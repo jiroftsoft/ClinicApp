@@ -38,6 +38,7 @@ using ClinicApp.Repositories.Insurance;
 using ClinicApp.Repositories.Payment;
 using ClinicApp.Services.Insurance;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Finance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.Services.DataSeeding;
@@ -47,6 +48,7 @@ using ClinicApp.Services.Triage;
 using ClinicApp.Services;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Repositories.Reception;
+using ClinicApp.Services.Finance;
 using ClinicApp.Services.Reception;
 using Unity;
 using Unity.AspNet.Mvc;
@@ -499,8 +501,11 @@ namespace ClinicApp
             container.RegisterType<ReceptionInsuranceAutoService, ReceptionInsuranceAutoService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionDepartmentDoctorService, Services.Reception.ReceptionDepartmentDoctorService>(new PerRequestLifetimeManager());
             
-            // ثبت ReceptionFacade - Orchestrator نازک
-            container.RegisterType<IReceptionFacade, ReceptionFacade>(new PerRequestLifetimeManager());
+                // ثبت ReceptionFacade - Orchestrator نازک
+                container.RegisterType<IReceptionFacade, ReceptionFacade>(new PerRequestLifetimeManager());
+                
+        // ثبت FinancialYearService
+        container.RegisterType<IFinancialYearService, DbFinancialYearService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionServiceManagementService, Services.Reception.ReceptionServiceManagementService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionPaymentService, Services.Reception.ReceptionPaymentService>(new PerRequestLifetimeManager());
             

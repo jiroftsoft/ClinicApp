@@ -16,8 +16,17 @@ namespace ClinicApp
             // 🏥 MEDICAL: فیلتر ضد کش برای مسیرهای درمانی - Real-time data for clinical safety
             filters.Add(new NoCacheFilter());
             
+            // 🏥 V2: فیلتر Zero-Cache برای Reception V2
+            filters.Add(new ClinicApp.Filters.NoCacheAttribute());
+            
             // 🔒 SECURITY: Global Anti-Forgery Filter برای تمام POST requests
             filters.Add(new ValidateAntiForgeryTokenAttribute());
+            
+            // 📊 LOGGING: CorrelationId Filter برای ردیابی درخواست‌ها
+            filters.Add(new ClinicApp.Filters.CorrelationIdFilter());
+            
+            // 🚨 EXCEPTION: Global Exception Filter برای ServiceResult
+            filters.Add(new ClinicApp.Filters.GlobalExceptionFilter());
         }
     }
 }

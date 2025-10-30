@@ -118,27 +118,7 @@ namespace ClinicApp.ViewModels.Reception
 
     #region Payment DTOs
 
-    /// <summary>
-    /// DTO برای پرداخت POS
-    /// </summary>
-    public class PosPaymentDto
-    {
-        public decimal Amount { get; set; }
-        public string Rrn { get; set; }
-        public string TraceNo { get; set; }
-        public string TerminalId { get; set; }
-        public string Last4 { get; set; }
-        public string CardType { get; set; }
-    }
-
-    /// <summary>
-    /// DTO برای پرداخت نقدی
-    /// </summary>
-    public class CashPaymentDto
-    {
-        public decimal Amount { get; set; }
-        public string Notes { get; set; }
-    }
+    // DTO های PosPaymentDto و CashPaymentDto در ReceptionDraftDtos.cs تعریف شده‌اند
 
     /// <summary>
     /// DTO برای نتیجه نهایی‌سازی

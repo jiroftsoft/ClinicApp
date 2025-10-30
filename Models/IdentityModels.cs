@@ -97,6 +97,12 @@ namespace ClinicApp.Models
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Reception> Receptions { get; set; }
         public DbSet<ReceptionItem> ReceptionItems { get; set; }
+        
+        // Reception Draft System - Using existing models
+        // Note: ReceptionDraft functionality is handled by Reception with Status=Draft
+        // ReceptionDraftItem functionality is handled by ReceptionItem
+        
+        // Payment System - Using existing PaymentTransaction model
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<CashSession> CashSessions { get; set; }

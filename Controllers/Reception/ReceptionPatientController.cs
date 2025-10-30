@@ -14,7 +14,6 @@ using ClinicApp.Constants;
 using ClinicApp.Extensions;
 using ClinicApp.Interfaces;
 using Serilog;
-using IReceptionPatientService = ClinicApp.Interfaces.Reception.IReceptionPatientService;
 
 namespace ClinicApp.Controllers.Reception
 {

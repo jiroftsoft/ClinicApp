@@ -1,0 +1,9 @@
+.reception-pro { font-family: Vazirmatn, Vazir, tahoma, sans-serif; }
+.reception-pro__header { padding: 8px 0; border-bottom: 1px solid #eee; }
+.reception-pro__section { margin-bottom: 12px; }
+.reception-pro__sticky { position: sticky; top: 12px; display: grid; gap: 12px; }
+.card-header { font-weight: 600; }
+.table td, .table th { vertical-align: middle; }
+@media print {
+  .reception-pro__header, .reception-pro__section, .reception-pro__sticky button { display: none !important; }
+}

@@ -144,7 +144,7 @@ namespace ClinicApp.Services.Reception
         /// <summary>
         /// دریافت وضعیت پرداخت‌ها برای سایدبار
         /// </summary>
-        public async Task<ServiceResult<PaymentStatus>> GetPaymentStatusAsync()
+        public async Task<ServiceResult<ViewModels.Reception.PaymentStatusInfo>> GetPaymentStatusAsync()
         {
             try
             {
@@ -156,7 +156,7 @@ namespace ClinicApp.Services.Reception
                 // دریافت آمار پرداخت‌های امروز
                 var receptionsResult = await _receptionService.GetReceptionsByDateRangeAsync(today, tomorrow);
                 
-                var status = new PaymentStatus
+                var status = new ViewModels.Reception.PaymentStatusInfo
                 {
                     TodayPayments = receptionsResult.Success ? receptionsResult.Data.Count() : 0,
                     TotalAmount = receptionsResult.Success ? receptionsResult.Data.Sum(r => r.TotalAmount) : 0,
@@ -167,12 +167,12 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("✅ وضعیت پرداخت‌ها دریافت شد - Today: {Today}, Amount: {Amount}. User: {UserName}",
                     status.TodayPayments, status.TotalAmount, _currentUserService.UserName);
 
-                return ServiceResult<PaymentStatus>.Successful(status);
+                return ServiceResult<ViewModels.Reception.PaymentStatusInfo>.Successful(status);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت وضعیت پرداخت‌ها. User: {UserName}", _currentUserService.UserName);
-                return ServiceResult<PaymentStatus>.Failed("خطا در دریافت وضعیت پرداخت‌ها");
+                return ServiceResult<ViewModels.Reception.PaymentStatusInfo>.Failed("خطا در دریافت وضعیت پرداخت‌ها");
             }
         }
 

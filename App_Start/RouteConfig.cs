@@ -15,6 +15,13 @@ namespace ClinicApp
             
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
+            
+            // 🏥 V2: Reception V2 Route
+            routes.MapRoute(
+                name: "ReceptionV2",
+                url: "reception/v2",
+                defaults: new { controller = "Reception", action = "Index", area = "" }
+            );
 
             // 🏥 Reception Module Routes - مسیرهای ماژول پذیرش
             routes.MapRoute(

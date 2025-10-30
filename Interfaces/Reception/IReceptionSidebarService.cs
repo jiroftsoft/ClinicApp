@@ -36,7 +36,7 @@ namespace ClinicApp.Interfaces.Reception
         /// دریافت وضعیت پرداخت‌ها برای سایدبار
         /// </summary>
         /// <returns>وضعیت پرداخت‌ها</returns>
-        Task<ServiceResult<PaymentStatus>> GetPaymentStatusAsync();
+        Task<ServiceResult<ViewModels.Reception.PaymentStatusInfo>> GetPaymentStatusAsync();
 
         /// <summary>
         /// دریافت اقدامات سریع برای سایدبار

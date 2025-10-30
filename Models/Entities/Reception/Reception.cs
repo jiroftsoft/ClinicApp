@@ -11,6 +11,7 @@ using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Receipt;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Models.Entities.Reception;
 
@@ -36,6 +37,24 @@ public class Reception : ISoftDelete, ITrackable
     /// شماره پذیرش (برای سازگاری با ViewModels)
     /// </summary>
     public string ReceptionNumber => $"R{ReceptionId:D6}";
+
+    /// <summary>
+    /// شماره پذیرش رسمی (مثل 1404-000123)
+    /// </summary>
+    [MaxLength(20, ErrorMessage = "شماره پذیرش نمی‌تواند بیش از 20 کاراکتر باشد.")]
+    public string ReceptionNo { get; set; }
+
+    /// <summary>
+    /// شناسه کلینیک
+    /// </summary>
+    [Required(ErrorMessage = "کلینیک الزامی است.")]
+    public int ClinicId { get; set; }
+
+    /// <summary>
+    /// شناسه بخش
+    /// </summary>
+    [Required(ErrorMessage = "بخش الزامی است.")]
+    public int DepartmentId { get; set; }
 
     /// <summary>
     /// شناسه بیمار
@@ -182,6 +201,16 @@ public class Reception : ISoftDelete, ITrackable
     /// </summary>
     public virtual Doctor.Doctor Doctor { get; set; }
 
+    /// <summary>
+    /// ارجاع به کلینیک
+    /// </summary>
+    public virtual Clinic.Clinic Clinic { get; set; }
+
+    /// <summary>
+    /// ارجاع به بخش
+    /// </summary>
+    public virtual Department Department { get; set; }
+
     // رابطه با مدل قدیمی Insurance حذف شد
 
     /// <summary>
@@ -189,6 +218,66 @@ public class Reception : ISoftDelete, ITrackable
     /// این فیلد برای ردیابی بیمه‌ای که در زمان پذیرش فعال بوده است
     /// </summary>
     public int? ActivePatientInsuranceId { get; set; }
+
+    /// <summary>
+    /// سال مالی
+    /// </summary>
+    [Required(ErrorMessage = "سال مالی الزامی است.")]
+    public int FinancialYear { get; set; }
+
+    /// <summary>
+    /// شناسه بیمه پایه
+    /// </summary>
+    public int? BasePlanId { get; set; }
+
+    /// <summary>
+    /// شناسه بیمه تکمیلی
+    /// </summary>
+    public int? SupplementaryPlanId { get; set; }
+
+    /// <summary>
+    /// مبلغ کل (قبل از محاسبه بیمه)
+    /// </summary>
+    [Required(ErrorMessage = "مبلغ کل الزامی است.")]
+    [DataType(DataType.Currency)]
+    [Column(TypeName = "decimal")]
+    public decimal Gross { get; set; }
+
+    /// <summary>
+    /// سهم بیمه پایه
+    /// </summary>
+    [Required(ErrorMessage = "سهم بیمه پایه الزامی است.")]
+    [DataType(DataType.Currency)]
+    [Column(TypeName = "decimal")]
+    public decimal BasePay { get; set; }
+
+    /// <summary>
+    /// سهم بیمه تکمیلی
+    /// </summary>
+    [Required(ErrorMessage = "سهم بیمه تکمیلی الزامی است.")]
+    [DataType(DataType.Currency)]
+    [Column(TypeName = "decimal")]
+    public decimal SuppPay { get; set; }
+
+    /// <summary>
+    /// سهم بیمار (نهایی)
+    /// </summary>
+    [Required(ErrorMessage = "سهم بیمار الزامی است.")]
+    [DataType(DataType.Currency)]
+    [Column(TypeName = "decimal")]
+    public decimal PatientPay { get; set; }
+
+    /// <summary>
+    /// روش پرداخت (POS|CASH)
+    /// </summary>
+    [MaxLength(10, ErrorMessage = "روش پرداخت نمی‌تواند بیش از 10 کاراکتر باشد.")]
+    public string PaymentMethod { get; set; }
+
+    /// <summary>
+    /// نسخه ردی برای کنترل همزمانی
+    /// </summary>
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
 
     /// <summary>
     /// ارجاع به بیمه فعال بیمار در زمان پذیرش
@@ -313,6 +402,61 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Reception_ActivePatientInsuranceId")));
 
+        Property(r => r.FinancialYear)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_FinancialYear")));
+
+        Property(r => r.BasePlanId)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_BasePlanId")));
+
+        Property(r => r.SupplementaryPlanId)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_SupplementaryPlanId")));
+
+        // فیلدهای جدید برای Reception V2
+        Property(r => r.ReceptionNo)
+            .IsOptional()
+            .HasMaxLength(20)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_ReceptionNo")));
+
+        Property(r => r.ClinicId)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_ClinicId")));
+
+        Property(r => r.DepartmentId)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_DepartmentId")));
+
+        Property(r => r.Gross)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(r => r.BasePay)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(r => r.SuppPay)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(r => r.PatientPay)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(r => r.PaymentMethod)
+            .IsOptional()
+            .HasMaxLength(10);
+
+        Property(r => r.RowVersion)
+            .IsRowVersion();
+
         // روابط
         HasRequired(r => r.Patient)
             .WithMany(p => p.Receptions)
@@ -322,6 +466,16 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
         HasRequired(r => r.Doctor)
             .WithMany(d => d.Receptions)
             .HasForeignKey(r => r.DoctorId)
+            .WillCascadeOnDelete(false);
+
+        HasRequired(r => r.Clinic)
+            .WithMany()
+            .HasForeignKey(r => r.ClinicId)
+            .WillCascadeOnDelete(false);
+
+        HasRequired(r => r.Department)
+            .WithMany()
+            .HasForeignKey(r => r.DepartmentId)
             .WillCascadeOnDelete(false);
 
         // رابطه با مدل قدیمی Insurance حذف شد

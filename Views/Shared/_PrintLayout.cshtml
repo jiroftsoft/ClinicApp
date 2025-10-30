@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - کلینیک شفا</title>
+    
+    <!-- Bootstrap RTL -->
+    <link href="~/Content/bootstrap.rtl.min.css" rel="stylesheet" />
+    
+    <!-- jQuery -->
+    <script src="~/Scripts/jquery-3.7.0.js"></script>
+    
+    <!-- Print Styles -->
+    <style>
+        @@media print {
+            body {
+                margin: 0;
+                padding: 0;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .receipt-container {
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 10px !important;
+            }
+            
+            .receipt-header,
+            .receipt-patient,
+            .receipt-doctor,
+            .receipt-services,
+            .receipt-totals {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .services-table {
+                font-size: 11px;
+            }
+            
+            .services-table th,
+            .services-table td {
+                padding: 4px;
+            }
+        }
+        
+        @@media screen {
+            body {
+                background-color: #f5f5f5;
+                padding: 20px;
+            }
+            
+            .receipt-container {
+                background-color: white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                border-radius: 8px;
+            }
+        }
+        
+        .print-controls {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .print-controls button {
+            margin: 0 5px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Print Controls (Hidden in Print) -->
+        <div class="print-controls no-print">
+            <button type="button" class="btn btn-primary" onclick="window.print()">
+                <i class="fa fa-print"></i> چاپ
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="window.close()">
+                <i class="fa fa-times"></i> بستن
+            </button>
+        </div>
+        
+        <!-- Main Content -->
+        @RenderBody()
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link href="~/Content/font-awesome.min.css" rel="stylesheet" />
+    
+    @RenderSection("scripts", required: false)
+</body>
+</html>

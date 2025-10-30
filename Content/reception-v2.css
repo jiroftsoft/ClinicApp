@@ -1,0 +1,478 @@
+/* فرم پذیرش V2 - CSS متمرکز و بهینه برای مانیتورهای 24-27 اینچ */
+
+/* Reset و Base Styles */
+.reception-pro * {
+    box-sizing: border-box;
+}
+
+.reception-pro {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+}
+
+/* Header ثابت */
+.reception-pro-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    flex-shrink: 0;
+}
+
+.reception-pro-header .header-left h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.reception-pro-header .header-subtitle {
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.reception-pro-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.reception-pro-header .reception-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.reception-pro-header .status-indicator {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.reception-pro-header .current-time {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Layout اصلی - بهینه برای مانیتورهای 24-27 اینچ */
+.reception-pro-layout {
+    display: flex;
+    height: calc(100vh - 80px);
+    gap: 1rem;
+    padding: 1rem;
+    overflow: hidden;
+    flex: 1;
+}
+
+/* پنل چپ - اطلاعات هویتی (Collapsible) - 35% */
+.reception-pro-left-panel {
+    width: 35%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+/* پنل وسط - فرآیند اصلی (ثابت) - 45% */
+.reception-pro-main-panel {
+    width: 45%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* پنل راست - Totals + Payment (Sticky) - 20% */
+.reception-pro-right-panel {
+    width: 20%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    height: fit-content;
+    max-height: calc(100vh - 120px);
+}
+
+/* Accordion Sections - فقط برای هویت */
+.reception-pro .accordion-section {
+    border: 1px solid #e9ecef;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.reception-pro .accordion-header {
+    background: #f8f9fa;
+    padding: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.reception-pro .accordion-header:hover {
+    background: #e9ecef;
+}
+
+.reception-pro .accordion-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.reception-pro .accordion-content {
+    padding: 1rem;
+    background: white;
+    display: none;
+}
+
+.reception-pro .accordion-content.active {
+    display: block;
+}
+
+/* Main Panel Sections - ثابت */
+.reception-pro .main-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.reception-pro .main-section:last-child {
+    border-bottom: none;
+}
+
+.reception-pro .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Form Elements */
+.reception-pro .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.reception-pro .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.reception-pro .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.reception-pro .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.reception-pro .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.reception-pro .form-control:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+/* Buttons */
+.reception-pro .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reception-pro .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.reception-pro .btn:active {
+    transform: translateY(0);
+}
+
+.reception-pro .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.reception-pro .btn-primary:hover {
+    background: #0056b3;
+}
+
+.reception-pro .btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.reception-pro .btn-success:hover {
+    background: #1e7e34;
+}
+
+.reception-pro .btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.reception-pro .btn-danger:hover {
+    background: #c82333;
+}
+
+.reception-pro .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+/* Tables */
+.reception-pro .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: white;
+}
+
+.reception-pro .items-table th,
+.reception-pro .items-table td {
+    padding: 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.reception-pro .items-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.reception-pro .items-table td {
+    font-size: 0.9rem;
+}
+
+.reception-pro .items-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Totals Section - Sticky */
+.reception-pro .totals-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.reception-pro .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.reception-pro .total-row:last-child {
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    background: #e9ecef;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+/* Payment Panel - Sticky */
+.reception-pro .payment-panel {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    margin-top: auto;
+}
+
+/* Status Indicators */
+.reception-pro .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.reception-pro .status-dot.pending {
+    background-color: #ffc107;
+}
+
+.reception-pro .status-dot.success {
+    background-color: #28a745;
+}
+
+.reception-pro .status-dot.error {
+    background-color: #dc3545;
+}
+
+.reception-pro .status-dot.loading {
+    background-color: #007bff;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Loading States */
+.reception-pro .loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.reception-pro .loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Keyboard Shortcuts */
+.reception-pro .shortcut-hint {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .reception-pro-layout {
+        flex-direction: column;
+    }
+    
+    .reception-pro-left-panel,
+    .reception-pro-main-panel,
+    .reception-pro-right-panel {
+        width: 100%;
+    }
+    
+    .reception-pro-left-panel {
+        height: 30vh;
+    }
+    
+    .reception-pro-main-panel {
+        height: 50vh;
+    }
+    
+    .reception-pro-right-panel {
+        height: 20vh;
+        position: relative;
+    }
+}
+
+@media (max-width: 768px) {
+    .reception-pro-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .reception-pro .form-row {
+        flex-direction: column;
+    }
+    
+    .reception-pro .form-group {
+        min-width: 100%;
+    }
+    
+    .reception-pro .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .reception-pro-header {
+        display: none;
+    }
+    
+    .reception-pro-layout {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .reception-pro-left-panel,
+    .reception-pro-main-panel,
+    .reception-pro-right-panel {
+        width: 100%;
+        height: auto;
+    }
+    
+    .reception-pro .btn {
+        display: none;
+    }
+}

@@ -5,7 +5,7 @@ namespace ClinicApp.ViewModels.Reception
     /// <summary>
     /// کلاس وضعیت پرداخت برای سایدبار پذیرش
     /// </summary>
-    public class PaymentStatus
+    public class PaymentStatusInfo
     {
         /// <summary>
         /// تعداد پرداخت‌های امروز

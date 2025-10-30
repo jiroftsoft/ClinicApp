@@ -7,8 +7,9 @@ namespace ClinicApp
     {
         public static void RegisterBundles(BundleCollection bundles)
         {
-            // Disable minification for debugging
+            // Disable cache and minification for medical environment
             BundleTable.EnableOptimizations = false;
+            BundleTable.Bundles.Clear();
                     bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
             "~/Scripts/jquery-3.7.1.min.js",
             "~/Content/js/jquery-protection.js"));
@@ -142,6 +143,37 @@ namespace ClinicApp
             // Insurance Supplementary Tariff CSS Bundle
             bundles.Add(new StyleBundle("~/Content/css/insurance/supplementary-tariff").Include(
                 "~/Content/css/insurance/supplementary-tariff-views.css"
+            ));
+
+            // Reception V2 Bundles - Zero Cache, Medical-Grade
+            bundles.Add(new StyleBundle("~/content/reception.v2").Include(
+                "~/Content/bootstrap.rtl.min.css",
+                "~/Content/select2.min.css",
+                "~/Content/persian-datepicker.min.css",
+                "~/Content/toastr.min.css",
+                "~/Content/reception.v2.css"
+            ));
+
+            bundles.Add(new ScriptBundle("~/bundles/reception.v2").Include(
+                "~/Scripts/jquery-3.7.1.min.js",
+                "~/Scripts/bootstrap.bundle.min.js",
+                "~/Scripts/select2.full.min.js",
+                "~/Scripts/persian-date.min.js",
+                "~/Scripts/persian-datepicker.min.js",
+                "~/Scripts/toastr.min.js",
+                "~/Scripts/lodash.debounce.min.js",
+                "~/Scripts/jquery.inputmask.bundle.min.js",
+                "~/Scripts/reception.v2/reception-api.js",
+                "~/Scripts/reception.v2/reception-utils.js",
+                "~/Scripts/reception.v2/form-change-detector.js",
+                "~/Scripts/reception.v2/auto-draft-manager.js",
+                "~/Scripts/reception.v2/patient-lookup.js",
+                "~/Scripts/reception.v2/insurance-panel.js",
+                "~/Scripts/reception.v2/clinic-dept-doctor.js",
+                "~/Scripts/reception.v2/service-lookup.js",
+                "~/Scripts/reception.v2/totals-panel.js",
+                "~/Scripts/reception.v2/payment-panel.js",
+                "~/Scripts/reception.v2/reception-main.js"
             ));
         }
     }

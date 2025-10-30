@@ -117,6 +117,24 @@ public class PaymentTransaction : ISoftDelete, ITrackable
 
     public PaymentMethod Method { get; set; }
 
+    /// <summary>
+    /// کلید یکتایی برای جلوگیری از تکرار تراکنش
+    /// </summary>
+    [MaxLength(100, ErrorMessage = "کلید یکتایی نمی‌تواند بیش از 100 کاراکتر باشد.")]
+    public string IdempotencyKey { get; set; }
+
+    /// <summary>
+    /// شناسه ترمینال پوز
+    /// </summary>
+    [MaxLength(50, ErrorMessage = "شناسه ترمینال نمی‌تواند بیش از 50 کاراکتر باشد.")]
+    public string TerminalId { get; set; }
+
+    /// <summary>
+    /// 4 رقم آخر کارت
+    /// </summary>
+    [MaxLength(4, ErrorMessage = "4 رقم آخر کارت نمی‌تواند بیش از 4 کاراکتر باشد.")]
+    public string CardLast4 { get; set; }
+
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
     /// نشان‌دهنده وضعیت حذف شدن تراکنش
@@ -248,6 +266,22 @@ public class PaymentTransactionConfig : EntityTypeConfiguration<PaymentTransacti
         Property(t => t.Description)
             .IsOptional()
             .HasMaxLength(500);
+
+        Property(t => t.IdempotencyKey)
+            .IsOptional()
+            .HasMaxLength(100)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_PaymentTransaction_IdempotencyKey")));
+
+        Property(t => t.TerminalId)
+            .IsOptional()
+            .HasMaxLength(50)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_PaymentTransaction_TerminalId")));
+
+        Property(t => t.CardLast4)
+            .IsOptional()
+            .HasMaxLength(4);
 
         // پیاده‌سازی ISoftDelete
         Property(t => t.IsDeleted)

@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.Insurance;
@@ -43,6 +46,8 @@ namespace ClinicApp.Services.Reception
         private readonly IPosManagementService _posManagementService;
         private readonly IReceptionRepository _receptionRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IFinancialYearService _financialYearService;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
         #endregion
@@ -60,6 +65,8 @@ namespace ClinicApp.Services.Reception
             IPosManagementService posManagementService,
             IReceptionRepository receptionRepository,
             ICurrentUserService currentUserService,
+            IFinancialYearService financialYearService,
+            ApplicationDbContext context,
             ILogger logger)
         {
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
@@ -72,6 +79,8 @@ namespace ClinicApp.Services.Reception
             _posManagementService = posManagementService ?? throw new ArgumentNullException(nameof(posManagementService));
             _receptionRepository = receptionRepository ?? throw new ArgumentNullException(nameof(receptionRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionFacade>();
         }
 
@@ -509,6 +518,443 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Error(ex, "❌ FACADE: خطا در دریافت خدمات مشترک");
                 return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات مشترک");
+            }
+        }
+
+        #endregion
+
+        #region Draft Management
+
+        /// <summary>
+        /// ایجاد پیش‌نویس پذیرش
+        /// </summary>
+        public async Task<ServiceResult<CreateDraftResponse>> CreateDraftAsync(CreateDraftRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: ایجاد پیش‌نویس پذیرش");
+
+                // var year = _financialYearService.GetCurrentYear(); // TODO: Add FinancialYear field to Reception
+
+                var draft = new Models.Entities.Reception.Reception
+                {
+                    PatientId = request.PatientId,
+                    DoctorId = request.DoctorId,
+                    ReceptionDate = DateTime.Now,
+                    Status = ReceptionStatus.Pending, // Draft status
+                    Type = ReceptionType.Normal,
+                    Priority = AppointmentPriority.Normal,
+                    TotalAmount = 0,
+                    PatientCoPay = 0,
+                    InsurerShareAmount = 0,
+                    FinancialYear = 1404 // TODO: Get from DbFinancialYearService
+                };
+                
+                _context.Receptions.Add(draft);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<CreateDraftResponse>.Successful(new CreateDraftResponse 
+                { 
+                    ReceptionId = draft.ReceptionId, 
+                    Status = "Draft" 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در ایجاد پیش‌نویس");
+                return ServiceResult<CreateDraftResponse>.Failed("خطا در ایجاد پیش‌نویس پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// افزودن آیتم به پیش‌نویس
+        /// </summary>
+        public async Task<ServiceResult<ItemsAndTotalsDto>> AddItemAsync(AddItemRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: افزودن آیتم به پیش‌نویس");
+
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                
+                if (draft == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+
+                // var year = draft.FinancialYear; // TODO: Add FinancialYear field to Reception
+                var year = 1404; // Default year for now
+
+                // دریافت ضرایب
+                var factor = await _context.FactorSettings
+                    .Where(f => f.FinancialYear == year && !f.IsDeleted)
+                    .Select(f => new { f.Value, f.FactorType })
+                    .ToListAsync();
+
+                var proFactor = factor.FirstOrDefault(f => f.FactorType == ServiceComponentType.Professional)?.Value ?? 0;
+                var techFactor = factor.FirstOrDefault(f => f.FactorType == ServiceComponentType.Technical)?.Value ?? 0;
+
+                // دریافت اطلاعات خدمت
+        var service = await _context.Services
+            .Where(s => s.ServiceId == request.ServiceId && s.IsActive && !s.IsDeleted)
+            .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+            .FirstOrDefaultAsync();
+
+                if (service == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("خدمت یافت نشد");
+
+                var qty = request.Quantity <= 0 ? 1 : request.Quantity;
+                // TODO: محاسبه قیمت بر اساس ServiceComponents
+                var unit = 1000m; // قیمت ثابت موقت
+                var total = unit * qty;
+
+                // محاسبه سهم بیمار و بیمه برای این آیتم
+                var itemBasePercent = 0m;
+                var itemSuppPercent = 0m;
+
+                // دریافت اطلاعات بیمه پایه
+                if (draft.BasePlanId.HasValue)
+                {
+                    var basePlan = await _context.InsurancePlans
+                        .Where(p => p.InsurancePlanId == draft.BasePlanId.Value && !p.IsDeleted && p.IsActive)
+                        .Select(p => new { p.CoveragePercent })
+                        .FirstOrDefaultAsync();
+                    
+                    if (basePlan != null)
+                    {
+                        itemBasePercent = basePlan.CoveragePercent;
+                    }
+                }
+
+                // دریافت اطلاعات بیمه تکمیلی
+                if (draft.SupplementaryPlanId.HasValue)
+                {
+                    var suppPlan = await _context.InsurancePlans
+                        .Where(p => p.InsurancePlanId == draft.SupplementaryPlanId.Value && !p.IsDeleted && p.IsActive)
+                        .Select(p => new { p.CoveragePercent })
+                        .FirstOrDefaultAsync();
+                    
+                    if (suppPlan != null)
+                    {
+                        itemSuppPercent = suppPlan.CoveragePercent;
+                    }
+                }
+
+                // محاسبه سهم بیمه پایه
+                var itemBasePay = total * (itemBasePercent / 100m);
+                var itemPatientAfterBase = total - itemBasePay;
+                
+                // محاسبه سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
+                var itemSuppPay = itemPatientAfterBase * (itemSuppPercent / 100m);
+                var itemPatientShare = itemPatientAfterBase - itemSuppPay;
+
+                var item = new Models.Entities.Reception.ReceptionItem
+                {
+                    ReceptionId = draft.ReceptionId,
+                    ServiceId = service.ServiceId,
+                    Quantity = qty,
+                    UnitPrice = unit,
+                    PatientShareAmount = itemPatientShare,
+                    InsurerShareAmount = itemBasePay + itemSuppPay
+                };
+                
+                _context.ReceptionItems.Add(item);
+                await _context.SaveChangesAsync();
+
+                // بازمحاسبه
+                await _context.Entry(draft).Collection(x => x.ReceptionItems).LoadAsync();
+                return await RecalculateDraftAsync(draft);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در افزودن آیتم");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در افزودن آیتم");
+            }
+        }
+
+        /// <summary>
+        /// حذف آیتم از پیش‌نویس
+        /// </summary>
+        public async Task<ServiceResult<ItemsAndTotalsDto>> RemoveItemAsync(RemoveItemRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: حذف آیتم از پیش‌نویس");
+
+                var item = await _context.ReceptionItems
+                    .FirstOrDefaultAsync(i => i.ReceptionId == request.ReceptionId && i.ServiceId == request.ServiceId);
+                
+                if (item == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto { Totals = new TotalsDto() });
+
+                _context.ReceptionItems.Remove(item);
+                await _context.SaveChangesAsync();
+
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstAsync(x => x.ReceptionId == request.ReceptionId);
+                
+                return await RecalculateDraftAsync(draft);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در حذف آیتم");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در حذف آیتم");
+            }
+        }
+
+        /// <summary>
+        /// تنظیم بیمه‌های پیش‌نویس
+        /// </summary>
+        public async Task<ServiceResult<ItemsAndTotalsDto>> SetInsurancesAsync(SetInsurancesRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: تنظیم بیمه‌های پیش‌نویس");
+
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                
+                if (draft == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+
+                draft.BasePlanId = request.BasePlanId;
+                draft.SupplementaryPlanId = request.SupplementaryPlanId;
+                draft.UpdatedAt = DateTime.Now;
+                
+                await _context.SaveChangesAsync();
+
+                return await RecalculateDraftAsync(draft);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در تنظیم بیمه‌ها");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها");
+            }
+        }
+
+        /// <summary>
+        /// نهایی‌سازی با POS
+        /// </summary>
+        public async Task<ServiceResult<FinalizeResponse>> FinalizePosAsync(FinalizePosRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: نهایی‌سازی با POS");
+
+                // بررسی وجود پرداخت قبلی - TODO: Add IdempotencyKey field to PaymentTransaction
+                // var exists = await _context.PaymentTransactions.AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey);
+                // if (exists)
+                // {
+                //     return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
+                // }
+
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                
+                if (draft == null)
+                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+
+                // محاسبه مجموع‌ها
+                var totals = await RecalculateDraftAsync(draft);
+                if (totals.Data.Totals.Patient != request.AmountIRR)
+                    return ServiceResult<FinalizeResponse>.Failed("مبلغ پرداخت با مجموع مطابقت ندارد");
+
+                // ثبت پرداخت
+                var payment = new Models.Entities.Payment.PaymentTransaction
+                {
+                    ReceptionId = request.ReceptionId,
+                    Amount = request.AmountIRR,
+                    Status = PaymentStatus.Success,
+                    IdempotencyKey = request.IdempotencyKey,
+                    Method = PaymentMethod.POS,
+                    ReferenceCode = request.Pos?.RRN,
+                    TransactionId = request.Pos?.TraceNo,
+                    TerminalId = request.Pos?.TerminalId,
+                    CardLast4 = request.Pos?.CardLast4
+                };
+
+                _context.PaymentTransactions.Add(payment);
+
+                // نهایی‌سازی پیش‌نویس
+                draft.Status = ReceptionStatus.Completed; // TODO: Add enum value
+                draft.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                // شماره رسید
+                var receiptNo = $"R{DateTime.Now:yyyyMMddHHmmss}-{request.ReceptionId}";
+                return ServiceResult<FinalizeResponse>.Successful(new FinalizeResponse
+                {
+                    Status = "Finalized",
+                    Receipt = new ReceiptDto 
+                    { 
+                        No = receiptNo, 
+                        PrintedUrl = $"/reception/print/{request.ReceptionId}" 
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در نهایی‌سازی POS");
+                return ServiceResult<FinalizeResponse>.Failed("خطا در نهایی‌سازی پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// نهایی‌سازی با نقدی
+        /// </summary>
+        public async Task<ServiceResult<FinalizeResponse>> FinalizeCashAsync(FinalizeCashRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: نهایی‌سازی با نقدی");
+
+                // بررسی وجود پرداخت قبلی - TODO: Add IdempotencyKey field to PaymentTransaction
+                // var exists = await _context.PaymentTransactions.AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey);
+                // if (exists)
+                // {
+                //     return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
+                // }
+
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                
+                if (draft == null)
+                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+
+                // محاسبه مجموع‌ها
+                var totals = await RecalculateDraftAsync(draft);
+                if (totals.Data.Totals.Patient != request.AmountIRR)
+                    return ServiceResult<FinalizeResponse>.Failed("مبلغ پرداخت با مجموع مطابقت ندارد");
+
+                // ثبت پرداخت
+                var payment = new Models.Entities.Payment.PaymentTransaction
+                {
+                    ReceptionId = request.ReceptionId,
+                    Amount = request.AmountIRR,
+                    Status = PaymentStatus.Success,
+                    IdempotencyKey = request.IdempotencyKey,
+                    Method = PaymentMethod.Cash
+                };
+
+                _context.PaymentTransactions.Add(payment);
+
+                // نهایی‌سازی پیش‌نویس
+                draft.Status = ReceptionStatus.Completed; // TODO: Add enum value
+                draft.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                // شماره رسید
+                var receiptNo = $"R{DateTime.Now:yyyyMMddHHmmss}-{request.ReceptionId}";
+                return ServiceResult<FinalizeResponse>.Successful(new FinalizeResponse
+                {
+                    Status = "Finalized",
+                    Receipt = new ReceiptDto 
+                    { 
+                        No = receiptNo, 
+                        PrintedUrl = $"/reception/print/{request.ReceptionId}" 
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در نهایی‌سازی نقدی");
+                return ServiceResult<FinalizeResponse>.Failed("خطا در نهایی‌سازی پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// بازمحاسبه پیش‌نویس
+        /// </summary>
+        private async Task<ServiceResult<ItemsAndTotalsDto>> RecalculateDraftAsync(Models.Entities.Reception.Reception draft)
+        {
+            try
+            {
+                // Gross
+                var gross = draft.ReceptionItems.Sum(i => i.UnitPrice * i.Quantity);
+
+                // درصدها از پلن‌های بیمه
+                var basePercent = 0m;
+                var suppPercent = 0m;
+
+                // دریافت اطلاعات بیمه پایه
+                if (draft.BasePlanId.HasValue)
+                {
+                    var basePlan = await _context.InsurancePlans
+                        .Where(p => p.InsurancePlanId == draft.BasePlanId.Value && !p.IsDeleted && p.IsActive)
+                        .Select(p => new { p.CoveragePercent, p.Deductible })
+                        .FirstOrDefaultAsync();
+                    
+                    if (basePlan != null)
+                    {
+                        basePercent = basePlan.CoveragePercent;
+                    }
+                }
+
+                // دریافت اطلاعات بیمه تکمیلی
+                if (draft.SupplementaryPlanId.HasValue)
+                {
+                    var suppPlan = await _context.InsurancePlans
+                        .Where(p => p.InsurancePlanId == draft.SupplementaryPlanId.Value && !p.IsDeleted && p.IsActive)
+                        .Select(p => new { p.CoveragePercent })
+                        .FirstOrDefaultAsync();
+                    
+                    if (suppPlan != null)
+                    {
+                        suppPercent = suppPlan.CoveragePercent;
+                    }
+                }
+
+                // محاسبه سهم بیمه پایه
+                var basePay = gross * (basePercent / 100m);
+                var patientAfterBase = gross - basePay;
+                
+                // محاسبه سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
+                var suppPay = patientAfterBase * (suppPercent / 100m);
+                var patient = patientAfterBase - suppPay;
+
+                // دریافت اطلاعات خدمات
+                var serviceIds = draft.ReceptionItems.Select(i => i.ServiceId).ToList();
+        var services = await _context.Services
+            .Where(s => serviceIds.Contains(s.ServiceId))
+            .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+            .ToListAsync();
+
+                var items = draft.ReceptionItems.Select(it => 
+                {
+                    var service = services.FirstOrDefault(s => s.ServiceId == it.ServiceId);
+                    return new ReceptionItemDto
+                    {
+                        ServiceId = it.ServiceId,
+                        Code = service?.ServiceCode ?? "",
+                        Name = service?.Title ?? "",
+                        Qty = it.Quantity,
+                        UnitPriceIRR = it.UnitPrice,
+                        TotalIRR = it.UnitPrice * it.Quantity
+                    };
+                }).ToList();
+
+                return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
+                {
+                    Items = items,
+                    Totals = new TotalsDto 
+                    { 
+                        Gross = gross, 
+                        Base = basePay, 
+                        Supplementary = suppPay, 
+                        Patient = patient 
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در بازمحاسبه");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بازمحاسبه");
             }
         }
 

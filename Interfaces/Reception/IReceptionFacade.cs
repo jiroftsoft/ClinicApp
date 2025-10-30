@@ -43,6 +43,21 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         Task<ServiceResult<AddItemResultDto>> AddItemAsync(int receptionId, int serviceId, int quantity, int year);
 
+        /// <summary>
+        /// ایجاد پیش‌نویس پذیرش
+        /// </summary>
+        Task<ServiceResult<CreateDraftResponse>> CreateDraftAsync(CreateDraftRequest request);
+
+        /// <summary>
+        /// افزودن آیتم به پیش‌نویس
+        /// </summary>
+        Task<ServiceResult<ItemsAndTotalsDto>> AddItemAsync(AddItemRequest request);
+
+        /// <summary>
+        /// حذف آیتم از پیش‌نویس
+        /// </summary>
+        Task<ServiceResult<ItemsAndTotalsDto>> RemoveItemAsync(RemoveItemRequest request);
+
         #endregion
 
         #region Insurances & Finalize
@@ -53,6 +68,11 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<bool>> SetInsurancesAsync(int receptionId, int? basePlanId, int? suppPlanId);
 
         /// <summary>
+        /// تنظیم بیمه‌های پیش‌نویس
+        /// </summary>
+        Task<ServiceResult<ItemsAndTotalsDto>> SetInsurancesAsync(SetInsurancesRequest request);
+
+        /// <summary>
         /// نهایی‌سازی با پرداخت POS
         /// </summary>
         Task<ServiceResult<FinalizeResultDto>> FinalizeWithPosAsync(int receptionId, PosPaymentDto pos);
@@ -61,6 +81,16 @@ namespace ClinicApp.Interfaces.Reception
         /// نهایی‌سازی با پرداخت نقدی
         /// </summary>
         Task<ServiceResult<FinalizeResultDto>> FinalizeWithCashAsync(int receptionId, CashPaymentDto cash);
+
+        /// <summary>
+        /// نهایی‌سازی با پرداخت POS (جدید)
+        /// </summary>
+        Task<ServiceResult<FinalizeResponse>> FinalizePosAsync(FinalizePosRequest request);
+
+        /// <summary>
+        /// نهایی‌سازی با پرداخت نقدی (جدید)
+        /// </summary>
+        Task<ServiceResult<FinalizeResponse>> FinalizeCashAsync(FinalizeCashRequest request);
 
         #endregion
     }

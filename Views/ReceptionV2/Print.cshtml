@@ -1,0 +1,255 @@
+@model int
+@{
+    ViewBag.Title = "چاپ رسید پذیرش";
+    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+}
+
+<div class="receipt-container">
+    <div class="receipt-header">
+        <h1>رسید پذیرش</h1>
+        <div class="receipt-info">
+            <p><strong>شماره پذیرش:</strong> <span id="receptionNo">-</span></p>
+            <p><strong>تاریخ:</strong> <span id="receptionDate">-</span></p>
+            <p><strong>ساعت:</strong> <span id="receptionTime">-</span></p>
+        </div>
+    </div>
+
+    <div class="receipt-patient">
+        <h2>اطلاعات بیمار</h2>
+        <div class="patient-info">
+            <p><strong>نام:</strong> <span id="patientName">-</span></p>
+            <p><strong>کد ملی:</strong> <span id="patientNationalCode">-</span></p>
+            <p><strong>موبایل:</strong> <span id="patientMobile">-</span></p>
+        </div>
+    </div>
+
+    <div class="receipt-doctor">
+        <h2>اطلاعات پزشک</h2>
+        <div class="doctor-info">
+            <p><strong>نام پزشک:</strong> <span id="doctorName">-</span></p>
+            <p><strong>بخش:</strong> <span id="departmentName">-</span></p>
+        </div>
+    </div>
+
+    <div class="receipt-services">
+        <h2>خدمات</h2>
+        <table class="services-table">
+            <thead>
+                <tr>
+                    <th>نام خدمت</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>جمع</th>
+                </tr>
+            </thead>
+            <tbody id="servicesList">
+                <!-- خدمات از JavaScript بارگذاری می‌شوند -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="receipt-totals">
+        <h2>خلاصه مالی</h2>
+        <div class="totals-info">
+            <p><strong>مبلغ کل:</strong> <span id="totalAmount">-</span> ریال</p>
+            <p><strong>سهم بیمه:</strong> <span id="insurerShare">-</span> ریال</p>
+            <p><strong>سهم بیمار:</strong> <span id="patientShare">-</span> ریال</p>
+            <p><strong>روش پرداخت:</strong> <span id="paymentMethod">-</span></p>
+        </div>
+    </div>
+
+    <div class="receipt-footer">
+        <p>با تشکر از انتخاب شما</p>
+        <p>کلینیک شفا</p>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        loadReceptionData(@Model);
+    });
+
+    function loadReceptionData(receptionId) {
+        $.ajax({
+            url: '/Api/ReceptionApi/GetReceptionDetails',
+            type: 'GET',
+            data: { id: receptionId },
+            success: function(response) {
+                if (response.Success) {
+                    populateReceipt(response.Data);
+                } else {
+                    alert('خطا در بارگذاری اطلاعات: ' + response.Message);
+                }
+            },
+            error: function() {
+                alert('خطا در ارتباط با سرور');
+            }
+        });
+    }
+
+    function populateReceipt(data) {
+        // اطلاعات پذیرش
+        $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber);
+        $('#receptionDate').text(formatDate(data.ReceptionDate));
+        $('#receptionTime').text(formatTime(data.ReceptionDate));
+
+        // اطلاعات بیمار
+        $('#patientName').text(data.PatientName);
+        $('#patientNationalCode').text(data.PatientNationalCode);
+        $('#patientMobile').text(data.PatientMobile);
+
+        // اطلاعات پزشک
+        $('#doctorName').text(data.DoctorName);
+        $('#departmentName').text(data.DepartmentName);
+
+        // خدمات
+        var servicesHtml = '';
+        if (data.Items && data.Items.length > 0) {
+            data.Items.forEach(function(item) {
+                servicesHtml += '<tr>';
+                servicesHtml += '<td>' + item.ServiceName + '</td>';
+                servicesHtml += '<td>' + item.Quantity + '</td>';
+                servicesHtml += '<td>' + formatCurrency(item.UnitPrice) + '</td>';
+                servicesHtml += '<td>' + formatCurrency(item.TotalPrice) + '</td>';
+                servicesHtml += '</tr>';
+            });
+        }
+        $('#servicesList').html(servicesHtml);
+
+        // خلاصه مالی
+        $('#totalAmount').text(formatCurrency(data.TotalAmount));
+        $('#insurerShare').text(formatCurrency(data.InsurerShareAmount));
+        $('#patientShare').text(formatCurrency(data.PatientCoPay));
+        $('#paymentMethod').text(data.PaymentMethod || 'نقدی');
+
+        // چاپ خودکار
+        setTimeout(function() {
+            window.print();
+        }, 1000);
+    }
+
+    function formatDate(dateString) {
+        var date = new Date(dateString);
+        return date.toLocaleDateString('fa-IR');
+    }
+
+    function formatTime(dateString) {
+        var date = new Date(dateString);
+        return date.toLocaleTimeString('fa-IR');
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('fa-IR').format(amount);
+    }
+</script>
+
+<style>
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Tahoma', sans-serif;
+        direction: rtl;
+    }
+
+    .receipt-header {
+        text-align: center;
+        border-bottom: 2px solid #333;
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+    }
+
+    .receipt-header h1 {
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    .receipt-info {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+    }
+
+    .receipt-info p {
+        margin: 5px 0;
+    }
+
+    .receipt-patient,
+    .receipt-doctor,
+    .receipt-services,
+    .receipt-totals {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+    }
+
+    .receipt-patient h2,
+    .receipt-doctor h2,
+    .receipt-services h2,
+    .receipt-totals h2 {
+        color: #333;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .patient-info,
+    .doctor-info,
+    .totals-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+    }
+
+    .services-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .services-table th,
+    .services-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .services-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    .receipt-footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #333;
+    }
+
+    .receipt-footer p {
+        margin: 5px 0;
+        font-weight: bold;
+    }
+
+    @media print {
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .receipt-container {
+            max-width: none;
+            margin: 0;
+            padding: 10px;
+        }
+        
+        .receipt-header,
+        .receipt-patient,
+        .receipt-doctor,
+        .receipt-services,
+        .receipt-totals {
+            break-inside: avoid;
+        }
+    }
+</style>

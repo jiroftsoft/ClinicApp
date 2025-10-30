@@ -1,6 +1,7 @@
 @model ClinicApp.ViewModels.Reception.PatientSectionVM
 <div class="card mb-3">
   <div class="card-body row g-2">
+    <input type="hidden" id="Patient_PatientId" value="@Model.PatientId" />
     <div class="col-md-4">
       <label class="form-label">کدملی</label>
       <input id="Patient_NationalCode" class="form-control" value="@Model.NationalCode" autocomplete="off" />
