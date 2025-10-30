@@ -36,6 +36,7 @@ using ClinicApp.Interfaces.Payment;
 using ClinicApp.Models.Core;
 using ClinicApp.Repositories.Insurance;
 using ClinicApp.Repositories.Payment;
+using ClinicApp.Repositories.Payment.POS;
 using ClinicApp.Services.Insurance;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Finance;
@@ -47,13 +48,17 @@ using ClinicApp.Services.SystemSettings;
 using ClinicApp.Services.Triage;
 using ClinicApp.Services;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Repositories.Patient;
 using ClinicApp.Repositories.Reception;
 using ClinicApp.Services.Finance;
+using ClinicApp.Services.Reception;
 using ClinicApp.Services.Reception;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
 using Unity.Lifetime;
+using ClinicApp.Interfaces.Payment.POS;
+using ClinicApp.Services.Payment.POS;
 
 namespace ClinicApp
 {
@@ -319,6 +324,8 @@ namespace ClinicApp
             {
                 // ثبت سرویس‌های پزشکی با پشتیبانی از سیستم حذف نرم
                 container.RegisterType<IPatientService, PatientService>(new HierarchicalLifetimeManager());
+                container.RegisterType<Interfaces.Repositories.IPatientRepository, PatientRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IReceptionWorkflowService, ReceptionWorkflowService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
@@ -519,6 +526,11 @@ namespace ClinicApp
 
                 // ثبت سرویس‌های پرداخت
                 container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());
+                // ثبت ریپازیتوری‌های POS
+                container.RegisterType<IPosTerminalRepository, PosTerminalRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<ICashSessionRepository, CashSessionRepository>(new PerRequestLifetimeManager());
+                // ثبت سرویس مدیریت POS
+                container.RegisterType<IPosManagementService, PosManagementService>(new PerRequestLifetimeManager());
 
                 // Register Supplementary Tariff Seeder Service
                 container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());

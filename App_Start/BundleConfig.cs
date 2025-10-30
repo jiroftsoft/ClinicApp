@@ -154,7 +154,10 @@ namespace ClinicApp
                 "~/Content/reception.v2.css"
             ));
 
-            bundles.Add(new ScriptBundle("~/bundles/reception.v2").Include(
+            var receptionV2 = new ScriptBundle("~/bundles/reception.v2");
+            // Disable minification for this bundle to avoid WebGrease/JSParser issues with modern JS syntax
+            receptionV2.Transforms.Clear();
+            receptionV2.Include(
                 "~/Scripts/jquery-3.7.1.min.js",
                 "~/Scripts/bootstrap.bundle.min.js",
                 "~/Scripts/select2.full.min.js",
@@ -174,7 +177,8 @@ namespace ClinicApp
                 "~/Scripts/reception.v2/totals-panel.js",
                 "~/Scripts/reception.v2/payment-panel.js",
                 "~/Scripts/reception.v2/reception-main.js"
-            ));
+            );
+            bundles.Add(receptionV2);
         }
     }
 }

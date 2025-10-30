@@ -6,7 +6,7 @@
       return;
     }
     
-    API.post("/Api/ReceptionApi/PatientLookupOrCreate", { nationalCode: nc })
+    API.post("/patient/lookup-or-create", { NationalCode: nc })
       .then(API.ok)
       .then(d => { 
         console.log('🏥 V2: Patient found/created:', d);

@@ -73,6 +73,11 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<ItemsAndTotalsDto>> SetInsurancesAsync(SetInsurancesRequest request);
 
         /// <summary>
+        /// به‌روزرسانی پیش‌نویس پذیرش و بازمحاسبه مجموع‌ها
+        /// </summary>
+        Task<ServiceResult<ItemsAndTotalsDto>> UpdateDraftAsync(ClinicApp.Dtos.Reception.UpdateDraftRequest request);
+
+        /// <summary>
         /// نهایی‌سازی با پرداخت POS
         /// </summary>
         Task<ServiceResult<FinalizeResultDto>> FinalizeWithPosAsync(int receptionId, PosPaymentDto pos);

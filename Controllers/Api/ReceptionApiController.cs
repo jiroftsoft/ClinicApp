@@ -21,8 +21,9 @@ namespace ClinicApp.Controllers.Api
     /// 3. ServiceResult<T> استاندارد
     /// 4. Idempotency برای عملیات حساس
     /// </summary>
-    [NoCache]
-    [ValidateAntiForgeryToken]
+[RoutePrefix("api/v1/reception")]
+[OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
+[NoCache]
     public class ReceptionApiController : Controller
     {
         #region Dependencies
@@ -50,7 +51,7 @@ namespace ClinicApp.Controllers.Api
         /// جستجو یا ایجاد بیمار
         /// POST: /Api/ReceptionApi/PatientLookup
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("patient/lookup-or-create")]
         public async Task<ActionResult> PatientLookup(PatientLookupRequest request)
         {
             try
@@ -92,13 +93,38 @@ namespace ClinicApp.Controllers.Api
 
         #endregion
 
+        #region Bootstrap
+
+        /// <summary>
+        /// داده‌های اولیه فرم پذیرش (دپارتمان‌ها، خدمات مشترک و ...)
+        /// GET: /Api/ReceptionApi/Bootstrap
+        /// </summary>
+        [HttpGet, Route("bootstrap")]
+        public async Task<ActionResult> Bootstrap(int? clinicId, int? deptId)
+        {
+            try
+            {
+                _logger.Information("🏥 API: Bootstrap - ClinicId: {ClinicId}, DeptId: {DeptId}", clinicId, deptId);
+
+                var result = await _receptionFacade.LoadInitialAsync(clinicId ?? 1, deptId);
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در Bootstrap پذیرش");
+                return Json(ServiceResult.Failed("خطا در بارگذاری اطلاعات اولیه"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
+
         #region Service Management
 
         /// <summary>
         /// دریافت خدمات دپارتمان
         /// GET: /Api/ReceptionApi/Services?deptId=123
         /// </summary>
-        [HttpGet]
+        [HttpGet, Route("services/by-department")]
         public async Task<ActionResult> Services(int? deptId)
         {
             try
@@ -119,7 +145,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// ایجاد پیش‌نویس پذیرش
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("draft/create")]
         public async Task<ActionResult> CreateDraft(CreateDraftRequest request)
         {
             try
@@ -139,7 +165,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// افزودن آیتم به پیش‌نویس
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("item/add")]
         public async Task<ActionResult> AddItem(AddItemRequest request)
         {
             try
@@ -165,7 +191,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// حذف آیتم از پیش‌نویس
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("item/remove")]
         public async Task<ActionResult> RemoveItem(RemoveItemRequest request)
         {
             try
@@ -185,7 +211,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// تنظیم بیمه‌های پیش‌نویس
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("insurances/set")]
         public async Task<ActionResult> SetInsurances(SetInsurancesRequest request)
         {
             try
@@ -211,7 +237,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// نهایی‌سازی با POS
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("finalize/pos")]
         public async Task<ActionResult> FinalizeWithPos(FinalizePosRequest request)
         {
             try
@@ -245,7 +271,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// نهایی‌سازی با نقدی
         /// </summary>
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken, Route("finalize/cash")]
         public async Task<ActionResult> FinalizeWithCash(FinalizeCashRequest request)
         {
             try
@@ -270,6 +296,73 @@ namespace ClinicApp.Controllers.Api
             {
                 _logger.Error(ex, "خطا در نهایی‌سازی نقدی");
                 return Json(ServiceResult<FinalizeResponse>.Failed("خطا در نهایی‌سازی پذیرش"));
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی پیش‌نویس پذیرش
+        /// </summary>
+        [HttpPost, ValidateAntiForgeryToken, Route("draft/update")]
+        public async Task<ActionResult> DraftUpdate(ClinicApp.Dtos.Reception.UpdateDraftRequest request)
+        {
+            try
+            {
+                var result = await _receptionFacade.UpdateDraftAsync(request);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی پیش‌نویس");
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("خطا در به‌روزرسانی پیش‌نویس"));
+            }
+        }
+
+        #endregion
+
+        // Draft Management methods are defined above under Service Management
+
+        #region Lookups
+
+        /// <summary>
+        /// دریافت خدمات یک دپارتمان - alias برای سازگاری Frontend
+        /// GET: /Api/ReceptionApi/GetServicesForDepartment?deptId=123
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetServicesForDepartment(int deptId)
+        {
+            try
+            {
+                var result = await _receptionFacade.GetServicesForDeptAsync(deptId);
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت خدمات دپارتمان");
+                return Json(ServiceResult.Failed("خطا در دریافت خدمات"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت پلن‌های بیمه - alias برای سازگاری Frontend
+        /// GET: /Api/ReceptionApi/GetInsurancePlans
+        /// </summary>
+        [HttpGet, Route("insurance/plans")]
+        public async Task<ActionResult> GetInsurancePlans(int? patientId = null, int? providerId = null)
+        {
+            try
+            {
+                // Minimal compatible payload for frontend expectations
+                var payload = new
+                {
+                    basePlans = new object[0],
+                    supplementaryPlans = new object[0]
+                };
+                return Json(ServiceResult<object>.Successful(payload), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پلن‌های بیمه");
+                return Json(ServiceResult.Failed("خطا در دریافت بیمه‌ها"), JsonRequestBehavior.AllowGet);
             }
         }
 

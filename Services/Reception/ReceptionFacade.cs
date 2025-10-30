@@ -263,6 +263,43 @@ namespace ClinicApp.Services.Reception
 
         #endregion
 
+        #region Draft Update
+
+        /// <summary>
+        /// به‌روزرسانی پیش‌نویس پذیرش و بازمحاسبه مجموع‌ها
+        /// </summary>
+        public async Task<ServiceResult<ItemsAndTotalsDto>> UpdateDraftAsync(ClinicApp.Dtos.Reception.UpdateDraftRequest request)
+        {
+            try
+            {
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+
+                if (draft == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+
+                if (request.ClinicId.HasValue) draft.ClinicId = request.ClinicId.Value;
+                if (request.DepartmentId.HasValue) draft.DepartmentId = request.DepartmentId.Value;
+                if (request.DoctorId.HasValue) draft.DoctorId = request.DoctorId.Value;
+                if (request.PatientId.HasValue) draft.PatientId = request.PatientId.Value;
+                if (request.BasePlanId.HasValue) draft.BasePlanId = request.BasePlanId.Value;
+                if (request.SupplementaryPlanId.HasValue) draft.SupplementaryPlanId = request.SupplementaryPlanId.Value;
+
+                draft.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+
+                return await RecalculateDraftAsync(draft);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در به‌روزرسانی پیش‌نویس");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در به‌روزرسانی پیش‌نویس");
+            }
+        }
+
+        #endregion
+
         #region Items & Calculation
 
         /// <summary>

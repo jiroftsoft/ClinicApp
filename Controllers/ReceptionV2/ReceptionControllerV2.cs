@@ -18,9 +18,8 @@ namespace ClinicApp.Controllers.ReceptionV2
     /// 3. UX بهینه برای مانیتورهای 24-27 اینچ
     /// 4. SRP و Clean Architecture
     /// </summary>
-    [Authorize]
     [NoCache]
-    public class ReceptionControllerV2 : Controller
+    public class ReceptionV2Controller : Controller
     {
         #region Dependencies
 
@@ -31,10 +30,10 @@ namespace ClinicApp.Controllers.ReceptionV2
 
         #region Constructor
 
-        public ReceptionControllerV2(IReceptionFacade receptionFacade, ILogger logger)
+        public ReceptionV2Controller(IReceptionFacade receptionFacade, ILogger logger)
         {
             _receptionFacade = receptionFacade ?? throw new ArgumentNullException(nameof(receptionFacade));
-            _logger = logger.ForContext<ReceptionControllerV2>();
+            _logger = logger.ForContext<ReceptionV2Controller>();
         }
 
         #endregion

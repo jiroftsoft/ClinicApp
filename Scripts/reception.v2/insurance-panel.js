@@ -1,7 +1,7 @@
 (function(API, U){
   // Load insurance plans on page load
   function loadInsurancePlans() {
-    API.get("/Api/ReceptionApi/GetInsurancePlans")
+    API.get("/insurance/plans")
       .then(API.ok)
       .then(plans => {
         console.log('🏥 V2: Insurance plans loaded:', plans);
@@ -73,7 +73,7 @@
       supplementaryPlanId: supplementaryPlanId
     };
     
-    API.post("/Api/ReceptionApi/SetInsurances", payload)
+    API.post("/insurances/set", payload)
       .then(API.ok)
       .then(d=>{
         console.log('🏥 V2: Insurances set:', d);
@@ -91,5 +91,5 @@
         console.error('🏥 V2: Set insurances error:', err);
         toastr.error('خطا در تنظیم بیمه‌ها');
       });
-  });
+  }
 })(window.ReceptionAPI, window.RxUtils);

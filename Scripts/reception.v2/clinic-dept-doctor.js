@@ -1,6 +1,6 @@
 (function(API){
   function bootstrap(){
-    API.get("/Api/ReceptionApi/Bootstrap",{ clinicId: $("#ClinicId").val(), deptId: $("#DepartmentId").val() })
+    API.get("/bootstrap",{ clinicId: $("#ClinicId").val(), deptId: $("#DepartmentId").val() })
       .then(API.ok)
       .then(d=>{
         console.log('🏥 V2: Bootstrap data loaded:', d);

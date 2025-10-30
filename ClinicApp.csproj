@@ -501,6 +501,7 @@
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
+    <Compile Include="Controllers\Payment\POS\PosTerminalApiController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\ReceptionV2\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\Reception\ReceptionAlertController.cs" />
@@ -532,6 +533,7 @@
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
+    <Compile Include="Dtos\Reception\ReceptionApiDtos.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
     <Compile Include="Extensions\CultureExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
@@ -547,6 +549,7 @@
     <Compile Include="Filters\NoCacheFilter.cs" />
     <Compile Include="Filters\NoStoreAttribute.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
+    <Compile Include="Filters\RequestTimingFilter.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AgeCalculationHelper.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
@@ -993,6 +996,7 @@
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Models\SystemSettings\SystemSetting.cs" />
     <Compile Include="ReceptionConstants.cs" />
+    <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Repositories\Reception\ClinicManagementRepository.cs" />
     <Compile Include="Repositories\Reception\DoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IClinicManagementRepository.cs" />
@@ -4571,7 +4575,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Dtos\Reception\" />
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />

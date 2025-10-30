@@ -28,7 +28,7 @@
       financialYear: (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) || 1404
     };
     
-    return API.post("/Api/ReceptionApi/CreateDraft", payload)
+    return API.post("/draft/create", payload)
       .then(API.ok)
       .then(d => {
         console.log('🏥 V2: Auto-draft created:', d);
@@ -78,7 +78,7 @@
       };
       
       // Auto-save draft data
-      API.post("/Api/ReceptionApi/UpdateDraft", formData)
+      API.post("/draft/update", formData)
         .then(API.ok)
         .then(() => {
           console.log('🏥 V2: Draft auto-saved successfully');

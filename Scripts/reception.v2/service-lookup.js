@@ -8,7 +8,7 @@
   });
   
   function loadServices(deptId) {
-    API.get("/Api/ReceptionApi/GetServicesForDepartment", { deptId: deptId })
+    API.get("/services/by-department", { deptId: deptId })
       .then(API.ok)
       .then(services => {
         console.log('🏥 V2: Services loaded:', services);
@@ -75,7 +75,7 @@
       year: (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) || 1404
     };
     
-    API.post("/Api/ReceptionApi/AddItem", payload)
+    API.post("/item/add", payload)
       .then(API.ok)
       .then(d=>{
         console.log('🏥 V2: Item added:', d);
@@ -103,7 +103,7 @@
         console.error('🏥 V2: Add item error:', err);
         toastr.error('خطا در افزودن خدمت');
       });
-  });
+  }
 
   $(document).on("click",".remove-item", function(){
     const serviceId = $(this).data("id");
@@ -112,7 +112,7 @@
       serviceId: serviceId 
     };
     
-    API.post("/Api/ReceptionApi/RemoveItem", payload)
+    API.post("/item/remove", payload)
       .then(API.ok)
       .then(() => {
         toastr.success('خدمت حذف شد');

@@ -15,12 +15,19 @@ namespace ClinicApp
             
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
+            // Legacy API route for MVC controllers under ClinicApp.Controllers.Api
+            routes.MapRoute(
+                name: "ReceptionApiLegacy",
+                url: "Api/ReceptionApi/{action}",
+                defaults: new { controller = "ReceptionApi", action = "Index", area = "" },
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            );
             
             // 🏥 V2: Reception V2 Route
             routes.MapRoute(
                 name: "ReceptionV2",
                 url: "reception/v2",
-                defaults: new { controller = "Reception", action = "Index", area = "" }
+                defaults: new { controller = "ReceptionV2", action = "Index", area = "" }
             );
 
             // 🏥 Reception Module Routes - مسیرهای ماژول پذیرش

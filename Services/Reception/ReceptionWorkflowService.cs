@@ -8,6 +8,9 @@ using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
+using ClinicApp.Interfaces.Reception;
+using ClinicApp.Models;
+using System.Data.Entity;
 
 namespace ClinicApp.Services.Reception
 {
@@ -26,22 +29,25 @@ namespace ClinicApp.Services.Reception
     /// ✅ Open/Closed: باز برای توسعه، بسته برای تغییر
     /// ✅ Dependency Inversion: وابستگی به Interface ها
     /// </summary>
-    public class ReceptionWorkflowService
+    public class ReceptionWorkflowService : IReceptionWorkflowService
     {
         #region Fields and Constructor
 
         private readonly IReceptionService _receptionService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
+        private readonly ApplicationDbContext _context;
 
         public ReceptionWorkflowService(
             IReceptionService receptionService,
             ICurrentUserService currentUserService,
-            ILogger logger)
+            ILogger logger,
+            ApplicationDbContext context)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         #endregion
@@ -297,6 +303,78 @@ namespace ClinicApp.Services.Reception
                 new WorkflowStep { Name = "PaymentProcessing", DisplayName = "پردازش پرداخت", Order = 5 },
                 new WorkflowStep { Name = "Completed", DisplayName = "تکمیل", Order = 6 }
             };
+        }
+
+        #endregion
+
+        #region Items & Insurances & Finalize
+
+        public async Task<ServiceResult<bool>> AddItemAsync(int receptionId, int serviceId, int quantity, decimal unitPrice)
+        {
+            try
+            {
+                var reception = await _context.Receptions.FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+                if (reception == null)
+                    return ServiceResult<bool>.Failed("پذیرش یافت نشد");
+
+                var item = new Models.Entities.Reception.ReceptionItem
+                {
+                    ReceptionId = receptionId,
+                    ServiceId = serviceId,
+                    Quantity = quantity,
+                    UnitPrice = unitPrice
+                };
+
+                _context.ReceptionItems.Add(item);
+                await _context.SaveChangesAsync();
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در افزودن آیتم به پذیرش");
+                return ServiceResult<bool>.Failed("خطا در افزودن آیتم");
+            }
+        }
+
+        public async Task<ServiceResult<bool>> SetInsurancesAsync(int receptionId, int? basePlanId, int? suppPlanId)
+        {
+            try
+            {
+                var reception = await _context.Receptions.FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+                if (reception == null)
+                    return ServiceResult<bool>.Failed("پذیرش یافت نشد");
+
+                reception.BasePlanId = basePlanId;
+                reception.SupplementaryPlanId = suppPlanId;
+                reception.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در تنظیم بیمه‌های پذیرش");
+                return ServiceResult<bool>.Failed("خطا در تنظیم بیمه‌ها");
+            }
+        }
+
+        public async Task<ServiceResult<bool>> FinalizeAsync(int receptionId)
+        {
+            try
+            {
+                var reception = await _context.Receptions.FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+                if (reception == null)
+                    return ServiceResult<bool>.Failed("پذیرش یافت نشد");
+
+                reception.Status = ReceptionStatus.Completed;
+                reception.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در نهایی‌سازی پذیرش");
+                return ServiceResult<bool>.Failed("خطا در نهایی‌سازی پذیرش");
+            }
         }
 
         #endregion

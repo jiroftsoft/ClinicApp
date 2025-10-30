@@ -13,6 +13,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using Serilog;
+using PatientEntity = ClinicApp.Models.Entities.Patient.Patient;
 
 namespace ClinicApp.Repositories.Insurance
 {
@@ -772,7 +773,7 @@ namespace ClinicApp.Repositories.Insurance
         /// <summary>
         /// دریافت بیمار بر اساس شناسه
         /// </summary>
-        public async Task<Patient> GetPatientByIdAsync(int patientId)
+        public async Task<PatientEntity> GetPatientByIdAsync(int patientId)
         {
             try
             {

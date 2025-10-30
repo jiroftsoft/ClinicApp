@@ -19,14 +19,17 @@ namespace ClinicApp
             // 🏥 V2: فیلتر Zero-Cache برای Reception V2
             filters.Add(new ClinicApp.Filters.NoCacheAttribute());
             
-            // 🔒 SECURITY: Global Anti-Forgery Filter برای تمام POST requests
-            filters.Add(new ValidateAntiForgeryTokenAttribute());
+            // 🔒 SECURITY: Anti-Forgery فقط برای متدهای تغییردهنده (POST/PUT/DELETE)
+            filters.Add(new ClinicApp.Filters.ValidateAntiForgeryTokenOnPostsAttribute());
             
             // 📊 LOGGING: CorrelationId Filter برای ردیابی درخواست‌ها
             filters.Add(new ClinicApp.Filters.CorrelationIdFilter());
             
             // 🚨 EXCEPTION: Global Exception Filter برای ServiceResult
             filters.Add(new ClinicApp.Filters.GlobalExceptionFilter());
+
+            // ⏱️ Request timing for performance visibility
+            filters.Add(new ClinicApp.Filters.RequestTimingFilter());
         }
     }
 }
