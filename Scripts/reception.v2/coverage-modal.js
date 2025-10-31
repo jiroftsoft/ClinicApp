@@ -260,8 +260,40 @@
     // نمایش در تب مؤثر (یا تب جدید)
     $('#cov-eff').html(html);
     
-    // فعال کردن تب مؤثر
-    $('#rv2-coverage-modal .nav-link[href="#tab-eff"]').tab('show');
+    // ✅ فعال کردن تب مؤثر (پشتیبانی از Bootstrap 5 و 4)
+    try {
+      var $tabLink = $('#rv2-coverage-modal .nav-link[href="#tab-eff"]');
+      
+      if ($tabLink.length > 0) {
+        // Bootstrap 5 API
+        if (window.bootstrap && typeof window.bootstrap.Tab !== 'undefined') {
+          var tabElement = $tabLink[0];
+          var tab = new bootstrap.Tab(tabElement);
+          tab.show();
+        }
+        // Bootstrap 4 API (fallback)
+        else if ($.fn.tab && typeof $tabLink.tab === 'function') {
+          $tabLink.tab('show');
+        }
+        // Fallback: دستی فعال کردن تب
+        else {
+          // حذف active از همه تب‌ها
+          $('#rv2-coverage-modal .nav-link').removeClass('active');
+          $('#rv2-coverage-modal .tab-pane').removeClass('show active');
+          
+          // فعال کردن تب مؤثر
+          $tabLink.addClass('active');
+          $('#tab-eff').addClass('show active');
+          
+          console.log('🏥 V2: Tab activated manually (fallback)');
+        }
+      } else {
+        console.warn('🏥 V2: Tab link not found for #tab-eff');
+      }
+    } catch (err) {
+      console.error('🏥 V2: Error activating tab:', err);
+      // Silent fail - modal still opens
+    }
     
     $modal.show();
   }
