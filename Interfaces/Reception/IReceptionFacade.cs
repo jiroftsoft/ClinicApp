@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.Reception;
@@ -18,6 +19,11 @@ namespace ClinicApp.Interfaces.Reception
         /// بارگذاری اولیه فرم پذیرش
         /// </summary>
         Task<ServiceResult<ReceptionLoadDto>> LoadInitialAsync(int clinicId, int? deptId);
+
+        /// <summary>
+        /// دریافت پزشکان یک دپارتمان
+        /// </summary>
+        Task<ServiceResult<List<DoctorDto>>> GetDoctorsByDepartmentAsync(int deptId, int? clinicId = null);
 
         /// <summary>
         /// جستجو یا ایجاد بیمار

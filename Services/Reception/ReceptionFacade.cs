@@ -128,6 +128,9 @@ namespace ClinicApp.Services.Reception
 
                 // 2. بارگذاری دپارتمان‌ها
                 var departmentsResult = await _departmentManagementService.GetAllDepartmentsAsync();
+                _logger.Information("🔍 FACADE: GetAllDepartmentsAsync result - Success: {Success}, Count: {Count}", 
+                    departmentsResult.Success, departmentsResult.Data?.Count ?? 0);
+                
                 if (departmentsResult.Success)
                 {
                     // Convert ClinicAdmin.DepartmentDto to Reception.DepartmentDto
@@ -139,6 +142,13 @@ namespace ClinicApp.Services.Reception
                         IsActive = d.IsActive,
                         Description = d.Description
                     }).ToList();
+                    
+                    _logger.Information("✅ FACADE: Departments converted - Count: {Count}", result.Departments.Count);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: GetAllDepartmentsAsync failed - Message: {Message}", departmentsResult.Message);
+                    result.Departments = new List<ViewModels.Reception.DepartmentDto>();
                 }
 
                 // 3. بارگذاری پزشک‌ها (اگر دپارتمان انتخاب شده)
@@ -161,8 +171,8 @@ namespace ClinicApp.Services.Reception
                     }
                     else
                     {
-                        _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, DeptClinicId: {DeptClinicId}", 
-                            deptId.Value, department.Name, department.ClinicId);
+                        _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, DeptClinicId: {DeptClinicId}, Now: {Now}", 
+                            deptId.Value, department.Name, department.ClinicId, now);
                         
                         // 🎯 رویکرد حرفه‌ای: فیلترها را به ترتیب اعمال کن و لاگ کن
                         // Step 1: فقط DepartmentId
@@ -267,6 +277,7 @@ namespace ClinicApp.Services.Reception
                 }
                 else
                 {
+                    _logger.Information("🔍 FACADE: deptId ندارد، Doctors را خالی می‌گذاریم");
                     result.Doctors = new List<DoctorDto>();
                 }
 
@@ -344,8 +355,96 @@ namespace ClinicApp.Services.Reception
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ FACADE: خطا در بارگذاری اولیه فرم پذیرش");
-                return ServiceResult<ReceptionLoadDto>.Failed("خطا در بارگذاری اولیه فرم پذیرش");
+                _logger.Error(ex, "❌ FACADE: خطا در بارگذاری اولیه فرم پذیرش - ClinicId: {ClinicId}, DeptId: {DeptId}, Exception: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    clinicId, deptId, ex.GetType().Name, ex.Message, ex.StackTrace);
+                return ServiceResult<ReceptionLoadDto>.Failed($"خطا در بارگذاری اولیه فرم پذیرش: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// دریافت پزشکان یک دپارتمان
+        /// </summary>
+        public async Task<ServiceResult<List<DoctorDto>>> GetDoctorsByDepartmentAsync(int deptId, int? clinicId = null)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: دریافت پزشکان دپارتمان - DeptId: {DeptId}, ClinicId: {ClinicId}", deptId, clinicId);
+
+                var now = DateTime.Now;
+
+                // ✅ ابتدا Department را پیدا کن تا ClinicId را بدست آوری
+                var department = await _context.Departments
+                    .AsNoTracking()
+                    .Where(d => d.DepartmentId == deptId && !d.IsDeleted && d.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (department == null)
+                {
+                    _logger.Warning("⚠️ FACADE: دپارتمان یافت نشد - DepartmentId: {DeptId}", deptId);
+                    return ServiceResult<List<DoctorDto>>.Failed($"دپارتمان با شناسه {deptId} یافت نشد");
+                }
+
+                // ✅ استفاده از ClinicId از Department اگر clinicId null است
+                var effectiveClinicId = clinicId ?? department.ClinicId;
+
+                _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, ClinicId: {ClinicId}, Now: {Now}", 
+                    deptId, department.Name, effectiveClinicId, now);
+
+                // 🎯 Query نهایی: فقط EndDate را چک کن (اگر EndDate در گذشته باشد، ignore کن)
+                // ✅ StartDate را ignore می‌کنیم چون ممکن است در آینده باشد (انتساب پیش‌رو)
+                // ⚠️ مشکل: Include باعث materialize شدن کامل Doctor entity می‌شود و ممکن است با enum Degree مشکل ایجاد کند
+                // ✅ راه‌حل: از Select مستقیم استفاده می‌کنیم تا فقط property های لازم را بگیریم
+                // ✅ برای SpecializationName، باید از DoctorSpecializations به صورت مستقیم در Select استفاده کنیم
+                // ⚠️ مشکل: در LINQ to Entities نمی‌توانیم از computed property (SpecializationName) استفاده کنیم
+                // ✅ راه‌حل: باید از DoctorSpecializations به صورت مستقیم در Select استفاده کنیم
+                var doctors = await _context.DoctorDepartments
+                    .AsNoTracking()
+                    .Where(dd => dd.DepartmentId == deptId &&
+                               !dd.Doctor.IsDeleted &&
+                               dd.Doctor.IsActive &&
+                               !dd.IsDeleted &&
+                               dd.IsActive &&
+                               (dd.EndDate == null || dd.EndDate > now)) // ✅ فقط EndDate را چک کن
+                    .Select(dd => new 
+                    {
+                        DoctorId = dd.Doctor.DoctorId,
+                        FirstName = dd.Doctor.FirstName ?? "",
+                        LastName = dd.Doctor.LastName ?? "",
+                        DoctorCode = dd.Doctor.DoctorCode ?? "",
+                        Specialization = dd.Doctor.DoctorSpecializations
+                            .Where(ds => ds.Specialization != null)
+                            .Select(ds => ds.Specialization.Name)
+                            .FirstOrDefault() ?? "",
+                        IsActive = dd.Doctor.IsActive
+                    })
+                    .Distinct() // جلوگیری از تکراری شدن در صورت چند DoctorDepartment برای یک Doctor
+                    .OrderBy(d => d.LastName)
+                    .ThenBy(d => d.FirstName)
+                    .Select(d => new DoctorDto
+                    {
+                        DoctorId = d.DoctorId,
+                        FirstName = d.FirstName,
+                        LastName = d.LastName,
+                        DoctorCode = d.DoctorCode,
+                        Specialization = d.Specialization,
+                        IsActive = d.IsActive
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ FACADE: Query نهایی - Count: {Count} (فقط EndDate چک شده است، StartDate ignore شده، Select مستقیم بدون Include)", doctors.Count);
+                if (doctors.Count > 0)
+                {
+                    _logger.Information("✅ FACADE: اولین پزشک - DoctorId: {DoctorId}, Name: {FirstName} {LastName}", 
+                        doctors[0].DoctorId, doctors[0].FirstName, doctors[0].LastName);
+                }
+
+                return ServiceResult<List<DoctorDto>>.Successful(doctors, $"تعداد {doctors.Count} پزشک یافت شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت پزشکان دپارتمان - DeptId: {DeptId}, ClinicId: {ClinicId}, Exception: {ExceptionType}, Message: {Message}", 
+                    deptId, clinicId, ex.GetType().Name, ex.Message);
+                return ServiceResult<List<DoctorDto>>.Failed($"خطا در دریافت پزشکان دپارتمان: {ex.Message}");
             }
         }
 

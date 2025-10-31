@@ -42,6 +42,16 @@
         console.log('🏥 V2: Bootstrap extracted data type:', typeof response);
         console.log('🏥 V2: Bootstrap extracted data keys:', response ? Object.keys(response) : 'null/undefined');
         
+        // 🔍 لاگ دقیق‌تر: بررسی ساختار response
+        if (response) {
+          console.log('🔍 V2: Response.Departments:', response.Departments, 'type:', typeof response.Departments, 'length:', response.Departments?.length);
+          console.log('🔍 V2: Response.departments:', response.departments, 'type:', typeof response.departments, 'length:', response.departments?.length);
+          console.log('🔍 V2: Response.Doctors:', response.Doctors, 'type:', typeof response.Doctors, 'length:', response.Doctors?.length);
+          console.log('🔍 V2: Response.doctors:', response.doctors, 'type:', typeof response.doctors, 'length:', response.doctors?.length);
+          console.log('🔍 V2: Response.Clinics:', response.Clinics, 'type:', typeof response.Clinics, 'length:', response.Clinics?.length);
+          console.log('🔍 V2: Response.clinics:', response.clinics, 'type:', typeof response.clinics, 'length:', response.clinics?.length);
+        }
+        
         // پشتیبانی از PascalCase و camelCase
         const departments = response.Departments || response.departments || [];
         const doctors = response.Doctors || response.doctors || [];
@@ -157,14 +167,101 @@
   function loadDoctorsForDepartment(deptId) {
     if (!deptId) {
       $("#DoctorId").empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+      $("#DoctorId").prop('disabled', true);
       return;
     }
     
     console.log('🏥 V2: Loading doctors for department:', deptId);
     
-    // بارگذاری مجدد bootstrap برای دریافت پزشکان دپارتمان جدید
-    // اما departments را reset نکن (reloadDepartments = false)
-    bootstrap(false);
+    const clinicId = $("#ClinicId").val() || 1; // Default clinic ID = 1 (کلینیک شفا)
+    
+    // ✅ استفاده از endpoint مستقل به‌جای bootstrap
+    API.get("/doctors/by-department", { deptId: deptId, clinicId: clinicId })
+      .then(function(fullResponse) {
+        console.log('🏥 V2: Doctors raw response:', fullResponse);
+        
+        // 🔍 چک Success قبل از extract
+        const successValue = fullResponse?.Success ?? fullResponse?.success;
+        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        
+        if (!fullResponse || !isSuccess) {
+          const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در بارگذاری پزشکان';
+          console.error('🏥 V2: Doctors load failed:', errorMsg, fullResponse);
+          toastr.error(errorMsg);
+          
+          const $doctorSelect = $("#DoctorId");
+          $doctorSelect.empty().append('<option value="">خطا در بارگذاری پزشکان</option>');
+          $doctorSelect.prop('disabled', true);
+          return;
+        }
+        
+        // Extract data using API.ok (handles ServiceResult structure)
+        // ✅ GetDoctorsByDepartment مستقیماً ServiceResult<List<DoctorDto>> برمی‌گرداند
+        // پس API.ok() مستقیماً List<DoctorDto> را برمی‌گرداند (نه یک object با property Data)
+        const response = API.ok(fullResponse);
+        console.log('🏥 V2: Doctors extracted data:', response);
+        console.log('🔍 V2: Response type:', typeof response, 'isArray:', Array.isArray(response));
+        console.log('🔍 V2: Response keys:', response && typeof response === 'object' && !Array.isArray(response) ? Object.keys(response) : 'N/A (array)');
+        
+        // پشتیبانی از PascalCase و camelCase
+        // ✅ اگر response مستقیماً Array باشد (List<DoctorDto>):
+        let doctors = [];
+        if (Array.isArray(response)) {
+          // API.ok() مستقیماً Array را برگردانده است
+          doctors = response;
+          console.log('✅ V2: Response is Array directly, count:', doctors.length);
+        } else if (response && typeof response === 'object') {
+          // اگر response یک object است، property Data را چک کن
+          doctors = response.Data || response.data || response.Doctors || response.doctors || [];
+          console.log('✅ V2: Response is Object, Data count:', doctors.length);
+        } else {
+          console.warn('⚠️ V2: Unexpected response type:', typeof response);
+          doctors = [];
+        }
+        
+        console.log('🏥 V2: Doctors parsed - Count:', doctors.length);
+        
+        const $doctorSelect = $("#DoctorId");
+        $doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
+        
+        if (doctors.length === 0) {
+          $doctorSelect.append('<option value="">پزشکی در این دپارتمان یافت نشد</option>');
+          $doctorSelect.prop('disabled', true);
+          console.warn('🏥 V2: No doctors found for department:', deptId);
+        } else {
+          doctors.forEach(function(doctor) {
+            const doctorId = doctor.doctorId || doctor.DoctorId;
+            const firstName = doctor.firstName || doctor.FirstName || '';
+            const lastName = doctor.lastName || doctor.LastName || '';
+            const specialization = doctor.specialization || doctor.Specialization || '';
+            const fullName = (firstName + ' ' + lastName).trim();
+            const displayName = specialization ? `${fullName} — ${specialization}` : fullName;
+            
+            $doctorSelect.append(`<option value="${doctorId}">${displayName}</option>`);
+          });
+          $doctorSelect.prop('disabled', false);
+          console.log('🏥 V2: Doctors filled:', doctors.length);
+          
+          // ✅ Trigger state change event for Summary Header
+          if (doctors.length > 0) {
+            const selectedDoctor = doctors[0];
+            $(document).trigger('rv2:stateChanged', {
+              doctor: {
+                DoctorId: selectedDoctor.doctorId || selectedDoctor.DoctorId,
+                Name: (selectedDoctor.firstName || selectedDoctor.FirstName || '') + ' ' + (selectedDoctor.lastName || selectedDoctor.LastName || '')
+              }
+            });
+          }
+        }
+      })
+      .catch(function(error) {
+        console.error('🏥 V2: Doctors load error:', error);
+        toastr.error('خطا در بارگذاری پزشکان');
+        
+        const $doctorSelect = $("#DoctorId");
+        $doctorSelect.empty().append('<option value="">خطا در بارگذاری پزشکان</option>');
+        $doctorSelect.prop('disabled', true);
+      });
   }
   
   // Load on page ready

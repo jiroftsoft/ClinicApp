@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -107,6 +108,13 @@ namespace ClinicApp.Controllers.Api
                 if (_facade != null)
                 {
                     var result = await _facade.LoadInitialAsync(cid, deptId);
+                    
+                    _logger?.Information("🔍 V1 API: LoadInitialAsync result - Success: {Success}, HasData: {HasData}, DoctorsCount: {DoctorsCount}, DepartmentsCount: {DepartmentsCount}, ClinicsCount: {ClinicsCount}", 
+                        result.Success, result.Data != null, 
+                        result.Data?.Doctors?.Count ?? 0,
+                        result.Data?.Departments?.Count ?? 0,
+                        result.Data?.Clinics?.Count ?? 0);
+                    
                     if (result.Success && result.Data != null)
                     {
                         var payload = new
@@ -119,11 +127,21 @@ namespace ClinicApp.Controllers.Api
                             FactorSetting = result.Data.FactorSetting, // ✅ اضافه شد
                             FinancialYear = _fy?.GetCurrentYear() ?? DateTime.Now.Year
                         };
+                        
+                        _logger?.Information("🔍 V1 API: Payload created - Doctors: {DoctorsCount}, Departments: {DepartmentsCount}, Clinics: {ClinicsCount}", 
+                            payload.Doctors.Count, payload.Departments.Count, payload.Clinics.Count);
+                        
                         return Json(ServiceResult<object>.Successful(payload, result.Message ?? "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: LoadInitialAsync failed or returned null - Success: {Success}, Message: {Message}", 
+                            result.Success, result.Message);
                     }
                 }
 
                 // Fallback: اسکلت حداقلی
+                _logger?.Warning("⚠️ V1 API: Using fallback minimal payload - _facade is null or LoadInitialAsync failed");
                 var minimalPayload = new
                 {
                     Clinics = Enumerable.Empty<ViewModels.Reception.ClinicDto>().ToList(),
@@ -138,7 +156,8 @@ namespace ClinicApp.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger?.Error(ex, "خطا در Bootstrap");
+                _logger?.Error(ex, "❌ V1 API: خطا در Bootstrap - ClinicId: {ClinicId}, DeptId: {DeptId}, Exception: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    clinicId, deptId, ex.GetType().Name, ex.Message, ex.StackTrace);
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
             }
         }
@@ -416,6 +435,48 @@ namespace ClinicApp.Controllers.Api
             catch (Exception ex)
             {
                 _logger?.Error(ex, "خطا در Get Insurance Plans");
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/doctors/by-department
+        /// دریافت پزشکان یک دپارتمان
+        /// </summary>
+        [HttpGet, Route("doctors/by-department")]
+        public async Task<ActionResult> GetDoctorsByDepartment(int deptId, int? clinicId = null)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: دریافت پزشکان دپارتمان - DeptId: {DeptId}, ClinicId: {ClinicId}", deptId, clinicId);
+
+                if (deptId <= 0)
+                {
+                    return Json(ServiceResult.Failed("شناسه دپارتمان نامعتبر است.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                if (_facade != null)
+                {
+                    var result = await _facade.GetDoctorsByDepartmentAsync(deptId, clinicId);
+                    
+                    if (result.Success && result.Data != null)
+                    {
+                        _logger?.Information("✅ V1 API: پزشکان دریافت شد - Count: {Count}", result.Data.Count);
+                        return Json(result, JsonRequestBehavior.AllowGet);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: دریافت پزشکان ناموفق - Message: {Message}", result.Message);
+                        return Json(result, JsonRequestBehavior.AllowGet);
+                    }
+                }
+
+                _logger?.Warning("⚠️ V1 API: _facade is null");
+                return Json(ServiceResult<List<ViewModels.Reception.DoctorDto>>.Failed("سرویس در دسترس نیست"), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در دریافت پزشکان دپارتمان - DeptId: {DeptId}, ClinicId: {ClinicId}", deptId, clinicId);
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
             }
         }
