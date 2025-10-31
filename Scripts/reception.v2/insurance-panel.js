@@ -2,9 +2,8 @@
   'use strict';
 
   // References to form fields
-  const $baseIns = $('#baseInsurance');
+  // نکته: در view فقط BasePlanId و SuppPlanId وجود دارند، نه baseInsurance و suppInsurance
   const $basePlan = $('#BasePlanId');
-  const $suppIns = $('#suppInsurance');
   const $suppPlan = $('#SuppPlanId');
   const $btnRemoveSupp = $('#btnRemoveSupp');
   const $btnSetInsurances = $('#BtnSetInsurances');
@@ -48,39 +47,77 @@
    * @param {Object} dto - InsuranceSelectionDto
    */
   function set(dto) {
-    if (!dto) return;
+    if (!dto) {
+      console.warn('🏥 V2: Insurance DTO is null/undefined');
+      return;
+    }
     
     console.log('🏥 V2: Setting insurances from DTO:', dto);
 
-    // تنظیم بیمه پایه
-    if (dto.BaseInsuranceId) {
-      $baseIns.val(dto.BaseInsuranceId);
-    }
-    
-    // تنظیم پلن پایه (اولویت: BasePlanId، سپس SuggestedBasePlanId)
-    if (dto.BasePlanId) {
-      $basePlan.val(dto.BasePlanId);
-    } else if (dto.SuggestedBasePlanId) {
-      $basePlan.val(dto.SuggestedBasePlanId);
-    }
+    // ابتدا لیست پلن‌ها را لود کن، سپس مقدار را set کن
+    loadPlans()
+      .then(function(plansData) {
+        console.log('🏥 V2: Insurance plans loaded, now setting values');
+        
+        // تنظیم پلن پایه (اولویت: BasePlanId، سپس SuggestedBasePlanId)
+        let basePlanIdToSet = null;
+        if (dto.BasePlanId) {
+          basePlanIdToSet = dto.BasePlanId;
+        } else if (dto.SuggestedBasePlanId) {
+          basePlanIdToSet = dto.SuggestedBasePlanId;
+        }
+        
+        if (basePlanIdToSet) {
+          console.log('🏥 V2: Setting base plan ID:', basePlanIdToSet);
+          // چک کن که آیا option با این value وجود دارد
+          const basePlanExists = $basePlan.find(`option[value="${basePlanIdToSet}"]`).length > 0;
+          if (basePlanExists) {
+            $basePlan.val(basePlanIdToSet).trigger('change');
+            console.log('🏥 V2: Base plan set successfully');
+          } else {
+            console.warn('🏥 V2: Base plan ID not found in dropdown:', basePlanIdToSet);
+            // حتی اگر در dropdown نیست، مقدار را set کن (شاید بعداً لود شود)
+            $basePlan.val(basePlanIdToSet);
+          }
+        }
+        
+        // تنظیم پلن تکمیلی (اولویت: SupplementaryPlanId، سپس SuggestedSupplementaryPlanId)
+        let suppPlanIdToSet = null;
+        if (dto.SupplementaryPlanId) {
+          suppPlanIdToSet = dto.SupplementaryPlanId;
+        } else if (dto.SuggestedSupplementaryPlanId) {
+          suppPlanIdToSet = dto.SuggestedSupplementaryPlanId;
+        }
+        
+        if (suppPlanIdToSet) {
+          console.log('🏥 V2: Setting supplementary plan ID:', suppPlanIdToSet);
+          // چک کن که آیا option با این value وجود دارد
+          const suppPlanExists = $suppPlan.find(`option[value="${suppPlanIdToSet}"]`).length > 0;
+          if (suppPlanExists) {
+            $suppPlan.val(suppPlanIdToSet).trigger('change');
+            console.log('🏥 V2: Supplementary plan set successfully');
+          } else {
+            console.warn('🏥 V2: Supplementary plan ID not found in dropdown:', suppPlanIdToSet);
+            // حتی اگر در dropdown نیست، مقدار را set کن (شاید بعداً لود شود)
+            $suppPlan.val(suppPlanIdToSet);
+          }
+        } else {
+          console.log('🏥 V2: No supplementary plan to set');
+        }
 
-    // تنظیم بیمه تکمیلی
-    if (dto.SupplementaryInsuranceId) {
-      $suppIns.val(dto.SupplementaryInsuranceId);
-    }
-    
-    // تنظیم پلن تکمیلی (اولویت: SupplementaryPlanId، سپس SuggestedSupplementaryPlanId)
-    if (dto.SupplementaryPlanId) {
-      $suppPlan.val(dto.SupplementaryPlanId);
-    } else if (dto.SuggestedSupplementaryPlanId) {
-      $suppPlan.val(dto.SuggestedSupplementaryPlanId);
-    }
-
-    // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن
-    const receptionId = $('#ReceptionId').val();
-    if (receptionId && receptionId > 0) {
-      persist();
-    }
+        // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن
+        const receptionId = $('#ReceptionId').val();
+        if (receptionId && receptionId > 0) {
+          console.log('🏥 V2: Reception ID exists, persisting insurances');
+          persist();
+        } else {
+          console.log('🏥 V2: No reception ID yet, skipping persist');
+        }
+      })
+      .catch(function(err) {
+        console.error('🏥 V2: Error loading insurance plans for set operation:', err);
+        toastr.warning('خطا در بارگذاری لیست بیمه‌ها');
+      });
   }
 
   /**
@@ -102,22 +139,50 @@
     console.log('🏥 V2: Persisting insurances:', payload);
 
     return API.post('/insurances/set', payload)
-      .then(API.ok)
-      .then(function(response) {
-        if (!response || !response.success) {
-          toastr.warning(response?.message || 'خطا در ثبت بیمه');
+      .then(function(fullResponse) {
+        // Log کامل response برای دیباگ
+        console.log('🏥 V2: Full SetInsurances API response:', fullResponse);
+        
+        // اگر response به صورت string است، آن را parse کن
+        let responseObj = fullResponse;
+        if (typeof fullResponse === 'string') {
+          try {
+            responseObj = JSON.parse(fullResponse);
+            console.log('🏥 V2: SetInsurances response parsed from string:', responseObj);
+          } catch (e) {
+            console.error('🏥 V2: Failed to parse JSON response:', e);
+            toastr.error('خطا در پردازش پاسخ سرور');
+            return;
+          }
+        }
+        
+        // چک Success
+        const successValue = responseObj?.Success ?? responseObj?.success;
+        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        
+        if (!responseObj || !isSuccess) {
+          const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت بیمه';
+          console.warn('🏥 V2: SetInsurances failed:', errorMsg, responseObj);
+          toastr.warning(errorMsg);
           return;
         }
 
-        console.log('🏥 V2: Insurances persisted successfully');
+        // دریافت Data
+        const response = API.ok(responseObj);
+        console.log('🏥 V2: Insurances persisted successfully:', response);
         
         // Update totals if provided
-        if (response.data && response.data.totals) {
-          const totals = response.data.totals;
-          $('#Gross').text(U.toIRR(totals.gross || 0));
-          $('#InsurancePayable').text(U.toIRR(totals.base || 0));
-          $('#SuppPayable').text(U.toIRR(totals.supplementary || 0));
-          $('#PatientPayable').text(U.toIRR(totals.patient || 0)).attr('data-value', totals.patient || 0);
+        if (response && (response.totals || (response.Data && response.Data.totals))) {
+          const totals = response.totals || response.Data?.totals;
+          if (totals) {
+            $('#Gross').text(U.toIRR(totals.gross || 0));
+            $('#InsurancePayable').text(U.toIRR(totals.base || 0));
+            $('#SuppPayable').text(U.toIRR(totals.supplementary || 0));
+            $('#PatientPayable').text(U.toIRR(totals.patient || 0)).attr('data-value', totals.patient || 0);
+            console.log('🏥 V2: Totals updated:', totals);
+          }
+        } else {
+          console.log('🏥 V2: No totals in response, skipping totals update');
         }
       })
       .catch(function(err) {
@@ -130,7 +195,6 @@
    * حذف بیمه تکمیلی
    */
   function removeSupplementary() {
-    $suppIns.val('');
     $suppPlan.val('');
     
     const receptionId = $('#ReceptionId').val();
@@ -142,18 +206,15 @@
   }
 
   // Event handlers
-  $baseIns.on('change', function() {
-    // وقتی بیمه پایه تغییر کرد، پلن‌های آن را لود کن
-    loadPlans();
+  $basePlan.on('change', function() {
+    console.log('🏥 V2: Base plan changed, persisting');
     persist();
   });
-
-  $basePlan.on('change', persist);
-  $suppIns.on('change', function() {
-    loadPlans();
+  
+  $suppPlan.on('change', function() {
+    console.log('🏥 V2: Supplementary plan changed, persisting');
     persist();
   });
-  $suppPlan.on('change', persist);
 
   if ($btnRemoveSupp.length) {
     $btnRemoveSupp.on('click', removeSupplementary);

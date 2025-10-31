@@ -10,7 +10,12 @@
     const h = {};
     if (method.toUpperCase() !== 'GET') {
       const t = token();
-      if (t) h['RequestVerificationToken'] = t;
+      if (t) {
+        // MVC 5 accepts token in header as RequestVerificationToken
+        h['RequestVerificationToken'] = t;
+        // Also add X-RequestVerificationToken as fallback
+        h['X-RequestVerificationToken'] = t;
+      }
     }
     h['X-Requested-With'] = 'XMLHttpRequest';
     return h;
@@ -61,6 +66,7 @@
       type: method,
       data: method === 'GET' ? undefined : JSON.stringify(data || {}),
       contentType: method === 'GET' ? undefined : 'application/json; charset=utf-8',
+      dataType: 'json', // اجباری: jQuery باید response را به JSON parse کند
       cache: false,
       headers: headers(method)
     })
@@ -72,6 +78,7 @@
           url: stamp(legacyBase + '/' + legacyPath),
           type: method === 'GET' ? 'GET' : 'POST',
           data: method === 'GET' ? (data || {}) : (data || {}),
+          dataType: 'json', // اجباری: jQuery باید response را به JSON parse کند
           cache: false,
           headers: headers(method)
         })

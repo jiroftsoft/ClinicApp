@@ -1,10 +1,18 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Mvc;
+using System.Data.Entity;
+using System.Text.RegularExpressions;
 using ClinicApp.Controllers.ReceptionV2;
 using ClinicApp.Helpers;
 using ClinicApp.Filters;
 using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Models;
+using ClinicApp.Extensions;
+using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Reception;
 using Serilog;
 
 namespace ClinicApp.Controllers.Api
@@ -25,6 +33,7 @@ namespace ClinicApp.Controllers.Api
         private readonly IFinancialYearService _fy;
         private readonly IReceptionFacade _facade;
         private readonly ILogger _logger;
+        private readonly ApplicationDbContext _context;
 
         #endregion
 
@@ -36,11 +45,13 @@ namespace ClinicApp.Controllers.Api
         public ReceptionApiV1Controller(
             IFinancialYearService fy,
             IReceptionFacade facade,
-            ILogger logger)
+            ILogger logger,
+            ApplicationDbContext context)
         {
             _fy = fy ?? throw new ArgumentNullException(nameof(fy));
             _facade = facade ?? throw new ArgumentNullException(nameof(facade));
             _logger = logger?.ForContext<ReceptionApiV1Controller>() ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         /// <summary>
@@ -50,7 +61,8 @@ namespace ClinicApp.Controllers.Api
             : this(
                   DependencyResolver.Current.GetService<IFinancialYearService>(),
                   DependencyResolver.Current.GetService<IReceptionFacade>(),
-                  DependencyResolver.Current.GetService<ILogger>())
+                  DependencyResolver.Current.GetService<ILogger>(),
+                  DependencyResolver.Current.GetService<ApplicationDbContext>())
         {
         }
 
@@ -80,40 +92,41 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// GET /api/v1/reception/bootstrap
         /// داده‌های اولیه فرم پذیرش (دپارتمان‌ها، خدمات مشترک و ...)
-        /// 
-        /// ✳️ اگر در فاساد Bootstrap داری همین‌جا پاس بده؛ در غیر اینصورت فعلاً اسکلت خالی برمی‌گردانیم
         /// </summary>
         [HttpGet, Route("bootstrap")]
-        public ActionResult Bootstrap(int? clinicId, int? deptId)
+        public async System.Threading.Tasks.Task<ActionResult> Bootstrap(int? clinicId, int? deptId)
         {
             try
             {
                 _logger?.Information("🏥 V1 API: Bootstrap - ClinicId: {ClinicId}, DeptId: {DeptId}", clinicId, deptId);
 
-                // اگر _facade.LoadInitialAsync() موجود است:
                 if (_facade != null)
                 {
-                    try
+                    var result = await _facade.LoadInitialAsync(clinicId ?? 1, deptId);
+                    if (result.Success && result.Data != null)
                     {
-                        var result = System.Threading.Tasks.Task.Run(async () => await _facade.LoadInitialAsync(clinicId ?? 1, deptId)).Result;
-                        return Json(result, JsonRequestBehavior.AllowGet);
-                    }
-                    catch
-                    {
-                        // Fallback to minimal payload
+                        var payload = new
+                        {
+                            Departments = result.Data.Departments ?? Enumerable.Empty<ViewModels.Reception.DepartmentDto>().ToList(),
+                            Services = result.Data.Services ?? Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
+                            SharedServices = result.Data.SharedServices ?? Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
+                            Doctors = result.Data.Doctors ?? Enumerable.Empty<ViewModels.Reception.DoctorDto>().ToList(),
+                            FinancialYear = _fy?.GetCurrentYear() ?? DateTime.Now.Year
+                        };
+                        return Json(ServiceResult<object>.Successful(payload, result.Message ?? "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
                     }
                 }
 
-                // اسکلت امن حداقلی (برای جلوگیری از 404/500)
-                var payload = new
+                // Fallback: اسکلت حداقلی
+                var minimalPayload = new
                 {
-                    Departments = new object[] { },
-                    Services = new object[] { },
-                    SharedServices = new object[] { },
-                    Doctors = new object[] { },
+                    Departments = Enumerable.Empty<ViewModels.Reception.DepartmentDto>().ToList(),
+                    Services = Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
+                    SharedServices = Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
+                    Doctors = Enumerable.Empty<ViewModels.Reception.DoctorDto>().ToList(),
                     FinancialYear = _fy?.GetCurrentYear() ?? DateTime.Now.Year
                 };
-                return Json(ServiceResult<object>.Successful(payload, "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
+                return Json(ServiceResult<object>.Successful(minimalPayload, "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -125,35 +138,16 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// POST /api/v1/reception/draft/create
         /// ایجاد پیش‌نویس پذیرش
-        /// 
-        /// اگر در فاساد متد ساخت Draft داری، همین‌جا صدا بزن:
         /// </summary>
         [HttpPost, Route("draft/create")]
-        [ValidateAntiForgeryTokenOnPosts] // اگر فیلتر سفارشی‌ات فعاله
-        [ValidateAntiForgeryToken]        // و نیز Attribute استاندارد
+        [ValidateAntiForgeryTokenOnPosts]
         public ActionResult CreateDraft()
         {
             try
             {
                 _logger?.Information("🏥 V1 API: Create Draft");
 
-                // اگر در فاساد متد ساخت Draft داری، همین‌جا صدا بزن:
-                if (_facade != null)
-                {
-                    try
-                    {
-                        // TODO: اتصال به ReceptionFacade.CreateDraftAsync() وقتی آماده شد
-                        // var request = new CreateDraftRequest { ... };
-                        // var res = System.Threading.Tasks.Task.Run(async () => await _facade.CreateDraftAsync(request)).Result;
-                        // return Json(res);
-                    }
-                    catch
-                    {
-                        // Fallback to minimal response
-                    }
-                }
-
-                // حداقل: DraftId ساختگی تا UI بالا بیاید (بعداً وصل به فاساد)
+                // TODO: اتصال به ReceptionFacade.CreateDraftAsync() وقتی آماده شد
                 var draftId = Guid.NewGuid().ToString("N");
                 _logger?.Information("🏥 V1 API: Draft created - DraftId: {DraftId}", draftId);
                 return Json(ServiceResult<string>.Successful(draftId, "Draft created."));
@@ -165,7 +159,344 @@ namespace ClinicApp.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// POST /api/v1/reception/patient/lookup-or-create
+        /// جستجو یا ایجاد بیمار
+        /// </summary>
+        [HttpPost, Route("patient/lookup-or-create")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async System.Threading.Tasks.Task<ActionResult> PatientLookupOrCreate(PatientLookupRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: Patient Lookup - NationalCode: {NationalCode}", request?.NationalCode);
+
+                // استفاده مستقیم از ReceptionFacade
+                if (_facade != null)
+                {
+                    var facadeImpl = _facade as Services.Reception.ReceptionFacade;
+                    if (facadeImpl != null)
+                    {
+                        var findResult = await facadeImpl.FindOrCreatePatientAsync(request?.NationalCode, null);
+                        if (findResult.Success && findResult.Data != null)
+                        {
+                            var patientDto = findResult.Data;
+                            var patientId = patientDto.PatientId;
+                            var insurances = await facadeImpl.GetAssignedInsurancesForPatient(patientId);
+                            
+                            // دریافت اطلاعات کامل بیمار از دیتابیس (مانند ReceptionApiController)
+                            var patient = await _context.Patients
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
+                            
+                            if (patient != null)
+                            {
+                                // ساخت پاسخ کامل با اطلاعات کامل
+                                var response = new Controllers.Api.PatientLookupResponseDto
+                                {
+                                    Identity = new Controllers.Api.PatientIdentityDto
+                                    {
+                                        PatientId = patient.PatientId,
+                                        NationalCode = patient.NationalCode,
+                                        FirstName = patient.FirstName,
+                                        LastName = patient.LastName,
+                                        FatherName = null, // Patient entity فیلد FatherName ندارد
+                                        Mobile = patient.PhoneNumber,
+                                        Phone = null,
+                                        Address = patient.Address,
+                                        Gender = patient.Gender.ToString(),
+                                            BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                                    },
+                                    Insurance = insurances
+                                };
+                                
+                                return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, "بیمار یافت شد."));
+                            }
+                            
+                            // Fallback: استفاده از PatientDto
+                            var fallbackResponse = new Controllers.Api.PatientLookupResponseDto
+                            {
+                                Identity = new Controllers.Api.PatientIdentityDto
+                                {
+                                    PatientId = patientId,
+                                    NationalCode = patientDto.NationalCode,
+                                    FirstName = patientDto.FirstName,
+                                    LastName = patientDto.LastName,
+                                    Mobile = patientDto.PhoneNumber,
+                                    Gender = patientDto.Gender,
+                                    BirthDateShamsi = patientDto.BirthDate?.ToPersianDate() ?? string.Empty
+                                },
+                                Insurance = insurances
+                            };
+                            
+                            return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(fallbackResponse, "بیمار یافت شد."));
+                        }
+                    }
+                }
+                
+                return Json(ServiceResult.Failed("بیمار یافت نشد.", "NOT_FOUND"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در Patient Lookup");
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/insurance/plans
+        /// دریافت پلن‌های بیمه (پایه و تکمیلی)
+        /// </summary>
+        [HttpGet, Route("insurance/plans")]
+        public async Task<ActionResult> GetInsurancePlans(int? patientId = null, int? providerId = null)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: Get Insurance Plans - PatientId: {PatientId}, ProviderId: {ProviderId}", patientId, providerId);
+
+                // دریافت بیمه‌های پایه (Primary)
+                var basePlansQuery = _context.InsurancePlans
+                    .Where(p => !p.IsDeleted && p.IsActive && p.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary);
+
+                // دریافت بیمه‌های تکمیلی (Supplementary)
+                var supplementaryPlansQuery = _context.InsurancePlans
+                    .Where(p => !p.IsDeleted && p.IsActive && p.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary);
+
+                // اگر providerId مشخص شده، فیلتر کن
+                if (providerId.HasValue)
+                {
+                    basePlansQuery = basePlansQuery.Where(p => p.InsuranceProviderId == providerId.Value);
+                    supplementaryPlansQuery = supplementaryPlansQuery.Where(p => p.InsuranceProviderId == providerId.Value);
+                }
+
+                // لود کردن بیمه‌ها
+                var basePlans = await basePlansQuery
+                    .Include(p => p.InsuranceProvider)
+                    .OrderBy(p => p.InsuranceProvider.Name)
+                    .ThenBy(p => p.Name)
+                    .AsNoTracking()
+                    .Select(p => new
+                    {
+                        insurancePlanId = p.InsurancePlanId,
+                        insuranceId = p.InsurancePlanId, // Alias برای سازگاری
+                        name = p.Name,
+                        insuranceName = p.Name, // Alias برای سازگاری
+                        planCode = p.PlanCode,
+                        coveragePercent = p.CoveragePercent, // CoveragePercent (نه CoveragePercentage)
+                        coveragePercentage = p.CoveragePercent, // Alias برای سازگاری با frontend
+                        providerId = p.InsuranceProviderId,
+                        providerName = p.InsuranceProvider.Name,
+                        isActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                var supplementaryPlans = await supplementaryPlansQuery
+                    .Include(p => p.InsuranceProvider)
+                    .OrderBy(p => p.InsuranceProvider.Name)
+                    .ThenBy(p => p.Name)
+                    .AsNoTracking()
+                    .Select(p => new
+                    {
+                        insurancePlanId = p.InsurancePlanId,
+                        insuranceId = p.InsurancePlanId, // Alias برای سازگاری
+                        name = p.Name,
+                        insuranceName = p.Name, // Alias برای سازگاری
+                        planCode = p.PlanCode,
+                        coveragePercent = p.CoveragePercent, // CoveragePercent (نه CoveragePercentage)
+                        coveragePercentage = p.CoveragePercent, // Alias برای سازگاری با frontend
+                        providerId = p.InsuranceProviderId,
+                        providerName = p.InsuranceProvider.Name,
+                        isActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                var payload = new
+                {
+                    basePlans = basePlans,
+                    supplementaryPlans = supplementaryPlans
+                };
+
+                _logger?.Information("🏥 V1 API: Insurance Plans loaded - Base: {BaseCount}, Supplementary: {SuppCount}", 
+                    basePlans.Count, supplementaryPlans.Count);
+                
+                return Json(ServiceResult<object>.Successful(payload, "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در Get Insurance Plans");
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/patient/update-basic
+        /// به‌روزرسانی اطلاعات پایه بیمار
+        /// </summary>
+        [HttpPost, Route("patient/update-basic")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> UpdatePatientBasic(PatientUpdateBasicRequest request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: به‌روزرسانی اطلاعات بیمار - PatientId: {PatientId}", request?.PatientId);
+
+                if (request == null || request.PatientId <= 0)
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("درخواست نامعتبر است.", "VALIDATION"));
+                }
+
+                var userId = User?.Identity?.Name ?? "system";
+
+                // دریافت بیمار از دیتابیس
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == request.PatientId && !p.IsDeleted);
+
+                if (patient == null)
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("بیمار یافت نشد.", "NOT_FOUND"));
+                }
+
+                // اعتبارسنجی‌های پایه
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("نام الزامی است.", "VALIDATION"));
+                }
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("نام خانوادگی الزامی است.", "VALIDATION"));
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Mobile) && !Regex.IsMatch(request.Mobile, @"^09\d{9}$"))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("شماره موبایل نامعتبر است. باید 11 رقم و با 09 شروع شود.", "VALIDATION"));
+                }
+
+                // تبدیل تاریخ شمسی به میلادی
+                DateTime? birthDate = null;
+                if (!string.IsNullOrWhiteSpace(request.BirthDateShamsi))
+                {
+                    try
+                    {
+                        birthDate = request.BirthDateShamsi.FromFaDate();
+                        if (!birthDate.HasValue)
+                        {
+                            return Json(ServiceResult<PatientIdentityDto>.Failed("تاریخ تولد نامعتبر است.", "VALIDATION"));
+                        }
+                    }
+                    catch
+                    {
+                        return Json(ServiceResult<PatientIdentityDto>.Failed("تاریخ تولد نامعتبر است.", "VALIDATION"));
+                    }
+                }
+
+                // تبدیل جنسیت
+                Gender gender = patient.Gender; // پیش‌فرض: جنسیت قبلی
+                if (!string.IsNullOrWhiteSpace(request.Gender))
+                {
+                    if (Enum.TryParse<Gender>(request.Gender, true, out var parsedGender))
+                    {
+                        gender = parsedGender;
+                    }
+                }
+
+                // اعمال تغییرات مجاز
+                patient.FirstName = request.FirstName?.Trim();
+                patient.LastName = request.LastName?.Trim();
+                patient.PhoneNumber = request.Mobile?.Trim(); // PhoneNumber به عنوان Mobile
+                patient.Address = request.Address?.Trim();
+                patient.Gender = gender;
+                patient.BirthDate = birthDate;
+
+                patient.UpdatedAt = DateTime.Now;
+                patient.UpdatedByUserId = userId;
+
+                await _context.SaveChangesAsync();
+
+                // بازگرداندن DTO تازه برای همسان‌سازی UI
+                var updatedDto = new PatientIdentityDto
+                {
+                    PatientId = patient.PatientId,
+                    NationalCode = patient.NationalCode,
+                    FirstName = patient.FirstName,
+                    LastName = patient.LastName,
+                    FatherName = null,
+                    Mobile = patient.PhoneNumber,
+                    Phone = null,
+                    Address = patient.Address,
+                    Gender = patient.Gender.ToString(),
+                    BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                };
+
+                return Json(ServiceResult<PatientIdentityDto>.Successful(updatedDto, "اطلاعات به‌روزرسانی شد."));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در به‌روزرسانی اطلاعات بیمار");
+                return Json(ServiceResult<PatientIdentityDto>.Failed("به‌روزرسانی ناموفق بود: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/insurances/set
+        /// تنظیم بیمه‌های پیش‌نویس
+        /// </summary>
+        [HttpPost, Route("insurances/set")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> SetInsurances(SetInsurancesRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: تنظیم بیمه‌های پیش‌نویس - ReceptionId: {ReceptionId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    request?.ReceptionId, request?.BasePlanId, request?.SupplementaryPlanId);
+
+                if (request == null || request.ReceptionId <= 0)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var facadeRequest = new ViewModels.Reception.SetInsurancesRequest
+                    {
+                        ReceptionId = request.ReceptionId,
+                        BasePlanId = request.BasePlanId,
+                        SupplementaryPlanId = request.SupplementaryPlanId
+                    };
+
+                    var result = await _facade.SetInsurancesAsync(facadeRequest);
+                    return Json(result);
+                }
+
+                return Json(ServiceResult.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در تنظیم بیمه‌ها");
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
         #endregion
+    }
+
+    /// <summary>
+    /// DTO برای درخواست تنظیم بیمه‌ها
+    /// </summary>
+    public class SetInsurancesRequestDto
+    {
+        public int ReceptionId { get; set; }
+        public int? BasePlanId { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای درخواست جستجوی بیمار
+    /// </summary>
+    public class PatientLookupRequestDto
+    {
+        public string NationalCode { get; set; }
+        public string Mobile { get; set; }
     }
 }
 

@@ -33,19 +33,31 @@
 
   /**
    * پر کردن فیلدهای هویتی از DTO
+   * پشتیبانی از camelCase و PascalCase
    */
   function fillIdentity(identity) {
     if (!identity) return;
     
-    $pid.val(identity.patientId || '');
-    $fn.val(identity.firstName || '');
-    $ln.val(identity.lastName || '');
-    $fa.val(identity.fatherName || '');
-    $mb.val(identity.mobile || '');
-    $ph.val(identity.phone || '');
-    $ad.val(identity.address || '');
-    $gd.val(identity.gender || '');
-    $bd.val(identity.birthDateShamsi || '');
+    // پشتیبانی از camelCase و PascalCase
+    const pid = identity.patientId || identity.PatientId;
+    const fn = identity.firstName || identity.FirstName;
+    const ln = identity.lastName || identity.LastName;
+    const fa = identity.fatherName || identity.FatherName;
+    const mb = identity.mobile || identity.Mobile;
+    const ph = identity.phone || identity.Phone;
+    const ad = identity.address || identity.Address;
+    const gd = identity.gender || identity.Gender;
+    const bd = identity.birthDateShamsi || identity.BirthDateShamsi;
+    
+    $pid.val(pid || '');
+    $fn.val(fn || '');
+    $ln.val(ln || '');
+    $fa.val(fa || '');
+    $mb.val(mb || '');
+    $ph.val(ph || '');
+    $ad.val(ad || '');
+    $gd.val(gd || '');
+    $bd.val(bd || '');
   }
 
   /**
@@ -64,29 +76,78 @@
     console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc);
 
     API.post('/patient/lookup-or-create', { NationalCode: nc })
-      .then(API.ok)
-      .then(function(response) {
-        if (!response || !response.success) {
-          toastr.error(response?.message || 'بیمار یافت نشد');
+      .then(function(fullResponse) {
+        // Log کامل response برای دیباگ
+        console.log('🏥 V2: Full API response (raw):', fullResponse);
+        console.log('🏥 V2: Response type:', typeof fullResponse);
+        
+        // اگر response به صورت string است، آن را parse کن
+        let responseObj = fullResponse;
+        if (typeof fullResponse === 'string') {
+          try {
+            responseObj = JSON.parse(fullResponse);
+            console.log('🏥 V2: Response parsed from string:', responseObj);
+          } catch (e) {
+            console.error('🏥 V2: Failed to parse JSON response:', e);
+            toastr.error('خطا در پردازش پاسخ سرور');
+            return;
+          }
+        }
+        
+        console.log('🏥 V2: Response keys:', responseObj ? Object.keys(responseObj) : 'null/undefined');
+        
+        // چک Success - پشتیبانی از Success و success (camelCase/PascalCase)
+        // همچنین چک می‌کنیم که آیا Success به صورت true (boolean) یا "true" (string) برگردانده شده
+        const successValue = responseObj?.Success ?? responseObj?.success;
+        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        
+        console.log('🏥 V2: Success check:', {
+          'responseObj.Success': responseObj?.Success,
+          'responseObj.success': responseObj?.success,
+          'successValue': successValue,
+          'isSuccess': isSuccess,
+          'typeof successValue': typeof successValue
+        });
+        
+        if (!responseObj || !isSuccess) {
+          const errorMsg = responseObj?.Message || responseObj?.message || 'بیمار یافت نشد';
+          console.warn('🏥 V2: Patient lookup failed:', errorMsg, responseObj);
+          toastr.error(errorMsg);
           return;
         }
 
-        const dto = response.data || response;
-        console.log('🏥 V2: Patient lookup response:', dto);
+        // دریافت Data (API.ok() آن را extract می‌کند)
+        const dto = API.ok(responseObj);
+        console.log('🏥 V2: Patient lookup data (extracted):', dto);
+        console.log('🏥 V2: Data type:', typeof dto);
+        console.log('🏥 V2: Data keys:', dto ? Object.keys(dto) : 'null/undefined');
 
         // ذخیره کپی برای انصراف
-        cache = JSON.parse(JSON.stringify(dto.identity || dto.Identity));
+        const identity = dto?.Identity || dto?.identity;
+        console.log('🏥 V2: Identity extracted:', identity);
+        
+        if (identity) {
+          cache = JSON.parse(JSON.stringify(identity));
+          
+          // پر کردن اطلاعات هویتی
+          fillIdentity(identity);
+          console.log('🏥 V2: Identity filled to form');
+          
+          // تنظیم بیمه‌ها
+          const insurance = dto?.Insurance || dto?.insurance;
+          console.log('🏥 V2: Insurance extracted:', insurance);
+          
+          if (window.insPanel && insurance) {
+            window.insPanel.set(insurance);
+            console.log('🏥 V2: Insurance set to panel');
+          }
 
-        // پر کردن اطلاعات هویتی
-        fillIdentity(dto.identity || dto.Identity);
-
-        // تنظیم بیمه‌ها
-        if (window.insPanel && (dto.insurance || dto.Insurance)) {
-          window.insPanel.set(dto.insurance || dto.Insurance);
+          setReadonly(true);
+          toastr.success('اطلاعات بیمار بارگذاری شد');
+        } else {
+          console.warn('🏥 V2: Identity not found in response data. DTO:', dto);
+          toastr.warning('اطلاعات هویتی یافت نشد');
         }
-
-        setReadonly(true);
-        toastr.success('اطلاعات بیمار بارگذاری شد');
 
         // Trigger auto-draft creation
         if (window.AutoDraftManager) {
@@ -126,16 +187,16 @@
     console.log('🏥 V2: ذخیره اطلاعات بیمار:', payload);
 
     API.post('/patient/update-basic', payload)
-      .then(API.ok)
-      .then(function(response) {
-        if (!response || !response.success) {
-          toastr.error(response?.message || 'خطا در ذخیره');
+      .then(function(fullResponse) {
+        // چک Success
+        if (!fullResponse || (fullResponse.Success !== true && fullResponse.success !== true)) {
+          toastr.error(fullResponse?.Message || fullResponse?.message || 'خطا در ذخیره');
           return;
         }
 
-        const updated = response.data || response;
-        fillIdentity(updated);
-        cache = JSON.parse(JSON.stringify(updated));
+        const updated = API.ok(fullResponse);
+        fillIdentity(updated.Identity || updated.identity || updated);
+        cache = JSON.parse(JSON.stringify(updated.Identity || updated.identity || updated));
         setReadonly(true);
         toastr.success('اطلاعات به‌روزرسانی شد');
       })
@@ -190,13 +251,18 @@
     if (patientId > 0) {
       // اگر PatientId وجود دارد، اطلاعات را از API بگیر
       API.post('/patient/lookup-or-create', { NationalCode: nc || '' })
-        .then(API.ok)
-        .then(function(response) {
-          if (response && response.success && response.data) {
-            const dto = response.data;
-            fillIdentity(dto.identity || dto.Identity);
-            if (window.insPanel && (dto.insurance || dto.Insurance)) {
-              window.insPanel.set(dto.insurance || dto.Insurance);
+        .then(function(fullResponse) {
+          // چک Success
+          if (fullResponse && (fullResponse.Success === true || fullResponse.success === true)) {
+            const dto = API.ok(fullResponse);
+            const identity = dto.Identity || dto.identity;
+            const insurance = dto.Insurance || dto.insurance;
+            
+            if (identity) {
+              fillIdentity(identity);
+            }
+            if (window.insPanel && insurance) {
+              window.insPanel.set(insurance);
             }
             setReadonly(true);
           }

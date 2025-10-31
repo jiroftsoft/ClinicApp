@@ -18,17 +18,14 @@ using Serilog;
 namespace ClinicApp.Controllers.Api
 {
     /// <summary>
-    /// API Controller واحد برای پذیرش V2 - Zero Cache, Medical-Grade
+    /// API Controller Legacy برای پذیرش - برای Fallback
     /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. Zero Cache برای محیط درمانی
-    /// 2. Anti-Forgery Token در همه POST ها
-    /// 3. ServiceResult<T> استاندارد
-    /// 4. Idempotency برای عملیات حساس
+    /// این Controller برای مسیرهای /Api/ReceptionApi/* استفاده می‌شود
+    /// برای v1 API از ReceptionApiV1Controller استفاده کنید
     /// </summary>
-[RoutePrefix("api/v1/reception")]
-[OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
-[NoCache]
+    [RoutePrefix("Api/ReceptionApi")]
+    [OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
+    [NoCache]
     public class ReceptionApiController : Controller
     {
         #region Dependencies
@@ -56,9 +53,13 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// جستجو یا ایجاد بیمار - بازگشت اطلاعات کامل هویتی + بیمه‌ها
-        /// POST: /api/v1/reception/patient/lookup-or-create
+        /// POST: /Api/ReceptionApi/PatientLookup (Legacy)
+        /// POST: /Api/ReceptionApi/patient/lookup-or-create (Alternative)
         /// </summary>
-        [HttpPost, Route("patient/lookup-or-create"), ValidateAntiForgeryToken]
+        [HttpPost]
+        [Route("PatientLookup")]
+        [Route("patient/lookup-or-create")]
+        [ValidateAntiForgeryTokenOnPosts]
         public async Task<ActionResult> PatientLookup(PatientLookupRequest request)
         {
             try
@@ -145,7 +146,7 @@ namespace ClinicApp.Controllers.Api
         /// به‌روزرسانی اطلاعات پایه بیمار (در فرم پذیرش)
         /// POST: /api/v1/reception/patient/update-basic
         /// </summary>
-        [HttpPost, Route("patient/update-basic"), ValidateAntiForgeryToken]
+        [HttpPost, Route("patient/update-basic"), ValidateAntiForgeryTokenOnPosts]
         public async Task<ActionResult> UpdatePatientBasic(PatientUpdateBasicRequest request)
         {
             try
@@ -390,7 +391,7 @@ namespace ClinicApp.Controllers.Api
         /// تنظیم بیمه‌های پیش‌نویس
         /// POST: /api/v1/reception/insurances/set
         /// </summary>
-        [HttpPost, Route("insurances/set"), ValidateAntiForgeryToken]
+        [HttpPost, Route("insurances/set"), ValidateAntiForgeryTokenOnPosts]
         public async Task<ActionResult> SetInsurances(SetInsurancesRequest request)
         {
             try
@@ -401,7 +402,7 @@ namespace ClinicApp.Controllers.Api
                 {
                     ReceptionId = request.ReceptionId,
                     BasePlanId = request.BasePlanId,
-                    SupplementaryPlanId = request.SuppPlanId
+                    SupplementaryPlanId = request.SupplementaryPlanId ?? request.SuppPlanId // پشتیبانی از هر دو نام
                 };
                 var result = await _receptionFacade.SetInsurancesAsync(facadeRequest);
                 return Json(result);
@@ -682,7 +683,8 @@ namespace ClinicApp.Controllers.Api
     {
         public int ReceptionId { get; set; }
         public int? BasePlanId { get; set; }
-        public int? SuppPlanId { get; set; }
+        public int? SuppPlanId { get; set; } // Legacy name
+        public int? SupplementaryPlanId { get; set; } // Preferred name
     }
 
     public class FinalizePosRequest
