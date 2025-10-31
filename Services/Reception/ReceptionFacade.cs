@@ -825,7 +825,8 @@ namespace ClinicApp.Services.Reception
         {
             try
             {
-                _logger.Information("🏥 FACADE: تنظیم بیمه‌های پیش‌نویس");
+                _logger.Information("🏥 FACADE: تنظیم بیمه‌های پیش‌نویس - ReceptionId: {ReceptionId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                    request.ReceptionId, request.BasePlanId, request.SupplementaryPlanId);
 
                 var draft = await _context.Receptions
                     .Include(d => d.ReceptionItems)
@@ -834,18 +835,126 @@ namespace ClinicApp.Services.Reception
                 if (draft == null)
                     return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
 
+                // اعتبارسنجی پلن بیمه پایه (در صورت وجود) - ذخیره برای استفاده بعدی
+                Models.Entities.Insurance.InsurancePlan basePlan = null;
+                if (request.BasePlanId.HasValue)
+                {
+                    basePlan = await _context.InsurancePlans
+                        .FirstOrDefaultAsync(p => p.InsurancePlanId == request.BasePlanId.Value && !p.IsDeleted && p.IsActive);
+                    
+                    if (basePlan == null)
+                        return ServiceResult<ItemsAndTotalsDto>.Failed("پلن بیمه پایه یافت نشد یا غیرفعال است.");
+                    
+                    if (basePlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Primary)
+                        return ServiceResult<ItemsAndTotalsDto>.Failed("پلن انتخاب شده بیمه پایه نیست.");
+                }
+
+                // اعتبارسنجی پلن بیمه تکمیلی (در صورت وجود) - ذخیره برای استفاده بعدی
+                Models.Entities.Insurance.InsurancePlan suppPlan = null;
+                if (request.SupplementaryPlanId.HasValue)
+                {
+                    suppPlan = await _context.InsurancePlans
+                        .FirstOrDefaultAsync(p => p.InsurancePlanId == request.SupplementaryPlanId.Value && !p.IsDeleted && p.IsActive);
+                    
+                    if (suppPlan == null)
+                        return ServiceResult<ItemsAndTotalsDto>.Failed("پلن بیمه تکمیلی یافت نشد یا غیرفعال است.");
+                    
+                    if (suppPlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Supplementary)
+                        return ServiceResult<ItemsAndTotalsDto>.Failed("پلن انتخاب شده بیمه تکمیلی نیست.");
+                }
+
+                // اعمال تغییرات روی Reception
                 draft.BasePlanId = request.BasePlanId;
                 draft.SupplementaryPlanId = request.SupplementaryPlanId;
                 draft.UpdatedAt = DateTime.Now;
                 
                 await _context.SaveChangesAsync();
 
+                // 🔥 به‌روزرسانی PatientInsurances (بیمه‌های واقعی بیمار)
+                var patientId = draft.PatientId;
+                var userId = _currentUserService?.UserId ?? "system";
+
+                // یافتن PatientInsurance فعال و Primary این بیمار (که بیمه پایه و تکمیلی در همان رکورد است)
+                var patientInsurance = await _context.PatientInsurances
+                    .FirstOrDefaultAsync(pi => pi.PatientId == patientId && pi.IsPrimary && pi.IsActive && !pi.IsDeleted);
+                
+                if (patientInsurance != null)
+                {
+                    bool hasChanges = false;
+
+                    // به‌روزرسانی بیمه پایه در PatientInsurances (از basePlan قبلاً query شده استفاده می‌کنیم)
+                    if (request.BasePlanId.HasValue && basePlan != null)
+                    {
+                        if (patientInsurance.InsurancePlanId != request.BasePlanId.Value || 
+                            patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
+                        {
+                            // به‌روزرسانی InsurancePlanId و InsuranceProviderId
+                            patientInsurance.InsurancePlanId = request.BasePlanId.Value;
+                            patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
+                            hasChanges = true;
+                            
+                            _logger.Information("🔄 FACADE: به‌روزرسانی بیمه پایه در PatientInsurances - PatientId: {PatientId}, PlanId: {PlanId}, ProviderId: {ProviderId}",
+                                patientId, request.BasePlanId.Value, basePlan.InsuranceProviderId);
+                        }
+                    }
+
+                    // به‌روزرسانی بیمه تکمیلی در PatientInsurances (از suppPlan قبلاً query شده استفاده می‌کنیم)
+                    if (request.SupplementaryPlanId.HasValue && suppPlan != null)
+                    {
+                        if (patientInsurance.SupplementaryInsurancePlanId != request.SupplementaryPlanId.Value || 
+                            patientInsurance.SupplementaryInsuranceProviderId != suppPlan.InsuranceProviderId)
+                        {
+                            // به‌روزرسانی SupplementaryInsurancePlanId و SupplementaryInsuranceProviderId
+                            patientInsurance.SupplementaryInsurancePlanId = request.SupplementaryPlanId.Value;
+                            patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                            hasChanges = true;
+                            
+                            _logger.Information("🔄 FACADE: به‌روزرسانی بیمه تکمیلی در PatientInsurances - PatientId: {PatientId}, SuppPlanId: {SuppPlanId}, SuppProviderId: {SuppProviderId}",
+                                patientId, request.SupplementaryPlanId.Value, suppPlan.InsuranceProviderId);
+                        }
+                    }
+                    else
+                    {
+                        // اگر SupplementaryPlanId null باشد، بیمه تکمیلی را حذف می‌کنیم
+                        if (patientInsurance.SupplementaryInsurancePlanId.HasValue)
+                        {
+                            patientInsurance.SupplementaryInsurancePlanId = null;
+                            patientInsurance.SupplementaryInsuranceProviderId = null;
+                            hasChanges = true;
+                            
+                            _logger.Information("🔄 FACADE: حذف بیمه تکمیلی از PatientInsurances - PatientId: {PatientId}", patientId);
+                        }
+                    }
+
+                    // ذخیره تغییرات PatientInsurances (فقط در صورت تغییر)
+                    if (hasChanges)
+                    {
+                        patientInsurance.UpdatedAt = DateTime.Now;
+                        patientInsurance.UpdatedByUserId = userId;
+                        await _context.SaveChangesAsync();
+                        
+                        _logger.Information("✅ FACADE: PatientInsurances با موفقیت به‌روزرسانی شد - PatientId: {PatientId}", patientId);
+                    }
+                    else
+                    {
+                        _logger.Information("ℹ️ FACADE: PatientInsurances تغییری نداشت - PatientId: {PatientId}", patientId);
+                    }
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: PatientInsurance پایه برای بیمار یافت نشد - PatientId: {PatientId}. فقط Reception به‌روزرسانی شد.", patientId);
+                    // TODO: در آینده می‌توانیم PatientInsurance ایجاد کنیم، اما برای حالا فقط Reception را update می‌کنیم
+                }
+
+                _logger.Information("✅ FACADE: بیمه‌های پیش‌نویس و PatientInsurances با موفقیت تنظیم شد - ReceptionId: {ReceptionId}, PatientId: {PatientId}", 
+                    request.ReceptionId, patientId);
+
                 return await RecalculateDraftAsync(draft);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ FACADE: خطا در تنظیم بیمه‌ها");
-                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها");
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها: " + ex.Message);
             }
         }
 

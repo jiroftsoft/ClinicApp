@@ -397,7 +397,23 @@ namespace ClinicApp.Controllers.Api
         {
             try
             {
-                _logger.Information("🏥 API: تنظیم بیمه‌های پیش‌نویس");
+                _logger.Information("🏥 API: تنظیم بیمه‌های پیش‌نویس - ReceptionId: {ReceptionId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                    request?.ReceptionId, request?.BasePlanId, request?.SupplementaryPlanId ?? request?.SuppPlanId);
+
+                // اعتبارسنجی اولیه
+                if (request == null || request.ReceptionId <= 0)
+                {
+                    return Json(ServiceResult<ItemsAndTotalsDto>.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+
+                // اعتبارسنجی Reception وجود دارد
+                var receptionExists = await _context.Receptions
+                    .AnyAsync(r => r.ReceptionId == request.ReceptionId && !r.IsDeleted);
+                
+                if (!receptionExists)
+                {
+                    return Json(ServiceResult<ItemsAndTotalsDto>.Failed("پذیرش یافت نشد.", "NOT_FOUND"));
+                }
 
                 var facadeRequest = new ViewModels.Reception.SetInsurancesRequest
                 {
@@ -405,13 +421,26 @@ namespace ClinicApp.Controllers.Api
                     BasePlanId = request.BasePlanId,
                     SupplementaryPlanId = request.SupplementaryPlanId ?? request.SuppPlanId // پشتیبانی از هر دو نام
                 };
+                
                 var result = await _receptionFacade.SetInsurancesAsync(facadeRequest);
+                
+                // لاگ نتیجه
+                if (result.Success)
+                {
+                    _logger.Information("✅ API: بیمه‌های پیش‌نویس با موفقیت تنظیم شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ API: تنظیم بیمه‌های پیش‌نویس ناموفق - ReceptionId: {ReceptionId}, Error: {Error}",
+                        request.ReceptionId, result.Message);
+                }
+                
                 return Json(result);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در تنظیم بیمه‌ها");
-                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها"));
+                _logger.Error(ex, "❌ API: خطا در تنظیم بیمه‌ها - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها: " + ex.Message, "UNHANDLED"));
             }
         }
 

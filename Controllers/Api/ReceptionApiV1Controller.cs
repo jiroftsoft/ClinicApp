@@ -451,9 +451,19 @@ namespace ClinicApp.Controllers.Api
                 _logger?.Information("🏥 V1 API: تنظیم بیمه‌های پیش‌نویس - ReceptionId: {ReceptionId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
                     request?.ReceptionId, request?.BasePlanId, request?.SupplementaryPlanId);
 
+                // اعتبارسنجی اولیه
                 if (request == null || request.ReceptionId <= 0)
                 {
-                    return Json(ServiceResult.Failed("درخواست نامعتبر است.", "VALIDATION"));
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+
+                // اعتبارسنجی Reception وجود دارد
+                var receptionExists = await _context.Receptions
+                    .AnyAsync(r => r.ReceptionId == request.ReceptionId && !r.IsDeleted);
+                
+                if (!receptionExists)
+                {
+                    return Json(ServiceResult.Failed("پذیرش یافت نشد.", "NOT_FOUND"));
                 }
 
                 if (_facade != null)
@@ -466,6 +476,18 @@ namespace ClinicApp.Controllers.Api
                     };
 
                     var result = await _facade.SetInsurancesAsync(facadeRequest);
+                    
+                    // لاگ نتیجه
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: بیمه‌های پیش‌نویس با موفقیت تنظیم شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: تنظیم بیمه‌های پیش‌نویس ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
                     return Json(result);
                 }
 
@@ -473,7 +495,7 @@ namespace ClinicApp.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger?.Error(ex, "خطا در تنظیم بیمه‌ها");
+                _logger?.Error(ex, "❌ V1 API: خطا در تنظیم بیمه‌ها - ReceptionId: {ReceptionId}", request?.ReceptionId);
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
             }
         }

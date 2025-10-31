@@ -8,6 +8,14 @@
   const $btnRemoveSupp = $('#btnRemoveSupp');
   const $btnSetInsurances = $('#BtnSetInsurances');
 
+  // Cache برای ذخیره وضعیت قبلی بیمه‌ها (مثل patient-lookup)
+  let cache = {
+    basePlanId: null,
+    basePlanName: null,
+    suppPlanId: null,
+    suppPlanName: null
+  };
+
   /**
    * بارگذاری لیست پلن‌های بیمه
    */
@@ -40,6 +48,32 @@
         toastr.error('خطا در بارگذاری بیمه‌ها');
         throw err;
       });
+  }
+
+  /**
+   * دریافت نام بیمه از dropdown بر اساس value
+   */
+  function getInsuranceName($select, planId) {
+    if (!planId || planId === '' || planId === null) return null;
+    const $option = $select.find(`option[value="${planId}"]`);
+    return $option.length > 0 ? $option.text().trim() : null;
+  }
+
+  /**
+   * ذخیره وضعیت فعلی بیمه‌ها در cache
+   */
+  function saveToCache() {
+    const basePlanId = $basePlan.val();
+    const suppPlanId = $suppPlan.val();
+    
+    cache = {
+      basePlanId: (basePlanId && basePlanId !== '') ? parseInt(basePlanId) : null,
+      basePlanName: getInsuranceName($basePlan, basePlanId),
+      suppPlanId: (suppPlanId && suppPlanId !== '') ? parseInt(suppPlanId) : null,
+      suppPlanName: getInsuranceName($suppPlan, suppPlanId)
+    };
+    
+    console.log('🏥 V2: Insurance state cached:', cache);
   }
 
   /**
@@ -100,10 +134,19 @@
             console.warn('🏥 V2: Supplementary plan ID not found in dropdown:', suppPlanIdToSet);
             // حتی اگر در dropdown نیست، مقدار را set کن (شاید بعداً لود شود)
             $suppPlan.val(suppPlanIdToSet);
+            toggleRemoveButton(); // Update button visibility
           }
         } else {
           console.log('🏥 V2: No supplementary plan to set');
+          $suppPlan.val(''); // Clear if no value
+          toggleRemoveButton(); // Hide button
         }
+
+        // ذخیره وضعیت فعلی در cache
+        saveToCache();
+        
+        // به‌روزرسانی نمایش وضعیت در UI
+        updateInsuranceStatus();
 
         // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن
         const receptionId = $('#ReceptionId').val();
@@ -122,21 +165,61 @@
 
   /**
    * ذخیره بیمه‌ها در سرور
+   * اگر ReceptionId وجود ندارد، ابتدا draft ایجاد می‌کند
    */
   function persist() {
     const receptionId = $('#ReceptionId').val();
     if (!receptionId || receptionId <= 0) {
-      console.warn('🏥 V2: Cannot persist insurances, no reception ID');
-      return Promise.resolve();
+      console.log('🏥 V2: No reception ID, attempting to create draft first...');
+      
+      // سعی کن draft ایجاد کن
+      if (window.AutoDraftManager && !window.AutoDraftManager.isDraftCreated()) {
+        return window.AutoDraftManager.createDraft()
+          .then(function(draftId) {
+            if (draftId) {
+              console.log('🏥 V2: Draft created successfully:', draftId);
+              $('#ReceptionId').val(draftId);
+              // حالا که draft ایجاد شد، persist را دوباره صدا بزن
+              return persist();
+            } else {
+              console.warn('🏥 V2: Draft creation returned null - missing required fields (patient/clinic/department/doctor)');
+              toastr.warning('لطفاً ابتدا بیمار، کلینیک، دپارتمان و پزشک را انتخاب کنید');
+              return Promise.resolve();
+            }
+          })
+          .catch(function(err) {
+            console.error('🏥 V2: Auto-draft creation error:', err);
+            toastr.warning('برای ثبت بیمه، ابتدا پذیرش را ایجاد کنید (بیمار، کلینیک، دپارتمان، پزشک)');
+            return Promise.resolve();
+          });
+      } else {
+        console.warn('🏥 V2: Cannot persist insurances, no reception ID and AutoDraftManager unavailable');
+        toastr.warning('برای ثبت بیمه، ابتدا پذیرش را ایجاد کنید (بیمار، کلینیک، دپارتمان، پزشک)');
+        return Promise.resolve();
+      }
     }
+
+    // دریافت مقادیر
+    const basePlanValue = $basePlan.val();
+    const suppPlanValue = $suppPlan.val();
+    
+    // تبدیل به integer یا null (اگر خالی باشد)
+    const basePlanId = (basePlanValue && basePlanValue !== '' && basePlanValue !== null) 
+      ? parseInt(basePlanValue) 
+      : null;
+    
+    const supplementaryPlanId = (suppPlanValue && suppPlanValue !== '' && suppPlanValue !== null) 
+      ? parseInt(suppPlanValue) 
+      : null;
 
     const payload = {
       receptionId: parseInt(receptionId),
-      basePlanId: parseInt($basePlan.val()) || null,
-      supplementaryPlanId: parseInt($suppPlan.val()) || null
+      basePlanId: basePlanId,
+      supplementaryPlanId: supplementaryPlanId // اگر null باشد، یعنی بیمار بیمه تکمیلی ندارد
     };
 
     console.log('🏥 V2: Persisting insurances:', payload);
+    console.log('🏥 V2: SupplementaryPlanId:', supplementaryPlanId === null ? 'NULL (No supplementary insurance)' : supplementaryPlanId);
 
     return API.post('/insurances/set', payload)
       .then(function(fullResponse) {
@@ -171,6 +254,62 @@
         const response = API.ok(responseObj);
         console.log('🏥 V2: Insurances persisted successfully:', response);
         
+        // 🎯 نمایش پیغام موفقیت با جزئیات برای منشی
+        const currentBasePlanId = parseInt($basePlan.val()) || null;
+        const currentSuppPlanId = parseInt($suppPlan.val()) || null;
+        const currentBasePlanName = getInsuranceName($basePlan, currentBasePlanId);
+        const currentSuppPlanName = getInsuranceName($suppPlan, currentSuppPlanId);
+        
+        // تشخیص تغییرات
+        let changes = [];
+        if (cache.basePlanId !== currentBasePlanId) {
+          if (cache.basePlanId && currentBasePlanId) {
+            changes.push(`بیمه پایه: "${cache.basePlanName}" → "${currentBasePlanName}"`);
+          } else if (currentBasePlanId) {
+            changes.push(`بیمه پایه: "${currentBasePlanName}" انتخاب شد`);
+          } else {
+            changes.push('بیمه پایه حذف شد');
+          }
+        }
+        
+        if (cache.suppPlanId !== currentSuppPlanId) {
+          if (cache.suppPlanId && currentSuppPlanId) {
+            changes.push(`بیمه تکمیلی: "${cache.suppPlanName}" → "${currentSuppPlanName}"`);
+          } else if (currentSuppPlanId) {
+            changes.push(`بیمه تکمیلی: "${currentSuppPlanName}" انتخاب شد`);
+          } else {
+            changes.push('بیمه تکمیلی حذف شد. بیمار بیمه تکمیلی ندارد.');
+          }
+        }
+        
+        // نمایش پیغام موفقیت
+        if (changes.length > 0) {
+          // اگر تغییرات وجود داشت، پیغام تفصیلی نمایش بده
+          let message = '✅ بیمه‌ها با موفقیت به‌روزرسانی شد:\n\n';
+          changes.forEach(function(change) {
+            message += '• ' + change + '\n';
+          });
+          message += '\n💡 وضعیت فعلی:\n';
+          message += '• بیمه پایه: ' + (currentBasePlanName || '—') + '\n';
+          message += '• بیمه تکمیلی: ' + (currentSuppPlanName || 'ندارد');
+          
+          toastr.success(message, 'بیمه‌ها به‌روزرسانی شد', {
+            timeOut: 8000, // 8 ثانیه نمایش بده
+            extendedTimeOut: 5000,
+            closeButton: true,
+            progressBar: true
+          });
+        } else {
+          // اگر تغییری نبود، فقط پیغام ساده
+          toastr.success('بیمه‌ها ذخیره شدند. تغییر جدیدی انجام نشد.');
+        }
+        
+        // به‌روزرسانی cache با مقادیر فعلی
+        saveToCache();
+        
+        // به‌روزرسانی نمایش وضعیت در UI
+        updateInsuranceStatus();
+        
         // Update totals if provided
         if (response && (response.totals || (response.Data && response.Data.totals))) {
           const totals = response.totals || response.Data?.totals;
@@ -193,26 +332,100 @@
 
   /**
    * حذف بیمه تکمیلی
+   * این تابع زمانی صدا زده می‌شود که کاربر روی دکمه ❌ کلیک می‌کند
+   * باعث می‌شود که فیلد بیمه تکمیلی خالی شود → بیمار بیمه تکمیلی ندارد
    */
   function removeSupplementary() {
-    $suppPlan.val('');
+    console.log('🏥 V2: Removing supplementary insurance → Patient will have NO supplementary insurance');
     
-    const receptionId = $('#ReceptionId').val();
-    if (receptionId && receptionId > 0) {
-      persist();
+    // پاک کردن dropdown (انتخاب "انتخاب کنید")
+    $suppPlan.val('').trigger('change'); // trigger change برای persist خودکار
+    
+    // مخفی کردن دکمه (چون حالا بیمه تکمیلی نداریم)
+    toggleRemoveButton();
+    
+    // پیام موفقیت - مشخص کردن که بیمار بیمه تکمیلی ندارد
+    toastr.info('بیمه تکمیلی حذف شد. بیمار بیمه تکمیلی ندارد.');
+  }
+
+  /**
+   * نمایش/مخفی کردن دکمه حذف بیمه تکمیلی
+   */
+  function toggleRemoveButton() {
+    const hasValue = $suppPlan.val() && $suppPlan.val() !== '';
+    if ($btnRemoveSupp.length) {
+      if (hasValue) {
+        $btnRemoveSupp.show();
+      } else {
+        $btnRemoveSupp.hide();
+      }
+    }
+  }
+
+  /**
+   * به‌روزرسانی نمایش وضعیت فعلی بیمه‌ها در UI (برای منشی)
+   */
+  function updateInsuranceStatus() {
+    const basePlanId = $basePlan.val();
+    const suppPlanId = $suppPlan.val();
+    
+    const basePlanName = getInsuranceName($basePlan, basePlanId);
+    const suppPlanName = getInsuranceName($suppPlan, suppPlanId);
+    
+    // به‌روزرسانی badge‌های وضعیت
+    const $baseBadge = $('#current-base-insurance');
+    const $suppBadge = $('#current-supp-insurance');
+    
+    if ($baseBadge.length) {
+      if (basePlanName) {
+        $baseBadge.text('پایه: ' + basePlanName).removeClass('bg-secondary').addClass('bg-info');
+      } else {
+        $baseBadge.text('پایه: —').removeClass('bg-info').addClass('bg-secondary');
+      }
     }
     
-    toastr.info('بیمه تکمیلی حذف شد');
+    if ($suppBadge.length) {
+      if (suppPlanName) {
+        $suppBadge.text('تکمیلی: ' + suppPlanName).removeClass('bg-secondary').addClass('bg-success');
+      } else {
+        $suppBadge.text('تکمیلی: ندارد').removeClass('bg-success').addClass('bg-secondary');
+      }
+    }
+    
+    console.log('🏥 V2: Insurance status updated in UI:', {
+      base: basePlanName || '—',
+      supplementary: suppPlanName || 'ندارد'
+    });
   }
 
   // Event handlers
   $basePlan.on('change', function() {
-    console.log('🏥 V2: Base plan changed, persisting');
+    console.log('🏥 V2: Base plan changed');
+    
+    // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
+    updateInsuranceStatus();
+    
+    // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
     persist();
   });
   
   $suppPlan.on('change', function() {
-    console.log('🏥 V2: Supplementary plan changed, persisting');
+    const selectedValue = $suppPlan.val();
+    console.log('🏥 V2: Supplementary plan changed, selected value:', selectedValue);
+    
+    // نمایش/مخفی کردن دکمه حذف
+    toggleRemoveButton();
+    
+    // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
+    updateInsuranceStatus();
+    
+    // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
+    if (!selectedValue || selectedValue === '' || selectedValue === null) {
+      console.log('🏥 V2: Supplementary plan cleared → Patient has NO supplementary insurance');
+    } else {
+      console.log('🏥 V2: Supplementary plan selected:', selectedValue, '- Persisting...');
+    }
+    
     persist();
   });
 
@@ -258,9 +471,27 @@
 
   // Initialization: لود لیست‌ها
   $(document).ready(function() {
-    loadPlans().catch(function(err) {
-      console.warn('🏥 V2: Failed to load insurance plans on init:', err);
-    });
+    // بارگذاری لیست بیمه‌ها
+    loadPlans()
+      .then(function() {
+        // پس از لود شدن بیمه‌ها، وضعیت فعلی را در cache ذخیره کن
+        saveToCache();
+        console.log('🏥 V2: Initial insurance state cached:', cache);
+        
+        // به‌روزرسانی نمایش وضعیت در UI
+        updateInsuranceStatus();
+      })
+      .catch(function(err) {
+        console.warn('🏥 V2: Failed to load insurance plans on init:', err);
+      });
+    
+    // نمایش/مخفی کردن دکمه حذف بیمه تکمیلی بر اساس مقدار فعلی
+    toggleRemoveButton();
+    
+    // به‌روزرسانی نمایش وضعیت در UI (اگر بیمه‌ها از قبل انتخاب شده باشند)
+    setTimeout(function() {
+      updateInsuranceStatus();
+    }, 500); // کمی تأخیر برای اطمینان از لود شدن dropdown‌ها
   });
 
 })(jQuery, window.ReceptionAPI, window.RxUtils);

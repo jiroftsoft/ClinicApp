@@ -1,6 +1,12 @@
 @model ClinicApp.ViewModels.Reception.InsuranceSectionVM
 <div class="card mb-3">
-  <div class="card-header">بیمه</div>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>بیمه</strong>
+    <small id="insurance-status" class="text-muted" style="font-size: 0.85rem;">
+      <span id="current-base-insurance" class="badge bg-info me-1">—</span>
+      <span id="current-supp-insurance" class="badge bg-secondary">—</span>
+    </small>
+  </div>
   <div class="card-body row g-2 align-items-end">
     <div class="col-md-6">
       @Html.LabelFor(m => m.BasePlanId, new { @class = "form-label" })
@@ -8,9 +14,16 @@
       @Html.ValidationMessageFor(m => m.BasePlanId, null, new { @class = "text-danger small" })
     </div>
     <div class="col-md-6">
-      @Html.LabelFor(m => m.SupplementaryPlanId, new { @class = "form-label" })
-      @Html.DropDownListFor(m => m.SupplementaryPlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "SuppPlanId" })
-      @Html.ValidationMessageFor(m => m.SupplementaryPlanId, null, new { @class = "text-danger small" })
+      <div class="d-flex gap-2 align-items-end">
+        <div class="flex-grow-1">
+          @Html.LabelFor(m => m.SupplementaryPlanId, new { @class = "form-label" })
+          @Html.DropDownListFor(m => m.SupplementaryPlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "SuppPlanId" })
+          @Html.ValidationMessageFor(m => m.SupplementaryPlanId, null, new { @class = "text-danger small" })
+        </div>
+        <button id="btnRemoveSupp" class="btn btn-outline-danger btn-sm" type="button" title="حذف بیمه تکمیلی" style="display: none;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
     <div class="col-12">
       <button id="BtnSetInsurances" class="btn btn-outline-primary">ثبت/بازمحاسبه</button>
