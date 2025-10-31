@@ -182,17 +182,30 @@
           const patientStr = pricingData.PatientPayableIRRStr || pricingData.patientPayableIRRStr || U.toIRR(patientPayable);
           
           // ✅ ردیف با ستون‌های کامل: کد، نام، تعداد، فی، مبلغ کل، سهم پایه، سهم تکمیلی، سهم بیمار
-          $tb.append(`<tr data-service-id="${serviceId}" data-reception-item-id="${itemData.ReceptionItemId || itemData.receptionItemId || ''}">
-            <td>${serviceCode}</td>
-            <td>${serviceName}</td>
-            <td>${qty}</td>
-            <td>${unitPriceStr}</td>
-            <td>${grossStr}</td>
-            <td>${baseStr}</td>
-            <td>${suppStr}</td>
-            <td>${patientStr}</td>
-            <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
+          var rowId = 'row-' + (itemData.ReceptionItemId || itemData.receptionItemId || serviceId);
+          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" data-reception-item-id="${itemData.ReceptionItemId || itemData.receptionItemId || ''}">
+            <td class="cell-code">${serviceCode}</td>
+            <td class="cell-name">${serviceName}</td>
+            <td class="cell-qty">${qty}</td>
+            <td class="cell-unit">${unitPriceStr}</td>
+            <td class="cell-gross">${grossStr}</td>
+            <td class="cell-base">${baseStr}</td>
+            <td class="cell-supp">${suppStr}</td>
+            <td class="cell-patient">${patientStr}</td>
+            <td class="cell-coverage"><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
           </tr>`);
+          
+          // ✅ ذخیره item و pricing در data و فراخوانی renderRowWithPricing برای badge + highlight
+          var $newRow = $('#' + rowId);
+          $newRow.data('item', itemData);
+          $newRow.data('pricing', pricingData);
+          
+          // استفاده از renderRowWithPricing اگر موجود است
+          if (window.renderRowWithPricing && typeof window.renderRowWithPricing === 'function') {
+            window.renderRowWithPricing(itemData, pricingData);
+          } else if (window.ClinicApp && window.ClinicApp.ReceptionV2 && window.ClinicApp.ReceptionV2.PricingUI) {
+            window.ClinicApp.ReceptionV2.PricingUI.renderRowWithPricing(itemData, pricingData);
+          }
         } else {
           // Fallback: اگر pricing موجود نیست، از items قدیمی استفاده کن
           const items = response.items || response.Items || [];

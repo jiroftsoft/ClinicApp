@@ -191,6 +191,120 @@
     }
   });
 
+  /**
+   * ✅ باز کردن Modal جزئیات پوشش برای یک آیتم خاص (Item Coverage Modal)
+   */
+  function openItemCoverageModal(item, pricing) {
+    if (!$('#rv2-coverage-modal').length) {
+      console.warn('🏥 V2: Coverage modal not found in DOM');
+      return;
+    }
+
+    var c = pricing?.Coverage || pricing?.coverage;
+    if (!c) {
+      toastr.warning('اطلاعات پوشش برای این آیتم موجود نیست');
+      return;
+    }
+
+    $modal = $modal || new bootstrap.Modal(document.getElementById('rv2-coverage-modal'), {});
+    
+    // تغییر تب به "جزئیات آیتم" (یا تب جدید)
+    var serviceName = item?.ServiceName || item?.serviceName || item?.Name || item?.name || '';
+    var serviceCode = item?.ServiceCode || item?.serviceCode || item?.Code || item?.code || '';
+    var qty = item?.Quantity || item?.quantity || 1;
+
+    // ساخت HTML برای segments
+    var segs = (c.Segments || []).map(function(s) {
+      var payerText = s.Payer === 'BASE' ? 'بیمه پایه' : 
+                      s.Payer === 'SUPP' ? 'بیمه تکمیلی' : 'بیمار';
+      var reasonText = humanizeReason(s.Reason || 0);
+      return (
+        '<tr>' +
+        '<td>' + payerText + '</td>' +
+        '<td>' + formatIrr(s.AmountIRR || 0) + '</td>' +
+        '<td>' + reasonText + '<div class="text-muted small mt-1">' + (s.Note || '') + '</div></td>' +
+        '</tr>'
+      );
+    }).join('');
+
+    // ساخت HTML برای caps/franchise
+    var caps = '<ul class="mb-2">';
+    if (c.BaseCapRemainingIRR != null) {
+      caps += '<li>باقیمانده سقف پایه: <b>' + formatIrr(c.BaseCapRemainingIRR) + '</b></li>';
+    }
+    if (c.SuppCapRemainingIRR != null) {
+      caps += '<li>باقیمانده سقف تکمیلی: <b>' + formatIrr(c.SuppCapRemainingIRR) + '</b></li>';
+    }
+    if (c.FranchiseIRR != null && c.FranchiseIRR > 0) {
+      caps += '<li>فرانشیز: <b>' + formatIrr(c.FranchiseIRR) + '</b></li>';
+    }
+    caps += '</ul>';
+
+    // ساخت HTML برای warnings
+    var warns = (c.Warnings || []).map(function(w) {
+      return '<div class="alert alert-warning py-1 my-1 small">' + w + '</div>';
+    }).join('');
+
+    var html = (
+      '<div class="mb-2"><b>خدمت:</b> ' + serviceName + ' (' + serviceCode + ') × ' + qty + '</div>' +
+      caps +
+      warns +
+      '<div class="table-responsive mt-3">' +
+      '<table class="table table-sm table-bordered">' +
+      '<thead><tr><th>پرداخت‌کننده</th><th>مبلغ (ریال)</th><th>دلیل</th></tr></thead>' +
+      '<tbody>' + (segs || '<tr><td colspan="3" class="text-center text-muted">اطلاعاتی موجود نیست</td></tr>') + '</tbody>' +
+      '</table>' +
+      '</div>'
+    );
+
+    // نمایش در تب مؤثر (یا تب جدید)
+    $('#cov-eff').html(html);
+    
+    // فعال کردن تب مؤثر
+    $('#rv2-coverage-modal .nav-link[href="#tab-eff"]').tab('show');
+    
+    $modal.show();
+  }
+
+  /**
+   * ✅ Humanize CoverageReasonCode
+   */
+  function humanizeReason(reasonCode) {
+    switch (reasonCode) {
+      case 1: return 'پوشش توسط بیمه پایه';
+      case 2: return 'پوشش توسط بیمه تکمیلی';
+      case 3: return 'سقف بیمه پایه پر شد';
+      case 4: return 'سقف بیمه تکمیلی پر شد';
+      case 5: return 'فرانشیز اعمال شد';
+      case 6: return 'خارج از شمول پوشش';
+      case 7: return 'پلن بیمه منقضی';
+      case 8: return 'خدمت مستثنی';
+      case 9: return 'تعرفه/تعین‌ست ناقص';
+      case 10: return 'پزشک مجاز برای خدمت/دپارتمان نیست';
+      default: return '—';
+    }
+  }
+
+  // ✅ Click handler روی badge
+  $(document).on('click', '.coverage-badge', function() {
+    var $row = $(this).closest('tr');
+    var item = $row.data('item');
+    var pricing = $row.data('pricing');
+    
+    if (!item || !pricing) {
+      console.warn('🏥 V2: Item or pricing data not found on row');
+      return;
+    }
+    
+    openItemCoverageModal(item, pricing);
+  });
+
+  // Export
+  ns.ReceptionV2.CoverageModal = {
+    open: open,
+    openItemCoverageModal: openItemCoverageModal
+  };
+
   console.log('🏥 V2: Coverage Modal initialized');
 
 })(window, jQuery);

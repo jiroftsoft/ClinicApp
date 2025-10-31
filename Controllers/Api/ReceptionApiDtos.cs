@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ClinicApp.Controllers.Api
@@ -219,6 +221,60 @@ namespace ClinicApp.Controllers.Api
     #region Pricing DTOs
 
     /// <summary>
+    /// ✅ وضعیت پوشش بیمه برای UI (badge و highlight)
+    /// </summary>
+    public enum CoverageState
+    {
+        None = 0,      // بدون پوشش
+        Partial = 1,   // بخشی پوشش (مثلاً سقف)
+        Full = 2       // پوشش کامل
+    }
+
+    /// <summary>
+    /// ✅ کد علت پوشش/عدم پوشش برای UI (tooltip و modal)
+    /// </summary>
+    public enum CoverageReasonCode
+    {
+        None = 0,
+        BaseCovered,               // پوشش توسط پایه
+        SuppCovered,               // پوشش توسط تکمیلی
+        BaseCapReached,            // سقف پایه پر شد
+        SuppCapReached,            // سقف تکمیلی پر شد
+        FranchiseApplied,          // فرانشیز اعمال شد
+        NotInCoverage,             // در شمول پوشش نبود
+        PlanExpired,               // پایان اعتبار پلن
+        ServiceExcluded,           // خدمت مستثنی
+        MissingPricing,            // تعرفه/تعین‌ست ناقص
+        DoctorNotEligible         // پزشک مجاز برای آن خدمت/دپارتمان نیست
+    }
+
+    /// <summary>
+    /// ✅ DTO برای یک segment پوشش (پرداخت‌کننده + مبلغ + علت)
+    /// </summary>
+    public sealed class CoverageSegmentDto
+    {
+        public string Payer { get; set; } // "BASE" | "SUPP" | "PATIENT"
+        public long AmountIRR { get; set; }
+        public CoverageReasonCode Reason { get; set; }
+        public string Note { get; set; } // پیام کوتاه برای tooltip
+    }
+
+    /// <summary>
+    /// ✅ DTO برای جزئیات پوشش بیمه (state + segments + caps/franchise)
+    /// </summary>
+    public sealed class CoverageDetailsDto
+    {
+        public CoverageState State { get; set; }
+        public List<CoverageSegmentDto> Segments { get; set; } = new List<CoverageSegmentDto>();
+        
+        // ✅ اختیاری: اطلاعات سقف/فرانشیز برای modal
+        public long? BaseCapRemainingIRR { get; set; }
+        public long? SuppCapRemainingIRR { get; set; }
+        public long? FranchiseIRR { get; set; }
+        public List<string> Warnings { get; set; } = new List<string>(); // پیام‌های قابل نمایش
+    }
+
+    /// <summary>
     /// ✅ DTO برای شکست محاسبه هر آیتم (جزئیات کامل سهم‌ها)
     /// </summary>
     public sealed class PricingBreakdownDto
@@ -232,12 +288,15 @@ namespace ClinicApp.Controllers.Api
         public long PatientPayableIRR { get; set; } // سهم بیمار نهایی
         public string[] Notes { get; set; }         // نکات/رول‌های اعمال شده (فرانشیز/سقف/استثنا)
         
-        // Friendly strings
+        // ✅ Friendly strings
         public string UnitPriceIRRStr { get; set; }
         public string GrossIRRStr { get; set; }
         public string BaseCoveredIRRStr { get; set; }
         public string SuppCoveredIRRStr { get; set; }
         public string PatientPayableIRRStr { get; set; }
+        
+        // ✅ جزئیات پوشش برای UI (badge + highlight + modal)
+        public CoverageDetailsDto Coverage { get; set; }
     }
 
     /// <summary>

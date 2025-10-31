@@ -168,6 +168,7 @@ namespace ClinicApp
                 "~/Scripts/jquery.inputmask.bundle.min.js",
                 "~/Scripts/reception.v2/reception-api.js",
                 "~/Scripts/reception.v2/reception-utils.js",
+                "~/Scripts/reception.v2/pricing-ui.js",
                 "~/Scripts/reception.v2/form-change-detector.js",
                 "~/Scripts/reception.v2/auto-draft-manager.js",
                 "~/Scripts/reception.v2/summary-header.js",

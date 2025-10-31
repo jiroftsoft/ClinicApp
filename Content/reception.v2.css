@@ -7,3 +7,45 @@
 @media print {
   .reception-pro__header, .reception-pro__section, .reception-pro__sticky button { display: none !important; }
 }
+
+/* ✅ Coverage Badge Styles */
+.badge.cov-good { 
+  background: #198754; 
+  color: white;
+  cursor: pointer;
+}
+.badge.cov-warn { 
+  background: #f39c12; 
+  color: white;
+  cursor: pointer;
+}
+.badge.cov-bad { 
+  background: #dc3545; 
+  color: white;
+  cursor: pointer;
+}
+
+/* ✅ Row Highlight Styles */
+tr.row-good { 
+  outline: 2px solid rgba(25, 135, 84, 0.2); 
+  border-left: 3px solid #198754;
+}
+tr.row-warn { 
+  outline: 2px solid rgba(243, 156, 18, 0.25); 
+  background: #fffaf1;
+  border-left: 3px solid #f39c12;
+}
+tr.row-bad { 
+  outline: 2px solid rgba(220, 53, 69, 0.25); 
+  background: #fff5f6;
+  border-left: 3px solid #dc3545;
+}
+
+/* ✅ Coverage Legend */
+.coverage-legend {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.coverage-legend .badge {
+  margin-left: 0.5rem;
+}

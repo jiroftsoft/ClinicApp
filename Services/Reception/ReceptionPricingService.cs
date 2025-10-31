@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Data.Entity;
+using System.Collections.Generic;
 using ClinicApp.Controllers.Api;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models;
@@ -138,6 +139,16 @@ namespace ClinicApp.Services.Reception
                     }
                 }
 
+                // ✅ ساخت CoverageDetails برای UI (badge + highlight + modal)
+                var coverageDetails = BuildCoverageDetails(
+                    gross: gross,
+                    baseCovered: baseCovered,
+                    suppCovered: suppCovered,
+                    patientPayable: patientPayable,
+                    reception: reception,
+                    snapshotJson: item.SnapshotJson
+                );
+
                 var result = new PricingBreakdownDto
                 {
                     ServiceId = item.ServiceId,
@@ -152,7 +163,8 @@ namespace ClinicApp.Services.Reception
                     GrossIRRStr = ((decimal)gross).ToIrrString(),
                     BaseCoveredIRRStr = ((decimal)baseCovered).ToIrrString(),
                     SuppCoveredIRRStr = ((decimal)suppCovered).ToIrrString(),
-                    PatientPayableIRRStr = ((decimal)patientPayable).ToIrrString()
+                    PatientPayableIRRStr = ((decimal)patientPayable).ToIrrString(),
+                    Coverage = coverageDetails
                 };
 
                 _logger.Information("✅ PRICING SERVICE: جزئیات قیمت محاسبه شد - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}", 
@@ -292,6 +304,164 @@ namespace ClinicApp.Services.Reception
                 _logger.Error(ex, "❌ PRICING SERVICE: خطا در محاسبه مجدد پذیرش - ReceptionId: {ReceptionId}", receptionId);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// ✅ ساخت CoverageDetails از مقادیر محاسبه شده
+        /// </summary>
+        private CoverageDetailsDto BuildCoverageDetails(
+            long gross,
+            long baseCovered,
+            long suppCovered,
+            long patientPayable,
+            Models.Entities.Reception.Reception reception,
+            string snapshotJson)
+        {
+            var coverage = new CoverageDetailsDto();
+
+            // ✅ State: Full اگر patientPayable = 0، Partial اگر بخشی پوشش، None اگر هیچ پوششی نیست
+            if (patientPayable == 0 && (baseCovered > 0 || suppCovered > 0))
+            {
+                coverage.State = CoverageState.Full;
+            }
+            else if (baseCovered > 0 || suppCovered > 0)
+            {
+                coverage.State = CoverageState.Partial;
+            }
+            else
+            {
+                coverage.State = CoverageState.None;
+            }
+
+            // ✅ Segments: ساخت لیست پرداخت‌کنندگان
+            if (baseCovered > 0)
+            {
+                bool capHit = false;
+                long? capRemaining = null;
+
+                // استخراج اطلاعات سقف از SnapshotJson
+                if (!string.IsNullOrEmpty(snapshotJson))
+                {
+                    try
+                    {
+                        var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(snapshotJson);
+                        if (snapshot != null)
+                        {
+                            // بررسی اینکه آیا سقف اعمال شده است
+                            if (snapshot.BaseInsuranceCoverage != null)
+                            {
+                                var coveragePercent = (decimal)snapshot.BaseInsuranceCoverage;
+                                var expectedCoverage = gross * (coveragePercent / 100m);
+                                if (baseCovered < expectedCoverage)
+                                {
+                                    capHit = true;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore
+                    }
+                }
+
+                coverage.Segments.Add(new CoverageSegmentDto
+                {
+                    Payer = "BASE",
+                    AmountIRR = baseCovered,
+                    Reason = capHit ? CoverageReasonCode.BaseCapReached : CoverageReasonCode.BaseCovered,
+                    Note = capHit ? "پوشش پایه تا سقف اعمال شد" : "پوشش توسط بیمه پایه"
+                });
+            }
+
+            if (suppCovered > 0)
+            {
+                bool capHit = false;
+
+                // استخراج اطلاعات سقف از SnapshotJson
+                if (!string.IsNullOrEmpty(snapshotJson))
+                {
+                    try
+                    {
+                        var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(snapshotJson);
+                        if (snapshot != null)
+                        {
+                            if (snapshot.SupplementaryCoverage != null)
+                            {
+                                var coveragePercent = (decimal)snapshot.SupplementaryCoverage;
+                                var remainderAfterBase = gross - baseCovered;
+                                var expectedCoverage = remainderAfterBase * (coveragePercent / 100m);
+                                if (suppCovered < expectedCoverage)
+                                {
+                                    capHit = true;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore
+                    }
+                }
+
+                coverage.Segments.Add(new CoverageSegmentDto
+                {
+                    Payer = "SUPP",
+                    AmountIRR = suppCovered,
+                    Reason = capHit ? CoverageReasonCode.SuppCapReached : CoverageReasonCode.SuppCovered,
+                    Note = capHit ? "پوشش تکمیلی تا سقف اعمال شد" : "پوشش توسط بیمه تکمیلی"
+                });
+            }
+
+            if (patientPayable > 0)
+            {
+                bool excluded = false;
+                long? franchise = null;
+
+                // بررسی فرانشیز از SnapshotJson
+                if (!string.IsNullOrEmpty(snapshotJson))
+                {
+                    try
+                    {
+                        var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(snapshotJson);
+                        if (snapshot != null)
+                        {
+                            // اگر FranchisePercent وجود دارد، احتمالاً فرانشیز اعمال شده
+                            if (snapshot.FranchisePercent != null || snapshot.FranchiseIRR != null)
+                            {
+                                franchise = snapshot.FranchiseIRR != null ? (long)snapshot.FranchiseIRR : null;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore
+                    }
+                }
+
+                coverage.Segments.Add(new CoverageSegmentDto
+                {
+                    Payer = "PATIENT",
+                    AmountIRR = patientPayable,
+                    Reason = franchise.HasValue ? CoverageReasonCode.FranchiseApplied : 
+                             (baseCovered == 0 && suppCovered == 0 ? CoverageReasonCode.NotInCoverage : CoverageReasonCode.None),
+                    Note = franchise.HasValue ? $"فرانشیز بر عهده بیمار: {((decimal)franchise.Value).ToIrrString()}" :
+                           (baseCovered == 0 && suppCovered == 0 ? "این خدمت در شمول پوشش نیست" : "سهم باقیمانده بیمار")
+                });
+
+                if (franchise.HasValue)
+                {
+                    coverage.FranchiseIRR = franchise.Value;
+                }
+            }
+
+            // ✅ Warnings: پیام‌های قابل نمایش
+            if (baseCovered == 0 && suppCovered == 0 && gross > 0)
+            {
+                coverage.Warnings.Add("این خدمت در شمول پوشش نیست.");
+            }
+
+            return coverage;
         }
     }
 }

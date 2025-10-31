@@ -3812,6 +3812,8 @@
     <Content Include="Content\plugins\SweetAlert2\sweetalert2.min.css" />
     <Content Include="Content\plugins\toastr\toastr.min.css" />
     <Content Include="Content\plugins\toastr\toastr.min.js" />
+    <Content Include="Content\reception-v2.css" />
+    <Content Include="Content\reception.v2.css" />
     <Content Include="Content\toastr.css" />
     <Content Include="Content\toastr.min.css" />
     <Content Include="favicon.ico" />
@@ -4457,6 +4459,7 @@
     <Content Include="Scripts\popper.min.js" />
     <Content Include="Scripts\reception.v2\auto-draft-manager.js" />
     <Content Include="Scripts\reception.v2\clinic-dept-doctor.js" />
+    <Content Include="Scripts\reception.v2\coverage-modal.js" />
     <Content Include="Scripts\reception.v2\form-change-detector.js" />
     <Content Include="Scripts\reception.v2\insurance-panel.js" />
     <Content Include="Scripts\reception.v2\patient-lookup.js" />
