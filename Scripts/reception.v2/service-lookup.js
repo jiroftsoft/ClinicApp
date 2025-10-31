@@ -352,9 +352,160 @@
       });
   });
   
+  /**
+   * ✅ تغییر خدمت/تعداد یک آیتم با پیش‌چک تعیین‌ست و Reprice
+   * @param {number} itemId - ReceptionItemId
+   * @param {number} serviceId - ServiceId جدید
+   * @param {number} qty - Quantity جدید
+   */
+  async function changeItemService(itemId, serviceId, qty) {
+    try {
+      // ✅ Draft Orchestrator: اطمینان از وجود Draft
+      if (!window.AutoDraftManager || typeof window.AutoDraftManager.ensureDraftOrSkip !== 'function') {
+        console.error('🏥 V2: AutoDraftManager not available');
+        toastr.error('سیستم پیش‌نویس در دسترس نیست. لطفاً صفحه را نوسازی کنید.');
+        return;
+      }
+
+      const receptionId = parseInt($('#ReceptionId').val(), 10);
+      const draft = await window.AutoDraftManager.ensureDraftOrSkip({
+        patientId: $('#Patient_PatientId').val(),
+        clinicId: $('#ClinicId').val(),
+        departmentId: $('#DepartmentId').val(),
+        doctorId: $('#DoctorId').val(),
+        receptionId: receptionId
+      });
+
+      if (!draft || !draft.id) {
+        console.warn('🏥 V2: Cannot change item service, draft creation failed or missing required fields');
+        window.AutoDraftManager?.warnDraftMissing();
+        return;
+      }
+
+      const payload = {
+        receptionId: draft.id,
+        receptionItemId: itemId,
+        serviceId: serviceId,
+        quantity: qty || 1,
+        departmentId: parseInt($('#DepartmentId').val(), 10),
+        doctorId: parseInt($('#DoctorId').val(), 10),
+        financialYearId: window.ReceptionBootstrap?.FinancialYearId || 1, // TODO: از Bootstrap بگیر
+        basePlanId: parseInt($('#BasePlanId').val(), 10) || null,
+        supplementaryPlanId: parseInt($('#SuppPlanId').val(), 10) || null
+      };
+
+      console.log('🏥 V2: Changing item service:', payload);
+
+      // ✅ Busy state برای ردیف
+      const $row = $('#row-' + itemId);
+      if ($row.length) {
+        $row.addClass('table-warning');
+      }
+
+      const fullResponse = await API.post('/item/update-service', payload);
+      
+      // ✅ Busy state را بردار
+      if ($row.length) {
+        $row.removeClass('table-warning');
+      }
+
+      // بررسی پاسخ
+      if (!fullResponse) {
+        toastr.error('خطا در به‌روزرسانی آیتم');
+        return;
+      }
+
+      const response = API.ok(fullResponse);
+      const successValue = fullResponse?.Success ?? fullResponse?.success;
+      const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+      // ✅ بررسی INSURANCE_SET_MISSING
+      if (fullResponse?.Code === 'INSURANCE_SET_MISSING' || fullResponse?.code === 'INSURANCE_SET_MISSING') {
+        const meta = fullResponse?.Metadata?.meta || fullResponse?.metadata?.meta || {};
+        const createTariffUrl = meta.createTariffUrl || `/InsuranceTariff/Create?serviceId=${serviceId}&planId=${(payload.basePlanId || payload.supplementaryPlanId)}`;
+
+        // ✅ Confirm Dialog
+        const message = `
+          برای این خدمت تعیین‌ست بیمه‌ای پیدا نشد.<br>
+          می‌خواهید آیتم با «پرداخت کامل بیمار» ثبت شود؟
+        `;
+
+        // استفاده از SweetAlert2 اگر موجود است، وگرنه confirm ساده
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+          const result = await window.Swal.fire({
+            title: 'تعیین‌ست بیمه‌ای یافت نشد',
+            html: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ثبت با پرداخت کامل',
+            cancelButtonText: 'انصراف',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33'
+          });
+
+          if (result.isConfirmed) {
+            // TODO: اگر مسیر سریع «پرداخت کامل بیمار» داری، از آن استفاده کن
+            // فعلاً فقط پیام می‌دهیم
+            toastr.info('این قابلیت در حال توسعه است. لطفاً تعیین‌ست بیمه‌ای را تعریف کنید.');
+            // window.location.href = createTariffUrl; // اگر می‌خواهی لینک باز شود
+          }
+        } else {
+          // Fallback: استفاده از confirm ساده
+          const ok = confirm('برای این خدمت تعیین‌ست بیمه‌ای پیدا نشد.\nمی‌خواهید آیتم با «پرداخت کامل بیمار» ثبت شود؟');
+          if (ok) {
+            toastr.info('این قابلیت در حال توسعه است. لطفاً تعیین‌ست بیمه‌ای را تعریف کنید.');
+          }
+        }
+
+        return;
+      }
+
+      if (!isSuccess) {
+        const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در به‌روزرسانی آیتم';
+        console.warn('🏥 V2: UpdateItemService failed:', errorMsg, fullResponse);
+        toastr.warning(errorMsg);
+        return;
+      }
+
+      // ✅ موفق: به‌روزرسانی همان ردیف + Totals
+      const pricing = response?.pricing || response?.Pricing || fullResponse?.Data?.pricing || fullResponse?.Data?.Pricing;
+      const totals = response?.totals || response?.Totals || fullResponse?.Data?.totals || fullResponse?.Data?.Totals;
+
+      if (pricing) {
+        // به‌روزرسانی ردیف با pricing
+        if (window.updateRowPricing && typeof window.updateRowPricing === 'function') {
+          window.updateRowPricing(itemId, pricing);
+        } else if (window.ClinicApp && window.ClinicApp.ReceptionV2 && window.ClinicApp.ReceptionV2.PricingUI) {
+          window.ClinicApp.ReceptionV2.PricingUI.updateRowPricing(itemId, pricing);
+        } else {
+          // Fallback: استفاده از renderRowWithPricing
+          const item = { ReceptionItemId: itemId, Id: itemId, receptionItemId: itemId, id: itemId };
+          if (window.renderRowWithPricing && typeof window.renderRowWithPricing === 'function') {
+            window.renderRowWithPricing(item, pricing);
+          }
+        }
+      }
+
+      if (totals) {
+        // به‌روزرسانی Totals
+        if (window.updateTotalsUI && typeof window.updateTotalsUI === 'function') {
+          window.updateTotalsUI(totals);
+        } else if (window.insurancePanelModule && typeof window.insurancePanelModule.updateTotalsUI === 'function') {
+          window.insurancePanelModule.updateTotalsUI(totals);
+        }
+      }
+
+      toastr.success('آیتم به‌روزرسانی و مجدد محاسبه شد.');
+    } catch (err) {
+      console.error('🏥 V2: Change item service error:', err);
+      toastr.error('خطا در به‌روزرسانی خدمت آیتم');
+    }
+  }
+
   // Export برای استفاده در ماژول‌های دیگر
   window.serviceLookupModule = {
-    loadServices: loadServices
+    loadServices: loadServices,
+    changeItemService: changeItemService // ✅ جدید: برای تغییر خدمت
   };
   
   // Initialize - اگر دپارتمان از قبل انتخاب شده، خدمات را لود کن

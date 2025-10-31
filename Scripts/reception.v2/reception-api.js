@@ -182,10 +182,30 @@
     return (res && (res.Success === true || res.success === true)) ? (res.Data ?? res.data ?? res) : res;
   }
 
+  // ✅ Race-safe: Token برای Reprice (ضد درخواست‌های کهنه)
+  let currentPricingToken = 0;
+
+  /**
+   * ✅ setInsurancesAndReprice: با Token برای دور انداختن پاسخ‌های کهنه
+   */
+  async function setInsurancesAndReprice(payload) {
+    const token = ++currentPricingToken;
+    const res = await ajaxWithFallback('POST', '/insurances/set', payload);
+    
+    // اگر token تغییر کرده، پاسخ کهنه را دور بینداز
+    if (token !== currentPricingToken) {
+      console.warn('🏥 V2: Reprice response ignored (outdated token)', token, currentPricingToken);
+      return null;
+    }
+    
+    return res;
+  }
+
   // Public API
   w.ReceptionAPI = {
     get: (path, params) => ajaxWithFallback('GET', path + (params ? ('?' + $.param(params)) : ''), null),
     post: (path, body) => ajaxWithFallback('POST', path, body),
-    ok: ok
+    ok: ok,
+    setInsurancesAndReprice: setInsurancesAndReprice // ✅ جدید: برای Reprice با Token
   };
 })(window, jQuery);

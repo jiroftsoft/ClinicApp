@@ -36,6 +36,54 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// ✅ افزودن Code به ServiceResult (استفاده از Metadata + Reflection)
+        /// </summary>
+        public static ServiceResult WithCode(this ServiceResult result, string code)
+        {
+            if (result == null) return result;
+            // ذخیره Code در Metadata
+            result.Metadata["Code"] = code;
+            // سعی کن Code property را set کن (با Reflection)
+            try
+            {
+                var prop = typeof(ServiceResult).GetProperty("Code", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (prop != null && prop.CanWrite)
+                {
+                    prop.SetValue(result, code, null);
+                }
+            }
+            catch
+            {
+                // اگر Reflection خطا داد، فقط Metadata استفاده می‌شود
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// ✅ افزودن Code به ServiceResult&lt;T&gt; (استفاده از Metadata + Reflection)
+        /// </summary>
+        public static ServiceResult<T> WithCode<T>(this ServiceResult<T> result, string code)
+        {
+            if (result == null) return result;
+            // ذخیره Code در Metadata
+            result.Metadata["Code"] = code;
+            // سعی کن Code property را set کن (با Reflection)
+            try
+            {
+                var prop = typeof(ServiceResult<T>).GetProperty("Code", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (prop != null && prop.CanWrite)
+                {
+                    prop.SetValue(result, code, null);
+                }
+            }
+            catch
+            {
+                // اگر Reflection خطا داد، فقط Metadata استفاده می‌شود
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Overload برای ServiceResult&lt;T&gt;
         /// </summary>
         public static ServiceResult<T> WithExceptionDev<T>(this ServiceResult<T> result, Exception ex)

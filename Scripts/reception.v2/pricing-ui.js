@@ -285,17 +285,42 @@
     $('#PatientPayable, #SumPatient').text(patientStr).attr('data-value', patient);
   }
 
+  /**
+   * ✅ به‌روزرسانی یک ردیف با pricing (برای Reprice)
+   * @param {number} receptionItemId - شناسه ReceptionItem
+   * @param {object} pricing - PricingBreakdownDto
+   */
+  function updateRowPricing(receptionItemId, pricing) {
+    if (!receptionItemId || !pricing) {
+      console.warn('🏥 V2: updateRowPricing called with invalid params:', receptionItemId, pricing);
+      return;
+    }
+
+    // پیدا کردن item از pricing (اگر موجود باشد)
+    var item = {
+      ReceptionItemId: receptionItemId,
+      Id: receptionItemId,
+      receptionItemId: receptionItemId,
+      id: receptionItemId
+    };
+
+    // استفاده از renderRowWithPricing موجود
+    renderRowWithPricing(item, pricing);
+  }
+
   // ✅ Export
   ns.ReceptionV2.PricingUI = {
     renderRowWithPricing: renderRowWithPricing,
     renderCoverageBadge: renderCoverageBadge,
     updateTotalsUI: updateTotalsUI,
+    updateRowPricing: updateRowPricing, // ✅ جدید: برای Reprice
     covStateClass: covStateClass
   };
 
   // ✅ Global برای استفاده در ماژول‌های دیگر
   w.renderRowWithPricing = renderRowWithPricing;
   w.updateTotalsUI = updateTotalsUI;
+  w.updateRowPricing = updateRowPricing; // ✅ جدید
 
   console.log('🏥 V2: PricingUI module initialized');
 

@@ -226,8 +226,19 @@
     console.log('🏥 V2: Persisting insurances:', payload);
     console.log('🏥 V2: SupplementaryPlanId:', supplementaryPlanId === null ? 'NULL (No supplementary insurance)' : supplementaryPlanId);
 
-    return API.post('/insurances/set', payload)
+    // ✅ استفاده از setInsurancesAndReprice برای Token-based race safety
+    const repricePromise = window.ReceptionAPI && typeof window.ReceptionAPI.setInsurancesAndReprice === 'function'
+      ? window.ReceptionAPI.setInsurancesAndReprice(payload)
+      : API.post('/insurances/set', payload);
+
+    return repricePromise
       .then(function(fullResponse) {
+        // اگر token outdated بود، null برمی‌گرداند
+        if (fullResponse === null) {
+          console.warn('🏥 V2: Reprice response ignored (outdated)');
+          return;
+        }
+
         // Log کامل response برای دیباگ
         console.log('🏥 V2: Full SetInsurances API response:', fullResponse);
         
@@ -259,13 +270,23 @@
         const response = API.ok(responseObj);
         console.log('🏥 V2: Insurances persisted successfully:', response);
         
+        // ✅ گام 3.3: به‌روزرسانی همه ردیف‌ها با pricings
+        const pricings = response.pricings || response.Pricings || responseObj?.Data?.pricings || responseObj?.Data?.Pricings || [];
+        if (pricings && Array.isArray(pricings) && pricings.length > 0) {
+          console.log('🏥 V2: Updating all rows with pricings:', pricings.length);
+          pricings.forEach(function(p) {
+            const itemId = p.ReceptionItemId || p.receptionItemId;
+            if (itemId) {
+              updateRowPricing(itemId, p);
+            }
+          });
+        }
+        
         // ✅ به‌روزرسانی Totals از پاسخ API (اگر موجود باشد)
-        if (response && response.totals) {
-          console.log('🏥 V2: Totals received in SetInsurances response:', response.totals);
-          updateTotalsUI(response.totals);
-        } else if (response && response.Data && response.Data.totals) {
-          console.log('🏥 V2: Totals received in SetInsurances response.Data:', response.Data.totals);
-          updateTotalsUI(response.Data.totals);
+        const totals = response.totals || response.Totals || responseObj?.Data?.totals || responseObj?.Data?.Totals;
+        if (totals) {
+          console.log('🏥 V2: Totals received in SetInsurances response:', totals);
+          updateTotalsUI(totals);
         } else if (receptionId) {
           // Fallback: اگر totals در پاسخ نیست، از API جداگانه دریافت کن
           console.log('🏥 V2: Totals not in response, fetching separately...');

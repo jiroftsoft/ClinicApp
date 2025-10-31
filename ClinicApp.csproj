@@ -570,6 +570,7 @@
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\ReceptionAjaxHelper.cs" />
+    <Compile Include="Helpers\ReceptionApiCodes.cs" />
     <Compile Include="Helpers\SafeSqlBuilder.cs" />
     <Compile Include="Helpers\Security\SecurityLogger.cs" />
     <Compile Include="Helpers\Security\SensitiveDataMaskingHelper.cs" />
@@ -4464,6 +4465,7 @@
     <Content Include="Scripts\reception.v2\insurance-panel.js" />
     <Content Include="Scripts\reception.v2\patient-lookup.js" />
     <Content Include="Scripts\reception.v2\payment-panel.js" />
+    <Content Include="Scripts\reception.v2\pricing-ui.js" />
     <Content Include="Scripts\reception.v2\reception-api.js" />
     <Content Include="Scripts\reception.v2\reception-main.js" />
     <Content Include="Scripts\reception.v2\reception-utils.js" />

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using ClinicApp.Controllers.Api;
 
 namespace ClinicApp.Interfaces.Reception
@@ -21,8 +22,21 @@ namespace ClinicApp.Interfaces.Reception
 
         /// <summary>
         /// محاسبه مجدد همه آیتم‌های پذیرش (برای زمانی که بیمه تغییر می‌کند)
+        /// ✅ بهبود یافته: برگرداندن totals و pricings برای UI
         /// </summary>
-        Task RepriceAllAsync(int receptionId);
+        Task<(ReceptionTotalsDto totals, List<PricingBreakdownDto> pricings)> RepriceAllAsync(int receptionId);
+
+        /// <summary>
+        /// ✅ بررسی وجود تعیین‌ست بیمه‌ای برای خدمت (قبل از افزودن/تغییر)
+        /// </summary>
+        /// <returns>(ok, code, message, meta) - ok=true اگر تعیین‌ست موجود است</returns>
+        Task<(bool ok, string code, string message, object meta)> CheckInsuranceSetAsync(
+            int serviceId, 
+            int? departmentId, 
+            int? doctorId, 
+            int financialYearId, 
+            int? basePlanId, 
+            int? suppPlanId);
     }
 }
 

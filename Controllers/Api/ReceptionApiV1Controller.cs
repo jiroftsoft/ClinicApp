@@ -695,18 +695,41 @@ namespace ClinicApp.Controllers.Api
                     {
                         _logger?.Information("✅ V1 API: بیمه‌های پیش‌نویس با موفقیت تنظیم شد - ReceptionId: {ReceptionId}", request.ReceptionId);
                         
-                        // ✅ پس از Reprice، Totals را محاسبه و ضمیمه پاسخ کنید
+                        // ✅ پس از Reprice، Totals و Pricings را محاسبه و ضمیمه پاسخ کنید
                         try
                         {
-                            var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
-                            return Json(ServiceResult<object>.Successful(new { totals }, "بیمه اعمال و محاسبه شد."));
+                            var (totals, pricings) = await _pricing.RepriceAllAsync(request.ReceptionId);
+                            
+                            var responseData = new
+                            {
+                                totals,
+                                pricings = pricings ?? new List<Controllers.Api.PricingBreakdownDto>()
+                            };
+                            
+                            _logger?.Information("✅ V1 API: Reprice کامل شد - ReceptionId: {ReceptionId}, ItemsCount: {Count}, Gross: {Gross}", 
+                                request.ReceptionId, pricings?.Count ?? 0, totals?.GrossIRR ?? 0);
+                            
+                            return Json(ServiceResult<object>.Successful(responseData, "بیمه اعمال و محاسبه شد.")
+                                .WithCode(ReceptionApiCodes.PRICING_RECALCULATED));
                         }
                         catch (Exception pricingEx)
                         {
-                            _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در محاسبه Totals پس از SetInsurances - ReceptionId: {ReceptionId}", 
+                            _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در RepriceAll پس از SetInsurances - ReceptionId: {ReceptionId}", 
                                 request.ReceptionId);
-                            // Fallback: فقط نتیجه SetInsurances را برگردان
-                            return Json(result);
+                            
+                            // Fallback: فقط Totals را محاسبه کن
+                            try
+                            {
+                                var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                                return Json(ServiceResult<object>.Successful(new { totals }, "بیمه اعمال شد (خطا در Reprice)."));
+                            }
+                            catch (Exception totalsEx)
+                            {
+                                _logger?.Warning(totalsEx, "⚠️ V1 API: خطا در محاسبه Totals (fallback) - ReceptionId: {ReceptionId}", 
+                                    request.ReceptionId);
+                                // Fallback نهایی: فقط نتیجه SetInsurances را برگردان
+                                return Json(result);
+                            }
                         }
                     }
                     else
@@ -995,6 +1018,117 @@ namespace ClinicApp.Controllers.Api
                 _logger?.Error(ex, "❌ V1 API: خطا در حذف آیتم - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
                     request?.ReceptionId, request?.ServiceId);
                 return Json(ServiceResult<ItemsAndTotalsDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/item/update-service
+        /// ✅ تغییر خدمت/تعداد یک آیتم با پیش‌چک تعیین‌ست و Reprice
+        /// </summary>
+        [HttpPost, Route("item/update-service")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> UpdateItemService(UpdateItemServiceRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: تغییر خدمت آیتم - ReceptionItemId: {ReceptionItemId}, ServiceId: {ServiceId}, Quantity: {Quantity}", 
+                    request?.ReceptionItemId, request?.ServiceId, request?.Quantity);
+
+                if (request == null || request.ReceptionItemId <= 0 || request.ServiceId <= 0 || request.Quantity <= 0)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionItemId، ServiceId و Quantity الزامی هستند.", ReceptionApiCodes.VALIDATION));
+                }
+
+                // ✅ بررسی Reception وجود دارد
+                var reception = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == request.ReceptionId && !r.IsDeleted);
+
+                if (reception == null)
+                {
+                    return Json(ServiceResult.Failed("پذیرش یافت نشد.", ReceptionApiCodes.NOT_FOUND));
+                }
+
+                // ✅ بررسی ReceptionItem وجود دارد
+                var item = reception.ReceptionItems.FirstOrDefault(i => i.ReceptionItemId == request.ReceptionItemId && !i.IsDeleted);
+                if (item == null)
+                {
+                    return Json(ServiceResult.Failed("آیتم پذیرش یافت نشد.", ReceptionApiCodes.NOT_FOUND));
+                }
+
+                // ✅ 1) پیش‌چک تعیین‌ست بیمه‌ای
+                if (_pricing != null)
+                {
+                    var (ok, code, message, meta) = await _pricing.CheckInsuranceSetAsync(
+                        serviceId: request.ServiceId,
+                        departmentId: request.DepartmentId,
+                        doctorId: request.DoctorId,
+                        financialYearId: request.FinancialYearId,
+                        basePlanId: request.BasePlanId,
+                        suppPlanId: request.SupplementaryPlanId);
+
+                    if (!ok)
+                    {
+                        _logger?.Warning("⚠️ V1 API: تعیین‌ست بیمه‌ای ناقص - ServiceId: {ServiceId}, Code: {Code}", 
+                            request.ServiceId, code);
+                        
+                        var errorResult = ServiceResult.Failed(message, code);
+                        if (meta != null)
+                        {
+                            errorResult.WithMetadata("meta", meta);
+                        }
+                        
+                        return Json(errorResult);
+                    }
+                }
+
+                // ✅ 2) Update خدمت/تعداد
+                item.ServiceId = request.ServiceId;
+                item.Quantity = request.Quantity;
+                item.UpdatedAt = DateTime.Now;
+                
+                await _context.SaveChangesAsync();
+
+                _logger?.Information("✅ V1 API: آیتم به‌روزرسانی شد - ReceptionItemId: {ReceptionItemId}", request.ReceptionItemId);
+
+                // ✅ 3) Reprice آیتم
+                if (_pricing != null)
+                {
+                    try
+                    {
+                        var pricing = await _pricing.PriceItemAsync(request.ReceptionId, request.ReceptionItemId);
+                        var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+
+                        var responseData = new
+                        {
+                            itemId = request.ReceptionItemId,
+                            pricing,
+                            totals
+                        };
+
+                        _logger?.Information("✅ V1 API: Reprice آیتم کامل شد - ReceptionItemId: {ReceptionItemId}", request.ReceptionItemId);
+                        
+                        return Json(ServiceResult<object>.Successful(responseData, "آیتم به‌روزرسانی و مجدد محاسبه شد.")
+                            .WithCode(ReceptionApiCodes.SUCCESS));
+                    }
+                    catch (Exception pricingEx)
+                    {
+                        _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در Reprice آیتم - ReceptionItemId: {ReceptionItemId}", 
+                            request.ReceptionItemId);
+                        // Fallback: فقط پیام موفقیت
+                        return Json(ServiceResult<object>.Successful(new { itemId = request.ReceptionItemId }, 
+                            "آیتم به‌روزرسانی شد (خطا در محاسبه قیمت)."));
+                    }
+                }
+
+                return Json(ServiceResult<object>.Successful(new { itemId = request.ReceptionItemId }, 
+                    "آیتم به‌روزرسانی شد."));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در به‌روزرسانی خدمت آیتم - ReceptionItemId: {ReceptionItemId}", 
+                    request?.ReceptionItemId);
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, ReceptionApiCodes.UNHANDLED).WithExceptionDev(ex));
             }
         }
 

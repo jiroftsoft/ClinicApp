@@ -200,6 +200,22 @@ namespace ClinicApp.Controllers.Api
         public int ServiceId { get; set; }
     }
 
+    /// <summary>
+    /// ✅ DTO برای درخواست تغییر خدمت/تعداد آیتم
+    /// </summary>
+    public sealed class UpdateItemServiceRequestDto
+    {
+        public int ReceptionId { get; set; }
+        public int ReceptionItemId { get; set; }
+        public int ServiceId { get; set; }
+        public int Quantity { get; set; }
+        public int? DepartmentId { get; set; }
+        public int? DoctorId { get; set; }
+        public int FinancialYearId { get; set; }
+        public int? BasePlanId { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+    }
+
     #endregion
 
     #region Doctor DTOs
@@ -279,6 +295,7 @@ namespace ClinicApp.Controllers.Api
     /// </summary>
     public sealed class PricingBreakdownDto
     {
+        public int ReceptionItemId { get; set; }   // ✅ اضافه شده برای RepriceAll
         public int ServiceId { get; set; }
         public int Quantity { get; set; }
         public long UnitPriceIRR { get; set; }      // مبلغ واحد قبل از پوشش

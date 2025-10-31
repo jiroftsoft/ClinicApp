@@ -5,6 +5,7 @@ using System.Data.Entity;
 using System.Collections.Generic;
 using ClinicApp.Controllers.Api;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
@@ -24,15 +25,18 @@ namespace ClinicApp.Services.Reception
         private readonly IPricingEngine _pricingEngine;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
+        private readonly IFactorSettingService _factorSettingService;
 
         public ReceptionPricingService(
             IPricingEngine pricingEngine,
             ApplicationDbContext context,
-            ILogger logger)
+            ILogger logger,
+            IFactorSettingService factorSettingService)
         {
             _pricingEngine = pricingEngine ?? throw new ArgumentNullException(nameof(pricingEngine));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionPricingService>();
+            _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
         }
 
         /// <summary>
@@ -151,6 +155,7 @@ namespace ClinicApp.Services.Reception
 
                 var result = new PricingBreakdownDto
                 {
+                    ReceptionItemId = item.ReceptionItemId,  // ✅ اضافه شده برای RepriceAll
                     ServiceId = item.ServiceId,
                     Quantity = item.Quantity,
                     UnitPriceIRR = unitPrice,
@@ -287,8 +292,9 @@ namespace ClinicApp.Services.Reception
 
         /// <summary>
         /// محاسبه مجدد همه آیتم‌های پذیرش
+        /// ✅ بهبود یافته: برگرداندن totals و pricings برای UI
         /// </summary>
-        public async Task RepriceAllAsync(int receptionId)
+        public async Task<(ReceptionTotalsDto totals, List<PricingBreakdownDto> pricings)> RepriceAllAsync(int receptionId)
         {
             try
             {
@@ -298,11 +304,153 @@ namespace ClinicApp.Services.Reception
                 await _pricingEngine.RepriceReceptionAsync(receptionId);
 
                 _logger.Information("✅ PRICING SERVICE: محاسبه مجدد پذیرش تکمیل شد - ReceptionId: {ReceptionId}", receptionId);
+
+                // ✅ دریافت Reception با آیتم‌ها برای محاسبه totals و pricings
+                var reception = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ PRICING SERVICE: پذیرش یافت نشد پس از Reprice - ReceptionId: {ReceptionId}", receptionId);
+                    throw new InvalidOperationException($"پذیرش با شناسه {receptionId} یافت نشد");
+                }
+
+                // ✅ محاسبه pricings برای همه آیتم‌ها
+                var pricings = new List<PricingBreakdownDto>();
+                foreach (var item in reception.ReceptionItems.Where(i => !i.IsDeleted))
+                {
+                    try
+                    {
+                        var pricing = await PriceItemAsync(receptionId, item.ReceptionItemId);
+                        pricings.Add(pricing);
+                    }
+                    catch (Exception itemEx)
+                    {
+                        _logger.Warning(itemEx, "⚠️ PRICING SERVICE: خطا در محاسبه قیمت آیتم - ReceptionItemId: {ReceptionItemId}", 
+                            item.ReceptionItemId);
+                        // ادامه با آیتم بعدی
+                    }
+                }
+
+                // ✅ محاسبه totals
+                var totals = await CalculateTotalsAsync(receptionId);
+
+                _logger.Information("✅ PRICING SERVICE: Reprice کامل شد - ReceptionId: {ReceptionId}, ItemsCount: {Count}, Gross: {Gross}", 
+                    receptionId, pricings.Count, totals.GrossIRR);
+
+                return (totals, pricings);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ PRICING SERVICE: خطا در محاسبه مجدد پذیرش - ReceptionId: {ReceptionId}", receptionId);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// ✅ بررسی وجود تعیین‌ست بیمه‌ای برای خدمت
+        /// </summary>
+        public async Task<(bool ok, string code, string message, object meta)> CheckInsuranceSetAsync(
+            int serviceId, 
+            int? departmentId, 
+            int? doctorId, 
+            int financialYearId, 
+            int? basePlanId, 
+            int? suppPlanId)
+        {
+            try
+            {
+                _logger.Information("🔍 PRICING SERVICE: بررسی تعیین‌ست بیمه‌ای - ServiceId: {ServiceId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    serviceId, basePlanId, suppPlanId);
+
+                var missing = new List<string>();
+                var meta = new Dictionary<string, object>
+                {
+                    ["serviceId"] = serviceId,
+                    ["financialYearId"] = financialYearId
+                };
+
+                // ✅ بررسی FactorSetting برای سال مالی (استفاده از IFactorSettingService)
+                try
+                {
+                    var techFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                        ServiceComponentType.Technical, 
+                        false, // فرض: خدمت non-hashtagged برای بررسی کلی
+                        financialYearId);
+
+                    if (techFactor == null)
+                    {
+                        missing.Add("FactorSetting (Technical)");
+                        meta["missingFactorSetting"] = true;
+                    }
+                }
+                catch (Exception factorEx)
+                {
+                    _logger.Warning(factorEx, "⚠️ PRICING SERVICE: خطا در بررسی FactorSetting - FinancialYearId: {FinancialYearId}", 
+                        financialYearId);
+                    missing.Add("FactorSetting (Technical)");
+                    meta["missingFactorSetting"] = true;
+                }
+
+                // ✅ بررسی InsuranceTariff برای بیمه پایه (در صورت وجود)
+                if (basePlanId.HasValue)
+                {
+                    var baseTariff = await _context.InsuranceTariffs
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(t => t.ServiceId == serviceId &&
+                                                 t.InsurancePlanId == basePlanId.Value &&
+                                                 t.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary &&
+                                                 t.IsActive &&
+                                                 !t.IsDeleted);
+
+                    if (baseTariff == null)
+                    {
+                        missing.Add("BASE");
+                        meta["missingBase"] = true;
+                    }
+                }
+
+                // ✅ بررسی InsuranceTariff برای بیمه تکمیلی (در صورت وجود)
+                if (suppPlanId.HasValue)
+                {
+                    var suppTariff = await _context.InsuranceTariffs
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(t => t.ServiceId == serviceId &&
+                                                 t.InsurancePlanId == suppPlanId.Value &&
+                                                 t.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary &&
+                                                 t.IsActive &&
+                                                 !t.IsDeleted);
+
+                    if (suppTariff == null)
+                    {
+                        missing.Add("SUPP");
+                        meta["missingSupp"] = true;
+                    }
+                }
+
+                if (missing.Any())
+                {
+                    var missingList = string.Join(" و ", missing);
+                    meta["missing"] = missingList;
+                    meta["createTariffUrl"] = $"/InsuranceTariff/Create?serviceId={serviceId}&planId={(basePlanId ?? suppPlanId)}";
+
+                    _logger.Warning("⚠️ PRICING SERVICE: تعیین‌ست بیمه‌ای ناقص - ServiceId: {ServiceId}, Missing: {Missing}", 
+                        serviceId, missingList);
+
+                    return (false, "INSURANCE_SET_MISSING", 
+                        $"برای این خدمت تعیین‌ست بیمه‌ای یافت نشد. ({missingList})", 
+                        meta);
+                }
+
+                _logger.Information("✅ PRICING SERVICE: تعیین‌ست بیمه‌ای موجود است - ServiceId: {ServiceId}", serviceId);
+                return (true, "SUCCESS", "تعیین‌ست بیمه‌ای موجود است", meta);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ PRICING SERVICE: خطا در بررسی تعیین‌ست بیمه‌ای - ServiceId: {ServiceId}", serviceId);
+                return (false, "UNHANDLED", "خطا در بررسی تعیین‌ست بیمه‌ای: " + ex.Message, new Dictionary<string, object> { ["exception"] = ex.Message });
             }
         }
 
