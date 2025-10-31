@@ -21,10 +21,17 @@ namespace ClinicApp
             app.CreatePerOwinContext<ApplicationSignInManager>(ApplicationSignInManager.Create);
 
             // Configure the application to use a cookie to store information for the signed-in user
+            // 🔒 SECURITY: Enhanced Cookie Security per Contract 04-Security-Requirements
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
                 LoginPath = new PathString("/Account/Login"), // Microsoft.Owin.PathString
+                CookieName = "ClinicAppAuth",
+                CookieSecure = CookieSecureOption.Always, // HTTPS Only - Security Requirement
+                CookieHttpOnly = true, // Prevent XSS - Security Requirement
+                CookieSameSite = SameSiteMode.Strict, // CSRF Protection - Security Requirement
+                ExpireTimeSpan = TimeSpan.FromHours(8), // Session Timeout - Security Requirement
+                SlidingExpiration = true, // Extend session on activity - Security Requirement
                 Provider = new CookieAuthenticationProvider
                 {
                     // Enables the application to validate the security stamp when the user logs in.
