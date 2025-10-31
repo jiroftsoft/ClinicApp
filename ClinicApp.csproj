@@ -494,6 +494,7 @@
     <Compile Include="Controllers\Api\ReceptionApiController.cs" />
     <Compile Include="Controllers\Api\ReceptionApiDtos.cs" />
     <Compile Include="Controllers\Api\ReceptionApiV1Controller.cs" />
+    <Compile Include="Controllers\Api\ReceptionPricingController.cs" />
     <Compile Include="Controllers\Api\ServiceController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
@@ -570,6 +571,7 @@
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\ReceptionAjaxHelper.cs" />
     <Compile Include="Helpers\SafeSqlBuilder.cs" />
+    <Compile Include="Helpers\ServiceResultExtensions.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
@@ -999,6 +1001,13 @@
     <Compile Include="Repositories\Reception\IShiftManagementRepository.cs" />
     <Compile Include="Repositories\Reception\ShiftManagementRepository.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
+    <Compile Include="Services\Pricing\Coverage\InsuranceCoverageProvider.cs" />
+    <Compile Include="Services\Pricing\Engines\PricingEngine.cs" />
+    <Compile Include="Services\Pricing\Interfaces\IInsuranceCoverageProvider.cs" />
+    <Compile Include="Services\Pricing\Interfaces\IPricingEngine.cs" />
+    <Compile Include="Services\Pricing\Interfaces\ITariffResolver.cs" />
+    <Compile Include="Services\Pricing\Models\PricingDtos.cs" />
+    <Compile Include="Services\Pricing\Resolvers\TariffResolver.cs" />
     <Compile Include="Services\Reception\ReceptionConstants.cs" />
     <Compile Include="Repositories\Base\BaseRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />

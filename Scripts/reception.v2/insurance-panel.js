@@ -165,38 +165,43 @@
 
   /**
    * ذخیره بیمه‌ها در سرور
+   * ✅ گام 2 - Draft Orchestrator: استفاده از ensureDraftOrSkip
    * اگر ReceptionId وجود ندارد، ابتدا draft ایجاد می‌کند
    */
-  function persist() {
-    const receptionId = $('#ReceptionId').val();
-    if (!receptionId || receptionId <= 0) {
-      console.log('🏥 V2: No reception ID, attempting to create draft first...');
+  async function persist() {
+    // ✅ Bugfix: بررسی وجود AutoDraftManager و ensureDraftOrSkip
+    if (!window.AutoDraftManager) {
+      console.error('🏥 V2: AutoDraftManager not available');
+      toastr.error('سیستم پیش‌نویس در دسترس نیست. لطفاً صفحه را نوسازی کنید.');
+      return Promise.resolve();
+    }
+    
+    if (typeof window.AutoDraftManager.ensureDraftOrSkip !== 'function') {
+      console.error('🏥 V2: ensureDraftOrSkip is not a function', window.AutoDraftManager);
+      toastr.error('خطا در سیستم پیش‌نویس. لطفاً صفحه را نوسازی کنید.');
+      return Promise.resolve();
+    }
+    
+    // ✅ استفاده از ensureDraftOrSkip برای اطمینان از وجود Draft
+    let receptionId;
+    try {
+      receptionId = await window.AutoDraftManager.ensureDraftOrSkip({
+        patientId: $('#Patient_PatientId').val(),
+        clinicId: $('#ClinicId').val(),
+        departmentId: $('#DepartmentId').val(),
+        doctorId: $('#DoctorId').val(),
+        receptionId: $('#ReceptionId').val()
+      });
       
-      // سعی کن draft ایجاد کن
-      if (window.AutoDraftManager && !window.AutoDraftManager.isDraftCreated()) {
-        return window.AutoDraftManager.createDraft()
-          .then(function(draftId) {
-            if (draftId) {
-              console.log('🏥 V2: Draft created successfully:', draftId);
-              $('#ReceptionId').val(draftId);
-              // حالا که draft ایجاد شد، persist را دوباره صدا بزن
-              return persist();
-            } else {
-              console.warn('🏥 V2: Draft creation returned null - missing required fields (patient/clinic/department/doctor)');
-              toastr.warning('لطفاً ابتدا بیمار، کلینیک، دپارتمان و پزشک را انتخاب کنید');
-              return Promise.resolve();
-            }
-          })
-          .catch(function(err) {
-            console.error('🏥 V2: Auto-draft creation error:', err);
-            toastr.warning('برای ثبت بیمه، ابتدا پذیرش را ایجاد کنید (بیمار، کلینیک، دپارتمان، پزشک)');
-            return Promise.resolve();
-          });
-      } else {
-        console.warn('🏥 V2: Cannot persist insurances, no reception ID and AutoDraftManager unavailable');
-        toastr.warning('برای ثبت بیمه، ابتدا پذیرش را ایجاد کنید (بیمار، کلینیک، دپارتمان، پزشک)');
+      if (!receptionId || receptionId <= 0) {
+        console.warn('🏥 V2: Cannot persist insurances, draft creation failed or missing required fields');
+        window.AutoDraftManager?.warnDraftMissing();
         return Promise.resolve();
       }
+    } catch (err) {
+      console.error('🏥 V2: ensureDraftOrSkip error:', err);
+      toastr.error('خطا در ایجاد پیش‌نویس. لطفاً مجدداً تلاش کنید.');
+      return Promise.resolve();
     }
 
     // دریافت مقادیر

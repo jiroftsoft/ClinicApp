@@ -62,6 +62,48 @@
     return path.replace(/^\//, '');
   }
 
+  /**
+   * ✅ گام 8 - قلاب کوچک در Frontend برای تجربه بهتر کاربر
+   * اگر پاسخ JSON با Code === "ANTIFORGERY_MISSING" یا "UNHANDLED" بود، پیام کاربرپسند بده
+   */
+  function handleErrorJson(res) {
+    if (!res) return false;
+
+    // بررسی ANTIFORGERY_MISSING
+    if (res.Code === 'ANTIFORGERY_MISSING' || res.code === 'ANTIFORGERY_MISSING') {
+      console.warn('🏥 V2: CSRF token missing/expired', res);
+      toastr.error('توکن امنیتی منقضی شده است. لطفاً صفحه را نوسازی کنید.', 'خطای امنیتی', {
+        timeOut: 5000,
+        extendedTimeOut: 3000
+      });
+      
+      // پیشنهاد Refresh (اختیاری)
+      if (confirm('آیا می‌خواهید صفحه را نوسازی کنید؟')) {
+        window.location.reload();
+      }
+      
+      return true; // خطا مصرف شد
+    }
+
+    // بررسی UNHANDLED
+    if (res.Code === 'UNHANDLED' || res.code === 'UNHANDLED') {
+      // در Dev، Metadata شامل Exception/StackTrace است؛ برای Console کافی است
+      if (res.Metadata && (res.Metadata.Exception || res.Metadata.StackTrace)) {
+        console.error('[DEV] Unhandled error:', res.Metadata);
+      } else {
+        console.error('[DEV] Unhandled error:', res);
+      }
+      
+      toastr.error('خطای غیرمنتظره رخ داد. لطفاً مجدداً تلاش کنید.', 'خطا', {
+        timeOut: 5000
+      });
+      
+      return true; // خطا مصرف شد
+    }
+
+    return false; // خطا مصرف نشد
+  }
+
   function ajaxWithFallback(method, path, data) {
     const d = $.Deferred();
     const cleanPath = path.replace(/^\//, ''); // Remove leading slash
@@ -75,8 +117,29 @@
       cache: false,
       headers: headers(method)
     })
-    .done(res => d.resolve(res))
+    .done(res => {
+      // ✅ گام 8: بررسی خطاهای خاص (ANTIFORGERY_MISSING, UNHANDLED)
+      if (!handleErrorJson(res)) {
+        d.resolve(res);
+      } else {
+        // اگر خطا مصرف شد، reject نکنیم چون UI خودش handle کرده
+        d.resolve(res);
+      }
+    })
     .fail(jq => {
+      // ✅ گام 8: بررسی response JSON در صورت خطای HTTP
+      try {
+        if (jq.responseJSON) {
+          if (handleErrorJson(jq.responseJSON)) {
+            // خطا مصرف شد، reject نکنیم
+            d.resolve(jq.responseJSON);
+            return;
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+
       if (shouldFallback(jq)) {
         var legacyPath = toLegacyPath(cleanPath);
         $.ajax({
@@ -87,8 +150,26 @@
           cache: false,
           headers: headers(method)
         })
-        .done(res => d.resolve(res))
-        .fail(err => d.reject(err));
+        .done(res => {
+          // ✅ گام 8: بررسی خطاهای خاص در fallback
+          if (!handleErrorJson(res)) {
+            d.resolve(res);
+          } else {
+            d.resolve(res);
+          }
+        })
+        .fail(err => {
+          // ✅ گام 8: بررسی response JSON در خطای fallback
+          try {
+            if (err.responseJSON && handleErrorJson(err.responseJSON)) {
+              d.resolve(err.responseJSON);
+              return;
+            }
+          } catch (e) {
+            // Ignore
+          }
+          d.reject(err);
+        });
       } else {
         d.reject(jq);
       }

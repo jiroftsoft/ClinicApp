@@ -53,6 +53,80 @@
         throw err;
       });
   }
+
+  /**
+   * ✅ گام 2 - Draft Orchestrator: ensureDraftOrSkip
+   * بررسی وجود ReceptionId، اگر نبود و شرایط کامل بود، Auto-draft ساخته می‌شود
+   * @param {Object} state - وضعیت فعلی فرم (patientId, clinicId, departmentId, doctorId)
+   * @returns {Promise<number|null>} ReceptionId یا null اگر شرایط کامل نیست
+   */
+  async function ensureDraftOrSkip(state) {
+    const { patientId, clinicId, departmentId, doctorId, receptionId } = state || {};
+    
+    // اگر ReceptionId موجود است، برگردان
+    const existingReceptionId = receptionId || $("#ReceptionId").val();
+    if (existingReceptionId && existingReceptionId > 0) {
+      console.log('🏥 V2: ReceptionId already exists:', existingReceptionId);
+      currentDraftId = parseInt(existingReceptionId);
+      isDraftCreated = true;
+      return Promise.resolve(currentDraftId);
+    }
+    
+    // اگر ReceptionId موجود نیست، بررسی شرایط
+    const resolvedPatientId = patientId || $("#Patient_PatientId").val();
+    const resolvedNationalCode = $("#Patient_NationalCode").val();
+    const resolvedClinicId = clinicId || $("#ClinicId").val();
+    const resolvedDepartmentId = departmentId || $("#DepartmentId").val();
+    const resolvedDoctorId = doctorId || $("#DoctorId").val();
+    
+    // بررسی وجود فیلدهای الزامی
+    if ((!resolvedPatientId && !resolvedNationalCode) || !resolvedClinicId || !resolvedDepartmentId || !resolvedDoctorId) {
+      console.log('🏥 V2: Missing required fields for draft (patient/clinic/department/doctor). Skipping.');
+      return Promise.resolve(null);
+    }
+    
+    // اگر شرایط کامل است، draft ایجاد کن
+    console.log('🏥 V2: Required fields complete, creating draft...');
+    return createAutoDraft()
+      .then(function(draftId) {
+        if (draftId) {
+          console.log('🏥 V2: Draft created successfully:', draftId);
+          return draftId;
+        } else {
+          console.warn('🏥 V2: Draft creation returned null');
+          return null;
+        }
+      })
+      .catch(function(err) {
+        console.error('🏥 V2: Draft creation failed:', err);
+        return null;
+      });
+  }
+
+  /**
+   * هشدار در صورت ناقص بودن فیلدهای الزامی
+   */
+  function warnDraftMissing() {
+    const patientId = $("#Patient_PatientId").val();
+    const nationalCode = $("#Patient_NationalCode").val();
+    const clinicId = $("#ClinicId").val();
+    const departmentId = $("#DepartmentId").val();
+    const doctorId = $("#DoctorId").val();
+    
+    const missingFields = [];
+    if (!patientId && !nationalCode) missingFields.push('بیمار');
+    if (!clinicId) missingFields.push('کلینیک');
+    if (!departmentId) missingFields.push('دپارتمان');
+    if (!doctorId) missingFields.push('پزشک');
+    
+    if (missingFields.length > 0) {
+      toastr.warning('فیلدهای الزامی برای پیش‌نویس ناقص است: ' + missingFields.join(', '));
+    } else {
+      toastr.warning('برای ثبت این اطلاعات، ابتدا پذیرش را ایجاد کنید');
+    }
+    
+    console.warn('🏥 V2: Draft missing - Missing fields:', missingFields);
+  }
   
   // Auto-save functionality with debouncing
   function autoSave() {
@@ -166,9 +240,20 @@
     console.log('🏥 V2: Auto-draft system initialized');
   }
   
-  // Public API
-  window.AutoDraftManager = {
+  // Public API - ✅ Bugfix: اطمینان از دسترسی صحیح به async function
+  // ایجاد object قبل از تعریف Public API برای اطمینان از دسترسی
+  const autoDraftManagerPublicAPI = {
     createDraft: createAutoDraft,
+    ensureDraftOrSkip: async function(state) {
+      // ✅ Bugfix: Wrapper برای اطمینان از دسترسی صحیح به async function
+      try {
+        return await ensureDraftOrSkip(state);
+      } catch (err) {
+        console.error('🏥 V2: ensureDraftOrSkip error:', err);
+        return null;
+      }
+    },
+    warnDraftMissing: warnDraftMissing,
     getCurrentDraftId: () => currentDraftId,
     isDraftCreated: () => isDraftCreated,
     forceSave: () => {
@@ -188,6 +273,9 @@
       $("#ReceptionId").val('');
     }
   };
+  
+  // ✅ Bugfix: Export به window.AutoDraftManager
+  window.AutoDraftManager = autoDraftManagerPublicAPI;
   
   // Initialize when document is ready
   $(document).ready(initializeAutoDraft);

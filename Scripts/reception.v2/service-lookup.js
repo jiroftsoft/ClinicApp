@@ -106,29 +106,24 @@
       return;
     }
     
-    const receptionId = $("#ReceptionId").val();
-    if(!receptionId || receptionId <= 0) {
-      // Try to create auto-draft first
-      if (window.AutoDraftManager && !window.AutoDraftManager.isDraftCreated()) {
-        window.AutoDraftManager.createDraft().then(function(draftId) {
-          if (draftId) {
-            $("#ReceptionId").val(draftId);
-            proceedWithAddItem();
-          } else {
-            toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
-          }
-        }).catch(function(err) {
-          console.error('🏥 V2: Auto-draft creation error:', err);
-          toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
-        });
-        return;
-      } else {
-        toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+    // ✅ گام 2 - Draft Orchestrator: استفاده از ensureDraftOrSkip
+    window.AutoDraftManager?.ensureDraftOrSkip({
+      patientId: $("#Patient_PatientId").val(),
+      clinicId: $("#ClinicId").val(),
+      departmentId: $("#DepartmentId").val(),
+      doctorId: $("#DoctorId").val(),
+      receptionId: $("#ReceptionId").val()
+    }).then(function(receptionId) {
+      if (!receptionId || receptionId <= 0) {
+        window.AutoDraftManager?.warnDraftMissing();
         return;
       }
-    }
-    
-    proceedWithAddItem();
+      $("#ReceptionId").val(receptionId);
+      proceedWithAddItem();
+    }).catch(function(err) {
+      console.error('🏥 V2: ensureDraftOrSkip error:', err);
+      window.AutoDraftManager?.warnDraftMissing();
+    });
   });
   
   function proceedWithAddItem() {

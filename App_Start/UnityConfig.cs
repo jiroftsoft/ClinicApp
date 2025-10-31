@@ -485,6 +485,14 @@ namespace ClinicApp
 
                 // Register Service Calculation Service
                 container.RegisterType<IServiceCalculationService, ServiceCalculationService>(new PerRequestLifetimeManager());
+                
+                // Register Service Calculation Engine
+                container.RegisterType<ServiceCalculationEngine, ServiceCalculationEngine>(new PerRequestLifetimeManager());
+                
+                // Register Pricing Module
+                container.RegisterType<ClinicApp.Services.Pricing.Interfaces.ITariffResolver, ClinicApp.Services.Pricing.Resolvers.TariffResolver>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Services.Pricing.Interfaces.IInsuranceCoverageProvider, ClinicApp.Services.Pricing.Coverage.InsuranceCoverageProvider>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Services.Pricing.Interfaces.IPricingEngine, ClinicApp.Services.Pricing.Engines.PricingEngine>(new PerRequestLifetimeManager());
 
                 // Register External Inquiry and Security Token Services
                 container.RegisterType<IExternalInquiryService, ExternalInquiryService>(new PerRequestLifetimeManager());

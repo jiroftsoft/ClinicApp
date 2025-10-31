@@ -55,6 +55,7 @@ namespace ClinicApp.Services.Reception
         private readonly IFinancialYearService _financialYearService;
         private readonly InsurancePlanSuggestionService _insurancePlanSuggestionService;
         private readonly IFactorSettingService _factorSettingService;
+        private readonly Services.Pricing.Interfaces.IPricingEngine _pricingEngine;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -76,6 +77,7 @@ namespace ClinicApp.Services.Reception
             IFinancialYearService financialYearService,
             InsurancePlanSuggestionService insurancePlanSuggestionService,
             IFactorSettingService factorSettingService,
+            Services.Pricing.Interfaces.IPricingEngine pricingEngine,
             ApplicationDbContext context,
             ILogger logger)
         {
@@ -92,6 +94,7 @@ namespace ClinicApp.Services.Reception
             _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
             _insurancePlanSuggestionService = insurancePlanSuggestionService ?? throw new ArgumentNullException(nameof(insurancePlanSuggestionService));
             _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
+            _pricingEngine = pricingEngine ?? throw new ArgumentNullException(nameof(pricingEngine));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionFacade>();
         }
@@ -1502,58 +1505,46 @@ namespace ClinicApp.Services.Reception
                 }
 
                 var qty = request.Quantity <= 0 ? 1 : request.Quantity;
+
+                // ✅ استفاده از PricingEngine برای محاسبه دقیق سهم‌های بیمه
+                var quoteRequest = new Services.Pricing.Models.QuoteRequestDto
+                {
+                    ClinicId = draft.ClinicId,
+                    DepartmentId = draft.DepartmentId,
+                    DoctorId = draft.DoctorId,
+                    ServiceId = service.ServiceId,
+                    FinancialYearId = year,
+                    Primary = draft.BasePlanId.HasValue
+                        ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = draft.BasePlanId.Value }
+                        : null,
+                    Supplementary = draft.SupplementaryPlanId.HasValue
+                        ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = draft.SupplementaryPlanId.Value }
+                        : null
+                };
+
+                var quoteResult = await _pricingEngine.QuoteAsync(quoteRequest);
                 
-                // محاسبه قیمت بر اساس ServiceComponents و ضرایب
-                var unitPrice = await _serviceCalculationEngine.CalculateUnitPriceIRRAsync(service.ServiceId, year);
-                if (unitPrice <= 0)
+                if (quoteResult == null || quoteResult.ApprovedTariff <= 0)
                 {
                     _logger.Warning("⚠️ FACADE: قیمت محاسبه شده نامعتبر است - ServiceId: {ServiceId}, Year: {Year}", 
                         service.ServiceId, year);
                     return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در محاسبه قیمت خدمت");
                 }
-                
-                var unit = unitPrice;
+
+                var unit = (decimal)quoteResult.ApprovedTariff;
                 var total = unit * qty;
 
-                // محاسبه سهم بیمار و بیمه برای این آیتم
-                var itemBasePercent = 0m;
-                var itemSuppPercent = 0m;
-
-                // دریافت اطلاعات بیمه پایه
-                if (draft.BasePlanId.HasValue)
-                {
-                    var basePlan = await _context.InsurancePlans
-                        .Where(p => p.InsurancePlanId == draft.BasePlanId.Value && !p.IsDeleted && p.IsActive)
-                        .Select(p => new { p.CoveragePercent })
-                        .FirstOrDefaultAsync();
-                    
-                    if (basePlan != null)
-                    {
-                        itemBasePercent = basePlan.CoveragePercent;
-                    }
-                }
-
-                // دریافت اطلاعات بیمه تکمیلی
-                if (draft.SupplementaryPlanId.HasValue)
-                {
-                    var suppPlan = await _context.InsurancePlans
-                        .Where(p => p.InsurancePlanId == draft.SupplementaryPlanId.Value && !p.IsDeleted && p.IsActive)
-                        .Select(p => new { p.CoveragePercent })
-                        .FirstOrDefaultAsync();
-                    
-                    if (suppPlan != null)
-                    {
-                        itemSuppPercent = suppPlan.CoveragePercent;
-                    }
-                }
-
-                // محاسبه سهم بیمه پایه
-                var itemBasePay = total * (itemBasePercent / 100m);
-                var itemPatientAfterBase = total - itemBasePay;
+                // محاسبه سهم‌ها بر اساس QuoteResult
+                var itemBasePay = (long)Math.Round((decimal)quoteResult.Primary.Pays * qty, 0, MidpointRounding.AwayFromZero);
+                var itemSuppPay = (long)Math.Round((decimal)quoteResult.Supplementary.Pays * qty, 0, MidpointRounding.AwayFromZero);
+                var itemPatientShare = total - itemBasePay - itemSuppPay;
                 
-                // محاسبه سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
-                var itemSuppPay = itemPatientAfterBase * (itemSuppPercent / 100m);
-                var itemPatientShare = itemPatientAfterBase - itemSuppPay;
+                if (itemPatientShare < 0)
+                    itemPatientShare = 0;
+
+                // برای Snapshot
+                var itemBasePercent = quoteResult.Primary.CoveragePercent;
+                var itemSuppPercent = quoteResult.Supplementary.CoveragePercent;
 
                 // ✅ طبق نقشه پیوندی: ایجاد SnapshotJson (Immutable snapshot)
                 // دریافت ServiceComponents و FactorSetting برای Snapshot
@@ -1596,10 +1587,12 @@ namespace ClinicApp.Services.Reception
                     GrossAmount = total,
                     BaseInsuranceCoverage = itemBasePercent,
                     SupplementaryCoverage = itemSuppPercent,
-                    PatientShare = itemPatientShare,
-                    InsurerShare = itemBasePay + itemSuppPay,
-                    RoundingMode = "RoundUp",
-                    RoundingDelta = 100,
+                    PatientShare = (decimal)itemPatientShare,
+                    InsurerShare = (decimal)(itemBasePay + itemSuppPay),
+                    PrimaryPays = itemBasePay,
+                    SupplementaryPays = itemSuppPay,
+                    RoundingMode = "AwayFromZero",
+                    RoundingDelta = 0,
                     FactorSettingId = factors?.FactorSettingId,
                     FinancialYear = year,
                     BasePlanId = draft.BasePlanId,
@@ -1615,8 +1608,8 @@ namespace ClinicApp.Services.Reception
                     ServiceId = service.ServiceId,
                     Quantity = qty,
                     UnitPrice = unit,
-                    PatientShareAmount = itemPatientShare,
-                    InsurerShareAmount = itemBasePay + itemSuppPay,
+                    PatientShareAmount = (decimal)itemPatientShare,
+                    InsurerShareAmount = (decimal)(itemBasePay + itemSuppPay),
                     SnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(snapshot)
                 };
                 
@@ -1796,76 +1789,22 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("✅ FACADE: بیمه‌های پیش‌نویس و PatientInsurances با موفقیت تنظیم شد - ReceptionId: {ReceptionId}, PatientId: {PatientId}", 
                     request.ReceptionId, patientId);
 
-                // 🔄 Reprice-on-change: بازمحاسبه تمام آیتم‌ها با بیمه‌های جدید
+                // 🔄 Reprice-on-change: بازمحاسبه تمام آیتم‌ها با بیمه‌های جدید با استفاده از PricingEngine
                 if (draft.ReceptionItems != null && draft.ReceptionItems.Any())
                 {
                     _logger.Information("🔄 FACADE: شروع بازمحاسبه آیتم‌ها با بیمه‌های جدید - ItemsCount: {Count}", 
                         draft.ReceptionItems.Count);
                     
-                    // درصدهای پوشش بیمه (از basePlan و suppPlan قبلاً query شده)
-                    var baseCoveragePercent = basePlan?.CoveragePercent ?? 0m;
-                    var suppCoveragePercent = suppPlan?.CoveragePercent ?? 0m;
-                    
-                    bool itemsRepriced = false;
-                    foreach (var item in draft.ReceptionItems.Where(ri => !ri.IsDeleted))
+                    try
                     {
-                        // محاسبه سهم‌ها با بیمه‌های جدید
-                        var itemGross = item.UnitPrice * item.Quantity;
-                        
-                        // سهم بیمه پایه
-                        var itemBasePay = itemGross * (baseCoveragePercent / 100m);
-                        var itemAfterBase = itemGross - itemBasePay;
-                        
-                        // سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
-                        var itemSuppPay = itemAfterBase * (suppCoveragePercent / 100m);
-                        var itemPatientShare = itemAfterBase - itemSuppPay;
-                        
-                        // بررسی تغییر
-                        if (item.PatientShareAmount != itemPatientShare || 
-                            item.InsurerShareAmount != (itemBasePay + itemSuppPay))
-                        {
-                            item.PatientShareAmount = itemPatientShare;
-                            item.InsurerShareAmount = itemBasePay + itemSuppPay;
-                            item.UpdatedAt = DateTime.Now;
-                            itemsRepriced = true;
-                            
-                            // ✅ طبق نقشه پیوندی: به‌روزرسانی SnapshotJson هنگام Reprice
-                            if (!string.IsNullOrWhiteSpace(item.SnapshotJson))
-                            {
-                                try
-                                {
-                                    var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
-                                    snapshot.BaseInsuranceCoverage = baseCoveragePercent;
-                                    snapshot.SupplementaryCoverage = suppCoveragePercent;
-                                    snapshot.PatientShare = itemPatientShare;
-                                    snapshot.InsurerShare = itemBasePay + itemSuppPay;
-                                    snapshot.BasePlanId = basePlan?.InsurancePlanId;
-                                    snapshot.SupplementaryPlanId = suppPlan?.InsurancePlanId;
-                                    snapshot.RepricedAt = DateTime.Now;
-                                    item.SnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(snapshot);
-                                }
-                                catch (Exception snapEx)
-                                {
-                                    _logger.Warning(snapEx, "⚠️ FACADE: خطا در به‌روزرسانی SnapshotJson - ItemId: {ItemId}", item.ReceptionItemId);
-                                    // ادامه می‌دهیم حتی اگر Snapshot به‌روزرسانی نشد
-                                }
-                            }
-                            
-                            _logger.Debug("🔄 FACADE: آیتم بازمحاسبه شد - ItemId: {ItemId}, ServiceId: {ServiceId}, OldPatient: {OldPatient}, NewPatient: {NewPatient}", 
-                                item.ReceptionItemId, item.ServiceId, 
-                                item.PatientShareAmount - itemPatientShare + itemPatientShare, // Old value before update
-                                itemPatientShare);
-                        }
-                    }
-                    
-                    if (itemsRepriced)
-                    {
-                        await _context.SaveChangesAsync();
+                        // ✅ استفاده از PricingEngine.RepriceReceptionAsync برای محاسبه دقیق
+                        await _pricingEngine.RepriceReceptionAsync(draft.ReceptionId);
                         _logger.Information("✅ FACADE: تمام آیتم‌ها با بیمه‌های جدید بازمحاسبه شدند");
                     }
-                    else
+                    catch (Exception repriceEx)
                     {
-                        _logger.Information("ℹ️ FACADE: تغییر بیمه تأثیری بر مبالغ آیتم‌ها نداشت");
+                        _logger.Error(repriceEx, "⚠️ FACADE: خطا در بازمحاسبه آیتم‌ها - ReceptionId: {ReceptionId}", draft.ReceptionId);
+                        // ادامه می‌دهیم - اگر Reprice با خطا مواجه شد، آیتم‌ها با قیمت قبلی باقی می‌مانند
                     }
                 }
 
@@ -1878,6 +1817,46 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Error(ex, "❌ FACADE: خطا در تنظیم بیمه‌ها");
                 return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در تنظیم بیمه‌ها: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ✅ گام 7 - Finalize Validation: اعتبارسنجی کامل Draft قبل از Finalize
+        /// </summary>
+        private async Task<ServiceResult<bool>> ValidateDraftForFinalizeAsync(Models.Entities.Reception.Reception draft)
+        {
+            try
+            {
+                // 1. بررسی وجود فیلدهای الزامی
+                if (draft.PatientId <= 0)
+                    return ServiceResult<bool>.Failed("اطلاعات بیمار ناقص است.", "VALIDATION");
+
+                if (draft.ClinicId <= 0)
+                    return ServiceResult<bool>.Failed("کلینیک انتخاب نشده است.", "VALIDATION");
+
+                if (draft.DepartmentId <= 0)
+                    return ServiceResult<bool>.Failed("دپارتمان انتخاب نشده است.", "VALIDATION");
+
+                if (draft.DoctorId <= 0)
+                    return ServiceResult<bool>.Failed("پزشک انتخاب نشده است.", "VALIDATION");
+
+                // 2. بررسی وجود آیتم‌ها
+                if (draft.ReceptionItems == null || !draft.ReceptionItems.Any(ri => !ri.IsDeleted))
+                    return ServiceResult<bool>.Failed("هیچ خدمتی به پذیرش افزوده نشده است.", "VALIDATION");
+
+                // 3. بررسی وجود بیمه پایه برای خدمات بیمه‌ای (در صورت نیاز)
+                // TODO: در آینده می‌توان بررسی کرد که آیا خدمات نیاز به بیمه دارند یا نه
+                // فعلاً این بررسی را انجام نمی‌دهیم چون برخی خدمات بدون بیمه هم ممکن است باشند
+
+                _logger.Information("✅ FACADE: اعتبارسنجی Draft برای Finalize موفق - ReceptionId: {ReceptionId}, ItemsCount: {Count}", 
+                    draft.ReceptionId, draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0);
+
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در اعتبارسنجی Draft برای Finalize - ReceptionId: {ReceptionId}", draft?.ReceptionId);
+                return ServiceResult<bool>.Failed("خطا در اعتبارسنجی Draft: " + ex.Message);
             }
         }
 
@@ -1909,6 +1888,15 @@ namespace ClinicApp.Services.Reception
                 
                 if (draft == null)
                     return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+
+                // ✅ گام 7 - Finalize Validation: اعتبارسنجی کامل Draft
+                var validationResult = await ValidateDraftForFinalizeAsync(draft);
+                if (!validationResult.Success)
+                {
+                    _logger.Warning("⚠️ FACADE: اعتبارسنجی Draft برای Finalize ناموفق - ReceptionId: {ReceptionId}, Message: {Message}", 
+                        request.ReceptionId, validationResult.Message);
+                    return ServiceResult<FinalizeResponse>.Failed(validationResult.Message, validationResult.Code);
+                }
 
                 // محاسبه مجموع‌ها
                 var totals = await RecalculateDraftAsync(draft);
@@ -1984,6 +1972,15 @@ namespace ClinicApp.Services.Reception
                 
                 if (draft == null)
                     return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+
+                // ✅ گام 7 - Finalize Validation: اعتبارسنجی کامل Draft
+                var validationResult = await ValidateDraftForFinalizeAsync(draft);
+                if (!validationResult.Success)
+                {
+                    _logger.Warning("⚠️ FACADE: اعتبارسنجی Draft برای Finalize ناموفق - ReceptionId: {ReceptionId}, Message: {Message}", 
+                        request.ReceptionId, validationResult.Message);
+                    return ServiceResult<FinalizeResponse>.Failed(validationResult.Message, validationResult.Code);
+                }
 
                 // محاسبه مجموع‌ها
                 var totals = await RecalculateDraftAsync(draft);

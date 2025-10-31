@@ -5,6 +5,8 @@ using System.Web.Helpers;
 using System.Web.Mvc;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
+using ClinicApp.Models.Enums;
+using Serilog;
 
 namespace ClinicApp.Filters
 {
@@ -63,27 +65,37 @@ namespace ClinicApp.Filters
                     AntiForgery.Validate();
                 }
             }
-            catch (HttpAntiForgeryException)
+            catch (HttpAntiForgeryException ex)
             {
-                // پاسخ JSON برای Ajax/JSON
-                if (req.IsAjaxRequest() || (req.ContentType != null && req.ContentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0))
+                // ✅ گام 8: استفاده از Serilog برای لاگ
+                Serilog.Log.Error(ex, "AntiForgery token validation failed. Path: {Path}", req?.RawUrl);
+
+                bool isAjax = req.IsAjaxRequest() || (req.ContentType != null && req.ContentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                if (isAjax)
                 {
+                    // ✅ گام 8: JSON استاندارد با کد ANTIFORGERY_MISSING + 400 (بدون 500)
                     filterContext.Result = new JsonResult
                     {
                         Data = ServiceResult.Failed(
-                            "توکن امنیتی نامعتبر یا موجود نیست.",
-                            code: "ANTIFORGERY_INVALID",
+                            "توکن امنیتی منقضی یا نامعتبر است. صفحه را نوسازی کنید.",
+                            code: "ANTIFORGERY_MISSING",
                             category: ErrorCategory.Security,
                             securityLevel: SecurityLevel.High
-                        ),
+                        ).WithExceptionDev(ex),
                         JsonRequestBehavior = JsonRequestBehavior.AllowGet
                     };
                     filterContext.HttpContext.Response.StatusCode = 400;
+                    filterContext.HttpContext.Response.TrySkipIisCustomErrors = true;
                     return;
                 }
-
-                // برای فرم‌ها اجازه بده Exception بالا برود
-                throw;
+                else
+                {
+                    // مسیر غیر AJAX: با پیام کاربرپسند برگردان
+                    filterContext.Controller.TempData["ErrorMessage"] = "توکن امنیتی منقضی است. لطفاً صفحه را نوسازی کنید.";
+                    filterContext.Result = new RedirectResult(req.UrlReferrer != null ? req.UrlReferrer.ToString() : "/");
+                    return;
+                }
             }
         }
     }
