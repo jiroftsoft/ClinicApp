@@ -64,8 +64,31 @@
     console.log('🏥 V2: Department changed, loading services for:', deptId);
     if (deptId) {
       loadServices(deptId);
+      // Reset service selection when department changes
+      $("#ServiceId").val('').trigger('change');
     } else {
       $("#ServiceId").empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+    }
+  });
+
+  // Load eligible doctors when service changes
+  $("#ServiceId").on('change', function() {
+    const serviceId = parseInt($(this).val(), 10);
+    const deptId = parseInt($("#DepartmentId").val(), 10);
+    const clinicId = parseInt($("#ClinicId").val(), 10) || 1; // Default clinic ID = 1 (کلینیک شفا)
+    
+    if (!serviceId || !deptId) {
+      console.log('🏥 V2: Service or Department not selected, skipping doctor filter');
+      return;
+    }
+    
+    console.log('🏥 V2: Service changed, loading eligible doctors...', { serviceId, deptId, clinicId });
+    
+    // Call the new endpoint to filter doctors by service
+    if (window.loadDoctorsByService) {
+      window.loadDoctorsByService({ serviceId, deptId, clinicId });
+    } else {
+      console.warn('🏥 V2: loadDoctorsByService function not found');
     }
   });
 

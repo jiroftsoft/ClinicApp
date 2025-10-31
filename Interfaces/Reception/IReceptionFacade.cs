@@ -26,6 +26,11 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<List<DoctorDto>>> GetDoctorsByDepartmentAsync(int deptId, int? clinicId = null);
 
         /// <summary>
+        /// دریافت پزشکان مجاز برای یک خدمت در دپارتمان
+        /// </summary>
+        Task<ServiceResult<List<DoctorDto>>> GetDoctorsByServiceAsync(int departmentId, int serviceId, int? clinicId = null);
+
+        /// <summary>
         /// جستجو یا ایجاد بیمار
         /// </summary>
         Task<ServiceResult<PatientDto>> FindOrCreatePatientAsync(string nationalCode, PatientCreateDto dtoIfNotExists);

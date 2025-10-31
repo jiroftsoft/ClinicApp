@@ -264,6 +264,143 @@
       });
   }
   
+  /**
+   * بارگذاری پزشکان مجاز برای یک خدمت در دپارتمان
+   * این تابع فقط پزشکان را لود می‌کند که برای خدمت انتخاب شده مجاز هستند
+   */
+  window.loadDoctorsByService = function(options) {
+    const { serviceId, deptId, clinicId } = options || {};
+    
+    if (!serviceId || !deptId) {
+      console.warn('🏥 V2: Cannot load doctors by service - missing serviceId or deptId');
+      $("#DoctorId").empty().append('<option value="">ابتدا خدمت و دپارتمان را انتخاب کنید</option>');
+      $("#DoctorId").prop('disabled', true);
+      return Promise.resolve();
+    }
+    
+    console.log('🏥 V2: Loading eligible doctors for service:', { serviceId, deptId, clinicId });
+    
+    const effectiveClinicId = clinicId || 1; // Default clinic ID = 1 (کلینیک شفا)
+    
+    // ✅ استفاده از endpoint مستقل برای فیلتر پزشکان بر اساس خدمت
+    return API.get("/doctors/by-service", { 
+      deptId: deptId, 
+      serviceId: serviceId, 
+      clinicId: effectiveClinicId 
+    })
+      .then(function(fullResponse) {
+        console.log('🏥 V2: Eligible doctors raw response:', fullResponse);
+        
+        // 🔍 چک Success قبل از extract
+        const successValue = fullResponse?.Success ?? fullResponse?.success;
+        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        
+        if (!fullResponse || !isSuccess) {
+          const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در بارگذاری پزشکان مجاز';
+          console.error('🏥 V2: Eligible doctors load failed:', errorMsg, fullResponse);
+          toastr.warning(errorMsg);
+          
+          const $doctorSelect = $("#DoctorId");
+          $doctorSelect.empty().append('<option value="">خطا در بارگذاری پزشکان مجاز</option>');
+          $doctorSelect.prop('disabled', true);
+          return;
+        }
+        
+        // Extract data using API.ok (handles ServiceResult structure)
+        const response = API.ok(fullResponse);
+        console.log('🏥 V2: Eligible doctors extracted data:', response);
+        console.log('🔍 V2: Response type:', typeof response, 'isArray:', Array.isArray(response));
+        
+        // پشتیبانی از PascalCase و camelCase
+        let doctors = [];
+        if (Array.isArray(response)) {
+          doctors = response;
+          console.log('✅ V2: Response is Array directly, count:', doctors.length);
+        } else if (response && typeof response === 'object') {
+          doctors = response.Data || response.data || response.Doctors || response.doctors || [];
+          console.log('✅ V2: Response is Object, Data count:', doctors.length);
+        } else {
+          console.warn('⚠️ V2: Unexpected response type:', typeof response);
+          doctors = [];
+        }
+        
+        console.log('🏥 V2: Eligible doctors parsed - Count:', doctors.length);
+        
+        const $doctorSelect = $("#DoctorId");
+        const previouslySelectedDoctorId = $doctorSelect.val(); // حفظ انتخاب قبلی اگر ممکن باشد
+        
+        $doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
+        
+        if (doctors.length === 0) {
+          $doctorSelect.append('<option value="">— پزشک مجاز برای این خدمت یافت نشد —</option>');
+          $doctorSelect.prop('disabled', true);
+          console.warn('🏥 V2: No eligible doctors found for service:', serviceId);
+          
+          // ✅ اگر قبلاً پزشکی انتخاب شده بود و حالا غیرمجاز است، هشدار بده
+          if (previouslySelectedDoctorId) {
+            toastr.warning('پزشک انتخاب شده برای این خدمت مجاز نیست. لطفاً پزشک دیگری انتخاب کنید.');
+          }
+        } else {
+          let selectedDoctorFound = false;
+          
+          doctors.forEach(function(doctor) {
+            const doctorId = doctor.doctorId || doctor.DoctorId;
+            const firstName = doctor.firstName || doctor.FirstName || '';
+            const lastName = doctor.lastName || doctor.LastName || '';
+            const specialization = doctor.specialization || doctor.Specialization || '';
+            const fullName = (firstName + ' ' + lastName).trim();
+            const displayName = specialization ? `${fullName} — ${specialization}` : fullName;
+            
+            const optionValue = doctorId;
+            const isPreviouslySelected = previouslySelectedDoctorId && 
+                                       (previouslySelectedDoctorId == doctorId || 
+                                        previouslySelectedDoctorId == optionValue);
+            
+            if (isPreviouslySelected) {
+              selectedDoctorFound = true;
+            }
+            
+            $doctorSelect.append(`<option value="${doctorId}" ${isPreviouslySelected ? 'selected' : ''}>${displayName}</option>`);
+          });
+          
+          $doctorSelect.prop('disabled', false);
+          console.log('🏥 V2: Eligible doctors filled:', doctors.length);
+          
+          // ✅ اگر قبلاً پزشکی انتخاب شده بود و حالا غیرمجاز است، هشدار بده و انتخاب را پاک کن
+          if (previouslySelectedDoctorId && !selectedDoctorFound) {
+            toastr.warning('پزشک انتخاب شده برای این خدمت مجاز نیست. لطفاً پزشک دیگری انتخاب کنید.');
+            $doctorSelect.val('').trigger('change');
+          }
+          
+          // ✅ Trigger state change event for Summary Header
+          if (doctors.length > 0 && $doctorSelect.val()) {
+            const selectedDoctorId = $doctorSelect.val();
+            const selectedDoctor = doctors.find(d => 
+              (d.doctorId || d.DoctorId) == selectedDoctorId
+            );
+            
+            if (selectedDoctor) {
+              $(document).trigger('rv2:stateChanged', {
+                doctor: {
+                  DoctorId: selectedDoctor.doctorId || selectedDoctor.DoctorId,
+                  Name: (selectedDoctor.firstName || selectedDoctor.FirstName || '') + ' ' + 
+                        (selectedDoctor.lastName || selectedDoctor.LastName || '')
+                }
+              });
+            }
+          }
+        }
+      })
+      .catch(function(error) {
+        console.error('🏥 V2: Eligible doctors load error:', error);
+        toastr.error('خطا در بارگذاری پزشکان مجاز برای خدمت');
+        
+        const $doctorSelect = $("#DoctorId");
+        $doctorSelect.empty().append('<option value="">خطا در بارگذاری پزشکان مجاز</option>');
+        $doctorSelect.prop('disabled', true);
+      });
+  };
+
   // Load on page ready
   $(document).ready(function() {
     console.log('🏥 V2: Initializing clinic/dept/doctor module...');

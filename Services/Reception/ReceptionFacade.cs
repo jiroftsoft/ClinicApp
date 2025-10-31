@@ -449,6 +449,229 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
+        /// دریافت پزشکان مجاز برای یک خدمت در دپارتمان
+        /// ✅ طبق نقشه پیوندی: فیلتر سه‌لایه (DoctorDepartments + ServiceCategory/SharedService + DoctorServiceCategory + Fallback)
+        /// </summary>
+        public async Task<ServiceResult<List<DoctorDto>>> GetDoctorsByServiceAsync(int departmentId, int serviceId, int? clinicId = null)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}", 
+                    departmentId, serviceId, clinicId);
+
+                var now = DateTime.Now;
+
+                // ✅ 1) بررسی اینکه خدمت در این دپارتمان ارائه می‌شود
+                // راه 1: از طریق ServiceCategory.DepartmentId
+                // راه 2: از طریق SharedService
+                var service = await _context.Services
+                    .AsNoTracking()
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => s.ServiceId == serviceId && !s.IsDeleted && s.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (service == null)
+                {
+                    _logger.Warning("⚠️ FACADE: خدمت یافت نشد - ServiceId: {ServiceId}", serviceId);
+                    return ServiceResult<List<DoctorDto>>.Failed($"خدمت با شناسه {serviceId} یافت نشد");
+                }
+
+                // بررسی اینکه خدمت در این دپارتمان ارائه می‌شود
+                var serviceInDepartment = false;
+                
+                // راه 1: از طریق ServiceCategory.DepartmentId
+                if (service.ServiceCategory != null && 
+                    service.ServiceCategory.DepartmentId == departmentId &&
+                    !service.ServiceCategory.IsDeleted && 
+                    service.ServiceCategory.IsActive)
+                {
+                    serviceInDepartment = true;
+                    _logger.Information("✅ FACADE: خدمت در دپارتمان ارائه می‌شود (از طریق ServiceCategory)");
+                }
+                else
+                {
+                    // راه 2: از طریق SharedService
+                    var isShared = await _context.SharedServices
+                        .AsNoTracking()
+                        .AnyAsync(ss => ss.ServiceId == serviceId &&
+                                       ss.DepartmentId == departmentId &&
+                                       ss.IsActive &&
+                                       !ss.IsDeleted);
+                    
+                    if (isShared)
+                    {
+                        serviceInDepartment = true;
+                        _logger.Information("✅ FACADE: خدمت در دپارتمان ارائه می‌شود (از طریق SharedService)");
+                    }
+                }
+
+                if (!serviceInDepartment)
+                {
+                    _logger.Warning("⚠️ FACADE: خدمت در این دپارتمان ارائه نمی‌شود - ServiceId: {ServiceId}, DeptId: {DeptId}", 
+                        serviceId, departmentId);
+                    return ServiceResult<List<DoctorDto>>.Successful(new List<DoctorDto>(), "خدمت در این دپارتمان ارائه نمی‌شود");
+                }
+
+                // ✅ 2) پایه: پزشکان فعال در دپارتمان
+                var department = await _context.Departments
+                    .AsNoTracking()
+                    .Where(d => d.DepartmentId == departmentId && !d.IsDeleted && d.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (department == null)
+                {
+                    _logger.Warning("⚠️ FACADE: دپارتمان یافت نشد - DepartmentId: {DeptId}", departmentId);
+                    return ServiceResult<List<DoctorDto>>.Failed($"دپارتمان با شناسه {departmentId} یافت نشد");
+                }
+
+                var effectiveClinicId = clinicId ?? department.ClinicId;
+
+                // ✅ 3) Query پایه: پزشکان فعال در دپارتمان
+                var doctorsBase = await _context.DoctorDepartments
+                    .AsNoTracking()
+                    .Where(dd => dd.DepartmentId == departmentId &&
+                               !dd.Doctor.IsDeleted &&
+                               dd.Doctor.IsActive &&
+                               !dd.IsDeleted &&
+                               dd.IsActive &&
+                               (dd.EndDate == null || dd.EndDate > now))
+                    .Select(dd => new
+                    {
+                        DoctorId = dd.Doctor.DoctorId,
+                        FirstName = dd.Doctor.FirstName ?? "",
+                        LastName = dd.Doctor.LastName ?? "",
+                        DoctorCode = dd.Doctor.DoctorCode ?? "",
+                        Specialization = dd.Doctor.DoctorSpecializations
+                            .Where(ds => ds.Specialization != null)
+                            .Select(ds => ds.Specialization.Name)
+                            .FirstOrDefault() ?? "",
+                        IsActive = dd.Doctor.IsActive
+                    })
+                    .Distinct()
+                    .ToListAsync();
+
+                _logger.Information("🔍 FACADE: پزشکان پایه در دپارتمان - Count: {Count}", doctorsBase.Count);
+
+                if (doctorsBase.Count == 0)
+                {
+                    _logger.Warning("⚠️ FACADE: هیچ پزشکی در دپارتمان فعال نیست");
+                    return ServiceResult<List<DoctorDto>>.Successful(new List<DoctorDto>(), "هیچ پزشکی در این دپارتمان فعال نیست");
+                }
+
+                // ✅ 4) فیلتر بر اساس DoctorServiceCategory (اگر موجود)
+                var doctorIdsByCategory = new List<int>();
+
+                if (service.ServiceCategoryId > 0)
+                {
+                    doctorIdsByCategory = await _context.DoctorServiceCategories
+                        .AsNoTracking()
+                        .Where(dsc => dsc.ServiceCategoryId == service.ServiceCategoryId &&
+                                     dsc.IsActive &&
+                                     !dsc.IsDeleted &&
+                                     // بازه اثر (اختیاری)
+                                     (dsc.ExpiryDate == null || dsc.ExpiryDate >= now))
+                        .Select(dsc => dsc.DoctorId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    _logger.Information("🔍 FACADE: پزشکان مجاز برای دسته خدمت - CategoryId: {CategoryId}, Count: {Count}", 
+                        service.ServiceCategoryId, doctorIdsByCategory.Count);
+                }
+
+                // ✅ 5) فیلتر نهایی
+                List<DoctorDto> filteredDoctors;
+
+                if (doctorIdsByCategory.Count > 0)
+                {
+                    // اگر DoctorServiceCategory موجود است، فقط پزشکان مجاز را برگردان
+                    filteredDoctors = doctorsBase
+                        .Where(d => doctorIdsByCategory.Contains(d.DoctorId))
+                        .OrderBy(d => d.LastName)
+                        .ThenBy(d => d.FirstName)
+                        .Select(d => new DoctorDto
+                        {
+                            DoctorId = d.DoctorId,
+                            FirstName = d.FirstName,
+                            LastName = d.LastName,
+                            DoctorCode = d.DoctorCode,
+                            Specialization = d.Specialization,
+                            IsActive = d.IsActive
+                        })
+                        .ToList();
+                    
+                    _logger.Information("✅ FACADE: پزشکان فیلتر شده (با DoctorServiceCategory) - Count: {Count}", filteredDoctors.Count);
+                }
+                else
+                {
+                    // ✅ Fallback: اگر DoctorServiceCategory موجود نیست، از منطق ServiceGroup ↔ Specialty استفاده کن
+                    // برای خدمات تخصصی (GroupCode = 1-7)، فقط پزشکان متخصص را برگردان
+                    // برای خدمات عمومی، همه پزشکان را برگردان
+                    if (service.GroupCode.HasValue && service.GroupCode.Value > 1)
+                    {
+                        // خدمت تخصصی: فقط پزشکان متخصص (نه عمومی)
+                        filteredDoctors = doctorsBase
+                            .Where(d => !string.IsNullOrEmpty(d.Specialization) && 
+                                       !d.Specialization.Contains("عمومی") &&
+                                       !d.Specialization.Contains("General"))
+                            .OrderBy(d => d.LastName)
+                            .ThenBy(d => d.FirstName)
+                            .Select(d => new DoctorDto
+                            {
+                                DoctorId = d.DoctorId,
+                                FirstName = d.FirstName,
+                                LastName = d.LastName,
+                                DoctorCode = d.DoctorCode,
+                                Specialization = d.Specialization,
+                                IsActive = d.IsActive
+                            })
+                            .ToList();
+                        
+                        _logger.Information("✅ FACADE: پزشکان فیلتر شده (Fallback - تخصصی) - GroupCode: {GroupCode}, Count: {Count}", 
+                            service.GroupCode.Value, filteredDoctors.Count);
+                    }
+                    else
+                    {
+                        // خدمت عمومی: همه پزشکان
+                        filteredDoctors = doctorsBase
+                            .OrderBy(d => d.LastName)
+                            .ThenBy(d => d.FirstName)
+                            .Select(d => new DoctorDto
+                            {
+                                DoctorId = d.DoctorId,
+                                FirstName = d.FirstName,
+                                LastName = d.LastName,
+                                DoctorCode = d.DoctorCode,
+                                Specialization = d.Specialization,
+                                IsActive = d.IsActive
+                            })
+                            .ToList();
+                        
+                        _logger.Information("✅ FACADE: پزشکان فیلتر شده (Fallback - عمومی) - Count: {Count}", filteredDoctors.Count);
+                    }
+                }
+
+                if (filteredDoctors.Count > 0)
+                {
+                    _logger.Information("✅ FACADE: اولین پزشک - DoctorId: {DoctorId}, Name: {FirstName} {LastName}", 
+                        filteredDoctors[0].DoctorId, filteredDoctors[0].FirstName, filteredDoctors[0].LastName);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: هیچ پزشک مجازی برای این خدمت یافت نشد");
+                }
+
+                return ServiceResult<List<DoctorDto>>.Successful(filteredDoctors, 
+                    filteredDoctors.Count > 0 ? $"تعداد {filteredDoctors.Count} پزشک مجاز یافت شد" : "هیچ پزشک مجازی برای این خدمت یافت نشد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}, Exception: {ExceptionType}, Message: {Message}", 
+                    departmentId, serviceId, clinicId, ex.GetType().Name, ex.Message);
+                return ServiceResult<List<DoctorDto>>.Failed($"خطا در دریافت پزشکان مجاز برای خدمت: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// جستجو یا ایجاد بیمار
         /// </summary>
         public async Task<ServiceResult<PatientDto>> FindOrCreatePatientAsync(string nationalCode, PatientCreateDto dtoIfNotExists)

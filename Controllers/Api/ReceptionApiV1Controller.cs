@@ -758,6 +758,196 @@ namespace ClinicApp.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// POST /api/v1/reception/item/add
+        /// افزودن آیتم به پیش‌نویس
+        /// </summary>
+        [HttpPost, Route("item/add")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> AddItem(AddItemRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: افزودن آیتم به پیش‌نویس - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}, Quantity: {Quantity}", 
+                    request?.ReceptionId, request?.ServiceId, request?.Quantity);
+
+                if (request == null || request.ReceptionId <= 0 || request.ServiceId <= 0 || request.Quantity <= 0)
+                {
+                    return Json(ServiceResult<ItemsAndTotalsDto>.Failed("درخواست نامعتبر است. ReceptionId, ServiceId و Quantity الزامی هستند.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var facadeRequest = new ViewModels.Reception.AddItemRequest
+                    {
+                        ReceptionId = request.ReceptionId,
+                        ServiceId = request.ServiceId,
+                        Quantity = request.Quantity
+                    };
+
+                    var result = await _facade.AddItemAsync(facadeRequest);
+                    
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: آیتم با موفقیت افزوده شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: افزودن آیتم ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
+                    return Json(result);
+                }
+
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در افزودن آیتم - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
+                    request?.ReceptionId, request?.ServiceId);
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/item/remove
+        /// حذف آیتم از پیش‌نویس
+        /// </summary>
+        [HttpPost, Route("item/remove")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> RemoveItem(RemoveItemRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: حذف آیتم از پیش‌نویس - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
+                    request?.ReceptionId, request?.ServiceId);
+
+                if (request == null || request.ReceptionId <= 0 || request.ServiceId <= 0)
+                {
+                    return Json(ServiceResult<ItemsAndTotalsDto>.Failed("درخواست نامعتبر است. ReceptionId و ServiceId الزامی هستند.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var facadeRequest = new ViewModels.Reception.RemoveItemRequest
+                    {
+                        ReceptionId = request.ReceptionId,
+                        ServiceId = request.ServiceId
+                    };
+
+                    var result = await _facade.RemoveItemAsync(facadeRequest);
+                    
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: آیتم با موفقیت حذف شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: حذف آیتم ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
+                    return Json(result);
+                }
+
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در حذف آیتم - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
+                    request?.ReceptionId, request?.ServiceId);
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/draft/update
+        /// به‌روزرسانی پیش‌نویس پذیرش
+        /// </summary>
+        [HttpPost, Route("draft/update")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> UpdateDraft(ClinicApp.Dtos.Reception.UpdateDraftRequest request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: به‌روزرسانی پیش‌نویس - ReceptionId: {ReceptionId}", request?.ReceptionId);
+
+                if (request == null || request.ReceptionId <= 0)
+                {
+                    return Json(ServiceResult<ItemsAndTotalsDto>.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var result = await _facade.UpdateDraftAsync(request);
+                    
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: پیش‌نویس با موفقیت به‌روزرسانی شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: به‌روزرسانی پیش‌نویس ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
+                    return Json(result);
+                }
+
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در به‌روزرسانی پیش‌نویس - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                return Json(ServiceResult<ItemsAndTotalsDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/doctors/by-service
+        /// دریافت پزشکان مجاز برای یک خدمت در دپارتمان
+        /// </summary>
+        [HttpGet, Route("doctors/by-service")]
+        public async Task<ActionResult> GetDoctorsByService(int deptId, int serviceId, int? clinicId = null)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}", 
+                    deptId, serviceId, clinicId);
+
+                if (deptId <= 0 || serviceId <= 0)
+                {
+                    return Json(ServiceResult.Failed("پارامترها نامعتبر است. DeptId و ServiceId الزامی هستند.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                if (_facade != null)
+                {
+                    var result = await _facade.GetDoctorsByServiceAsync(deptId, serviceId, clinicId);
+                    
+                    if (result.Success && result.Data != null)
+                    {
+                        _logger?.Information("✅ V1 API: پزشکان مجاز دریافت شد - Count: {Count}", result.Data.Count);
+                        return Json(result, JsonRequestBehavior.AllowGet);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: دریافت پزشکان مجاز ناموفق - Message: {Message}", result.Message);
+                        return Json(result, JsonRequestBehavior.AllowGet);
+                    }
+                }
+
+                _logger?.Warning("⚠️ V1 API: _facade is null");
+                return Json(ServiceResult<List<ViewModels.Reception.DoctorDto>>.Failed("سرویس در دسترس نیست"), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}", 
+                    deptId, serviceId, clinicId);
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
     }
 

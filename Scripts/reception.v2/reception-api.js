@@ -47,8 +47,13 @@
       const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
       return 'GetInsurancePlans' + q;
     }
+    if (/^\/?doctors\/by-service/i.test(path)) {
+      const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
+      return 'GetDoctorsByService' + q;
+    }
     if (/^\/?item\/add/i.test(path)) return 'AddItem';
     if (/^\/?item\/remove/i.test(path)) return 'RemoveItem';
+    if (/^\/?draft\/update/i.test(path)) return 'DraftUpdate';
     if (/^\/?insurances\/set/i.test(path)) return 'SetInsurances';
     if (/^\/?finalize\/pos/i.test(path)) return 'FinalizeWithPos';
     if (/^\/?finalize\/cash/i.test(path)) return 'FinalizeWithCash';

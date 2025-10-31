@@ -178,6 +178,26 @@ namespace ClinicApp.Controllers.Api
         public string PatientShareStr { get; set; }
     }
 
+    /// <summary>
+    /// DTO برای افزودن آیتم به پیش‌نویس
+    /// </summary>
+    public class AddItemRequestDto
+    {
+        public int ReceptionId { get; set; }
+        public int ServiceId { get; set; }
+        public int Quantity { get; set; }
+        public int? Year { get; set; } // اختیاری - اگر null باشد از Reception استفاده می‌شود
+    }
+
+    /// <summary>
+    /// DTO برای حذف آیتم از پیش‌نویس
+    /// </summary>
+    public class RemoveItemRequestDto
+    {
+        public int ReceptionId { get; set; }
+        public int ServiceId { get; set; }
+    }
+
     #endregion
 }
 
