@@ -135,18 +135,35 @@
         const identity = dto?.Identity || dto?.identity;
         console.log('🏥 V2: Identity extracted:', identity);
         
-        if (identity) {
-          cache = JSON.parse(JSON.stringify(identity));
-          
-          // پر کردن اطلاعات هویتی
-          fillIdentity(identity);
-          console.log('🏥 V2: Identity filled to form');
-          
-          // تنظیم بیمه‌ها
-          const insurance = dto?.Insurance || dto?.insurance;
-          console.log('🏥 V2: Insurance extracted:', insurance);
-          
-          if (window.insPanel && insurance) {
+          if (identity) {
+            cache = JSON.parse(JSON.stringify(identity));
+            
+            // پر کردن اطلاعات هویتی
+            fillIdentity(identity);
+            console.log('🏥 V2: Identity filled to form');
+            
+            // ✅ Trigger state change event for Summary Header
+            $(document).trigger('rv2:stateChanged', {
+              patient: {
+                PatientId: identity.PatientId || identity.patientId,
+                NationalCode: identity.NationalCode || identity.nationalCode,
+                FirstName: identity.FirstName || identity.firstName,
+                LastName: identity.LastName || identity.lastName,
+                Gender: identity.Gender || identity.gender,
+                GenderTitle: identity.Gender === 'Male' || identity.gender === 'Male' ? 'مرد' : (identity.Gender === 'Female' || identity.gender === 'Female' ? 'زن' : ''),
+                BirthDate: identity.BirthDate || identity.birthDate,
+                BirthDateIso: identity.BirthDate || identity.birthDate,
+                BirthDateShamsi: identity.BirthDateShamsi || identity.birthDateShamsi,
+                Address: identity.Address || identity.address,
+                Mobile: identity.Mobile || identity.mobile
+              }
+            });
+            
+            // تنظیم بیمه‌ها
+            const insurance = dto?.Insurance || dto?.insurance;
+            console.log('🏥 V2: Insurance extracted:', insurance);
+            
+            if (window.insPanel && insurance) {
             window.insPanel.set(insurance);
             console.log('🏥 V2: Insurance set to panel');
           }

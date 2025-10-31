@@ -6,7 +6,27 @@
   ns.ReceptionV2 = ns.ReceptionV2 || {};
   
   var $modal;
-  var API = window.ReceptionAPI || {};
+  // Use the same API wrapper as other modules (from reception-api.js)
+  var API = w.ReceptionAPI || {
+    get: function(path, data) {
+      return $.ajax({
+        url: '/api/v1/reception' + path,
+        type: 'GET',
+        data: data || {},
+        dataType: 'json',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+    },
+    ok: function(response) {
+      if (response && response.Data !== undefined) return response.Data;
+      if (response && response.data !== undefined) return response.data;
+      return response;
+    }
+  };
 
   /**
    * فرمت مبلغ IRR

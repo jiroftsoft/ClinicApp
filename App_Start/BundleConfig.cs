@@ -170,10 +170,12 @@ namespace ClinicApp
                 "~/Scripts/reception.v2/reception-utils.js",
                 "~/Scripts/reception.v2/form-change-detector.js",
                 "~/Scripts/reception.v2/auto-draft-manager.js",
+                "~/Scripts/reception.v2/summary-header.js",
                 "~/Scripts/reception.v2/patient-lookup.js",
                 "~/Scripts/reception.v2/insurance-panel.js",
                 "~/Scripts/reception.v2/clinic-dept-doctor.js",
                 "~/Scripts/reception.v2/service-lookup.js",
+                "~/Scripts/reception.v2/coverage-modal.js",
                 "~/Scripts/reception.v2/totals-panel.js",
                 "~/Scripts/reception.v2/payment-panel.js",
                 "~/Scripts/reception.v2/reception-main.js"

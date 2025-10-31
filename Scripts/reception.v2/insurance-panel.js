@@ -310,6 +310,16 @@
         // به‌روزرسانی نمایش وضعیت در UI
         updateInsuranceStatus();
         
+        // ✅ Trigger state change event for Summary Header
+        $(document).trigger('rv2:stateChanged', {
+          insurances: {
+            BasePlanId: currentBasePlanId,
+            BasePlanName: currentBasePlanName,
+            SupplementaryPlanId: currentSuppPlanId,
+            SupplementaryPlanName: currentSuppPlanName
+          }
+        });
+        
         // Update totals if provided
         if (response && (response.totals || (response.Data && response.Data.totals))) {
           const totals = response.totals || response.Data?.totals;

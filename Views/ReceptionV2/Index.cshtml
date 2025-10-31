@@ -10,6 +10,10 @@
     @Html.AntiForgeryToken()
 }
 
+@* Summary Header + Identity Section *@
+@Html.Partial("Partials/_ReceptionSummaryHeader")
+@Html.Partial("Partials/_IdentitySection")
+
 <div class="reception-pro container-fluid" dir="rtl">
   <header class="reception-pro__header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
@@ -49,6 +53,9 @@
 
 @* Patient Fast Create Modal *@
 @Html.Partial("Partials/_PatientFastCreateModal")
+
+@* Coverage Modal *@
+@Html.Partial("Partials/_CoverageModal")
 
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/reception.v2")

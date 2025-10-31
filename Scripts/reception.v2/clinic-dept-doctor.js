@@ -109,11 +109,21 @@
           $doctorSelect.empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
         }
         
-        // Mark as initialized
-        if (!isInitialized) {
-          isInitialized = true;
-          console.log('🏥 V2: Bootstrap initialized');
-        }
+                // Mark as initialized
+                if (!isInitialized) {
+                  isInitialized = true;
+                  console.log('🏥 V2: Bootstrap initialized');
+                  
+                  // ✅ Trigger FinancialYear update for Summary Header
+                  if (financialYear) {
+                    $(document).trigger('rv2:stateChanged', {
+                      financialYear: {
+                        Year: financialYear,
+                        YearTitle: 'سال مالی ' + financialYear
+                      }
+                    });
+                  }
+                }
       })
       .catch(function(err) {
         console.error('🏥 V2: Bootstrap error:', err);
@@ -147,6 +157,25 @@
   // Reload doctors when department changes
   $("#DepartmentId").on('change', function() {
     const deptId = $(this).val();
+    const deptName = $(this).find('option:selected').text();
+    
+    // ✅ Trigger state change event for Summary Header
+    $(document).trigger('rv2:stateChanged', {
+      department: {
+        DepartmentId: deptId ? parseInt(deptId) : null,
+        Name: deptName || '—'
+      }
+    });
+    
+    // Trigger FinancialYear update if available
+    if (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) {
+      $(document).trigger('rv2:stateChanged', {
+        financialYear: {
+          Year: window.ReceptionBootstrap.FinancialYear,
+          YearTitle: 'سال مالی ' + window.ReceptionBootstrap.FinancialYear
+        }
+      });
+    }
     console.log('🏥 V2: Department changed:', deptId);
     loadDoctorsForDepartment(deptId);
     
@@ -158,6 +187,21 @@
       console.log('🏥 V2: Triggering services load for department:', deptId);
       // service-lookup.js خودش change event را handle می‌کند
     }
+  });
+  
+  // Doctor change handler
+  $("#DoctorId").on('change', function() {
+    const doctorId = $(this).val();
+    const doctorName = $(this).find('option:selected').text();
+    
+    // ✅ Trigger state change event for Summary Header
+    $(document).trigger('rv2:stateChanged', {
+      doctor: {
+        DoctorId: doctorId ? parseInt(doctorId) : null,
+        FullName: doctorName || '—',
+        Name: doctorName || '—'
+      }
+    });
   });
   
   // Reload departments when clinic changes (اما چون یک کلینیک داریم، این event کمتر اتفاق می‌افتد)
