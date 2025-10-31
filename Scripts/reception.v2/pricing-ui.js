@@ -47,15 +47,46 @@
 
     if (!tip) tip = s.label;
 
-    return (
-      '<span class="badge ' + s.badge + ' coverage-badge"' +
-      '        data-itemid="' + itemId + '"' +
-      '        data-bs-toggle="tooltip"' +
-      '        data-bs-html="true"' +
-      '        title="' + (tip.replace(/'/g, "&#39;") || s.label) + '">' +
-      s.label +
-      '</span>'
-    );
+    // ✅ بررسی وجود Popper.js قبل از اضافه کردن data-bs-toggle
+    var hasPopper = false;
+    try {
+      if (typeof window.Popper !== 'undefined' && typeof window.Popper.createPopper === 'function') {
+        hasPopper = true;
+      } else if (typeof Popper !== 'undefined' && typeof Popper.createPopper === 'function') {
+        hasPopper = true;
+      }
+    } catch (e) {
+      hasPopper = false;
+    }
+
+    // ✅ اگر Popper موجود نیست یا Bootstrap موجود نیست، فقط از title استفاده کنیم (native tooltip)
+    var useNativeTooltip = !hasPopper || !window.bootstrap || typeof window.bootstrap.Tooltip === 'undefined';
+    
+    // Escape HTML برای title (native tooltip HTML را نمی‌پذیرد)
+    var tipText = tip.replace(/<br>/g, ' | ').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    
+    if (useNativeTooltip) {
+      // ✅ Fallback: فقط title (native browser tooltip)
+      return (
+        '<span class="badge ' + s.badge + ' coverage-badge"' +
+        '        data-itemid="' + itemId + '"' +
+        '        title="' + tipText + '">' +
+        s.label +
+        '</span>'
+      );
+    } else {
+      // ✅ Bootstrap 5 Tooltip با Popper
+      return (
+        '<span class="badge ' + s.badge + ' coverage-badge"' +
+        '        data-itemid="' + itemId + '"' +
+        '        data-bs-toggle="tooltip"' +
+        '        data-bs-html="true"' +
+        '        data-bs-original-title="' + (tip.replace(/'/g, "&#39;") || s.label) + '"' +
+        '        title="' + tipText + '">' +
+        s.label +
+        '</span>'
+      );
+    }
   }
 
   /**
@@ -127,53 +158,107 @@
       $row.data('item', item);
       $row.data('pricing', pricing);
 
-      // ✅ init tooltip (پشتیبانی از Bootstrap 5 و 4 با fallback برای Popper)
+      // ✅ init tooltip (پشتیبانی از Bootstrap 5 و 4 با fallback کامل برای Popper)
       try {
-        // بررسی وجود Popper.js (Bootstrap 5 نیاز دارد)
-        var hasPopper = typeof window.Popper !== 'undefined' || 
-                       (window.bootstrap && window.bootstrap.Tooltip && 
-                        typeof window.bootstrap.Tooltip.prototype !== 'undefined');
-        
-        if (window.bootstrap && typeof window.bootstrap.Tooltip !== 'undefined' && hasPopper) {
-          // Bootstrap 5 API (با Popper)
-          $('[data-bs-toggle="tooltip"]', $row).each(function() {
+        // ✅ بررسی دقیق وجود Popper.js (چندین روش)
+        var hasPopper = false;
+        try {
+          // روش 1: بررسی window.Popper.createPopper (Popper v2)
+          if (typeof window.Popper !== 'undefined' && 
+              window.Popper && 
+              typeof window.Popper.createPopper === 'function') {
+            // تست عملی: سعی کن یک popper ساده بسازیم
             try {
-              // بررسی اینکه آیا tooltip قبلاً ایجاد شده یا نه
-              var existingTooltip = bootstrap.Tooltip.getInstance(this);
-              if (existingTooltip) {
-                existingTooltip.dispose();
+              var testElement = document.createElement('div');
+              var testPopper = window.Popper.createPopper(testElement, testElement, {});
+              if (testPopper) {
+                testPopper.destroy();
+                hasPopper = true;
               }
-              new bootstrap.Tooltip(this, { 
-                trigger: 'hover',
-                html: true,
-                fallbackPlacements: ['top', 'bottom', 'left', 'right']
-              });
-            } catch (err) {
-              // اگر Popper خطا داد، از title استفاده کنیم
-              console.warn('🏥 V2: Error creating Bootstrap 5 tooltip (Popper issue):', err.message);
-              // Fallback: استفاده از title attribute
-              var $el = $(this);
-              if (!$el.attr('title') && $el.data('bs-original-title')) {
-                $el.attr('title', $el.data('bs-original-title'));
-              }
+            } catch (testErr) {
+              hasPopper = false;
             }
-          });
+          }
+          // روش 2: بررسی Popper از namespace مستقیم
+          if (!hasPopper && typeof Popper !== 'undefined' && typeof Popper.createPopper === 'function') {
+            try {
+              var testElement = document.createElement('div');
+              var testPopper = Popper.createPopper(testElement, testElement, {});
+              if (testPopper) {
+                testPopper.destroy();
+                hasPopper = true;
+              }
+            } catch (testErr) {
+              hasPopper = false;
+            }
+          }
+        } catch (e) {
+          hasPopper = false;
+        }
+        
+        // ✅ اگر Bootstrap 5 موجود است اما Popper موجود نیست، از title attribute استفاده کنیم
+        if (window.bootstrap && typeof window.bootstrap.Tooltip !== 'undefined') {
+          if (hasPopper) {
+            // Bootstrap 5 API (با Popper) - فقط با hover init شود
+            $('[data-bs-toggle="tooltip"]', $row).each(function() {
+              try {
+                var existingTooltip = bootstrap.Tooltip.getInstance(this);
+                if (existingTooltip) {
+                  existingTooltip.dispose();
+                }
+                new bootstrap.Tooltip(this, { 
+                  trigger: 'hover',
+                  html: true,
+                  fallbackPlacements: ['top', 'bottom', 'left', 'right']
+                });
+              } catch (err) {
+                // اگر Popper خطا داد، از title استفاده کنیم
+                console.warn('🏥 V2: Error creating Bootstrap 5 tooltip (Popper issue):', err.message);
+                var $el = $(this);
+                var title = $el.data('bs-original-title') || $el.attr('title');
+                if (title) {
+                  $el.attr('title', title);
+                  $el.removeAttr('data-bs-toggle');
+                }
+              }
+            });
+          } else {
+            // Popper موجود نیست - از title attribute استفاده کنیم (native browser tooltip)
+            console.warn('🏥 V2: Popper.js not found, using native tooltips');
+            $('[data-bs-toggle="tooltip"]', $row).each(function() {
+              var $el = $(this);
+              var title = $el.data('bs-original-title') || $el.attr('title') || $el.attr('data-bs-original-title');
+              if (title) {
+                $el.attr('title', title);
+                $el.removeAttr('data-bs-toggle'); // حذف data-bs-toggle تا Bootstrap تلاش نکند tooltip بسازد
+              }
+            });
+          }
         } else if ($.fn.tooltip && typeof $('[data-toggle="tooltip"]', $row).tooltip === 'function') {
           // Bootstrap 4 API (fallback)
           $('[data-toggle="tooltip"]', $row).tooltip({ trigger: 'hover' });
         } else {
-          // Ultimate fallback: استفاده از title attribute و CSS
+          // Ultimate fallback: استفاده از title attribute (native browser tooltip)
           $('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]', $row).each(function() {
             var $el = $(this);
-            var title = $el.data('bs-original-title') || $el.data('original-title') || $el.attr('title');
+            var title = $el.data('bs-original-title') || $el.data('original-title') || $el.attr('title') || $el.attr('data-bs-original-title');
             if (title && !$el.attr('title')) {
               $el.attr('title', title);
+              $el.removeAttr('data-bs-toggle data-toggle'); // حذف تا Bootstrap تلاش نکند
             }
           });
         }
       } catch (err) {
         console.warn('🏥 V2: Error initializing tooltips:', err);
-        // Silent fail - tooltips optional
+        // Ultimate fallback: استفاده از title attribute
+        $('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]', $row).each(function() {
+          var $el = $(this);
+          var title = $el.data('bs-original-title') || $el.data('original-title') || $el.attr('title');
+          if (title) {
+            $el.attr('title', title);
+            $el.removeAttr('data-bs-toggle data-toggle');
+          }
+        });
       }
     }
   }

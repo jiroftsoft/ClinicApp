@@ -574,12 +574,47 @@
             window.jQueryReady = true;
             console.log('✅ jQuery is fully loaded and ready');
             
-            // Initialize tooltips globally
-            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
-                });
+            // ✅ Initialize tooltips globally (با بررسی Popper.js)
+            try {
+                var hasPopper = false;
+                try {
+                    if (typeof window.Popper !== 'undefined' && typeof window.Popper.createPopper === 'function') {
+                        hasPopper = true;
+                    } else if (typeof Popper !== 'undefined' && typeof Popper.createPopper === 'function') {
+                        hasPopper = true;
+                    }
+                } catch (e) {
+                    hasPopper = false;
+                }
+                
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip && hasPopper) {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                        try {
+                            new bootstrap.Tooltip(tooltipTriggerEl, { trigger: 'hover', html: true });
+                        } catch (err) {
+                            // اگر Popper خطا داد، از title استفاده کنیم
+                            var $el = jQuery(tooltipTriggerEl);
+                            var title = $el.data('bs-original-title') || $el.attr('title');
+                            if (title) {
+                                $el.attr('title', title);
+                                $el.removeAttr('data-bs-toggle data-bs-html');
+                            }
+                        }
+                    });
+                } else if (!hasPopper && typeof bootstrap !== 'undefined') {
+                    // Popper موجود نیست - از native tooltip استفاده کنیم
+                    jQuery('[data-bs-toggle="tooltip"]').each(function() {
+                        var $el = jQuery(this);
+                        var title = $el.data('bs-original-title') || $el.attr('title');
+                        if (title) {
+                            $el.attr('title', title);
+                            $el.removeAttr('data-bs-toggle data-bs-html data-bs-original-title');
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('🏥 V2: Error initializing tooltips in _Layout:', err);
             }
         });
         
