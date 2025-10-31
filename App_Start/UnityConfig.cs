@@ -493,6 +493,9 @@ namespace ClinicApp
                 container.RegisterType<ClinicApp.Services.Pricing.Interfaces.ITariffResolver, ClinicApp.Services.Pricing.Resolvers.TariffResolver>(new PerRequestLifetimeManager());
                 container.RegisterType<ClinicApp.Services.Pricing.Interfaces.IInsuranceCoverageProvider, ClinicApp.Services.Pricing.Coverage.InsuranceCoverageProvider>(new PerRequestLifetimeManager());
                 container.RegisterType<ClinicApp.Services.Pricing.Interfaces.IPricingEngine, ClinicApp.Services.Pricing.Engines.PricingEngine>(new PerRequestLifetimeManager());
+                
+                // ✅ Register Reception Pricing Service
+                container.RegisterType<ClinicApp.Interfaces.Reception.IReceptionPricingService, ClinicApp.Services.Reception.ReceptionPricingService>(new PerRequestLifetimeManager());
 
                 // Register External Inquiry and Security Token Services
                 container.RegisterType<IExternalInquiryService, ExternalInquiryService>(new PerRequestLifetimeManager());

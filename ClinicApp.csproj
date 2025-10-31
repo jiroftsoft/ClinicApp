@@ -571,9 +571,12 @@
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\ReceptionAjaxHelper.cs" />
     <Compile Include="Helpers\SafeSqlBuilder.cs" />
+    <Compile Include="Helpers\Security\SecurityLogger.cs" />
+    <Compile Include="Helpers\Security\SensitiveDataMaskingHelper.cs" />
     <Compile Include="Helpers\ServiceResultExtensions.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
+    <Compile Include="Helpers\Validation\IdentityValidators.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\ITimeProvider.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
@@ -666,6 +669,7 @@
     <Compile Include="Interfaces\Reception\IReceptionFormService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionNavigationService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionPaymentService.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionPricingService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionSecurityService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionServiceManagementService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionSidebarService.cs" />
@@ -1132,6 +1136,7 @@
     <Compile Include="Services\Reception\ReceptionPatientIdentityService.cs" />
     <Compile Include="Services\Reception\ReceptionPatientService.cs" />
     <Compile Include="Services\Reception\ReceptionPaymentService.cs" />
+    <Compile Include="Services\Reception\ReceptionPricingService.cs" />
     <Compile Include="Services\Reception\ReceptionSecurityService.cs" />
     <Compile Include="Services\Reception\ReceptionServiceManagementService.cs" />
     <Compile Include="Services\Reception\ReceptionSidebarService.cs" />

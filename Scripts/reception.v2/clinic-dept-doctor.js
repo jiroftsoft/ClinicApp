@@ -195,25 +195,19 @@
           return;
         }
         
-        // Extract data using API.ok (handles ServiceResult structure)
-        // ✅ GetDoctorsByDepartment مستقیماً ServiceResult<List<DoctorDto>> برمی‌گرداند
-        // پس API.ok() مستقیماً List<DoctorDto> را برمی‌گرداند (نه یک object با property Data)
+        // ✅ Extract data using API.ok (handles ServiceResult structure)
+        // ✅ GetDoctorsByDepartment اکنون { doctors: [...] } برمی‌گرداند
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Doctors extracted data:', response);
         console.log('🔍 V2: Response type:', typeof response, 'isArray:', Array.isArray(response));
-        console.log('🔍 V2: Response keys:', response && typeof response === 'object' && !Array.isArray(response) ? Object.keys(response) : 'N/A (array)');
         
-        // پشتیبانی از PascalCase و camelCase
-        // ✅ اگر response مستقیماً Array باشد (List<DoctorDto>):
+        // ✅ پشتیبانی از پاسخ جدید { doctors: [...] }
         let doctors = [];
-        if (Array.isArray(response)) {
-          // API.ok() مستقیماً Array را برگردانده است
-          doctors = response;
-          console.log('✅ V2: Response is Array directly, count:', doctors.length);
-        } else if (response && typeof response === 'object') {
-          // اگر response یک object است، property Data را چک کن
-          doctors = response.Data || response.data || response.Doctors || response.doctors || [];
-          console.log('✅ V2: Response is Object, Data count:', doctors.length);
+        if (response && typeof response === 'object') {
+          // ✅ پاسخ جدید: { doctors: [...] }
+          doctors = response.doctors || response.Doctors || 
+                    (Array.isArray(response) ? response : []);
+          console.log('✅ V2: Doctors extracted from response, count:', doctors.length);
         } else {
           console.warn('⚠️ V2: Unexpected response type:', typeof response);
           doctors = [];
@@ -221,37 +215,10 @@
         
         console.log('🏥 V2: Doctors parsed - Count:', doctors.length);
         
-        const $doctorSelect = $("#DoctorId");
-        $doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
+        fillDoctorOptions(doctors);
         
         if (doctors.length === 0) {
-          $doctorSelect.append('<option value="">پزشکی در این دپارتمان یافت نشد</option>');
-          $doctorSelect.prop('disabled', true);
-          console.warn('🏥 V2: No doctors found for department:', deptId);
-        } else {
-          doctors.forEach(function(doctor) {
-            const doctorId = doctor.doctorId || doctor.DoctorId;
-            const firstName = doctor.firstName || doctor.FirstName || '';
-            const lastName = doctor.lastName || doctor.LastName || '';
-            const specialization = doctor.specialization || doctor.Specialization || '';
-            const fullName = (firstName + ' ' + lastName).trim();
-            const displayName = specialization ? `${fullName} — ${specialization}` : fullName;
-            
-            $doctorSelect.append(`<option value="${doctorId}">${displayName}</option>`);
-          });
-          $doctorSelect.prop('disabled', false);
-          console.log('🏥 V2: Doctors filled:', doctors.length);
-          
-          // ✅ Trigger state change event for Summary Header
-          if (doctors.length > 0) {
-            const selectedDoctor = doctors[0];
-            $(document).trigger('rv2:stateChanged', {
-              doctor: {
-                DoctorId: selectedDoctor.doctorId || selectedDoctor.DoctorId,
-                Name: (selectedDoctor.firstName || selectedDoctor.FirstName || '') + ' ' + (selectedDoctor.lastName || selectedDoctor.LastName || '')
-              }
-            });
-          }
+          toastr.warning('برای این دپارتمان، پزشک فعالی تعریف نشده است.');
         }
       })
       .catch(function(error) {
@@ -262,6 +229,34 @@
         $doctorSelect.empty().append('<option value="">خطا در بارگذاری پزشکان</option>');
         $doctorSelect.prop('disabled', true);
       });
+  }
+  
+  /**
+   * ✅ پر کردن Dropdown پزشکان (بهینه‌سازی شده)
+   * پشتیبانی از DoctorOptionDto (FullName, Title, DepartmentName)
+   */
+  function fillDoctorOptions(doctors) {
+    const $doctorSelect = $("#DoctorId");
+    $doctorSelect.empty().append('<option value="">— انتخاب پزشک —</option>');
+    
+    if (!doctors || doctors.length === 0) {
+      $doctorSelect.append('<option value="">پزشکی در این دپارتمان یافت نشد</option>');
+      $doctorSelect.prop('disabled', true);
+      return;
+    }
+    
+    doctors.forEach(function(doctor) {
+      const doctorId = doctor.doctorId || doctor.DoctorId;
+      const fullName = doctor.fullName || doctor.FullName || 
+                       `${doctor.firstName || doctor.FirstName || ''} ${doctor.lastName || doctor.LastName || ''}`.trim();
+      const title = doctor.title || doctor.Title || doctor.specialization || doctor.Specialization || '';
+      const displayName = title ? `${fullName} — ${title}` : fullName;
+      
+      $doctorSelect.append(`<option value="${doctorId}">${displayName}</option>`);
+    });
+    
+    $doctorSelect.prop('disabled', false);
+    console.log('🏥 V2: Doctors filled:', doctors.length);
   }
   
   /**
@@ -306,19 +301,19 @@
           return;
         }
         
-        // Extract data using API.ok (handles ServiceResult structure)
+        // ✅ Extract data using API.ok (handles ServiceResult structure)
+        // ✅ GetDoctorsByService اکنون { doctors: [...] } برمی‌گرداند
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Eligible doctors extracted data:', response);
         console.log('🔍 V2: Response type:', typeof response, 'isArray:', Array.isArray(response));
         
-        // پشتیبانی از PascalCase و camelCase
+        // ✅ پشتیبانی از پاسخ جدید { doctors: [...] }
         let doctors = [];
-        if (Array.isArray(response)) {
-          doctors = response;
-          console.log('✅ V2: Response is Array directly, count:', doctors.length);
-        } else if (response && typeof response === 'object') {
-          doctors = response.Data || response.data || response.Doctors || response.doctors || [];
-          console.log('✅ V2: Response is Object, Data count:', doctors.length);
+        if (response && typeof response === 'object') {
+          // ✅ پاسخ جدید: { doctors: [...] }
+          doctors = response.doctors || response.Doctors || 
+                    (Array.isArray(response) ? response : []);
+          console.log('✅ V2: Eligible doctors extracted from response, count:', doctors.length);
         } else {
           console.warn('⚠️ V2: Unexpected response type:', typeof response);
           doctors = [];
@@ -326,65 +321,56 @@
         
         console.log('🏥 V2: Eligible doctors parsed - Count:', doctors.length);
         
-        const $doctorSelect = $("#DoctorId");
-        const previouslySelectedDoctorId = $doctorSelect.val(); // حفظ انتخاب قبلی اگر ممکن باشد
-        
-        $doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
+        // ✅ استفاده از fillDoctorOptions برای یکنواختی
+        const previouslySelectedDoctorId = $("#DoctorId").val(); // حفظ انتخاب قبلی اگر ممکن باشد
         
         if (doctors.length === 0) {
-          $doctorSelect.append('<option value="">— پزشک مجاز برای این خدمت یافت نشد —</option>');
-          $doctorSelect.prop('disabled', true);
+          fillDoctorOptions([]);
           console.warn('🏥 V2: No eligible doctors found for service:', serviceId);
           
           // ✅ اگر قبلاً پزشکی انتخاب شده بود و حالا غیرمجاز است، هشدار بده
           if (previouslySelectedDoctorId) {
             toastr.warning('پزشک انتخاب شده برای این خدمت مجاز نیست. لطفاً پزشک دیگری انتخاب کنید.');
+          } else {
+            toastr.info('هیچ پزشکی برای این خدمت در این دپارتمان مجاز/در دسترس نیست.');
           }
         } else {
-          let selectedDoctorFound = false;
+          // ✅ پر کردن dropdown با استفاده از fillDoctorOptions
+          fillDoctorOptions(doctors);
           
-          doctors.forEach(function(doctor) {
-            const doctorId = doctor.doctorId || doctor.DoctorId;
-            const firstName = doctor.firstName || doctor.FirstName || '';
-            const lastName = doctor.lastName || doctor.LastName || '';
-            const specialization = doctor.specialization || doctor.Specialization || '';
-            const fullName = (firstName + ' ' + lastName).trim();
-            const displayName = specialization ? `${fullName} — ${specialization}` : fullName;
+          // ✅ اگر پزشک قبلی انتخاب شده بود و حالا در لیست مجاز است، انتخاب را حفظ کن
+          if (previouslySelectedDoctorId) {
+            const selectedDoctorFound = doctors.some(function(doctor) {
+              const doctorId = doctor.doctorId || doctor.DoctorId;
+              return previouslySelectedDoctorId == doctorId || previouslySelectedDoctorId == doctorId.toString();
+            });
             
-            const optionValue = doctorId;
-            const isPreviouslySelected = previouslySelectedDoctorId && 
-                                       (previouslySelectedDoctorId == doctorId || 
-                                        previouslySelectedDoctorId == optionValue);
-            
-            if (isPreviouslySelected) {
-              selectedDoctorFound = true;
+            if (selectedDoctorFound) {
+              $("#DoctorId").val(previouslySelectedDoctorId);
+              console.log('✅ V2: Previously selected doctor is still eligible, preserving selection');
+            } else {
+              // اگر پزشک قبلی دیگر مجاز نیست، هشدار بده و انتخاب را پاک کن
+              toastr.warning('پزشک انتخاب شده برای این خدمت مجاز نیست. لطفاً پزشک دیگری انتخاب کنید.');
+              $("#DoctorId").val('').trigger('change');
             }
-            
-            $doctorSelect.append(`<option value="${doctorId}" ${isPreviouslySelected ? 'selected' : ''}>${displayName}</option>`);
-          });
-          
-          $doctorSelect.prop('disabled', false);
-          console.log('🏥 V2: Eligible doctors filled:', doctors.length);
-          
-          // ✅ اگر قبلاً پزشکی انتخاب شده بود و حالا غیرمجاز است، هشدار بده و انتخاب را پاک کن
-          if (previouslySelectedDoctorId && !selectedDoctorFound) {
-            toastr.warning('پزشک انتخاب شده برای این خدمت مجاز نیست. لطفاً پزشک دیگری انتخاب کنید.');
-            $doctorSelect.val('').trigger('change');
           }
           
           // ✅ Trigger state change event for Summary Header
-          if (doctors.length > 0 && $doctorSelect.val()) {
-            const selectedDoctorId = $doctorSelect.val();
-            const selectedDoctor = doctors.find(d => 
-              (d.doctorId || d.DoctorId) == selectedDoctorId
-            );
+          const selectedDoctorId = $("#DoctorId").val();
+          if (selectedDoctorId && doctors.length > 0) {
+            const selectedDoctor = doctors.find(function(d) {
+              const doctorId = d.doctorId || d.DoctorId;
+              return selectedDoctorId == doctorId || selectedDoctorId == doctorId.toString();
+            });
             
             if (selectedDoctor) {
+              const fullName = selectedDoctor.fullName || selectedDoctor.FullName || 
+                               `${selectedDoctor.firstName || selectedDoctor.FirstName || ''} ${selectedDoctor.lastName || selectedDoctor.LastName || ''}`.trim();
               $(document).trigger('rv2:stateChanged', {
                 doctor: {
                   DoctorId: selectedDoctor.doctorId || selectedDoctor.DoctorId,
-                  Name: (selectedDoctor.firstName || selectedDoctor.FirstName || '') + ' ' + 
-                        (selectedDoctor.lastName || selectedDoctor.LastName || '')
+                  FullName: fullName,
+                  Name: fullName
                 }
               });
             }
@@ -455,7 +441,56 @@
         Name: doctorName || '—'
       }
     });
+    
+    // ✅ گام 5: Draft را فقط وقتی بساز که چهارتا کلید آماده باشد
+    tryCreateDraftIfAllReady();
   });
+  
+  /**
+   * ✅ بررسی و ایجاد Draft اگر تمام فیلدهای الزامی پر شده باشند
+   * فیلدهای الزامی: patient + clinic + department + doctor
+   */
+  function tryCreateDraftIfAllReady() {
+    const patientId = $("#Patient_PatientId").val();
+    const nationalCode = $("#Patient_NationalCode").val();
+    const clinicId = $("#ClinicId").val();
+    const departmentId = $("#DepartmentId").val();
+    const doctorId = $("#DoctorId").val();
+    const existingReceptionId = $("#ReceptionId").val();
+    
+    // اگر ReceptionId موجود است، نیازی به ایجاد نیست
+    if (existingReceptionId && existingReceptionId > 0) {
+      console.log('🏥 V2: ReceptionId already exists, skipping draft creation');
+      return;
+    }
+    
+    // بررسی وجود فیلدهای الزامی
+    if ((!patientId && !nationalCode) || !clinicId || !departmentId || !doctorId) {
+      console.log('🏥 V2: Missing required fields for draft creation');
+      return;
+    }
+    
+    // ✅ تمام فیلدهای الزامی پر شده‌اند، Draft ایجاد کن
+    console.log('🏥 V2: All required fields ready, creating draft...');
+    if (window.AutoDraftManager && typeof window.AutoDraftManager.ensureDraftOrSkip === 'function') {
+      window.AutoDraftManager.ensureDraftOrSkip({
+        patientId: patientId,
+        clinicId: clinicId,
+        departmentId: departmentId,
+        doctorId: doctorId,
+        receptionId: existingReceptionId
+      }).then(function(receptionId) {
+        if (receptionId && receptionId > 0) {
+          console.log('🏥 V2: Draft created successfully:', receptionId);
+          $("#ReceptionId").val(receptionId);
+        }
+      }).catch(function(err) {
+        console.error('🏥 V2: Draft creation failed:', err);
+      });
+    } else {
+      console.warn('🏥 V2: AutoDraftManager not available');
+    }
+  }
   
   // Reload departments when clinic changes (اما چون یک کلینیک داریم، این event کمتر اتفاق می‌افتد)
   $("#ClinicId").on('change', function() {
@@ -470,6 +505,8 @@
   // Export برای استفاده در ماژول‌های دیگر
   window.clinicDeptDoctorModule = {
     bootstrap: bootstrap,
-    loadDoctorsForDepartment: loadDoctorsForDepartment
+    loadDoctorsForDepartment: loadDoctorsForDepartment,
+    fillDoctorOptions: fillDoctorOptions,
+    tryCreateDraftIfAllReady: tryCreateDraftIfAllReady
   };
 })(window.ReceptionAPI);

@@ -146,36 +146,104 @@
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Item added response:', response);
         
-        toastr.success('خدمت افزوده شد');
+        // ✅ پشتیبانی از ساختار جدید: { item, pricing, totals }
+        const itemData = response.item || response.Item || {};
+        const pricingData = response.pricing || response.Pricing || null;
+        const totalsData = response.totals || response.Totals || null;
         
-        // Update items grid - پشتیبانی از PascalCase و camelCase
-        const $tb = $("#items-grid tbody").empty();
-        const items = response.items || response.Items || [];
-        
-        if (items && items.length > 0) {
-          items.forEach(function(it) {
-            const code = it.code || it.Code || '';
-            const name = it.name || it.Name || '';
-            const qty = it.qty || it.Qty || 0;
-            const unitPrice = it.unitPriceIRR || it.UnitPriceIRR || 0;
-            const total = it.totalIRR || it.TotalIRR || 0;
-            const serviceId = it.serviceId || it.ServiceId;
-            
-            $tb.append(`<tr>
-              <td>${code}</td><td>${name}</td><td>${qty}</td>
-              <td>${U.toIRR(unitPrice)}</td><td>${U.toIRR(total)}</td>
-              <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
-            </tr>`);
-          });
+        // ✅ اگر totals در پاسخ نیست، از Data.totals یا Data.Totals استفاده کن
+        let totals = totalsData;
+        if (!totals && response.Data) {
+          totals = response.Data.totals || response.Data.Totals || null;
         }
         
-        // Update totals - پشتیبانی از PascalCase و camelCase
-        const totals = response.totals || response.Totals || {};
+        toastr.success('خدمت افزوده شد');
+        
+        // ✅ Update items grid - استفاده از pricing اگر موجود باشد
+        const $tb = $("#items-grid tbody");
+        
+        // اگر pricing موجود است، ردیف جدید را با اطلاعات کامل pricing اضافه کن
+        if (pricingData) {
+          const serviceId = itemData.ServiceId || itemData.serviceId || $("#ServiceId").val();
+          const serviceCode = itemData.Code || itemData.code || '';
+          const serviceName = itemData.Name || itemData.name || '';
+          const qty = pricingData.Quantity || pricingData.quantity || itemData.Quantity || itemData.quantity || 1;
+          const unitPrice = pricingData.UnitPriceIRR || pricingData.unitPriceIRR || 0;
+          const gross = pricingData.GrossIRR || pricingData.grossIRR || 0;
+          const baseCovered = pricingData.BaseCoveredIRR || pricingData.baseCoveredIRR || 0;
+          const suppCovered = pricingData.SuppCoveredIRR || pricingData.suppCoveredIRR || 0;
+          const patientPayable = pricingData.PatientPayableIRR || pricingData.patientPayableIRR || 0;
+          
+          // استفاده از Friendly strings اگر موجود باشند
+          const unitPriceStr = pricingData.UnitPriceIRRStr || pricingData.unitPriceIRRStr || U.toIRR(unitPrice);
+          const grossStr = pricingData.GrossIRRStr || pricingData.grossIRRStr || U.toIRR(gross);
+          const baseStr = pricingData.BaseCoveredIRRStr || pricingData.baseCoveredIRRStr || U.toIRR(baseCovered);
+          const suppStr = pricingData.SuppCoveredIRRStr || pricingData.suppCoveredIRRStr || U.toIRR(suppCovered);
+          const patientStr = pricingData.PatientPayableIRRStr || pricingData.patientPayableIRRStr || U.toIRR(patientPayable);
+          
+          // ✅ ردیف با ستون‌های کامل: کد، نام، تعداد، فی، مبلغ کل، سهم پایه، سهم تکمیلی، سهم بیمار
+          $tb.append(`<tr data-service-id="${serviceId}" data-reception-item-id="${itemData.ReceptionItemId || itemData.receptionItemId || ''}">
+            <td>${serviceCode}</td>
+            <td>${serviceName}</td>
+            <td>${qty}</td>
+            <td>${unitPriceStr}</td>
+            <td>${grossStr}</td>
+            <td>${baseStr}</td>
+            <td>${suppStr}</td>
+            <td>${patientStr}</td>
+            <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
+          </tr>`);
+        } else {
+          // Fallback: اگر pricing موجود نیست، از items قدیمی استفاده کن
+          const items = response.items || response.Items || [];
+          $tb.empty();
+          
+          if (items && items.length > 0) {
+            items.forEach(function(it) {
+              const code = it.code || it.Code || '';
+              const name = it.name || it.Name || '';
+              const qty = it.qty || it.Qty || 0;
+              const unitPrice = it.unitPriceIRR || it.UnitPriceIRR || 0;
+              const total = it.totalIRR || it.TotalIRR || 0;
+              const serviceId = it.serviceId || it.ServiceId;
+              
+              $tb.append(`<tr>
+                <td>${code}</td><td>${name}</td><td>${qty}</td>
+                <td>${U.toIRR(unitPrice)}</td><td>${U.toIRR(total)}</td>
+                <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
+              </tr>`);
+            });
+          }
+        }
+        
+        // ✅ Update totals - استفاده از تابع updateTotalsUI اگر موجود باشد
         if (totals) {
-          $("#Gross").text(U.toIRR(totals.gross || totals.Gross || 0));
-          $("#InsurancePayable").text(U.toIRR(totals.base || totals.Base || 0));
-          $("#SuppPayable").text(U.toIRR(totals.supplementary || totals.Supplementary || 0));
-          $("#PatientPayable").text(U.toIRR(totals.patient || totals.Patient || 0)).attr("data-value", totals.patient || totals.Patient || 0);
+          console.log('🏥 V2: Updating totals from AddItem response:', totals);
+          if (window.insurancePanelModule && typeof window.insurancePanelModule.updateTotalsUI === 'function') {
+            window.insurancePanelModule.updateTotalsUI(totals);
+          } else {
+            // Fallback: به‌روزرسانی مستقیم
+            const gross = totals.GrossIRR || totals.grossIRR || totals.Gross || totals.gross || 0;
+            const base = totals.BaseCoveredIRR || totals.baseCoveredIRR || totals.Base || totals.base || 0;
+            const supp = totals.SuppCoveredIRR || totals.suppCoveredIRR || totals.Supplementary || totals.supplementary || 0;
+            const patient = totals.PatientPayableIRR || totals.patientPayableIRR || totals.Patient || totals.patient || 0;
+            
+            const grossStr = totals.GrossIRRStr || totals.grossIRRStr || U.toIRR(gross);
+            const baseStr = totals.BaseCoveredIRRStr || totals.baseCoveredIRRStr || U.toIRR(base);
+            const suppStr = totals.SuppCoveredIRRStr || totals.suppCoveredIRRStr || U.toIRR(supp);
+            const patientStr = totals.PatientPayableIRRStr || totals.patientPayableIRRStr || U.toIRR(patient);
+            
+            $("#Gross").text(grossStr).attr('data-value', gross);
+            $("#InsurancePayable").text(baseStr).attr('data-value', base);
+            $("#SuppPayable").text(suppStr).attr('data-value', supp);
+            $("#PatientPayable").text(patientStr).attr('data-value', patient);
+          }
+        } else {
+          console.warn('🏥 V2: Totals not found in AddItem response, attempting to fetch separately...');
+          const receptionId = $("#ReceptionId").val();
+          if (receptionId && window.insurancePanelModule && typeof window.insurancePanelModule.loadTotals === 'function') {
+            window.insurancePanelModule.loadTotals(receptionId);
+          }
         }
       })
       .catch(function(err) {

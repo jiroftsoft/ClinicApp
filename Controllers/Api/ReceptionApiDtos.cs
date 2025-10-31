@@ -199,5 +199,64 @@ namespace ClinicApp.Controllers.Api
     }
 
     #endregion
+
+    #region Doctor DTOs
+
+    /// <summary>
+    /// ✅ DTO برای گزینه‌های پزشک در Dropdown (ساده و تمیز)
+    /// </summary>
+    public class DoctorOptionDto
+    {
+        public int DoctorId { get; set; }
+        public string FullName { get; set; }
+        public string Title { get; set; }         // اختیاری: متخصص قلب، عمومی، ...
+        public string DepartmentName { get; set; } // برای UI خلاصه
+        public bool IsActive { get; set; }
+    }
+
+    #endregion
+
+    #region Pricing DTOs
+
+    /// <summary>
+    /// ✅ DTO برای شکست محاسبه هر آیتم (جزئیات کامل سهم‌ها)
+    /// </summary>
+    public sealed class PricingBreakdownDto
+    {
+        public int ServiceId { get; set; }
+        public int Quantity { get; set; }
+        public long UnitPriceIRR { get; set; }      // مبلغ واحد قبل از پوشش
+        public long GrossIRR { get; set; }          // UnitPrice × Qty
+        public long BaseCoveredIRR { get; set; }    // سهم بیمه پایه
+        public long SuppCoveredIRR { get; set; }    // سهم بیمه تکمیلی
+        public long PatientPayableIRR { get; set; } // سهم بیمار نهایی
+        public string[] Notes { get; set; }         // نکات/رول‌های اعمال شده (فرانشیز/سقف/استثنا)
+        
+        // Friendly strings
+        public string UnitPriceIRRStr { get; set; }
+        public string GrossIRRStr { get; set; }
+        public string BaseCoveredIRRStr { get; set; }
+        public string SuppCoveredIRRStr { get; set; }
+        public string PatientPayableIRRStr { get; set; }
+    }
+
+    /// <summary>
+    /// ✅ DTO برای جمع‌های پذیرش (مجموع همه آیتم‌ها)
+    /// </summary>
+    public sealed class ReceptionTotalsDto
+    {
+        public long GrossIRR { get; set; }          // مجموع مبالغ آیتم‌ها
+        public long BaseCoveredIRR { get; set; }    // مجموع پوشش پایه
+        public long SuppCoveredIRR { get; set; }    // مجموع پوشش تکمیلی
+        public long PatientPayableIRR { get; set; } // قابل‌پرداخت بیمار
+        
+        // Friendly strings
+        public string GrossIRRStr { get; set; }
+        public string BaseCoveredIRRStr { get; set; }
+        public string SuppCoveredIRRStr { get; set; }
+        public string PatientPayableIRRStr { get; set; }
+    }
+
+    #endregion
 }
 

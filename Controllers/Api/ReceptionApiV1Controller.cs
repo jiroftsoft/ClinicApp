@@ -33,6 +33,7 @@ namespace ClinicApp.Controllers.Api
 
         private readonly IFinancialYearService _fy;
         private readonly IReceptionFacade _facade;
+        private readonly IReceptionPricingService _pricing;
         private readonly ILogger _logger;
         private readonly ApplicationDbContext _context;
 
@@ -46,11 +47,13 @@ namespace ClinicApp.Controllers.Api
         public ReceptionApiV1Controller(
             IFinancialYearService fy,
             IReceptionFacade facade,
+            IReceptionPricingService pricing,
             ILogger logger,
             ApplicationDbContext context)
         {
             _fy = fy ?? throw new ArgumentNullException(nameof(fy));
             _facade = facade ?? throw new ArgumentNullException(nameof(facade));
+            _pricing = pricing ?? throw new ArgumentNullException(nameof(pricing));
             _logger = logger?.ForContext<ReceptionApiV1Controller>() ?? throw new ArgumentNullException(nameof(logger));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
@@ -62,6 +65,7 @@ namespace ClinicApp.Controllers.Api
             : this(
                   DependencyResolver.Current.GetService<IFinancialYearService>(),
                   DependencyResolver.Current.GetService<IReceptionFacade>(),
+                  DependencyResolver.Current.GetService<IReceptionPricingService>(),
                   DependencyResolver.Current.GetService<ILogger>(),
                   DependencyResolver.Current.GetService<ApplicationDbContext>())
         {
@@ -441,7 +445,7 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// GET /api/v1/reception/doctors/by-department
-        /// دریافت پزشکان یک دپارتمان
+        /// ✅ دریافت پزشکان یک دپارتمان (بهینه شده با DoctorOptionDto)
         /// </summary>
         [HttpGet, Route("doctors/by-department")]
         public async Task<ActionResult> GetDoctorsByDepartment(int deptId, int? clinicId = null)
@@ -461,23 +465,33 @@ namespace ClinicApp.Controllers.Api
                     
                     if (result.Success && result.Data != null)
                     {
-                        _logger?.Information("✅ V1 API: پزشکان دریافت شد - Count: {Count}", result.Data.Count);
-                        return Json(result, JsonRequestBehavior.AllowGet);
+                        // ✅ تبدیل DoctorDto به DoctorOptionDto برای پاسخ یکنواخت
+                        var doctors = result.Data.Select(d => new DoctorOptionDto
+                        {
+                            DoctorId = d.DoctorId,
+                            FullName = d.FullName ?? $"{d.FirstName} {d.LastName}".Trim(),
+                            Title = d.Specialization ?? "",
+                            DepartmentName = "", // TODO: از Department بگیریم اگر لازم است
+                            IsActive = d.IsActive
+                        }).ToList();
+
+                        _logger?.Information("✅ V1 API: پزشکان دریافت شد - Count: {Count}", doctors.Count);
+                        return Json(ServiceResult<object>.Successful(new { doctors }, "پزشکان با موفقیت دریافت شد."), JsonRequestBehavior.AllowGet);
                     }
                     else
                     {
                         _logger?.Warning("⚠️ V1 API: دریافت پزشکان ناموفق - Message: {Message}", result.Message);
-                        return Json(result, JsonRequestBehavior.AllowGet);
+                        return Json(ServiceResult.Failed(result.Message, result.Code), JsonRequestBehavior.AllowGet);
                     }
                 }
 
                 _logger?.Warning("⚠️ V1 API: _facade is null");
-                return Json(ServiceResult<List<ViewModels.Reception.DoctorDto>>.Failed("سرویس در دسترس نیست"), JsonRequestBehavior.AllowGet);
+                return Json(ServiceResult.Failed("سرویس در دسترس نیست", "SERVICE_UNAVAILABLE"), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger?.Error(ex, "❌ V1 API: خطا در دریافت پزشکان دپارتمان - DeptId: {DeptId}, ClinicId: {ClinicId}", deptId, clinicId);
-                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+                return Json(ServiceResult.Failed("خطا در دریافت فهرست پزشکان.", "DOCTORS_FETCH_FAILED").WithExceptionDev(ex), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -680,6 +694,20 @@ namespace ClinicApp.Controllers.Api
                     if (result.Success)
                     {
                         _logger?.Information("✅ V1 API: بیمه‌های پیش‌نویس با موفقیت تنظیم شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        
+                        // ✅ پس از Reprice، Totals را محاسبه و ضمیمه پاسخ کنید
+                        try
+                        {
+                            var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                            return Json(ServiceResult<object>.Successful(new { totals }, "بیمه اعمال و محاسبه شد."));
+                        }
+                        catch (Exception pricingEx)
+                        {
+                            _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در محاسبه Totals پس از SetInsurances - ReceptionId: {ReceptionId}", 
+                                request.ReceptionId);
+                            // Fallback: فقط نتیجه SetInsurances را برگردان
+                            return Json(result);
+                        }
                     }
                     else
                     {
@@ -787,14 +815,57 @@ namespace ClinicApp.Controllers.Api
 
                     var result = await _facade.AddItemAsync(facadeRequest);
                     
-                    if (result.Success)
+                    if (result.Success && result.Data != null)
                     {
                         _logger?.Information("✅ V1 API: آیتم با موفقیت افزوده شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        
+                        // ✅ محاسبه Pricing برای آخرین آیتم افزوده شده و Totals
+                        try
+                        {
+                            // پیدا کردن آخرین ReceptionItem برای این Reception
+                            var lastItem = await _context.ReceptionItems
+                                .Where(i => i.ReceptionId == request.ReceptionId && 
+                                           i.ServiceId == request.ServiceId && 
+                                           !i.IsDeleted)
+                                .OrderByDescending(i => i.ReceptionItemId)
+                                .FirstOrDefaultAsync();
+                            
+                            if (lastItem != null)
+                            {
+                                var pricing = await _pricing.PriceItemAsync(request.ReceptionId, lastItem.ReceptionItemId);
+                                var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                                
+                                return Json(ServiceResult<object>.Successful(new 
+                                { 
+                                    item = new
+                                    {
+                                        ServiceId = request.ServiceId,
+                                        Quantity = request.Quantity,
+                                        ReceptionItemId = lastItem.ReceptionItemId
+                                    },
+                                    pricing,
+                                    totals
+                                }, "آیتم اضافه و محاسبه شد."));
+                            }
+                            else
+                            {
+                                // Fallback: فقط Totals را برگردان
+                                var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                                return Json(ServiceResult<object>.Successful(new { totals }, result.Message));
+                            }
+                        }
+                        catch (Exception pricingEx)
+                        {
+                            _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در محاسبه Pricing/Totals پس از AddItem - ReceptionId: {ReceptionId}", 
+                                request.ReceptionId);
+                            // Fallback: فقط نتیجه AddItem را برگردان
+                            return Json(result);
+                        }
                     }
                     else
                     {
                         _logger?.Warning("⚠️ V1 API: افزودن آیتم ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
-                            request.ReceptionId, result.Message);
+                            request.ReceptionId, result?.Message);
                     }
                     
                     return Json(result);
@@ -807,6 +878,33 @@ namespace ClinicApp.Controllers.Api
                 _logger?.Error(ex, "❌ V1 API: خطا در افزودن آیتم - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
                     request?.ReceptionId, request?.ServiceId);
                 return Json(ServiceResult<ItemsAndTotalsDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/totals
+        /// دریافت جمع‌های پذیرش
+        /// </summary>
+        [HttpGet, Route("totals")]
+        public async Task<ActionResult> GetTotals(int receptionId)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: دریافت جمع‌های پذیرش - ReceptionId: {ReceptionId}", receptionId);
+
+                if (receptionId <= 0)
+                {
+                    return Json(ServiceResult.Failed("ReceptionId الزامی است.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                var totals = await _pricing.CalculateTotalsAsync(receptionId);
+                return Json(ServiceResult<object>.Successful(new { totals }), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در دریافت جمع‌ها - ReceptionId: {ReceptionId}", receptionId);
+                return Json(ServiceResult.Failed("خطا در دریافت جمع‌ها.", "TOTALS_FETCH_FAILED").WithExceptionDev(ex), 
+                    JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -927,13 +1025,23 @@ namespace ClinicApp.Controllers.Api
                     
                     if (result.Success && result.Data != null)
                     {
-                        _logger?.Information("✅ V1 API: پزشکان مجاز دریافت شد - Count: {Count}", result.Data.Count);
-                        return Json(result, JsonRequestBehavior.AllowGet);
+                        // ✅ تبدیل DoctorDto به DoctorOptionDto برای پاسخ یکنواخت
+                        var doctors = result.Data.Select(d => new DoctorOptionDto
+                        {
+                            DoctorId = d.DoctorId,
+                            FullName = d.FullName ?? $"{d.FirstName} {d.LastName}".Trim(),
+                            Title = d.Specialization ?? "",
+                            DepartmentName = "", // TODO: از Department بگیریم اگر لازم است
+                            IsActive = d.IsActive
+                        }).ToList();
+
+                        _logger?.Information("✅ V1 API: پزشکان مجاز دریافت شد - Count: {Count}", doctors.Count);
+                        return Json(ServiceResult<object>.Successful(new { doctors }, "پزشکان مجاز با موفقیت دریافت شد."), JsonRequestBehavior.AllowGet);
                     }
                     else
                     {
                         _logger?.Warning("⚠️ V1 API: دریافت پزشکان مجاز ناموفق - Message: {Message}", result.Message);
-                        return Json(result, JsonRequestBehavior.AllowGet);
+                        return Json(ServiceResult.Failed(result.Message, result.Code), JsonRequestBehavior.AllowGet);
                     }
                 }
 
@@ -944,7 +1052,7 @@ namespace ClinicApp.Controllers.Api
             {
                 _logger?.Error(ex, "❌ V1 API: خطا در دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}", 
                     deptId, serviceId, clinicId);
-                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+                return Json(ServiceResult.Failed("خطا در فیلتر پزشکان بر اساس خدمت.", "DOCTORS_FILTER_FAILED").WithExceptionDev(ex), JsonRequestBehavior.AllowGet);
             }
         }
 

@@ -852,16 +852,64 @@ namespace ClinicApp.Repositories
                     return ServiceResult<ReceptionTotalsDto>.Failed("پذیرش یافت نشد");
                 }
 
-                // TODO: Implement actual recalculation logic
-                // This is a placeholder implementation
+                // ✅ محاسبه واقعی جمع‌ها از ReceptionItems
+                var items = reception.ReceptionItems.Where(i => !i.IsDeleted).ToList();
+                
+                var grossAmount = items.Sum(i => i.UnitPrice * i.Quantity);
+                var baseInsurancePayable = 0m;
+                var supplementaryInsurancePayable = 0m;
+                var patientPayable = items.Sum(i => i.PatientShareAmount);
+                
+                // استخراج سهم‌ها از SnapshotJson
+                foreach (var item in items)
+                {
+                    if (!string.IsNullOrEmpty(item.SnapshotJson))
+                    {
+                        try
+                        {
+                            var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                            if (snapshot != null)
+                            {
+                                if (snapshot.PrimaryPays != null)
+                                    baseInsurancePayable += (decimal)snapshot.PrimaryPays;
+                                if (snapshot.SupplementaryPays != null)
+                                    supplementaryInsurancePayable += (decimal)snapshot.SupplementaryPays;
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore parse errors
+                        }
+                    }
+                }
+                
+                // Fallback: اگر SnapshotJson خالی است، از InsurerShareAmount استفاده کن
+                if (baseInsurancePayable == 0 && supplementaryInsurancePayable == 0)
+                {
+                    var insurerShare = items.Sum(i => i.InsurerShareAmount);
+                    if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                    {
+                        baseInsurancePayable = insurerShare / 2m;
+                        supplementaryInsurancePayable = insurerShare - baseInsurancePayable;
+                    }
+                    else if (reception.BasePlanId.HasValue)
+                    {
+                        baseInsurancePayable = insurerShare;
+                    }
+                    else if (reception.SupplementaryPlanId.HasValue)
+                    {
+                        supplementaryInsurancePayable = insurerShare;
+                    }
+                }
+                
                 var totals = new ReceptionTotalsDto
                 {
-                    GrossAmount = 0,
-                    DiscountAmount = 0,
-                    DeductionAmount = 0,
-                    BaseInsurancePayable = 0,
-                    SupplementaryInsurancePayable = 0,
-                    PatientPayable = 0
+                    GrossAmount = grossAmount,
+                    DiscountAmount = 0m,
+                    DeductionAmount = 0m,
+                    BaseInsurancePayable = baseInsurancePayable,
+                    SupplementaryInsurancePayable = supplementaryInsurancePayable,
+                    PatientPayable = patientPayable
                 };
 
                 _logger.Debug("محاسبه مجدد مجموع‌های پذیرش تکمیل شد");

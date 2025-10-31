@@ -259,6 +259,21 @@
         const response = API.ok(responseObj);
         console.log('🏥 V2: Insurances persisted successfully:', response);
         
+        // ✅ به‌روزرسانی Totals از پاسخ API (اگر موجود باشد)
+        if (response && response.totals) {
+          console.log('🏥 V2: Totals received in SetInsurances response:', response.totals);
+          updateTotalsUI(response.totals);
+        } else if (response && response.Data && response.Data.totals) {
+          console.log('🏥 V2: Totals received in SetInsurances response.Data:', response.Data.totals);
+          updateTotalsUI(response.Data.totals);
+        } else if (receptionId) {
+          // Fallback: اگر totals در پاسخ نیست، از API جداگانه دریافت کن
+          console.log('🏥 V2: Totals not in response, fetching separately...');
+          loadTotals(receptionId).catch(function(err) {
+            console.warn('🏥 V2: Error loading totals after SetInsurances:', err);
+          });
+        }
+        
         // 🎯 نمایش پیغام موفقیت با جزئیات برای منشی
         const currentBasePlanId = parseInt($basePlan.val()) || null;
         const currentSuppPlanId = parseInt($suppPlan.val()) || null;
@@ -315,7 +330,7 @@
         // به‌روزرسانی نمایش وضعیت در UI
         updateInsuranceStatus();
         
-        // ✅ Trigger state change event for Summary Header
+        // ✅ Trigger state change event for Summary Header (با totals اگر موجود باشد)
         $(document).trigger('rv2:stateChanged', {
           insurances: {
             BasePlanId: currentBasePlanId,
@@ -325,19 +340,7 @@
           }
         });
         
-        // Update totals if provided
-        if (response && (response.totals || (response.Data && response.Data.totals))) {
-          const totals = response.totals || response.Data?.totals;
-          if (totals) {
-            $('#Gross').text(U.toIRR(totals.gross || 0));
-            $('#InsurancePayable').text(U.toIRR(totals.base || 0));
-            $('#SuppPayable').text(U.toIRR(totals.supplementary || 0));
-            $('#PatientPayable').text(U.toIRR(totals.patient || 0)).attr('data-value', totals.patient || 0);
-            console.log('🏥 V2: Totals updated:', totals);
-          }
-        } else {
-          console.log('🏥 V2: No totals in response, skipping totals update');
-        }
+        // ✅ Totals قبلاً با updateTotalsUI به‌روزرسانی شده است - نیازی به کد duplicate نیست
       })
       .catch(function(err) {
         console.error('🏥 V2: Persist insurances error:', err);
@@ -477,11 +480,87 @@
     });
   }
 
+  /**
+   * ✅ به‌روزرسانی Totals در UI
+   * پشتیبانی از ReceptionTotalsDto (GrossIRR, BaseCoveredIRR, SuppCoveredIRR, PatientPayableIRR)
+   */
+  function updateTotalsUI(totals) {
+    if (!totals) {
+      console.warn('🏥 V2: updateTotalsUI called with null/undefined totals');
+      return;
+    }
+    
+    console.log('🏥 V2: Updating totals UI:', totals);
+    
+    // ✅ پشتیبانی از PascalCase و camelCase + Friendly strings
+    const gross = totals.GrossIRR || totals.grossIRR || totals.Gross || totals.gross || 0;
+    const base = totals.BaseCoveredIRR || totals.baseCoveredIRR || totals.Base || totals.base || 0;
+    const supp = totals.SuppCoveredIRR || totals.suppCoveredIRR || totals.Supplementary || totals.supplementary || 0;
+    const patient = totals.PatientPayableIRR || totals.patientPayableIRR || totals.Patient || totals.patient || 0;
+    
+    // ✅ استفاده از Friendly strings اگر موجود باشند
+    const grossStr = totals.GrossIRRStr || totals.grossIRRStr || (gross ? U.toIRR(gross) : '۰');
+    const baseStr = totals.BaseCoveredIRRStr || totals.baseCoveredIRRStr || (base ? U.toIRR(base) : '۰');
+    const suppStr = totals.SuppCoveredIRRStr || totals.suppCoveredIRRStr || (supp ? U.toIRR(supp) : '۰');
+    const patientStr = totals.PatientPayableIRRStr || totals.patientPayableIRRStr || (patient ? U.toIRR(patient) : '۰');
+    
+    // ✅ به‌روزرسانی UI
+    $('#Gross').text(grossStr).attr('data-value', gross);
+    $('#InsurancePayable').text(baseStr).attr('data-value', base);
+    $('#SuppPayable').text(suppStr).attr('data-value', supp);
+    $('#PatientPayable').text(patientStr).attr('data-value', patient);
+    
+    console.log('✅ V2: Totals UI updated - Gross:', grossStr, 'Base:', baseStr, 'Supp:', suppStr, 'Patient:', patientStr);
+  }
+  
+  /**
+   * ✅ دریافت Totals از API (fallback)
+   */
+  async function loadTotals(receptionId) {
+    if (!receptionId || receptionId <= 0) {
+      console.warn('🏥 V2: Cannot load totals - invalid receptionId:', receptionId);
+      return Promise.resolve();
+    }
+    
+    try {
+      const fullResponse = await API.get('/totals', { receptionId: receptionId });
+      console.log('🏥 V2: LoadTotals raw response:', fullResponse);
+      
+      const successValue = fullResponse?.Success ?? fullResponse?.success;
+      const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+      
+      if (!fullResponse || !isSuccess) {
+        const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در دریافت جمع‌ها';
+        console.warn('🏥 V2: LoadTotals failed:', errorMsg);
+        return Promise.resolve();
+      }
+      
+      const response = API.ok(fullResponse);
+      const totals = response.totals || response.Totals || response;
+      
+      if (totals) {
+        updateTotalsUI(totals);
+      }
+    } catch (err) {
+      console.error('🏥 V2: Error loading totals:', err);
+      // Silent fail - don't show error to user as it's a background operation
+    }
+  }
+  
   // Export برای patient-lookup.js
   window.insPanel = {
     set: set,
     persist: persist,
     loadPlans: loadPlans
+  };
+  
+  // ✅ Export برای استفاده در ماژول‌های دیگر
+  window.insurancePanelModule = {
+    loadPlans: loadPlans,
+    persist: persist,
+    updateInsuranceStatus: updateInsuranceStatus,
+    updateTotalsUI: updateTotalsUI,
+    loadTotals: loadTotals
   };
 
   // Initialization: لود لیست‌ها
