@@ -142,17 +142,24 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // 3. بارگذاری پزشک‌ها (اگر دپارتمان انتخاب شده)
+                // ✅ طبق نقشه پیوندی: بررسی StartDate/EndDate + ClinicId + IsActive
                 if (deptId.HasValue)
                 {
+                    var now = DateTime.Now;
                     var doctorDepartments = await _context.DoctorDepartments
                         .AsNoTracking()
                         .Include(dd => dd.Doctor)
+                        .Include(dd => dd.Department)
                         .Include(dd => dd.Doctor.DoctorSpecializations)
                         .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
                         .Where(dd => dd.DepartmentId == deptId.Value && 
+                                     dd.Department.ClinicId == clinicId && // ✅ همان کلینیک
                                      !dd.Doctor.IsDeleted && 
                                      dd.Doctor.IsActive && 
-                                     !dd.IsDeleted)
+                                     !dd.IsDeleted &&
+                                     dd.IsActive && // ✅ DoctorDepartment فعال
+                                     (dd.StartDate == null || dd.StartDate <= now) && // ✅ بازه تاریخ معتبر
+                                     (dd.EndDate == null || dd.EndDate > now))
                         .ToListAsync();
                     
                     // Map به DoctorDto (بعد از materialize شدن برای استفاده از computed property)
@@ -939,13 +946,18 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // 🔍 اعتبارسنجی: بررسی عضویت پزشک به دپارتمان
+                // ✅ طبق نقشه پیوندی: بررسی ClinicId + StartDate/EndDate + IsActive
+                var now = DateTime.Now;
                 var doctorDept = await _context.DoctorDepartments
                     .AsNoTracking()
+                    .Include(dd => dd.Department)
                     .Where(dd => dd.DoctorId == request.DoctorId.Value && 
                                 dd.DepartmentId == request.DepartmentId.Value && 
+                                dd.Department.ClinicId == request.ClinicId.Value && // ✅ همان کلینیک
                                 !dd.IsDeleted &&
                                 dd.IsActive &&
-                                (dd.EndDate == null || dd.EndDate > DateTime.Now))
+                                (dd.StartDate == null || dd.StartDate <= now) && // ✅ بازه تاریخ معتبر
+                                (dd.EndDate == null || dd.EndDate > now))
                     .FirstOrDefaultAsync();
 
                 if (doctorDept == null)
@@ -1014,14 +1026,64 @@ namespace ClinicApp.Services.Reception
                 // دریافت سال مالی از پیش‌نویس
                 var year = draft.FinancialYear;
 
-                // دریافت اطلاعات خدمت
+                // دریافت اطلاعات خدمت با قیود Eligibility
                 var service = await _context.Services
                     .Where(s => s.ServiceId == request.ServiceId && s.IsActive && !s.IsDeleted)
-                    .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+                    .Select(s => new { s.ServiceId, s.ServiceCode, s.Title, s.AgeMin, s.AgeMax, s.GenderLimit, s.GroupCode, s.IsHashtagged })
                     .FirstOrDefaultAsync();
 
                 if (service == null)
                     return ServiceResult<ItemsAndTotalsDto>.Failed("خدمت یافت نشد");
+
+                // ✅ طبق نقشه پیوندی: اعتبارسنجی Service Eligibility (Age/Gender)
+                // دریافت اطلاعات بیمار
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == draft.PatientId && !p.IsDeleted)
+                    .Select(p => new { p.PatientId, p.BirthDate, p.Gender })
+                    .FirstOrDefaultAsync();
+
+                if (patient == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("اطلاعات بیمار یافت نشد");
+
+                // محاسبه سن بیمار
+                int? patientAge = null;
+                if (patient.BirthDate.HasValue)
+                {
+                    var today = DateTime.Today;
+                    patientAge = today.Year - patient.BirthDate.Value.Year;
+                    if (patient.BirthDate.Value.Date > today.AddYears(-patientAge.Value))
+                        patientAge--;
+                }
+
+                // بررسی AgeMin
+                if (service.AgeMin.HasValue && (!patientAge.HasValue || patientAge.Value < service.AgeMin.Value))
+                {
+                    _logger.Warning("⚠️ FACADE: حداقل سن برای این خدمت {AgeMin} سال است - ServiceId: {ServiceId}, PatientAge: {PatientAge}", 
+                        service.AgeMin.Value, service.ServiceId, patientAge);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed(
+                        $"حداقل سن برای این خدمت {service.AgeMin.Value} سال است.", 
+                        "AGE_LIMIT");
+                }
+
+                // بررسی AgeMax
+                if (service.AgeMax.HasValue && (!patientAge.HasValue || patientAge.Value > service.AgeMax.Value))
+                {
+                    _logger.Warning("⚠️ FACADE: حداکثر سن برای این خدمت {AgeMax} سال است - ServiceId: {ServiceId}, PatientAge: {PatientAge}", 
+                        service.AgeMax.Value, service.ServiceId, patientAge);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed(
+                        $"حداکثر سن برای این خدمت {service.AgeMax.Value} سال است.", 
+                        "AGE_LIMIT");
+                }
+
+                // بررسی GenderLimit
+                if (service.GenderLimit.HasValue && patient.Gender != service.GenderLimit.Value)
+                {
+                    _logger.Warning("⚠️ FACADE: این خدمت فقط برای {GenderLimit} مجاز است - ServiceId: {ServiceId}, PatientGender: {PatientGender}", 
+                        service.GenderLimit.Value, service.ServiceId, patient.Gender);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed(
+                        $"این خدمت فقط برای {service.GenderLimit.Value} مجاز است.", 
+                        "GENDER_LIMIT");
+                }
 
                 var qty = request.Quantity <= 0 ? 1 : request.Quantity;
                 
@@ -1077,6 +1139,60 @@ namespace ClinicApp.Services.Reception
                 var itemSuppPay = itemPatientAfterBase * (itemSuppPercent / 100m);
                 var itemPatientShare = itemPatientAfterBase - itemSuppPay;
 
+                // ✅ طبق نقشه پیوندی: ایجاد SnapshotJson (Immutable snapshot)
+                // دریافت ServiceComponents و FactorSetting برای Snapshot
+                var serviceComponents = await _context.ServiceComponents
+                    .Where(sc => sc.ServiceId == service.ServiceId && sc.IsActive && !sc.IsDeleted)
+                    .Select(sc => new { sc.ComponentType, sc.Coefficient })
+                    .ToListAsync();
+
+                var techComponent = serviceComponents.FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Technical);
+                var profComponent = serviceComponents.FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Professional);
+
+                var factors = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(ServiceComponentType.Technical, service.IsHashtagged, year);
+                var profFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(ServiceComponentType.Professional, service.IsHashtagged, year);
+
+                var coefTech = techComponent?.Coefficient ?? 0m;
+                var coefProf = profComponent?.Coefficient ?? 0m;
+                var kTech = factors?.Value ?? 0m;
+                var kProf = profFactor?.Value ?? 0m;
+
+                // محاسبه TechAmount و ProfAmount
+                var techAmount = coefTech * kTech;
+                var profAmount = coefProf * kProf;
+                var baseKaPriceIRR = techAmount + profAmount; // یا unit اگر از Price استفاده می‌شود
+
+                // ایجاد Snapshot
+                var snapshot = new
+                {
+                    ServiceId = service.ServiceId,
+                    ServiceCode = service.ServiceCode,
+                    ServiceName = service.Title,
+                    Quantity = qty,
+                    UnitPrice = unit,
+                    KTech = kTech,
+                    KProf = kProf,
+                    CoefTech = coefTech,
+                    CoefProf = coefProf,
+                    BaseKaPriceIRR = unit, // قیمت نهایی محاسبه شده
+                    TechAmount = techAmount,
+                    ProfAmount = profAmount,
+                    GrossAmount = total,
+                    BaseInsuranceCoverage = itemBasePercent,
+                    SupplementaryCoverage = itemSuppPercent,
+                    PatientShare = itemPatientShare,
+                    InsurerShare = itemBasePay + itemSuppPay,
+                    RoundingMode = "RoundUp",
+                    RoundingDelta = 100,
+                    FactorSettingId = factors?.FactorSettingId,
+                    FinancialYear = year,
+                    BasePlanId = draft.BasePlanId,
+                    SupplementaryPlanId = draft.SupplementaryPlanId,
+                    CalculatedAt = DateTime.Now,
+                    GroupCode = service.GroupCode,
+                    IsHashtagged = service.IsHashtagged
+                };
+
                 var item = new Models.Entities.Reception.ReceptionItem
                 {
                     ReceptionId = draft.ReceptionId,
@@ -1084,7 +1200,8 @@ namespace ClinicApp.Services.Reception
                     Quantity = qty,
                     UnitPrice = unit,
                     PatientShareAmount = itemPatientShare,
-                    InsurerShareAmount = itemBasePay + itemSuppPay
+                    InsurerShareAmount = itemBasePay + itemSuppPay,
+                    SnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(snapshot)
                 };
                 
                 _context.ReceptionItems.Add(item);
@@ -1295,6 +1412,28 @@ namespace ClinicApp.Services.Reception
                             item.InsurerShareAmount = itemBasePay + itemSuppPay;
                             item.UpdatedAt = DateTime.Now;
                             itemsRepriced = true;
+                            
+                            // ✅ طبق نقشه پیوندی: به‌روزرسانی SnapshotJson هنگام Reprice
+                            if (!string.IsNullOrWhiteSpace(item.SnapshotJson))
+                            {
+                                try
+                                {
+                                    var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                                    snapshot.BaseInsuranceCoverage = baseCoveragePercent;
+                                    snapshot.SupplementaryCoverage = suppCoveragePercent;
+                                    snapshot.PatientShare = itemPatientShare;
+                                    snapshot.InsurerShare = itemBasePay + itemSuppPay;
+                                    snapshot.BasePlanId = basePlan?.InsurancePlanId;
+                                    snapshot.SupplementaryPlanId = suppPlan?.InsurancePlanId;
+                                    snapshot.RepricedAt = DateTime.Now;
+                                    item.SnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(snapshot);
+                                }
+                                catch (Exception snapEx)
+                                {
+                                    _logger.Warning(snapEx, "⚠️ FACADE: خطا در به‌روزرسانی SnapshotJson - ItemId: {ItemId}", item.ReceptionItemId);
+                                    // ادامه می‌دهیم حتی اگر Snapshot به‌روزرسانی نشد
+                                }
+                            }
                             
                             _logger.Debug("🔄 FACADE: آیتم بازمحاسبه شد - ItemId: {ItemId}, ServiceId: {ServiceId}, OldPatient: {OldPatient}, NewPatient: {NewPatient}", 
                                 item.ReceptionItemId, item.ServiceId, 

@@ -675,6 +675,10 @@
     <Compile Include="Migrations\202510311033089_AddFatherName.Designer.cs">
       <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510311331187_AddSnapshotJsonAndServiceEligibilityFields.cs" />
+    <Compile Include="Migrations\202510311331187_AddSnapshotJsonAndServiceEligibilityFields.Designer.cs">
+      <DependentUpon>202510311331187_AddSnapshotJsonAndServiceEligibilityFields.cs</DependentUpon>
+    </Compile>
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -4590,6 +4594,7 @@
     <Content Include="Views\ReceptionV2\Partials\_PatientFastCreateModal.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_IdentitySection.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_ReceptionSummaryHeader.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_CoverageModal.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -4770,6 +4775,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510311033089_AddFatherName.resx">
       <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510311331187_AddSnapshotJsonAndServiceEligibilityFields.resx">
+      <DependentUpon>202510311331187_AddSnapshotJsonAndServiceEligibilityFields.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

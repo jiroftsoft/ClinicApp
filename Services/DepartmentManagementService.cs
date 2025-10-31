@@ -2,12 +2,14 @@
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using FluentValidation;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Clinic;
@@ -19,15 +21,18 @@ namespace ClinicApp.Services
     {
         private readonly IDepartmentRepository _departmentRepo;
         private readonly IValidator<DepartmentCreateEditViewModel> _validator;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger _log;
 
         public DepartmentManagementService(
             IDepartmentRepository departmentRepository,
             IValidator<DepartmentCreateEditViewModel> validator,
+            ApplicationDbContext context,
             ILogger logger)
         {
             _departmentRepo = departmentRepository;
             _validator = validator;
+            _context = context;
             _log = logger.ForContext<DepartmentManagementService>();
         }
 
@@ -264,40 +269,84 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// دریافت خدمات دپارتمان
+        /// خدمات از طریق ServiceCategory.DepartmentId به دپارتمان لینک می‌شوند
         /// </summary>
         public async Task<ServiceResult<List<ServiceDto>>> GetDepartmentServicesAsync(int deptId)
         {
             try
             {
-                _log.Information("Getting services for department {DeptId}", deptId);
-                // Assuming there's a method to get department services
-                // This is a placeholder implementation
-                var services = new List<ServiceDto>();
+                _log.Information("🏥 Getting services for department {DeptId}", deptId);
+
+                // دریافت خدمات از طریق ServiceCategory.DepartmentId
+                var services = await _context.Services
+                    .AsNoTracking()
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => s.ServiceCategory.DepartmentId == deptId && 
+                               !s.IsDeleted && 
+                               s.IsActive &&
+                               !s.ServiceCategory.IsDeleted &&
+                               s.ServiceCategory.IsActive)
+                    .OrderBy(s => s.Title)
+                    .Select(s => new ServiceDto
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceCode = s.ServiceCode,
+                        ServiceName = s.Title,
+                        Price = s.Price,
+                        IsActive = s.IsActive
+                    })
+                    .ToListAsync();
+
+                _log.Information("✅ Found {Count} services for department {DeptId}", services.Count, deptId);
                 return ServiceResult<List<ServiceDto>>.Successful(services);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting department services for {DeptId}", deptId);
+                _log.Error(ex, "❌ Error getting department services for {DeptId}", deptId);
                 return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات دپارتمان");
             }
         }
 
         /// <summary>
         /// دریافت خدمات مشترک
+        /// خدمات مشترک از جدول SharedService که در چندین دپارتمان قابل استفاده هستند
         /// </summary>
         public async Task<ServiceResult<List<ServiceDto>>> GetSharedServicesAsync()
         {
             try
             {
-                _log.Information("Getting shared services");
-                // Assuming there's a method to get shared services
-                // This is a placeholder implementation
-                var services = new List<ServiceDto>();
-                return ServiceResult<List<ServiceDto>>.Successful(services);
+                _log.Information("🏥 Getting shared services");
+
+                // دریافت خدمات مشترک از جدول SharedService
+                var sharedServices = await _context.SharedServices
+                    .AsNoTracking()
+                    .Include(ss => ss.Service)
+                    .Include(ss => ss.Service.ServiceCategory)
+                    .Where(ss => !ss.IsDeleted && 
+                                ss.IsActive &&
+                                !ss.Service.IsDeleted &&
+                                ss.Service.IsActive &&
+                                !ss.Service.ServiceCategory.IsDeleted &&
+                                ss.Service.ServiceCategory.IsActive)
+                    .Select(ss => ss.Service)
+                    .Distinct()
+                    .OrderBy(s => s.Title)
+                    .Select(s => new ServiceDto
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceCode = s.ServiceCode,
+                        ServiceName = s.Title,
+                        Price = s.Price,
+                        IsActive = s.IsActive
+                    })
+                    .ToListAsync();
+
+                _log.Information("✅ Found {Count} shared services", sharedServices.Count);
+                return ServiceResult<List<ServiceDto>>.Successful(sharedServices);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting shared services");
+                _log.Error(ex, "❌ Error getting shared services");
                 return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات مشترک");
             }
         }

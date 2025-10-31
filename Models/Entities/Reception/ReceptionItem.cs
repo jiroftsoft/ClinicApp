@@ -68,6 +68,15 @@ public class ReceptionItem : ISoftDelete, ITrackable
     [Column(TypeName = "decimal")]
     public decimal InsurerShareAmount { get; set; }
 
+    /// <summary>
+    /// تصویر Immutable از محاسبات در زمان ثبت
+    /// طبق نقشه پیوندی: شامل KTech, KProf, CoefTech, CoefProf, BaseKaPriceIRR, 
+    /// TechAmount, ProfAmount, GrossAmount, BaseInsuranceCoverage, SupplementaryCoverage, 
+    /// PatientShare, FactorSettingId, FinancialYearId, BasePlanId, SupplementaryPlanId
+    /// </summary>
+    [Column(TypeName = "nvarchar(MAX)")]
+    public string SnapshotJson { get; set; }
+
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
     /// نشان‌دهنده وضعیت حذف شدن آیتم پذیرش
@@ -177,6 +186,11 @@ public class ReceptionItemConfig : EntityTypeConfiguration<ReceptionItem>
             .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ReceptionItem_InsurerShareAmount")));
+
+        // ✅ طبق نقشه پیوندی: SnapshotJson برای Immutable snapshot
+        Property(ri => ri.SnapshotJson)
+            .IsOptional()
+            .HasMaxLength(int.MaxValue);
 
         // پیاده‌سازی ISoftDelete
         Property(ri => ri.IsDeleted)

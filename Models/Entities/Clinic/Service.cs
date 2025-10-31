@@ -78,6 +78,34 @@ public class Service : ISoftDelete, ITrackable
     /// </summary>
     public bool IsHashtagged { get; set; } = false;
 
+    /// <summary>
+    /// گروه خدمات (۱–۷)
+    /// طبق نقشه پیوندی: برای قواعد هشتگ‌دار و تعرفه
+    /// </summary>
+    [Range(1, 7, ErrorMessage = "گروه خدمات باید بین 1 تا 7 باشد.")]
+    public int? GroupCode { get; set; }
+
+    /// <summary>
+    /// حداقل سن برای استفاده از این خدمت (اختیاری)
+    /// طبق نقشه پیوندی: قید سن برای Eligibility
+    /// </summary>
+    [Range(0, 150, ErrorMessage = "حداقل سن باید بین 0 تا 150 سال باشد.")]
+    public int? AgeMin { get; set; }
+
+    /// <summary>
+    /// حداکثر سن برای استفاده از این خدمت (اختیاری)
+    /// طبق نقشه پیوندی: قید سن برای Eligibility
+    /// </summary>
+    [Range(0, 150, ErrorMessage = "حداکثر سن باید بین 0 تا 150 سال باشد.")]
+    public int? AgeMax { get; set; }
+
+    /// <summary>
+    /// محدودیت جنسیت برای این خدمت (اختیاری)
+    /// طبق نقشه پیوندی: قید جنسیت برای Eligibility
+    /// اگر null باشد، برای همه جنسیت‌ها قابل استفاده است
+    /// </summary>
+    public Gender? GenderLimit { get; set; }
+
     // فیلدهای TechnicalPart و ProfessionalPart حذف شدند
     // استفاده از ServiceComponents به عنوان روش اصلی محاسبه
 
@@ -230,6 +258,27 @@ public class ServiceConfig : EntityTypeConfiguration<Service>
             .IsRequired()
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Service_IsHashtagged")));
+
+        // ✅ طبق نقشه پیوندی: قیود Eligibility
+        Property(s => s.GroupCode)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Service_GroupCode")));
+
+        Property(s => s.AgeMin)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Service_AgeMin")));
+
+        Property(s => s.AgeMax)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Service_AgeMax")));
+
+        Property(s => s.GenderLimit)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Service_GenderLimit")));
 
         // Property های TechnicalPart و ProfessionalPart حذف شدند
         // استفاده از ServiceComponents به عنوان روش اصلی محاسبه

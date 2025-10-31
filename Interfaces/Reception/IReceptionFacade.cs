@@ -98,5 +98,19 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<FinalizeResponse>> FinalizeCashAsync(FinalizeCashRequest request);
 
         #endregion
+
+        #region Coverage & Price Preview
+
+        /// <summary>
+        /// دریافت جزئیات پوشش بیمه (پایه + تکمیلی + مؤثر)
+        /// </summary>
+        Task<ServiceResult<Controllers.Api.InsuranceCoverageDto>> GetInsuranceCoverageAsync(int patientId, int? basePlanId, int? suppPlanId);
+
+        /// <summary>
+        /// پیش‌نمایش قیمت خدمت (بدون persist)
+        /// </summary>
+        Task<ServiceResult<Controllers.Api.PricePreviewResultDto>> PreviewItemPriceAsync(Controllers.Api.PricePreviewRequestDto request);
+
+        #endregion
     }
 }
