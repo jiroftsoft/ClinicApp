@@ -1,0 +1,51 @@
+@* Views/ReceptionV2/Partials/_IdentitySection.cshtml *@
+<div class="card mb-3" dir="rtl" id="rv2-identity">
+  <div class="card-header py-2 d-flex align-items-center justify-content-between">
+    <div class="fw-bold"><i class="fas fa-id-badge me-2"></i> هویت بیمار</div>
+    <div>
+      <a id="rv2-edit-patient-link" class="btn btn-sm btn-outline-primary d-none" target="_blank" href="#">
+        <i class="fas fa-external-link-alt ms-1"></i> ویرایش در پرونده بیمار
+      </a>
+    </div>
+  </div>
+  <div class="card-body py-3">
+    <div class="row g-3">
+      <div class="col-12 col-md-3">
+        <label class="form-label">کد ملی</label>
+        <input type="text" class="form-control" id="id-nationalCode" readonly>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">نام</label>
+        <input type="text" class="form-control" id="id-firstName" readonly>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">نام خانوادگی</label>
+        <input type="text" class="form-control" id="id-lastName" readonly>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">شماره موبایل</label>
+        <input type="text" class="form-control" id="id-mobile" readonly>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">جنسیت</label>
+        <input type="text" class="form-control" id="id-gender" readonly>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">تاریخ تولد (شمسی)</label>
+        <input type="text" class="form-control" id="id-birthdate-sh" readonly>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">آدرس</label>
+        <input type="text" class="form-control" id="id-address" readonly>
+      </div>
+    </div>
+    <div class="small text-muted mt-2">
+      * ویرایش اطلاعات هویتی فقط از طریق صفحهٔ «پرونده بیمار» امکان‌پذیر است.
+    </div>
+  </div>
+</div>
+
+<style>
+  #rv2-identity input[readonly] { background-color: #f8f9fa; }
+</style>
+

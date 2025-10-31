@@ -507,8 +507,10 @@
     <Compile Include="Controllers\ReceptionV2\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\Reception\ReceptionAlertController.cs" />
     <Compile Include="Controllers\Reception\ReceptionCalculationController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentController.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentDoctorController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionFacadeController.cs" />
     <Compile Include="Controllers\Reception\ReceptionFormController.cs" />
     <Compile Include="Controllers\Reception\ReceptionHistoryController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceAutoController.cs" />
@@ -3797,6 +3799,7 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Scripts\anti-forgery-ajax.js" />
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\app\assignment-form.js" />
     <Content Include="Scripts\app\combined-insurance-calculation.js" />
@@ -4434,16 +4437,17 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
     <Content Include="Scripts\popper.min.js" />
+    <Content Include="Scripts\reception.v2\auto-draft-manager.js" />
     <Content Include="Scripts\reception.v2\clinic-dept-doctor.js" />
     <Content Include="Scripts\reception.v2\form-change-detector.js" />
     <Content Include="Scripts\reception.v2\insurance-panel.js" />
-    <Content Include="Scripts\reception.v2\items-grid.js" />
     <Content Include="Scripts\reception.v2\patient-lookup.js" />
     <Content Include="Scripts\reception.v2\payment-panel.js" />
     <Content Include="Scripts\reception.v2\reception-api.js" />
     <Content Include="Scripts\reception.v2\reception-main.js" />
     <Content Include="Scripts\reception.v2\reception-utils.js" />
     <Content Include="Scripts\reception.v2\service-lookup.js" />
+    <Content Include="Scripts\reception.v2\summary-header.js" />
     <Content Include="Scripts\reception.v2\totals-panel.js" />
     <Content Include="Scripts\reception\core\error-handler.js" />
     <Content Include="Scripts\reception\core\event-bus.js" />
@@ -4584,6 +4588,8 @@
     <Content Include="Views\PosManagement\Index.cshtml" />
     <Content Include="Views\ReceptionV2\Print.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_PatientFastCreateModal.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_IdentitySection.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_ReceptionSummaryHeader.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

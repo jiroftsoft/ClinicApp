@@ -104,5 +104,76 @@ namespace ClinicApp.Controllers.Api
         public int? SupplementaryInsurancePlanId { get; set; }
         public string SupplementaryInsurancePlanName { get; set; }
     }
+
+    #region Coverage DTOs
+
+    /// <summary>
+    /// DTO برای جزئیات پوشش یک طرح بیمه (پایه یا تکمیلی)
+    /// </summary>
+    public class InsuranceCoverageSliceDto
+    {
+        public string PlanName { get; set; }
+        public decimal? FranchisePercent { get; set; }   // فرانشیز
+        public decimal? CoveragePercent { get; set; }    // درصد پوشش پایه/تکمیلی
+        public decimal? CeilingPerService { get; set; }
+        public decimal? CeilingPerVisit { get; set; }
+        public decimal? CeilingMonthly { get; set; }
+        public decimal? RemainingCeiling { get; set; }
+        
+        // Friendly strings
+        public string CeilingPerServiceStr { get; set; }
+        public string CeilingPerVisitStr { get; set; }
+        public string CeilingMonthlyStr { get; set; }
+        public string RemainingCeilingStr { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای پوشش مؤثر ترکیبی (بعد از اعمال پایه + تکمیلی)
+    /// </summary>
+    public class InsuranceCoverageEffectiveDto
+    {
+        public decimal EffectiveCoveragePercent { get; set; } // بعد از ترکیب پایه/تکمیلی
+        public decimal PatientSharePercent { get; set; }
+        public string Notes { get; set; } // توضیح قواعد ترکیب
+    }
+
+    /// <summary>
+    /// DTO برای پاسخ پوشش بیمه (پایه + تکمیلی + مؤثر)
+    /// </summary>
+    public class InsuranceCoverageDto
+    {
+        public InsuranceCoverageSliceDto Base { get; set; }
+        public InsuranceCoverageSliceDto Supplementary { get; set; }
+        public InsuranceCoverageEffectiveDto Effective { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای درخواست پیش‌نمایش قیمت
+    /// </summary>
+    public class PricePreviewRequestDto
+    {
+        public int? PatientId { get; set; }
+        public int? DepartmentId { get; set; }
+        public int? DoctorId { get; set; }
+        public int? BasePlanId { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+        public string ServiceCodeOrName { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای نتیجه پیش‌نمایش قیمت
+    /// </summary>
+    public class PricePreviewResultDto
+    {
+        public decimal Price { get; set; }
+        public decimal PatientShare { get; set; }
+        public decimal EffectiveCoveragePercent { get; set; }
+        
+        // Friendly strings
+        public string PriceStr { get; set; }
+        public string PatientShareStr { get; set; }
+    }
+
+    #endregion
 }
 

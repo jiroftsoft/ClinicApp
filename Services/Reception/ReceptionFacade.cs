@@ -1563,5 +1563,193 @@ namespace ClinicApp.Services.Reception
         }
 
         #endregion
+
+        #region Coverage & Price Preview
+
+        /// <summary>
+        /// دریافت جزئیات پوشش بیمه (پایه + تکمیلی + مؤثر)
+        /// </summary>
+        public async Task<ServiceResult<Controllers.Api.InsuranceCoverageDto>> GetInsuranceCoverageAsync(int patientId, int? basePlanId, int? suppPlanId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: دریافت پوشش بیمه - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    patientId, basePlanId, suppPlanId);
+
+                var baseCoverage = new Controllers.Api.InsuranceCoverageSliceDto();
+                var suppCoverage = new Controllers.Api.InsuranceCoverageSliceDto();
+                
+                // بارگذاری بیمه پایه
+                if (basePlanId.HasValue)
+                {
+                    var basePlan = await _context.InsurancePlans
+                        .Include(p => p.InsuranceProvider)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.InsurancePlanId == basePlanId.Value && !p.IsDeleted && p.IsActive);
+                    
+                    if (basePlan != null)
+                    {
+                        baseCoverage.PlanName = basePlan.Name;
+                        baseCoverage.CoveragePercent = basePlan.CoveragePercent;
+                        baseCoverage.FranchisePercent = basePlan.Deductible > 0 ? 0 : 0; // TODO: اگر Deductible درصدی است، اینجا محاسبه کن
+                        
+                        // سقف‌ها (فعلاً null - بعداً از InsuranceTariff یا PatientInsurance بخوان)
+                        baseCoverage.CeilingPerService = null;
+                        baseCoverage.CeilingPerVisit = null;
+                        baseCoverage.CeilingMonthly = null;
+                        baseCoverage.RemainingCeiling = null;
+                        
+                        baseCoverage.CeilingPerServiceStr = "—";
+                        baseCoverage.CeilingPerVisitStr = "—";
+                        baseCoverage.CeilingMonthlyStr = "—";
+                        baseCoverage.RemainingCeilingStr = "—";
+                    }
+                }
+                else
+                {
+                    baseCoverage.PlanName = "—";
+                }
+
+                // بارگذاری بیمه تکمیلی
+                if (suppPlanId.HasValue)
+                {
+                    var suppPlan = await _context.InsurancePlans
+                        .Include(p => p.InsuranceProvider)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
+                    
+                    if (suppPlan != null)
+                    {
+                        suppCoverage.PlanName = suppPlan.Name;
+                        suppCoverage.CoveragePercent = suppPlan.CoveragePercent;
+                        suppCoverage.FranchisePercent = suppPlan.Deductible > 0 ? 0 : 0; // TODO: اگر Deductible درصدی است، اینجا محاسبه کن
+                        
+                        // سقف‌ها (فعلاً null)
+                        suppCoverage.CeilingPerService = null;
+                        suppCoverage.CeilingPerVisit = null;
+                        suppCoverage.CeilingMonthly = null;
+                        suppCoverage.RemainingCeiling = null;
+                        
+                        suppCoverage.CeilingPerServiceStr = "—";
+                        suppCoverage.CeilingPerVisitStr = "—";
+                        suppCoverage.CeilingMonthlyStr = "—";
+                        suppCoverage.RemainingCeilingStr = "—";
+                    }
+                }
+                else
+                {
+                    suppCoverage.PlanName = "—";
+                }
+
+                // محاسبه پوشش مؤثر
+                decimal baseCov = (baseCoverage.CoveragePercent ?? 0m) / 100m;
+                decimal suppCov = (suppCoverage.CoveragePercent ?? 0m) / 100m;
+                decimal franchiseAdj = 0m; // TODO: فرانشیز را از Deductible محاسبه کن
+                
+                // قاعده ترکیب: ابتدا پایه، سپس تکمیلی روی سهم باقیمانده بیمار
+                decimal effective = Math.Min(1m, baseCov + (1m - baseCov) * suppCov);
+                decimal patientShare = Math.Max(0m, 1m - effective + franchiseAdj);
+                
+                var effectiveCoverage = new Controllers.Api.InsuranceCoverageEffectiveDto
+                {
+                    EffectiveCoveragePercent = Math.Round(effective * 100m, 2),
+                    PatientSharePercent = Math.Round(patientShare * 100m, 2),
+                    Notes = "قاعده ترکیب: ابتدا بیمه پایه، سپس بیمه تکمیلی روی سهم باقیمانده بیمار."
+                };
+
+                var result = new Controllers.Api.InsuranceCoverageDto
+                {
+                    Base = baseCoverage,
+                    Supplementary = suppCoverage,
+                    Effective = effectiveCoverage
+                };
+
+                _logger.Information("✅ FACADE: پوشش بیمه محاسبه شد - Effective: {Effective}%, PatientShare: {PatientShare}%", 
+                    effectiveCoverage.EffectiveCoveragePercent, effectiveCoverage.PatientSharePercent);
+
+                return ServiceResult<Controllers.Api.InsuranceCoverageDto>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت پوشش بیمه");
+                return ServiceResult<Controllers.Api.InsuranceCoverageDto>.Failed("خطا در دریافت پوشش بیمه: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// پیش‌نمایش قیمت خدمت (بدون persist)
+        /// </summary>
+        public async Task<ServiceResult<Controllers.Api.PricePreviewResultDto>> PreviewItemPriceAsync(Controllers.Api.PricePreviewRequestDto request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: پیش‌نمایش قیمت - ServiceCode: {ServiceCode}, PatientId: {PatientId}", 
+                    request?.ServiceCodeOrName, request?.PatientId);
+
+                if (string.IsNullOrWhiteSpace(request?.ServiceCodeOrName))
+                {
+                    return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("کد یا نام خدمت الزامی است.", "VALIDATION");
+                }
+
+                // 1) یافتن خدمت
+                var service = await _context.Services
+                    .Where(s => (s.ServiceCode == request.ServiceCodeOrName || 
+                               s.Title.Contains(request.ServiceCodeOrName)) &&
+                               s.IsActive && !s.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (service == null)
+                {
+                    return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("خدمت یافت نشد.", "NOT_FOUND");
+                }
+
+                // 2) محاسبه قیمت پایه
+                var financialYear = _financialYearService.GetCurrentYear();
+                var unitPrice = await _serviceCalculationEngine.CalculateUnitPriceIRRAsync(service.ServiceId, financialYear);
+                
+                if (unitPrice <= 0)
+                {
+                    _logger.Warning("⚠️ FACADE: قیمت محاسبه شده نامعتبر - ServiceId: {ServiceId}, Year: {Year}", 
+                        service.ServiceId, financialYear);
+                    return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("خطا در محاسبه قیمت خدمت", "CALCULATION_ERROR");
+                }
+
+                // 3) دریافت پوشش مؤثر
+                var coverage = await GetInsuranceCoverageAsync(request.PatientId ?? 0, request.BasePlanId, request.SupplementaryPlanId);
+                decimal effPct = 0m;
+                if (coverage.Success && coverage.Data != null)
+                {
+                    effPct = coverage.Data.Effective.EffectiveCoveragePercent;
+                }
+
+                // 4) محاسبه سهم بیمار
+                decimal patientShare = Math.Round(unitPrice * (1m - effPct / 100m), 0);
+
+                // 5) فرمت مبالغ
+                var priceStr = unitPrice.ToString("N0") + " ریال";
+                var patientShareStr = patientShare.ToString("N0") + " ریال";
+
+                var result = new Controllers.Api.PricePreviewResultDto
+                {
+                    Price = unitPrice,
+                    PatientShare = patientShare,
+                    EffectiveCoveragePercent = effPct,
+                    PriceStr = priceStr,
+                    PatientShareStr = patientShareStr
+                };
+
+                _logger.Information("✅ FACADE: پیش‌نمایش قیمت محاسبه شد - Price: {Price}, PatientShare: {PatientShare}, EffectiveCoverage: {EffPct}%", 
+                    unitPrice, patientShare, effPct);
+
+                return ServiceResult<Controllers.Api.PricePreviewResultDto>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در پیش‌نمایش قیمت");
+                return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("خطا در پیش‌نمایش قیمت: " + ex.Message);
+            }
+        }
+
+        #endregion
     }
 }

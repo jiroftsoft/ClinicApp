@@ -1,0 +1,46 @@
+@* Views/ReceptionV2/Partials/_ReceptionSummaryHeader.cshtml *@
+<div id="rv2-summary" class="card shadow-sm mb-3" dir="rtl">
+  <div class="card-body py-2">
+    <div class="row align-items-center">
+      <div class="col-12 col-md-6">
+        <div class="fw-bold">
+          <i class="fas fa-user me-2"></i>
+          <span data-field="patient-fullname" data-action="open-patient" style="cursor: pointer; text-decoration: underline;" title="برای باز کردن پرونده بیمار کلیک کنید">—</span>
+          <span class="badge bg-secondary ms-2" data-field="patient-gender">—</span>
+        </div>
+        <div class="text-muted small mt-1">
+          <span><i class="fas fa-id-card-alt ms-1"></i><span data-field="patient-nc">—</span></span>
+          <span class="mx-2">·</span>
+          <span><i class="far fa-calendar-alt ms-1"></i><span data-field="patient-age">—</span></span>
+          <span class="mx-2">·</span>
+          <span><i class="fas fa-map-marker-alt ms-1"></i><span data-field="patient-address" class="text-truncate d-inline-block" style="max-width:220px;">—</span></span>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 text-md-start text-start mt-2 mt-md-0">
+        <div class="small">
+          <span class="me-3">
+            <i class="fas fa-hospital me-1"></i>
+            <span data-field="department-name" data-action="goto-dept" style="cursor: pointer; text-decoration: underline;" title="برای تغییر دپارتمان کلیک کنید">—</span>
+          </span>
+          <span>
+            <i class="fas fa-stethoscope me-1"></i>
+            <span data-field="doctor-name" data-action="goto-doctor" style="cursor: pointer; text-decoration: underline;" title="برای تغییر پزشک کلیک کنید">—</span>
+          </span>
+        </div>
+        <div class="mt-2">
+          <span class="badge bg-info text-dark me-1" data-field="base-ins-name" data-action="open-coverage" style="cursor: pointer;" title="برای دیدن جزئیات پوشش کلیک کنید">بیمه پایه: —</span>
+          <span class="badge bg-warning text-dark me-1" data-field="supp-ins-name" data-action="open-coverage" style="cursor: pointer;" title="برای دیدن جزئیات پوشش کلیک کنید">تکمیلی: —</span>
+          <span class="badge bg-light text-dark" data-field="fy-name" title="سال مالی جاری">سال مالی: —</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #rv2-summary .badge { font-weight: 600; }
+  #rv2-summary [data-field="patient-address"] { vertical-align: middle; }
+  #rv2-summary [data-action] { transition: opacity 0.2s; }
+  #rv2-summary [data-action]:hover { opacity: 0.8; }
+</style>
+

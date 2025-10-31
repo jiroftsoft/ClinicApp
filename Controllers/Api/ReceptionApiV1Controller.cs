@@ -638,6 +638,65 @@ namespace ClinicApp.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// GET /api/v1/reception/insurance/coverage
+        /// دریافت جزئیات پوشش بیمه (پایه + تکمیلی + مؤثر)
+        /// </summary>
+        [HttpGet, Route("insurance/coverage")]
+        public async Task<ActionResult> GetInsuranceCoverage(int patientId = 0, int? basePlanId = null, int? supplementaryPlanId = null)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: Get Insurance Coverage - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    patientId, basePlanId, supplementaryPlanId);
+
+                if (_facade != null)
+                {
+                    var result = await _facade.GetInsuranceCoverageAsync(patientId, basePlanId, supplementaryPlanId);
+                    return Json(result, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(ServiceResult<InsuranceCoverageDto>.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در دریافت پوشش بیمه");
+                return Json(ServiceResult<InsuranceCoverageDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/item/price/preview
+        /// پیش‌نمایش قیمت خدمت (بدون persist)
+        /// </summary>
+        [HttpGet, Route("item/price/preview")]
+        public async Task<ActionResult> PreviewItemPrice(PricePreviewRequestDto request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: Price Preview - ServiceCode: {ServiceCode}, PatientId: {PatientId}", 
+                    request?.ServiceCodeOrName, request?.PatientId);
+
+                if (string.IsNullOrWhiteSpace(request?.ServiceCodeOrName))
+                {
+                    return Json(ServiceResult<PricePreviewResultDto>.Failed("کد یا نام خدمت الزامی است.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                if (_facade != null)
+                {
+                    var result = await _facade.PreviewItemPriceAsync(request);
+                    return Json(result, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(ServiceResult<PricePreviewResultDto>.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در پیش‌نمایش قیمت");
+                return Json(ServiceResult<PricePreviewResultDto>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
     }
 
