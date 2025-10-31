@@ -115,6 +115,10 @@ namespace ClinicApp.Controllers.Api
         public string PlanName { get; set; }
         public decimal? FranchisePercent { get; set; }   // فرانشیز
         public decimal? CoveragePercent { get; set; }    // درصد پوشش پایه/تکمیلی
+        
+        // ✅ Friendly string for Franchise (مبلغ یا درصد)
+        public string FranchisePercentStr { get; set; }
+        
         public decimal? CeilingPerService { get; set; }
         public decimal? CeilingPerVisit { get; set; }
         public decimal? CeilingMonthly { get; set; }

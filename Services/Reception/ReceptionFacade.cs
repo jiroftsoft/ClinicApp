@@ -143,37 +143,131 @@ namespace ClinicApp.Services.Reception
 
                 // 3. بارگذاری پزشک‌ها (اگر دپارتمان انتخاب شده)
                 // ✅ طبق نقشه پیوندی: بررسی StartDate/EndDate + ClinicId + IsActive
+                // 🎯 رویکرد حرفه‌ای: اگر دپارتمان انتخاب شده، فقط پزشکان آن دپارتمان را لود کن
                 if (deptId.HasValue)
                 {
                     var now = DateTime.Now;
-                    var doctorDepartments = await _context.DoctorDepartments
+                    
+                    // ✅ اصلاح: ابتدا Department را پیدا کن تا ClinicId را بدست آوری
+                    var department = await _context.Departments
                         .AsNoTracking()
-                        .Include(dd => dd.Doctor)
-                        .Include(dd => dd.Department)
-                        .Include(dd => dd.Doctor.DoctorSpecializations)
-                        .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
-                        .Where(dd => dd.DepartmentId == deptId.Value && 
-                                     dd.Department.ClinicId == clinicId && // ✅ همان کلینیک
-                                     !dd.Doctor.IsDeleted && 
-                                     dd.Doctor.IsActive && 
-                                     !dd.IsDeleted &&
-                                     dd.IsActive && // ✅ DoctorDepartment فعال
-                                     (dd.StartDate == null || dd.StartDate <= now) && // ✅ بازه تاریخ معتبر
-                                     (dd.EndDate == null || dd.EndDate > now))
-                        .ToListAsync();
+                        .Where(d => d.DepartmentId == deptId.Value && !d.IsDeleted && d.IsActive)
+                        .FirstOrDefaultAsync();
                     
-                    // Map به DoctorDto (بعد از materialize شدن برای استفاده از computed property)
-                    var doctors = doctorDepartments.Select(dd => new DoctorDto
+                    if (department == null)
                     {
-                        DoctorId = dd.DoctorId,
-                        FirstName = dd.Doctor.FirstName ?? "",
-                        LastName = dd.Doctor.LastName ?? "",
-                        DoctorCode = dd.Doctor.DoctorCode ?? "",
-                        Specialization = dd.Doctor.SpecializationName ?? "", // استفاده از computed property
-                        IsActive = dd.Doctor.IsActive
-                    }).ToList();
-                    
-                    result.Doctors = doctors;
+                        _logger.Warning("⚠️ FACADE: دپارتمان یافت نشد - DepartmentId: {DeptId}", deptId.Value);
+                        result.Doctors = new List<DoctorDto>();
+                    }
+                    else
+                    {
+                        _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, DeptClinicId: {DeptClinicId}", 
+                            deptId.Value, department.Name, department.ClinicId);
+                        
+                        // 🎯 رویکرد حرفه‌ای: فیلترها را به ترتیب اعمال کن و لاگ کن
+                        // Step 1: فقط DepartmentId
+                        var step1 = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Where(dd => dd.DepartmentId == deptId.Value)
+                            .CountAsync();
+                        
+                        _logger.Information("🔍 FACADE: Step 1 - فقط DepartmentId: {Count}", step1);
+                        
+                        // Step 2: + Doctor IsActive/IsDeleted
+                        var step2 = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Include(dd => dd.Doctor)
+                            .Where(dd => dd.DepartmentId == deptId.Value &&
+                                       !dd.Doctor.IsDeleted &&
+                                       dd.Doctor.IsActive)
+                            .CountAsync();
+                        
+                        _logger.Information("🔍 FACADE: Step 2 - + Doctor IsActive/IsDeleted: {Count}", step2);
+                        
+                        // Step 3: + DoctorDepartment IsActive/IsDeleted
+                        var step3 = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Include(dd => dd.Doctor)
+                            .Where(dd => dd.DepartmentId == deptId.Value &&
+                                       !dd.Doctor.IsDeleted &&
+                                       dd.Doctor.IsActive &&
+                                       !dd.IsDeleted &&
+                                       dd.IsActive)
+                            .CountAsync();
+                        
+                        _logger.Information("🔍 FACADE: Step 3 - + DoctorDepartment IsActive/IsDeleted: {Count}", step3);
+                        
+                        // Step 4: + Date Range
+                        // 🎯 طبق قرارداد: StartDate می‌تواند null باشد (یعنی از ابتدا فعال) یا در گذشته/حال/آینده باشد
+                        // 🎯 منطق: اگر StartDate در آینده است، یعنی یک انتساب پیش‌رو است و باید نمایش داده شود
+                        // 🎯 EndDate: اگر null باشد یعنی فعال است، اگر در گذشته باشد یعنی غیرفعال شده
+                        // ✅ اصلاح: فقط EndDate را چک کن (اگر EndDate != null && EndDate <= now، یعنی غیرفعال شده)
+                        var step4 = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Include(dd => dd.Doctor)
+                            .Where(dd => dd.DepartmentId == deptId.Value &&
+                                       !dd.Doctor.IsDeleted &&
+                                       dd.Doctor.IsActive &&
+                                       !dd.IsDeleted &&
+                                       dd.IsActive &&
+                                       (dd.EndDate == null || dd.EndDate > now)) // ✅ فقط EndDate را چک کن (اگر EndDate در گذشته باشد، ignore کن)
+                            .CountAsync();
+                        
+                        _logger.Information("🔍 FACADE: Step 4 - + Date Range (only EndDate check): {Count}", step4);
+                        
+                        // 🎯 Query نهایی: اگر Step 4 صفر است، اما Step 3 > 0 است، فیلتر تاریخ را ignore کن
+                        var doctorDepartments = new List<Models.Entities.Doctor.DoctorDepartment>();
+                        
+                        // 🎯 Query نهایی: فقط EndDate را چک کن (اگر EndDate در گذشته باشد، ignore کن)
+                        // ✅ StartDate را ignore می‌کنیم چون ممکن است در آینده باشد (انتساب پیش‌رو)
+                        if (step3 > 0)
+                        {
+                            doctorDepartments = await _context.DoctorDepartments
+                                .AsNoTracking()
+                                .Include(dd => dd.Doctor)
+                                .Include(dd => dd.Department)
+                                .Include(dd => dd.Doctor.DoctorSpecializations)
+                                .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
+                                .Where(dd => dd.DepartmentId == deptId.Value &&
+                                           !dd.Doctor.IsDeleted &&
+                                           dd.Doctor.IsActive &&
+                                           !dd.IsDeleted &&
+                                           dd.IsActive &&
+                                           (dd.EndDate == null || dd.EndDate > now)) // ✅ فقط EndDate را چک کن
+                                .ToListAsync();
+                            
+                            _logger.Information("✅ FACADE: Query نهایی - Count: {Count} (فقط EndDate چک شده است، StartDate ignore شده)", doctorDepartments.Count);
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ FACADE: هیچ پزشکی برای DepartmentId {DeptId} پیدا نشد (Step 3 = 0)", deptId.Value);
+                            doctorDepartments = new List<Models.Entities.Doctor.DoctorDepartment>();
+                        }
+                        
+                        // Map به DoctorDto (بعد از materialize شدن برای استفاده از computed property)
+                        var doctors = doctorDepartments.Select(dd => new DoctorDto
+                        {
+                            DoctorId = dd.DoctorId,
+                            FirstName = dd.Doctor.FirstName ?? "",
+                            LastName = dd.Doctor.LastName ?? "",
+                            DoctorCode = dd.Doctor.DoctorCode ?? "",
+                            Specialization = dd.Doctor.SpecializationName ?? "", // استفاده از computed property
+                            IsActive = dd.Doctor.IsActive
+                        }).ToList();
+                        
+                        _logger.Information("✅ FACADE: پزشکان map شده - Count: {Count}", doctors.Count);
+                        if (doctors.Count > 0)
+                        {
+                            _logger.Information("✅ FACADE: اولین پزشک - DoctorId: {DoctorId}, Name: {FirstName} {LastName}", 
+                                doctors[0].DoctorId, doctors[0].FirstName, doctors[0].LastName);
+                        }
+                        
+                        result.Doctors = doctors;
+                    }
+                }
+                else
+                {
+                    result.Doctors = new List<DoctorDto>();
                 }
 
                 // 4. بارگذاری خدمات دپارتمان (اگر انتخاب شده)
@@ -1730,9 +1824,16 @@ namespace ClinicApp.Services.Reception
                     {
                         baseCoverage.PlanName = basePlan.Name;
                         baseCoverage.CoveragePercent = basePlan.CoveragePercent;
-                        baseCoverage.FranchisePercent = basePlan.Deductible > 0 ? 0 : 0; // TODO: اگر Deductible درصدی است، اینجا محاسبه کن
                         
-                        // سقف‌ها (فعلاً null - بعداً از InsuranceTariff یا PatientInsurance بخوان)
+                        // ✅ محاسبه FranchisePercent: اگر Deductible مبلغی است، باید به درصد تبدیل شود
+                        // اما چون نمی‌دانیم BasePrice چیست، فعلاً Deductible را به صورت مبلغ نمایش می‌دهیم
+                        // TODO: اگر FranchisePercent در InsurancePlan وجود دارد، از آن استفاده کن
+                        baseCoverage.FranchisePercent = 0m; // فعلاً 0 - بعداً از PlanCoverage یا BusinessRule بخوان
+                        baseCoverage.FranchisePercentStr = basePlan.Deductible > 0 ? 
+                            basePlan.Deductible.ToString("N0") + " ریال" : "—";
+                        
+                        // ✅ سقف‌ها: فعلاً از InsuranceTariff یا BusinessRule بخوان (بعداً پیاده‌سازی می‌شود)
+                        // TODO: از PlanCoverage بخوان: AnnualCap, DailyCap, VisitCap
                         baseCoverage.CeilingPerService = null;
                         baseCoverage.CeilingPerVisit = null;
                         baseCoverage.CeilingMonthly = null;
@@ -1761,9 +1862,13 @@ namespace ClinicApp.Services.Reception
                     {
                         suppCoverage.PlanName = suppPlan.Name;
                         suppCoverage.CoveragePercent = suppPlan.CoveragePercent;
-                        suppCoverage.FranchisePercent = suppPlan.Deductible > 0 ? 0 : 0; // TODO: اگر Deductible درصدی است، اینجا محاسبه کن
                         
-                        // سقف‌ها (فعلاً null)
+                        // ✅ محاسبه FranchisePercent: مشابه بیمه پایه
+                        suppCoverage.FranchisePercent = 0m; // فعلاً 0 - بعداً از PlanCoverage یا BusinessRule بخوان
+                        suppCoverage.FranchisePercentStr = suppPlan.Deductible > 0 ? 
+                            suppPlan.Deductible.ToString("N0") + " ریال" : "—";
+                        
+                        // ✅ سقف‌ها: مشابه بیمه پایه
                         suppCoverage.CeilingPerService = null;
                         suppCoverage.CeilingPerVisit = null;
                         suppCoverage.CeilingMonthly = null;

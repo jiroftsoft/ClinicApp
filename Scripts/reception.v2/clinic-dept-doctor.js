@@ -15,13 +15,32 @@
     const clinicId = $("#ClinicId").val() || 1; // Default clinic ID = 1 (کلینیک شفا)
     const deptId = $("#DepartmentId").val();
     
+    // ✅ لاگ دقیق‌تر برای دیباگ
+    console.log('🏥 V2: Bootstrap params - clinicId:', clinicId, 'deptId:', deptId, 'deptId type:', typeof deptId);
+    
     API.get("/bootstrap", { clinicId: clinicId, deptId: deptId })
       .then(function(fullResponse) {
         console.log('🏥 V2: Bootstrap raw response:', fullResponse);
+        console.log('🏥 V2: Bootstrap response type:', typeof fullResponse);
+        console.log('🏥 V2: Bootstrap response keys:', fullResponse ? Object.keys(fullResponse) : 'null/undefined');
+        
+        // 🔍 چک Success قبل از extract
+        const successValue = fullResponse?.Success ?? fullResponse?.success;
+        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        console.log('🏥 V2: Bootstrap success check - successValue:', successValue, 'isSuccess:', isSuccess);
+        
+        if (!fullResponse || !isSuccess) {
+          const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در بارگذاری اطلاعات اولیه';
+          console.error('🏥 V2: Bootstrap failed:', errorMsg, fullResponse);
+          toastr.error(errorMsg);
+          return;
+        }
         
         // Extract data using API.ok (handles ServiceResult structure)
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Bootstrap extracted data:', response);
+        console.log('🏥 V2: Bootstrap extracted data type:', typeof response);
+        console.log('🏥 V2: Bootstrap extracted data keys:', response ? Object.keys(response) : 'null/undefined');
         
         // پشتیبانی از PascalCase و camelCase
         const departments = response.Departments || response.departments || [];
