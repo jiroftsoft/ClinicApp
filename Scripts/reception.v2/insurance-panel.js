@@ -416,20 +416,21 @@
     });
   }
 
-  // Event handlers
+  // ✅ Event handlers - هوشمندسازی: تغییر بیمه → Reprice همه آیتم‌ها + به‌روزرسانی Totals
   $basePlan.on('change', function() {
-    console.log('🏥 V2: Base plan changed');
+    console.log('🏥 V2: Base plan changed - Triggering smart recalculation...');
     
     // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
     updateInsuranceStatus();
     
     // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
+    // persist() خودش totals را از API دریافت و به‌روزرسانی می‌کند
     persist();
   });
   
   $suppPlan.on('change', function() {
     const selectedValue = $suppPlan.val();
-    console.log('🏥 V2: Supplementary plan changed, selected value:', selectedValue);
+    console.log('🏥 V2: Supplementary plan changed, selected value:', selectedValue, '- Triggering smart recalculation...');
     
     // نمایش/مخفی کردن دکمه حذف
     toggleRemoveButton();
@@ -438,6 +439,7 @@
     updateInsuranceStatus();
     
     // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
+    // persist() خودش totals را از API دریافت و به‌روزرسانی می‌کند
     if (!selectedValue || selectedValue === '' || selectedValue === null) {
       console.log('🏥 V2: Supplementary plan cleared → Patient has NO supplementary insurance');
     } else {
@@ -504,11 +506,11 @@
     const suppStr = totals.SuppCoveredIRRStr || totals.suppCoveredIRRStr || (supp ? U.toIRR(supp) : '۰');
     const patientStr = totals.PatientPayableIRRStr || totals.patientPayableIRRStr || (patient ? U.toIRR(patient) : '۰');
     
-    // ✅ به‌روزرسانی UI
-    $('#Gross').text(grossStr).attr('data-value', gross);
-    $('#InsurancePayable').text(baseStr).attr('data-value', base);
-    $('#SuppPayable').text(suppStr).attr('data-value', supp);
-    $('#PatientPayable').text(patientStr).attr('data-value', patient);
+    // ✅ به‌روزرسانی UI - پشتیبانی از هر دو مجموعه selector
+    $('#Gross, #SumGross').text(grossStr).attr('data-value', gross);
+    $('#InsurancePayable, #SumBase').text(baseStr).attr('data-value', base);
+    $('#SuppPayable, #SumSupp').text(suppStr).attr('data-value', supp);
+    $('#PatientPayable, #SumPatient').text(patientStr).attr('data-value', patient);
     
     console.log('✅ V2: Totals UI updated - Gross:', grossStr, 'Base:', baseStr, 'Supp:', suppStr, 'Patient:', patientStr);
   }

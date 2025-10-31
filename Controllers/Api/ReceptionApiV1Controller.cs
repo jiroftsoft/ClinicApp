@@ -832,7 +832,10 @@ namespace ClinicApp.Controllers.Api
                             
                             if (lastItem != null)
                             {
+                                // ✅ محاسبه Pricing برای آخرین آیتم
                                 var pricing = await _pricing.PriceItemAsync(request.ReceptionId, lastItem.ReceptionItemId);
+                                
+                                // ✅ محاسبه Totals برای کل Reception
                                 var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
                                 
                                 return Json(ServiceResult<object>.Successful(new 
@@ -841,7 +844,9 @@ namespace ClinicApp.Controllers.Api
                                     {
                                         ServiceId = request.ServiceId,
                                         Quantity = request.Quantity,
-                                        ReceptionItemId = lastItem.ReceptionItemId
+                                        ReceptionItemId = lastItem.ReceptionItemId,
+                                        Code = lastItem.Service?.ServiceCode ?? "",
+                                        Name = lastItem.Service?.Title ?? ""
                                     },
                                     pricing,
                                     totals
@@ -939,6 +944,40 @@ namespace ClinicApp.Controllers.Api
                     if (result.Success)
                     {
                         _logger?.Information("✅ V1 API: آیتم با موفقیت حذف شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        
+                        // ✅ پس از حذف، Totals را محاسبه و ضمیمه پاسخ کنید
+                        try
+                        {
+                            var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                            
+                            // ✅ دریافت لیست آیتم‌های باقیمانده برای نمایش در UI
+                            var remainingItems = await _context.ReceptionItems
+                                .Include(i => i.Service)
+                                .Where(i => i.ReceptionId == request.ReceptionId && !i.IsDeleted)
+                                .Select(i => new
+                                {
+                                    ServiceId = i.ServiceId,
+                                    Code = i.Service.ServiceCode,
+                                    Name = i.Service.Title,
+                                    Qty = i.Quantity,
+                                    UnitPriceIRR = (long)i.UnitPrice,
+                                    TotalIRR = (long)(i.UnitPrice * i.Quantity)
+                                })
+                                .ToListAsync();
+                            
+                            return Json(ServiceResult<object>.Successful(new 
+                            { 
+                                items = remainingItems,
+                                totals
+                            }, "آیتم حذف و محاسبه شد."));
+                        }
+                        catch (Exception pricingEx)
+                        {
+                            _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در محاسبه Totals پس از RemoveItem - ReceptionId: {ReceptionId}", 
+                                request.ReceptionId);
+                            // Fallback: فقط نتیجه RemoveItem را برگردان
+                            return Json(result);
+                        }
                     }
                     else
                     {
@@ -1053,6 +1092,118 @@ namespace ClinicApp.Controllers.Api
                 _logger?.Error(ex, "❌ V1 API: خطا در دریافت پزشکان مجاز برای خدمت - DeptId: {DeptId}, ServiceId: {ServiceId}, ClinicId: {ClinicId}", 
                     deptId, serviceId, clinicId);
                 return Json(ServiceResult.Failed("خطا در فیلتر پزشکان بر اساس خدمت.", "DOCTORS_FILTER_FAILED").WithExceptionDev(ex), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/finalize/pos
+        /// نهایی‌سازی پذیرش با POS
+        /// </summary>
+        [HttpPost, Route("finalize/pos")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> FinalizeWithPos(Controllers.Api.FinalizePosRequest request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: نهایی‌سازی با POS - ReceptionId: {ReceptionId}", request?.ReceptionId);
+
+                if (request == null || request.ReceptionId <= 0)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var facadeRequest = new ViewModels.Reception.FinalizePosRequest
+                    {
+                        ReceptionId = request.ReceptionId,
+                        AmountIRR = request.Amount,
+                        IdempotencyKey = request.IdempotencyKey ?? System.Guid.NewGuid().ToString(),
+                        Pos = request.PosPayment != null ? new ViewModels.Reception.PosPaymentDto
+                        {
+                            Amount = request.PosPayment.Amount,
+                            RRN = request.PosPayment.RRN,
+                            TraceNo = request.PosPayment.TraceNo,
+                            TerminalId = request.PosPayment.TerminalId,
+                            CardLast4 = request.PosPayment.CardLast4
+                        } : null
+                    };
+
+                    var result = await _facade.FinalizePosAsync(facadeRequest);
+                    
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: پذیرش با موفقیت نهایی شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: نهایی‌سازی پذیرش ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
+                    return Json(result);
+                }
+
+                return Json(ServiceResult.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در نهایی‌سازی POS - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED").WithExceptionDev(ex));
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/finalize/cash
+        /// نهایی‌سازی پذیرش با نقدی
+        /// </summary>
+        [HttpPost, Route("finalize/cash")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> FinalizeWithCash(Controllers.Api.FinalizeCashRequest request)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: نهایی‌سازی با نقدی - ReceptionId: {ReceptionId}", request?.ReceptionId);
+
+                if (request == null || request.ReceptionId <= 0)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var facadeRequest = new ViewModels.Reception.FinalizeCashRequest
+                    {
+                        ReceptionId = request.ReceptionId,
+                        AmountIRR = request.Amount,
+                        IdempotencyKey = request.IdempotencyKey ?? System.Guid.NewGuid().ToString(),
+                        Cash = request.CashPayment != null ? new ViewModels.Reception.CashPaymentDto
+                        {
+                            CashSessionId = request.CashPayment.CashSessionId
+                        } : null
+                    };
+
+                    var result = await _facade.FinalizeCashAsync(facadeRequest);
+                    
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: پذیرش با موفقیت نهایی شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: نهایی‌سازی پذیرش ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
+                            request.ReceptionId, result.Message);
+                    }
+                    
+                    return Json(result);
+                }
+
+                return Json(ServiceResult.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در نهایی‌سازی Cash - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED").WithExceptionDev(ex));
             }
         }
 

@@ -62,7 +62,8 @@
       };
     }
     
-    const endpoint = isPOS ? "/Api/ReceptionApi/FinalizeWithPos" : "/Api/ReceptionApi/FinalizeWithCash";
+    // ✅ استفاده از endpoint v1 با fallback به legacy
+    const endpoint = isPOS ? "/finalize/pos" : "/finalize/cash";
     
     API.post(endpoint, payload)
       .then(API.ok)

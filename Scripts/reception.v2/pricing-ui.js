@@ -127,11 +127,53 @@
       $row.data('item', item);
       $row.data('pricing', pricing);
 
-      // init tooltip (اگر Bootstrap موجود است)
-      if (window.bootstrap && typeof window.bootstrap.Tooltip !== 'undefined') {
-        $('[data-bs-toggle="tooltip"]', $row).tooltip({ trigger: 'hover' });
-      } else if ($.fn.tooltip) {
-        $('[data-toggle="tooltip"]', $row).tooltip({ trigger: 'hover' });
+      // ✅ init tooltip (پشتیبانی از Bootstrap 5 و 4 با fallback برای Popper)
+      try {
+        // بررسی وجود Popper.js (Bootstrap 5 نیاز دارد)
+        var hasPopper = typeof window.Popper !== 'undefined' || 
+                       (window.bootstrap && window.bootstrap.Tooltip && 
+                        typeof window.bootstrap.Tooltip.prototype !== 'undefined');
+        
+        if (window.bootstrap && typeof window.bootstrap.Tooltip !== 'undefined' && hasPopper) {
+          // Bootstrap 5 API (با Popper)
+          $('[data-bs-toggle="tooltip"]', $row).each(function() {
+            try {
+              // بررسی اینکه آیا tooltip قبلاً ایجاد شده یا نه
+              var existingTooltip = bootstrap.Tooltip.getInstance(this);
+              if (existingTooltip) {
+                existingTooltip.dispose();
+              }
+              new bootstrap.Tooltip(this, { 
+                trigger: 'hover',
+                html: true,
+                fallbackPlacements: ['top', 'bottom', 'left', 'right']
+              });
+            } catch (err) {
+              // اگر Popper خطا داد، از title استفاده کنیم
+              console.warn('🏥 V2: Error creating Bootstrap 5 tooltip (Popper issue):', err.message);
+              // Fallback: استفاده از title attribute
+              var $el = $(this);
+              if (!$el.attr('title') && $el.data('bs-original-title')) {
+                $el.attr('title', $el.data('bs-original-title'));
+              }
+            }
+          });
+        } else if ($.fn.tooltip && typeof $('[data-toggle="tooltip"]', $row).tooltip === 'function') {
+          // Bootstrap 4 API (fallback)
+          $('[data-toggle="tooltip"]', $row).tooltip({ trigger: 'hover' });
+        } else {
+          // Ultimate fallback: استفاده از title attribute و CSS
+          $('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]', $row).each(function() {
+            var $el = $(this);
+            var title = $el.data('bs-original-title') || $el.data('original-title') || $el.attr('title');
+            if (title && !$el.attr('title')) {
+              $el.attr('title', title);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('🏥 V2: Error initializing tooltips:', err);
+        // Silent fail - tooltips optional
       }
     }
   }

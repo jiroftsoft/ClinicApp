@@ -71,7 +71,7 @@
     }
   });
 
-  // Load eligible doctors when service changes
+  // ✅ Load eligible doctors when service changes + هوشمندسازی: اگر ReceptionId وجود دارد، Reprice
   $("#ServiceId").on('change', function() {
     const serviceId = parseInt($(this).val(), 10);
     const deptId = parseInt($("#DepartmentId").val(), 10);
@@ -89,6 +89,19 @@
       window.loadDoctorsByService({ serviceId, deptId, clinicId });
     } else {
       console.warn('🏥 V2: loadDoctorsByService function not found');
+    }
+    
+    // ✅ هوشمندسازی: اگر ReceptionId وجود دارد و آیتم‌هایی در Reception هستند، Totals را رفرش کن
+    const receptionId = $("#ReceptionId").val();
+    if (receptionId && receptionId > 0) {
+      console.log('🏥 V2: Service changed with active reception, refreshing totals...');
+      // Totals بعداً هنگام افزودن/حذف آیتم به‌روزرسانی می‌شود
+      // اینجا فقط برای اطمینان، اگر آیتم‌هایی وجود دارد، refresh می‌کنیم
+      setTimeout(function() {
+        if (window.insurancePanelModule && typeof window.insurancePanelModule.loadTotals === 'function') {
+          window.insurancePanelModule.loadTotals(receptionId);
+        }
+      }, 500); // کمی تأخیر برای اطمینان از به‌روزرسانی
     }
   });
 
@@ -302,13 +315,35 @@
           });
         }
         
-        // Update totals - پشتیبانی از PascalCase و camelCase
-        if (response && (response.totals || response.Totals)) {
-          const totals = response.totals || response.Totals || {};
-          $("#Gross").text(U.toIRR(totals.gross || totals.Gross || 0));
-          $("#InsurancePayable").text(U.toIRR(totals.base || totals.Base || 0));
-          $("#SuppPayable").text(U.toIRR(totals.supplementary || totals.Supplementary || 0));
-          $("#PatientPayable").text(U.toIRR(totals.patient || totals.Patient || 0)).attr("data-value", totals.patient || totals.Patient || 0);
+        // ✅ Update totals - استفاده از تابع updateTotalsUI
+        const totals = response.totals || response.Totals || null;
+        if (totals) {
+          console.log('🏥 V2: Updating totals from RemoveItem response:', totals);
+          if (window.insurancePanelModule && typeof window.insurancePanelModule.updateTotalsUI === 'function') {
+            window.insurancePanelModule.updateTotalsUI(totals);
+          } else {
+            // Fallback: به‌روزرسانی مستقیم
+            const gross = totals.GrossIRR || totals.grossIRR || totals.Gross || totals.gross || 0;
+            const base = totals.BaseCoveredIRR || totals.baseCoveredIRR || totals.Base || totals.base || 0;
+            const supp = totals.SuppCoveredIRR || totals.suppCoveredIRR || totals.Supplementary || totals.supplementary || 0;
+            const patient = totals.PatientPayableIRR || totals.patientPayableIRR || totals.Patient || totals.patient || 0;
+            
+            const grossStr = totals.GrossIRRStr || totals.grossIRRStr || U.toIRR(gross);
+            const baseStr = totals.BaseCoveredIRRStr || totals.baseCoveredIRRStr || U.toIRR(base);
+            const suppStr = totals.SuppCoveredIRRStr || totals.suppCoveredIRRStr || U.toIRR(supp);
+            const patientStr = totals.PatientPayableIRRStr || totals.patientPayableIRRStr || U.toIRR(patient);
+            
+            $("#Gross").text(grossStr).attr('data-value', gross);
+            $("#InsurancePayable").text(baseStr).attr('data-value', base);
+            $("#SuppPayable").text(suppStr).attr('data-value', supp);
+            $("#PatientPayable").text(patientStr).attr('data-value', patient);
+          }
+        } else {
+          console.warn('🏥 V2: Totals not found in RemoveItem response, attempting to fetch separately...');
+          const receptionId = $("#ReceptionId").val();
+          if (receptionId && window.insurancePanelModule && typeof window.insurancePanelModule.loadTotals === 'function') {
+            window.insurancePanelModule.loadTotals(receptionId);
+          }
         }
       })
       .catch(function(err) {
