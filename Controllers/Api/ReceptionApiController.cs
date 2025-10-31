@@ -123,7 +123,7 @@ namespace ClinicApp.Controllers.Api
                         NationalCode = patient.NationalCode,
                         FirstName = patient.FirstName,
                         LastName = patient.LastName,
-                        FatherName = null, // Patient entity فیلد FatherName ندارد
+                        FatherName = patient.FatherName,
                         Mobile = patient.PhoneNumber, // PhoneNumber به عنوان Mobile
                         Phone = null, // اگر فیلد جداگانه نیاز است
                         Address = patient.Address,
@@ -211,6 +211,7 @@ namespace ClinicApp.Controllers.Api
                 // اعمال تغییرات مجاز
                 patient.FirstName = request.FirstName?.Trim();
                 patient.LastName = request.LastName?.Trim();
+                patient.FatherName = request.FatherName?.Trim();
                 patient.PhoneNumber = request.Mobile?.Trim(); // PhoneNumber به عنوان Mobile
                 patient.Address = request.Address?.Trim();
                 patient.Gender = gender;
@@ -228,7 +229,7 @@ namespace ClinicApp.Controllers.Api
                     NationalCode = patient.NationalCode,
                     FirstName = patient.FirstName,
                     LastName = patient.LastName,
-                    FatherName = null,
+                    FatherName = patient.FatherName,
                     Mobile = patient.PhoneNumber,
                     Phone = null,
                     Address = patient.Address,

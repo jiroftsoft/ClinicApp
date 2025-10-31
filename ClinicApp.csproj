@@ -669,6 +669,10 @@
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
+    <Compile Include="Migrations\202510311033089_AddFatherName.cs" />
+    <Compile Include="Migrations\202510311033089_AddFatherName.Designer.cs">
+      <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>
+    </Compile>
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -4745,6 +4749,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510171050535_ChnagTypeOfBirthDate.resx">
       <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510311033089_AddFatherName.resx">
+      <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

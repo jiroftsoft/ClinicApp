@@ -51,6 +51,12 @@ public class Patient : ISoftDelete, ITrackable
     public string LastName { get; set; }
 
     /// <summary>
+    /// نام پدر بیمار
+    /// </summary>
+    [MaxLength(100, ErrorMessage = "نام پدر نمی‌تواند بیش از 100 کاراکتر باشد.")]
+    public string FatherName { get; set; }
+
+    /// <summary>
     /// نام کامل بیمار (محاسبه شده)
     /// </summary>
     [NotMapped]
@@ -286,6 +292,10 @@ public class PatientConfig : EntityTypeConfiguration<Patient>
             .HasMaxLength(100)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Patient_LastName")));
+
+        Property(p => p.FatherName)
+            .IsOptional()
+            .HasMaxLength(100);
 
         Property(p => p.BirthDate)
             .IsOptional()
