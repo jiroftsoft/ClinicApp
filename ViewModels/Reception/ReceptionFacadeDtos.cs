@@ -11,6 +11,7 @@ namespace ClinicApp.ViewModels.Reception
     /// </summary>
     public class ReceptionLoadDto
     {
+        public List<ClinicDto> Clinics { get; set; } = new List<ClinicDto>();
         public List<DepartmentDto> Departments { get; set; } = new List<DepartmentDto>();
         public List<ServiceDto> Services { get; set; } = new List<ServiceDto>();
         public List<ServiceDto> SharedServices { get; set; } = new List<ServiceDto>();
@@ -158,8 +159,20 @@ namespace ClinicApp.ViewModels.Reception
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string FullName => $"{FirstName} {LastName}";
+        public string Name => FullName; // Alias برای سازگاری با frontend
         public string DoctorCode { get; set; }
         public string Specialization { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای کلینیک
+    /// </summary>
+    public class ClinicDto
+    {
+        public int ClinicId { get; set; }
+        public string Name { get; set; }
+        public string Code { get; set; }
         public bool IsActive { get; set; }
     }
 

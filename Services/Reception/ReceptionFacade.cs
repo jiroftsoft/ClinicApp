@@ -107,7 +107,22 @@ namespace ClinicApp.Services.Reception
 
                 var result = new ReceptionLoadDto();
 
-                // 1. بارگذاری دپارتمان‌ها
+                // 1. بارگذاری کلینیک‌ها
+                var clinics = await _context.Clinics
+                    .AsNoTracking()
+                    .Where(c => !c.IsDeleted && c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .Select(c => new ClinicDto
+                    {
+                        ClinicId = c.ClinicId,
+                        Name = c.Name,
+                        Code = c.Code,
+                        IsActive = c.IsActive
+                    })
+                    .ToListAsync();
+                result.Clinics = clinics;
+
+                // 2. بارگذاری دپارتمان‌ها
                 var departmentsResult = await _departmentManagementService.GetAllDepartmentsAsync();
                 if (departmentsResult.Success)
                 {
@@ -122,7 +137,35 @@ namespace ClinicApp.Services.Reception
                     }).ToList();
                 }
 
-                // 2. بارگذاری خدمات دپارتمان (اگر انتخاب شده)
+                // 3. بارگذاری پزشک‌ها (اگر دپارتمان انتخاب شده)
+                if (deptId.HasValue)
+                {
+                    var doctorDepartments = await _context.DoctorDepartments
+                        .AsNoTracking()
+                        .Include(dd => dd.Doctor)
+                        .Include(dd => dd.Doctor.DoctorSpecializations)
+                        .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
+                        .Where(dd => dd.DepartmentId == deptId.Value && 
+                                     !dd.Doctor.IsDeleted && 
+                                     dd.Doctor.IsActive && 
+                                     !dd.IsDeleted)
+                        .ToListAsync();
+                    
+                    // Map به DoctorDto (بعد از materialize شدن برای استفاده از computed property)
+                    var doctors = doctorDepartments.Select(dd => new DoctorDto
+                    {
+                        DoctorId = dd.DoctorId,
+                        FirstName = dd.Doctor.FirstName ?? "",
+                        LastName = dd.Doctor.LastName ?? "",
+                        DoctorCode = dd.Doctor.DoctorCode ?? "",
+                        Specialization = dd.Doctor.SpecializationName ?? "", // استفاده از computed property
+                        IsActive = dd.Doctor.IsActive
+                    }).ToList();
+                    
+                    result.Doctors = doctors;
+                }
+
+                // 4. بارگذاری خدمات دپارتمان (اگر انتخاب شده)
                 if (deptId.HasValue)
                 {
                     var servicesResult = await GetServicesForDeptAsync(deptId.Value);
@@ -139,15 +182,18 @@ namespace ClinicApp.Services.Reception
                     }
                 }
 
-                // 3. بارگذاری خدمات مشترک
+                // 5. بارگذاری خدمات مشترک
                 var sharedServicesResult = await GetSharedServicesAsync();
                 if (sharedServicesResult.Success)
                 {
                     result.SharedServices = sharedServicesResult.Data;
                 }
 
-                _logger.Information("✅ FACADE: بارگذاری اولیه تکمیل شد - Departments: {DeptCount}, Services: {ServiceCount}", 
-                    result.Departments?.Count ?? 0, result.Services?.Count ?? 0);
+                _logger.Information("✅ FACADE: بارگذاری اولیه تکمیل شد - Clinics: {ClinicCount}, Departments: {DeptCount}, Doctors: {DoctorCount}, Services: {ServiceCount}", 
+                    result.Clinics?.Count ?? 0,
+                    result.Departments?.Count ?? 0, 
+                    result.Doctors?.Count ?? 0,
+                    result.Services?.Count ?? 0);
 
                 return ServiceResult<ReceptionLoadDto>.Successful(result);
             }
