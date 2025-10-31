@@ -98,11 +98,15 @@ namespace ClinicApp.Controllers.Api
         {
             try
             {
-                _logger?.Information("🏥 V1 API: Bootstrap - ClinicId: {ClinicId}, DeptId: {DeptId}", clinicId, deptId);
+                // ✅ Default ClinicId = 1 (Shafa) if not provided or invalid
+                var cid = (clinicId.HasValue && clinicId.Value > 0) ? clinicId.Value : 1;
+                
+                _logger?.Information("🏥 V1 API: Bootstrap - ClinicId: {ClinicId} (default: {DefaultClinicId}), DeptId: {DeptId}", 
+                    clinicId, cid, deptId);
 
                 if (_facade != null)
                 {
-                    var result = await _facade.LoadInitialAsync(clinicId ?? 1, deptId);
+                    var result = await _facade.LoadInitialAsync(cid, deptId);
                     if (result.Success && result.Data != null)
                     {
                         var payload = new
@@ -145,21 +149,39 @@ namespace ClinicApp.Controllers.Api
         /// </summary>
         [HttpPost, Route("draft/create")]
         [ValidateAntiForgeryTokenOnPosts]
-        public ActionResult CreateDraft()
+        public async Task<ActionResult> CreateDraft(ViewModels.Reception.CreateDraftRequest request)
         {
             try
             {
-                _logger?.Information("🏥 V1 API: Create Draft");
+                _logger?.Information("🏥 V1 API: Create Draft - PatientId: {PatientId}, ClinicId: {ClinicId}, DeptId: {DeptId}, DoctorId: {DoctorId}",
+                    request?.PatientId, request?.ClinicId, request?.DepartmentId, request?.DoctorId);
 
-                // TODO: اتصال به ReceptionFacade.CreateDraftAsync() وقتی آماده شد
-                var draftId = Guid.NewGuid().ToString("N");
-                _logger?.Information("🏥 V1 API: Draft created - DraftId: {DraftId}", draftId);
-                return Json(ServiceResult<string>.Successful(draftId, "Draft created."));
+                if (_facade != null)
+                {
+                    var result = await _facade.CreateDraftAsync(request);
+                    if (result.Success && result.Data != null)
+                    {
+                        _logger?.Information("✅ V1 API: Draft created successfully - ReceptionId: {ReceptionId}", result.Data.ReceptionId);
+                        return Json(ServiceResult<object>.Successful(new { receptionId = result.Data.ReceptionId, status = result.Data.Status }, "پیش‌نویس با موفقیت ایجاد شد."));
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: Draft creation failed - {Error}", result.Message);
+                        return Json(ServiceResult.Failed(result.Message ?? "خطا در ایجاد پیش‌نویس", result.Code ?? "CREATE_FAILED"));
+                    }
+                }
+
+                _logger?.Warning("⚠️ V1 API: Facade not available");
+                return Json(ServiceResult.Failed("سرویس پذیرش در دسترس نیست.", "SERVICE_UNAVAILABLE"));
             }
             catch (Exception ex)
             {
-                _logger?.Error(ex, "خطا در Create Draft");
+                _logger?.Error(ex, "❌ V1 API: خطا در Create Draft");
+#if DEBUG
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+#else
+                return Json(ServiceResult.Failed("خطای غیرمنتظره رخ داد.", "UNHANDLED"));
+#endif
             }
         }
 

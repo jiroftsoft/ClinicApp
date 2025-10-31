@@ -3,6 +3,13 @@
     ViewBag.Title = "پذیرش (نسخه جدید)";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
+@* Anti-Forgery Token for AJAX (MUST be before scripts to ensure token exists in DOM) *@
+@using (Html.BeginForm("Index", "ReceptionV2", FormMethod.Post, new { id = "v2_af_form", style = "display:none" }))
+{
+    @Html.AntiForgeryToken()
+}
+
 <div class="reception-pro container-fluid" dir="rtl">
   <header class="reception-pro__header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
@@ -39,12 +46,6 @@
     </div>
   </div>
 </div>
-
-@* Anti-Forgery Token (Hidden Form) *@
-@using (Html.BeginForm("Index", "ReceptionV2", FormMethod.Post, new { id = "v2_af_form", style = "display: none;" }))
-{
-    @Html.AntiForgeryToken()
-}
 
 @* Patient Fast Create Modal *@
 @Html.Partial("Partials/_PatientFastCreateModal")
