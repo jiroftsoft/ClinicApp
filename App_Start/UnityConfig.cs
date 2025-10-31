@@ -467,6 +467,9 @@ namespace ClinicApp
 
                 // Register Reception Services
                 container.RegisterType<IReceptionPatientService, ReceptionPatientService>(new PerRequestLifetimeManager());
+                
+                // Register Insurance Plan Suggestion Service (برای پیشنهاد پلن‌های پیش‌فرض)
+                container.RegisterType<InsurancePlanSuggestionService, InsurancePlanSuggestionService>(new PerRequestLifetimeManager());
 
                 // Register System Settings Service
                 container.RegisterType<ISystemSettingService, SystemSettingService>(new PerRequestLifetimeManager());

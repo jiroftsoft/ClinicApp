@@ -3,11 +3,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Data.Entity;
+using System.Text.RegularExpressions;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Enums;
+using ClinicApp.Extensions;
+using ClinicApp.Services.Reception;
 using Serilog;
 
 namespace ClinicApp.Controllers.Api
@@ -29,6 +34,7 @@ namespace ClinicApp.Controllers.Api
         #region Dependencies
 
         private readonly IReceptionFacade _receptionFacade;
+        private readonly ReceptionFacade _receptionFacadeImpl; // برای دسترسی به متدهای غیر-interface
         private readonly ILogger _logger;
         private readonly ApplicationDbContext _context;
 
@@ -39,6 +45,7 @@ namespace ClinicApp.Controllers.Api
         public ReceptionApiController(IReceptionFacade receptionFacade, ILogger logger, ApplicationDbContext context)
         {
             _receptionFacade = receptionFacade ?? throw new ArgumentNullException(nameof(receptionFacade));
+            _receptionFacadeImpl = receptionFacade as ReceptionFacade; // Cast برای دسترسی به متدهای غیر-interface
             _logger = logger.ForContext<ReceptionApiController>();
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
@@ -48,24 +55,192 @@ namespace ClinicApp.Controllers.Api
         #region Patient Management
 
         /// <summary>
-        /// جستجو یا ایجاد بیمار
-        /// POST: /Api/ReceptionApi/PatientLookup
+        /// جستجو یا ایجاد بیمار - بازگشت اطلاعات کامل هویتی + بیمه‌ها
+        /// POST: /api/v1/reception/patient/lookup-or-create
         /// </summary>
-        [HttpPost, Route("patient/lookup-or-create")]
+        [HttpPost, Route("patient/lookup-or-create"), ValidateAntiForgeryToken]
         public async Task<ActionResult> PatientLookup(PatientLookupRequest request)
         {
             try
             {
                 _logger.Information("🏥 API: جستجوی بیمار - NationalCode: {NationalCode}", request.NationalCode);
 
-                var result = await _receptionFacade.FindOrCreatePatientAsync(request.NationalCode, request.CreateDto);
-                
-                return Json(result);
+                // 1) یافتن بیمار
+                var patientResult = await _receptionFacade.FindOrCreatePatientAsync(request.NationalCode, request.CreateDto);
+                if (!patientResult.Success || patientResult.Data == null)
+                {
+                    return Json(ServiceResult<PatientLookupResponseDto>.Failed(patientResult.Message ?? "بیمار یافت نشد.", "NOT_FOUND"));
+                }
+
+                var patientDto = patientResult.Data;
+                if (patientDto.PatientId <= 0)
+                {
+                    return Json(ServiceResult<PatientLookupResponseDto>.Failed("بیمار یافت نشد.", "NOT_FOUND"));
+                }
+
+                // 2) دریافت اطلاعات کامل بیمار از دیتابیس
+                var patient = await _context.Patients
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.PatientId == patientDto.PatientId && !p.IsDeleted);
+
+                if (patient == null)
+                {
+                    return Json(ServiceResult<PatientLookupResponseDto>.Failed("بیمار یافت نشد.", "NOT_FOUND"));
+                }
+
+                // 3) بیمه‌های انتسابی (پایه/تکمیلی) برای این بیمار
+                InsuranceSelectionDto assignedInsurances = null;
+                if (_receptionFacadeImpl != null)
+                {
+                    assignedInsurances = await _receptionFacadeImpl.GetAssignedInsurancesForPatient(patient.PatientId);
+                }
+                else
+                {
+                    // Fallback: استفاده از LoadPatientInsurancesAsync و تبدیل به InsuranceSelectionDto
+                    var insuranceResult = await _receptionFacade.LoadPatientInsurancesAsync(patient.PatientId);
+                    if (insuranceResult.Success && insuranceResult.Data != null)
+                    {
+                        var bundle = insuranceResult.Data;
+                        assignedInsurances = new InsuranceSelectionDto
+                        {
+                            BasePlanId = bundle.BaseInsurances.FirstOrDefault()?.InsuranceId,
+                            SupplementaryPlanId = bundle.SupplementaryInsurances.FirstOrDefault()?.InsuranceId
+                        };
+                    }
+                    else
+                    {
+                        assignedInsurances = new InsuranceSelectionDto();
+                    }
+                }
+
+                // 4) ساخت DTO پاسخ
+                var responseDto = new PatientLookupResponseDto
+                {
+                    Identity = new PatientIdentityDto
+                    {
+                        PatientId = patient.PatientId,
+                        NationalCode = patient.NationalCode,
+                        FirstName = patient.FirstName,
+                        LastName = patient.LastName,
+                        FatherName = null, // Patient entity فیلد FatherName ندارد
+                        Mobile = patient.PhoneNumber, // PhoneNumber به عنوان Mobile
+                        Phone = null, // اگر فیلد جداگانه نیاز است
+                        Address = patient.Address,
+                        Gender = patient.Gender.ToString(),
+                        BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                    },
+                    Insurance = assignedInsurances
+                };
+
+                return Json(ServiceResult<PatientLookupResponseDto>.Successful(responseDto, "اطلاعات بیمار و بیمه بارگذاری شد."));
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در جستجوی بیمار");
-                return Json(ServiceResult<PatientDto>.Failed("خطا در جستجوی بیمار"));
+                return Json(ServiceResult<PatientLookupResponseDto>.Failed("خطا در جستجوی بیمار: " + ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی اطلاعات پایه بیمار (در فرم پذیرش)
+        /// POST: /api/v1/reception/patient/update-basic
+        /// </summary>
+        [HttpPost, Route("patient/update-basic"), ValidateAntiForgeryToken]
+        public async Task<ActionResult> UpdatePatientBasic(PatientUpdateBasicRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 API: به‌روزرسانی اطلاعات بیمار - PatientId: {PatientId}", request.PatientId);
+
+                var userId = User?.Identity?.Name ?? "system";
+
+                // دریافت بیمار از دیتابیس
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == request.PatientId && !p.IsDeleted);
+
+                if (patient == null)
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("بیمار یافت نشد.", "NOT_FOUND"));
+                }
+
+                // اعتبارسنجی‌های پایه
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("نام الزامی است.", "VALIDATION"));
+                }
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("نام خانوادگی الزامی است.", "VALIDATION"));
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Mobile) && !Regex.IsMatch(request.Mobile, @"^09\d{9}$"))
+                {
+                    return Json(ServiceResult<PatientIdentityDto>.Failed("شماره موبایل نامعتبر است. باید 11 رقم و با 09 شروع شود.", "VALIDATION"));
+                }
+
+                // تبدیل تاریخ شمسی به میلادی
+                DateTime? birthDate = null;
+                if (!string.IsNullOrWhiteSpace(request.BirthDateShamsi))
+                {
+                    try
+                    {
+                        birthDate = request.BirthDateShamsi.FromFaDate();
+                        if (!birthDate.HasValue)
+                        {
+                            return Json(ServiceResult<PatientIdentityDto>.Failed("تاریخ تولد نامعتبر است.", "VALIDATION"));
+                        }
+                    }
+                    catch
+                    {
+                        return Json(ServiceResult<PatientIdentityDto>.Failed("تاریخ تولد نامعتبر است.", "VALIDATION"));
+                    }
+                }
+
+                // تبدیل جنسیت
+                Gender gender = patient.Gender; // پیش‌فرض: جنسیت قبلی
+                if (!string.IsNullOrWhiteSpace(request.Gender))
+                {
+                    if (Enum.TryParse<Gender>(request.Gender, true, out var parsedGender))
+                    {
+                        gender = parsedGender;
+                    }
+                }
+
+                // اعمال تغییرات مجاز
+                patient.FirstName = request.FirstName?.Trim();
+                patient.LastName = request.LastName?.Trim();
+                patient.PhoneNumber = request.Mobile?.Trim(); // PhoneNumber به عنوان Mobile
+                patient.Address = request.Address?.Trim();
+                patient.Gender = gender;
+                patient.BirthDate = birthDate;
+
+                patient.UpdatedAt = DateTime.Now;
+                patient.UpdatedByUserId = userId;
+
+                await _context.SaveChangesAsync();
+
+                // بازگرداندن DTO تازه برای همسان‌سازی UI
+                var updatedDto = new PatientIdentityDto
+                {
+                    PatientId = patient.PatientId,
+                    NationalCode = patient.NationalCode,
+                    FirstName = patient.FirstName,
+                    LastName = patient.LastName,
+                    FatherName = null,
+                    Mobile = patient.PhoneNumber,
+                    Phone = null,
+                    Address = patient.Address,
+                    Gender = patient.Gender.ToString(),
+                    BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                };
+
+                return Json(ServiceResult<PatientIdentityDto>.Successful(updatedDto, "اطلاعات به‌روزرسانی شد."));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی اطلاعات بیمار");
+                return Json(ServiceResult<PatientIdentityDto>.Failed("به‌روزرسانی ناموفق بود: " + ex.Message));
             }
         }
 
@@ -144,8 +319,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// ایجاد پیش‌نویس پذیرش
+        /// POST: /api/v1/reception/draft/create
         /// </summary>
-        [HttpPost, Route("draft/create")]
+        [HttpPost, Route("draft/create"), ValidateAntiForgeryToken]
         public async Task<ActionResult> CreateDraft(CreateDraftRequest request)
         {
             try
@@ -164,8 +340,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// افزودن آیتم به پیش‌نویس
+        /// POST: /api/v1/reception/item/add
         /// </summary>
-        [HttpPost, Route("item/add")]
+        [HttpPost, Route("item/add"), ValidateAntiForgeryToken]
         public async Task<ActionResult> AddItem(AddItemRequest request)
         {
             try
@@ -190,8 +367,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// حذف آیتم از پیش‌نویس
+        /// POST: /api/v1/reception/item/remove
         /// </summary>
-        [HttpPost, Route("item/remove")]
+        [HttpPost, Route("item/remove"), ValidateAntiForgeryToken]
         public async Task<ActionResult> RemoveItem(RemoveItemRequest request)
         {
             try
@@ -210,8 +388,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// تنظیم بیمه‌های پیش‌نویس
+        /// POST: /api/v1/reception/insurances/set
         /// </summary>
-        [HttpPost, Route("insurances/set")]
+        [HttpPost, Route("insurances/set"), ValidateAntiForgeryToken]
         public async Task<ActionResult> SetInsurances(SetInsurancesRequest request)
         {
             try
@@ -236,8 +415,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// نهایی‌سازی با POS
+        /// POST: /api/v1/reception/finalize/pos
         /// </summary>
-        [HttpPost, Route("finalize/pos")]
+        [HttpPost, Route("finalize/pos"), ValidateAntiForgeryToken]
         public async Task<ActionResult> FinalizeWithPos(FinalizePosRequest request)
         {
             try
@@ -248,7 +428,7 @@ namespace ClinicApp.Controllers.Api
                 {
                     ReceptionId = request.ReceptionId,
                     AmountIRR = request.Amount,
-                    IdempotencyKey = Guid.NewGuid().ToString(), // TODO: از request دریافت شود
+                    IdempotencyKey = request.IdempotencyKey ?? Guid.NewGuid().ToString(),
                     Pos = new ViewModels.Reception.PosPaymentDto
                     {
                         Amount = request.PosPayment.Amount,
@@ -270,8 +450,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// نهایی‌سازی با نقدی
+        /// POST: /api/v1/reception/finalize/cash
         /// </summary>
-        [HttpPost, Route("finalize/cash")]
+        [HttpPost, Route("finalize/cash"), ValidateAntiForgeryToken]
         public async Task<ActionResult> FinalizeWithCash(FinalizeCashRequest request)
         {
             try
@@ -282,7 +463,7 @@ namespace ClinicApp.Controllers.Api
                 {
                     ReceptionId = request.ReceptionId,
                     AmountIRR = request.Amount,
-                    IdempotencyKey = Guid.NewGuid().ToString(), // TODO: از request دریافت شود
+                    IdempotencyKey = request.IdempotencyKey ?? Guid.NewGuid().ToString(),
                     Cash = new ViewModels.Reception.CashPaymentDto
                     {
                         Amount = request.CashPayment.Amount,
@@ -301,8 +482,9 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// به‌روزرسانی پیش‌نویس پذیرش
+        /// POST: /api/v1/reception/draft/update
         /// </summary>
-        [HttpPost, Route("draft/update")]
+        [HttpPost, Route("draft/update"), ValidateAntiForgeryToken]
         public async Task<ActionResult> DraftUpdate(ClinicApp.Dtos.Reception.UpdateDraftRequest request)
         {
             try
@@ -507,6 +689,7 @@ namespace ClinicApp.Controllers.Api
     {
         public int ReceptionId { get; set; }
         public decimal Amount { get; set; }
+        public string IdempotencyKey { get; set; }
         public PosPaymentDto PosPayment { get; set; }
     }
 
@@ -514,6 +697,7 @@ namespace ClinicApp.Controllers.Api
     {
         public int ReceptionId { get; set; }
         public decimal Amount { get; set; }
+        public string IdempotencyKey { get; set; }
         public CashPaymentDto CashPayment { get; set; }
     }
 

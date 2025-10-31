@@ -40,7 +40,12 @@
   </div>
 </div>
 
-@Html.AntiForgeryToken()
+@* Anti-Forgery Token (Hidden Form) *@
+@using (Html.BeginForm("Index", "ReceptionV2", FormMethod.Post, new { id = "v2_af_form", style = "display: none;" }))
+{
+    @Html.AntiForgeryToken()
+}
+
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/reception.v2")
 <script>

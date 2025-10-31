@@ -2,7 +2,9 @@ using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
@@ -24,15 +26,20 @@ namespace ClinicApp.Controllers.ReceptionV2
         #region Dependencies
 
         private readonly IReceptionFacade _receptionFacade;
+        private readonly IFinancialYearService _financialYearService;
         private readonly ILogger _logger;
 
         #endregion
 
         #region Constructor
 
-        public ReceptionV2Controller(IReceptionFacade receptionFacade, ILogger logger)
+        public ReceptionV2Controller(
+            IReceptionFacade receptionFacade,
+            IFinancialYearService financialYearService,
+            ILogger logger)
         {
             _receptionFacade = receptionFacade ?? throw new ArgumentNullException(nameof(receptionFacade));
+            _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
             _logger = logger.ForContext<ReceptionV2Controller>();
         }
 
@@ -53,12 +60,15 @@ namespace ClinicApp.Controllers.ReceptionV2
                 // بارگذاری داده‌های اولیه از Facade
                 var model = await _receptionFacade.LoadInitialAsync(1, null);
                 
+                // دریافت سال مالی جاری از سرویس
+                var financialYear = _financialYearService.GetCurrentYear();
+                
                 // تبدیل به ReceptionFormVM
                 var vm = new ReceptionFormVM
                 {
                     Bootstrap = new BootstrapVM
                     {
-                        FinancialYear = DateTime.Now.Year // TODO: از FinancialYearService
+                        FinancialYear = financialYear
                     }
                 };
 

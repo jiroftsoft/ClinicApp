@@ -1,22 +1,67 @@
 @model ClinicApp.ViewModels.Reception.PatientSectionVM
-<div class="card mb-3">
-  <div class="card-body row g-2">
-    @Html.HiddenFor(m => m.PatientId, new { id = "Patient_PatientId" })
-    <div class="col-md-4">
-      @Html.LabelFor(m => m.NationalCode, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", id = "Patient_NationalCode", autocomplete = "off" })
-      @Html.ValidationMessageFor(m => m.NationalCode, null, new { @class = "text-danger small" })
-    </div>
-    <div class="col-md-4">
-      @Html.LabelFor(m => m.FullName, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", id = "Patient_FullName" })
-      @Html.ValidationMessageFor(m => m.FullName, null, new { @class = "text-danger small" })
-    </div>
-    <div class="col-md-4">
-      @Html.LabelFor(m => m.Mobile, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.Mobile, new { @class = "form-control", id = "Patient_Mobile" })
-      @Html.ValidationMessageFor(m => m.Mobile, null, new { @class = "text-danger small" })
+<div id="identity-panel" class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>اطلاعات هویتی</strong>
+    <div>
+      <button type="button" id="btnEditIdentity" class="btn btn-sm btn-outline-primary">✏️ ویرایش</button>
+      <button type="button" id="btnSaveIdentity" class="btn btn-sm btn-success d-none">💾 ذخیره</button>
+      <button type="button" id="btnCancelIdentity" class="btn btn-sm btn-secondary d-none">↩️ انصراف</button>
     </div>
   </div>
-  
+  <div class="card-body">
+    <div class="row g-2">
+      @Html.HiddenFor(m => m.PatientId, new { id = "Patient_PatientId" })
+      
+      <div class="col-md-3">
+        <label class="form-label">کد ملی</label>
+        @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", id = "Patient_NationalCode", autocomplete = "off", placeholder = "10 رقمی" })
+        @Html.ValidationMessageFor(m => m.NationalCode, null, new { @class = "text-danger small" })
+        <button type="button" id="BtnPatientLookup" class="btn btn-sm btn-primary mt-1 w-100">🔍 جستجو</button>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">نام</label>
+        <input id="firstName" class="form-control" readonly />
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">نام خانوادگی</label>
+        <input id="lastName" class="form-control" readonly />
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">نام پدر</label>
+        <input id="fatherName" class="form-control" readonly placeholder="—" />
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">جنسیت</label>
+        <select id="gender" class="form-select" disabled>
+          <option value="">—</option>
+          <option value="Male">مذکر</option>
+          <option value="Female">مونث</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">تاریخ تولد</label>
+        <input id="birthSh" class="form-control" placeholder="YYYY/MM/DD" readonly />
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">موبایل</label>
+        <input id="mobile" class="form-control" readonly />
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">تلفن ثابت</label>
+        <input id="phone" class="form-control" readonly placeholder="—" />
+      </div>
+      
+      <div class="col-md-12">
+        <label class="form-label">آدرس</label>
+        <textarea id="address" class="form-control" readonly rows="2"></textarea>
+      </div>
+    </div>
+  </div>
 </div>

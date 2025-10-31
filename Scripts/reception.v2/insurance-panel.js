@@ -1,95 +1,205 @@
-(function(API, U){
-  // Load insurance plans on page load
-  function loadInsurancePlans() {
-    API.get("/insurance/plans")
+(function($, API, U) {
+  'use strict';
+
+  // References to form fields
+  const $baseIns = $('#baseInsurance');
+  const $basePlan = $('#BasePlanId');
+  const $suppIns = $('#suppInsurance');
+  const $suppPlan = $('#SuppPlanId');
+  const $btnRemoveSupp = $('#btnRemoveSupp');
+  const $btnSetInsurances = $('#BtnSetInsurances');
+
+  /**
+   * بارگذاری لیست پلن‌های بیمه
+   */
+  function loadPlans() {
+    return API.get('/insurance/plans')
       .then(API.ok)
-      .then(plans => {
-        console.log('🏥 V2: Insurance plans loaded:', plans);
+      .then(function(res) {
+        console.log('🏥 V2: Insurance plans loaded:', res);
         
         // Fill base insurance plans
-        const $baseSelect = $("#BasePlanId");
-        $baseSelect.empty().append('<option value="">انتخاب کنید</option>');
-        if(plans.basePlans) {
-          plans.basePlans.forEach(plan => {
-            $baseSelect.append(`<option value="${plan.insuranceId}">${plan.insuranceName} (${plan.coveragePercentage}%)</option>`);
+        $basePlan.empty().append('<option value="">انتخاب کنید</option>');
+        if (res.basePlans) {
+          res.basePlans.forEach(function(plan) {
+            $basePlan.append(`<option value="${plan.insurancePlanId || plan.insuranceId}">${plan.name || plan.insuranceName} (${plan.coveragePercent || plan.coveragePercentage}%)</option>`);
           });
         }
         
         // Fill supplementary insurance plans
-        const $suppSelect = $("#SuppPlanId");
-        $suppSelect.empty().append('<option value="">انتخاب کنید</option>');
-        if(plans.supplementaryPlans) {
-          plans.supplementaryPlans.forEach(plan => {
-            $suppSelect.append(`<option value="${plan.insuranceId}">${plan.insuranceName} (${plan.coveragePercentage}%)</option>`);
+        $suppPlan.empty().append('<option value="">انتخاب کنید</option>');
+        if (res.supplementaryPlans) {
+          res.supplementaryPlans.forEach(function(plan) {
+            $suppPlan.append(`<option value="${plan.insurancePlanId || plan.insuranceId}">${plan.name || plan.insuranceName} (${plan.coveragePercent || plan.coveragePercentage}%)</option>`);
           });
         }
+        
+        return res;
       })
-      .catch(err => {
+      .catch(function(err) {
         console.error('🏥 V2: Insurance plans load error:', err);
         toastr.error('خطا در بارگذاری بیمه‌ها');
+        throw err;
       });
   }
-  
-  // Load on page ready
-  $(document).ready(loadInsurancePlans);
 
-  $("#BtnSetInsurances").on("click", function(){
-    const receptionId = $("#ReceptionId").val();
-    const basePlanId = $("#BasePlanId").val() || null;
-    const supplementaryPlanId = $("#SuppPlanId").val() || null;
+  /**
+   * تنظیم بیمه‌ها از DTO (از patient-lookup)
+   * @param {Object} dto - InsuranceSelectionDto
+   */
+  function set(dto) {
+    if (!dto) return;
     
-    if(!receptionId || receptionId <= 0) {
-      // Try to create auto-draft first
-      if (window.AutoDraftManager && !window.AutoDraftManager.isDraftCreated()) {
-        window.AutoDraftManager.createDraft().then(draftId => {
-          if (draftId) {
-            $("#ReceptionId").val(draftId);
-            proceedWithInsurance();
-          } else {
-            toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
-          }
-        }).catch(err => {
-          console.error('🏥 V2: Auto-draft creation error:', err);
-          toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
-        });
-        return;
-      } else {
-        toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
-        return;
-      }
+    console.log('🏥 V2: Setting insurances from DTO:', dto);
+
+    // تنظیم بیمه پایه
+    if (dto.BaseInsuranceId) {
+      $baseIns.val(dto.BaseInsuranceId);
     }
     
-    proceedWithInsurance();
-  });
-  
-  function proceedWithInsurance() {
-    const receptionId = $("#ReceptionId").val();
-    const basePlanId = $("#BasePlanId").val() || null;
-    const supplementaryPlanId = $("#SuppPlanId").val() || null;
+    // تنظیم پلن پایه (اولویت: BasePlanId، سپس SuggestedBasePlanId)
+    if (dto.BasePlanId) {
+      $basePlan.val(dto.BasePlanId);
+    } else if (dto.SuggestedBasePlanId) {
+      $basePlan.val(dto.SuggestedBasePlanId);
+    }
+
+    // تنظیم بیمه تکمیلی
+    if (dto.SupplementaryInsuranceId) {
+      $suppIns.val(dto.SupplementaryInsuranceId);
+    }
     
+    // تنظیم پلن تکمیلی (اولویت: SupplementaryPlanId، سپس SuggestedSupplementaryPlanId)
+    if (dto.SupplementaryPlanId) {
+      $suppPlan.val(dto.SupplementaryPlanId);
+    } else if (dto.SuggestedSupplementaryPlanId) {
+      $suppPlan.val(dto.SuggestedSupplementaryPlanId);
+    }
+
+    // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن
+    const receptionId = $('#ReceptionId').val();
+    if (receptionId && receptionId > 0) {
+      persist();
+    }
+  }
+
+  /**
+   * ذخیره بیمه‌ها در سرور
+   */
+  function persist() {
+    const receptionId = $('#ReceptionId').val();
+    if (!receptionId || receptionId <= 0) {
+      console.warn('🏥 V2: Cannot persist insurances, no reception ID');
+      return Promise.resolve();
+    }
+
     const payload = {
-      receptionId: receptionId,
-      basePlanId: basePlanId,
-      supplementaryPlanId: supplementaryPlanId
+      receptionId: parseInt(receptionId),
+      basePlanId: parseInt($basePlan.val()) || null,
+      supplementaryPlanId: parseInt($suppPlan.val()) || null
     };
-    
-    API.post("/insurances/set", payload)
+
+    console.log('🏥 V2: Persisting insurances:', payload);
+
+    return API.post('/insurances/set', payload)
       .then(API.ok)
-      .then(d=>{
-        console.log('🏥 V2: Insurances set:', d);
-        toastr.success('بیمه‌ها تنظیم شدند');
+      .then(function(response) {
+        if (!response || !response.success) {
+          toastr.warning(response?.message || 'خطا در ثبت بیمه');
+          return;
+        }
+
+        console.log('🏥 V2: Insurances persisted successfully');
         
-        // Update totals
-        if(d.totals) {
-          $("#Gross").text(U.toIRR(d.totals.gross || 0));
-          $("#InsurancePayable").text(U.toIRR(d.totals.base || 0));
-          $("#SuppPayable").text(U.toIRR(d.totals.supplementary || 0));
-          $("#PatientPayable").text(U.toIRR(d.totals.patient || 0)).attr("data-value", d.totals.patient || 0);
+        // Update totals if provided
+        if (response.data && response.data.totals) {
+          const totals = response.data.totals;
+          $('#Gross').text(U.toIRR(totals.gross || 0));
+          $('#InsurancePayable').text(U.toIRR(totals.base || 0));
+          $('#SuppPayable').text(U.toIRR(totals.supplementary || 0));
+          $('#PatientPayable').text(U.toIRR(totals.patient || 0)).attr('data-value', totals.patient || 0);
         }
       })
-      .catch(err => {
-        console.error('🏥 V2: Set insurances error:', err);
-        toastr.error('خطا در تنظیم بیمه‌ها');
+      .catch(function(err) {
+        console.error('🏥 V2: Persist insurances error:', err);
+        toastr.error('خطا در ذخیره بیمه‌ها');
       });
   }
-})(window.ReceptionAPI, window.RxUtils);
+
+  /**
+   * حذف بیمه تکمیلی
+   */
+  function removeSupplementary() {
+    $suppIns.val('');
+    $suppPlan.val('');
+    
+    const receptionId = $('#ReceptionId').val();
+    if (receptionId && receptionId > 0) {
+      persist();
+    }
+    
+    toastr.info('بیمه تکمیلی حذف شد');
+  }
+
+  // Event handlers
+  $baseIns.on('change', function() {
+    // وقتی بیمه پایه تغییر کرد، پلن‌های آن را لود کن
+    loadPlans();
+    persist();
+  });
+
+  $basePlan.on('change', persist);
+  $suppIns.on('change', function() {
+    loadPlans();
+    persist();
+  });
+  $suppPlan.on('change', persist);
+
+  if ($btnRemoveSupp.length) {
+    $btnRemoveSupp.on('click', removeSupplementary);
+  }
+
+  // Manual set button (if exists)
+  if ($btnSetInsurances.length) {
+    $btnSetInsurances.on('click', function() {
+      const receptionId = $('#ReceptionId').val();
+      if (!receptionId || receptionId <= 0) {
+        // Try to create auto-draft first
+        if (window.AutoDraftManager && !window.AutoDraftManager.isDraftCreated()) {
+          window.AutoDraftManager.createDraft().then(function(draftId) {
+            if (draftId) {
+              $('#ReceptionId').val(draftId);
+              persist();
+            } else {
+              toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+            }
+          }).catch(function(err) {
+            console.error('🏥 V2: Auto-draft creation error:', err);
+            toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+          });
+          return;
+        } else {
+          toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+          return;
+        }
+      }
+      
+      persist();
+    });
+  }
+
+  // Export برای patient-lookup.js
+  window.insPanel = {
+    set: set,
+    persist: persist,
+    loadPlans: loadPlans
+  };
+
+  // Initialization: لود لیست‌ها
+  $(document).ready(function() {
+    loadPlans().catch(function(err) {
+      console.warn('🏥 V2: Failed to load insurance plans on init:', err);
+    });
+  });
+
+})(jQuery, window.ReceptionAPI, window.RxUtils);

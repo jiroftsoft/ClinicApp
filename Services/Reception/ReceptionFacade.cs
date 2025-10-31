@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Controllers.Api;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -17,6 +18,10 @@ using ClinicApp.Services.Insurance;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
+using AddItemRequest = ClinicApp.ViewModels.Reception.AddItemRequest;
+using FinalizeCashRequest = ClinicApp.ViewModels.Reception.FinalizeCashRequest;
+using FinalizePosRequest = ClinicApp.ViewModels.Reception.FinalizePosRequest;
+using SetInsurancesRequest = ClinicApp.ViewModels.Reception.SetInsurancesRequest;
 
 namespace ClinicApp.Services.Reception
 {
@@ -47,6 +52,7 @@ namespace ClinicApp.Services.Reception
         private readonly IReceptionRepository _receptionRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly IFinancialYearService _financialYearService;
+        private readonly InsurancePlanSuggestionService _insurancePlanSuggestionService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -66,6 +72,7 @@ namespace ClinicApp.Services.Reception
             IReceptionRepository receptionRepository,
             ICurrentUserService currentUserService,
             IFinancialYearService financialYearService,
+            InsurancePlanSuggestionService insurancePlanSuggestionService,
             ApplicationDbContext context,
             ILogger logger)
         {
@@ -80,6 +87,7 @@ namespace ClinicApp.Services.Reception
             _receptionRepository = receptionRepository ?? throw new ArgumentNullException(nameof(receptionRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
+            _insurancePlanSuggestionService = insurancePlanSuggestionService ?? throw new ArgumentNullException(nameof(insurancePlanSuggestionService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionFacade>();
         }
@@ -258,6 +266,67 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Error(ex, "❌ FACADE: خطا در بارگذاری بیمه‌های بیمار");
                 return ServiceResult<InsuranceBundleDto>.Failed("خطا در بارگذاری بیمه‌های بیمار");
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های انتسابی فعال بیمار (برای فرم پذیرش)
+        /// </summary>
+        public async Task<InsuranceSelectionDto> GetAssignedInsurancesForPatient(int patientId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: دریافت بیمه‌های انتسابی بیمار - PatientId: {PatientId}", patientId);
+
+                // دریافت آخرین بیمه فعال بیمار
+                var activeInsurances = await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && pi.IsActive && !pi.IsDeleted)
+                    .Include(pi => pi.InsurancePlan)
+                    .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.SupplementaryInsuranceProvider)
+                    .Include(pi => pi.SupplementaryInsurancePlan)
+                    .OrderByDescending(pi => pi.StartDate)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (activeInsurances == null)
+                {
+                    return new InsuranceSelectionDto
+                    {
+                        BaseInsuranceId = null,
+                        BasePlanId = null,
+                        SupplementaryInsuranceId = null,
+                        SupplementaryPlanId = null,
+                        SuggestedBasePlanId = null,
+                        SuggestedSupplementaryPlanId = null
+                    };
+                }
+
+                // استخراج بیمه پایه
+                var baseInsuranceId = activeInsurances.InsurancePlan?.InsuranceProviderId;
+                var basePlanId = activeInsurances.InsurancePlanId;
+
+                // استخراج بیمه تکمیلی (اگر وجود داشته باشد)
+                var suppInsuranceId = activeInsurances.SupplementaryInsuranceProviderId;
+                var suppPlanId = activeInsurances.SupplementaryInsurancePlanId;
+
+                // پیشنهاد پلن‌های پیش‌فرض
+                var (suggestedBasePlan, suggestedSuppPlan) = await _insurancePlanSuggestionService.SuggestDefaultsAsync(baseInsuranceId, suppInsuranceId);
+
+                return new InsuranceSelectionDto
+                {
+                    BaseInsuranceId = baseInsuranceId,
+                    BasePlanId = basePlanId,
+                    SupplementaryInsuranceId = suppInsuranceId,
+                    SupplementaryPlanId = suppPlanId,
+                    SuggestedBasePlanId = suggestedBasePlan,
+                    SuggestedSupplementaryPlanId = suggestedSuppPlan
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت بیمه‌های انتسابی بیمار");
+                return new InsuranceSelectionDto();
             }
         }
 
@@ -571,13 +640,14 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: ایجاد پیش‌نویس پذیرش");
 
-                // var year = _financialYearService.GetCurrentYear(); // TODO: Add FinancialYear field to Reception
-
                 // Validate required fields for creating a draft using Reception entity (non-nullable columns)
                 if (!request.PatientId.HasValue || !request.DoctorId.HasValue || !request.ClinicId.HasValue || !request.DepartmentId.HasValue)
                 {
                     return ServiceResult<CreateDraftResponse>.Failed("اطلاعات بیمار/کلینیک/بخش/پزشک ناقص است. ابتدا فیلدهای لازم را تکمیل کنید.");
                 }
+
+                // دریافت سال مالی جاری
+                var financialYear = _financialYearService.GetCurrentYear();
 
                 var draft = new Models.Entities.Reception.Reception
                 {
@@ -592,7 +662,7 @@ namespace ClinicApp.Services.Reception
                     TotalAmount = 0,
                     PatientCoPay = 0,
                     InsurerShareAmount = 0,
-                    FinancialYear = 1404 // TODO: Get from DbFinancialYearService
+                    FinancialYear = financialYear
                 };
                 
                 _context.Receptions.Add(draft);
@@ -627,30 +697,30 @@ namespace ClinicApp.Services.Reception
                 if (draft == null)
                     return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
 
-                // var year = draft.FinancialYear; // TODO: Add FinancialYear field to Reception
-                var year = 1404; // Default year for now
-
-                // دریافت ضرایب
-                var factor = await _context.FactorSettings
-                    .Where(f => f.FinancialYear == year && !f.IsDeleted)
-                    .Select(f => new { f.Value, f.FactorType })
-                    .ToListAsync();
-
-                var proFactor = factor.FirstOrDefault(f => f.FactorType == ServiceComponentType.Professional)?.Value ?? 0;
-                var techFactor = factor.FirstOrDefault(f => f.FactorType == ServiceComponentType.Technical)?.Value ?? 0;
+                // دریافت سال مالی از پیش‌نویس
+                var year = draft.FinancialYear;
 
                 // دریافت اطلاعات خدمت
-        var service = await _context.Services
-            .Where(s => s.ServiceId == request.ServiceId && s.IsActive && !s.IsDeleted)
-            .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
-            .FirstOrDefaultAsync();
+                var service = await _context.Services
+                    .Where(s => s.ServiceId == request.ServiceId && s.IsActive && !s.IsDeleted)
+                    .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+                    .FirstOrDefaultAsync();
 
                 if (service == null)
                     return ServiceResult<ItemsAndTotalsDto>.Failed("خدمت یافت نشد");
 
                 var qty = request.Quantity <= 0 ? 1 : request.Quantity;
-                // TODO: محاسبه قیمت بر اساس ServiceComponents
-                var unit = 1000m; // قیمت ثابت موقت
+                
+                // محاسبه قیمت بر اساس ServiceComponents و ضرایب
+                var unitPrice = await _serviceCalculationEngine.CalculateUnitPriceIRRAsync(service.ServiceId, year);
+                if (unitPrice <= 0)
+                {
+                    _logger.Warning("⚠️ FACADE: قیمت محاسبه شده نامعتبر است - ServiceId: {ServiceId}, Year: {Year}", 
+                        service.ServiceId, year);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در محاسبه قیمت خدمت");
+                }
+                
+                var unit = unitPrice;
                 var total = unit * qty;
 
                 // محاسبه سهم بیمار و بیمه برای این آیتم
@@ -788,12 +858,18 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: نهایی‌سازی با POS");
 
-                // بررسی وجود پرداخت قبلی - TODO: Add IdempotencyKey field to PaymentTransaction
-                // var exists = await _context.PaymentTransactions.AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey);
-                // if (exists)
-                // {
-                //     return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
-                // }
+                // بررسی وجود پرداخت قبلی (Idempotency Check)
+                if (!string.IsNullOrEmpty(request.IdempotencyKey))
+                {
+                    var exists = await _context.PaymentTransactions
+                        .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
+                    if (exists)
+                    {
+                        _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", 
+                            request.IdempotencyKey);
+                        return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
+                    }
+                }
 
                 var draft = await _context.Receptions
                     .Include(d => d.ReceptionItems)
@@ -824,7 +900,7 @@ namespace ClinicApp.Services.Reception
                 _context.PaymentTransactions.Add(payment);
 
                 // نهایی‌سازی پیش‌نویس
-                draft.Status = ReceptionStatus.Completed; // TODO: Add enum value
+                draft.Status = ReceptionStatus.Completed;
                 draft.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
@@ -857,12 +933,18 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: نهایی‌سازی با نقدی");
 
-                // بررسی وجود پرداخت قبلی - TODO: Add IdempotencyKey field to PaymentTransaction
-                // var exists = await _context.PaymentTransactions.AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey);
-                // if (exists)
-                // {
-                //     return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
-                // }
+                // بررسی وجود پرداخت قبلی (Idempotency Check)
+                if (!string.IsNullOrEmpty(request.IdempotencyKey))
+                {
+                    var exists = await _context.PaymentTransactions
+                        .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
+                    if (exists)
+                    {
+                        _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", 
+                            request.IdempotencyKey);
+                        return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
+                    }
+                }
 
                 var draft = await _context.Receptions
                     .Include(d => d.ReceptionItems)
@@ -889,7 +971,7 @@ namespace ClinicApp.Services.Reception
                 _context.PaymentTransactions.Add(payment);
 
                 // نهایی‌سازی پیش‌نویس
-                draft.Status = ReceptionStatus.Completed; // TODO: Add enum value
+                draft.Status = ReceptionStatus.Completed;
                 draft.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();

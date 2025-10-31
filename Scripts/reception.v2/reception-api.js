@@ -1,65 +1,98 @@
-(function($, win){
-  var KEY = 'rx_api_base_v2';
-  var baseV1 = '/api/v1/reception';
-  var legacy = '/Api/ReceptionApi';
-  var cached = null;
-  try { cached = win.sessionStorage.getItem(KEY); } catch(e){}
-  var base = cached || baseV1;
+(function (w, $) {
+  const baseV1 = '/api/v1/reception';
+  const legacyBase = '/Api/ReceptionApi';
 
-  function memo(okBase){
-    if(okBase !== base){ base = okBase; try{ win.sessionStorage.setItem(KEY, okBase); }catch(e){} }
+  function token() {
+    return $('input[name="__RequestVerificationToken"]').val() || '';
   }
 
-  function anti(){ var t = $('input[name="__RequestVerificationToken"]').first().val(); return t || ''; }
-  function qnc(q){ var o = q||{}; o._ts = Date.now(); return o; }
-  function ok(res){ return (res && (res.Success === true || res.success === true)) ? (res.Data ?? res.data ?? res) : res; }
-
-  // Map RESTful v1 paths to legacy MVC action names
-  function toLegacy(path){
-    var map = {
-      '/bootstrap':                 '/Bootstrap',
-      '/patient/lookup-or-create':  '/PatientLookup',
-      '/draft/create':              '/CreateDraft',
-      '/services/by-department':    '/GetServicesForDepartment',
-      '/item/add':                  '/AddItem',
-      '/item/remove':               '/RemoveItem',
-      '/insurance/plans':           '/GetInsurancePlans',
-      '/insurances/set':            '/SetInsurances',
-      '/finalize/pos':              '/FinalizeWithPos',
-      '/finalize/cash':             '/FinalizeWithCash'
-    };
-    return map[path] || path;
+  function headers(method) {
+    const h = {};
+    if (method.toUpperCase() !== 'GET') {
+      const t = token();
+      if (t) h['RequestVerificationToken'] = t;
+    }
+    h['X-Requested-With'] = 'XMLHttpRequest';
+    return h;
   }
 
-  function ajaxWithFallback(method, path, data){
-    var first = {
-      url: baseV1 + path + (method === 'GET' ? ('?' + $.param(qnc(data||{}))) : ('?_ts=' + Date.now())),
+  function stamp(url) {
+    return url + (url.indexOf('?') > -1 ? '&' : '?') + '_ts=' + Date.now();
+  }
+
+  function shouldFallback(jqXHR) {
+    const s = jqXHR && jqXHR.status;
+    const body = (jqXHR && jqXHR.responseText || '').toLowerCase();
+    return s === 404 || s === 500 || s === 0 ||
+           body.indexOf('resource cannot be found') > -1 ||
+           body.indexOf('was not found') > -1 ||
+           body.indexOf('not found') > -1;
+  }
+
+  function toLegacyPath(path) {
+    // map v1 paths -> legacy actions
+    if (/^\/?bootstrap/i.test(path)) return 'Bootstrap';
+    if (/^\/?draft\/create/i.test(path)) return 'CreateDraft';
+    if (/^\/?patient\/lookup-or-create/i.test(path)) return 'PatientLookup';
+    if (/^\/?services\/by-department/i.test(path)) {
+      const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
+      return 'GetServicesForDepartment' + q;
+    }
+    if (/^\/?insurance\/plans/i.test(path)) {
+      const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
+      return 'GetInsurancePlans' + q;
+    }
+    if (/^\/?item\/add/i.test(path)) return 'AddItem';
+    if (/^\/?item\/remove/i.test(path)) return 'RemoveItem';
+    if (/^\/?insurances\/set/i.test(path)) return 'SetInsurances';
+    if (/^\/?finalize\/pos/i.test(path)) return 'FinalizeWithPos';
+    if (/^\/?finalize\/cash/i.test(path)) return 'FinalizeWithCash';
+    if (/^\/?health/i.test(path)) return 'Health';
+    // Remove leading slash if present
+    return path.replace(/^\//, '');
+  }
+
+  function ajaxWithFallback(method, path, data) {
+    const d = $.Deferred();
+    const cleanPath = path.replace(/^\//, ''); // Remove leading slash
+
+    $.ajax({
+      url: stamp(baseV1 + '/' + cleanPath),
       type: method,
-      data: method === 'GET' ? undefined : JSON.stringify(data||{}),
+      data: method === 'GET' ? undefined : JSON.stringify(data || {}),
       contentType: method === 'GET' ? undefined : 'application/json; charset=utf-8',
       cache: false,
-      headers: { 'RequestVerificationToken': anti() }
-    };
-    var second = {
-      url: legacy + toLegacy(path),
-      type: method === 'GET' ? 'GET' : 'POST',
-      data: method === 'GET' ? (data||{}) : (data||{}),
-      cache: false,
-      headers: { 'RequestVerificationToken': anti() }
-    };
+      headers: headers(method)
+    })
+    .done(res => d.resolve(res))
+    .fail(jq => {
+      if (shouldFallback(jq)) {
+        var legacyPath = toLegacyPath(cleanPath);
+        $.ajax({
+          url: stamp(legacyBase + '/' + legacyPath),
+          type: method === 'GET' ? 'GET' : 'POST',
+          data: method === 'GET' ? (data || {}) : (data || {}),
+          cache: false,
+          headers: headers(method)
+        })
+        .done(res => d.resolve(res))
+        .fail(err => d.reject(err));
+      } else {
+        d.reject(jq);
+      }
+    });
 
-    return $.ajax(first)
-      .then(function(d){ memo(baseV1); return d; })
-      .catch(function(){ return $.ajax(second).then(function(d){ memo(legacy); return d; }); });
+    return d.promise();
   }
 
-  function get(path, query){
-    return ajaxWithFallback('GET', path, query);
+  function ok(res) {
+    return (res && (res.Success === true || res.success === true)) ? (res.Data ?? res.data ?? res) : res;
   }
 
-  function post(path, body){
-    return ajaxWithFallback('POST', path, body);
-  }
-
-  win.ReceptionAPI = { get:get, post:post, ok:ok, _base:function(){return base;} };
-})(jQuery, window);
+  // Public API
+  w.ReceptionAPI = {
+    get: (path, params) => ajaxWithFallback('GET', path + (params ? ('?' + $.param(params)) : ''), null),
+    post: (path, body) => ajaxWithFallback('POST', path, body),
+    ok: ok
+  };
+})(window, jQuery);

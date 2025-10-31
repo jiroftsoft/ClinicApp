@@ -1,22 +1,32 @@
+using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Filters;
+using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
 
 namespace ClinicApp.Controllers.Reception
 {
+    /// <summary>
+    /// Controller V2 برای فرم پذیرش - Zero Cache, Production-Grade
+    /// </summary>
     [Authorize]
     [NoCache]
     public class ReceptionControllerV2 : Controller
     {
         private readonly IReceptionFacade _receptionFacade;
+        private readonly IFinancialYearService _financialYearService;
         private readonly ILogger _logger;
 
-        public ReceptionControllerV2(IReceptionFacade receptionFacade, ILogger logger)
+        public ReceptionControllerV2(
+            IReceptionFacade receptionFacade,
+            IFinancialYearService financialYearService,
+            ILogger logger)
         {
             _receptionFacade = receptionFacade ?? throw new ArgumentNullException(nameof(receptionFacade));
+            _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
             _logger = logger.ForContext<ReceptionControllerV2>();
         }
 
@@ -30,12 +40,15 @@ namespace ClinicApp.Controllers.Reception
                 // بارگذاری داده‌های اولیه از Facade
                 var model = await _receptionFacade.LoadInitialAsync(1, null);
                 
+                // دریافت سال مالی جاری از سرویس
+                var financialYear = _financialYearService.GetCurrentYear();
+                
                 // تبدیل به ReceptionFormVM
                 var vm = new ReceptionFormVM
                 {
                     Bootstrap = new BootstrapVM
                     {
-                        FinancialYear = DateTime.Now.Year // TODO: از FinancialYearService
+                        FinancialYear = financialYear
                     }
                 };
 

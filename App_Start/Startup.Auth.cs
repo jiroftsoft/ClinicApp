@@ -6,6 +6,7 @@ using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Owin;
 using System;
+using System.Configuration;
 using ClinicApp.Models.Core;
 
 namespace ClinicApp
@@ -22,12 +23,16 @@ namespace ClinicApp
 
             // Configure the application to use a cookie to store information for the signed-in user
             // 🔒 SECURITY: Enhanced Cookie Security per Contract 04-Security-Requirements
+            // 🚫 DEVELOPMENT: CookieSecure allows HTTP in Development mode
+            var isDevelopment = ConfigurationManager.AppSettings["Environment"]?.Equals("Development", StringComparison.OrdinalIgnoreCase) ?? false;
+            var cookieSecure = isDevelopment ? CookieSecureOption.SameAsRequest : CookieSecureOption.Always;
+            
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
                 LoginPath = new PathString("/Account/Login"), // Microsoft.Owin.PathString
                 CookieName = "ClinicAppAuth",
-                CookieSecure = CookieSecureOption.Always, // HTTPS Only - Security Requirement
+                CookieSecure = cookieSecure, // HTTPS Only in Production, HTTP allowed in Development
                 CookieHttpOnly = true, // Prevent XSS - Security Requirement
                 CookieSameSite = SameSiteMode.Strict, // CSRF Protection - Security Requirement
                 ExpireTimeSpan = TimeSpan.FromHours(8), // Session Timeout - Security Requirement
