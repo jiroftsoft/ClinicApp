@@ -12,6 +12,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.Insurance;
@@ -53,6 +54,7 @@ namespace ClinicApp.Services.Reception
         private readonly ICurrentUserService _currentUserService;
         private readonly IFinancialYearService _financialYearService;
         private readonly InsurancePlanSuggestionService _insurancePlanSuggestionService;
+        private readonly IFactorSettingService _factorSettingService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -73,6 +75,7 @@ namespace ClinicApp.Services.Reception
             ICurrentUserService currentUserService,
             IFinancialYearService financialYearService,
             InsurancePlanSuggestionService insurancePlanSuggestionService,
+            IFactorSettingService factorSettingService,
             ApplicationDbContext context,
             ILogger logger)
         {
@@ -88,6 +91,7 @@ namespace ClinicApp.Services.Reception
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _financialYearService = financialYearService ?? throw new ArgumentNullException(nameof(financialYearService));
             _insurancePlanSuggestionService = insurancePlanSuggestionService ?? throw new ArgumentNullException(nameof(insurancePlanSuggestionService));
+            _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionFacade>();
         }
@@ -189,6 +193,46 @@ namespace ClinicApp.Services.Reception
                     result.SharedServices = sharedServicesResult.Data;
                 }
 
+                // 6. بارگذاری تنظیمات ضرایب (FactorSetting) برای سال مالی جاری
+                var financialYear = _financialYearService.GetCurrentYear();
+                try
+                {
+                    var techFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                        ServiceComponentType.Technical, false, financialYear);
+                    var techFactorHashtagged = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                        ServiceComponentType.Technical, true, financialYear);
+                    var profFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                        ServiceComponentType.Professional, false, financialYear);
+                    var profFactorHashtagged = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                        ServiceComponentType.Professional, true, financialYear);
+
+                    // تبدیل به bool برای جلوگیری از خطای CS0019
+                    var techFactorIsActive = techFactor?.IsActive ?? false;
+                    var profFactorIsActive = profFactor?.IsActive ?? false;
+                    var techFactorIsFrozen = techFactor?.IsFrozen ?? false;
+                    var profFactorIsFrozen = profFactor?.IsFrozen ?? false;
+
+                    result.FactorSetting = new FactorSettingDto
+                    {
+                        FinancialYear = financialYear,
+                        TechnicalFactor = techFactor?.Value,
+                        TechnicalFactorHashtagged = techFactorHashtagged?.Value,
+                        ProfessionalFactor = profFactor?.Value,
+                        ProfessionalFactorHashtagged = profFactorHashtagged?.Value,
+                        IsActive = techFactorIsActive || profFactorIsActive,
+                        IsFrozen = techFactorIsFrozen || profFactorIsFrozen
+                    };
+
+                    _logger.Information("✅ FACADE: تنظیمات ضرایب بارگذاری شد - FinancialYear: {Year}, Tech: {Tech}, Prof: {Prof}", 
+                        financialYear, techFactor?.Value ?? 0, profFactor?.Value ?? 0);
+                }
+                catch (Exception factorEx)
+                {
+                    _logger.Warning(factorEx, "⚠️ FACADE: خطا در بارگذاری تنظیمات ضرایب - FinancialYear: {Year}", financialYear);
+                    // FactorSetting را null می‌گذاریم (optional)
+                    result.FactorSetting = null;
+                }
+
                 _logger.Information("✅ FACADE: بارگذاری اولیه تکمیل شد - Clinics: {ClinicCount}, Departments: {DeptCount}, Doctors: {DoctorCount}, Services: {ServiceCount}", 
                     result.Clinics?.Count ?? 0,
                     result.Departments?.Count ?? 0, 
@@ -247,17 +291,35 @@ namespace ClinicApp.Services.Reception
                     var createResult = await _patientService.CreatePatientAsync(createViewModel);
                     if (createResult.Success)
                     {
-                        // Since CreatePatientAsync returns ServiceResult (not ServiceResult<T>), 
-                        // we need to create the PatientDto from the input data
-                        return ServiceResult<PatientDto>.Successful(new PatientDto
+                        // پس از ایجاد موفقیت‌آمیز، بیمار را دوباره پیدا کنیم تا PatientId واقعی را بگیریم
+                        var findCreatedResult = await _patientService.FindByNationalCodeAsync(nationalCode);
+                        if (findCreatedResult.Success && findCreatedResult.Data != null)
                         {
-                            PatientId = 0, // Will be set by the service
-                            NationalCode = dtoIfNotExists.NationalCode,
-                            FirstName = dtoIfNotExists.FirstName,
-                            LastName = dtoIfNotExists.LastName,
-                            PhoneNumber = dtoIfNotExists.PhoneNumber,
-                            Email = dtoIfNotExists.Email
-                        });
+                            _logger.Information("✅ FACADE: بیمار جدید ایجاد شد - PatientId: {PatientId}", findCreatedResult.Data.PatientId);
+                            return ServiceResult<PatientDto>.Successful(new PatientDto
+                            {
+                                PatientId = findCreatedResult.Data.PatientId, // ✅ PatientId واقعی
+                                NationalCode = findCreatedResult.Data.NationalCode ?? dtoIfNotExists.NationalCode,
+                                FirstName = findCreatedResult.Data.FirstName ?? dtoIfNotExists.FirstName,
+                                LastName = findCreatedResult.Data.LastName ?? dtoIfNotExists.LastName,
+                                PhoneNumber = findCreatedResult.Data.PhoneNumber ?? dtoIfNotExists.PhoneNumber,
+                                Email = findCreatedResult.Data.Email ?? dtoIfNotExists.Email
+                            });
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ FACADE: بیمار ایجاد شد اما یافت نشد - NationalCode: {NationalCode}", nationalCode);
+                            // Fallback: از اطلاعات ورودی استفاده کنیم (PatientId = 0)
+                            return ServiceResult<PatientDto>.Successful(new PatientDto
+                            {
+                                PatientId = 0, // ⚠️ باید بعداً از frontend دوباره lookup شود
+                                NationalCode = dtoIfNotExists.NationalCode,
+                                FirstName = dtoIfNotExists.FirstName,
+                                LastName = dtoIfNotExists.LastName,
+                                PhoneNumber = dtoIfNotExists.PhoneNumber,
+                                Email = dtoIfNotExists.Email
+                            });
+                        }
                     }
                 }
 
@@ -316,9 +378,136 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
+        /// تنظیم بیمه‌های بیمار (برای Quick Create)
+        /// </summary>
+        public async Task SetPatientInsurancesAsync(int patientId, int? basePlanId, int? suppPlanId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: تنظیم بیمه‌های بیمار - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                    patientId, basePlanId, suppPlanId);
+
+                // یافتن PatientInsurance فعال و Primary این بیمار
+                var patientInsurance = await _context.PatientInsurances
+                    .FirstOrDefaultAsync(pi => pi.PatientId == patientId && pi.IsPrimary && pi.IsActive && !pi.IsDeleted);
+
+                if (patientInsurance == null)
+                {
+                    // ایجاد PatientInsurance جدید اگر وجود ندارد
+                    if (basePlanId.HasValue)
+                    {
+                        var basePlan = await _context.InsurancePlans
+                            .FirstOrDefaultAsync(p => p.InsurancePlanId == basePlanId.Value && !p.IsDeleted && p.IsActive);
+
+                        if (basePlan != null && basePlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary)
+                        {
+                            patientInsurance = new PatientInsurance
+                            {
+                                PatientId = patientId,
+                                InsurancePlanId = basePlanId.Value,
+                                InsuranceProviderId = basePlan.InsuranceProviderId,
+                                IsPrimary = true,
+                                IsActive = true,
+                                StartDate = DateTime.Now,
+                                CreatedAt = DateTime.Now,
+                                CreatedByUserId = _currentUserService?.UserId ?? "system"
+                            };
+
+                            // اگر بیمه تکمیلی هم مشخص شده، اضافه کن
+                            if (suppPlanId.HasValue)
+                            {
+                                var suppPlan = await _context.InsurancePlans
+                                    .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
+
+                                if (suppPlan != null && suppPlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary)
+                                {
+                                    patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
+                                    patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                }
+                            }
+
+                            _context.PatientInsurances.Add(patientInsurance);
+                            await _context.SaveChangesAsync();
+
+                            _logger.Information("✅ FACADE: PatientInsurance جدید ایجاد شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                                patientId, basePlanId, suppPlanId);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    // به‌روزرسانی PatientInsurance موجود
+                    bool hasChanges = false;
+
+                    // به‌روزرسانی بیمه پایه
+                    if (basePlanId.HasValue)
+                    {
+                        var basePlan = await _context.InsurancePlans
+                            .FirstOrDefaultAsync(p => p.InsurancePlanId == basePlanId.Value && !p.IsDeleted && p.IsActive);
+
+                        if (basePlan != null && basePlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary)
+                        {
+                            if (patientInsurance.InsurancePlanId != basePlanId.Value ||
+                                patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
+                            {
+                                patientInsurance.InsurancePlanId = basePlanId.Value;
+                                patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
+                                hasChanges = true;
+                            }
+                        }
+                    }
+
+                    // به‌روزرسانی بیمه تکمیلی
+                    if (suppPlanId.HasValue)
+                    {
+                        var suppPlan = await _context.InsurancePlans
+                            .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
+
+                        if (suppPlan != null && suppPlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary)
+                        {
+                            if (patientInsurance.SupplementaryInsurancePlanId != suppPlanId.Value ||
+                                patientInsurance.SupplementaryInsuranceProviderId != suppPlan.InsuranceProviderId)
+                            {
+                                patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
+                                patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                hasChanges = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // اگر suppPlanId null باشد، بیمه تکمیلی را حذف کن
+                        if (patientInsurance.SupplementaryInsurancePlanId.HasValue)
+                        {
+                            patientInsurance.SupplementaryInsurancePlanId = null;
+                            patientInsurance.SupplementaryInsuranceProviderId = null;
+                            hasChanges = true;
+                        }
+                    }
+
+                    if (hasChanges)
+                    {
+                        patientInsurance.UpdatedAt = DateTime.Now;
+                        patientInsurance.UpdatedByUserId = _currentUserService?.UserId ?? "system";
+                        await _context.SaveChangesAsync();
+
+                        _logger.Information("✅ FACADE: PatientInsurance به‌روزرسانی شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                            patientId, basePlanId, suppPlanId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در تنظیم بیمه‌های بیمار - PatientId: {PatientId}", patientId);
+                throw; // Re-throw برای Controller
+            }
+        }
+
+        /// <summary>
         /// دریافت بیمه‌های انتسابی فعال بیمار (برای فرم پذیرش)
         /// </summary>
-        public async Task<InsuranceSelectionDto> GetAssignedInsurancesForPatient(int patientId)
+        public async Task<Controllers.Api.InsuranceSelectionDto> GetAssignedInsurancesForPatient(int patientId)
         {
             try
             {
@@ -337,7 +526,7 @@ namespace ClinicApp.Services.Reception
 
                 if (activeInsurances == null)
                 {
-                    return new InsuranceSelectionDto
+                    return new Controllers.Api.InsuranceSelectionDto
                     {
                         BaseInsuranceId = null,
                         BasePlanId = null,
@@ -359,7 +548,7 @@ namespace ClinicApp.Services.Reception
                 // پیشنهاد پلن‌های پیش‌فرض
                 var (suggestedBasePlan, suggestedSuppPlan) = await _insurancePlanSuggestionService.SuggestDefaultsAsync(baseInsuranceId, suppInsuranceId);
 
-                return new InsuranceSelectionDto
+                return new Controllers.Api.InsuranceSelectionDto
                 {
                     BaseInsuranceId = baseInsuranceId,
                     BasePlanId = basePlanId,
@@ -372,7 +561,7 @@ namespace ClinicApp.Services.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ FACADE: خطا در دریافت بیمه‌های انتسابی بیمار");
-                return new InsuranceSelectionDto();
+                return new Controllers.Api.InsuranceSelectionDto();
             }
         }
 
@@ -395,8 +584,65 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
 
                 if (request.ClinicId.HasValue) draft.ClinicId = request.ClinicId.Value;
-                if (request.DepartmentId.HasValue) draft.DepartmentId = request.DepartmentId.Value;
-                if (request.DoctorId.HasValue) draft.DoctorId = request.DoctorId.Value;
+                
+                // اگر DepartmentId تغییر کرده، Doctor-Department را اعتبارسنجی کن
+                if (request.DepartmentId.HasValue)
+                {
+                    var oldDeptId = draft.DepartmentId;
+                    draft.DepartmentId = request.DepartmentId.Value;
+                    
+                    // اگر Department تغییر کرد و DoctorId مشخص شده، اعتبارسنجی کن
+                    var doctorIdToValidate = request.DoctorId.HasValue ? request.DoctorId.Value : draft.DoctorId;
+                    if (request.DepartmentId.Value != oldDeptId && doctorIdToValidate > 0)
+                    {
+                        var doctorDept = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Where(dd => dd.DoctorId == doctorIdToValidate && 
+                                        dd.DepartmentId == request.DepartmentId.Value && 
+                                        !dd.IsDeleted &&
+                                        dd.IsActive &&
+                                        (dd.EndDate == null || dd.EndDate > DateTime.Now))
+                            .FirstOrDefaultAsync();
+
+                        if (doctorDept == null)
+                        {
+                            _logger.Warning("⚠️ FACADE: پزشک انتخابی به دپارتمان جدید منتسب نیست - DoctorId: {DoctorId}, DepartmentId: {DepartmentId}", 
+                                doctorIdToValidate, request.DepartmentId.Value);
+                            return ServiceResult<ItemsAndTotalsDto>.Failed(
+                                "پزشک انتخابی به دپارتمان انتخاب شده منتسب نیست.", 
+                                "VALIDATION");
+                        }
+                    }
+                }
+                
+                // اگر DoctorId تغییر کرده، Doctor-Department را اعتبارسنجی کن
+                if (request.DoctorId.HasValue)
+                {
+                    var oldDoctorId = draft.DoctorId;
+                    draft.DoctorId = request.DoctorId.Value;
+                    
+                    if (request.DoctorId.Value != oldDoctorId && draft.DepartmentId > 0)
+                    {
+                        var doctorDept = await _context.DoctorDepartments
+                            .AsNoTracking()
+                            .Where(dd => dd.DoctorId == request.DoctorId.Value && 
+                                        dd.DepartmentId == draft.DepartmentId && 
+                                        !dd.IsDeleted &&
+                                        dd.IsActive &&
+                                        (dd.EndDate == null || dd.EndDate > DateTime.Now))
+                            .FirstOrDefaultAsync();
+
+                        if (doctorDept == null)
+                        {
+                            _logger.Warning("⚠️ FACADE: پزشک جدید به دپارتمان انتخاب شده منتسب نیست - DoctorId: {DoctorId}, DepartmentId: {DepartmentId}", 
+                                request.DoctorId.Value, draft.DepartmentId);
+                            return ServiceResult<ItemsAndTotalsDto>.Failed(
+                                "پزشک انتخابی به دپارتمان انتخاب شده منتسب نیست.", 
+                                "VALIDATION");
+                        }
+                    }
+                }
+                
                 if (request.PatientId.HasValue) draft.PatientId = request.PatientId.Value;
                 if (request.BasePlanId.HasValue) draft.BasePlanId = request.BasePlanId.Value;
                 if (request.SupplementaryPlanId.HasValue) draft.SupplementaryPlanId = request.SupplementaryPlanId.Value;
@@ -691,6 +937,28 @@ namespace ClinicApp.Services.Reception
                 {
                     return ServiceResult<CreateDraftResponse>.Failed("اطلاعات بیمار/کلینیک/بخش/پزشک ناقص است. ابتدا فیلدهای لازم را تکمیل کنید.");
                 }
+
+                // 🔍 اعتبارسنجی: بررسی عضویت پزشک به دپارتمان
+                var doctorDept = await _context.DoctorDepartments
+                    .AsNoTracking()
+                    .Where(dd => dd.DoctorId == request.DoctorId.Value && 
+                                dd.DepartmentId == request.DepartmentId.Value && 
+                                !dd.IsDeleted &&
+                                dd.IsActive &&
+                                (dd.EndDate == null || dd.EndDate > DateTime.Now))
+                    .FirstOrDefaultAsync();
+
+                if (doctorDept == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پزشک انتخابی به دپارتمان انتخاب شده منتسب نیست - DoctorId: {DoctorId}, DepartmentId: {DepartmentId}", 
+                        request.DoctorId.Value, request.DepartmentId.Value);
+                    return ServiceResult<CreateDraftResponse>.Failed(
+                        "پزشک انتخابی به دپارتمان انتخاب شده منتسب نیست.", 
+                        "VALIDATION");
+                }
+
+                _logger.Information("✅ FACADE: اعتبارسنجی Doctor-Department موفق - DoctorId: {DoctorId}, DepartmentId: {DepartmentId}", 
+                    request.DoctorId.Value, request.DepartmentId.Value);
 
                 // دریافت سال مالی جاری
                 var financialYear = _financialYearService.GetCurrentYear();
@@ -995,6 +1263,60 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("✅ FACADE: بیمه‌های پیش‌نویس و PatientInsurances با موفقیت تنظیم شد - ReceptionId: {ReceptionId}, PatientId: {PatientId}", 
                     request.ReceptionId, patientId);
 
+                // 🔄 Reprice-on-change: بازمحاسبه تمام آیتم‌ها با بیمه‌های جدید
+                if (draft.ReceptionItems != null && draft.ReceptionItems.Any())
+                {
+                    _logger.Information("🔄 FACADE: شروع بازمحاسبه آیتم‌ها با بیمه‌های جدید - ItemsCount: {Count}", 
+                        draft.ReceptionItems.Count);
+                    
+                    // درصدهای پوشش بیمه (از basePlan و suppPlan قبلاً query شده)
+                    var baseCoveragePercent = basePlan?.CoveragePercent ?? 0m;
+                    var suppCoveragePercent = suppPlan?.CoveragePercent ?? 0m;
+                    
+                    bool itemsRepriced = false;
+                    foreach (var item in draft.ReceptionItems.Where(ri => !ri.IsDeleted))
+                    {
+                        // محاسبه سهم‌ها با بیمه‌های جدید
+                        var itemGross = item.UnitPrice * item.Quantity;
+                        
+                        // سهم بیمه پایه
+                        var itemBasePay = itemGross * (baseCoveragePercent / 100m);
+                        var itemAfterBase = itemGross - itemBasePay;
+                        
+                        // سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
+                        var itemSuppPay = itemAfterBase * (suppCoveragePercent / 100m);
+                        var itemPatientShare = itemAfterBase - itemSuppPay;
+                        
+                        // بررسی تغییر
+                        if (item.PatientShareAmount != itemPatientShare || 
+                            item.InsurerShareAmount != (itemBasePay + itemSuppPay))
+                        {
+                            item.PatientShareAmount = itemPatientShare;
+                            item.InsurerShareAmount = itemBasePay + itemSuppPay;
+                            item.UpdatedAt = DateTime.Now;
+                            itemsRepriced = true;
+                            
+                            _logger.Debug("🔄 FACADE: آیتم بازمحاسبه شد - ItemId: {ItemId}, ServiceId: {ServiceId}, OldPatient: {OldPatient}, NewPatient: {NewPatient}", 
+                                item.ReceptionItemId, item.ServiceId, 
+                                item.PatientShareAmount - itemPatientShare + itemPatientShare, // Old value before update
+                                itemPatientShare);
+                        }
+                    }
+                    
+                    if (itemsRepriced)
+                    {
+                        await _context.SaveChangesAsync();
+                        _logger.Information("✅ FACADE: تمام آیتم‌ها با بیمه‌های جدید بازمحاسبه شدند");
+                    }
+                    else
+                    {
+                        _logger.Information("ℹ️ FACADE: تغییر بیمه تأثیری بر مبالغ آیتم‌ها نداشت");
+                    }
+                }
+
+                // Reload draft with updated items for RecalculateDraftAsync
+                await _context.Entry(draft).Collection(x => x.ReceptionItems).LoadAsync();
+                
                 return await RecalculateDraftAsync(draft);
             }
             catch (Exception ex)

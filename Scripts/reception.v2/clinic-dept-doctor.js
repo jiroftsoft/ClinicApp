@@ -1,14 +1,18 @@
 (function(API){
   'use strict';
 
+  // Flag برای جلوگیری از reset شدن departments
+  let isInitialized = false;
+  
   /**
    * بارگذاری داده‌های اولیه (کلینیک، دپارتمان، پزشک)
    * پشتیبانی از PascalCase و camelCase
+   * @param {boolean} reloadDepartments - آیا departments را دوباره لود کند؟
    */
-  function bootstrap(){
-    console.log('🏥 V2: Starting bootstrap...');
+  function bootstrap(reloadDepartments){
+    console.log('🏥 V2: Starting bootstrap...', { reloadDepartments: reloadDepartments });
     
-    const clinicId = $("#ClinicId").val();
+    const clinicId = $("#ClinicId").val() || 1; // Default clinic ID = 1 (کلینیک شفا)
     const deptId = $("#DepartmentId").val();
     
     API.get("/bootstrap", { clinicId: clinicId, deptId: deptId })
@@ -33,24 +37,34 @@
           window.ReceptionBootstrap.FinancialYear = financialYear;
         }
         
-        // Fill clinics (اگر وجود دارد)
-        if (clinics && clinics.length > 0) {
+        // Fill clinics (فقط در اولین بار یا اگر reloadDepartments = true)
+        if ((!isInitialized || reloadDepartments) && clinics && clinics.length > 0) {
           const $clinicSelect = $("#ClinicId");
-          const currentClinicId = $clinicSelect.val();
+          const currentClinicId = $clinicSelect.val() || 1; // Default = 1 (کلینیک شفا)
           $clinicSelect.empty().append('<option value="">انتخاب کنید</option>');
           clinics.forEach(function(clinic) {
             const clinicId = clinic.clinicId || clinic.ClinicId;
             const clinicName = clinic.name || clinic.Name || clinic.clinicName || clinic.ClinicName;
             $clinicSelect.append(`<option value="${clinicId}">${clinicName}</option>`);
           });
-          // اگر قبلاً انتخاب شده بود، مقدار را برگردان
-          if (currentClinicId) {
+          // Set default clinic (کلینیک شفا)
+          if (clinics.length === 1) {
+            // اگر فقط یک کلینیک داریم، به صورت خودکار انتخاب کن و disable کن
+            const singleClinicId = clinics[0].clinicId || clinics[0].ClinicId;
+            $clinicSelect.val(singleClinicId).prop('disabled', true);
+            console.log('🏥 V2: Single clinic auto-selected and disabled:', singleClinicId);
+          } else if (currentClinicId) {
             $clinicSelect.val(currentClinicId);
+          } else {
+            // اگر clinicId وجود نداشت، اولین کلینیک را انتخاب کن
+            const firstClinicId = clinics[0].clinicId || clinics[0].ClinicId;
+            $clinicSelect.val(firstClinicId);
+            console.log('🏥 V2: First clinic auto-selected:', firstClinicId);
           }
         }
         
-        // Fill departments
-        if (departments && departments.length > 0) {
+        // Fill departments (فقط در اولین بار یا اگر reloadDepartments = true)
+        if ((!isInitialized || reloadDepartments) && departments && departments.length > 0) {
           const $deptSelect = $("#DepartmentId");
           const currentDeptId = $deptSelect.val();
           $deptSelect.empty().append('<option value="">انتخاب کنید</option>');
@@ -64,11 +78,11 @@
             $deptSelect.val(currentDeptId);
           }
           console.log('🏥 V2: Departments filled:', departments.length);
-        } else {
+        } else if (!isInitialized) {
           console.warn('🏥 V2: No departments found in bootstrap response');
         }
         
-        // Fill doctors (فقط اگر deptId انتخاب شده باشد)
+        // Fill doctors (همیشه - چون وابسته به deptId است)
         const selectedDeptId = $("#DepartmentId").val();
         if (selectedDeptId && doctors && doctors.length > 0) {
           const $doctorSelect = $("#DoctorId");
@@ -76,7 +90,7 @@
           $doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
           doctors.forEach(function(doctor) {
             const doctorId = doctor.doctorId || doctor.DoctorId;
-            const doctorName = doctor.name || doctor.Name || doctor.doctorName || doctor.DoctorName;
+            const doctorName = doctor.name || doctor.Name || doctor.doctorName || doctor.DoctorName || doctor.FullName || doctor.fullName;
             $doctorSelect.append(`<option value="${doctorId}">${doctorName}</option>`);
           });
           // اگر قبلاً انتخاب شده بود، مقدار را برگردان
@@ -87,7 +101,18 @@
         } else if (selectedDeptId) {
           // اگر دپارتمان انتخاب شده اما پزشکی نیست
           const $doctorSelect = $("#DoctorId");
+          $doctorSelect.empty().append('<option value="">پزشکی در این دپارتمان یافت نشد</option>');
+          console.warn('🏥 V2: No doctors found for department:', selectedDeptId);
+        } else {
+          // اگر دپارتمان انتخاب نشده
+          const $doctorSelect = $("#DoctorId");
           $doctorSelect.empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+        }
+        
+        // Mark as initialized
+        if (!isInitialized) {
+          isInitialized = true;
+          console.log('🏥 V2: Bootstrap initialized');
         }
       })
       .catch(function(err) {
@@ -98,6 +123,7 @@
   
   /**
    * بارگذاری مجدد پزشکان هنگام تغییر دپارتمان
+   * این تابع فقط پزشکان را لود می‌کند، departments را reset نمی‌کند
    */
   function loadDoctorsForDepartment(deptId) {
     if (!deptId) {
@@ -108,7 +134,8 @@
     console.log('🏥 V2: Loading doctors for department:', deptId);
     
     // بارگذاری مجدد bootstrap برای دریافت پزشکان دپارتمان جدید
-    bootstrap();
+    // اما departments را reset نکن (reloadDepartments = false)
+    bootstrap(false);
   }
   
   // Load on page ready
@@ -133,12 +160,13 @@
     }
   });
   
-  // Reload departments when clinic changes
+  // Reload departments when clinic changes (اما چون یک کلینیک داریم، این event کمتر اتفاق می‌افتد)
   $("#ClinicId").on('change', function() {
     const clinicId = $(this).val();
     console.log('🏥 V2: Clinic changed:', clinicId);
     if (clinicId) {
-      bootstrap();
+      // وقتی کلینیک تغییر کرد، departments را هم reload کن
+      bootstrap(true);
     }
   });
   

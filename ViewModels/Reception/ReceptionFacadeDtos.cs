@@ -16,6 +16,21 @@ namespace ClinicApp.ViewModels.Reception
         public List<ServiceDto> Services { get; set; } = new List<ServiceDto>();
         public List<ServiceDto> SharedServices { get; set; } = new List<ServiceDto>();
         public List<DoctorDto> Doctors { get; set; } = new List<DoctorDto>();
+        public FactorSettingDto FactorSetting { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای تنظیمات ضرایب (FactorSetting)
+    /// </summary>
+    public class FactorSettingDto
+    {
+        public int FinancialYear { get; set; }
+        public decimal? TechnicalFactor { get; set; }
+        public decimal? TechnicalFactorHashtagged { get; set; }
+        public decimal? ProfessionalFactor { get; set; }
+        public decimal? ProfessionalFactorHashtagged { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsFrozen { get; set; }
     }
 
     /// <summary>

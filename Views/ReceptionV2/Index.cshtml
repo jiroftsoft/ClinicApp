@@ -46,6 +46,9 @@
     @Html.AntiForgeryToken()
 }
 
+@* Patient Fast Create Modal *@
+@Html.Partial("Partials/_PatientFastCreateModal")
+
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/reception.v2")
 <script>

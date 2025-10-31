@@ -1,0 +1,94 @@
+@* Modal برای ثبت سریع بیمار (Fast Create) *@
+@using (Html.BeginForm("", "", FormMethod.Post, new { id = "patientFastCreateForm", data_form = "patient-fast-create" }))
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="modal fade" id="patientFastCreateModal" tabindex="-1" role="dialog" aria-labelledby="patientFastCreateLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="patientFastCreateLabel">
+              <i class="fas fa-user-plus me-2"></i>ثبت سریع بیمار
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label required">کدملی</label>
+                <input id="fc_nationalCode" name="NationalCode" class="form-control" maxlength="10" placeholder="10 رقم" autocomplete="off" />
+                <div class="invalid-feedback">کد ملی الزامی است</div>
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label required">نام</label>
+                <input id="fc_firstName" name="FirstName" class="form-control" placeholder="نام بیمار" />
+                <div class="invalid-feedback">نام الزامی است</div>
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label required">نام خانوادگی</label>
+                <input id="fc_lastName" name="LastName" class="form-control" placeholder="نام خانوادگی بیمار" />
+                <div class="invalid-feedback">نام خانوادگی الزامی است</div>
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label required">موبایل</label>
+                <input id="fc_mobile" name="Mobile" class="form-control" maxlength="11" placeholder="09123456789" autocomplete="off" />
+                <div class="invalid-feedback">شماره موبایل الزامی است</div>
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label">جنسیت</label>
+                <select id="fc_gender" name="Gender" class="form-select">
+                  <option value="">انتخاب کنید</option>
+                  <option value="Male">مذکر</option>
+                  <option value="Female">مونث</option>
+                </select>
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label">تاریخ تولد (شمسی)</label>
+                <input id="fc_birth" name="BirthDateShamsi" class="form-control persian-date" placeholder="1403/01/01" autocomplete="off" />
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label">آدرس</label>
+                <input id="fc_address" name="Address" class="form-control" placeholder="آدرس کامل بیمار" />
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label">بیمه پایه</label>
+                <select id="fc_basePlanId" name="BaseInsurancePlanId" class="form-select">
+                  <option value="">انتخاب کنید</option>
+                </select>
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label">بیمه تکمیلی</label>
+                <select id="fc_suppPlanId" name="SupplementaryInsurancePlanId" class="form-select">
+                  <option value="">انتخاب کنید</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btnFastCreateSave" type="button" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>انصراف
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+}
+
+<style>
+  .required::after {
+    content: " *";
+    color: red;
+  }
+</style>
+

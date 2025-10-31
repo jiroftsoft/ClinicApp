@@ -4224,7 +4224,18 @@
     <Content Include="Contracts\02-Architecture-Guidelines.md" />
     <Content Include="Contracts\03-Code-Quality-Standards.md" />
     <Content Include="Contracts\04-Security-Requirements.md" />
-    <Content Include="Contracts\06-Change-Management.md" />
+    <Content Include="Contracts\DEBUGGING_SPECIALIST_CONTRACT.md" />
+    <Content Include="Contracts\MODULE_ANALYSIS_CONTRACT.md" />
+    <Content Include="Docs\ground-rules.md" />
+    <Content Include="Docs\https-dev-fix.md" />
+    <Content Include="Docs\insurance-clearing-behavior.md" />
+    <Content Include="Docs\insurance-edit-complete-audit.md" />
+    <Content Include="Docs\insurance-edit-frontend-update.md" />
+    <Content Include="Docs\inventory.md" />
+    <Content Include="Docs\layer-deps.md" />
+    <Content Include="Docs\reception-v2-module-analysis.md" />
+    <Content Include="Docs\ssl-completely-disabled.md" />
+    <Content Include="Docs\system-web-mvc-version-fix.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4572,6 +4583,7 @@
     <Content Include="Views\ReceptionV2\Partials\_Totals.cshtml" />
     <Content Include="Views\PosManagement\Index.cshtml" />
     <Content Include="Views\ReceptionV2\Print.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_PatientFastCreateModal.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

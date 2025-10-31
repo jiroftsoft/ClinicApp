@@ -107,10 +107,12 @@ namespace ClinicApp.Controllers.Api
                     {
                         var payload = new
                         {
+                            Clinics = result.Data.Clinics ?? Enumerable.Empty<ViewModels.Reception.ClinicDto>().ToList(),
                             Departments = result.Data.Departments ?? Enumerable.Empty<ViewModels.Reception.DepartmentDto>().ToList(),
                             Services = result.Data.Services ?? Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
                             SharedServices = result.Data.SharedServices ?? Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
                             Doctors = result.Data.Doctors ?? Enumerable.Empty<ViewModels.Reception.DoctorDto>().ToList(),
+                            FactorSetting = result.Data.FactorSetting, // ✅ اضافه شد
                             FinancialYear = _fy?.GetCurrentYear() ?? DateTime.Now.Year
                         };
                         return Json(ServiceResult<object>.Successful(payload, result.Message ?? "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
@@ -120,10 +122,12 @@ namespace ClinicApp.Controllers.Api
                 // Fallback: اسکلت حداقلی
                 var minimalPayload = new
                 {
+                    Clinics = Enumerable.Empty<ViewModels.Reception.ClinicDto>().ToList(),
                     Departments = Enumerable.Empty<ViewModels.Reception.DepartmentDto>().ToList(),
                     Services = Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
                     SharedServices = Enumerable.Empty<ViewModels.Reception.ServiceDto>().ToList(),
                     Doctors = Enumerable.Empty<ViewModels.Reception.DoctorDto>().ToList(),
+                    FactorSetting = (ViewModels.Reception.FactorSettingDto)null, // ✅ اضافه شد
                     FinancialYear = _fy?.GetCurrentYear() ?? DateTime.Now.Year
                 };
                 return Json(ServiceResult<object>.Successful(minimalPayload, "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
@@ -161,15 +165,21 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// POST /api/v1/reception/patient/lookup-or-create
-        /// جستجو یا ایجاد بیمار
+        /// جستجو یا ایجاد بیمار (Idempotent: هم lookup هم quick create)
         /// </summary>
         [HttpPost, Route("patient/lookup-or-create")]
         [ValidateAntiForgeryTokenOnPosts]
-        public async System.Threading.Tasks.Task<ActionResult> PatientLookupOrCreate(PatientLookupRequestDto request)
+        public async System.Threading.Tasks.Task<ActionResult> PatientLookupOrCreate(PatientQuickCreateDto request)
         {
             try
             {
-                _logger?.Information("🏥 V1 API: Patient Lookup - NationalCode: {NationalCode}", request?.NationalCode);
+                _logger?.Information("🏥 V1 API: Patient Lookup-Or-Create - NationalCode: {NationalCode}, HasQuickCreateData: {HasData}", 
+                    request?.NationalCode, !string.IsNullOrWhiteSpace(request?.FirstName));
+
+                if (string.IsNullOrWhiteSpace(request?.NationalCode))
+                {
+                    return Json(ServiceResult<PatientLookupResponseDto>.Failed("کد ملی الزامی است.", "VALIDATION"));
+                }
 
                 // استفاده مستقیم از ReceptionFacade
                 if (_facade != null)
@@ -177,60 +187,116 @@ namespace ClinicApp.Controllers.Api
                     var facadeImpl = _facade as Services.Reception.ReceptionFacade;
                     if (facadeImpl != null)
                     {
-                        var findResult = await facadeImpl.FindOrCreatePatientAsync(request?.NationalCode, null);
-                        if (findResult.Success && findResult.Data != null)
+                        // اگر فقط کدملی آمده (Lookup فقط)
+                        if (string.IsNullOrWhiteSpace(request.FirstName) && string.IsNullOrWhiteSpace(request.LastName))
                         {
-                            var patientDto = findResult.Data;
-                            var patientId = patientDto.PatientId;
-                            var insurances = await facadeImpl.GetAssignedInsurancesForPatient(patientId);
-                            
-                            // دریافت اطلاعات کامل بیمار از دیتابیس (مانند ReceptionApiController)
-                            var patient = await _context.Patients
-                                .AsNoTracking()
-                                .FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
-                            
-                            if (patient != null)
+                            var findResult = await facadeImpl.FindOrCreatePatientAsync(request.NationalCode, null);
+                            if (findResult.Success && findResult.Data != null)
                             {
-                                // ساخت پاسخ کامل با اطلاعات کامل
-                                var response = new Controllers.Api.PatientLookupResponseDto
-                                {
-                                    Identity = new Controllers.Api.PatientIdentityDto
-                                    {
-                                        PatientId = patient.PatientId,
-                                        NationalCode = patient.NationalCode,
-                                        FirstName = patient.FirstName,
-                                        LastName = patient.LastName,
-                                        FatherName = patient.FatherName,
-                                        Mobile = patient.PhoneNumber,
-                                        Phone = null,
-                                        Address = patient.Address,
-                                        Gender = patient.Gender.ToString(),
-                                        BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
-                                    },
-                                    Insurance = insurances
-                                };
+                                var patientDto = findResult.Data;
+                                var patientId = patientDto.PatientId;
                                 
-                                return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, "بیمار یافت شد."));
+                                if (patientId > 0)
+                                {
+                                    var insurances = await facadeImpl.GetAssignedInsurancesForPatient(patientId);
+                                    
+                                    // دریافت اطلاعات کامل بیمار از دیتابیس
+                                    var patient = await _context.Patients
+                                        .AsNoTracking()
+                                        .FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
+                                    
+                                    if (patient != null)
+                                    {
+                                        var response = new Controllers.Api.PatientLookupResponseDto
+                                        {
+                                            Identity = new Controllers.Api.PatientIdentityDto
+                                            {
+                                                PatientId = patient.PatientId,
+                                                NationalCode = patient.NationalCode,
+                                                FirstName = patient.FirstName,
+                                                LastName = patient.LastName,
+                                                FatherName = patient.FatherName,
+                                                Mobile = patient.PhoneNumber,
+                                                Phone = null,
+                                                Address = patient.Address,
+                                                Gender = patient.Gender.ToString(),
+                                                BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                                            },
+                                            Insurance = insurances
+                                        };
+                                        
+                                        return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, "بیمار یافت شد."));
+                                    }
+                                }
+                                
+                                // Fallback
+                                return Json(ServiceResult.Failed("بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.", "NOT_FOUND"));
                             }
                             
-                            // Fallback: استفاده از PatientDto
-                            var fallbackResponse = new Controllers.Api.PatientLookupResponseDto
-                            {
-                                Identity = new Controllers.Api.PatientIdentityDto
-                                {
-                                    PatientId = patientId,
-                                    NationalCode = patientDto.NationalCode,
-                                    FirstName = patientDto.FirstName,
-                                    LastName = patientDto.LastName,
-                                    Mobile = patientDto.PhoneNumber,
-                                    Gender = patientDto.Gender,
-                                    BirthDateShamsi = patientDto.BirthDate?.ToPersianDate() ?? string.Empty
-                                },
-                                Insurance = insurances
-                            };
-                            
-                            return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(fallbackResponse, "بیمار یافت شد."));
+                            return Json(ServiceResult.Failed("بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.", "NOT_FOUND"));
                         }
+                        
+                        // اگر اطلاعات هویت آمده (Quick Create)
+                        var quickCreateDto = new ViewModels.Reception.PatientCreateDto
+                        {
+                            NationalCode = request.NationalCode,
+                            FirstName = request.FirstName,
+                            LastName = request.LastName,
+                            PhoneNumber = request.Mobile,
+                            Gender = request.Gender,
+                            BirthDate = !string.IsNullOrWhiteSpace(request.BirthDateShamsi) 
+                                ? Helpers.PersianDateHelper.ToGregorianDate(request.BirthDateShamsi) 
+                                : (DateTime?)null,
+                            Address = request.Address
+                        };
+                        
+                        var createResult = await facadeImpl.FindOrCreatePatientAsync(request.NationalCode, quickCreateDto);
+                        if (createResult.Success && createResult.Data != null)
+                        {
+                            var patientDto = createResult.Data;
+                            var patientId = patientDto.PatientId;
+                            
+                            if (patientId > 0)
+                            {
+                                // ایجاد/اتصال بیمه‌ها اگر مشخص شده باشند
+                                if (request.BaseInsurancePlanId.HasValue || request.SupplementaryInsurancePlanId.HasValue)
+                                {
+                                    await facadeImpl.SetPatientInsurancesAsync(patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId);
+                                }
+                                
+                                // دریافت اطلاعات کامل بیمار و بیمه‌ها
+                                var patient = await _context.Patients
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
+                                
+                                var insurances = await facadeImpl.GetAssignedInsurancesForPatient(patientId);
+                                
+                                if (patient != null)
+                                {
+                                    var response = new Controllers.Api.PatientLookupResponseDto
+                                    {
+                                        Identity = new Controllers.Api.PatientIdentityDto
+                                        {
+                                            PatientId = patient.PatientId,
+                                            NationalCode = patient.NationalCode,
+                                            FirstName = patient.FirstName,
+                                            LastName = patient.LastName,
+                                            FatherName = patient.FatherName,
+                                            Mobile = patient.PhoneNumber,
+                                            Phone = null,
+                                            Address = patient.Address,
+                                            Gender = patient.Gender.ToString(),
+                                            BirthDateShamsi = patient.BirthDate?.ToPersianDate() ?? string.Empty
+                                        },
+                                        Insurance = insurances
+                                    };
+                                    
+                                    return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, "بیمار با موفقیت ثبت شد."));
+                                }
+                            }
+                        }
+                        
+                        return Json(ServiceResult.Failed(createResult?.Message ?? "خطا در ثبت بیمار.", "CREATE_FAILED"));
                     }
                 }
                 
@@ -238,8 +304,12 @@ namespace ClinicApp.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger?.Error(ex, "خطا در Patient Lookup");
+                _logger?.Error(ex, "خطا در Patient Lookup-Or-Create");
+#if DEBUG
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+#else
+                return Json(ServiceResult.Failed("خطای غیرمنتظره رخ داد.", "UNHANDLED"));
+#endif
             }
         }
 
@@ -325,6 +395,52 @@ namespace ClinicApp.Controllers.Api
             {
                 _logger?.Error(ex, "خطا در Get Insurance Plans");
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// GET /api/v1/reception/services/by-department
+        /// دریافت خدمات یک دپارتمان
+        /// </summary>
+        [HttpGet, Route("services/by-department")]
+        public async Task<ActionResult> GetServicesByDepartment(int? deptId)
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: دریافت خدمات - DeptId: {DeptId}", deptId);
+
+                if (!deptId.HasValue || deptId.Value <= 0)
+                {
+                    return Json(ServiceResult<object>.Failed("شناسه دپارتمان نامعتبر است.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _facade.GetServicesForDeptAsync(deptId.Value);
+                
+                if (result.Success && result.Data != null)
+                {
+                    // تبدیل به فرمت مورد نیاز frontend
+                    var payload = new
+                    {
+                        services = result.Data.Services.Select(s => new
+                        {
+                            serviceId = s.ServiceId,
+                            serviceCode = s.ServiceCode,
+                            serviceName = s.ServiceName,
+                            price = s.UnitPrice,
+                            unitPriceIRR = s.UnitPrice, // Alias
+                            isActive = s.IsActive
+                        }).ToList()
+                    };
+                    
+                    return Json(ServiceResult<object>.Successful(payload, result.Message ?? "عملیات با موفقیت انجام شد."), JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "خطا در دریافت خدمات");
+                return Json(ServiceResult<object>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
             }
         }
 
