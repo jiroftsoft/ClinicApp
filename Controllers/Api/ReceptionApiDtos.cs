@@ -62,20 +62,28 @@ namespace ClinicApp.Controllers.Api
     }
 
     /// <summary>
-    /// DTO برای ثبت سریع بیمار (Fast Create)
+    /// DTO برای ثبت سریع بیمار (Fast Create) و جستجو (Lookup)
+    /// برای Lookup: فقط NationalCode الزامی است
+    /// برای Quick Create: FirstName, LastName, Mobile نیز الزامی هستند
     /// </summary>
     public class PatientQuickCreateDto
     {
-        [Required, StringLength(10, MinimumLength = 10)]
+        [Required(ErrorMessage = "کد ملی الزامی است."), StringLength(10, MinimumLength = 10, ErrorMessage = "کد ملی باید 10 رقم باشد.")]
         public string NationalCode { get; set; }
         
-        [Required, StringLength(50)]
+        // ✅ Required نیست - فقط برای Quick Create الزامی است (در Controller بررسی می‌شود)
+        [StringLength(50, ErrorMessage = "نام نمی‌تواند بیش از 50 کاراکتر باشد.")]
         public string FirstName { get; set; }
         
-        [Required, StringLength(50)]
+        // ✅ Required نیست - فقط برای Quick Create الزامی است (در Controller بررسی می‌شود)
+        [StringLength(50, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از 50 کاراکتر باشد.")]
         public string LastName { get; set; }
         
-        [Required, StringLength(11)]
+        [StringLength(50, ErrorMessage = "نام پدر نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string FatherName { get; set; }
+        
+        // ✅ Required نیست - فقط برای Quick Create الزامی است (در Controller بررسی می‌شود)
+        [StringLength(11, MinimumLength = 11, ErrorMessage = "شماره موبایل باید 11 رقم باشد.")]
         public string Mobile { get; set; }
         
         public string Gender { get; set; } // "Male"/"Female" یا Enum

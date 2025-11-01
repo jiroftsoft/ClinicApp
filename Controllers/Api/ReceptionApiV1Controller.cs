@@ -221,9 +221,68 @@ namespace ClinicApp.Controllers.Api
                 _logger?.Information("🏥 V1 API: Patient Lookup-Or-Create - NationalCode: {NationalCode}, HasQuickCreateData: {HasData}", 
                     request?.NationalCode, !string.IsNullOrWhiteSpace(request?.FirstName));
 
+                // ✅ بررسی الزامات پایه
                 if (string.IsNullOrWhiteSpace(request?.NationalCode))
                 {
-                    return Json(ServiceResult<PatientLookupResponseDto>.Failed("کد ملی الزامی است.", "VALIDATION"));
+                    return Json(ServiceResult<PatientLookupResponseDto>
+                        .Failed("کد ملی الزامی است.", ReceptionApiCodes.VALIDATION)
+                        .WithValidationError("NationalCode", "کد ملی الزامی است."));
+                }
+
+                // ✅ بررسی اعتبار کد ملی (10 رقم)
+                if (request.NationalCode.Length != 10 || !System.Text.RegularExpressions.Regex.IsMatch(request.NationalCode, @"^\d{10}$"))
+                {
+                    return Json(ServiceResult<PatientLookupResponseDto>
+                        .Failed("کد ملی باید 10 رقم عددی باشد.", ReceptionApiCodes.VALIDATION)
+                        .WithValidationError("NationalCode", "کد ملی باید 10 رقم عددی باشد."));
+                }
+
+                // ✅ بررسی اینکه آیا این Lookup است یا Quick Create
+                bool isQuickCreate = !string.IsNullOrWhiteSpace(request.FirstName) || !string.IsNullOrWhiteSpace(request.LastName);
+
+                // ✅ اگر Quick Create است، فیلدهای الزامی را بررسی کن
+                if (isQuickCreate)
+                {
+                    var validationErrors = new List<ValidationError>();
+
+                    // بررسی ModelState برای فیلدهای دارای StringLength
+                    if (!ModelState.IsValid)
+                    {
+                        var modelErrors = ModelState
+                            .Where(ms => ms.Value.Errors.Any())
+                            .SelectMany(ms => ms.Value.Errors.Select(e => new ValidationError(ms.Key, e.ErrorMessage)))
+                            .ToList();
+                        validationErrors.AddRange(modelErrors);
+                    }
+
+                    // ✅ اعتبارسنجی فیلدهای الزامی برای Quick Create
+                    if (string.IsNullOrWhiteSpace(request.FirstName))
+                    {
+                        validationErrors.Add(new ValidationError("FirstName", "نام الزامی است."));
+                    }
+
+                    if (string.IsNullOrWhiteSpace(request.LastName))
+                    {
+                        validationErrors.Add(new ValidationError("LastName", "نام خانوادگی الزامی است."));
+                    }
+
+                    if (string.IsNullOrWhiteSpace(request.Mobile))
+                    {
+                        validationErrors.Add(new ValidationError("Mobile", "شماره موبایل الزامی است."));
+                    }
+                    else if (!System.Text.RegularExpressions.Regex.IsMatch(request.Mobile, @"^09\d{9}$"))
+                    {
+                        validationErrors.Add(new ValidationError("Mobile", "شماره موبایل باید 11 رقم و با 09 شروع شود."));
+                    }
+
+                    if (validationErrors.Any())
+                    {
+                        _logger?.Warning("🏥 V1 API: Quick Create validation failed - Errors: {Count}", validationErrors.Count);
+                        
+                        return Json(ServiceResult<PatientLookupResponseDto>
+                            .FailedWithValidationErrors("اعتبارسنجی ناموفق", validationErrors)
+                            .WithCode(ReceptionApiCodes.VALIDATION));
+                    }
                 }
 
                 // استفاده مستقیم از ReceptionFacade
@@ -281,17 +340,32 @@ namespace ClinicApp.Controllers.Api
                             return Json(ServiceResult.Failed("بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.", "NOT_FOUND"));
                         }
                         
-                        // اگر اطلاعات هویت آمده (Quick Create)
+                        // ✅ گام ۵: اگر اطلاعات هویت آمده (Quick Create) - با تبدیل بهتر تاریخ
+                        DateTime? birthDate = null;
+                        if (!string.IsNullOrWhiteSpace(request.BirthDateShamsi))
+                        {
+                            try
+                            {
+                                birthDate = Helpers.PersianDateHelper.ToGregorianDate(request.BirthDateShamsi);
+                            }
+                            catch (Exception dateEx)
+                            {
+                                _logger?.Warning(dateEx, "🏥 V1 API: خطا در تبدیل تاریخ شمسی - BirthDateShamsi: {BirthDateShamsi}", request.BirthDateShamsi);
+                                return Json(ServiceResult<PatientLookupResponseDto>
+                                    .Failed($"تاریخ تولد معتبر نیست: {dateEx.Message}", ReceptionApiCodes.VALIDATION)
+                                    .WithValidationError("BirthDateShamsi", $"تاریخ تولد معتبر نیست. فرمت صحیح: yyyy/MM/dd"));
+                            }
+                        }
+
                         var quickCreateDto = new ViewModels.Reception.PatientCreateDto
                         {
                             NationalCode = request.NationalCode,
                             FirstName = request.FirstName,
                             LastName = request.LastName,
+                            FatherName = request.FatherName,
                             PhoneNumber = request.Mobile,
                             Gender = request.Gender,
-                            BirthDate = !string.IsNullOrWhiteSpace(request.BirthDateShamsi) 
-                                ? Helpers.PersianDateHelper.ToGregorianDate(request.BirthDateShamsi) 
-                                : (DateTime?)null,
+                            BirthDate = birthDate,
                             Address = request.Address
                         };
                         

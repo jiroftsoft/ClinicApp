@@ -707,6 +707,7 @@ namespace ClinicApp.Services.Reception
                         NationalCode = dtoIfNotExists.NationalCode,
                         FirstName = dtoIfNotExists.FirstName,
                         LastName = dtoIfNotExists.LastName,
+                        FatherName = dtoIfNotExists.FatherName,
                         PhoneNumber = dtoIfNotExists.PhoneNumber,
                         Email = dtoIfNotExists.Email,
                         BirthDate = dtoIfNotExists.BirthDate,

@@ -33,6 +33,11 @@
               </div>
               
               <div class="col-md-3">
+                <label class="form-label">نام پدر</label>
+                <input id="fc_fatherName" name="FatherName" class="form-control" placeholder="نام پدر بیمار" />
+              </div>
+              
+              <div class="col-md-3">
                 <label class="form-label required">موبایل</label>
                 <input id="fc_mobile" name="Mobile" class="form-control" maxlength="11" placeholder="09123456789" autocomplete="off" />
                 <div class="invalid-feedback">شماره موبایل الزامی است</div>
@@ -73,7 +78,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button id="btnFastCreateSave" type="button" class="btn btn-primary">
+            <button id="btnFastCreateSave" type="button" class="btn btn-primary" data-action="submit-fast-create">
               <i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش
             </button>
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">

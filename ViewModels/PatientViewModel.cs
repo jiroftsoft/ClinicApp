@@ -185,6 +185,10 @@ namespace ClinicApp.ViewModels
         [MaxLength(150, ErrorMessage = "{0} نمی‌تواند بیش از {1} کاراکتر باشد.")]
         public string LastName { get; set; }
 
+        [Display(Name = "نام پدر")]
+        [MaxLength(150, ErrorMessage = "{0} نمی‌تواند بیش از {1} کاراکتر باشد.")]
+        public string FatherName { get; set; }
+
         [Display(Name = "نام کامل")]
         public string FullName => $"{FirstName} {LastName}".Trim();
 

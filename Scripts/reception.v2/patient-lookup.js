@@ -243,13 +243,41 @@
           }
           
           // Show modal
-          const modal = new bootstrap.Modal(document.getElementById('patientFastCreateModal'));
-          modal.show();
+          const modalElement = document.getElementById('patientFastCreateModal');
+          if (!modalElement) {
+            console.error('🏥 V2: ❌ patientFastCreateModal not found in DOM!');
+            toastr.error('مودال ثبت سریع بیمار یافت نشد');
+            return;
+          }
           
-          // Focus on first name field after modal is shown
-          $('#patientFastCreateModal').on('shown.bs.modal', function() {
+          const modal = new bootstrap.Modal(modalElement);
+          
+          // ✅ اطمینان از ثبت event handler بعد از نمایش modal
+          $('#patientFastCreateModal').one('shown.bs.modal', function() {
+            console.log('🏥 V2: Fast Create Modal shown, ensuring event handlers...');
+            
+            // بررسی وجود دکمه
+            const $btn = $('#btnFastCreateSave');
+            if ($btn.length === 0) {
+              console.error('🏥 V2: ❌ btnFastCreateSave not found in DOM after modal shown!');
+            } else {
+              console.log('🏥 V2: ✅ btnFastCreateSave found:', $btn[0]);
+              
+              // ثبت event handler
+              $btn.off('click').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🏥 V2: Fast Create Save button clicked (from openFastCreateModal)', this);
+                submitFastCreate();
+                return false;
+              });
+            }
+            
+            // Focus on first name field
             $('#fc_firstName').focus();
           });
+          
+          modal.show();
         })
         .catch(function(err) {
           console.error('🏥 V2: Error loading insurance plans for modal:', err);
@@ -259,16 +287,56 @@
           if (nc) {
             $('#fc_nationalCode').val(nc);
           }
-          const modal = new bootstrap.Modal(document.getElementById('patientFastCreateModal'));
-          modal.show();
+          const modalElement = document.getElementById('patientFastCreateModal');
+          if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            
+            // ✅ اطمینان از ثبت event handler
+            $('#patientFastCreateModal').one('shown.bs.modal', function() {
+              console.log('🏥 V2: Fast Create Modal shown (fallback), ensuring event handlers...');
+              const $btn = $('#btnFastCreateSave');
+              if ($btn.length > 0) {
+                $btn.off('click').on('click', function(e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🏥 V2: Fast Create Save button clicked (fallback)', this);
+                  submitFastCreate();
+                  return false;
+                });
+              }
+              $('#fc_firstName').focus();
+            });
+            
+            modal.show();
+          }
         });
     } else {
       // اگر insPanel موجود نیست، Modal را بدون بیمه‌ها نشان بده
       if (nc) {
         $('#fc_nationalCode').val(nc);
       }
-      const modal = new bootstrap.Modal(document.getElementById('patientFastCreateModal'));
-      modal.show();
+      const modalElement = document.getElementById('patientFastCreateModal');
+      if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // ✅ اطمینان از ثبت event handler
+        $('#patientFastCreateModal').one('shown.bs.modal', function() {
+          console.log('🏥 V2: Fast Create Modal shown (no insPanel), ensuring event handlers...');
+          const $btn = $('#btnFastCreateSave');
+          if ($btn.length > 0) {
+            $btn.off('click').on('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🏥 V2: Fast Create Save button clicked (no insPanel)', this);
+              submitFastCreate();
+              return false;
+            });
+          }
+          $('#fc_firstName').focus();
+        });
+        
+        modal.show();
+      }
     }
   }
 
@@ -311,17 +379,18 @@
     // Remove invalid classes
     $('#patientFastCreateForm input, #patientFastCreateForm select').removeClass('is-invalid');
     
-    // Prepare payload
+    // ✅ گام ۴: Prepare payload با کلیدهای دقیق هم‌نام با DTO
     const payload = {
       NationalCode: nc,
       FirstName: fn,
       LastName: ln,
+      FatherName: ($('#fc_fatherName').val() || '').trim() || null,
       Mobile: mb,
-      Gender: $('#fc_gender').val() || null,
-      BirthDateShamsi: $('#fc_birth').val() || null,
-      Address: $('#fc_address').val() || null,
-      BaseInsurancePlanId: $('#fc_basePlanId').val() ? parseInt($('#fc_basePlanId').val()) : null,
-      SupplementaryInsurancePlanId: $('#fc_suppPlanId').val() ? parseInt($('#fc_suppPlanId').val()) : null
+      Gender: $('#fc_gender').val() || null, // "Male"/"Female"
+      BirthDateShamsi: ($('#fc_birth').val() || '').trim() || null, // "yyyy/MM/dd" شمسی
+      Address: ($('#fc_address').val() || '').trim() || null,
+      BaseInsurancePlanId: $('#fc_basePlanId').val() ? parseInt($('#fc_basePlanId').val(), 10) : null,
+      SupplementaryInsurancePlanId: $('#fc_suppPlanId').val() ? parseInt($('#fc_suppPlanId').val(), 10) : null
     };
     
     console.log('🏥 V2: Fast Create payload:', payload);
@@ -351,6 +420,53 @@
         const successValue = responseObj?.Success ?? responseObj?.success;
         const isSuccess = successValue === true || successValue === "true" || successValue === 1;
         
+        // ✅ گام ۷: بررسی خطاهای Validation
+        const errorCode = responseObj?.Code || responseObj?.code;
+        if (errorCode === 'VALIDATION_ERROR' || errorCode === 'VALIDATION') {
+          console.log('🏥 V2: Validation error detected, Code:', errorCode);
+          console.log('🏥 V2: Response ValidationErrors:', responseObj?.ValidationErrors || responseObj?.validationErrors);
+          
+          const validationErrors = responseObj?.ValidationErrors || responseObj?.validationErrors || [];
+          
+          console.log('🏥 V2: ValidationErrors parsed:', validationErrors, 'Length:', validationErrors.length);
+          
+          if (validationErrors.length > 0) {
+            // ✅ نمایش هر خطای validation
+            validationErrors.forEach(function(err) {
+              // ✅ ValidationError دارای Field و ErrorMessage است
+              const field = err.Field || err.field || '';
+              const message = err.ErrorMessage || err.Message || err.message || err.errorMessage || '';
+              
+              console.log('🏥 V2: Validation error:', { field, message, fullError: err });
+              
+              // ✅ نمایش پیام خطا با نام فیلد فارسی
+              const fieldNameMap = {
+                'NationalCode': 'کد ملی',
+                'FirstName': 'نام',
+                'LastName': 'نام خانوادگی',
+                'FatherName': 'نام پدر',
+                'Mobile': 'موبایل',
+                'BirthDateShamsi': 'تاریخ تولد',
+                'Address': 'آدرس'
+              };
+              
+              const fieldName = fieldNameMap[field] || field;
+              const displayMessage = message || 'مقدار نامعتبر است';
+              
+              toastr.error(`${fieldName}: ${displayMessage}`, 'خطای اعتبارسنجی', {
+                timeOut: 5000,
+                positionClass: 'toast-top-center',
+                closeButton: true
+              });
+            });
+          } else {
+            const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در اعتبارسنجی اطلاعات';
+            console.warn('🏥 V2: Validation error but no ValidationErrors array:', responseObj);
+            toastr.error(errorMsg, 'خطای اعتبارسنجی');
+          }
+          return;
+        }
+        
         if (!responseObj || !isSuccess) {
           const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت سریع بیمار';
           console.error('🏥 V2: Fast Create failed:', errorMsg, responseObj);
@@ -358,7 +474,7 @@
           return;
         }
         
-        // Extract data
+        // ✅ گام ۶: Extract data و handleLookupOrCreateResponse
         const dto = API.ok(responseObj);
         const identity = dto?.Identity || dto?.identity;
         const insurance = dto?.Insurance || dto?.insurance;
@@ -384,16 +500,16 @@
             modal.hide();
           }
           
-          toastr.success('بیمار با موفقیت ثبت شد');
+          toastr.success('بیمار با موفقیت ثبت/بازیابی شد.');
           
-          // Trigger auto-draft creation
+          // ✅ Trigger auto-draft creation (الان patientId داریم)
           if (window.AutoDraftManager) {
             window.AutoDraftManager.createDraft().catch(err => {
               console.error('🏥 V2: Auto-draft creation error:', err);
             });
           }
           
-          // اگر DraftId موجود است و بیمه‌ها تغییر کرده، Reprice کن
+          // ✅ اگر DraftId موجود است و بیمه‌ها تغییر کرده، Reprice کن
           const receptionId = $('#ReceptionId').val();
           if (receptionId && receptionId > 0 && insurance) {
             console.log('🏥 V2: Draft exists, triggering Reprice after insurance change...');
@@ -494,6 +610,59 @@
   $btnS.on('click', save);
 
   $btnC.on('click', cancelEdit);
+
+  // ✅ جلوگیری از submit فرم در صورت Enter
+  $(document).on('submit', '#patientFastCreateForm', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🏥 V2: Fast Create Form submit prevented');
+    return false;
+  });
+
+  // ✅ Event handler for Fast Create Save button - چند لایه برای اطمینان
+  // روش ۱: Event delegation روی document با data-action (برای عناصر پویا)
+  $(document).on('click', '[data-action="submit-fast-create"], #btnFastCreateSave', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    console.log('🏥 V2: Fast Create Save button clicked (via delegation)', e.target);
+    submitFastCreate();
+    return false;
+  });
+  
+  // روش ۲: مستقیماً روی دکمه (اگر در DOM موجود باشد)
+  $(document).ready(function() {
+    $('#btnFastCreateSave').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🏥 V2: Fast Create Save button clicked (direct)', this);
+      submitFastCreate();
+      return false;
+    });
+    
+    // روش ۳: بعد از نمایش modal (برای Bootstrap modal events)
+    $('#patientFastCreateModal').on('shown.bs.modal', function() {
+      console.log('🏥 V2: Fast Create Modal shown, re-attaching event handlers');
+      var $btn = $('#btnFastCreateSave');
+      $btn.off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🏥 V2: Fast Create Save button clicked (after modal shown)', this);
+        submitFastCreate();
+        return false;
+      });
+      
+      // تست: بررسی وجود دکمه
+      if ($btn.length === 0) {
+        console.error('🏥 V2: ❌ btnFastCreateSave not found in DOM!');
+      } else {
+        console.log('🏥 V2: ✅ btnFastCreateSave found:', $btn[0]);
+      }
+    });
+  });
+  
+  // Export برای تست در console
+  window.submitFastCreate = submitFastCreate;
 
   // Initialize - اگر PatientId وجود دارد، اطلاعات را لود کن
   $(document).ready(function() {

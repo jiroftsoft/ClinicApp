@@ -108,6 +108,43 @@
     const d = $.Deferred();
     const cleanPath = path.replace(/^\//, ''); // Remove leading slash
 
+    // ✅ گام ۲: برای endpoint های /patient/*، fallback را غیرفعال کن
+    const isPatientV1 = /^\/?patient\//i.test(path);
+    
+    if (isPatientV1) {
+      // فقط v1 را بزن؛ به legacy نرو
+      $.ajax({
+        url: stamp(baseV1 + '/' + cleanPath),
+        type: method,
+        data: method === 'GET' ? undefined : JSON.stringify(data || {}),
+        contentType: method === 'GET' ? undefined : 'application/json; charset=utf-8',
+        dataType: 'json',
+        cache: false,
+        headers: headers(method)
+      })
+      .done(res => {
+        if (!handleErrorJson(res)) {
+          d.resolve(res);
+        } else {
+          d.resolve(res);
+        }
+      })
+      .fail(jq => {
+        try {
+          if (jq.responseJSON) {
+            if (handleErrorJson(jq.responseJSON)) {
+              d.resolve(jq.responseJSON);
+              return;
+            }
+          }
+        } catch (e) {
+          // Ignore
+        }
+        d.reject(jq);
+      });
+      return d.promise();
+    }
+
     $.ajax({
       url: stamp(baseV1 + '/' + cleanPath),
       type: method,
