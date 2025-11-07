@@ -133,5 +133,24 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<Controllers.Api.PricePreviewResultDto>> PreviewItemPriceAsync(Controllers.Api.PricePreviewRequestDto request);
 
         #endregion
+
+        #region Edit Operations
+
+        /// <summary>
+        /// بارگذاری پذیرش برای ویرایش
+        /// </summary>
+        Task<ServiceResult<ReceptionEditLoadDto>> LoadReceptionForEditAsync(int receptionId);
+
+        /// <summary>
+        /// به‌روزرسانی پذیرش
+        /// </summary>
+        Task<ServiceResult<UpdateReceptionResponse>> UpdateReceptionAsync(UpdateReceptionRequest request);
+
+        /// <summary>
+        /// لغو پذیرش
+        /// </summary>
+        Task<ServiceResult<CancelReceptionResponse>> CancelReceptionAsync(CancelReceptionRequest request);
+
+        #endregion
     }
 }

@@ -33,7 +33,7 @@
     <OutputPath>bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -4299,6 +4299,7 @@
     <Content Include="Docs\RECEPTION_V2_FINALIZATION_REPORT.md" />
     <Content Include="Docs\RECEPTION_V2_FORM_AUDIT_REPORT.md" />
     <Content Include="Docs\RECEPTION_V2_VIEWS_COMPREHENSIVE_REVIEW.md" />
+    <Content Include="Docs\reception-v2-readiness.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4506,6 +4507,8 @@
     <Content Include="Scripts\reception.v2\payment-panel.js" />
     <Content Include="Scripts\reception.v2\pricing-ui.js" />
     <Content Include="Scripts\reception.v2\reception-api.js" />
+    <Content Include="Scripts\reception.v2\reception-edit.js" />
+    <Content Include="Scripts\reception.v2\reception-list.js" />
     <Content Include="Scripts\reception.v2\reception-main.js" />
     <Content Include="Scripts\reception.v2\reception-utils.js" />
     <Content Include="Scripts\reception.v2\service-lookup.js" />
@@ -4662,6 +4665,7 @@
     <Content Include="Views\ReceptionV2\ReceptionList\Index.cshtml" />
     <Content Include="Views\ReceptionV2\PrintInsurance.cshtml" />
     <Content Include="Views\Shared\_PrintLayout.cshtml" />
+    <Content Include="Views\ReceptionV2\Edit.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

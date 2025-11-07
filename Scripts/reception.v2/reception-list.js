@@ -403,6 +403,21 @@
                                         <i class="fas fa-file-invoice"></i>
                                     </button>
                                 ` : ''}
+                                ${item.Status === 0 || item.Status === 'Pending' ? `
+                                    <button type="button" class="btn btn-primary btn-edit-reception" 
+                                            data-reception-id="${item.ReceptionId}"
+                                            title="ویرایش پذیرش">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                ` : ''}
+                                ${(item.Status === 0 || item.Status === 'Pending' || item.Status === 1 || item.Status === 'Completed') && item.Status !== 2 && item.Status !== 'Cancelled' ? `
+                                    <button type="button" class="btn btn-danger btn-cancel-reception" 
+                                            data-reception-id="${item.ReceptionId}"
+                                            data-paid-amount="${item.PaidAmount || 0}"
+                                            title="لغو پذیرش">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                ` : ''}
                                 <button type="button" class="btn btn-secondary btn-view-details" 
                                         data-reception-id="${item.ReceptionId}"
                                         title="مشاهده جزئیات">
@@ -494,6 +509,19 @@
             $('.btn-print-insurance').off('click').on('click', function() {
                 const receptionId = $(this).data('reception-id');
                 handlePrintInsurance(receptionId);
+            });
+
+            // ویرایش پذیرش
+            $('.btn-edit-reception').off('click').on('click', function() {
+                const receptionId = $(this).data('reception-id');
+                window.location.href = `/ReceptionV2/reception/edit/${receptionId}`;
+            });
+
+            // لغو پذیرش
+            $('.btn-cancel-reception').off('click').on('click', function() {
+                const receptionId = $(this).data('reception-id');
+                const paidAmount = parseFloat($(this).data('paid-amount')) || 0;
+                handleCancelReception(receptionId, paidAmount);
             });
 
             // مشاهده جزئیات
@@ -745,6 +773,164 @@
         function handleViewDetails(receptionId) {
             // TODO: Implement view details
             toastr.info('مشاهده جزئیات - در حال توسعه');
+        }
+
+        /**
+         * لغو پذیرش
+         */
+        function handleCancelReception(receptionId, paidAmount) {
+            console.log('🚫 Reception List: Cancel reception', { receptionId, paidAmount });
+
+            // نمایش مودال لغو
+            showCancelModal(receptionId, paidAmount);
+        }
+
+        /**
+         * نمایش مودال لغو پذیرش
+         */
+        function showCancelModal(receptionId, paidAmount) {
+            const hasPayment = paidAmount > 0;
+            const paymentWarning = hasPayment 
+                ? `<div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار:</strong> این پذیرش دارای پرداخت به مبلغ <strong>${formatIRR(paidAmount)}</strong> است.
+                    با لغو این پذیرش، مبلغ پرداخت شده باید برگشت داده شود.
+                </div>`
+                : '';
+
+            const modalHtml = `
+                <div class="modal fade" id="cancelReceptionModal" tabindex="-1" aria-labelledby="cancelReceptionModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="cancelReceptionModalLabel">
+                                    <i class="fas fa-ban me-2"></i>لغو پذیرش
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${paymentWarning}
+                                <div class="mb-3">
+                                    <label for="cancelReason" class="form-label">
+                                        دلیل لغو <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="cancelReason" rows="4" 
+                                              placeholder="لطفاً دلیل لغو پذیرش را به صورت کامل وارد کنید (حداقل 10 کاراکتر)"
+                                              required></textarea>
+                                    <small class="form-text text-muted">حداقل 10 کاراکتر الزامی است</small>
+                                </div>
+                                ${hasPayment ? `
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="processRefund" checked>
+                                        <label class="form-check-label" for="processRefund">
+                                            برگشت وجه پرداخت شده
+                                        </label>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                <button type="button" class="btn btn-danger" id="btnConfirmCancel">
+                                    <i class="fas fa-ban me-1"></i>لغو پذیرش
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // حذف مودال قبلی اگر وجود دارد
+            $('#cancelReceptionModal').remove();
+
+            // اضافه کردن مودال به DOM
+            $('body').append(modalHtml);
+
+            // نمایش مودال
+            const modal = new bootstrap.Modal(document.getElementById('cancelReceptionModal'));
+            modal.show();
+
+            // Event handler برای تایید لغو
+            $('#btnConfirmCancel').off('click').on('click', function() {
+                const reason = $('#cancelReason').val().trim();
+                const processRefund = $('#processRefund').is(':checked');
+
+                if (!reason || reason.length < 10) {
+                    toastr.error('لطفاً دلیل لغو را به صورت کامل وارد کنید (حداقل 10 کاراکتر)', 'خطا');
+                    $('#cancelReason').focus();
+                    return;
+                }
+
+                if (hasPayment && !processRefund) {
+                    toastr.error('برای لغو پذیرش با پرداخت، باید برگشت وجه انجام شود', 'خطا');
+                    return;
+                }
+
+                // غیرفعال کردن دکمه
+                $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال لغو...');
+
+                // ارسال درخواست لغو
+                cancelReceptionRequest(receptionId, reason, processRefund, modal);
+            });
+
+            // پاک کردن مودال هنگام بسته شدن
+            $('#cancelReceptionModal').on('hidden.bs.modal', function() {
+                $(this).remove();
+            });
+        }
+
+        /**
+         * ارسال درخواست لغو پذیرش
+         */
+        function cancelReceptionRequest(receptionId, reason, processRefund, modal) {
+            const API = window.ReceptionAPI || window.API || {};
+            const baseUrl = '/api/v1/reception';
+
+            const request = {
+                ReceptionId: receptionId,
+                Reason: reason,
+                ProcessRefund: processRefund,
+                RefundReason: processRefund ? reason : null
+            };
+
+            console.log('🚫 Reception List: Sending cancel request:', request);
+
+            $.ajax({
+                url: `${baseUrl}/cancel`,
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    console.log('🚫 Reception List: Cancel response:', response);
+
+                    if (!response || !response.Success) {
+                        const errorMsg = response?.Message || 'خطا در لغو پذیرش';
+                        toastr.error(errorMsg, 'خطا');
+                        $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                        return;
+                    }
+
+                    // بستن مودال
+                    modal.hide();
+
+                    // نمایش پیام موفقیت
+                    const message = response.Data?.Message || 'پذیرش با موفقیت لغو شد';
+                    toastr.success(message, 'موفق');
+
+                    // رفرش لیست
+                    setTimeout(function() {
+                        loadReceptionList(currentPage);
+                    }, 1000);
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Reception List: Error canceling reception:', error);
+                    toastr.error('خطا در لغو پذیرش', 'خطا');
+                    $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                }
+            });
         }
 
         // Event handlers - بهینه‌سازی شده برای محیط درمانی

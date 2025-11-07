@@ -1,485 +1,363 @@
-# 📋 **فهرست‌برداری پروژه ClinicApp**
+# 📋 **فهرست‌برداری جامع پروژه ClinicApp - Reception V2 Focus**
 
-**تاریخ ایجاد:** 2024  
-**هدف:** فهرست‌برداری جامع از ساختار پروژه، وابستگی‌ها و قراردادها
-
----
-
-## 📁 **ساختار پروژه**
-
-### **1️⃣ Models/** (122 فایل)
-
-#### **Entities/** (48 موجودیت)
-- `Models/Entities/Clinic/` - Clinic, Department, Service, ServiceCategory, ServiceTemplate, ServiceComponent, SharedService, FactorSetting
-- `Models/Entities/Patient/` - Patient, PatientInsurance, MedicalHistory
-- `Models/Entities/Doctor/` - Doctor, Specialization, DoctorSchedule, DoctorAssignmentHistory, DoctorTimeSlot, DoctorDepartment, DoctorWorkDay, DoctorTimeRange, ScheduleTemplate, ScheduleException, DoctorServiceCategory, DoctorSpecialization
-- `Models/Entities/Reception/` - Reception, ReceptionItem
-- `Models/Entities/Insurance/` - InsuranceProvider, InsurancePlan, PlanService, InsuranceTariff, InsuranceCalculation, BusinessRule, InsuranceType
-- `Models/Entities/Payment/` - PaymentTransaction, OnlinePayment, PosTerminal, PaymentGateway, CashSession
-- `Models/Entities/Triage/` - TriageProtocol, TriageAssessment, TriageQueue, TriageVitalSigns, TriageReassessment
-- `Models/Entities/Appointment/` - Appointment, AppointmentSlot
-- `Models/Entities/Notification/` - NotificationHistory, NotificationTemplate
-- `Models/Entities/Receipt/` - ReceiptPrint
-- `Models/Entities/Report/` - Report
-
-#### **Core/** (Interfaces & Base Classes)
-- `ApplicationUser` (extends IdentityUser)
-- `ISoftDelete`
-- `ITrackable`
-- `AuditableEntity`
-
-#### **Enums/** (37 فایل)
-- Gender, ReceptionStatus, ReceptionType, PaymentStatus, PaymentMethod
-- InsuranceCalculationType, InsurancePriority, InsuranceType
-- PosProtocol, PosProviderType, PaymentGatewayType, OnlinePaymentType
-- ServiceComponentType, ServicePriceCalculationType, FactorScope
-- TriageEnums, AppointmentStatus, AppointmentType, AppointmentPriority, AppointmentSlotStatus
-- CashSessionStatus, OnlinePaymentStatus
-- EmergencyType, EmergencyPriority, EmergencyConflictSeverity, EmergencyBookingStatus
-- WorkloadBalanceStatus, WorkLifeBalanceStatus
-- NotificationStatus, NotificationChannelType
-- ShiftType, BreakType, TemplateType, ExceptionType
-- ReportType, Degree, AssignmentHistoryImportance, MedicalHistoryType
-
-#### **ViewModels/** (236 فایل)
-- `ViewModels/Reception/**` - ReceptionFormVM, ReceptionDraftDtos, ReceptionFacadeDtos, SidebarModels, PaymentStatus, ...
+**تاریخ ایجاد:** 2025-01-27  
+**هدف:** فهرست‌برداری جامع از ساختار پروژه با تمرکز بر ماژول Reception V2  
+**نسخه:** 2.0.0
 
 ---
 
-### **2️⃣ Controllers/** (83 فایل)
+## 📁 **ساختار پروژه - Reception V2 Focus**
 
-#### **Reception/** (20 کنترلر)
-- `ReceptionController.cs` (Legacy)
-- `ReceptionControllerV2.cs` (V2 در Controllers/Reception)
-- `ReceptionV2/ReceptionControllerV2.cs` (V2 در Controllers/ReceptionV2)
-- `ReceptionFacadeController.cs`
-- `ReceptionAlertController.cs`
-- `ReceptionCalculationController.cs`
-- `ReceptionDepartmentController.cs`
-- `ReceptionDepartmentDoctorController.cs`
-- `ReceptionFormController.cs`
-- `ReceptionHistoryController.cs`
-- `ReceptionInsuranceAutoController.cs`
-- `ReceptionInsuranceController.cs`
-- `ReceptionInsuranceFormController.cs`
-- `ReceptionListController.cs`
-- `ReceptionPatientController.cs`
-- `ReceptionPatientIdentityController.cs`
-- `ReceptionPatientSearchController.cs`
-- `ReceptionPaymentController.cs`
-- `ReceptionServiceController.cs`
-- `ReceptionServiceManagementController.cs`
-- `ReceptionStatisticsController.cs`
-- `ReceptionTriageIntegrationController.cs`
+### **1️⃣ Route/Filters/DI Configuration**
 
-#### **Api/** (7 کنترلر)
-- `ReceptionApiController.cs` (با RoutePrefix("api/v1/reception"))
-- `ReceptionApiDtos.cs`
-- `ClinicController.cs`
-- `DoctorController.cs`
-- `InsuranceController.cs`
-- `PatientController.cs`
-- `ServiceController.cs`
+#### **Route Configuration**
+- ✅ `App_Start/RouteConfig.cs` - Attribute Routing فعال (`routes.MapMvcAttributeRoutes()`)
+  - Route Prefix: `api/v1/reception` برای `ReceptionApiV1Controller`
+  - Legacy Fallback: `/Api/ReceptionApi/*` برای سازگاری با کد قدیمی
+  - Reception V2 Routes: `/reception/v2`, `/ReceptionV2/ReceptionList/*`
 
-#### **Payment/** (4 کنترلر)
-- `PaymentController.cs`
-- `Payment/Gateway/PaymentGatewayController.cs`
-- `Payment/POS/PosManagementController.cs`
-- `Payment/POS/PosTerminalApiController.cs`
+#### **Dependency Injection**
+- ✅ `App_Start/UnityConfig.cs` - Unity Container Configuration
+  - ثبت `IReceptionFacade` → `ReceptionFacade`
+  - ثبت `IReceptionPricingService` → `ReceptionPricingService`
+  - ثبت `ILogger` → `Serilog.ILogger`
+  - ثبت `IPosTerminalRepository` → `PosTerminalRepository`
+  - ثبت `IPaymentTransactionRepository` → `PaymentTransactionRepository`
+  - ثبت `IPosManagementService` → `PosManagementService`
 
-#### **Triage/** (6 کنترلر)
-- `TriageController.cs`
-- `TriageDashboardController.cs`
-- `TriageProtocolController.cs`
-- `TriageQueueController.cs`
-- `TriageReassessmentController.cs`
-- `TriageReportController.cs`
-
-#### **Base/** (2 کنترلر)
-- `BaseController.cs`
-- `Base/OptimizedBaseController.cs`
-- `Base/PersianDateController.cs`
-
-#### **Areas/Admin/** (35+ کنترلر)
-- Service Management, Insurance Management, Doctor Management, Clinic Management, ...
+#### **Filters**
+- ✅ `Filters/ValidateAntiForgeryTokenOnPostsAttribute.cs` - CSRF Validation برای POST/PUT/DELETE
+  - پشتیبانی از Header Token: `RequestVerificationToken` یا `X-RequestVerificationToken`
+  - پاسخ JSON 400 با کد `ANTIFORGERY_MISSING` در Dev
+- ✅ `Filters/NoCacheFilter.cs` - Zero Cache برای محیط درمانی
+- ✅ `Filters/GlobalExceptionFilter.cs` - مدیریت خطاهای سراسری
+- ✅ `Filters/CultureFilter.cs` - مدیریت Culture فارسی
 
 ---
 
-### **3️⃣ Services/** (123 فایل)
+### **2️⃣ Reception V2 - Controllers**
 
-#### **Reception/** (25+ سرویس)
-- `ReceptionFacade.cs` (Orchestrator اصلی)
-- `ReceptionWorkflowService.cs`
-- `ReceptionEventHandler.cs`
-- `ReceptionStateMachine.cs`
-- `ReceptionServiceManagementService.cs`
-- `ReceptionSecurityService.cs`
-- `ReceptionPaymentService.cs`
-- `ReceptionPatientIdentityService.cs`
-- `ReceptionNavigationService.cs`
-- `ReceptionInsuranceAutoService.cs`
-- `ReceptionInformationService.cs`
-- `ReceptionFormService.cs`
-- `ReceptionDomainService.cs`
-- `ReceptionDepartmentService.cs`
-- `ReceptionDepartmentDoctorService.cs`
-- `ReceptionCalculationService.cs`
-- `ReceptionBusinessRulesEngine.cs`
-- `ReceptionBusinessRules.cs`
-- `ReceptionPatientService.cs`
-- `ReceptionSidebarService.cs`
-- `ReceptionTriageIntegrationService.cs`
-- `ReceptionValidationOrchestrator.cs`
-- `ReceptionTransitionRules.cs`
-- `MedicalEmergencyService.cs`
-- `EventStore.cs`
-- Event Handlers: `SmsNotificationEventHandler`, `PushNotificationEventHandler`, `PaymentProcessingEventHandler`, `PatientValidationEventHandler`, `NotificationSendingEventHandler`, `InsuranceValidationEventHandler`, `EmailNotificationEventHandler`, `AuditLoggingEventHandler`, `AnalyticsEventHandler`
+#### **API Controllers**
+- ✅ `Controllers/Api/ReceptionApiV1Controller.cs` - API V1 پذیرش
+  - Route Prefix: `[RoutePrefix("api/v1/reception")]`
+  - Endpoints:
+    - `GET /api/v1/reception/health`
+    - `GET /api/v1/reception/bootstrap?clinicId=&deptId=`
+    - `POST /api/v1/reception/draft/create`
+    - `POST /api/v1/reception/patient/lookup-or-create`
+    - `POST /api/v1/reception/item/add`
+    - `POST /api/v1/reception/item/update`
+    - `POST /api/v1/reception/item/remove`
+    - `POST /api/v1/reception/insurances/set`
+    - `GET /api/v1/reception/totals`
+    - `POST /api/v1/reception/finalize/pos`
+    - `POST /api/v1/reception/finalize/cash`
+    - `GET /api/v1/reception/doctors/by-department?deptId=`
+    - `GET /api/v1/reception/doctors/by-service?deptId=&serviceId=`
+- ✅ `Controllers/Api/ReceptionApiController.cs` - Legacy API (Fallback)
+- ✅ `Controllers/Api/ReceptionApiDtos.cs` - DTOs برای API
 
-#### **Insurance/** (20+ سرویس)
-- `InsuranceCalculationService.cs`
-- `InsuranceTariffCalculationService.cs`
-- `CombinedInsuranceCalculationService.cs`
-- `ServiceCalculationEngine.cs`
-- `InsurancePlanSuggestionService.cs`
-- `InsuranceRulesService.cs`
-- `InsuranceTariffService.cs`
-- `InsuranceProviderService.cs`
-- `InsurancePlanService.cs`
-- `InsuranceValidationService.cs`
-- `PatientInsuranceService.cs`
-- `PatientInsuranceManagementService.cs`
-- `PatientInsuranceValidationService.cs`
-- `TariffDomainValidationService.cs`
-- `SupplementaryInsuranceService.cs`
-- `SupplementaryInsuranceOptimizationService.cs`
-- `SupplementaryInsuranceMonitoringService.cs`
-- `SupplementaryInsuranceDataFixService.cs`
-- `SupplementaryCombinationService.cs`
-- `AdvancedInsuranceCalculationService.cs`
-- `BusinessRuleEngine.cs`
-- `BulkInsuranceTariffService.cs`
-- `BulkSupplementaryTariffService.cs`
-- `CorrectSupplementaryInsuranceCalculationService.cs`
-- `CombinedInsuranceCalculationTestService.cs`
-- `SupplementaryTariffSeederService.cs`
-
-#### **Payment/** (5 سرویس)
-- `PaymentService.cs`
-- `Payment/Gateway/PaymentGatewayService.cs`
-- `Payment/Web/WebPaymentService.cs`
-- `Payment/POS/PosManagementService.cs`
-- `Payment/Reporting/PaymentReportingService.cs`
-
-#### **Finance/** (2 سرویس)
-- `Finance/DbFinancialYearService.cs` (پیاده‌سازی IFinancialYearService)
-- `Finance/InsuranceTariffCalculationService.cs`
-
-#### **Triage/** (4 سرویس)
-- `Triage/TriageService.cs`
-- `Triage/TriageQueueService.cs`
-- `Triage/TriageWorkflowIntegration.cs`
-
-#### **SystemSettings/** (2 سرویس)
-- `SystemSettings/SystemSettingService.cs`
-- `SystemSettings/ISystemSettingService.cs`
-
-#### **UserContext/** (2 سرویس)
-- `UserContext/UserContextService.cs`
-- `UserContext/IUserContextService.cs`
-
-#### **Idempotency/** (2 سرویس)
-- `Idempotency/InMemoryIdempotencyService.cs`
-- `Idempotency/IIdempotencyService.cs`
-
-#### **DataSeeding/** (6 سرویس)
-- `DataSeeding/SystemSeedService.cs`
-- `DataSeeding/ServiceSeedService.cs`
-- `DataSeeding/ServiceTemplateSeedService.cs`
-- `DataSeeding/InsuranceTypeUpdateService.cs`
-- `DataSeeding/FactorSettingSeedService.cs`
-
-#### **دیگر سرویس‌ها**
-- `ServiceCalculationService.cs`
-- `ServiceService.cs`
-- `ServiceCategoryService.cs`
-- `ServiceManagementService.cs`
-- `DepartmentManagementService.cs`
-- `PatientService.cs`
-- `ReceptionService.cs`
-- `CurrentUserService.cs`
-- `BackgroundCurrentUserService.cs`
-- `ShiftHelperService.cs`
-- `ShiftInfo.cs`
-- `Calculation/TariffCalculator.cs`
+#### **MVC Controllers**
+- ✅ `Controllers/ReceptionV2/ReceptionControllerV2.cs` - Controller اصلی V2
+  - Route: `/reception/v2` یا `/ReceptionV2`
+  - Actions: `Index()`, `Edit(int id)`, `Print(int id)`
+- ✅ `Controllers/ReceptionV2/ReceptionListV2Controller.cs` - لیست پذیرش‌ها
+  - Route: `/ReceptionV2/ReceptionList/*`
 
 ---
 
-### **4️⃣ Repositories/** (40 فایل)
+### **3️⃣ Reception V2 - Services**
 
-#### **Reception/**
-- `ReceptionRepository.cs` (Base)
-- `Reception/OptimizedReceptionRepository.cs`
-- `Reception/ClinicManagementRepository.cs`
-- `Reception/DoctorManagementRepository.cs`
-- `Reception/ShiftManagementRepository.cs`
-- `Reception/IShiftManagementRepository.cs`
-- `Reception/IClinicManagementRepository.cs`
-- `Reception/IDoctorManagementRepository.cs`
+#### **Core Services**
+- ✅ `Services/Reception/ReceptionFacade.cs` - Orchestrator اصلی
+  - Interface: `Interfaces/Reception/IReceptionFacade.cs`
+  - وابستگی‌ها:
+    - `IServiceCalculationService`
+    - `ServiceCalculationEngine`
+    - `ICombinedInsuranceCalculationService`
+    - `IReceptionWorkflowService`
+    - `IDepartmentManagementService`
+    - `IPatientService`
+    - `IPatientInsuranceService`
+    - `IPosManagementService`
+    - `IReceptionRepository`
+    - `ICurrentUserService`
+    - `IFinancialYearService`
+    - `InsurancePlanSuggestionService`
+    - `IFactorSettingService`
+    - `IPricingEngine`
+    - `IReceptionPricingService`
+- ✅ `Services/Reception/ReceptionPricingService.cs` - سرویس Pricing
+  - Interface: `Interfaces/Reception/IReceptionPricingService.cs`
+  - متدهای کلیدی:
+    - `PriceItemAsync(item)` - محاسبه قیمت یک آیتم
+    - `RepriceAllAsync(draftId)` - بازمحاسبه تمام آیتم‌ها
+    - `CalculateTotalsAsync(draftId)` - محاسبه مجموع‌ها
+    - `CheckInsuranceSetAsync(serviceId, basePlanId, suppPlanId)` - بررسی تعیین‌ست
 
-#### **Patient/**
-- `Patient/PatientRepository.cs`
-
-#### **Insurance/**
-- `Insurance/PatientInsuranceRepository.cs`
-- `Insurance/InsuranceProviderRepository.cs`
-- `Insurance/InsurancePlanRepository.cs`
-- `Insurance/PlanServiceRepository.cs`
-- `Insurance/InsuranceTariffRepository.cs`
-- `Insurance/InsuranceCalculationRepository.cs`
-- `Insurance/BusinessRuleRepository.cs`
-
-#### **Payment/**
-- `Payment/PaymentTransactionRepository.cs`
-- `Payment/OnlinePaymentRepository.cs`
-- `Payment/Gateway/PaymentGatewayRepository.cs`
-- `Payment/POS/PosTerminalRepository.cs`
-- `Payment/POS/CashSessionRepository.cs`
-
-#### **ClinicAdmin/**
-- `ClinicAdmin/DoctorAssignmentRepository.cs`
-- `ClinicAdmin/DoctorDashboardRepository.cs`
-- `ClinicAdmin/DoctorReportingRepository.cs`
-- `ClinicAdmin/DoctorServiceCategoryRepository.cs`
-- `ClinicAdmin/DoctorScheduleRepository.cs`
-- `ClinicAdmin/DoctorDepartmentRepository.cs`
-- `ClinicAdmin/DoctorAssignmentHistoryRepository.cs`
-- `ClinicAdmin/IDoctorAssignmentHistoryRepository.cs`
-- `ClinicAdmin/SpecializationRepository.cs`
-- `ClinicAdmin/DoctorCrudRepository.cs`
-
-#### **Base/**
-- `Base/BaseRepository.cs`
-
-#### **دیگر**
-- `ServiceRepository.cs`
-- `ServiceCategoryRepository.cs`
-- `DepartmentRepository.cs`
-- `ClinicRepository.cs`
-
-#### **Interfaces/**
-- `Interfaces/Repositories/IPatientRepository.cs`
-- `Interfaces/Repositories/IDoctorRepository.cs`
-- `Interfaces/Repositories/IPaymentRepository.cs`
-- `Interfaces/Repositories/IInsuranceRepository.cs`
+#### **Supporting Services**
+- ✅ `Services/Reception/ReceptionWorkflowService.cs` - Workflow Management
+- ✅ `Services/Reception/ReceptionDepartmentDoctorService.cs` - مدیریت پزشک/دپارتمان
+- ✅ `Services/Reception/ReceptionServiceManagementService.cs` - مدیریت خدمات
+- ✅ `Services/Reception/ReceptionPaymentService.cs` - مدیریت پرداخت
+- ✅ `Services/Reception/ReceptionCalculationService.cs` - محاسبات پذیرش
 
 ---
 
-### **5️⃣ Views/** (77 فایل .cshtml)
+### **4️⃣ Reception V2 - Repositories**
 
-#### **Reception/**
-- Legacy Views در `Views/Reception/`
-- `Views/ReceptionV2/Index.cshtml` (V2)
-- `Views/ReceptionV2/Print.cshtml`
-- `Views/ReceptionV2/Partials/` - _ClinicDept.cshtml, _Insurance.cshtml, _ItemsGrid.cshtml, _Patient.cshtml, _Payment.cshtml, _ServicePicker.cshtml, _Totals.cshtml
+#### **Core Repositories**
+- ✅ `Repositories/ReceptionRepository.cs` - Repository اصلی پذیرش
+  - Interface: `Interfaces/Repositories/IReceptionRepository.cs`
+- ✅ `Repositories/Reception/OptimizedReceptionRepository.cs` - نسخه بهینه‌شده
+- ✅ `Repositories/Patient/PatientRepository.cs` - Repository بیمار
+  - Interface: `Interfaces/Repositories/IPatientRepository.cs`
+- ✅ `Repositories/Insurance/PatientInsuranceRepository.cs` - Repository بیمه بیمار
+  - Interface: `Interfaces/Insurance/IPatientInsuranceRepository.cs`
 
----
-
-### **6️⃣ Scripts/** (187 فایل)
-
-#### **reception.v2/** (11 فایل)
-- `reception-api.js` (Wrapper با fallback + Anti-Forgery)
-- `reception-main.js`
-- `reception-utils.js`
-- `patient-lookup.js`
-- `clinic-dept-doctor.js`
-- `service-lookup.js`
-- `insurance-panel.js`
-- `payment-panel.js`
-- `auto-draft-manager.js`
-- `totals-panel.js`
-- `form-change-detector.js`
-
-#### **reception/** (Legacy)
-- `reception-main.js`
-- `reception-modules.js`
-- `modules/payment-processing.js`
-- ...
+#### **Supporting Repositories**
+- ✅ `Repositories/Reception/ClinicManagementRepository.cs` - مدیریت کلینیک
+- ✅ `Repositories/Reception/DoctorManagementRepository.cs` - مدیریت پزشک
+- ✅ `Repositories/Reception/ShiftManagementRepository.cs` - مدیریت شیفت
 
 ---
 
-### **7️⃣ App_Start/** (10 فایل)
+### **5️⃣ Insurance/Tariff Services**
 
-- `RouteConfig.cs` (Attribute Routing + Legacy Routes)
-- `BundleConfig.cs`
-- `FilterConfig.cs`
-- `UnityConfig.cs` (DI Container Registration)
-- `IdentityConfig.cs`
-- `Startup.Auth.cs`
-- `UnityMvcActivator.cs`
-- `IdentitySeed.cs`
-- `DataSeeding/` (6 فایل Seed)
+#### **Insurance Calculation Services**
+- ✅ `Services/Insurance/InsuranceCalculationService.cs`
+  - Interface: `Interfaces/Insurance/IInsuranceCalculationService.cs`
+- ✅ `Services/Insurance/InsuranceTariffCalculationService.cs`
+  - Interface: `Interfaces/IInsuranceTariffCalculationService.cs`
+- ✅ `Services/Insurance/CombinedInsuranceCalculationService.cs`
+  - Interface: `Interfaces/Insurance/ICombinedInsuranceCalculationService.cs`
+- ✅ `Services/Insurance/ServiceCalculationEngine.cs` - موتور محاسبه خدمات
+- ✅ `Services/Insurance/BusinessRuleEngine.cs` - موتور قوانین کسب‌وکار
+  - Interface: `Interfaces/Insurance/IBusinessRuleEngine.cs`
+  - Repository: `Repositories/Insurance/BusinessRuleRepository.cs`
 
----
+#### **Insurance Plan Services**
+- ✅ `Services/Insurance/InsurancePlanService.cs`
+  - Interface: `Interfaces/Insurance/IInsurancePlanService.cs`
+  - Repository: `Repositories/Insurance/InsurancePlanRepository.cs`
+- ✅ `Services/Insurance/PatientInsuranceService.cs`
+  - Interface: `Interfaces/Insurance/IPatientInsuranceService.cs`
+  - Repository: `Repositories/Insurance/PatientInsuranceRepository.cs`
 
-### **8️⃣ Helpers/** (35 فایل)
+#### **Tariff Services**
+- ✅ `Services/Insurance/InsuranceTariffService.cs`
+  - Interface: `Interfaces/Insurance/IInsuranceTariffService.cs`
+  - Repository: `Repositories/Insurance/InsuranceTariffRepository.cs`
 
-- `ServiceResult.cs`
-- `ValidationResult.cs`
-- `SecurityValidationResult.cs`
-- `PersianDateHelper.cs`
-- `PersianDatePickerHelper.cs`
-- `CultureHelper.cs`
-- `PhoneNumberHelper.cs`
-- `PhoneNumberValidator.cs`
-- `IranianNationalCodeValidator.cs`
-- `InsurancePriorityHelper.cs`
-- `AgeCalculationHelper.cs`
-- `LoggingHelper.cs`
-- `StructuredLogger.cs`
-- `AppHelper.cs`
-- `AppSettings.cs`
-- `ApplicationVersion.cs`
-- `DynamicSqlHelper.cs`
-- `DynamicSqlConfiguration.cs`
-- `SafeSqlBuilder.cs`
-- `RegexHelper.cs`
-- `ErrorMessageHelper.cs`
-- `HtmlHelpers.cs`
-- `IdentityExtensions.cs`
-- `ReceptionAjaxHelper.cs`
-- `RateLimiter.cs`
-- `SystemUsers.cs`
-- `AntiForgeryTokenHelper.cs`
-- `Insurance/` (Helper classes)
-- `Security/` (Helper classes)
-- `Validation/` (Helper classes)
-- `MedicalReportExcelGenerator.cs`
+#### **Supplementary Insurance Services**
+- ✅ `Services/Insurance/SupplementaryInsuranceService.cs`
+  - Interface: `Interfaces/Insurance/ISupplementaryInsuranceService.cs`
+- ✅ `Services/Insurance/CorrectSupplementaryInsuranceCalculationService.cs`
+  - Interface: `Interfaces/Insurance/ISupplementaryInsuranceCalculationService.cs`
 
 ---
 
-### **9️⃣ Filters/** (12 فایل)
+### **6️⃣ Doctor/Department Services**
 
-- `NoCacheAttribute.cs`
-- `NoCacheFilter.cs`
-- `NoStoreAttribute.cs`
-- `CultureFilter.cs`
-- `CorrelationIdFilter.cs`
-- `GlobalExceptionFilter.cs`
-- `RequestTimingFilter.cs`
-- `ValidateAntiForgeryTokenOnPostsAttribute.cs`
-- `PersianDateAttribute.cs`
-- `CheckProfileCompletionAttribute.cs`
-- `MedicalEnvironmentFilter.cs`
-- `ReceptionExportHelper.cs`
+#### **Doctor Services**
+- ✅ `Services/ClinicAdmin/DoctorCrudService.cs` - CRUD پزشک
+  - Interface: `Interfaces/ClinicAdmin/IDoctorCrudService.cs`
+  - Repository: `Repositories/ClinicAdmin/DoctorCrudRepository.cs`
+- ✅ `Services/ClinicAdmin/DoctorDepartmentService.cs` - مدیریت پزشک↔دپارتمان
+  - Interface: `Interfaces/ClinicAdmin/IDoctorDepartmentService.cs`
+  - Repository: `Repositories/ClinicAdmin/DoctorDepartmentRepository.cs`
+- ✅ `Services/ClinicAdmin/DoctorServiceCategoryService.cs` - مدیریت پزشک↔خدمت
+  - Interface: `Interfaces/ClinicAdmin/IDoctorServiceCategoryService.cs`
+  - Repository: `Repositories/ClinicAdmin/DoctorServiceCategoryRepository.cs`
 
----
+#### **Department Services**
+- ✅ `Services/DepartmentManagementService.cs` - مدیریت دپارتمان
+  - Interface: `Interfaces/ClinicAdmin/IDepartmentManagementService.cs`
+  - Repository: `Repositories/DepartmentRepository.cs`
 
-### **🔟 Extensions/** (6 فایل)
-
-- `ApplicationUserManagerExtensions.cs`
-- `CultureExtensions.cs`
-- `DateTimeExtensions.cs`
-- `EnumExtensions.cs`
-- `GenderParsing.cs`
-- `PersianDateExtensions.cs`
+#### **Entities**
+- ✅ `Models/Entities/Doctor/Doctor.cs` - موجودیت پزشک
+- ✅ `Models/Entities/Doctor/DoctorDepartment.cs` - رابطه پزشک↔دپارتمان
+- ✅ `Models/Entities/Doctor/DoctorServiceCategory.cs` - رابطه پزشک↔خدمت
+- ✅ `Models/Entities/Clinic/Department.cs` - موجودیت دپارتمان
 
 ---
 
-### **1️⃣1️⃣ Interfaces/** (105 فایل)
+### **7️⃣ POS Payment Services**
 
-#### **Reception/**
-- `Interfaces/Reception/IReceptionFacade.cs`
+#### **POS Terminal**
+- ✅ `Models/Entities/Payment/PosTerminal.cs` - موجودیت ترمینال POS
+- ✅ `Repositories/Payment/POS/PosTerminalRepository.cs` - Repository ترمینال
+  - Interface: `Interfaces/Payment/POS/IPosTerminalRepository.cs`
+- ✅ `Services/Payment/POS/PosManagementService.cs` - سرویس مدیریت POS
+  - Interface: `Interfaces/Payment/POS/IPosManagementService.cs`
 
-#### **Finance/**
-- `Interfaces/Finance/IFinancialYearService.cs`
+#### **Payment Transaction**
+- ✅ `Models/Entities/Payment/PaymentTransaction.cs` - موجودیت تراکنش پرداخت
+- ✅ `Repositories/Payment/PaymentTransactionRepository.cs` - Repository تراکنش
+  - Interface: `Interfaces/Payment/IPaymentTransactionRepository.cs`
 
-#### **Triage/**
-- `Interfaces/Triage/ITriageService.cs`
-- `Interfaces/Triage/ITriageQueueService.cs`
+#### **POS Provider Interfaces** (نیاز به بررسی)
+- ⚠️ `Interfaces/Payment/IPosProviderClient.cs` - Interface کلاینت POS (نیاز به بررسی وجود)
+- ⚠️ `Interfaces/Payment/IPosProviderResolver.cs` - Interface Resolver POS (نیاز به بررسی وجود)
+- ⚠️ `Interfaces/Payment/IPosPaymentService.cs` - Interface سرویس پرداخت POS (نیاز به بررسی وجود)
 
-#### **UserContext/**
-- `Interfaces/UserContext/IUserContextService.cs`
+#### **POS Provider Implementations** (نیاز به بررسی)
+- ⚠️ `Services/Payment/POS/PosProviderResolver.cs` - Resolver POS (نیاز به بررسی وجود)
+- ⚠️ `Services/Payment/POS/Clients/FakePosClient.cs` - کلاینت Fake POS (نیاز به بررسی وجود)
+- ⚠️ `Services/Payment/POS/PosPaymentService.cs` - سرویس پرداخت POS (نیاز به بررسی وجود)
 
-#### **SystemSettings/**
-- `Interfaces/SystemSettings/ISystemSettingService.cs`
-
-#### **Payment/**
-- `Interfaces/Payment/IPaymentService.cs`
-- `Interfaces/Payment/IPosManagementService.cs`
-
-#### **Insurance/**
-- `Interfaces/Insurance/IInsuranceCalculationService.cs`
-- `Interfaces/Insurance/IInsuranceRulesService.cs`
-- `Interfaces/Insurance/IPatientInsuranceService.cs`
-- `Interfaces/Insurance/IPatientInsuranceValidationService.cs`
-- `Interfaces/Insurance/IPatientInsuranceManagementService.cs`
-
-#### **Repositories/**
-- `Interfaces/Repositories/IPatientRepository.cs`
-- `Interfaces/Repositories/IDoctorRepository.cs`
-- `Interfaces/Repositories/IPaymentRepository.cs`
-- `Interfaces/Repositories/IInsuranceRepository.cs`
-- `Interfaces/Repositories/IReceptionRepository.cs`
-
-#### **Services/**
-- `Interfaces/Service/IServiceCalculationService.cs`
-- `Interfaces/Service/IServiceService.cs`
-- `Interfaces/Service/IFactorSettingService.cs`
+#### **POS API Controllers**
+- ✅ `Controllers/Payment/POS/PosTerminalApiController.cs` - API ترمینال POS
+  - Routes:
+    - `GET /api/v1/pos/terminals/{id}`
+    - `PUT /api/v1/pos/terminals/{id}`
+    - `GET /api/v1/pos/terminals/default`
+    - `POST /api/v1/pos/terminals/{id}/default`
+    - `POST /api/v1/pos/terminals/{id}/active`
+    - `POST /api/v1/pos/process-payment`
+- ✅ `Controllers/Payment/POS/PosManagementController.cs` - مدیریت POS
 
 ---
 
-### **1️⃣2️⃣ Contracts/** (6 فایل)
+### **8️⃣ Reception V2 - Views**
 
-- `01-PreFlight-Protocol.md`
-- `02-Architecture-Guidelines.md`
-- `03-Code-Quality-Standards.md`
-- `04-Security-Requirements.md`
-- `Bugfix-Master-Contract.md`
-- `MODULE_ANALYSIS_CONTRACT.md`
-- `DEBUGGING_SPECIALIST_CONTRACT.md`
+#### **Main Views**
+- ✅ `Views/ReceptionV2/Index.cshtml` - صفحه اصلی فرم پذیرش V2
+  - Layout: `~/Views/Shared/_Layout.cshtml`
+  - Model: `ReceptionFormVM`
+  - Anti-Forgery Token: `@Html.AntiForgeryToken()`
+- ✅ `Views/ReceptionV2/Edit.cshtml` - صفحه ویرایش پذیرش
+- ✅ `Views/ReceptionV2/Print.cshtml` - صفحه چاپ پذیرش
+- ✅ `Views/ReceptionV2/PrintInsurance.cshtml` - صفحه چاپ بیمه
 
----
-
-## 📊 **آمار کلی**
-
-| لایه | تعداد فایل |
-|------|-----------|
-| Entities | 48 |
-| Enums | 37 |
-| ViewModels | 236 |
-| Controllers | 83 |
-| Services | 123 |
-| Repositories | 40 |
-| Views | 77 (.cshtml) |
-| Scripts | 187 (.js) |
-| Helpers | 35 |
-| Filters | 12 |
-| Extensions | 6 |
-| Interfaces | 105 |
-| **مجموع** | **~896 فایل** |
+#### **Partial Views**
+- ✅ `Views/ReceptionV2/Partials/_ReceptionSummaryHeader.cshtml` - هدر خلاصه پذیرش
+- ✅ `Views/ReceptionV2/Partials/_IdentitySection.cshtml` - بخش هویت
+- ✅ `Views/ReceptionV2/Partials/_Patient.cshtml` - بخش بیمار
+- ✅ `Views/ReceptionV2/Partials/_ClinicDept.cshtml` - بخش کلینیک/دپارتمان
+- ✅ `Views/ReceptionV2/Partials/_Insurance.cshtml` - بخش بیمه
+- ✅ `Views/ReceptionV2/Partials/_ServicePicker.cshtml` - انتخاب خدمت
+- ✅ `Views/ReceptionV2/Partials/_ItemsGrid.cshtml` - جدول آیتم‌ها
+- ✅ `Views/ReceptionV2/Partials/_Totals.cshtml` - بخش مجموع‌ها
+- ✅ `Views/ReceptionV2/Partials/_Payment.cshtml` - بخش پرداخت
+- ✅ `Views/ReceptionV2/Partials/_CoverageModal.cshtml` - مودال پوشش بیمه
+- ✅ `Views/ReceptionV2/Partials/_PatientFastCreateModal.cshtml` - مودال ثبت سریع بیمار
+- ✅ `Views/ReceptionV2/Partials/_PosPaymentModal.cshtml` - مودال پرداخت POS
 
 ---
 
-## 🔗 **وابستگی‌های اصلی**
+### **9️⃣ Reception V2 - Scripts**
 
-```
-Entity (48) 
-  ↓
-EntityTypeConfiguration (Models/Configurations)
-  ↓
-ApplicationDbContext (Models/IdentityModels.cs)
-  ↓
-Repository Interface → Repository Implementation (40)
-  ↓
-Service Interface → Service Implementation (123)
-  ↓
-Facade (ReceptionFacade)
-  ↓
-Controller (83) → View (77) + Scripts (187)
-```
+#### **Core Scripts**
+- ✅ `Scripts/reception.v2/reception-api.js` - Wrapper API با Anti-Forgery Token
+  - تزریق هدر `__RequestVerificationToken` در همه POSTها
+  - Fallback برای خطاها
+- ✅ `Scripts/reception.v2/reception-main.js` - اسکریپت اصلی
+- ✅ `Scripts/reception.v2/reception-utils.js` - توابع کمکی
+
+#### **Feature Scripts**
+- ✅ `Scripts/reception.v2/patient-lookup.js` - جستجو/ایجاد بیمار
+- ✅ `Scripts/reception.v2/clinic-dept-doctor.js` - مدیریت کلینیک/دپارتمان/پزشک
+- ✅ `Scripts/reception.v2/service-lookup.js` - جستجو/افزودن خدمت
+- ✅ `Scripts/reception.v2/insurance-panel.js` - مدیریت بیمه
+- ✅ `Scripts/reception.v2/payment-panel.js` - مدیریت پرداخت
+- ✅ `Scripts/reception.v2/pricing-ui.js` - UI محاسبات قیمت
+- ✅ `Scripts/reception.v2/totals-panel.js` - نمایش مجموع‌ها
+- ✅ `Scripts/reception.v2/auto-draft-manager.js` - مدیریت خودکار Draft
+- ✅ `Scripts/reception.v2/form-change-detector.js` - تشخیص تغییرات فرم
+- ✅ `Scripts/reception.v2/coverage-modal.js` - مودال پوشش بیمه
+- ✅ `Scripts/reception.v2/reception-edit.js` - ویرایش پذیرش
+- ✅ `Scripts/reception.v2/reception-list.js` - لیست پذیرش‌ها
+- ✅ `Scripts/reception.v2/summary-header.js` - هدر خلاصه
 
 ---
 
-**تاریخ به‌روزرسانی:** 2024  
-**نسخه:** 1.0
+### **🔟 ViewModels/DTOs**
 
+#### **Reception DTOs**
+- ✅ `ViewModels/Reception/ReceptionFacadeDtos.cs` - DTOs اصلی Facade
+  - `ReceptionLoadDto` - داده‌های اولیه
+  - `PatientDto` - اطلاعات بیمار
+  - `DoctorDto` - اطلاعات پزشک
+  - `ServicePickListDto` - لیست خدمات
+  - `AddItemRequest` / `AddItemResultDto` - افزودن آیتم
+  - `SetInsurancesRequest` - تنظیم بیمه‌ها
+  - `ItemsAndTotalsDto` - آیتم‌ها و مجموع‌ها
+  - `FinalizePosRequest` / `FinalizeCashRequest` - نهایی‌سازی
+  - `FinalizeResponse` - پاسخ نهایی‌سازی
+  - `InsuranceBundleDto` - بسته بیمه
+  - `CreateDraftRequest` / `CreateDraftResponse` - ایجاد Draft
+  - `UpdateReceptionRequest` / `UpdateReceptionResponse` - به‌روزرسانی
+  - `CancelReceptionRequest` / `CancelReceptionResponse` - لغو
+
+#### **Reception ViewModels**
+- ✅ `ViewModels/Reception/ReceptionFormVM.cs` - ViewModel فرم پذیرش
+- ✅ `ViewModels/Reception/ReceptionInsuranceViewModel.cs` - ViewModel بیمه
+- ✅ `ViewModels/Reception/ReceptionInsuranceShareViewModel.cs` - سهم بیمه
+
+---
+
+### **1️⃣1️⃣ Models/Entities**
+
+#### **Reception Entities**
+- ✅ `Models/Entities/Reception/Reception.cs` - موجودیت پذیرش
+  - Properties: `Id`, `PatientId`, `ClinicId`, `DepartmentId`, `DoctorId`, `Status`, `TotalAmount`, `RowVersion`
+- ✅ `Models/Entities/Reception/ReceptionItem.cs` - موجودیت آیتم پذیرش
+  - Properties: `Id`, `ReceptionId`, `ServiceId`, `Quantity`, `UnitPrice`, `TotalPrice`, `RowVersion`
+
+#### **Insurance Entities**
+- ✅ `Models/Entities/Insurance/InsuranceProvider.cs` - ارائه‌دهنده بیمه
+- ✅ `Models/Entities/Insurance/InsurancePlan.cs` - پلن بیمه
+- ✅ `Models/Entities/Insurance/InsuranceTariff.cs` - تعرفه بیمه
+- ✅ `Models/Entities/Insurance/InsuranceCalculation.cs` - محاسبه بیمه
+- ✅ `Models/Entities/Insurance/BusinessRule.cs` - قانون کسب‌وکار
+- ✅ `Models/Entities/Patient/PatientInsurance.cs` - بیمه بیمار
+
+#### **Payment Entities**
+- ✅ `Models/Entities/Payment/PosTerminal.cs` - ترمینال POS
+  - Properties: `Id`, `Name`, `Provider`, `IsActive`, `IsDefault`
+- ✅ `Models/Entities/Payment/PaymentTransaction.cs` - تراکنش پرداخت
+  - Properties: `TransactionId`, `ReceptionId`, `Amount`, `Method`, `Status`
+
+---
+
+## 📊 **آمار کلی - Reception V2**
+
+| دسته‌بندی | تعداد | وضعیت |
+|----------|------|-------|
+| Controllers (API) | 1 | ✅ |
+| Controllers (MVC) | 2 | ✅ |
+| Services (Core) | 6 | ✅ |
+| Services (Supporting) | 10+ | ✅ |
+| Repositories | 8+ | ✅ |
+| Views (Main) | 4 | ✅ |
+| Views (Partials) | 12 | ✅ |
+| Scripts | 14 | ✅ |
+| DTOs/ViewModels | 20+ | ✅ |
+| Entities | 10+ | ✅ |
+
+---
+
+## 🔍 **نقاط نیازمند بررسی**
+
+### **POS Payment (فاز F)**
+- ⚠️ بررسی وجود `IPosProviderClient`, `IPosProviderResolver`, `IPosPaymentService`
+- ⚠️ بررسی وجود `PosProviderResolver`, `FakePosClient`, `PosPaymentService`
+- ⚠️ بررسی وجود `pos-payment.js` برای مدیریت پرداخت POS
+
+### **Bootstrap Endpoint (فاز C)**
+- ⚠️ بررسی کامل بودن `GET /api/v1/reception/bootstrap`
+- ⚠️ بررسی وجود `PosTerminals` و `DefaultPosTerminalId` در پاسخ
+- ⚠️ بررسی Lazy Loading برای Doctors
+
+### **Pricing Endpoints (فاز D)**
+- ⚠️ بررسی کامل بودن `POST /api/v1/reception/insurances/set`
+- ⚠️ بررسی کامل بودن `POST /api/v1/reception/item/add` با Pricing
+- ⚠️ بررسی کامل بودن `POST /api/v1/reception/item/update` با Reprice
+
+---
+
+**تاریخ به‌روزرسانی:** 2025-01-27  
+**نسخه:** 2.0.0  
+**وضعیت:** ✅ فاز A تکمیل شد

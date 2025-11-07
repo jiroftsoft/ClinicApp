@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Controllers.Api;
 using ClinicApp.Helpers;
+using ClinicApp.Extensions;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.Finance;
@@ -2749,6 +2750,607 @@ namespace ClinicApp.Services.Reception
                 _logger.Error(ex, "❌ FACADE: خطا در پیش‌نمایش قیمت");
                 return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("خطا در پیش‌نمایش قیمت: " + ex.Message);
             }
+        }
+
+        #endregion
+
+        #region Edit Operations
+
+        /// <summary>
+        /// بارگذاری پذیرش برای ویرایش
+        /// </summary>
+        public async Task<ServiceResult<ReceptionEditLoadDto>> LoadReceptionForEditAsync(int receptionId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: بارگذاری پذیرش برای ویرایش - ReceptionId: {ReceptionId}", receptionId);
+
+                // 1. دریافت پذیرش با تمام جزئیات
+                var reception = await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .Include(r => r.Department)
+                    .Include(r => r.Clinic)
+                    .Include(r => r.ActivePatientInsurance)
+                    .Include(r => r.ReceptionItems.Select(ri => ri.Service))
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId);
+
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پذیرش یافت نشد - ReceptionId: {ReceptionId}", receptionId);
+                    return ServiceResult<ReceptionEditLoadDto>.Failed($"پذیرش با شناسه {receptionId} یافت نشد", "NOT_FOUND");
+                }
+
+                // 2. بررسی مجوز ویرایش بر اساس وضعیت
+                var permissions = DetermineEditPermissions(reception.Status);
+
+                // 3. ساخت DTO
+                var result = new ReceptionEditLoadDto
+                {
+                    ReceptionId = reception.ReceptionId,
+                    Status = reception.Status,
+                    
+                    // اطلاعات بیمار
+                    PatientId = reception.PatientId,
+                    PatientFullName = reception.Patient != null 
+                        ? $"{reception.Patient.FirstName} {reception.Patient.LastName}".Trim()
+                        : string.Empty,
+                    PatientNationalCode = reception.Patient?.NationalCode ?? string.Empty,
+                    PatientMobile = reception.Patient?.PhoneNumber ?? string.Empty,
+                    
+                    // اطلاعات پزشک و دپارتمان
+                    DoctorId = reception.DoctorId,
+                    DoctorFullName = reception.Doctor != null
+                        ? $"{reception.Doctor.FirstName} {reception.Doctor.LastName}".Trim()
+                        : string.Empty,
+                    DepartmentId = reception.DepartmentId,
+                    DepartmentName = reception.Department?.Name ?? string.Empty,
+                    ClinicId = reception.ClinicId,
+                    ClinicName = reception.Clinic?.Name ?? string.Empty,
+                    
+                    // تاریخ پذیرش
+                    ReceptionDate = reception.ReceptionDate,
+                    ReceptionDateShamsi = reception.ReceptionDate.ToPersianDate(),
+                    
+                    // بیمه‌ها
+                    BasePlanId = reception.BasePlanId,
+                    BasePlanName = reception.ActivePatientInsurance?.InsurancePlan?.Name ?? string.Empty,
+                    SupplementaryPlanId = reception.SupplementaryPlanId,
+                    SupplementaryPlanName = reception.ActivePatientInsurance?.SupplementaryInsurancePlan?.Name ?? string.Empty,
+                    
+                    // خدمات
+                    Items = reception.ReceptionItems
+                        .Where(ri => !ri.IsDeleted)
+                        .Select(ri => new ReceptionItemEditDto
+                        {
+                            ReceptionItemId = ri.ReceptionItemId,
+                            ServiceId = ri.ServiceId,
+                            ServiceCode = ri.Service?.ServiceCode ?? string.Empty,
+                            ServiceName = ri.Service?.Title ?? string.Empty,
+                            Quantity = ri.Quantity,
+                            UnitPrice = ri.UnitPrice,
+                            TotalPrice = ri.UnitPrice * ri.Quantity,
+                            PatientShareAmount = ri.PatientShareAmount,
+                            InsurerShareAmount = ri.InsurerShareAmount,
+                            SnapshotJson = ri.SnapshotJson,
+                            IsDeleted = false
+                        })
+                        .ToList(),
+                    
+                    // مبالغ
+                    TotalAmount = reception.TotalAmount,
+                    InsurerShareAmount = reception.InsurerShareAmount,
+                    PatientCoPay = reception.PatientCoPay,
+                    PaidAmount = reception.Transactions?.Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted).Sum(t => (decimal?)t.Amount) ?? 0m,
+                    RemainingAmount = reception.PatientCoPay - (reception.Transactions?.Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted).Sum(t => (decimal?)t.Amount) ?? 0m),
+                    
+                    // یادداشت‌ها و تنظیمات
+                    Notes = reception.Notes ?? string.Empty,
+                    Type = reception.Type,
+                    Priority = reception.Priority,
+                    IsEmergency = reception.IsEmergency,
+                    IsOnlineReception = reception.IsOnlineReception,
+                    
+                    // محدودیت‌های ویرایش
+                    Permissions = permissions
+                };
+
+                // 4. بارگذاری لیست‌های کمکی (فقط اگر قابل ویرایش باشند)
+                if (permissions.CanEditDoctor || permissions.CanEditDepartment)
+                {
+                    // بارگذاری پزشکان دپارتمان
+                    var doctorsResult = await GetDoctorsByDepartmentAsync(reception.DepartmentId, reception.ClinicId);
+                    if (doctorsResult.Success && doctorsResult.Data != null)
+                    {
+                        result.AvailableDoctors = doctorsResult.Data;
+                    }
+                }
+
+                if (permissions.CanEditDepartment)
+                {
+                    // بارگذاری دپارتمان‌ها
+                    var deptsResult = await _departmentManagementService.GetAllDepartmentsAsync();
+                    if (deptsResult.Success && deptsResult.Data != null)
+                    {
+                        result.AvailableDepartments = deptsResult.Data.Select(d => new DepartmentDto
+                        {
+                            DepartmentId = d.DepartmentId,
+                            Name = d.Name,
+                            Code = d.Code,
+                            IsActive = d.IsActive,
+                            Description = d.Description
+                        }).ToList();
+                    }
+                }
+
+                if (permissions.CanEditServices)
+                {
+                    // بارگذاری خدمات دپارتمان
+                    var servicesResult = await GetServicesForDeptAsync(reception.DepartmentId);
+                    if (servicesResult.Success && servicesResult.Data != null)
+                    {
+                        result.AvailableServices = servicesResult.Data.Services;
+                    }
+                }
+
+                if (permissions.CanEditInsurances)
+                {
+                    // بارگذاری بیمه‌های بیمار
+                    var insurancesResult = await LoadPatientInsurancesAsync(reception.PatientId);
+                    if (insurancesResult.Success && insurancesResult.Data != null)
+                    {
+                        result.PatientInsurances = insurancesResult.Data;
+                    }
+                }
+
+                _logger.Information("✅ FACADE: پذیرش برای ویرایش بارگذاری شد - ReceptionId: {ReceptionId}, Status: {Status}, ItemsCount: {ItemsCount}", 
+                    receptionId, reception.Status, result.Items.Count);
+
+                return ServiceResult<ReceptionEditLoadDto>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در بارگذاری پذیرش برای ویرایش - ReceptionId: {ReceptionId}", receptionId);
+                return ServiceResult<ReceptionEditLoadDto>.Failed($"خطا در بارگذاری پذیرش: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// تعیین مجوزهای ویرایش بر اساس وضعیت پذیرش
+        /// </summary>
+        private EditPermissionsDto DetermineEditPermissions(ReceptionStatus status)
+        {
+            var permissions = new EditPermissionsDto();
+
+            switch (status)
+            {
+                case ReceptionStatus.Pending:
+                    // پذیرش در انتظار: تمام فیلدها قابل ویرایش
+                    permissions.CanEditPatient = true;
+                    permissions.CanEditDoctor = true;
+                    permissions.CanEditDepartment = true;
+                    permissions.CanEditServices = true;
+                    permissions.CanEditInsurances = true;
+                    permissions.CanEditAmounts = true;
+                    permissions.CanEditDate = true;
+                    permissions.CanEditNotes = true;
+                    permissions.RequiresApproval = false;
+                    break;
+
+                case ReceptionStatus.Completed:
+                    // پذیرش تکمیل شده: فقط یادداشت‌ها و تنظیمات جزئی قابل ویرایش
+                    permissions.CanEditPatient = false;
+                    permissions.CanEditDoctor = false;
+                    permissions.CanEditDepartment = false;
+                    permissions.CanEditServices = false;
+                    permissions.CanEditInsurances = false;
+                    permissions.CanEditAmounts = false;
+                    permissions.CanEditDate = false;
+                    permissions.CanEditNotes = true;
+                    permissions.RequiresApproval = false;
+                    break;
+
+                case ReceptionStatus.Cancelled:
+                    // پذیرش لغو شده: هیچ فیلدی قابل ویرایش نیست
+                    permissions.CanEditPatient = false;
+                    permissions.CanEditDoctor = false;
+                    permissions.CanEditDepartment = false;
+                    permissions.CanEditServices = false;
+                    permissions.CanEditInsurances = false;
+                    permissions.CanEditAmounts = false;
+                    permissions.CanEditDate = false;
+                    permissions.CanEditNotes = false;
+                    permissions.RequiresApproval = false;
+                    break;
+
+                default:
+                    // حالت پیش‌فرض: محافظه‌کارانه
+                    permissions.CanEditPatient = false;
+                    permissions.CanEditDoctor = false;
+                    permissions.CanEditDepartment = false;
+                    permissions.CanEditServices = false;
+                    permissions.CanEditInsurances = false;
+                    permissions.CanEditAmounts = false;
+                    permissions.CanEditDate = false;
+                    permissions.CanEditNotes = true;
+                    permissions.RequiresApproval = true;
+                    break;
+            }
+
+            return permissions;
+        }
+
+        /// <summary>
+        /// به‌روزرسانی پذیرش
+        /// </summary>
+        public async Task<ServiceResult<UpdateReceptionResponse>> UpdateReceptionAsync(UpdateReceptionRequest request)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: به‌روزرسانی پذیرش - ReceptionId: {ReceptionId}", request.ReceptionId);
+
+                // 1. دریافت پذیرش
+                var reception = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == request.ReceptionId);
+
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پذیرش یافت نشد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<UpdateReceptionResponse>.Failed($"پذیرش با شناسه {request.ReceptionId} یافت نشد", "NOT_FOUND");
+                }
+
+                // 2. بررسی مجوز ویرایش
+                var permissions = DetermineEditPermissions(reception.Status);
+                
+                if (reception.Status == ReceptionStatus.Cancelled)
+                {
+                    return ServiceResult<UpdateReceptionResponse>.Failed("امکان ویرایش پذیرش لغو شده وجود ندارد", "CANCELLED");
+                }
+
+                // 3. اعمال تغییرات (فقط فیلدهای مجاز)
+                if (permissions.CanEditDoctor && request.DoctorId.HasValue)
+                {
+                    reception.DoctorId = request.DoctorId.Value;
+                }
+
+                if (permissions.CanEditDepartment && request.DepartmentId.HasValue)
+                {
+                    reception.DepartmentId = request.DepartmentId.Value;
+                    
+                    // اگر ClinicId تغییر کرده
+                    if (request.ClinicId.HasValue)
+                    {
+                        reception.ClinicId = request.ClinicId.Value;
+                    }
+                    else
+                    {
+                        // استخراج ClinicId از Department
+                        var department = await _context.Departments
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(d => d.DepartmentId == request.DepartmentId.Value);
+                        if (department != null)
+                        {
+                            reception.ClinicId = department.ClinicId;
+                        }
+                    }
+                }
+
+                if (permissions.CanEditDate && request.ReceptionDate.HasValue)
+                {
+                    reception.ReceptionDate = request.ReceptionDate.Value;
+                }
+
+                if (permissions.CanEditInsurances)
+                {
+                    if (request.BasePlanId.HasValue)
+                    {
+                        reception.BasePlanId = request.BasePlanId.Value;
+                    }
+                    if (request.SupplementaryPlanId.HasValue)
+                    {
+                        reception.SupplementaryPlanId = request.SupplementaryPlanId.Value;
+                    }
+                }
+
+                if (permissions.CanEditNotes && !string.IsNullOrEmpty(request.Notes))
+                {
+                    reception.Notes = request.Notes;
+                }
+
+                if (request.Type.HasValue)
+                {
+                    reception.Type = request.Type.Value;
+                }
+
+                if (request.Priority.HasValue)
+                {
+                    reception.Priority = request.Priority.Value;
+                }
+
+                if (request.IsEmergency.HasValue)
+                {
+                    reception.IsEmergency = request.IsEmergency.Value;
+                }
+
+                // 4. مدیریت خدمات (فقط اگر مجاز باشد)
+                if (permissions.CanEditServices && request.Items != null && request.Items.Any())
+                {
+                    await UpdateReceptionItemsAsync(reception, request.Items);
+                }
+
+                // 5. بازمحاسبه قیمت‌ها (اگر لازم باشد)
+                if (request.RecalculatePrices && (permissions.CanEditServices || permissions.CanEditInsurances))
+                {
+                    await _receptionPricingService.CalculateTotalsAsync(reception.ReceptionId);
+                    
+                    // بارگذاری مجدد برای دریافت مبالغ به‌روزرسانی شده
+                    await _context.Entry(reception).ReloadAsync();
+                }
+
+                // 6. ذخیره تغییرات
+                await _context.SaveChangesAsync();
+
+                // 7. ساخت پاسخ
+                var response = new UpdateReceptionResponse
+                {
+                    ReceptionId = reception.ReceptionId,
+                    Status = reception.Status,
+                    Items = reception.ReceptionItems
+                        .Where(ri => !ri.IsDeleted)
+                        .Select(ri => new ReceptionItemEditDto
+                        {
+                            ReceptionItemId = ri.ReceptionItemId,
+                            ServiceId = ri.ServiceId,
+                            ServiceCode = ri.Service?.ServiceCode ?? string.Empty,
+                            ServiceName = ri.Service?.Title ?? string.Empty,
+                            Quantity = ri.Quantity,
+                            UnitPrice = ri.UnitPrice,
+                            TotalPrice = ri.UnitPrice * ri.Quantity,
+                            PatientShareAmount = ri.PatientShareAmount,
+                            InsurerShareAmount = ri.InsurerShareAmount,
+                            SnapshotJson = ri.SnapshotJson,
+                            IsDeleted = false
+                        })
+                        .ToList(),
+                    Totals = new ViewModels.Reception.ReceptionTotalsDto
+                    {
+                        GrossAmount = reception.TotalAmount,
+                        PatientPayable = reception.PatientCoPay,
+                        BaseInsurancePayable = reception.InsurerShareAmount,
+                        SupplementaryInsurancePayable = 0m // TODO: محاسبه از ReceptionItems
+                    },
+                    RequiresApproval = permissions.RequiresApproval,
+                    Message = "پذیرش با موفقیت به‌روزرسانی شد"
+                };
+
+                _logger.Information("✅ FACADE: پذیرش به‌روزرسانی شد - ReceptionId: {ReceptionId}, Status: {Status}", 
+                    reception.ReceptionId, reception.Status);
+
+                return ServiceResult<UpdateReceptionResponse>.Successful(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در به‌روزرسانی پذیرش - ReceptionId: {ReceptionId}", request.ReceptionId);
+                return ServiceResult<UpdateReceptionResponse>.Failed($"خطا در به‌روزرسانی پذیرش: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی آیتم‌های پذیرش
+        /// </summary>
+        private async Task UpdateReceptionItemsAsync(Models.Entities.Reception.Reception reception, List<ReceptionItemUpdateDto> updates)
+        {
+            foreach (var update in updates)
+            {
+                if (update.IsDeleted && update.ReceptionItemId.HasValue)
+                {
+                    // حذف آیتم موجود
+                    var item = reception.ReceptionItems.FirstOrDefault(ri => ri.ReceptionItemId == update.ReceptionItemId.Value);
+                    if (item != null)
+                    {
+                        item.IsDeleted = true;
+                    }
+                }
+                else if (!update.ReceptionItemId.HasValue)
+                {
+                    // افزودن آیتم جدید
+                    var addRequest = new AddItemRequest
+                    {
+                        ReceptionId = reception.ReceptionId,
+                        ServiceId = update.ServiceId,
+                        Quantity = update.Quantity
+                    };
+                    await AddItemAsync(addRequest);
+                }
+                else
+                {
+                    // به‌روزرسانی آیتم موجود
+                    var item = reception.ReceptionItems.FirstOrDefault(ri => ri.ReceptionItemId == update.ReceptionItemId.Value);
+                    if (item != null && item.ServiceId != update.ServiceId)
+                    {
+                        // اگر ServiceId تغییر کرده، باید آیتم را حذف و دوباره اضافه کنیم
+                        item.IsDeleted = true;
+                        
+                        var addRequest = new AddItemRequest
+                        {
+                            ReceptionId = reception.ReceptionId,
+                            ServiceId = update.ServiceId,
+                            Quantity = update.Quantity
+                        };
+                        await AddItemAsync(addRequest);
+                    }
+                    else if (item != null && item.Quantity != update.Quantity)
+                    {
+                        // فقط تعداد تغییر کرده - بازمحاسبه
+                        item.Quantity = update.Quantity;
+                        // بازمحاسبه در مرحله بعد انجام می‌شود
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// لغو پذیرش
+        /// </summary>
+        public async Task<ServiceResult<CancelReceptionResponse>> CancelReceptionAsync(CancelReceptionRequest request)
+        {
+            try
+            {
+                _logger.Information("🚫 FACADE: لغو پذیرش - ReceptionId: {ReceptionId}, Reason: {Reason}", 
+                    request.ReceptionId, request.Reason);
+
+                // 1. دریافت پذیرش
+                var reception = await _context.Receptions
+                    .Include(r => r.Transactions)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == request.ReceptionId);
+
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پذیرش یافت نشد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<CancelReceptionResponse>.Failed($"پذیرش با شناسه {request.ReceptionId} یافت نشد", "NOT_FOUND");
+                }
+
+                // 2. بررسی امکان لغو
+                var canCancelResult = CanCancelReception(reception);
+                if (!canCancelResult.CanCancel)
+                {
+                    _logger.Warning("⚠️ FACADE: امکان لغو پذیرش وجود ندارد - ReceptionId: {ReceptionId}, Reason: {Reason}", 
+                        request.ReceptionId, canCancelResult.ErrorMessage);
+                    return ServiceResult<CancelReceptionResponse>.Failed(canCancelResult.ErrorMessage, "CANNOT_CANCEL");
+                }
+
+                // 3. بررسی وجود پرداخت
+                var successfulPayments = reception.Transactions
+                    .Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted)
+                    .ToList();
+
+                var totalPaid = successfulPayments.Sum(t => t.Amount);
+                bool hasPayment = totalPaid > 0;
+
+                // 4. مدیریت Refund (اگر پرداختی وجود دارد)
+                decimal? refundAmount = null;
+                bool refundProcessed = false;
+
+                if (hasPayment && request.ProcessRefund)
+                {
+                    // ثبت تراکنش Refund
+                    var refundTransaction = new Models.Entities.Payment.PaymentTransaction
+                    {
+                        ReceptionId = reception.ReceptionId,
+                        Amount = -totalPaid, // منفی برای Refund
+                        Status = PaymentStatus.Canceled, // استفاده از Canceled برای Refund
+                        Method = successfulPayments.FirstOrDefault()?.Method ?? PaymentMethod.Cash,
+                        Description = $"برگشت وجه (Refund) - دلیل: {request.RefundReason ?? request.Reason}",
+                        IdempotencyKey = Guid.NewGuid().ToString(),
+                        CreatedAt = DateTime.Now,
+                        CreatedByUserId = _currentUserService.UserId
+                    };
+
+                    _context.PaymentTransactions.Add(refundTransaction);
+
+                    // Note: PaidAmount is calculated dynamically from Transactions, no need to update it here
+
+                    refundAmount = totalPaid;
+                    refundProcessed = true;
+
+                    _logger.Information("💰 FACADE: Refund ثبت شد - ReceptionId: {ReceptionId}, Amount: {Amount}", 
+                        request.ReceptionId, totalPaid);
+                }
+                else if (hasPayment && !request.ProcessRefund)
+                {
+                    // اگر پرداختی وجود دارد اما Refund درخواست نشده
+                    _logger.Warning("⚠️ FACADE: پرداختی وجود دارد اما Refund درخواست نشده - ReceptionId: {ReceptionId}, PaidAmount: {PaidAmount}", 
+                        request.ReceptionId, totalPaid);
+                    return ServiceResult<CancelReceptionResponse>.Failed(
+                        $"این پذیرش دارای پرداخت به مبلغ {totalPaid:N0} ریال است. برای لغو، باید Refund انجام شود.",
+                        "PAYMENT_EXISTS");
+                }
+
+                // 5. تغییر وضعیت به Cancelled
+                var previousStatus = reception.Status;
+                reception.Status = ReceptionStatus.Cancelled;
+
+                // 6. ثبت دلیل لغو در Notes (اگر Notes خالی است یا اضافه کردن به انتهای آن)
+                var cancellationNote = $"\n\n[لغو شده در {DateTime.Now.ToPersianDateTime()} توسط {_currentUserService.UserName}]\nدلیل: {request.Reason}";
+                reception.Notes = (reception.Notes ?? string.Empty) + cancellationNote;
+
+                // 7. به‌روزرسانی UpdatedAt
+                reception.UpdatedAt = DateTime.Now;
+                reception.UpdatedByUserId = _currentUserService.UserId;
+
+                // 8. ذخیره تغییرات
+                await _context.SaveChangesAsync();
+
+                // 9. ساخت پاسخ
+                var response = new CancelReceptionResponse
+                {
+                    ReceptionId = reception.ReceptionId,
+                    PreviousStatus = previousStatus,
+                    NewStatus = ReceptionStatus.Cancelled,
+                    RefundProcessed = refundProcessed,
+                    RefundAmount = refundAmount,
+                    RequiresApproval = canCancelResult.RequiresApproval,
+                    CancelledAt = DateTime.Now,
+                    CancelledBy = _currentUserService.UserName,
+                    Message = refundProcessed 
+                        ? $"پذیرش با موفقیت لغو شد و مبلغ {refundAmount:N0} ریال برگشت داده شد."
+                        : "پذیرش با موفقیت لغو شد."
+                };
+
+                _logger.Information("✅ FACADE: پذیرش لغو شد - ReceptionId: {ReceptionId}, PreviousStatus: {PreviousStatus}, RefundProcessed: {RefundProcessed}", 
+                    reception.ReceptionId, previousStatus, refundProcessed);
+
+                return ServiceResult<CancelReceptionResponse>.Successful(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در لغو پذیرش - ReceptionId: {ReceptionId}", request.ReceptionId);
+                return ServiceResult<CancelReceptionResponse>.Failed($"خطا در لغو پذیرش: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// بررسی امکان لغو پذیرش
+        /// </summary>
+        private (bool CanCancel, string ErrorMessage, bool RequiresApproval) CanCancelReception(Models.Entities.Reception.Reception reception)
+        {
+            // اگر قبلاً لغو شده
+            if (reception.Status == ReceptionStatus.Cancelled)
+            {
+                return (false, "این پذیرش قبلاً لغو شده است.", false);
+            }
+
+            // اگر Pending است، همیشه قابل لغو است
+            if (reception.Status == ReceptionStatus.Pending)
+            {
+                return (true, null, false);
+            }
+
+            // اگر Completed است، بررسی محدودیت زمانی
+            if (reception.Status == ReceptionStatus.Completed)
+            {
+                var timeSinceCompletion = DateTime.Now - (reception.UpdatedAt ?? reception.CreatedAt);
+                
+                // کمتر از 24 ساعت: قابل لغو توسط منشی
+                if (timeSinceCompletion.TotalHours <= 24)
+                {
+                    return (true, null, false);
+                }
+                
+                // بیشتر از 24 ساعت و کمتر از 7 روز: نیاز به تایید مدیر
+                if (timeSinceCompletion.TotalDays <= 7)
+                {
+                    return (true, null, true);
+                }
+                
+                // بیشتر از 7 روز: نیاز به تایید مدیر ارشد
+                return (true, "این پذیرش بیش از 7 روز از زمان ایجاد گذشته است. برای لغو نیاز به تایید مدیر ارشد دارید.", true);
+            }
+
+            // سایر وضعیت‌ها: بررسی موردی
+            return (false, $"امکان لغو پذیرش با وضعیت {reception.Status} وجود ندارد.", false);
         }
 
         #endregion

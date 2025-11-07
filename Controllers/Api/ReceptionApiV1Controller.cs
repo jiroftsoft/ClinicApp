@@ -1541,6 +1541,110 @@ namespace ClinicApp.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// GET /api/v1/reception/edit/{id}
+        /// دریافت اطلاعات پذیرش برای ویرایش
+        /// </summary>
+        [HttpGet, Route("edit/{id:int}")]
+        public async Task<ActionResult> GetReceptionForEdit(int id)
+        {
+            try
+            {
+                _logger.Information("🏥 V1 API: دریافت پذیرش برای ویرایش - ReceptionId: {Id}", id);
+
+                var result = await _facade.LoadReceptionForEditAsync(id);
+
+                if (result.Success)
+                {
+                    return Json(ServiceResult<ReceptionEditLoadDto>.Successful(result.Data), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    return Json(ServiceResult<ReceptionEditLoadDto>.Failed(result.Message, result.Code ?? "ERROR"), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ V1 API: خطا در دریافت پذیرش برای ویرایش - ReceptionId: {Id}", id);
+                return Json(ServiceResult<ReceptionEditLoadDto>.Failed($"خطا در دریافت پذیرش: {ex.Message}", "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/update
+        /// به‌روزرسانی پذیرش
+        /// </summary>
+        [HttpPost, Route("update")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> UpdateReception(UpdateReceptionRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return Json(ServiceResult<UpdateReceptionResponse>.Failed("درخواست نامعتبر است", "INVALID_REQUEST"), JsonRequestBehavior.AllowGet);
+                }
+
+                _logger.Information("🏥 V1 API: به‌روزرسانی پذیرش - ReceptionId: {ReceptionId}", request.ReceptionId);
+
+                var result = await _facade.UpdateReceptionAsync(request);
+
+                if (result.Success)
+                {
+                    return Json(ServiceResult<UpdateReceptionResponse>.Successful(result.Data), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    return Json(ServiceResult<UpdateReceptionResponse>.Failed(result.Message, result.Code ?? "ERROR"), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ V1 API: خطا در به‌روزرسانی پذیرش - ReceptionId: {ReceptionId}", request?.ReceptionId ?? 0);
+                return Json(ServiceResult<UpdateReceptionResponse>.Failed($"خطا در به‌روزرسانی پذیرش: {ex.Message}", "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/cancel
+        /// لغو پذیرش
+        /// </summary>
+        [HttpPost, Route("cancel")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> CancelReception(CancelReceptionRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return Json(ServiceResult<CancelReceptionResponse>.Failed("درخواست نامعتبر است", "INVALID_REQUEST"), JsonRequestBehavior.AllowGet);
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length < 10)
+                {
+                    return Json(ServiceResult<CancelReceptionResponse>.Failed("دلیل لغو الزامی است و باید حداقل 10 کاراکتر باشد", "INVALID_REASON"), JsonRequestBehavior.AllowGet);
+                }
+
+                _logger.Information("🚫 V1 API: لغو پذیرش - ReceptionId: {ReceptionId}", request.ReceptionId);
+
+                var result = await _facade.CancelReceptionAsync(request);
+
+                if (result.Success)
+                {
+                    return Json(ServiceResult<CancelReceptionResponse>.Successful(result.Data), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    return Json(ServiceResult<CancelReceptionResponse>.Failed(result.Message, result.Code ?? "ERROR"), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ V1 API: خطا در لغو پذیرش - ReceptionId: {ReceptionId}", request?.ReceptionId ?? 0);
+                return Json(ServiceResult<CancelReceptionResponse>.Failed($"خطا در لغو پذیرش: {ex.Message}", "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
     }
 

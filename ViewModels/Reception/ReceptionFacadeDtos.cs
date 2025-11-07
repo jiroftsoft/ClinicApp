@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Reception
 {
@@ -17,6 +19,8 @@ namespace ClinicApp.ViewModels.Reception
         public List<ServiceDto> SharedServices { get; set; } = new List<ServiceDto>();
         public List<DoctorDto> Doctors { get; set; } = new List<DoctorDto>();
         public FactorSettingDto FactorSetting { get; set; }
+        public List<PosTerminalDto> PosTerminals { get; set; } = new List<PosTerminalDto>();
+        public int? DefaultPosTerminalId { get; set; }
     }
 
     /// <summary>
@@ -207,6 +211,30 @@ namespace ClinicApp.ViewModels.Reception
         public bool IsHashtagged { get; set; }
     }
 
+    /// <summary>
+    /// DTO برای ترمینال POS
+    /// </summary>
+    public class PosTerminalDto
+    {
+        public int PosTerminalId { get; set; }
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Name { get; set; }
+        public string TerminalId { get; set; }
+        public string MerchantId { get; set; }
+        public string SerialNumber { get; set; }
+        public string IpAddress { get; set; }
+        public int? Port { get; set; }
+        public string MacAddress { get; set; }
+        public Models.Enums.PosProviderType Provider { get; set; }
+        public Models.Enums.PosProviderType ProviderType { get; set; }
+        public Models.Enums.PosProtocol Protocol { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsDefault { get; set; }
+        public string ConnectionString { get; set; }
+        public string Description { get; set; }
+    }
+
     #endregion
 
     #region Totals DTOs
@@ -224,6 +252,194 @@ namespace ClinicApp.ViewModels.Reception
         public decimal PatientPayable { get; set; }
         public decimal NetAmount => GrossAmount - DiscountAmount + DeductionAmount;
         public decimal TotalInsurancePayable => BaseInsurancePayable + SupplementaryInsurancePayable;
+    }
+
+    #endregion
+
+    #region Edit DTOs
+
+    /// <summary>
+    /// DTO برای بارگذاری پذیرش برای ویرایش
+    /// </summary>
+    public class ReceptionEditLoadDto
+    {
+        public int ReceptionId { get; set; }
+        public ReceptionStatus Status { get; set; }
+        
+        // اطلاعات بیمار
+        public int PatientId { get; set; }
+        public string PatientFullName { get; set; }
+        public string PatientNationalCode { get; set; }
+        public string PatientMobile { get; set; }
+        
+        // اطلاعات پزشک و دپارتمان
+        public int DoctorId { get; set; }
+        public string DoctorFullName { get; set; }
+        public int DepartmentId { get; set; }
+        public string DepartmentName { get; set; }
+        public int ClinicId { get; set; }
+        public string ClinicName { get; set; }
+        
+        // تاریخ پذیرش
+        public DateTime ReceptionDate { get; set; }
+        public string ReceptionDateShamsi { get; set; }
+        
+        // بیمه‌ها
+        public int? BasePlanId { get; set; }
+        public string BasePlanName { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+        public string SupplementaryPlanName { get; set; }
+        
+        // خدمات
+        public List<ReceptionItemEditDto> Items { get; set; } = new List<ReceptionItemEditDto>();
+        
+        // مبالغ
+        public decimal TotalAmount { get; set; }
+        public decimal InsurerShareAmount { get; set; }
+        public decimal PatientCoPay { get; set; }
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        
+        // یادداشت‌ها و تنظیمات
+        public string Notes { get; set; }
+        public ReceptionType Type { get; set; }
+        public AppointmentPriority Priority { get; set; }
+        public bool IsEmergency { get; set; }
+        public bool IsOnlineReception { get; set; }
+        
+        // محدودیت‌های ویرایش
+        public EditPermissionsDto Permissions { get; set; }
+        
+        // لیست‌های کمکی
+        public List<DoctorDto> AvailableDoctors { get; set; } = new List<DoctorDto>();
+        public List<DepartmentDto> AvailableDepartments { get; set; } = new List<DepartmentDto>();
+        public List<ServicePickItemDto> AvailableServices { get; set; } = new List<ServicePickItemDto>();
+        public InsuranceBundleDto PatientInsurances { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای آیتم پذیرش در ویرایش
+    /// </summary>
+    public class ReceptionItemEditDto
+    {
+        public int ReceptionItemId { get; set; }
+        public int ServiceId { get; set; }
+        public string ServiceCode { get; set; }
+        public string ServiceName { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice { get; set; }
+        public decimal PatientShareAmount { get; set; }
+        public decimal InsurerShareAmount { get; set; }
+        public string SnapshotJson { get; set; }
+        public bool IsDeleted { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای مجوزهای ویرایش
+    /// </summary>
+    public class EditPermissionsDto
+    {
+        public bool CanEditPatient { get; set; }
+        public bool CanEditDoctor { get; set; }
+        public bool CanEditDepartment { get; set; }
+        public bool CanEditServices { get; set; }
+        public bool CanEditInsurances { get; set; }
+        public bool CanEditAmounts { get; set; }
+        public bool CanEditDate { get; set; }
+        public bool CanEditNotes { get; set; }
+        public bool RequiresApproval { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای درخواست به‌روزرسانی پذیرش
+    /// </summary>
+    public class UpdateReceptionRequest
+    {
+        public int ReceptionId { get; set; }
+        
+        // فیلدهای قابل ویرایش
+        public int? DoctorId { get; set; }
+        public int? DepartmentId { get; set; }
+        public int? ClinicId { get; set; }
+        public DateTime? ReceptionDate { get; set; }
+        public string ReceptionDateShamsi { get; set; }
+        
+        // بیمه‌ها
+        public int? BasePlanId { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+        
+        // خدمات (لیست تغییرات)
+        public List<ReceptionItemUpdateDto> Items { get; set; } = new List<ReceptionItemUpdateDto>();
+        
+        // یادداشت‌ها و تنظیمات
+        public string Notes { get; set; }
+        public ReceptionType? Type { get; set; }
+        public AppointmentPriority? Priority { get; set; }
+        public bool? IsEmergency { get; set; }
+        
+        // برای بازمحاسبه
+        public bool RecalculatePrices { get; set; } = true;
+    }
+
+    /// <summary>
+    /// DTO برای به‌روزرسانی آیتم پذیرش
+    /// </summary>
+    public class ReceptionItemUpdateDto
+    {
+        public int? ReceptionItemId { get; set; } // null = جدید
+        public int ServiceId { get; set; }
+        public int Quantity { get; set; }
+        public bool IsDeleted { get; set; } // true = حذف
+    }
+
+    /// <summary>
+    /// DTO برای پاسخ به‌روزرسانی پذیرش
+    /// </summary>
+    public class UpdateReceptionResponse
+    {
+        public int ReceptionId { get; set; }
+        public ReceptionStatus Status { get; set; }
+        public List<ReceptionItemEditDto> Items { get; set; } = new List<ReceptionItemEditDto>();
+        public ReceptionTotalsDto Totals { get; set; }
+        public bool RequiresApproval { get; set; }
+        public string Message { get; set; }
+    }
+
+    #endregion
+
+    #region Cancellation DTOs
+
+    /// <summary>
+    /// DTO برای درخواست لغو پذیرش
+    /// </summary>
+    public class CancelReceptionRequest
+    {
+        public int ReceptionId { get; set; }
+        
+        [Required(ErrorMessage = "دلیل لغو الزامی است")]
+        [StringLength(500, MinimumLength = 10, ErrorMessage = "دلیل لغو باید بین 10 تا 500 کاراکتر باشد")]
+        public string Reason { get; set; }
+        
+        public bool ProcessRefund { get; set; }
+        
+        public string RefundReason { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای پاسخ لغو پذیرش
+    /// </summary>
+    public class CancelReceptionResponse
+    {
+        public int ReceptionId { get; set; }
+        public ReceptionStatus PreviousStatus { get; set; }
+        public ReceptionStatus NewStatus { get; set; }
+        public bool RefundProcessed { get; set; }
+        public decimal? RefundAmount { get; set; }
+        public string Message { get; set; }
+        public bool RequiresApproval { get; set; }
+        public DateTime CancelledAt { get; set; }
+        public string CancelledBy { get; set; }
     }
 
     #endregion

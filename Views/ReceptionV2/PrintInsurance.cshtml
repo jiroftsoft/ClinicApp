@@ -89,29 +89,43 @@
             url: '/Api/ReceptionApi/GetReceptionDetails',
             type: 'GET',
             data: { id: receptionId },
+            dataType: 'json',
             success: function(response) {
-                if (response.Success) {
-                    populateInsuranceReceipt(response.Data);
+                console.log('Response received:', response);
+                if (response && response.Success) {
+                    if (response.Data) {
+                        console.log('Data:', response.Data);
+                        populateInsuranceReceipt(response.Data);
+                    } else {
+                        console.error('Data is null or undefined');
+                        alert('خطا در بارگذاری اطلاعات: داده‌ها یافت نشد');
+                    }
                 } else {
-                    alert('خطا در بارگذاری اطلاعات: ' + response.Message);
+                    var errorMsg = (response && response.Message) ? response.Message : 'خطای نامشخص';
+                    console.error('API Error:', errorMsg);
+                    alert('خطا در بارگذاری اطلاعات: ' + errorMsg);
                 }
             },
-            error: function() {
-                alert('خطا در ارتباط با سرور');
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', { xhr: xhr, status: status, error: error });
+                alert('خطا در ارتباط با سرور: ' + (error || status));
             }
         });
     }
 
     function populateInsuranceReceipt(data) {
-        // اطلاعات پذیرش
-        $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber);
-        $('#receptionDate').text(formatDate(data.ReceptionDate));
-        $('#receptionTime').text(formatTime(data.ReceptionDate));
+        try {
+            console.log('Populating insurance receipt with data:', data);
+            
+            // اطلاعات پذیرش
+            $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber || '-');
+            $('#receptionDate').text(formatDate(data.ReceptionDate));
+            $('#receptionTime').text(formatTime(data.ReceptionDate));
 
-        // اطلاعات بیمار
-        $('#patientName').text(data.PatientName);
-        $('#patientNationalCode').text(data.PatientNationalCode);
-        $('#patientMobile').text(data.PatientMobile || '-');
+            // اطلاعات بیمار
+            $('#patientName').text(data.PatientName || '-');
+            $('#patientNationalCode').text(data.PatientNationalCode || '-');
+            $('#patientMobile').text(data.PatientMobile || '-');
 
         // اطلاعات بیمه تکمیلی
         $('#supplementaryInsuranceName').text(data.SupplementaryInsuranceName || '-');
@@ -154,44 +168,96 @@
                     }
                 }
                 
-                totalSupplementaryShare += supplementaryShare;
-                totalBaseShare += baseShare;
-                
-                servicesHtml += '<tr>';
-                servicesHtml += '<td>' + (item.ServiceName || '-') + '</td>';
-                servicesHtml += '<td>' + (item.Quantity || 1) + '</td>';
-                servicesHtml += '<td>' + formatCurrency(item.UnitPrice || 0) + '</td>';
-                servicesHtml += '<td>' + formatCurrency((item.UnitPrice || 0) * (item.Quantity || 1)) + '</td>';
-                servicesHtml += '<td>' + formatCurrency(supplementaryShare) + '</td>';
-                servicesHtml += '</tr>';
-            });
+                    totalSupplementaryShare += supplementaryShare;
+                    totalBaseShare += baseShare;
+                    
+                    servicesHtml += '<tr>';
+                    servicesHtml += '<td>' + (item.ServiceName || '-') + '</td>';
+                    servicesHtml += '<td>' + (item.Quantity || 1) + '</td>';
+                    servicesHtml += '<td>' + formatCurrency(item.UnitPrice || 0) + '</td>';
+                    servicesHtml += '<td>' + formatCurrency((item.UnitPrice || 0) * (item.Quantity || 1)) + '</td>';
+                    servicesHtml += '<td>' + formatCurrency(supplementaryShare) + '</td>';
+                    servicesHtml += '</tr>';
+                });
+            } else {
+                servicesHtml = '<tr><td colspan="5" style="text-align: center;">خدمتی یافت نشد</td></tr>';
+            }
+            $('#servicesList').html(servicesHtml);
+
+            // خلاصه مالی
+            $('#totalAmount').text(formatCurrency(data.TotalAmount || 0));
+            $('#baseInsuranceShare').text(formatCurrency(totalBaseShare));
+            $('#supplementaryInsuranceShare').text(formatCurrency(totalSupplementaryShare));
+            $('#patientShare').text(formatCurrency(data.PatientCoPay || 0));
+
+            console.log('Insurance receipt populated successfully');
+            
+            // چاپ خودکار
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        } catch (e) {
+            console.error('خطا در populateInsuranceReceipt:', e);
+            alert('خطا در نمایش اطلاعات: ' + e.message);
         }
-        $('#servicesList').html(servicesHtml);
+    }
 
-        // خلاصه مالی
-        $('#totalAmount').text(formatCurrency(data.TotalAmount || 0));
-        $('#baseInsuranceShare').text(formatCurrency(totalBaseShare));
-        $('#supplementaryInsuranceShare').text(formatCurrency(totalSupplementaryShare));
-        $('#patientShare').text(formatCurrency(data.PatientCoPay || 0));
-
-        // چاپ خودکار
-        setTimeout(function() {
-            window.print();
-        }, 1000);
+    function parseMicrosoftDate(dateString) {
+        // پشتیبانی از Microsoft JSON date format: /Date(1234567890)/
+        if (!dateString) return null;
+        
+        var match = dateString.match(/\/Date\((\d+)\)\//);
+        if (match) {
+            return new Date(parseInt(match[1]));
+        }
+        
+        // اگر format معمولی بود
+        return new Date(dateString);
     }
 
     function formatDate(dateString) {
-        var date = new Date(dateString);
-        return date.toLocaleDateString('fa-IR');
+        try {
+            var date = parseMicrosoftDate(dateString);
+            if (!date || isNaN(date.getTime())) {
+                return '-';
+            }
+            return date.toLocaleDateString('fa-IR', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            });
+        } catch (e) {
+            console.error('خطا در formatDate:', e);
+            return '-';
+        }
     }
 
     function formatTime(dateString) {
-        var date = new Date(dateString);
-        return date.toLocaleTimeString('fa-IR');
+        try {
+            var date = parseMicrosoftDate(dateString);
+            if (!date || isNaN(date.getTime())) {
+                return '-';
+            }
+            return date.toLocaleTimeString('fa-IR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        } catch (e) {
+            console.error('خطا در formatTime:', e);
+            return '-';
+        }
     }
 
     function formatCurrency(amount) {
-        return new Intl.NumberFormat('fa-IR').format(amount);
+        try {
+            if (amount == null || amount === undefined || isNaN(amount)) {
+                return '0';
+            }
+            return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
+        } catch (e) {
+            console.error('خطا در formatCurrency:', e);
+            return amount || '0';
+        }
     }
 </script>
 

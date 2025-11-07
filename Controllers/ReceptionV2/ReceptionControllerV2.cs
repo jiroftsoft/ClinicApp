@@ -124,6 +124,44 @@ namespace ClinicApp.Controllers.ReceptionV2
             }
         }
 
+        /// <summary>
+        /// صفحه ویرایش پذیرش
+        /// </summary>
+        [HttpGet]
+        [Route("reception/edit/{id:int}", Name = "ReceptionV2_Edit")]
+        public async Task<ActionResult> Edit(int id)
+        {
+            try
+            {
+                _logger.Information("🏥 V2: بارگذاری صفحه ویرایش پذیرش - ReceptionId: {Id}", id);
+
+                // بارگذاری داده‌های اولیه از Facade
+                var model = await _receptionFacade.LoadInitialAsync(1, null);
+                
+                // دریافت سال مالی جاری از سرویس
+                var financialYear = _financialYearService.GetCurrentYear();
+                
+                // تبدیل به ReceptionFormVM
+                var vm = new ReceptionFormVM
+                {
+                    Bootstrap = new BootstrapVM
+                    {
+                        FinancialYear = financialYear
+                    }
+                };
+
+                // ذخیره ReceptionId در ViewBag برای استفاده در JavaScript
+                ViewBag.ReceptionId = id;
+
+                return View("~/Views/ReceptionV2/Edit.cshtml", vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بارگذاری صفحه ویرایش پذیرش - ReceptionId: {Id}", id);
+                return View("Error");
+            }
+        }
+
         #endregion
 
         #region Custom Filters

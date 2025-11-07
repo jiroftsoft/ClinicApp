@@ -1,0 +1,81 @@
+@model ClinicApp.ViewModels.Reception.ReceptionFormVM
+@{
+    ViewBag.Title = "ویرایش پذیرش";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var receptionId = ViewBag.ReceptionId as int? ?? 0;
+}
+
+@* Anti-Forgery Token for AJAX (MUST be before scripts to ensure token exists in DOM) *@
+@using (Html.BeginForm("Edit", "ReceptionV2", FormMethod.Post, new { id = "v2_af_form", style = "display:none" }))
+{
+    @Html.AntiForgeryToken()
+}
+
+@* Summary Header *@
+@Html.Partial("Partials/_ReceptionSummaryHeader")
+
+<div class="reception-pro container-fluid" dir="rtl">
+  <header class="reception-pro__header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#receptionSidebar" aria-controls="receptionSidebar">☰</button>
+      <h5 class="m-0">ویرایش پذیرش</h5>
+      <span id="ReceptionStatusBadge" class="badge bg-secondary ms-2">در حال بارگذاری...</span>
+    </div>
+    <div class="d-flex gap-2">
+      <button id="BtnSaveChanges" class="btn btn-success">
+        <i class="fas fa-save me-1"></i> ذخیره تغییرات
+      </button>
+      <button id="BtnCancelReception" class="btn btn-danger">
+        <i class="fas fa-ban me-1"></i> لغو پذیرش
+      </button>
+      <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-outline-secondary">
+        <i class="fas fa-times me-1"></i> انصراف
+      </a>
+    </div>
+  </header>
+
+  <div class="row mt-3">
+    <div class="col-xl-8 col-lg-7">
+      <section class="reception-pro__section">
+        <button class="btn btn-link p-0 mb-2" data-bs-toggle="collapse" data-bs-target="#identity">مشخصات هویتی</button>
+        <div id="identity" class="collapse show">
+          @Html.Partial("Partials/_Patient", Model.Patient)
+        </div>
+      </section>
+
+      @Html.Partial("Partials/_Insurance", Model.Insurance)
+      @Html.Partial("Partials/_ClinicDept", Model.ClinicDept)
+      @Html.Partial("Partials/_ServicePicker", Model.ServicePicker)
+      @Html.Partial("Partials/_ItemsGrid", Model.ServicePicker.SelectedItems)
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+      <div class="reception-pro__sticky">
+        @Html.Partial("Partials/_Totals", Model.Totals)
+        @Html.Partial("Partials/_Payment", Model.Payment)
+      </div>
+    </div>
+  </div>
+</div>
+
+@* Hidden field for ReceptionId *@
+<input type="hidden" id="ReceptionId" name="ReceptionId" value="@receptionId" />
+
+@* Patient Fast Create Modal *@
+@Html.Partial("Partials/_PatientFastCreateModal")
+
+@* Coverage Modal *@
+@Html.Partial("Partials/_CoverageModal")
+
+@* POS Payment Modal *@
+@Html.Partial("Partials/_PosPaymentModal")
+
+@Styles.Render("~/content/reception.v2")
+@Scripts.Render("~/bundles/reception.v2")
+<script>
+  window.ReceptionBootstrap = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Bootstrap));
+  window.ReceptionEditMode = true;
+  window.ReceptionId = @receptionId;
+</script>
+<script src="~/Scripts/reception.v2/reception-edit.js"></script>
+

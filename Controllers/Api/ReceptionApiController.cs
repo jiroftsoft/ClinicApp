@@ -647,75 +647,109 @@ namespace ClinicApp.Controllers.Api
             {
                 _logger.Information("🏥 API: دریافت جزئیات پذیرش - ID: {Id}", id);
 
-                // دریافت اطلاعات پذیرش از دیتابیس
-                var reception = await _context.Receptions
-                    .Include(r => r.Patient)
-                    .Include(r => r.Doctor)
-                    .Include(r => r.Department)
-                    .Include(r => r.ReceptionItems.Select(receptionItem => receptionItem.Service))
-                    .Include(reception => reception.ActivePatientInsurance)
-                    .FirstOrDefaultAsync(r => r.ReceptionId == id);
+                // 🏥 MEDICAL: استفاده از projection برای جلوگیری از mapping issues با enum ها
+                var receptionData = await _context.Receptions
+                    .Where(r => r.ReceptionId == id)
+                    .Select(r => new
+                    {
+                        ReceptionId = r.ReceptionId,
+                        ReceptionNo = r.ReceptionNo, // فقط ReceptionNo (computed property نمی‌تواند در LINQ استفاده شود)
+                        ReceptionDate = r.ReceptionDate,
+                        PatientId = r.PatientId,
+                        PatientName = r.Patient != null ? r.Patient.FirstName + " " + r.Patient.LastName : null,
+                        PatientNationalCode = r.Patient != null ? r.Patient.NationalCode : null,
+                        PatientMobile = r.Patient != null ? r.Patient.PhoneNumber : null,
+                        DoctorId = r.DoctorId,
+                        DoctorName = r.Doctor != null ? r.Doctor.FirstName + " " + r.Doctor.LastName : null,
+                        DepartmentId = r.DepartmentId,
+                        DepartmentName = r.Department != null ? r.Department.Name : null,
+                        TotalAmount = r.TotalAmount,
+                        InsurerShareAmount = r.InsurerShareAmount,
+                        PatientCoPay = r.PatientCoPay,
+                        PaymentMethod = r.PaymentMethod ?? "نقدی",
+                        BasePlanId = r.BasePlanId,
+                        SupplementaryPlanId = r.SupplementaryPlanId,
+                        Items = r.ReceptionItems
+                            .Where(ri => !ri.IsDeleted)
+                            .Select(ri => new
+                            {
+                                ServiceName = ri.Service != null ? ri.Service.Title : null,
+                                Quantity = ri.Quantity,
+                                UnitPrice = ri.UnitPrice,
+                                TotalPrice = ri.UnitPrice * ri.Quantity,
+                                SnapshotJson = ri.SnapshotJson,
+                                PatientShareAmount = ri.PatientShareAmount,
+                                InsurerShareAmount = ri.InsurerShareAmount
+                            }).ToList()
+                    })
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
 
-                if (reception == null)
+                if (receptionData == null)
                 {
                     return Json(ServiceResult<object>.Failed("پذیرش یافت نشد"), JsonRequestBehavior.AllowGet);
                 }
 
+                // 🏥 MEDICAL: محاسبه ReceptionNumber در memory (computed property)
+                string receptionNumber = receptionData.ReceptionNo ?? $"R{receptionData.ReceptionId:D6}";
+
+                // 🏥 MEDICAL: اجرای query های async برای اطلاعات بیمه تکمیلی
+                string supplementaryInsuranceName = null;
+                string supplementaryPolicyNumber = null;
+                string supplementaryCardNumber = null;
+
+                if (receptionData.SupplementaryPlanId.HasValue)
+                {
+                    // دریافت نام بیمه تکمیلی
+                    supplementaryInsuranceName = await _context.InsurancePlans
+                        .Where(p => p.InsurancePlanId == receptionData.SupplementaryPlanId.Value)
+                        .Select(p => p.Name)
+                        .FirstOrDefaultAsync();
+
+                    // دریافت اطلاعات بیمه تکمیلی از PatientInsurance
+                    var supplementaryInsurance = await _context.PatientInsurances
+                        .Where(pi => pi.PatientId == receptionData.PatientId && 
+                                    pi.InsurancePlanId == receptionData.SupplementaryPlanId.Value &&
+                                    pi.IsActive && !pi.IsDeleted)
+                        .Select(pi => new { pi.PolicyNumber, pi.CardNumber })
+                        .FirstOrDefaultAsync();
+
+                    if (supplementaryInsurance != null)
+                    {
+                        supplementaryPolicyNumber = supplementaryInsurance.PolicyNumber;
+                        supplementaryCardNumber = supplementaryInsurance.CardNumber;
+                    }
+                }
+
                 var result = new
                 {
-                    ReceptionId = reception.ReceptionId,
-                    ReceptionNo = reception.ReceptionNo ?? reception.ReceptionNumber,
-                    ReceptionDate = reception.ReceptionDate,
-                    PatientName = reception.Patient?.FullName,
-                    PatientNationalCode = reception.Patient?.NationalCode,
-                    PatientMobile = reception.Patient?.PhoneNumber,
-                    DoctorName = reception.Doctor?.FullName,
-                    DepartmentName = reception.Department?.Name,
-                    TotalAmount = reception.TotalAmount,
-                    InsurerShareAmount = reception.InsurerShareAmount,
-                    PatientCoPay = reception.PatientCoPay,
-                    PaymentMethod = reception.PaymentMethod ?? "نقدی",
-                    Items = reception.ReceptionItems.Where(ri => !ri.IsDeleted).Select(ri => new
-                    {
-                        ServiceName = ri.Service?.Title,
-                        Quantity = ri.Quantity,
-                        UnitPrice = ri.UnitPrice,
-                        TotalPrice = ri.UnitPrice * ri.Quantity,
-                        SnapshotJson = ri.SnapshotJson,
-                        PatientShareAmount = ri.PatientShareAmount,
-                        InsurerShareAmount = ri.InsurerShareAmount
-                    }).ToList(),
-                    BasePlanId = reception.BasePlanId,
-                    SupplementaryPlanId = reception.SupplementaryPlanId,
-                    SupplementaryInsuranceName = reception.SupplementaryPlanId.HasValue ? 
-                        (await _context.InsurancePlans
-                            .Where(p => p.InsurancePlanId == reception.SupplementaryPlanId.Value)
-                            .Select(p => p.Name)
-                            .FirstOrDefaultAsync()) : null,
-                    // 🏥 MEDICAL: دریافت اطلاعات بیمه تکمیلی از PatientInsurance
-                    // اگر ActivePatientInsurance وجود دارد و InsurancePlanId آن با SupplementaryPlanId مطابقت دارد
-                    SupplementaryPolicyNumber = reception.SupplementaryPlanId.HasValue && reception.ActivePatientInsurance != null ?
-                        (await _context.PatientInsurances
-                            .Where(pi => pi.PatientId == reception.PatientId && 
-                                        pi.InsurancePlanId == reception.SupplementaryPlanId.Value &&
-                                        pi.IsActive && !pi.IsDeleted)
-                            .Select(pi => pi.PolicyNumber)
-                            .FirstOrDefaultAsync()) : null,
-                    SupplementaryCardNumber = reception.SupplementaryPlanId.HasValue && reception.ActivePatientInsurance != null ?
-                        (await _context.PatientInsurances
-                            .Where(pi => pi.PatientId == reception.PatientId && 
-                                        pi.InsurancePlanId == reception.SupplementaryPlanId.Value &&
-                                        pi.IsActive && !pi.IsDeleted)
-                            .Select(pi => pi.CardNumber)
-                            .FirstOrDefaultAsync()) : null
+                    ReceptionId = receptionData.ReceptionId,
+                    ReceptionNo = receptionData.ReceptionNo,
+                    ReceptionNumber = receptionNumber, // computed property در memory
+                    ReceptionDate = receptionData.ReceptionDate,
+                    PatientName = receptionData.PatientName,
+                    PatientNationalCode = receptionData.PatientNationalCode,
+                    PatientMobile = receptionData.PatientMobile,
+                    DoctorName = receptionData.DoctorName,
+                    DepartmentName = receptionData.DepartmentName,
+                    TotalAmount = receptionData.TotalAmount,
+                    InsurerShareAmount = receptionData.InsurerShareAmount,
+                    PatientCoPay = receptionData.PatientCoPay,
+                    PaymentMethod = receptionData.PaymentMethod,
+                    Items = receptionData.Items,
+                    BasePlanId = receptionData.BasePlanId,
+                    SupplementaryPlanId = receptionData.SupplementaryPlanId,
+                    SupplementaryInsuranceName = supplementaryInsuranceName,
+                    SupplementaryPolicyNumber = supplementaryPolicyNumber,
+                    SupplementaryCardNumber = supplementaryCardNumber
                 };
 
                 return Json(ServiceResult<object>.Successful(result), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت جزئیات پذیرش");
-                return Json(ServiceResult<object>.Failed("خطا در دریافت جزئیات پذیرش"), JsonRequestBehavior.AllowGet);
+                _logger.Error(ex, "❌ API: خطا در دریافت جزئیات پذیرش - ID: {Id}, Exception: {Exception}", id, ex.ToString());
+                return Json(ServiceResult<object>.Failed($"خطا در دریافت جزئیات پذیرش: {ex.Message}", "ERROR"), JsonRequestBehavior.AllowGet);
             }
         }
     }
