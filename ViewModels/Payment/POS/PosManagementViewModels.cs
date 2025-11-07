@@ -152,7 +152,13 @@ namespace ClinicApp.ViewModels.Payment.POS
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string Title { get; set; } // Alias for Name
+        public string TerminalId { get; set; }
+        public string MerchantId { get; set; }
         public string SerialNumber { get; set; }
+        public string IpAddress { get; set; }
+        public int? Port { get; set; }
+        public string MacAddress { get; set; }
         public PosProviderType ProviderType { get; set; }
         public PosProtocol Protocol { get; set; }
         public bool IsActive { get; set; }
@@ -168,7 +174,12 @@ namespace ClinicApp.ViewModels.Payment.POS
         public PosTerminalListViewModel()
         {
             Name = string.Empty;
+            Title = string.Empty;
+            TerminalId = string.Empty;
+            MerchantId = string.Empty;
             SerialNumber = string.Empty;
+            IpAddress = string.Empty;
+            MacAddress = string.Empty;
             CreatedByUserName = string.Empty;
         }
     }

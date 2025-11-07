@@ -28,11 +28,18 @@ namespace ClinicApp.ViewModels.Payment.POS
     public class UpdatePosTerminalRequest
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Title { get; set; }
+        public string Name { get; set; } // Alias for Title
+        public string TerminalId { get; set; }
+        public string MerchantId { get; set; }
         public string SerialNumber { get; set; }
-        public PosProviderType ProviderType { get; set; }
+        public PosProviderType Provider { get; set; }
+        public PosProviderType ProviderType { get; set; } // Alias for Provider
         public PosProtocol Protocol { get; set; }
         public string ConnectionString { get; set; }
+        public string IpAddress { get; set; }
+        public int? Port { get; set; }
+        public string MacAddress { get; set; }
         public string Description { get; set; }
         public bool IsActive { get; set; }
         public bool IsDefault { get; set; }

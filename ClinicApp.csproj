@@ -4614,6 +4614,7 @@
     <Content Include="Views\ReceptionV2\Partials\_IdentitySection.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_ReceptionSummaryHeader.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_CoverageModal.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_PosPaymentModal.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

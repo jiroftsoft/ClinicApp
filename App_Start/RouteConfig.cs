@@ -372,11 +372,34 @@ namespace ClinicApp
                 constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
             );
 
+            // 🏥 POS Terminal API Routes
+            routes.MapRoute(
+                name: "PosTerminalApi_Default",
+                url: "api/v1/pos/terminals/default",
+                defaults: new { controller = "PosTerminalApi", action = "GetDefault" },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
+                name: "PosTerminalApi_ProcessPayment",
+                url: "api/v1/pos/process-payment",
+                defaults: new { controller = "PosTerminalApi", action = "ProcessPayment" },
+                constraints: new { httpMethod = new HttpMethodConstraint("POST") },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
+                name: "PosTerminalApi",
+                url: "api/v1/pos/{action}",
+                defaults: new { controller = "PosTerminalApi", action = "List" },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
-                namespaces: new[] { "ClinicApp.Controllers", "ClinicApp.Controllers.Payment.POS" }
+                namespaces: new[] { "ClinicApp.Controllers", "ClinicApp.Controllers.Payment.POS", "ClinicApp.Controllers.Api" }
             );
         }
     }

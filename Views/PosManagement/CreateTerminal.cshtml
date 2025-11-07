@@ -1,0 +1,173 @@
+@model ClinicApp.ViewModels.Payment.POS.PosTerminalCreateViewModel
+@using System.Linq
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@{
+    ViewBag.Title = "ایجاد ترمینال POS";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // Helper function برای دریافت Display Name از Enum
+    Func<Enum, string> getDisplayName = (enumValue) => {
+        var field = enumValue.GetType().GetField(enumValue.ToString());
+        if (field == null) return enumValue.ToString();
+        var displayAttr = field.GetCustomAttributes(typeof(DisplayAttribute), false)
+            .FirstOrDefault() as DisplayAttribute;
+        return displayAttr?.Name ?? enumValue.ToString();
+    };
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">ایجاد ترمینال POS جدید</h5>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Index", "PosManagement")">
+                    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    @using (Html.BeginForm("CreateTerminal", "PosManagement", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="Name" class="form-label">
+                                    @Html.DisplayNameFor(m => m.Name)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required", maxlength = "100" })
+                                @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="SerialNumber" class="form-label">
+                                    @Html.DisplayNameFor(m => m.SerialNumber)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.SerialNumber, new { @class = "form-control", required = "required", maxlength = "50", pattern = "[A-Za-z0-9\\-_]+", title = "شماره سریال باید شامل حروف، اعداد، خط تیره و زیرخط باشد" })
+                                @Html.ValidationMessageFor(m => m.SerialNumber, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">فقط حروف، اعداد، خط تیره (-) و زیرخط (_) مجاز است</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ProviderType" class="form-label">
+                                    @Html.DisplayNameFor(m => m.ProviderType)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.DropDownListFor(m => m.ProviderType, 
+                                    Enum.GetValues(typeof(ClinicApp.Models.Enums.PosProviderType))
+                                        .Cast<ClinicApp.Models.Enums.PosProviderType>()
+                                        .Select(e => new SelectListItem
+                                        {
+                                            Value = ((int)e).ToString(),
+                                            Text = getDisplayName(e),
+                                            Selected = Model.ProviderType == e
+                                        }), 
+                                    "انتخاب کنید...", 
+                                    new { @class = "form-select", required = "required" })
+                                @Html.ValidationMessageFor(m => m.ProviderType, "", new { @class = "text-danger" })
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="Protocol" class="form-label">
+                                    @Html.DisplayNameFor(m => m.Protocol)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.DropDownListFor(m => m.Protocol, 
+                                    Enum.GetValues(typeof(ClinicApp.Models.Enums.PosProtocol))
+                                        .Cast<ClinicApp.Models.Enums.PosProtocol>()
+                                        .Select(e => new SelectListItem
+                                        {
+                                            Value = ((int)e).ToString(),
+                                            Text = getDisplayName(e),
+                                            Selected = Model.Protocol == e
+                                        }), 
+                                    "انتخاب کنید...", 
+                                    new { @class = "form-select", required = "required" })
+                                @Html.ValidationMessageFor(m => m.Protocol, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="ConnectionString" class="form-label">
+                                    @Html.DisplayNameFor(m => m.ConnectionString)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextAreaFor(m => m.ConnectionString, new { @class = "form-control", required = "required", maxlength = "500", rows = "3", placeholder = "مثال: IP:192.168.1.10,Port:5000 یا COM1,9600" })
+                                @Html.ValidationMessageFor(m => m.ConnectionString, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">برای TCP/IP: IP:آدرس,Port:پورت | برای Serial: COM1,9600 | برای API: URL کامل</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="Description" class="form-label">
+                                    @Html.DisplayNameFor(m => m.Description)
+                                </label>
+                                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", maxlength = "500", rows = "3" })
+                                @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="form-check">
+                                    @Html.CheckBoxFor(m => m.IsDefault, new { @class = "form-check-input" })
+                                    <label class="form-check-label" for="IsDefault">
+                                        @Html.DisplayNameFor(m => m.IsDefault)
+                                    </label>
+                                    <small class="form-text text-muted d-block">اگر این ترمینال را به عنوان پیش‌فرض انتخاب کنید، سایر ترمینال‌های پیش‌فرض غیرفعال می‌شوند</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="@Url.Action("Index", "PosManagement")" class="btn btn-secondary">
+                                        <i class="fas fa-times me-2"></i>انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>ذخیره ترمینال
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // ✅ Bootstrap 5 Form Validation
+        (function() {
+            'use strict';
+            
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.querySelectorAll('.needs-validation');
+            
+            // Loop over them and prevent submission
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+}
+

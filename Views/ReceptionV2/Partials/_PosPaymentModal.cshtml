@@ -1,0 +1,60 @@
+@* Modal پرداخت POS - ارتباط با دستگاه کارتخوان *@
+<div class="modal fade" id="posPaymentModal" tabindex="-1" aria-labelledby="posPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="posPaymentModalLabel">
+          <i class="fas fa-credit-card me-2"></i>پرداخت از طریق کارتخوان
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <div id="posPaymentStatus" class="text-center">
+          <div id="posPaymentLoading" class="d-none">
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">در حال پردازش...</span>
+            </div>
+            <p class="text-muted">در حال اتصال به دستگاه کارتخوان...</p>
+            <p class="text-muted small">لطفاً کارت را وارد کنید</p>
+          </div>
+          
+          <div id="posPaymentSuccess" class="d-none">
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle fa-3x mb-3"></i>
+              <h5>پرداخت با موفقیت انجام شد</h5>
+              <div id="posPaymentDetails" class="mt-3">
+                <p class="mb-1"><strong>RRN:</strong> <span id="posRRN"></span></p>
+                <p class="mb-1"><strong>Trace No:</strong> <span id="posTraceNo"></span></p>
+                <p class="mb-1"><strong>Terminal ID:</strong> <span id="posTerminalId"></span></p>
+                <p class="mb-0"><strong>شماره کارت:</strong> <span id="posCardLast4"></span></p>
+              </div>
+            </div>
+          </div>
+          
+          <div id="posPaymentError" class="d-none">
+            <div class="alert alert-danger">
+              <i class="fas fa-times-circle fa-3x mb-3"></i>
+              <h5>خطا در پرداخت</h5>
+              <p id="posErrorMessage" class="mb-0"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div id="posPaymentInfo" class="mt-3">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title">اطلاعات تراکنش</h6>
+              <p class="mb-1"><strong>مبلغ:</strong> <span id="posAmount" class="text-primary"></span></p>
+              <p class="mb-0"><strong>دستگاه:</strong> <span id="posTerminalName"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="posPaymentCancelBtn">انصراف</button>
+        <button type="button" class="btn btn-primary d-none" id="posPaymentConfirmBtn">تأیید و ادامه</button>
+      </div>
+    </div>
+  </div>
+</div>
+

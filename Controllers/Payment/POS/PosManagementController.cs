@@ -154,24 +154,33 @@ namespace ClinicApp.Controllers.Payment.POS
                 if (!validation.IsValid)
                 {
                     await PopulateTerminalCreateViewModel(model);
-                    return HandleValidationErrors(validation.Errors.Select(e => e.ErrorMessage));
+                    foreach (var error in validation.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    }
+                    return View(model);
                 }
 
                 // ایجاد ترمینال
-                var result = await _posManagementService.CreateTerminalAsync(new PosTerminal
+                var createRequest = new CreatePosTerminalRequest
                 {
-                    Title = model.Name,
+                    Name = model.Name,
                     SerialNumber = model.SerialNumber,
-                    Provider = model.ProviderType,
+                    ProviderType = model.ProviderType,
                     Protocol = model.Protocol,
+                    ConnectionString = model.ConnectionString,
+                    Description = model.Description,
                     IsDefault = model.IsDefault,
                     CreatedByUserId = _currentUserService.UserId
-                });
+                };
+
+                var result = await _posManagementService.CreatePosTerminalAsync(createRequest);
 
                 if (!result.Success)
                 {
                     await PopulateTerminalCreateViewModel(model);
-                    return HandleServiceError(result);
+                    ModelState.AddModelError("", result.Message);
+                    return View(model);
                 }
 
                 _logger.Information("ترمینال POS با موفقیت ایجاد شد. شناسه: {TerminalId}, کاربر: {UserName}",
@@ -181,7 +190,10 @@ namespace ClinicApp.Controllers.Payment.POS
             }
             catch (Exception ex)
             {
-                return HandleException(ex, "ایجاد ترمینال POS");
+                _logger.Error(ex, "خطا در ایجاد ترمینال POS");
+                await PopulateTerminalCreateViewModel(model);
+                ModelState.AddModelError("", "خطا در ایجاد ترمینال POS. لطفاً مجدداً تلاش کنید.");
+                return View(model);
             }
         }
 
@@ -475,27 +487,33 @@ namespace ClinicApp.Controllers.Payment.POS
                 var terminals = result.Data?.Select(t => new PosTerminalListViewModel
                 {
                     Id = t.PosTerminalId,
-                    Name = t.Name,
+                    Name = t.Title,
+                    Title = t.Title,
+                    TerminalId = t.TerminalId,
+                    MerchantId = t.MerchantId,
                     SerialNumber = t.SerialNumber,
-                    ProviderType = t.ProviderType,
+                    IpAddress = t.IpAddress,
+                    Port = t.Port,
+                    MacAddress = t.MacAddress,
+                    ProviderType = t.Provider,
                     Protocol = t.Protocol,
                     IsActive = t.IsActive,
                     IsDefault = t.IsDefault,
                     CreatedAt = t.CreatedAt,
-                    CreatedByUserName = t.CreatedByUserName,
-                    TotalTransactions = t.TotalTransactions,
-                    TotalAmount = t.TotalAmount,
-                    SuccessRate = t.SuccessRate
+                    CreatedByUserName = t.CreatedByUser?.UserName ?? "نامشخص",
+                    TotalTransactions = 0, // TODO: Calculate from Transactions
+                    TotalAmount = 0, // TODO: Calculate from Transactions
+                    SuccessRate = 0 // TODO: Calculate from Transactions
                 }).ToList() ?? new List<PosTerminalListViewModel>();
 
                 return StandardJsonResponse(true, "لیست ترمینال‌های POS با موفقیت دریافت شد", new
                 {
                     terminals,
-                    totalCount = result.Data?.Count() ?? 0,
+                    totalCount = terminals.Count,
                     pageNumber,
                     pageSize,
-                    totalPages = (int)Math.Ceiling((double)(result.Data?.Count() ?? 0) / pageSize)
-                });
+                    totalPages = (int)Math.Ceiling((double)terminals.Count / pageSize)
+                }, null);
             }
             catch (Exception ex)
             {

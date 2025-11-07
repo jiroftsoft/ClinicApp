@@ -116,7 +116,14 @@ namespace ClinicApp.Controllers.Payment.POS
         {
             try
             {
+                if (request == null)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است"));
+                }
+                
                 request.Id = id;
+                request.UpdatedByUserId = User?.Identity?.Name;
+                
                 var res = await _service.UpdatePosTerminalAsync(request);
                 return Json(res);
             }
@@ -158,6 +165,100 @@ namespace ClinicApp.Controllers.Payment.POS
                 return Json(ServiceResult.Failed("خطا در تغییر وضعیت ترمینال"));
             }
         }
+
+        // GET /api/v1/pos/terminals/default
+        [HttpGet, Route("terminals/default")]
+        public async Task<ActionResult> GetDefault()
+        {
+            try
+            {
+                var res = await _service.GetDefaultPosTerminalAsync();
+                if (res.Success && res.Data != null)
+                {
+                    return Json(ServiceResult<object>.Successful(new
+                    {
+                        posTerminalId = res.Data.PosTerminalId,
+                        title = res.Data.Title,
+                        terminalId = res.Data.TerminalId,
+                        merchantId = res.Data.MerchantId,
+                        provider = res.Data.Provider.ToString(),
+                        protocol = res.Data.Protocol.ToString(),
+                        ipAddress = res.Data.IpAddress,
+                        port = res.Data.Port,
+                        macAddress = res.Data.MacAddress,
+                        isActive = res.Data.IsActive,
+                        isDefault = res.Data.IsDefault
+                    }), JsonRequestBehavior.AllowGet);
+                }
+                return Json(res, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "POS: get default terminal error");
+                return Json(ServiceResult.Failed("خطا در دریافت ترمینال پیش‌فرض"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // POST /api/v1/pos/process-payment
+        [HttpPost, ValidateAntiForgeryToken, Route("process-payment")]
+        public async Task<ActionResult> ProcessPayment(ProcessPosPaymentRequest request)
+        {
+            try
+            {
+                if (request == null || request.ReceptionId <= 0 || request.AmountIRR <= 0)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است"));
+                }
+
+                // دریافت ترمینال پیش‌فرض
+                var terminalResult = await _service.GetDefaultPosTerminalAsync();
+                if (!terminalResult.Success || terminalResult.Data == null)
+                {
+                    return Json(ServiceResult.Failed("ترمینال POS پیش‌فرض یافت نشد. لطفاً ابتدا ترمینال را تنظیم کنید."));
+                }
+
+                var terminal = terminalResult.Data;
+
+                // TODO: اینجا باید با دستگاه کارتخوان ارتباط برقرار شود
+                // برای حال حاضر، یک شبیه‌سازی ساده انجام می‌دهیم
+                // در آینده باید با SDK دستگاه کارتخوان (مثل سامان کیش، آسان پرداخت و...) ارتباط برقرار شود
+                
+                // شبیه‌سازی پردازش پرداخت
+                // در واقعیت، اینجا باید:
+                // 1. اتصال به دستگاه کارتخوان از طریق IP/MAC
+                // 2. ارسال مبلغ به دستگاه
+                // 3. دریافت پاسخ از دستگاه (RRN، TraceNo، TerminalId، CardLast4)
+                // 4. بررسی موفقیت تراکنش
+
+                // برای حال حاضر، یک پاسخ شبیه‌سازی شده برمی‌گردانیم
+                var simulatedResponse = new
+                {
+                    success = true,
+                    rrn = $"RRN{DateTime.Now:yyyyMMddHHmmss}{new Random().Next(1000, 9999)}",
+                    traceNo = $"{DateTime.Now:HHmmss}{new Random().Next(100, 999)}",
+                    terminalId = terminal.TerminalId,
+                    cardLast4 = $"****{new Random().Next(1000, 9999)}",
+                    message = "پرداخت با موفقیت انجام شد"
+                };
+
+                return Json(ServiceResult<object>.Successful(simulatedResponse));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "POS: process payment error");
+                return Json(ServiceResult.Failed("خطا در پردازش پرداخت POS"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// درخواست پردازش پرداخت POS
+    /// </summary>
+    public class ProcessPosPaymentRequest
+    {
+        public int ReceptionId { get; set; }
+        public decimal AmountIRR { get; set; }
+        public int? PosTerminalId { get; set; }
     }
 }
 

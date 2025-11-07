@@ -91,12 +91,13 @@ namespace ClinicApp.Services.Payment.POS
                 var terminal = new PosTerminal
                 {
                     Title = request.Name,
+                    TerminalId = request.SerialNumber, // استفاده از SerialNumber به عنوان TerminalId
+                    MerchantId = "DEFAULT", // مقدار پیش‌فرض برای MerchantId - می‌تواند بعداً ویرایش شود
                     SerialNumber = request.SerialNumber,
                     Provider = request.ProviderType,
                     Protocol = request.Protocol,
-                    IpAddress = request.ConnectionString?.Split(':')[0],
-                    Port = request.ConnectionString?.Contains(':') == true ? 
-                           int.TryParse(request.ConnectionString.Split(':')[1], out var port) ? port : null : null,
+                    IpAddress = ParseConnectionStringIp(request.ConnectionString),
+                    Port = ParseConnectionStringPort(request.ConnectionString),
                     IsActive = true,
                     IsDefault = request.IsDefault,
                     CreatedByUserId = request.CreatedByUserId,
@@ -164,21 +165,46 @@ namespace ClinicApp.Services.Payment.POS
                 }
 
                 // به‌روزرسانی اطلاعات ترمینال
-                terminal.Title = request.Name; // Name is computed from Title
+                terminal.Title = !string.IsNullOrEmpty(request.Title) ? request.Title : request.Name;
                 terminal.SerialNumber = request.SerialNumber;
-                terminal.Provider = request.ProviderType; // ProviderType is computed from Provider
+                terminal.Provider = request.Provider != default(PosProviderType) ? request.Provider : request.ProviderType;
                 terminal.Protocol = request.Protocol;
-                // Parse ConnectionString to IpAddress and Port
-                if (!string.IsNullOrEmpty(request.ConnectionString) && request.ConnectionString.Contains(':'))
+                
+                // به‌روزرسانی اطلاعات شبکه
+                if (!string.IsNullOrEmpty(request.IpAddress))
                 {
-                    var parts = request.ConnectionString.Split(':');
-                    terminal.IpAddress = parts[0];
-                    if (parts.Length > 1 && int.TryParse(parts[1], out var port))
+                    terminal.IpAddress = request.IpAddress;
+                }
+                if (request.Port.HasValue)
+                {
+                    terminal.Port = request.Port.Value;
+                }
+                if (!string.IsNullOrEmpty(request.MacAddress))
+                {
+                    terminal.MacAddress = request.MacAddress;
+                }
+                
+                // Parse ConnectionString to IpAddress and Port (if provided and not already set)
+                if (!string.IsNullOrEmpty(request.ConnectionString) && string.IsNullOrEmpty(request.IpAddress))
+                {
+                    if (request.ConnectionString.Contains(':'))
                     {
-                        terminal.Port = port;
+                        var parts = request.ConnectionString.Split(':');
+                        if (parts.Length >= 2)
+                        {
+                            terminal.IpAddress = parts[0].Trim();
+                            if (int.TryParse(parts[1].Trim(), out int port))
+                            {
+                                terminal.Port = port;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        terminal.IpAddress = request.ConnectionString;
                     }
                 }
-                // Description is computed from Title and Provider, no need to set it
+                
                 terminal.IsActive = request.IsActive;
                 terminal.IsDefault = request.IsDefault;
                 terminal.UpdatedByUserId = request.UpdatedByUserId;
@@ -314,30 +340,160 @@ namespace ClinicApp.Services.Payment.POS
 
         #endregion
 
+        #region Helper Methods
+
+        /// <summary>
+        /// استخراج IP از ConnectionString
+        /// </summary>
+        private string ParseConnectionStringIp(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+                return null;
+
+            // فرمت: IP:192.168.1.10,Port:5000 یا 192.168.1.10:5000
+            if (connectionString.Contains("IP:"))
+            {
+                var ipPart = connectionString.Split(',')[0];
+                return ipPart.Replace("IP:", "").Trim();
+            }
+            else if (connectionString.Contains(":"))
+            {
+                var parts = connectionString.Split(':');
+                return parts[0].Trim();
+            }
+
+            return connectionString.Trim();
+        }
+
+        /// <summary>
+        /// استخراج Port از ConnectionString
+        /// </summary>
+        private int? ParseConnectionStringPort(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+                return null;
+
+            // فرمت: IP:192.168.1.10,Port:5000 یا 192.168.1.10:5000
+            if (connectionString.Contains("Port:"))
+            {
+                var portPart = connectionString.Split(',')
+                    .FirstOrDefault(p => p.Contains("Port:"));
+                if (portPart != null)
+                {
+                    var portStr = portPart.Replace("Port:", "").Trim();
+                    if (int.TryParse(portStr, out int port))
+                        return port;
+                }
+            }
+            else if (connectionString.Contains(":"))
+            {
+                var parts = connectionString.Split(':');
+                if (parts.Length >= 2)
+                {
+                    var portStr = parts[1].Split(',')[0].Trim();
+                    if (int.TryParse(portStr, out int port))
+                        return port;
+                }
+            }
+
+            return null;
+        }
+
+        #endregion
+
         #region Placeholder Methods (To be implemented in next parts)
 
         public async Task<ServiceResult<PosTerminal>> GetPosTerminalAsync(int terminalId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPosTerminalAsync will be implemented in next part");
+            try
+            {
+                var terminal = await _posTerminalRepository.GetByIdAsync(terminalId);
+                if (terminal == null)
+                {
+                    return ServiceResult<PosTerminal>.Failed("ترمینال POS یافت نشد");
+                }
+                
+                return ServiceResult<PosTerminal>.Successful(terminal);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت ترمینال POS. شناسه: {TerminalId}", terminalId);
+                return ServiceResult<PosTerminal>.Failed("خطا در دریافت ترمینال POS");
+            }
         }
 
         public async Task<ServiceResult<IEnumerable<PosTerminal>>> GetActivePosTerminalsAsync()
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetActivePosTerminalsAsync will be implemented in next part");
+            try
+            {
+                var terminals = await _posTerminalRepository.GetActiveTerminalsAsync();
+                return ServiceResult<IEnumerable<PosTerminal>>.Successful(terminals);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت ترمینال‌های فعال POS");
+                return ServiceResult<IEnumerable<PosTerminal>>.Failed("خطا در دریافت ترمینال‌های فعال");
+            }
         }
 
         public async Task<ServiceResult<PosTerminal>> GetDefaultPosTerminalAsync()
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDefaultPosTerminalAsync will be implemented in next part");
+            try
+            {
+                var terminal = await _posTerminalRepository.GetDefaultTerminalAsync();
+                if (terminal == null)
+                {
+                    // اگر ترمینال پیش‌فرض وجود نداشت، اولین ترمینال فعال را برگردان
+                    var activeTerminals = await _posTerminalRepository.GetActiveTerminalsAsync();
+                    terminal = activeTerminals.FirstOrDefault();
+                    
+                    if (terminal == null)
+                    {
+                        return ServiceResult<PosTerminal>.Failed("هیچ ترمینال POS فعالی یافت نشد. لطفاً ابتدا ترمینال را تنظیم کنید.");
+                    }
+                }
+                
+                return ServiceResult<PosTerminal>.Successful(terminal);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت ترمینال پیش‌فرض POS");
+                return ServiceResult<PosTerminal>.Failed("خطا در دریافت ترمینال پیش‌فرض");
+            }
         }
 
         public async Task<ServiceResult> SetDefaultPosTerminalAsync(int terminalId, string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("SetDefaultPosTerminalAsync will be implemented in next part");
+            try
+            {
+                // بررسی وجود ترمینال
+                var terminal = await _posTerminalRepository.GetByIdAsync(terminalId);
+                if (terminal == null)
+                {
+                    return ServiceResult.Failed("ترمینال POS یافت نشد");
+                }
+
+                // بررسی فعال بودن ترمینال
+                if (!terminal.IsActive)
+                {
+                    return ServiceResult.Failed("فقط ترمینال‌های فعال می‌توانند به عنوان پیش‌فرض تنظیم شوند");
+                }
+
+                // تنظیم ترمینال به عنوان پیش‌فرض
+                var result = await _posTerminalRepository.SetAsDefaultAsync(terminalId, userId);
+                if (!result.Success)
+                {
+                    return result;
+                }
+
+                _logger.Information("ترمینال POS با شناسه {TerminalId} به عنوان پیش‌فرض تنظیم شد. کاربر: {UserId}", terminalId, userId);
+                return ServiceResult.Successful("ترمینال با موفقیت به عنوان پیش‌فرض تنظیم شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تنظیم ترمینال پیش‌فرض. شناسه: {TerminalId}", terminalId);
+                return ServiceResult.Failed("خطا در تنظیم ترمینال پیش‌فرض");
+            }
         }
 
         public async Task<ServiceResult<CashSession>> StartCashSessionAsync(StartCashSessionRequest request)

@@ -8,23 +8,10 @@
         <button id="PayCash" class="btn btn-outline-secondary w-50">نقدی</button>
       </div>
     </div>
-    <div class="col-6">
-      @Html.LabelFor(m => m.RRN, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.RRN, new { @class = "form-control", id = "RRN" })
+    <div class="col-12">
+      <button id="BtnFinalizePOS" class="btn btn-primary w-100">
+        <i class="fas fa-credit-card me-2"></i>پرداخت و نهایی‌سازی
+      </button>
     </div>
-    <div class="col-6">
-      @Html.LabelFor(m => m.TraceNo, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.TraceNo, new { @class = "form-control", id = "TraceNo" })
-    </div>
-    <div class="col-6">
-      @Html.LabelFor(m => m.TerminalId, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.TerminalId, new { @class = "form-control", id = "TerminalId" })
-    </div>
-    <div class="col-6">
-      @Html.LabelFor(m => m.CardLast4, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.CardLast4, new { @class = "form-control", id = "CardLast4" })
-      @Html.ValidationMessageFor(m => m.CardLast4, null, new { @class = "text-danger small" })
-    </div>
-    <div class="col-12"><button id="BtnFinalizePOS" class="btn btn-primary w-100">نهایی‌سازی</button></div>
   </div>
 </div>
