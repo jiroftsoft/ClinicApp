@@ -75,8 +75,10 @@
 
     console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc);
 
-    API.post('/patient/lookup-or-create', { NationalCode: nc })
-      .then(function(fullResponse) {
+    // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
+    const lookupRequest = API.post('/patient/lookup-or-create', { NationalCode: nc });
+    
+    lookupRequest.done(function(fullResponse) {
         // Log کامل response برای دیباگ
         console.log('🏥 V2: Full API response (raw):', fullResponse);
         console.log('🏥 V2: Response type:', typeof fullResponse);
@@ -181,11 +183,12 @@
             console.error('🏥 V2: Auto-draft creation error:', err);
           });
         }
-      })
-      .catch(function(err) {
-        console.error('🏥 V2: Patient lookup error:', err);
-        toastr.error('خطا در جستجوی بیمار');
       });
+    
+    lookupRequest.fail(function(err) {
+      console.error('🏥 V2: Patient lookup error:', err);
+      toastr.error('خطا در جستجوی بیمار');
+    });
   }
 
   /**
@@ -399,135 +402,153 @@
     const $btnSave = $('#btnFastCreateSave');
     $btnSave.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ثبت...');
     
-    // Submit
-    API.post('/patient/lookup-or-create', payload)
-      .then(function(fullResponse) {
-        console.log('🏥 V2: Fast Create response:', fullResponse);
-        
-        // Parse response if string
-        let responseObj = fullResponse;
-        if (typeof fullResponse === 'string') {
-          try {
-            responseObj = JSON.parse(fullResponse);
-          } catch (e) {
-            console.error('🏥 V2: Failed to parse JSON response:', e);
-            toastr.error('خطا در پردازش پاسخ سرور');
-            return;
-          }
-        }
-        
-        // Check success
-        const successValue = responseObj?.Success ?? responseObj?.success;
-        const isSuccess = successValue === true || successValue === "true" || successValue === 1;
-        
-        // ✅ گام ۷: بررسی خطاهای Validation
-        const errorCode = responseObj?.Code || responseObj?.code;
-        if (errorCode === 'VALIDATION_ERROR' || errorCode === 'VALIDATION') {
-          console.log('🏥 V2: Validation error detected, Code:', errorCode);
-          console.log('🏥 V2: Response ValidationErrors:', responseObj?.ValidationErrors || responseObj?.validationErrors);
-          
-          const validationErrors = responseObj?.ValidationErrors || responseObj?.validationErrors || [];
-          
-          console.log('🏥 V2: ValidationErrors parsed:', validationErrors, 'Length:', validationErrors.length);
-          
-          if (validationErrors.length > 0) {
-            // ✅ نمایش هر خطای validation
-            validationErrors.forEach(function(err) {
-              // ✅ ValidationError دارای Field و ErrorMessage است
-              const field = err.Field || err.field || '';
-              const message = err.ErrorMessage || err.Message || err.message || err.errorMessage || '';
-              
-              console.log('🏥 V2: Validation error:', { field, message, fullError: err });
-              
-              // ✅ نمایش پیام خطا با نام فیلد فارسی
-              const fieldNameMap = {
-                'NationalCode': 'کد ملی',
-                'FirstName': 'نام',
-                'LastName': 'نام خانوادگی',
-                'FatherName': 'نام پدر',
-                'Mobile': 'موبایل',
-                'BirthDateShamsi': 'تاریخ تولد',
-                'Address': 'آدرس'
-              };
-              
-              const fieldName = fieldNameMap[field] || field;
-              const displayMessage = message || 'مقدار نامعتبر است';
-              
-              toastr.error(`${fieldName}: ${displayMessage}`, 'خطای اعتبارسنجی', {
-                timeOut: 5000,
-                positionClass: 'toast-top-center',
-                closeButton: true
-              });
-            });
-          } else {
-            const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در اعتبارسنجی اطلاعات';
-            console.warn('🏥 V2: Validation error but no ValidationErrors array:', responseObj);
-            toastr.error(errorMsg, 'خطای اعتبارسنجی');
-          }
+    // ✅ Submit - استفاده از jQuery Deferred API (.done/.fail/.always) به جای Promise API (.then/.catch/.finally)
+    const request = API.post('/patient/lookup-or-create', payload);
+    
+    request.done(function(fullResponse) {
+      console.log('🏥 V2: Fast Create response:', fullResponse);
+      
+      // Parse response if string
+      let responseObj = fullResponse;
+      if (typeof fullResponse === 'string') {
+        try {
+          responseObj = JSON.parse(fullResponse);
+        } catch (e) {
+          console.error('🏥 V2: Failed to parse JSON response:', e);
+          toastr.error('خطا در پردازش پاسخ سرور');
           return;
         }
+      }
+      
+      // Check success
+      const successValue = responseObj?.Success ?? responseObj?.success;
+      const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+      
+      // ✅ گام ۷: بررسی خطاهای Validation
+      const errorCode = responseObj?.Code || responseObj?.code;
+      if (errorCode === 'VALIDATION_ERROR' || errorCode === 'VALIDATION') {
+        console.log('🏥 V2: Validation error detected, Code:', errorCode);
+        console.log('🏥 V2: Response ValidationErrors:', responseObj?.ValidationErrors || responseObj?.validationErrors);
         
-        if (!responseObj || !isSuccess) {
-          const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت سریع بیمار';
-          console.error('🏥 V2: Fast Create failed:', errorMsg, responseObj);
-          toastr.error(errorMsg);
-          return;
-        }
+        const validationErrors = responseObj?.ValidationErrors || responseObj?.validationErrors || [];
         
-        // ✅ گام ۶: Extract data و handleLookupOrCreateResponse
-        const dto = API.ok(responseObj);
-        const identity = dto?.Identity || dto?.identity;
-        const insurance = dto?.Insurance || dto?.insurance;
+        console.log('🏥 V2: ValidationErrors parsed:', validationErrors, 'Length:', validationErrors.length);
         
-        console.log('🏥 V2: Fast Create success - Identity:', identity, 'Insurance:', insurance);
-        
-        if (identity) {
-          // Fill form with patient data
-          fillIdentity(identity);
-          cache = JSON.parse(JSON.stringify(identity));
-          
-          // Set insurances if provided
-          if (window.insPanel && insurance) {
-            window.insPanel.set(insurance);
-          }
-          
-          // Set readonly
-          setReadonly(true);
-          
-          // Hide modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('patientFastCreateModal'));
-          if (modal) {
-            modal.hide();
-          }
-          
-          toastr.success('بیمار با موفقیت ثبت/بازیابی شد.');
-          
-          // ✅ Trigger auto-draft creation (الان patientId داریم)
-          if (window.AutoDraftManager) {
-            window.AutoDraftManager.createDraft().catch(err => {
-              console.error('🏥 V2: Auto-draft creation error:', err);
+        if (validationErrors.length > 0) {
+          // ✅ نمایش هر خطای validation
+          validationErrors.forEach(function(err) {
+            // ✅ ValidationError دارای Field و ErrorMessage است
+            const field = err.Field || err.field || '';
+            const message = err.ErrorMessage || err.Message || err.message || err.errorMessage || '';
+            
+            console.log('🏥 V2: Validation error:', { field, message, fullError: err });
+            
+            // ✅ نمایش پیام خطا با نام فیلد فارسی
+            const fieldNameMap = {
+              'NationalCode': 'کد ملی',
+              'FirstName': 'نام',
+              'LastName': 'نام خانوادگی',
+              'FatherName': 'نام پدر',
+              'Mobile': 'موبایل',
+              'BirthDateShamsi': 'تاریخ تولد',
+              'Address': 'آدرس'
+            };
+            
+            const fieldName = fieldNameMap[field] || field;
+            const displayMessage = message || 'مقدار نامعتبر است';
+            
+            toastr.error(`${fieldName}: ${displayMessage}`, 'خطای اعتبارسنجی', {
+              timeOut: 5000,
+              positionClass: 'toast-top-center',
+              closeButton: true
             });
-          }
-          
-          // ✅ اگر DraftId موجود است و بیمه‌ها تغییر کرده، Reprice کن
-          const receptionId = $('#ReceptionId').val();
-          if (receptionId && receptionId > 0 && insurance) {
-            console.log('🏥 V2: Draft exists, triggering Reprice after insurance change...');
-            // insurance-panel.js به صورت خودکار Reprice می‌کند وقتی set() فراخوانی می‌شود
-          }
+          });
         } else {
-          console.warn('🏥 V2: Fast Create success but Identity is missing');
-          toastr.warning('بیمار ثبت شد اما اطلاعات هویتی یافت نشد');
+          const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در اعتبارسنجی اطلاعات';
+          console.warn('🏥 V2: Validation error but no ValidationErrors array:', responseObj);
+          toastr.error(errorMsg, 'خطای اعتبارسنجی');
         }
-      })
-      .catch(function(err) {
-        console.error('🏥 V2: Fast Create error:', err);
-        toastr.error('خطا در ثبت سریع بیمار');
-      })
-      .finally(function() {
-        // Re-enable save button
-        $btnSave.prop('disabled', false).html('<i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش');
-      });
+        return;
+      }
+      
+      if (!responseObj || !isSuccess) {
+        const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت سریع بیمار';
+        console.error('🏥 V2: Fast Create failed:', errorMsg, responseObj);
+        toastr.error(errorMsg);
+        return;
+      }
+      
+      // ✅ گام ۶: Extract data و handleLookupOrCreateResponse
+      const dto = API.ok(responseObj);
+      const identity = dto?.Identity || dto?.identity;
+      const insurance = dto?.Insurance || dto?.insurance;
+      
+      // ✅ بررسی خطای بیمه از Metadata
+      const metadata = responseObj?.Metadata || responseObj?.metadata || {};
+      const insuranceError = metadata?.InsuranceError || metadata?.insuranceError || 
+                            (typeof metadata === 'object' && metadata !== null ? (metadata.InsuranceError || metadata.insuranceError) : null);
+      
+      console.log('🏥 V2: Fast Create success - Identity:', identity, 'Insurance:', insurance, 'InsuranceError:', insuranceError);
+      
+      if (identity) {
+        // Fill form with patient data
+        fillIdentity(identity);
+        cache = JSON.parse(JSON.stringify(identity));
+        
+        // Set insurances if provided
+        if (window.insPanel && insurance) {
+          window.insPanel.set(insurance);
+        }
+        
+        // Set readonly
+        setReadonly(true);
+        
+        // Hide modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('patientFastCreateModal'));
+        if (modal) {
+          modal.hide();
+        }
+        
+        // ✅ نمایش پیام مناسب با توجه به خطای بیمه
+        if (insuranceError) {
+          toastr.warning('بیمار ثبت شد اما تنظیم بیمه با خطا مواجه شد: ' + insuranceError, 'هشدار', {
+            timeOut: 7000,
+            positionClass: 'toast-top-center',
+            closeButton: true
+          });
+        } else {
+          toastr.success('بیمار با موفقیت ثبت/بازیابی شد.');
+        }
+        
+        // ✅ Trigger auto-draft creation (الان patientId داریم)
+        if (window.AutoDraftManager) {
+          window.AutoDraftManager.createDraft().catch(err => {
+            console.error('🏥 V2: Auto-draft creation error:', err);
+          });
+        }
+        
+        // ✅ اگر DraftId موجود است و بیمه‌ها تغییر کرده، Reprice کن
+        const receptionId = $('#ReceptionId').val();
+        if (receptionId && receptionId > 0 && insurance) {
+          console.log('🏥 V2: Draft exists, triggering Reprice after insurance change...');
+          // insurance-panel.js به صورت خودکار Reprice می‌کند وقتی set() فراخوانی می‌شود
+        }
+      } else {
+        console.warn('🏥 V2: Fast Create success but Identity is missing');
+        toastr.warning('بیمار ثبت شد اما اطلاعات هویتی یافت نشد');
+      }
+    });
+    
+    request.fail(function(err) {
+      console.error('🏥 V2: Fast Create error:', err);
+      toastr.error('خطا در ثبت سریع بیمار');
+    });
+    
+    request.always(function() {
+      // ✅ Re-enable save button - استفاده از .always() برای jQuery Deferred
+      // .always() معادل .finally() در jQuery Deferred است و همیشه اجرا می‌شود
+      $btnSave.prop('disabled', false).html('<i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش');
+    });
   }
 
   /**
@@ -554,24 +575,27 @@
 
     console.log('🏥 V2: ذخیره اطلاعات بیمار:', payload);
 
-    API.post('/patient/update-basic', payload)
-      .then(function(fullResponse) {
-        // چک Success
-        if (!fullResponse || (fullResponse.Success !== true && fullResponse.success !== true)) {
-          toastr.error(fullResponse?.Message || fullResponse?.message || 'خطا در ذخیره');
-          return;
-        }
+    // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
+    const updateRequest = API.post('/patient/update-basic', payload);
+    
+    updateRequest.done(function(fullResponse) {
+      // چک Success
+      if (!fullResponse || (fullResponse.Success !== true && fullResponse.success !== true)) {
+        toastr.error(fullResponse?.Message || fullResponse?.message || 'خطا در ذخیره');
+        return;
+      }
 
-        const updated = API.ok(fullResponse);
-        fillIdentity(updated.Identity || updated.identity || updated);
-        cache = JSON.parse(JSON.stringify(updated.Identity || updated.identity || updated));
-        setReadonly(true);
-        toastr.success('اطلاعات به‌روزرسانی شد');
-      })
-      .catch(function(err) {
-        console.error('🏥 V2: Update patient error:', err);
-        toastr.error('خطا در به‌روزرسانی اطلاعات');
-      });
+      const updated = API.ok(fullResponse);
+      fillIdentity(updated.Identity || updated.identity || updated);
+      cache = JSON.parse(JSON.stringify(updated.Identity || updated.identity || updated));
+      setReadonly(true);
+      toastr.success('اطلاعات به‌روزرسانی شد');
+    });
+    
+    updateRequest.fail(function(err) {
+      console.error('🏥 V2: Update patient error:', err);
+      toastr.error('خطا در به‌روزرسانی اطلاعات');
+    });
   }
 
   /**
@@ -671,26 +695,29 @@
     
     if (patientId > 0) {
       // اگر PatientId وجود دارد، اطلاعات را از API بگیر
-      API.post('/patient/lookup-or-create', { NationalCode: nc || '' })
-        .then(function(fullResponse) {
-          // چک Success
-          if (fullResponse && (fullResponse.Success === true || fullResponse.success === true)) {
-            const dto = API.ok(fullResponse);
-            const identity = dto.Identity || dto.identity;
-            const insurance = dto.Insurance || dto.insurance;
-            
-            if (identity) {
-              fillIdentity(identity);
-            }
-            if (window.insPanel && insurance) {
-              window.insPanel.set(insurance);
-            }
-            setReadonly(true);
+      // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
+      const initRequest = API.post('/patient/lookup-or-create', { NationalCode: nc || '' });
+      
+      initRequest.done(function(fullResponse) {
+        // چک Success
+        if (fullResponse && (fullResponse.Success === true || fullResponse.success === true)) {
+          const dto = API.ok(fullResponse);
+          const identity = dto.Identity || dto.identity;
+          const insurance = dto.Insurance || dto.insurance;
+          
+          if (identity) {
+            fillIdentity(identity);
           }
-        })
-        .catch(function(err) {
-          console.warn('🏥 V2: Failed to load patient data on init:', err);
-        });
+          if (window.insPanel && insurance) {
+            window.insPanel.set(insurance);
+          }
+          setReadonly(true);
+        }
+      });
+      
+      initRequest.fail(function(err) {
+        console.warn('🏥 V2: Failed to load patient data on init:', err);
+      });
     }
   });
 

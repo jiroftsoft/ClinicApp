@@ -16,6 +16,7 @@ using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.Insurance;
+using ClinicApp.Services.Reception;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
@@ -56,6 +57,7 @@ namespace ClinicApp.Services.Reception
         private readonly InsurancePlanSuggestionService _insurancePlanSuggestionService;
         private readonly IFactorSettingService _factorSettingService;
         private readonly Services.Pricing.Interfaces.IPricingEngine _pricingEngine;
+        private readonly IReceptionPricingService _receptionPricingService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -78,6 +80,7 @@ namespace ClinicApp.Services.Reception
             InsurancePlanSuggestionService insurancePlanSuggestionService,
             IFactorSettingService factorSettingService,
             Services.Pricing.Interfaces.IPricingEngine pricingEngine,
+            IReceptionPricingService receptionPricingService,
             ApplicationDbContext context,
             ILogger logger)
         {
@@ -95,6 +98,7 @@ namespace ClinicApp.Services.Reception
             _insurancePlanSuggestionService = insurancePlanSuggestionService ?? throw new ArgumentNullException(nameof(insurancePlanSuggestionService));
             _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
             _pricingEngine = pricingEngine ?? throw new ArgumentNullException(nameof(pricingEngine));
+            _receptionPricingService = receptionPricingService ?? throw new ArgumentNullException(nameof(receptionPricingService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<ReceptionFacade>();
         }
@@ -826,45 +830,78 @@ namespace ClinicApp.Services.Reception
                         var basePlan = await _context.InsurancePlans
                             .FirstOrDefaultAsync(p => p.InsurancePlanId == basePlanId.Value && !p.IsDeleted && p.IsActive);
 
-                        if (basePlan != null && basePlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary)
+                        if (basePlan == null)
                         {
-                            patientInsurance = new PatientInsurance
-                            {
-                                PatientId = patientId,
-                                InsurancePlanId = basePlanId.Value,
-                                InsuranceProviderId = basePlan.InsuranceProviderId,
-                                IsPrimary = true,
-                                IsActive = true,
-                                StartDate = DateTime.Now,
-                                CreatedAt = DateTime.Now,
-                                CreatedByUserId = _currentUserService?.UserId ?? "system"
-                            };
+                            _logger.Warning("⚠️ FACADE: بیمه پایه یافت نشد - BasePlanId: {BasePlanId}, PatientId: {PatientId}", basePlanId, patientId);
+                            throw new InvalidOperationException($"بیمه پایه با شناسه {basePlanId} یافت نشد یا غیرفعال است.");
+                        }
 
-                            // اگر بیمه تکمیلی هم مشخص شده، اضافه کن
-                            if (suppPlanId.HasValue)
-                            {
-                                var suppPlan = await _context.InsurancePlans
-                                    .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
+                        if (basePlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Primary)
+                        {
+                            _logger.Warning("⚠️ FACADE: نوع بیمه پایه نامعتبر است - BasePlanId: {BasePlanId}, InsuranceType: {InsuranceType}, PatientId: {PatientId}", 
+                                basePlanId, basePlan.InsuranceType, patientId);
+                            throw new InvalidOperationException($"بیمه با شناسه {basePlanId} از نوع پایه نیست. نوع: {basePlan.InsuranceType}");
+                        }
 
-                                if (suppPlan != null && suppPlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary)
-                                {
-                                    patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
-                                    patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
-                                }
+                        // ✅ همه چک‌ها انجام شد، ایجاد PatientInsurance
+                        patientInsurance = new PatientInsurance
+                        {
+                            PatientId = patientId,
+                            InsurancePlanId = basePlanId.Value,
+                            InsuranceProviderId = basePlan.InsuranceProviderId,
+                            IsPrimary = true,
+                            IsActive = true,
+                            StartDate = DateTime.Now,
+                            CreatedAt = DateTime.Now,
+                            CreatedByUserId = _currentUserService?.UserId ?? "system"
+                        };
+
+                        // اگر بیمه تکمیلی هم مشخص شده، اضافه کن
+                        if (suppPlanId.HasValue)
+                        {
+                            var suppPlan = await _context.InsurancePlans
+                                .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
+
+                            if (suppPlan == null)
+                            {
+                                _logger.Warning("⚠️ FACADE: بیمه تکمیلی یافت نشد - SuppPlanId: {SuppPlanId}, PatientId: {PatientId}", suppPlanId, patientId);
+                                // فقط لاگ می‌کنیم، خطا throw نمی‌کنیم چون بیمه پایه تنظیم شده
                             }
+                            else if (suppPlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Supplementary)
+                            {
+                                _logger.Warning("⚠️ FACADE: نوع بیمه تکمیلی نامعتبر است - SuppPlanId: {SuppPlanId}, InsuranceType: {InsuranceType}, PatientId: {PatientId}", 
+                                    suppPlanId, suppPlan.InsuranceType, patientId);
+                                // فقط لاگ می‌کنیم، خطا throw نمی‌کنیم چون بیمه پایه تنظیم شده
+                            }
+                            else
+                            {
+                                patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
+                                patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                _logger.Information("✅ FACADE: بیمه تکمیلی به PatientInsurance اضافه شد - SuppPlanId: {SuppPlanId}", suppPlanId);
+                            }
+                        }
 
-                            _context.PatientInsurances.Add(patientInsurance);
-                            await _context.SaveChangesAsync();
+                        _context.PatientInsurances.Add(patientInsurance);
+                        await _context.SaveChangesAsync();
 
-                            _logger.Information("✅ FACADE: PatientInsurance جدید ایجاد شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
-                                patientId, basePlanId, suppPlanId);
-                            return;
+                        _logger.Information("✅ FACADE: PatientInsurance جدید ایجاد شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                            patientId, basePlanId, suppPlanId);
+                        return;
+                    }
+                    else
+                    {
+                        // اگر basePlanId null باشد اما suppPlanId داشته باشیم، نمی‌توانیم PatientInsurance ایجاد کنیم
+                        if (suppPlanId.HasValue)
+                        {
+                            _logger.Warning("⚠️ FACADE: نمی‌توان بیمه تکمیلی را بدون بیمه پایه تنظیم کرد - PatientId: {PatientId}, SuppPlanId: {SuppPlanId}", 
+                                patientId, suppPlanId);
+                            // خطا throw نمی‌کنیم، فقط لاگ می‌کنیم
                         }
                     }
                 }
                 else
                 {
-                    // به‌روزرسانی PatientInsurance موجود
+                    // ✅ به‌روزرسانی PatientInsurance موجود
                     bool hasChanges = false;
 
                     // به‌روزرسانی بیمه پایه
@@ -873,15 +910,27 @@ namespace ClinicApp.Services.Reception
                         var basePlan = await _context.InsurancePlans
                             .FirstOrDefaultAsync(p => p.InsurancePlanId == basePlanId.Value && !p.IsDeleted && p.IsActive);
 
-                        if (basePlan != null && basePlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary)
+                        if (basePlan == null)
                         {
-                            if (patientInsurance.InsurancePlanId != basePlanId.Value ||
-                                patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
-                            {
-                                patientInsurance.InsurancePlanId = basePlanId.Value;
-                                patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
-                                hasChanges = true;
-                            }
+                            _logger.Warning("⚠️ FACADE: بیمه پایه یافت نشد (به‌روزرسانی) - BasePlanId: {BasePlanId}, PatientId: {PatientId}", basePlanId, patientId);
+                            throw new InvalidOperationException($"بیمه پایه با شناسه {basePlanId} یافت نشد یا غیرفعال است.");
+                        }
+
+                        if (basePlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Primary)
+                        {
+                            _logger.Warning("⚠️ FACADE: نوع بیمه پایه نامعتبر است (به‌روزرسانی) - BasePlanId: {BasePlanId}, InsuranceType: {InsuranceType}, PatientId: {PatientId}", 
+                                basePlanId, basePlan.InsuranceType, patientId);
+                            throw new InvalidOperationException($"بیمه با شناسه {basePlanId} از نوع پایه نیست. نوع: {basePlan.InsuranceType}");
+                        }
+
+                        // ✅ همه چک‌ها انجام شد، به‌روزرسانی کن
+                        if (patientInsurance.InsurancePlanId != basePlanId.Value ||
+                            patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
+                        {
+                            patientInsurance.InsurancePlanId = basePlanId.Value;
+                            patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
+                            hasChanges = true;
+                            _logger.Information("✅ FACADE: بیمه پایه به‌روزرسانی شد - BasePlanId: {BasePlanId}", basePlanId);
                         }
                     }
 
@@ -891,7 +940,18 @@ namespace ClinicApp.Services.Reception
                         var suppPlan = await _context.InsurancePlans
                             .FirstOrDefaultAsync(p => p.InsurancePlanId == suppPlanId.Value && !p.IsDeleted && p.IsActive);
 
-                        if (suppPlan != null && suppPlan.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary)
+                        if (suppPlan == null)
+                        {
+                            _logger.Warning("⚠️ FACADE: بیمه تکمیلی یافت نشد (به‌روزرسانی) - SuppPlanId: {SuppPlanId}, PatientId: {PatientId}", suppPlanId, patientId);
+                            // فقط لاگ می‌کنیم، خطا throw نمی‌کنیم چون بیمه پایه تنظیم شده
+                        }
+                        else if (suppPlan.InsuranceType != Models.Entities.Insurance.InsuranceType.Supplementary)
+                        {
+                            _logger.Warning("⚠️ FACADE: نوع بیمه تکمیلی نامعتبر است (به‌روزرسانی) - SuppPlanId: {SuppPlanId}, InsuranceType: {InsuranceType}, PatientId: {PatientId}", 
+                                suppPlanId, suppPlan.InsuranceType, patientId);
+                            // فقط لاگ می‌کنیم، خطا throw نمی‌کنیم چون بیمه پایه تنظیم شده
+                        }
+                        else
                         {
                             if (patientInsurance.SupplementaryInsurancePlanId != suppPlanId.Value ||
                                 patientInsurance.SupplementaryInsuranceProviderId != suppPlan.InsuranceProviderId)
@@ -899,6 +959,7 @@ namespace ClinicApp.Services.Reception
                                 patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
                                 patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
                                 hasChanges = true;
+                                _logger.Information("✅ FACADE: بیمه تکمیلی به‌روزرسانی شد - SuppPlanId: {SuppPlanId}", suppPlanId);
                             }
                         }
                     }
@@ -910,6 +971,7 @@ namespace ClinicApp.Services.Reception
                             patientInsurance.SupplementaryInsurancePlanId = null;
                             patientInsurance.SupplementaryInsuranceProviderId = null;
                             hasChanges = true;
+                            _logger.Information("✅ FACADE: بیمه تکمیلی حذف شد - PatientId: {PatientId}", patientId);
                         }
                     }
 
@@ -920,6 +982,11 @@ namespace ClinicApp.Services.Reception
                         await _context.SaveChangesAsync();
 
                         _logger.Information("✅ FACADE: PatientInsurance به‌روزرسانی شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
+                            patientId, basePlanId, suppPlanId);
+                    }
+                    else
+                    {
+                        _logger.Information("ℹ️ FACADE: PatientInsurance تغییری نداشت - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
                             patientId, basePlanId, suppPlanId);
                     }
                 }
@@ -1899,10 +1966,68 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<FinalizeResponse>.Failed(validationResult.Message, validationResult.Code);
                 }
 
-                // محاسبه مجموع‌ها
+                // ✅ محاسبه مجموع‌ها با استفاده از ReceptionPricingService (محاسبه دقیق از SnapshotJson)
                 var totals = await RecalculateDraftAsync(draft);
+                
+                if (!totals.Success || totals.Data == null)
+                {
+                    _logger.Warning("⚠️ FACADE: خطا در محاسبه Totals برای Finalize (POS) - ReceptionId: {ReceptionId}, Error: {Error}", 
+                        request.ReceptionId, totals?.Message);
+                    return ServiceResult<FinalizeResponse>.Failed("خطا در محاسبه مجموع‌ها. لطفاً دوباره تلاش کنید.", "CALCULATION_ERROR");
+                }
+                
+                // ✅ اعتبارسنجی مبلغ قابل پرداخت
+                if (totals.Data.Totals.Patient <= 0)
+                {
+                    // بررسی اینکه آیا بیمه 100% پوشش می‌دهد
+                    var gross = totals.Data.Totals.Gross;
+                    var baseCovered = totals.Data.Totals.Base;
+                    var suppCovered = totals.Data.Totals.Supplementary;
+                    
+                    if (gross > 0 && (baseCovered + suppCovered) >= gross)
+                    {
+                        // ✅ بیمه 100% پوشش می‌دهد - مبلغ صفر قابل قبول است
+                        _logger.Information("✅ FACADE: بیمه 100% پوشش می‌دهد (POS) - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}", 
+                            gross, baseCovered, suppCovered, totals.Data.Totals.Patient);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: مبلغ قابل پرداخت صفر یا منفی است (POS) - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}, ReceptionId: {ReceptionId}", 
+                            gross, baseCovered, suppCovered, totals.Data.Totals.Patient, request.ReceptionId);
+                        
+                        // ✅ بررسی دقیق‌تر: آیا آیتم‌ها وجود دارند؟
+                        var itemsCount = draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0;
+                        if (itemsCount == 0)
+                        {
+                            return ServiceResult<FinalizeResponse>.Failed("هیچ خدمتی به پذیرش افزوده نشده است.", "NO_ITEMS");
+                        }
+                        
+                        // ✅ بررسی اینکه آیا UnitPrice صفر است؟
+                        var hasZeroPrice = draft.ReceptionItems?.Any(ri => !ri.IsDeleted && ri.UnitPrice <= 0) ?? false;
+                        if (hasZeroPrice)
+                        {
+                            _logger.Warning("⚠️ FACADE: برخی آیتم‌ها UnitPrice صفر دارند (POS) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                            return ServiceResult<FinalizeResponse>.Failed("برخی خدمات قیمت صفر دارند. لطفاً خدمات را بررسی کنید.", "ZERO_PRICE_ITEMS");
+                        }
+                        
+                        // ✅ بررسی اینکه آیا بیمه‌ها تنظیم شده‌اند؟
+                        if (!draft.BasePlanId.HasValue && !draft.SupplementaryPlanId.HasValue)
+                        {
+                            _logger.Warning("⚠️ FACADE: هیچ بیمه‌ای تنظیم نشده است (POS) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                            return ServiceResult<FinalizeResponse>.Failed("لطفاً بیمه پایه یا تکمیلی را انتخاب کنید.", "NO_INSURANCE");
+                        }
+                        
+                        return ServiceResult<FinalizeResponse>.Failed("مبلغ قابل پرداخت باید بیشتر از صفر باشد. لطفاً بیمه‌ها و خدمات را بررسی کنید.", "INVALID_PAYABLE_AMOUNT");
+                    }
+                }
+                
+                // ✅ اعتبارسنجی تطابق مبلغ ارسالی با محاسبه شده
                 if (totals.Data.Totals.Patient != request.AmountIRR)
-                    return ServiceResult<FinalizeResponse>.Failed("مبلغ پرداخت با مجموع مطابقت ندارد");
+                {
+                    _logger.Warning("⚠️ FACADE: مبلغ پرداخت با مجموع مطابقت ندارد (POS) - Calculated: {Calculated}, Requested: {Requested}", 
+                        totals.Data.Totals.Patient, request.AmountIRR);
+                    return ServiceResult<FinalizeResponse>.Failed($"مبلغ پرداخت ({request.AmountIRR:N0} ریال) با مجموع محاسبه شده ({totals.Data.Totals.Patient:N0} ریال) مطابقت ندارد. لطفاً صفحه را نوسازی کنید.", "AMOUNT_MISMATCH");
+                }
 
                 // ثبت پرداخت
                 var payment = new Models.Entities.Payment.PaymentTransaction
@@ -1983,10 +2108,68 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<FinalizeResponse>.Failed(validationResult.Message, validationResult.Code);
                 }
 
-                // محاسبه مجموع‌ها
+                // ✅ محاسبه مجموع‌ها با استفاده از ReceptionPricingService (محاسبه دقیق از SnapshotJson)
                 var totals = await RecalculateDraftAsync(draft);
+                
+                if (!totals.Success || totals.Data == null)
+                {
+                    _logger.Warning("⚠️ FACADE: خطا در محاسبه Totals برای Finalize (Cash) - ReceptionId: {ReceptionId}, Error: {Error}", 
+                        request.ReceptionId, totals?.Message);
+                    return ServiceResult<FinalizeResponse>.Failed("خطا در محاسبه مجموع‌ها. لطفاً دوباره تلاش کنید.", "CALCULATION_ERROR");
+                }
+                
+                // ✅ اعتبارسنجی مبلغ قابل پرداخت
+                if (totals.Data.Totals.Patient <= 0)
+                {
+                    // بررسی اینکه آیا بیمه 100% پوشش می‌دهد
+                    var gross = totals.Data.Totals.Gross;
+                    var baseCovered = totals.Data.Totals.Base;
+                    var suppCovered = totals.Data.Totals.Supplementary;
+                    
+                    if (gross > 0 && (baseCovered + suppCovered) >= gross)
+                    {
+                        // ✅ بیمه 100% پوشش می‌دهد - مبلغ صفر قابل قبول است
+                        _logger.Information("✅ FACADE: بیمه 100% پوشش می‌دهد (Cash) - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}", 
+                            gross, baseCovered, suppCovered, totals.Data.Totals.Patient);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: مبلغ قابل پرداخت صفر یا منفی است (Cash) - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}, ReceptionId: {ReceptionId}", 
+                            gross, baseCovered, suppCovered, totals.Data.Totals.Patient, request.ReceptionId);
+                        
+                        // ✅ بررسی دقیق‌تر: آیا آیتم‌ها وجود دارند؟
+                        var itemsCount = draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0;
+                        if (itemsCount == 0)
+                        {
+                            return ServiceResult<FinalizeResponse>.Failed("هیچ خدمتی به پذیرش افزوده نشده است.", "NO_ITEMS");
+                        }
+                        
+                        // ✅ بررسی اینکه آیا UnitPrice صفر است؟
+                        var hasZeroPrice = draft.ReceptionItems?.Any(ri => !ri.IsDeleted && ri.UnitPrice <= 0) ?? false;
+                        if (hasZeroPrice)
+                        {
+                            _logger.Warning("⚠️ FACADE: برخی آیتم‌ها UnitPrice صفر دارند (Cash) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                            return ServiceResult<FinalizeResponse>.Failed("برخی خدمات قیمت صفر دارند. لطفاً خدمات را بررسی کنید.", "ZERO_PRICE_ITEMS");
+                        }
+                        
+                        // ✅ بررسی اینکه آیا بیمه‌ها تنظیم شده‌اند؟
+                        if (!draft.BasePlanId.HasValue && !draft.SupplementaryPlanId.HasValue)
+                        {
+                            _logger.Warning("⚠️ FACADE: هیچ بیمه‌ای تنظیم نشده است (Cash) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                            return ServiceResult<FinalizeResponse>.Failed("لطفاً بیمه پایه یا تکمیلی را انتخاب کنید.", "NO_INSURANCE");
+                        }
+                        
+                        return ServiceResult<FinalizeResponse>.Failed("مبلغ قابل پرداخت باید بیشتر از صفر باشد. لطفاً بیمه‌ها و خدمات را بررسی کنید.", "INVALID_PAYABLE_AMOUNT");
+                    }
+                }
+                
+                // ✅ اعتبارسنجی تطابق مبلغ ارسالی با محاسبه شده
                 if (totals.Data.Totals.Patient != request.AmountIRR)
-                    return ServiceResult<FinalizeResponse>.Failed("مبلغ پرداخت با مجموع مطابقت ندارد");
+                {
+                    _logger.Warning("⚠️ FACADE: مبلغ پرداخت با مجموع مطابقت ندارد (Cash) - Calculated: {Calculated}, Requested: {Requested}", 
+                        totals.Data.Totals.Patient, request.AmountIRR);
+                    return ServiceResult<FinalizeResponse>.Failed($"مبلغ پرداخت ({request.AmountIRR:N0} ریال) با مجموع محاسبه شده ({totals.Data.Totals.Patient:N0} ریال) مطابقت ندارد. لطفاً صفحه را نوسازی کنید.", "AMOUNT_MISMATCH");
+                }
 
                 // ثبت پرداخت
                 var payment = new Models.Entities.Payment.PaymentTransaction
@@ -2028,61 +2211,27 @@ namespace ClinicApp.Services.Reception
         /// <summary>
         /// بازمحاسبه پیش‌نویس
         /// </summary>
+        /// <summary>
+        /// بازمحاسبه پیش‌نویس - استفاده از ReceptionPricingService برای محاسبه دقیق
+        /// </summary>
         private async Task<ServiceResult<ItemsAndTotalsDto>> RecalculateDraftAsync(Models.Entities.Reception.Reception draft)
         {
             try
             {
-                // Gross
-                var gross = draft.ReceptionItems.Sum(i => i.UnitPrice * i.Quantity);
+                _logger.Information("🏥 FACADE: بازمحاسبه پیش‌نویس - ReceptionId: {ReceptionId}", draft.ReceptionId);
 
-                // درصدها از پلن‌های بیمه
-                var basePercent = 0m;
-                var suppPercent = 0m;
+                // ✅ استفاده از ReceptionPricingService برای محاسبه دقیق Totals
+                // این سرویس از SnapshotJson و PatientShareAmount استفاده می‌کند
+                var totalsDto = await _receptionPricingService.CalculateTotalsAsync(draft.ReceptionId);
 
-                // دریافت اطلاعات بیمه پایه
-                if (draft.BasePlanId.HasValue)
-                {
-                    var basePlan = await _context.InsurancePlans
-                        .Where(p => p.InsurancePlanId == draft.BasePlanId.Value && !p.IsDeleted && p.IsActive)
-                        .Select(p => new { p.CoveragePercent, p.Deductible })
-                        .FirstOrDefaultAsync();
-                    
-                    if (basePlan != null)
-                    {
-                        basePercent = basePlan.CoveragePercent;
-                    }
-                }
+                // دریافت اطلاعات خدمات برای ساخت DTO
+                var serviceIds = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(i => i.ServiceId).Distinct().ToList();
+                var services = await _context.Services
+                    .Where(s => serviceIds.Contains(s.ServiceId))
+                    .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+                    .ToListAsync();
 
-                // دریافت اطلاعات بیمه تکمیلی
-                if (draft.SupplementaryPlanId.HasValue)
-                {
-                    var suppPlan = await _context.InsurancePlans
-                        .Where(p => p.InsurancePlanId == draft.SupplementaryPlanId.Value && !p.IsDeleted && p.IsActive)
-                        .Select(p => new { p.CoveragePercent })
-                        .FirstOrDefaultAsync();
-                    
-                    if (suppPlan != null)
-                    {
-                        suppPercent = suppPlan.CoveragePercent;
-                    }
-                }
-
-                // محاسبه سهم بیمه پایه
-                var basePay = gross * (basePercent / 100m);
-                var patientAfterBase = gross - basePay;
-                
-                // محاسبه سهم بیمه تکمیلی (از مبلغ باقی‌مانده)
-                var suppPay = patientAfterBase * (suppPercent / 100m);
-                var patient = patientAfterBase - suppPay;
-
-                // دریافت اطلاعات خدمات
-                var serviceIds = draft.ReceptionItems.Select(i => i.ServiceId).ToList();
-        var services = await _context.Services
-            .Where(s => serviceIds.Contains(s.ServiceId))
-            .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
-            .ToListAsync();
-
-                var items = draft.ReceptionItems.Select(it => 
+                var items = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(it => 
                 {
                     var service = services.FirstOrDefault(s => s.ServiceId == it.ServiceId);
                     return new ReceptionItemDto
@@ -2096,22 +2245,23 @@ namespace ClinicApp.Services.Reception
                     };
                 }).ToList();
 
+                // ✅ تبدیل ReceptionTotalsDto به TotalsDto
                 return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
                 {
                     Items = items,
                     Totals = new TotalsDto 
                     { 
-                        Gross = gross, 
-                        Base = basePay, 
-                        Supplementary = suppPay, 
-                        Patient = patient 
+                        Gross = (decimal)totalsDto.GrossIRR, 
+                        Base = (decimal)totalsDto.BaseCoveredIRR, 
+                        Supplementary = (decimal)totalsDto.SuppCoveredIRR, 
+                        Patient = (decimal)totalsDto.PatientPayableIRR 
                     }
                 });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ FACADE: خطا در بازمحاسبه");
-                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بازمحاسبه");
+                _logger.Error(ex, "❌ FACADE: خطا در بازمحاسبه - ReceptionId: {ReceptionId}", draft?.ReceptionId);
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بازمحاسبه: " + ex.Message);
             }
         }
 

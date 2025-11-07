@@ -377,10 +377,30 @@ namespace ClinicApp.Controllers.Api
                             
                             if (patientId > 0)
                             {
-                                // ایجاد/اتصال بیمه‌ها اگر مشخص شده باشند
+                                // ✅ ایجاد/اتصال بیمه‌ها اگر مشخص شده باشند - با try/catch برای جلوگیری از شکست کل عملیات
+                                string insuranceError = null;
                                 if (request.BaseInsurancePlanId.HasValue || request.SupplementaryInsurancePlanId.HasValue)
                                 {
-                                    await facadeImpl.SetPatientInsurancesAsync(patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId);
+                                    try
+                                    {
+                                        await facadeImpl.SetPatientInsurancesAsync(patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId);
+                                        _logger?.Information("✅ V1 API: بیمه‌های بیمار با موفقیت تنظیم شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                                            patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId);
+                                    }
+                                    catch (InvalidOperationException ioEx)
+                                    {
+                                        // ⚠️ خطای business logic: بیمه یافت نشد یا نوع آن نامعتبر است
+                                        insuranceError = ioEx.Message;
+                                        _logger?.Warning(ioEx, "⚠️ V1 API: خطا در تنظیم بیمه‌های بیمار (خطای business logic) - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}, Error: {Error}", 
+                                            patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId, ioEx.Message);
+                                    }
+                                    catch (Exception insuranceEx)
+                                    {
+                                        // ⚠️ خطای غیرمنتظره در تنظیم بیمه
+                                        insuranceError = $"خطا در تنظیم بیمه‌های بیمار: {insuranceEx.Message}";
+                                        _logger?.Error(insuranceEx, "⚠️ V1 API: خطا در تنظیم بیمه‌های بیمار (خطای غیرمنتظره) - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                                            patientId, request.BaseInsurancePlanId, request.SupplementaryInsurancePlanId);
+                                    }
                                 }
                                 
                                 // دریافت اطلاعات کامل بیمار و بیمه‌ها
@@ -410,7 +430,18 @@ namespace ClinicApp.Controllers.Api
                                         Insurance = insurances
                                     };
                                     
-                                    return Json(ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, "بیمار با موفقیت ثبت شد."));
+                                    // ✅ اگر خطای بیمه داشتیم، آن را در Metadata بفرستیم
+                                    var result = ServiceResult<Controllers.Api.PatientLookupResponseDto>.Successful(response, 
+                                        string.IsNullOrWhiteSpace(insuranceError) ? "بیمار با موفقیت ثبت شد." : "بیمار ثبت شد اما تنظیم بیمه با خطا مواجه شد.");
+                                    
+                                    if (!string.IsNullOrWhiteSpace(insuranceError))
+                                    {
+                                        // ✅ اضافه کردن خطای بیمه به Metadata
+                                        result.Metadata["InsuranceError"] = insuranceError;
+                                        _logger?.Warning("⚠️ V1 API: بیمار ثبت شد اما تنظیم بیمه ناموفق بود - PatientId: {PatientId}, Error: {Error}", patientId, insuranceError);
+                                    }
+                                    
+                                    return Json(result);
                                 }
                             }
                         }
@@ -1319,6 +1350,12 @@ namespace ClinicApp.Controllers.Api
                 {
                     return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
                 }
+                
+                // ✅ اعتبارسنجی اولیه مبلغ (validation دقیق‌تر در Facade انجام می‌شود)
+                if (request.Amount < 0)
+                {
+                    return Json(ServiceResult.Failed("مبلغ پرداخت نمی‌تواند منفی باشد.", "VALIDATION"));
+                }
 
                 if (_facade != null)
                 {
@@ -1376,6 +1413,12 @@ namespace ClinicApp.Controllers.Api
                 if (request == null || request.ReceptionId <= 0)
                 {
                     return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
+                }
+                
+                // ✅ اعتبارسنجی اولیه مبلغ (validation دقیق‌تر در Facade انجام می‌شود)
+                if (request.Amount < 0)
+                {
+                    return Json(ServiceResult.Failed("مبلغ پرداخت نمی‌تواند منفی باشد.", "VALIDATION"));
                 }
 
                 if (_facade != null)
