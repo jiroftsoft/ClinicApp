@@ -201,7 +201,20 @@ public class PosTerminal : ISoftDelete, ITrackable
     /// <summary>
     /// تاریخ آخرین تراکنش (برای سازگاری با ViewModels)
     /// </summary>
-    public DateTime? LastTransactionDate => Transactions?.Where(t => t.Status == PaymentStatus.Success).Max(t => t.CreatedAt);
+    public DateTime? LastTransactionDate
+    {
+        get
+        {
+            if (Transactions == null || !Transactions.Any())
+                return null;
+            
+            var successfulTransactions = Transactions.Where(t => t.Status == PaymentStatus.Success);
+            if (!successfulTransactions.Any())
+                return null;
+            
+            return successfulTransactions.Max(t => t.CreatedAt);
+        }
+    }
     #endregion
 
     #region روابط
