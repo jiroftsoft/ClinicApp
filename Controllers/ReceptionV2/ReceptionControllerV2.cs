@@ -20,6 +20,7 @@ namespace ClinicApp.Controllers.ReceptionV2
     /// 3. UX بهینه برای مانیتورهای 24-27 اینچ
     /// 4. SRP و Clean Architecture
     /// </summary>
+    [RoutePrefix("ReceptionV2")]
     [NoCache]
     public class ReceptionV2Controller : Controller
     {
@@ -85,7 +86,7 @@ namespace ClinicApp.Controllers.ReceptionV2
         /// چاپ رسید پذیرش
         /// </summary>
         [HttpGet]
-        [Route("reception/print/{id:int}")]
+        [Route("reception/print/{id:int}", Name = "ReceptionV2_Print")]
         public ActionResult Print(int id)
         {
             try
@@ -98,6 +99,27 @@ namespace ClinicApp.Controllers.ReceptionV2
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در چاپ رسید");
+                return View("Error");
+            }
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
+        /// </summary>
+        [HttpGet]
+        [Route("reception/print-insurance/{id:int}", Name = "ReceptionV2_PrintInsurance")]
+        public ActionResult PrintInsurance(int id)
+        {
+            try
+            {
+                _logger.Information("🏥 V2: چاپ قبض بیمه تکمیلی - ReceptionId: {Id}", id);
+                
+                // TODO: از Reception رسمی داده‌ها را بخوان و View مخصوص بیمه تکمیلی را نمایش بده
+                return View("~/Views/ReceptionV2/PrintInsurance.cshtml", model: id);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در چاپ قبض بیمه تکمیلی");
                 return View("Error");
             }
         }

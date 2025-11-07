@@ -677,6 +677,18 @@
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
+    <Compile Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs" />
+    <Compile Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.Designer.cs">
+      <DependentUpon>202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510251859278_14040803-New.cs" />
+    <Compile Include="Migrations\202510251859278_14040803-New.Designer.cs">
+      <DependentUpon>202510251859278_14040803-New.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510251938204_Change14040803-02.cs" />
+    <Compile Include="Migrations\202510251938204_Change14040803-02.Designer.cs">
+      <DependentUpon>202510251938204_Change14040803-02.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\202510311033089_AddFatherName.cs" />
     <Compile Include="Migrations\202510311033089_AddFatherName.Designer.cs">
       <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>
@@ -4648,6 +4660,8 @@
     <Content Include="Views\PosManagement\TerminalDetails.cshtml" />
     <Content Include="Views\Reception\ReceptionList\Index.cshtml" />
     <Content Include="Views\ReceptionV2\ReceptionList\Index.cshtml" />
+    <Content Include="Views\ReceptionV2\PrintInsurance.cshtml" />
+    <Content Include="Views\Shared\_PrintLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -4825,6 +4839,15 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510171050535_ChnagTypeOfBirthDate.resx">
       <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.resx">
+      <DependentUpon>202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510251859278_14040803-New.resx">
+      <DependentUpon>202510251859278_14040803-New.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510251938204_Change14040803-02.resx">
+      <DependentUpon>202510251938204_Change14040803-02.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510311033089_AddFatherName.resx">
       <DependentUpon>202510311033089_AddFatherName.cs</DependentUpon>

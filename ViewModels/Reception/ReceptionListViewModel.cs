@@ -143,6 +143,12 @@ namespace ClinicApp.ViewModels.Reception
 
         [Display(Name = "یادداشت")]
         public string Notes { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: شناسه بیمه تکمیلی (برای نمایش دکمه چاپ قبض بیمه تکمیلی)
+        /// </summary>
+        [Display(Name = "شناسه بیمه تکمیلی")]
+        public int? SupplementaryPlanId { get; set; }
     }
 
     /// <summary>

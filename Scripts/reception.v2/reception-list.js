@@ -389,11 +389,18 @@
                                         <i class="fas fa-credit-card"></i>
                                     </button>
                                 ` : ''}
-                                ${item.PaidAmount > 0 ? `
+                                ${(item.Status === 1 || item.StatusText === 'تکمیل شده' || item.StatusText === 'Completed' || item.PaidAmount > 0 || (item.TotalAmount > 0 && item.RemainingAmount === 0)) ? `
                                     <button type="button" class="btn btn-info btn-print-receipt" 
                                             data-reception-id="${item.ReceptionId}"
-                                            title="چاپ قبض پرداخت">
-                                        <i class="fas fa-print"></i>
+                                            title="چاپ قبض پذیرش">
+                                        <i class="fas fa-receipt"></i>
+                                    </button>
+                                ` : ''}
+                                ${item.SupplementaryPlanId && (item.Status === 1 || item.StatusText === 'تکمیل شده' || item.StatusText === 'Completed' || item.PaidAmount > 0 || (item.TotalAmount > 0 && item.RemainingAmount === 0)) ? `
+                                    <button type="button" class="btn btn-success btn-print-insurance" 
+                                            data-reception-id="${item.ReceptionId}"
+                                            title="چاپ قبض بیمه تکمیلی">
+                                        <i class="fas fa-file-invoice"></i>
                                     </button>
                                 ` : ''}
                                 <button type="button" class="btn btn-secondary btn-view-details" 
@@ -477,10 +484,16 @@
                 handlePayDebt(receptionId, amount);
             });
 
-            // چاپ قبض
+            // چاپ قبض پذیرش
             $('.btn-print-receipt').off('click').on('click', function() {
                 const receptionId = $(this).data('reception-id');
                 handlePrintReceipt(receptionId);
+            });
+
+            // 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
+            $('.btn-print-insurance').off('click').on('click', function() {
+                const receptionId = $(this).data('reception-id');
+                handlePrintInsurance(receptionId);
             });
 
             // مشاهده جزئیات
@@ -709,10 +722,20 @@
         }
 
         /**
-         * چاپ قبض
+         * چاپ قبض پذیرش
          */
         function handlePrintReceipt(receptionId) {
-            const url = (config.printReceiptUrl || '/Reception/PrintReceipt') + '?receptionId=' + receptionId;
+            const url = '/ReceptionV2/reception/print/' + receptionId;
+            console.log('🏥 Reception List: Printing receipt for reception:', receptionId);
+            window.open(url, '_blank');
+        }
+
+        /**
+         * 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
+         */
+        function handlePrintInsurance(receptionId) {
+            const url = '/ReceptionV2/reception/print-insurance/' + receptionId;
+            console.log('🏥 Reception List: Printing insurance receipt for reception:', receptionId);
             window.open(url, '_blank');
         }
 

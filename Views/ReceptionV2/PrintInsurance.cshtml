@@ -1,12 +1,12 @@
 @model int
 @{
-    ViewBag.Title = "چاپ رسید پذیرش";
+    ViewBag.Title = "چاپ قبض بیمه تکمیلی";
     Layout = "~/Views/Shared/_PrintLayout.cshtml";
 }
 
 <div class="receipt-container">
     <div class="receipt-header">
-        <h1>رسید پذیرش</h1>
+        <h1>قبض بیمه تکمیلی</h1>
         <div class="receipt-info">
             <p><strong>شماره پذیرش:</strong> <span id="receptionNo">-</span></p>
             <p><strong>تاریخ:</strong> <span id="receptionDate">-</span></p>
@@ -23,6 +23,15 @@
         </div>
     </div>
 
+    <div class="receipt-insurance">
+        <h2>اطلاعات بیمه تکمیلی</h2>
+        <div class="insurance-info">
+            <p><strong>نام بیمه تکمیلی:</strong> <span id="supplementaryInsuranceName">-</span></p>
+            <p><strong>شماره بیمه‌نامه:</strong> <span id="supplementaryPolicyNumber">-</span></p>
+            <p><strong>شماره کارت:</strong> <span id="supplementaryCardNumber">-</span></p>
+        </div>
+    </div>
+
     <div class="receipt-doctor">
         <h2>اطلاعات پزشک</h2>
         <div class="doctor-info">
@@ -32,7 +41,7 @@
     </div>
 
     <div class="receipt-services">
-        <h2>خدمات</h2>
+        <h2>خدمات تحت پوشش بیمه تکمیلی</h2>
         <table class="services-table">
             <thead>
                 <tr>
@@ -40,6 +49,7 @@
                     <th>تعداد</th>
                     <th>قیمت واحد</th>
                     <th>جمع</th>
+                    <th>سهم بیمه تکمیلی</th>
                 </tr>
             </thead>
             <tbody id="servicesList">
@@ -49,12 +59,12 @@
     </div>
 
     <div class="receipt-totals">
-        <h2>خلاصه مالی</h2>
+        <h2>خلاصه مالی بیمه تکمیلی</h2>
         <div class="totals-info">
-            <p><strong>مبلغ کل:</strong> <span id="totalAmount">-</span> ریال</p>
-            <p><strong>سهم بیمه:</strong> <span id="insurerShare">-</span> ریال</p>
+            <p><strong>مبلغ کل خدمات:</strong> <span id="totalAmount">-</span> ریال</p>
+            <p><strong>سهم بیمه پایه:</strong> <span id="baseInsuranceShare">-</span> ریال</p>
+            <p><strong>سهم بیمه تکمیلی:</strong> <span id="supplementaryInsuranceShare">-</span> ریال</p>
             <p><strong>سهم بیمار:</strong> <span id="patientShare">-</span> ریال</p>
-            <p><strong>روش پرداخت:</strong> <span id="paymentMethod">-</span></p>
         </div>
     </div>
 
@@ -66,7 +76,12 @@
 
 <script>
     $(document).ready(function() {
-        loadReceptionData(@Model);
+        var receptionId = @(Model > 0 ? Model : 0);
+        if (receptionId > 0) {
+            loadReceptionData(receptionId);
+        } else {
+            alert('شناسه پذیرش نامعتبر است');
+        }
     });
 
     function loadReceptionData(receptionId) {
@@ -76,7 +91,7 @@
             data: { id: receptionId },
             success: function(response) {
                 if (response.Success) {
-                    populateReceipt(response.Data);
+                    populateInsuranceReceipt(response.Data);
                 } else {
                     alert('خطا در بارگذاری اطلاعات: ' + response.Message);
                 }
@@ -87,7 +102,7 @@
         });
     }
 
-    function populateReceipt(data) {
+    function populateInsuranceReceipt(data) {
         // اطلاعات پذیرش
         $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber);
         $('#receptionDate').text(formatDate(data.ReceptionDate));
@@ -96,7 +111,12 @@
         // اطلاعات بیمار
         $('#patientName').text(data.PatientName);
         $('#patientNationalCode').text(data.PatientNationalCode);
-        $('#patientMobile').text(data.PatientMobile);
+        $('#patientMobile').text(data.PatientMobile || '-');
+
+        // اطلاعات بیمه تکمیلی
+        $('#supplementaryInsuranceName').text(data.SupplementaryInsuranceName || '-');
+        $('#supplementaryPolicyNumber').text(data.SupplementaryPolicyNumber || '-');
+        $('#supplementaryCardNumber').text(data.SupplementaryCardNumber || '-');
 
         // اطلاعات پزشک
         $('#doctorName').text(data.DoctorName);
@@ -104,23 +124,55 @@
 
         // خدمات
         var servicesHtml = '';
+        var totalSupplementaryShare = 0;
+        var totalBaseShare = 0;
+        
         if (data.Items && data.Items.length > 0) {
             data.Items.forEach(function(item) {
+                // استخراج سهم بیمه تکمیلی از SnapshotJson
+                var supplementaryShare = 0;
+                var baseShare = 0;
+                
+                if (item.SnapshotJson) {
+                    try {
+                        var snapshot = JSON.parse(item.SnapshotJson);
+                        if (snapshot.SupplementaryPays) {
+                            supplementaryShare = snapshot.SupplementaryPays;
+                        }
+                        if (snapshot.PrimaryPays) {
+                            baseShare = snapshot.PrimaryPays;
+                        }
+                    } catch (e) {
+                        // اگر SnapshotJson parse نشد، از InsurerShareAmount استفاده کن
+                        // و بر اساس وجود BasePlanId و SupplementaryPlanId تقسیم کن
+                        if (data.BasePlanId && data.SupplementaryPlanId) {
+                            baseShare = item.InsurerShareAmount / 2;
+                            supplementaryShare = item.InsurerShareAmount - baseShare;
+                        } else if (data.SupplementaryPlanId) {
+                            supplementaryShare = item.InsurerShareAmount;
+                        }
+                    }
+                }
+                
+                totalSupplementaryShare += supplementaryShare;
+                totalBaseShare += baseShare;
+                
                 servicesHtml += '<tr>';
-                servicesHtml += '<td>' + item.ServiceName + '</td>';
-                servicesHtml += '<td>' + item.Quantity + '</td>';
-                servicesHtml += '<td>' + formatCurrency(item.UnitPrice) + '</td>';
-                servicesHtml += '<td>' + formatCurrency(item.TotalPrice) + '</td>';
+                servicesHtml += '<td>' + (item.ServiceName || '-') + '</td>';
+                servicesHtml += '<td>' + (item.Quantity || 1) + '</td>';
+                servicesHtml += '<td>' + formatCurrency(item.UnitPrice || 0) + '</td>';
+                servicesHtml += '<td>' + formatCurrency((item.UnitPrice || 0) * (item.Quantity || 1)) + '</td>';
+                servicesHtml += '<td>' + formatCurrency(supplementaryShare) + '</td>';
                 servicesHtml += '</tr>';
             });
         }
         $('#servicesList').html(servicesHtml);
 
         // خلاصه مالی
-        $('#totalAmount').text(formatCurrency(data.TotalAmount));
-        $('#insurerShare').text(formatCurrency(data.InsurerShareAmount));
-        $('#patientShare').text(formatCurrency(data.PatientCoPay));
-        $('#paymentMethod').text(data.PaymentMethod || 'نقدی');
+        $('#totalAmount').text(formatCurrency(data.TotalAmount || 0));
+        $('#baseInsuranceShare').text(formatCurrency(totalBaseShare));
+        $('#supplementaryInsuranceShare').text(formatCurrency(totalSupplementaryShare));
+        $('#patientShare').text(formatCurrency(data.PatientCoPay || 0));
 
         // چاپ خودکار
         setTimeout(function() {
@@ -160,7 +212,7 @@
     }
 
     .receipt-header h1 {
-        color: #333;
+        color: #28a745;
         margin-bottom: 15px;
     }
 
@@ -175,6 +227,7 @@
     }
 
     .receipt-patient,
+    .receipt-insurance,
     .receipt-doctor,
     .receipt-services,
     .receipt-totals {
@@ -184,7 +237,13 @@
         border-radius: 5px;
     }
 
+    .receipt-insurance {
+        background-color: #f0f8ff;
+        border-color: #28a745;
+    }
+
     .receipt-patient h2,
+    .receipt-insurance h2,
     .receipt-doctor h2,
     .receipt-services h2,
     .receipt-totals h2 {
@@ -195,6 +254,7 @@
     }
 
     .patient-info,
+    .insurance-info,
     .doctor-info,
     .totals-info {
         display: grid;
@@ -246,6 +306,7 @@
         
         .receipt-header,
         .receipt-patient,
+        .receipt-insurance,
         .receipt-doctor,
         .receipt-services,
         .receipt-totals {
@@ -253,3 +314,4 @@
         }
     }
 </style>
+

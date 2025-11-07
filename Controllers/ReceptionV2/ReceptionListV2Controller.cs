@@ -474,7 +474,8 @@ namespace ClinicApp.Controllers.ReceptionV2
                             ReceiptNo = r.ReceptionNo ?? r.ReceptionNumber ?? "—",
                             ReceptionNo = r.ReceptionNo ?? "—", // 🏥 MEDICAL: شماره پذیرش رسمی
                             ElectronicReceptionNumber = r.ElectronicReceptionNumber ?? "—", // 🏥 MEDICAL: شماره الکترونیکی
-                            Notes = r.Notes
+                            Notes = r.Notes,
+                            SupplementaryPlanId = r.SupplementaryPlanId // 🏥 MEDICAL: شناسه بیمه تکمیلی برای چاپ
                         };
                         
                         items.Add(item);
