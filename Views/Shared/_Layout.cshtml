@@ -338,19 +338,27 @@
     </style>
 </head>
     <body>
-        <!-- Reception Sidebar (Hamburger) -->
+        <!-- Reception Sidebar (Hamburger) - Professional Medical Navigation -->
         <div class="offcanvas offcanvas-start" tabindex="-1" id="receptionSidebar" aria-labelledby="receptionSidebarLabel">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="receptionSidebarLabel">ناوبری سریع</h5>
+            <div class="offcanvas-header reception-nav-header">
+                <h5 class="offcanvas-title" id="receptionSidebarLabel">
+                    <i class="fas fa-bars me-2"></i>ناوبری سریع
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
-            <div class="offcanvas-body">
-                <ul class="list-group">
-                    <li class="list-group-item">
-                        <a href="/Reception/History">سوابق پذیرش</a>
+            <div class="offcanvas-body reception-nav-body">
+                <ul class="list-group reception-nav-list">
+                    <li class="list-group-item reception-nav-item">
+                        <a href="@Url.Action("Index", "ReceptionListV2", new { area = "" })" class="reception-nav-link">
+                            <span><i class="fas fa-list-ul me-2"></i>لیست پذیرش‌ها</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
                     </li>
-                    <li class="list-group-item">
-                        <a href="@Url.Action("Index", "PosManagement")">تنظیمات پوز</a>
+                    <li class="list-group-item reception-nav-item">
+                        <a href="@Url.Action("Index", "PosManagement", new { area = "" })" class="reception-nav-link">
+                            <span><i class="fas fa-credit-card me-2"></i>تنظیمات پوز</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
                     </li>
                 </ul>
             </div>

@@ -6,6 +6,7 @@
  * - امکان پرداخت مجدد با POS
  * - چاپ قبض پرداخت و بیمه تکمیلی
  * - مدیریت بدهی‌ها
+ * - بهینه‌سازی برای محیط درمانی (سریع، چابک، حرفه‌ای)
  */
 (function(API) {
     'use strict';
@@ -15,15 +16,25 @@
         console.log('🏥 Reception List: Initializing module...');
 
         const config = window.ReceptionListConfig || {};
+        // استفاده از ReceptionAPI اگر موجود باشد، در غیر این صورت از API محلی
+        const API = window.ReceptionAPI || window.API || {};
         let currentPage = 1;
         const pageSize = 20;
         let currentFilters = {};
+        let isLoading = false;
 
         /**
          * دریافت توکن Anti-Forgery
          */
         function getAntiForgeryToken() {
-            const token = $('input[name="__RequestVerificationToken"]').val();
+            // بررسی چند منبع برای توکن
+            let token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                const $meta = $('meta[name="__RequestVerificationToken"]');
+                if ($meta.length) {
+                    token = $meta.attr('content');
+                }
+            }
             if (!token) {
                 console.warn('⚠️ Reception List: Anti-forgery token not found');
             }
@@ -74,22 +85,40 @@
         }
 
         /**
-         * بارگذاری لیست پذیرش‌ها
+         * بارگذاری لیست پذیرش‌ها - بهینه‌سازی شده برای محیط درمانی
          */
         function loadReceptionList(page = 1) {
+            // جلوگیری از درخواست‌های تکراری
+            if (isLoading) {
+                console.warn('⚠️ Reception List: Request already in progress');
+                return;
+            }
+
             currentPage = page;
+            isLoading = true;
             
             const filters = {
-                NationalCode: $('#filterNationalCode').val() || null,
-                PatientName: $('#filterPatientName').val() || null,
-                DateFrom: $('#filterDateFrom').val() || null,
-                DateTo: $('#filterDateTo').val() || null,
+                NationalCode: $('#filterNationalCode').val()?.trim() || null,
+                PatientName: $('#filterPatientName').val()?.trim() || null,
+                DateFrom: $('#filterDateFrom').val()?.trim() || null,
+                DateTo: $('#filterDateTo').val()?.trim() || null,
                 Status: $('#filterStatus').val() ? parseInt($('#filterStatus').val()) : null
             };
+
+            // حذف null values برای بهینه‌سازی
+            Object.keys(filters).forEach(key => {
+                if (filters[key] === null || filters[key] === '') {
+                    delete filters[key];
+                }
+            });
 
             currentFilters = filters;
 
             const $container = $('#receptionListContainer');
+            const $btnSearch = $('#btnSearch');
+            
+            // نمایش loading state
+            $btnSearch.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال جستجو...');
             $container.html(`
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
@@ -99,54 +128,193 @@
                 </div>
             `);
 
-            const token = getAntiForgeryToken();
             const payload = {
                 filters: filters,
                 page: page,
                 pageSize: pageSize
             };
 
+            const apiUrl = config.apiUrl || '/ReceptionV2/ReceptionList/GetReceptionList';
+            console.log('🏥 Reception List: Loading page', page, 'with filters:', filters);
+            console.log('🏥 Reception List: API URL:', apiUrl);
+
+            // استفاده از AJAX مستقیم با error handling بهتر
             $.ajax({
-                url: config.apiUrl || '/Reception/ReceptionList/GetReceptionList',
+                url: apiUrl,
                 method: 'POST',
                 headers: {
-                    'RequestVerificationToken': token,
-                    'Content-Type': 'application/json; charset=utf-8'
+                    'RequestVerificationToken': getAntiForgeryToken(),
+                    'X-RequestVerificationToken': getAntiForgeryToken(),
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 data: JSON.stringify(payload),
-                dataType: 'json'
+                dataType: 'json',
+                cache: false,
+                timeout: 30000 // 30 ثانیه timeout برای محیط درمانی
             })
-            .done(function(response) {
-                if (response && response.Success && response.Data) {
-                    renderReceptionList(response.Data);
-                    renderPagination(response.Data);
-                } else {
+            .done(function(fullResponse) {
+                isLoading = false;
+                $btnSearch.prop('disabled', false).html('<i class="fas fa-search me-1"></i>جستجو');
+                
+                console.log('🏥 Reception List: Raw response received', fullResponse);
+                console.log('🏥 Reception List: Response type:', typeof fullResponse);
+                console.log('🏥 Reception List: Response keys:', fullResponse ? Object.keys(fullResponse) : 'null/undefined');
+                
+                // اگر response به صورت string است، آن را parse کن
+                let responseObj = fullResponse;
+                if (typeof fullResponse === 'string') {
+                    try {
+                        responseObj = JSON.parse(fullResponse);
+                        console.log('🏥 Reception List: Response parsed from string', responseObj);
+                    } catch (e) {
+                        console.error('❌ Reception List: Failed to parse JSON response', e);
+                        $container.html(`
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                خطا در پردازش پاسخ سرور. لطفاً صفحه را نوسازی کنید.
+                            </div>
+                        `);
+                        toastr.error('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                // بررسی Success - پشتیبانی از Success و success (camelCase/PascalCase)
+                const successValue = responseObj?.Success ?? responseObj?.success;
+                const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+                
+                console.log('🏥 Reception List: Success check - successValue:', successValue, 'isSuccess:', isSuccess);
+                console.log('🏥 Reception List: Has Data?', !!responseObj?.Data, 'Data type:', typeof responseObj?.Data);
+                console.log('🏥 Reception List: Data value:', responseObj?.Data);
+                console.log('🏥 Reception List: Message:', responseObj?.Message || responseObj?.message);
+                console.log('🏥 Reception List: Code:', responseObj?.Code || responseObj?.code);
+                
+                // بررسی دقیق‌تر: اگر Success false است اما Data وجود دارد، ممکن است مشکل از ساختار response باشد
+                if (!responseObj || (!isSuccess && !responseObj.Data)) {
+                    const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در دریافت لیست پذیرش‌ها';
+                    console.error('❌ Reception List: API returned error', {
+                        response: responseObj,
+                        successValue: successValue,
+                        isSuccess: isSuccess,
+                        hasData: !!responseObj?.Data
+                    });
+                    
                     $container.html(`
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            ${response?.Message || 'خطا در دریافت لیست پذیرش‌ها'}
+                            ${errorMsg}
                         </div>
                     `);
+                    
+                    // استفاده از handleErrorJson اگر موجود باشد
+                    if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                        API.handleErrorJson(responseObj);
+                    } else if (window.ReceptionAPI && window.ReceptionAPI.handleErrorJson) {
+                        window.ReceptionAPI.handleErrorJson(responseObj);
+                    }
+                    return;
+                }
+                
+                // Extract data using API.ok (handles ServiceResult structure)
+                let data = responseObj.Data || responseObj.data;
+                
+                // اگر API.ok موجود است، از آن استفاده کن
+                if (API && API.ok && typeof API.ok === 'function') {
+                    data = API.ok(responseObj);
+                } else if (window.ReceptionAPI && window.ReceptionAPI.ok) {
+                    data = window.ReceptionAPI.ok(responseObj);
+                }
+                
+                console.log('🏥 Reception List: Extracted data', data);
+                console.log('🏥 Reception List: Data type:', typeof data);
+                console.log('🏥 Reception List: Data keys:', data ? Object.keys(data) : 'null/undefined');
+                
+                // بررسی اینکه data معتبر است
+                if (!data) {
+                    console.error('❌ Reception List: Data is null or undefined', responseObj);
+                    $container.html(`
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            داده‌ای دریافت نشد. لطفاً دوباره تلاش کنید.
+                        </div>
+                    `);
+                    return;
+                }
+                
+                // رندر لیست
+                renderReceptionList(data);
+                renderPagination(data);
+                
+                // نمایش تعداد نتایج
+                const totalCount = data.TotalCount || data.totalCount || 0;
+                if (totalCount > 0) {
+                    toastr.success(`${totalCount} پذیرش یافت شد`, '', { timeOut: 2000 });
+                } else {
+                    console.log('🏥 Reception List: No items found');
                 }
             })
             .fail(function(xhr, status, error) {
-                console.error('❌ Reception List: Load failed', error);
+                isLoading = false;
+                $btnSearch.prop('disabled', false).html('<i class="fas fa-search me-1"></i>جستجو');
+                
+                console.error('❌ Reception List: Load failed', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText?.substring(0, 500)
+                });
+                
+                let errorMessage = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
+                
+                if (xhr.status === 404) {
+                    errorMessage = 'آدرس درخواست یافت نشد. لطفاً صفحه را نوسازی کنید.';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'خطای سرور رخ داد. لطفاً با پشتیبانی تماس بگیرید.';
+                } else if (xhr.status === 0 || status === 'timeout') {
+                    errorMessage = 'اتصال به سرور برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                }
+                
+                // تلاش برای parse کردن response JSON
+                try {
+                    const jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                        API.handleErrorJson(jsonResponse);
+                        return;
+                    }
+                } catch (e) {
+                    // Ignore parse errors
+                }
+                
                 $container.html(`
                     <div class="alert alert-danger">
                         <i class="fas fa-times-circle me-2"></i>
-                        خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.
+                        ${errorMessage}
+                        <br><small class="text-muted">کد خطا: ${xhr.status || 'نامشخص'}</small>
                     </div>
                 `);
+                
+                toastr.error(errorMessage, 'خطا', { timeOut: 5000 });
             });
         }
 
         /**
-         * رندر لیست پذیرش‌ها
+         * رندر لیست پذیرش‌ها - بهینه‌سازی شده برای محیط درمانی
          */
         function renderReceptionList(data) {
             const $container = $('#receptionListContainer');
             
-            if (!data.Items || data.Items.length === 0) {
+            // پشتیبانی از هر دو حالت: Items و items (PascalCase و camelCase)
+            const items = data.Items || data.items || [];
+            const totalCount = data.TotalCount || data.totalCount || 0;
+            
+            console.log('🏥 Reception List: Rendering list', {
+                itemsCount: items.length,
+                totalCount: totalCount,
+                dataKeys: Object.keys(data)
+            });
+            
+            if (!items || items.length === 0) {
                 $container.html(`
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
@@ -177,7 +345,7 @@
                         <tbody>
             `;
 
-            data.Items.forEach(function(item) {
+            items.forEach(function(item) {
                 const hasDebt = item.RemainingAmount > 0;
                 const statusBadge = getStatusBadgeClass(item.Status);
                 
@@ -231,7 +399,7 @@
                 </div>
                 <div class="mt-2 text-muted small">
                     <i class="fas fa-info-circle me-1"></i>
-                    نمایش ${data.Items.length} از ${data.TotalCount} پذیرش
+                    نمایش ${items.length} از ${totalCount} پذیرش
                 </div>
             `;
 
@@ -248,12 +416,13 @@
             const $pagination = $('#receptionListPagination ul');
             $pagination.empty();
 
-            if (!data.TotalPages || data.TotalPages <= 1) {
+            // پشتیبانی از هر دو حالت: TotalPages و totalPages
+            const totalPages = data.TotalPages || data.totalPages || 0;
+            const current = data.CurrentPage || data.currentPage || 1;
+            
+            if (!totalPages || totalPages <= 1) {
                 return;
             }
-
-            const totalPages = data.TotalPages;
-            const current = data.CurrentPage;
 
             // Previous button
             $pagination.append(`
@@ -497,38 +666,48 @@
             toastr.info('مشاهده جزئیات - در حال توسعه');
         }
 
-        // Event handlers
-        $('#btnSearch').on('click', function() {
-            loadReceptionList(1);
+        // Event handlers - بهینه‌سازی شده برای محیط درمانی
+        $('#btnSearch').on('click', function(e) {
+            e.preventDefault();
+            if (!isLoading) {
+                loadReceptionList(1);
+            }
         });
 
-        $('#btnReset').on('click', function() {
+        $('#btnReset').on('click', function(e) {
+            e.preventDefault();
             $('#filterNationalCode').val('');
             $('#filterPatientName').val('');
             $('#filterDateFrom').val('');
             $('#filterDateTo').val('');
             $('#filterStatus').val('');
-            loadReceptionList(1);
+            if (!isLoading) {
+                loadReceptionList(1);
+            }
         });
 
         // Pagination
         $(document).on('click', '#receptionListPagination .page-link', function(e) {
             e.preventDefault();
             const page = $(this).data('page');
-            if (page && page !== currentPage) {
+            if (page && page !== currentPage && !isLoading) {
                 loadReceptionList(page);
             }
         });
 
         // Enter key in filters
         $('#receptionListFilters input').on('keypress', function(e) {
-            if (e.which === 13) {
-                $('#btnSearch').click();
+            if (e.which === 13 && !isLoading) {
+                e.preventDefault();
+                loadReceptionList(1);
             }
         });
 
-        // Initial load
-        loadReceptionList(1);
+        // Initial load با تاخیر کوتاه برای اطمینان از لود شدن کامل
+        setTimeout(function() {
+            console.log('🏥 Reception List: Starting initial load...');
+            loadReceptionList(1);
+        }, 100);
 
         console.log('✅ Reception List: Module initialized');
     });

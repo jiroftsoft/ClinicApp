@@ -43,7 +43,70 @@ namespace ClinicApp
             routes.MapRoute(
                 name: "ReceptionV2",
                 url: "reception/v2",
-                defaults: new { controller = "ReceptionV2", action = "Index", area = "" }
+                defaults: new { controller = "ReceptionV2", action = "Index", area = "" },
+                namespaces: new[] { "ClinicApp.Controllers.ReceptionV2" }
+            );
+            
+            // 🏥 V2: Reception List V2 Route - نسخه بهینه‌شده
+            routes.MapRoute(
+                name: "ReceptionListV2",
+                url: "ReceptionV2/ReceptionList/{action}",
+                defaults: new { 
+                    controller = "ReceptionListV2", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|GetReceptionList)$"
+                },
+                namespaces: new[] { "ClinicApp.Controllers.ReceptionV2" }
+            );
+            
+            // 🏥 Legacy: Reception List Route - Redirect to V2
+            routes.MapRoute(
+                name: "ReceptionList",
+                url: "Reception/ReceptionList/{action}",
+                defaults: new { 
+                    controller = "ReceptionListV2", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|GetReceptionList)$"
+                },
+                namespaces: new[] { "ClinicApp.Controllers.ReceptionV2" }
+            );
+            
+            // 🏥 Legacy: Reception History Routes - Redirect to V2
+            routes.MapRoute(
+                name: "ReceptionHistoryShort",
+                url: "Reception/History",
+                defaults: new { 
+                    controller = "ReceptionListV2", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET")
+                },
+                namespaces: new[] { "ClinicApp.Controllers.ReceptionV2" }
+            );
+            
+            routes.MapRoute(
+                name: "ReceptionHistory",
+                url: "Reception/ReceptionHistory/{action}",
+                defaults: new { 
+                    controller = "ReceptionListV2", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|GetReceptionList)$"
+                },
+                namespaces: new[] { "ClinicApp.Controllers.ReceptionV2" }
             );
 
             // 🏥 Reception Module Routes - مسیرهای ماژول پذیرش
@@ -314,35 +377,6 @@ namespace ClinicApp
             }
        );
 
-            // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها
-            routes.MapRoute(
-                name: "ReceptionList",
-                url: "Reception/ReceptionList/{action}",
-                defaults: new { 
-                    controller = "ReceptionList", 
-                    action = "Index", 
-                    area = ""
-                },
-                constraints: new { 
-                    httpMethod = new HttpMethodConstraint("GET", "POST"),
-                    action = @"^(Index|GetReceptionList)$"
-                }
-            );
-
-            // 🏥 Reception History Routes - مسیرهای سوابق پذیرش
-            routes.MapRoute(
-                name: "ReceptionHistory",
-                url: "Reception/ReceptionHistory/{action}",
-                defaults: new { 
-                    controller = "ReceptionHistory", 
-                    action = "Index", 
-                    area = ""
-                },
-                constraints: new { 
-                    httpMethod = new HttpMethodConstraint("GET", "POST"),
-                    action = @"^(Index|SearchHistory)$"
-                }
-            );
 
             routes.MapRoute(
                 name: "ReceptionInsuranceAuto",
@@ -431,7 +465,13 @@ namespace ClinicApp
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
-                namespaces: new[] { "ClinicApp.Controllers", "ClinicApp.Controllers.Payment.POS", "ClinicApp.Controllers.Api" }
+                namespaces: new[] { 
+                    "ClinicApp.Controllers", 
+                    "ClinicApp.Controllers.ReceptionV2", 
+                    "ClinicApp.Controllers.Reception", 
+                    "ClinicApp.Controllers.Payment.POS", 
+                    "ClinicApp.Controllers.Api" 
+                }
             );
         }
     }

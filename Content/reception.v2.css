@@ -8,6 +8,120 @@
   .reception-pro__header, .reception-pro__section, .reception-pro__sticky button { display: none !important; }
 }
 
+/* ✅ Professional Medical Navigation Styles - ناوبری سریع حرفه‌ای */
+.reception-nav-header {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  color: white;
+  padding: 1rem 1.25rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.reception-nav-header .offcanvas-title {
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.reception-nav-header .btn-close {
+  filter: invert(1);
+  opacity: 0.9;
+}
+
+.reception-nav-header .btn-close:hover {
+  opacity: 1;
+}
+
+.reception-nav-body {
+  background: #f8f9fa;
+  padding: 0;
+}
+
+.reception-nav-list {
+  border-radius: 0;
+  margin: 0;
+  border: none;
+}
+
+.reception-nav-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.reception-nav-item:first-child {
+  border-top: 1px solid #e9ecef;
+}
+
+.reception-nav-item:hover {
+  background: #e7f1ff;
+  transform: translateX(-2px);
+  box-shadow: -2px 0 4px rgba(13, 110, 253, 0.1);
+}
+
+.reception-nav-item:active {
+  background: #cfe2ff;
+}
+
+.reception-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  color: #212529;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.reception-nav-link span {
+  display: flex;
+  align-items: center;
+}
+
+.reception-nav-link .fa-chevron-left {
+  color: #6c757d;
+  font-size: 0.875rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.reception-nav-link:hover {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.reception-nav-link:hover .fa-chevron-left {
+  color: #0d6efd;
+  transform: translateX(-3px);
+}
+
+.reception-nav-link:focus {
+  color: #0d6efd;
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+}
+
+/* Active state for current page */
+.reception-nav-item.active {
+  background: #e7f1ff;
+  border-right: 3px solid #0d6efd;
+}
+
+.reception-nav-item.active .reception-nav-link {
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.reception-nav-item.active .reception-nav-link .fa-chevron-left {
+  color: #0d6efd;
+}
+
 /* ✅ Coverage Badge Styles */
 .badge.cov-good { 
   background: #198754; 

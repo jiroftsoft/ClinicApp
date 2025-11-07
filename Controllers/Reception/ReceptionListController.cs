@@ -17,8 +17,14 @@ using Serilog;
 namespace ClinicApp.Controllers.Reception
 {
     /// <summary>
-    /// کنترلر لیست پذیرش‌ها - تخصصی برای ماژول پذیرش
+    /// ⚠️ DEPRECATED: این کنترلر منسوخ شده است.
+    /// 
+    /// تمام قابلیت‌های این کنترلر به ReceptionListV2Controller منتقل شده‌اند.
+    /// Routeهای این کنترلر به ReceptionListV2 redirect می‌شوند.
+    /// 
+    /// لطفاً از ReceptionListV2Controller استفاده کنید.
     /// </summary>
+    [Obsolete("این کنترلر منسوخ شده است. از ReceptionListV2Controller استفاده کنید.", false)]
     [RoutePrefix("Reception/ReceptionList")]
     public class ReceptionListController : BaseController
     {

@@ -507,18 +507,16 @@
     <Compile Include="Controllers\Payment\POS\PosTerminalApiController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\ReceptionV2\ReceptionControllerV2.cs" />
+    <Compile Include="Controllers\ReceptionV2\ReceptionListV2Controller.cs" />
     <Compile Include="Controllers\Reception\ReceptionAlertController.cs" />
     <Compile Include="Controllers\Reception\ReceptionCalculationController.cs" />
-    <Compile Include="Controllers\Reception\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentController.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentDoctorController.cs" />
     <Compile Include="Controllers\Reception\ReceptionFacadeController.cs" />
     <Compile Include="Controllers\Reception\ReceptionFormController.cs" />
-    <Compile Include="Controllers\Reception\ReceptionHistoryController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceAutoController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceFormController.cs" />
-    <Compile Include="Controllers\Reception\ReceptionListController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientIdentityController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientSearchController.cs" />
@@ -4644,6 +4642,7 @@
     <Content Include="Views\PosManagement\SessionDetails.cshtml" />
     <Content Include="Views\PosManagement\TerminalDetails.cshtml" />
     <Content Include="Views\Reception\ReceptionList\Index.cshtml" />
+    <Content Include="Views\ReceptionV2\ReceptionList\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
