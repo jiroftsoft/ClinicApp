@@ -41,9 +41,39 @@ namespace ClinicApp.Filters
 
                 if (!string.IsNullOrWhiteSpace(headerToken))
                 {
-                    // کوکی توکن
-                    var cookieName = AntiForgeryConfig.CookieName ?? CookieFallbackName;
-                    var cookieToken = req.Cookies[cookieName]?.Value ?? req.Cookies[CookieFallbackName]?.Value;
+                    // کوکی توکن - نام پیش‌فرض Anti-Forgery در MVC
+                    // در MVC، cookie name معمولاً "__RequestVerificationToken" است اما ممکن است با prefix باشد
+                    var cookieName = AntiForgeryConfig.CookieName;
+                    if (string.IsNullOrWhiteSpace(cookieName))
+                    {
+                        // اگر CookieName تنظیم نشده، از نام پیش‌فرض استفاده کن
+                        cookieName = "__RequestVerificationToken";
+                    }
+                    
+                    var cookieToken = req.Cookies[cookieName]?.Value;
+                    
+                    // اگر cookie token پیدا نشد، از نام fallback استفاده کن
+                    if (string.IsNullOrWhiteSpace(cookieToken))
+                    {
+                        cookieToken = req.Cookies[CookieFallbackName]?.Value;
+                    }
+                    
+                    // اگر هنوز cookie token پیدا نشد، از تمام cookies با نام‌های مشابه استفاده کن
+                    if (string.IsNullOrWhiteSpace(cookieToken))
+                    {
+                        foreach (string cookieKey in req.Cookies.AllKeys)
+                        {
+                            if (cookieKey != null && (cookieKey.Contains("RequestVerificationToken") || cookieKey.Contains("__RequestVerificationToken")))
+                            {
+                                cookieToken = req.Cookies[cookieKey]?.Value;
+                                if (!string.IsNullOrWhiteSpace(cookieToken))
+                                {
+                                    Serilog.Log.Debug("Found anti-forgery cookie token in cookie: {CookieName}", cookieKey);
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
                     // پشتیبانی از الگوی "cookie:form" در یک هدر
                     string formToken = headerToken;
@@ -56,6 +86,19 @@ namespace ClinicApp.Filters
                             formToken = parts[1].Trim();
                         }
                     }
+
+                    if (string.IsNullOrWhiteSpace(cookieToken))
+                    {
+                        Serilog.Log.Warning("Anti-forgery cookie token not found. CookieName: {CookieName}, Headers: {Headers}, Cookies: {Cookies}", 
+                            cookieName,
+                            string.Join(", ", req.Headers.AllKeys), 
+                            string.Join(", ", req.Cookies.AllKeys));
+                        throw new HttpAntiForgeryException("Anti-forgery cookie token is missing");
+                    }
+
+                    Serilog.Log.Debug("Validating anti-forgery token. Cookie token present: {HasCookie}, Form token present: {HasForm}", 
+                        !string.IsNullOrWhiteSpace(cookieToken), 
+                        !string.IsNullOrWhiteSpace(formToken));
 
                     AntiForgery.Validate(cookieToken, formToken);
                 }

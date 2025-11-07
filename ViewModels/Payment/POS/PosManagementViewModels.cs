@@ -31,10 +31,19 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "پروتکل")]
         public PosProtocol Protocol { get; set; }
 
-        [Required(ErrorMessage = "رشته اتصال الزامی است")]
-        [StringLength(500, ErrorMessage = "رشته اتصال نمی‌تواند بیشتر از 500 کاراکتر باشد")]
-        [Display(Name = "رشته اتصال")]
-        public string ConnectionString { get; set; }
+        [Required(ErrorMessage = "آدرس IP الزامی است")]
+        [StringLength(50, ErrorMessage = "آدرس IP نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "آدرس IP")]
+        public string IpAddress { get; set; }
+
+        [Required(ErrorMessage = "پورت الزامی است")]
+        [Range(1, 65535, ErrorMessage = "پورت باید بین 1 تا 65535 باشد")]
+        [Display(Name = "پورت")]
+        public int? Port { get; set; }
+
+        [Display(Name = "MAC Address (اختیاری)")]
+        [StringLength(50, ErrorMessage = "MAC Address نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        public string MacAddress { get; set; }
 
         [Display(Name = "توضیحات")]
         [StringLength(500, ErrorMessage = "توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد")]
@@ -47,7 +56,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         {
             Name = string.Empty;
             SerialNumber = string.Empty;
-            ConnectionString = string.Empty;
+            IpAddress = string.Empty;
+            MacAddress = string.Empty;
             Description = string.Empty;
         }
     }
@@ -79,10 +89,19 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "پروتکل")]
         public PosProtocol Protocol { get; set; }
 
-        [Required(ErrorMessage = "رشته اتصال الزامی است")]
-        [StringLength(500, ErrorMessage = "رشته اتصال نمی‌تواند بیشتر از 500 کاراکتر باشد")]
-        [Display(Name = "رشته اتصال")]
-        public string ConnectionString { get; set; }
+        [Required(ErrorMessage = "آدرس IP الزامی است")]
+        [StringLength(50, ErrorMessage = "آدرس IP نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "آدرس IP")]
+        public string IpAddress { get; set; }
+
+        [Required(ErrorMessage = "پورت الزامی است")]
+        [Range(1, 65535, ErrorMessage = "پورت باید بین 1 تا 65535 باشد")]
+        [Display(Name = "پورت")]
+        public int? Port { get; set; }
+
+        [Display(Name = "MAC Address (اختیاری)")]
+        [StringLength(50, ErrorMessage = "MAC Address نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        public string MacAddress { get; set; }
 
         [Display(Name = "توضیحات")]
         [StringLength(500, ErrorMessage = "توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد")]
@@ -98,7 +117,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         {
             Name = string.Empty;
             SerialNumber = string.Empty;
-            ConnectionString = string.Empty;
+            IpAddress = string.Empty;
+            MacAddress = string.Empty;
             Description = string.Empty;
         }
     }

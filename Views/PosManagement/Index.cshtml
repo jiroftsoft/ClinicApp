@@ -108,6 +108,14 @@
   
   function getAntiForgeryToken() {
     var token = document.querySelector('input[name="__RequestVerificationToken"]');
+    if (!token || !token.value) {
+      console.warn('⚠️ POS: Anti-forgery token not found in form');
+      // تلاش برای خواندن از meta tag
+      var metaToken = document.querySelector('meta[name="__RequestVerificationToken"]');
+      if (metaToken) {
+        return metaToken.getAttribute('content') || '';
+      }
+    }
     return token ? token.value : '';
   }
   
@@ -117,7 +125,7 @@
   }
   
   function loadTerminals() {
-    var url = '@Url.Action("GetTerminals","PosManagement")';
+    var url = '/api/v1/pos/terminals'; // استفاده از API endpoint
     var tbody = document.querySelector('#pos-table tbody');
     
     if (!tbody) {
@@ -142,23 +150,20 @@
         return response.json();
       })
       .then(function(res) {
-        // ✅ سازگاری با ساختار ServiceResult و StandardJsonResponse
-        var ok = (res && (res.Success === true || res.success === true)) || 
-                 (res && res.data && (res.data.Success === true || res.data.success === true));
+        // ✅ سازگاری با ساختار ServiceResult
+        var ok = (res && (res.Success === true || res.success === true));
         
         if (!ok) {
           console.error('🏥 POS: GetTerminals failed:', res);
-          var errorMsg = res?.Message || res?.message || 
-                        res?.data?.Message || res?.data?.message || 
-                        'خطای نامشخص';
+          var errorMsg = res?.Message || res?.message || 'خطای نامشخص';
           tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">خطا در بارگذاری داده‌ها: ' + errorMsg + '</td></tr>';
           return;
         }
         
-        // ✅ استخراج داده‌ها از ساختارهای مختلف
-        var data = (res.Data && res.Data.terminals) || 
-                   (res.data && res.data.terminals) || 
-                   (res.terminals) ||
+        // ✅ استخراج داده‌ها از ساختار ServiceResult
+        var data = (res.Data && res.Data.items) || 
+                   (res.data && res.data.items) ||
+                   (res.items) ||
                    [];
         
         tbody.innerHTML = '';
@@ -170,12 +175,30 @@
         
         data.forEach(function(t) {
           var tr = document.createElement('tr');
+          
+          // تبدیل Protocol enum به string
+          var protocolStr = 'Tcp'; // default
+          if (t.Protocol !== undefined && t.Protocol !== null) {
+            if (typeof t.Protocol === 'number') {
+              // اگر عدد است، به string تبدیل کن
+              protocolStr = t.Protocol === 1 ? 'Tcp' : (t.Protocol === 2 ? 'Serial' : (t.Protocol === 3 ? 'Api' : 'Tcp'));
+            } else if (typeof t.Protocol === 'string') {
+              protocolStr = t.Protocol;
+            }
+          }
+          
+          // تبدیل Provider enum به string
+          var providerStr = t.ProviderType || t.Provider || '—';
+          if (typeof providerStr === 'number') {
+            providerStr = providerStr.toString();
+          }
+          
           tr.innerHTML = 
             '<td><strong>' + (t.Name || t.Title || '—') + '</strong></td>' +
             '<td>' + (t.TerminalId || '—') + '</td>' +
             '<td>' + (t.MerchantId || '—') + '</td>' +
-            '<td><span class="badge bg-info">' + (t.ProviderType || '—') + '</span></td>' +
-            '<td><span class="badge bg-secondary">' + (t.Protocol || '—') + '</span></td>' +
+            '<td><span class="badge bg-info">' + providerStr + '</span></td>' +
+            '<td><span class="badge bg-secondary">' + protocolStr + '</span></td>' +
             '<td>' + (t.IpAddress || '—') + '</td>' +
             '<td>' + (t.Port || '—') + '</td>' +
             '<td>' + (t.IsActive ? '<span class="badge bg-success">فعال</span>' : '<span class="badge bg-danger">غیرفعال</span>') + '</td>' +
@@ -190,12 +213,15 @@
               '<button data-id="' + t.Id + '" data-active="' + (!t.IsActive) + '" class="btn btn-sm btn-outline-warning btn-toggle-active" title="' + (t.IsActive ? 'غیرفعال کردن' : 'فعال کردن') + '">' +
                 '<i class="fas fa-' + (t.IsActive ? 'ban' : 'check') + '"></i> ' + (t.IsActive ? 'غیرفعال' : 'فعال') +
               '</button>' +
-              '<button data-id="' + t.Id + '" class="btn btn-sm btn-outline-success btn-set-default" title="تنظیم به عنوان پیش‌فرض">' +
+              '<button data-id="' + t.Id + '" class="btn btn-sm btn-outline-success btn-set-default" title="تنظیم به عنوان پیش‌فرض"' + (t.IsDefault ? ' disabled' : '') + '>' +
                 '<i class="fas fa-star"></i> پیش‌فرض' +
               '</button>' +
-              '<button data-id="' + t.Id + '" data-ip="' + (t.IpAddress || '') + '" data-port="' + (t.Port || '') + '" data-mac="' + (t.MacAddress || '') + '" data-protocol="' + (t.Protocol || 'Tcp') + '" class="btn btn-sm btn-outline-dark btn-network" title="تنظیمات شبکه">' +
+              '<button data-id="' + t.Id + '" data-ip="' + (t.IpAddress || '') + '" data-port="' + (t.Port || '') + '" data-mac="' + (t.MacAddress || '') + '" data-protocol="' + protocolStr + '" class="btn btn-sm btn-outline-dark btn-network" title="تنظیمات شبکه">' +
                 '<i class="fas fa-network-wired"></i>' +
               '</button>' +
+              (t.IsDefault ? '' : '<button data-id="' + t.Id + '" class="btn btn-sm btn-outline-danger btn-delete" title="حذف">' +
+                '<i class="fas fa-trash"></i>' +
+              '</button>') +
             '</td>';
           tbody.appendChild(tr);
         });
@@ -317,11 +343,21 @@
     var mac = btn.getAttribute('data-mac') || '';
     var protocol = btn.getAttribute('data-protocol') || 'Tcp';
     
+    console.log('🏥 POS: Opening network modal. ID:', id, 'Protocol:', protocol, 'IP:', ip, 'Port:', port, 'MAC:', mac);
+    
     document.getElementById('net-id').value = id;
     document.getElementById('net-ip').value = ip;
     document.getElementById('net-port').value = port;
     document.getElementById('net-mac').value = mac;
-    document.getElementById('net-protocol').value = protocol;
+    
+    // تنظیم Protocol با fallback
+    var protocolSelect = document.getElementById('net-protocol');
+    if (protocolSelect) {
+      protocolSelect.value = protocol || 'Tcp';
+      console.log('🏥 POS: Protocol set to:', protocolSelect.value);
+    } else {
+      console.error('❌ POS: Protocol select element not found!');
+    }
     
     var modalElement = document.getElementById('netModal');
     if (modalElement && typeof bootstrap !== 'undefined') {
@@ -341,7 +377,15 @@
     var ip = document.getElementById('net-ip').value.trim();
     var port = parseInt(document.getElementById('net-port').value, 10) || null;
     var mac = document.getElementById('net-mac').value.trim() || null;
-    var protocol = document.getElementById('net-protocol').value;
+    var protocolSelect = document.getElementById('net-protocol');
+    var protocol = protocolSelect ? protocolSelect.value : 'Tcp';
+    
+    console.log('🏥 POS: Saving network settings. ID:', id, 'Protocol:', protocol, 'IP:', ip, 'Port:', port, 'MAC:', mac);
+    
+    if (!id || id <= 0) {
+      toastr.error('شناسه ترمینال نامعتبر است');
+      return;
+    }
     
     if (!ip) {
       toastr.warning('لطفاً آدرس IP را وارد کنید');
@@ -351,6 +395,13 @@
     if (port && (port < 1 || port > 65535)) {
       toastr.warning('پورت باید بین 1 تا 65535 باشد');
       return;
+    }
+    
+    // اعتبارسنجی Protocol
+    var validProtocols = ['Tcp', 'Serial', 'Api'];
+    if (!validProtocols.includes(protocol)) {
+      console.warn('⚠️ POS: Invalid protocol:', protocol, 'Using default: Tcp');
+      protocol = 'Tcp';
     }
     
     saveBtn.disabled = true;
@@ -374,14 +425,32 @@
         }
         
         var terminal = res.Data;
+        
+        // تبدیل Protocol string به enum number
+        var protocolEnum = 1; // Tcp = 1
+        if (protocol === 'Serial') {
+          protocolEnum = 2;
+        } else if (protocol === 'Api') {
+          protocolEnum = 3;
+        }
+        
+        // تبدیل Provider string به enum number (اگر لازم باشد)
+        var providerEnum = terminal.provider || terminal.Provider;
+        if (typeof providerEnum === 'string') {
+          // اگر string است، باید به enum تبدیل شود - فعلاً همان را نگه می‌داریم
+          providerEnum = terminal.provider || terminal.Provider;
+        }
+        
         var updateData = {
           Id: id,
-          Title: terminal.title || terminal.Title,
+          Title: terminal.title || terminal.Title || terminal.name || terminal.Name,
+          Name: terminal.title || terminal.Title || terminal.name || terminal.Name,
           TerminalId: terminal.terminalId || terminal.TerminalId,
           MerchantId: terminal.merchantId || terminal.MerchantId,
           SerialNumber: terminal.serialNumber || terminal.SerialNumber,
-          Provider: terminal.provider || terminal.Provider,
-          Protocol: protocol,
+          Provider: providerEnum,
+          ProviderType: providerEnum,
+          Protocol: protocolEnum, // ارسال به صورت عدد enum
           IpAddress: ip,
           Port: port,
           MacAddress: mac,
@@ -389,18 +458,36 @@
           IsDefault: terminal.isDefault !== undefined ? terminal.isDefault : terminal.IsDefault
         };
         
+        console.log('🏥 POS: Sending update request:', updateData);
+        
+        var token = getAntiForgeryToken();
+        if (!token) {
+          console.error('❌ POS: Anti-forgery token not found!');
+          toastr.error('توکن امنیتی یافت نشد. لطفاً صفحه را Refresh کنید.');
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = 'ذخیره';
+          return;
+        }
+        
+        console.log('🏥 POS: Anti-forgery token found:', token.substring(0, 20) + '...');
+        
         return fetch('/api/v1/pos/terminals/' + id, {
           method: 'PUT',
           headers: {
-            'RequestVerificationToken': getAntiForgeryToken(),
+            'RequestVerificationToken': token,
             'Content-Type': 'application/json; charset=utf-8'
           },
-          credentials: 'same-origin',
+          credentials: 'same-origin', // مهم: برای ارسال cookie token
           body: JSON.stringify(updateData)
         });
       })
       .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (!r.ok) {
+          return r.text().then(function(text) {
+            console.error('❌ POS: Update failed. Status:', r.status, 'Response:', text);
+            throw new Error('HTTP ' + r.status + ': ' + text);
+          });
+        }
         return r.json();
       })
       .then(function(res) {
@@ -428,5 +515,51 @@
         saveBtn.innerHTML = 'ذخیره';
       });
   });
+  
+  // Delete Terminal
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('.btn-delete');
+    if (!btn) return;
+    
+    var id = parseInt(btn.getAttribute('data-id'), 10);
+    
+    if (!confirm('آیا از حذف این ترمینال مطمئن هستید؟\nاین عمل قابل بازگشت نیست.')) {
+      return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    var formData = new FormData();
+    formData.append('id', id);
+    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+    
+    fetch('@Url.Action("DeleteTerminal", "PosManagement")', {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin',
+      headers: {
+        'RequestVerificationToken': getAntiForgeryToken()
+      }
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(res) {
+        if (!(res && (res.success || res.Success))) {
+          throw new Error(res?.message || res?.Message || 'خطا در حذف ترمینال');
+        }
+        toastr.success('ترمینال با موفقیت حذف شد');
+        loadTerminals();
+      })
+      .catch(function(e) {
+        console.error('❌ POS: Delete terminal error:', e);
+        toastr.error('خطا در حذف ترمینال: ' + e.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash"></i>';
+      });
+  });
+  
 })();
 </script>

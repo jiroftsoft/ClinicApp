@@ -504,6 +504,7 @@
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
+    <Compile Include="Controllers\Payment\POS\PosTerminalApiController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\ReceptionV2\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\Reception\ReceptionAlertController.cs" />
@@ -4615,6 +4616,10 @@
     <Content Include="Views\ReceptionV2\Partials\_ReceptionSummaryHeader.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_CoverageModal.cshtml" />
     <Content Include="Views\ReceptionV2\Partials\_PosPaymentModal.cshtml" />
+    <Content Include="Views\PosManagement\CreateTerminal.cshtml" />
+    <Content Include="Views\PosManagement\EditTerminal.cshtml" />
+    <Content Include="Views\PosManagement\SessionDetails.cshtml" />
+    <Content Include="Views\PosManagement\TerminalDetails.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

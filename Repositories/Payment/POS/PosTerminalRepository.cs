@@ -4,6 +4,7 @@ using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Payment.POS;
 using ClinicApp.Helpers;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,8 +35,6 @@ namespace ClinicApp.Repositories.Payment.POS
             try
             {
                 return await _context.PosTerminals
-                    .Include(pt => pt.CreatedByUser)
-                    .Include(pt => pt.UpdatedByUser)
                     .FirstOrDefaultAsync(pt => pt.PosTerminalId == terminalId && !pt.IsDeleted);
             }
             catch (Exception ex)
@@ -50,8 +49,6 @@ namespace ClinicApp.Repositories.Payment.POS
             try
             {
                 return await _context.PosTerminals
-                    .Include(pt => pt.CreatedByUser)
-                    .Include(pt => pt.UpdatedByUser)
                     .Where(pt => !pt.IsDeleted)
                     .OrderByDescending(pt => pt.CreatedAt)
                     .Skip((pageNumber - 1) * pageSize)
@@ -89,9 +86,60 @@ namespace ClinicApp.Repositories.Payment.POS
         {
             try
             {
-                _context.Entry(terminal).State = System.Data.Entity.EntityState.Modified;
+                // بررسی وجود entity در context
+                var existingTerminal = await _context.PosTerminals
+                    .FirstOrDefaultAsync(pt => pt.PosTerminalId == terminal.PosTerminalId);
+
+                if (existingTerminal == null)
+                {
+                    _logger.Warning("ترمینال POS با شناسه {TerminalId} در دیتابیس یافت نشد", terminal.PosTerminalId);
+                    throw new InvalidOperationException($"ترمینال POS با شناسه {terminal.PosTerminalId} یافت نشد");
+                }
+
+                // به‌روزرسانی فیلدها
+                existingTerminal.Title = terminal.Title;
+                existingTerminal.SerialNumber = terminal.SerialNumber;
+                existingTerminal.Provider = terminal.Provider;
+                existingTerminal.Protocol = terminal.Protocol;
+                existingTerminal.IpAddress = terminal.IpAddress;
+                existingTerminal.Port = terminal.Port;
+                existingTerminal.MacAddress = terminal.MacAddress;
+                existingTerminal.IsActive = terminal.IsActive;
+                existingTerminal.IsDefault = terminal.IsDefault;
+                existingTerminal.UpdatedByUserId = terminal.UpdatedByUserId;
+                existingTerminal.UpdatedAt = terminal.UpdatedAt;
+                
+                // TerminalId و MerchantId را فقط در صورت تغییر به‌روزرسانی می‌کنیم (برای حفظ مقادیر موجود)
+                // اگر در terminal object مقدار جدیدی وجود داشت، آن را استفاده می‌کنیم، در غیر این صورت مقدار موجود حفظ می‌شود
+                if (!string.IsNullOrEmpty(terminal.TerminalId) && terminal.TerminalId != existingTerminal.TerminalId)
+                {
+                    existingTerminal.TerminalId = terminal.TerminalId;
+                }
+                if (!string.IsNullOrEmpty(terminal.MerchantId) && terminal.MerchantId != existingTerminal.MerchantId)
+                {
+                    existingTerminal.MerchantId = terminal.MerchantId;
+                }
+                
+                // اطمینان از اینکه TerminalId و MerchantId null نباشند (Required fields)
+                if (string.IsNullOrEmpty(existingTerminal.TerminalId))
+                {
+                    _logger.Warning("TerminalId خالی است برای ترمینال {TerminalId}. استفاده از SerialNumber", existingTerminal.PosTerminalId);
+                    existingTerminal.TerminalId = existingTerminal.SerialNumber ?? existingTerminal.PosTerminalId.ToString();
+                }
+                if (string.IsNullOrEmpty(existingTerminal.MerchantId))
+                {
+                    _logger.Warning("MerchantId خالی است برای ترمینال {TerminalId}. استفاده از مقدار پیش‌فرض", existingTerminal.PosTerminalId);
+                    existingTerminal.MerchantId = "DEFAULT";
+                }
+
                 await _context.SaveChangesAsync();
-                return terminal;
+                return existingTerminal;
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.Error(dbEx, "خطای دیتابیس در به‌روزرسانی ترمینال POS. شناسه: {TerminalId}, InnerException: {InnerException}", 
+                    terminal.PosTerminalId, dbEx.InnerException?.Message);
+                throw new InvalidOperationException("خطا در به‌روزرسانی ترمینال POS در دیتابیس", dbEx);
             }
             catch (Exception ex)
             {
@@ -135,7 +183,6 @@ namespace ClinicApp.Repositories.Payment.POS
             try
             {
                 return await _context.PosTerminals
-                    .Include(pt => pt.CreatedByUser)
                     .Where(pt => !pt.IsDeleted && pt.IsActive)
                     .OrderBy(pt => pt.Title)
                     .ToListAsync();
@@ -152,7 +199,6 @@ namespace ClinicApp.Repositories.Payment.POS
             try
             {
                 return await _context.PosTerminals
-                    .Include(pt => pt.CreatedByUser)
                     .FirstOrDefaultAsync(pt => !pt.IsDeleted && pt.IsDefault);
             }
             catch (Exception ex)

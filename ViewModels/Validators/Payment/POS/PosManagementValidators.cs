@@ -37,35 +37,30 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .IsInEnum()
                 .WithMessage("پروتکل نامعتبر است");
 
-            RuleFor(x => x.ConnectionString)
+            RuleFor(x => x.IpAddress)
                 .NotEmpty()
-                .WithMessage("رشته اتصال الزامی است")
-                .MaximumLength(500)
-                .WithMessage("رشته اتصال نمی‌تواند بیشتر از 500 کاراکتر باشد");
+                .WithMessage("آدرس IP الزامی است")
+                .MaximumLength(50)
+                .WithMessage("آدرس IP نمی‌تواند بیشتر از 50 کاراکتر باشد")
+                .Matches(@"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+                .WithMessage("آدرس IP معتبر وارد کنید (مثال: 192.168.1.100)");
+
+            RuleFor(x => x.Port)
+                .NotNull()
+                .WithMessage("پورت الزامی است")
+                .InclusiveBetween(1, 65535)
+                .WithMessage("پورت باید بین 1 تا 65535 باشد");
+
+            RuleFor(x => x.MacAddress)
+                .MaximumLength(50)
+                .WithMessage("MAC Address نمی‌تواند بیشتر از 50 کاراکتر باشد")
+                .Matches(@"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$|^$")
+                .When(x => !string.IsNullOrEmpty(x.MacAddress))
+                .WithMessage("فرمت MAC Address نامعتبر است (مثال: 10-7C-61-21-F3-F1 یا 10:7C:61:21:F3:F1)");
 
             RuleFor(x => x.Description)
                 .MaximumLength(500)
                 .WithMessage("توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد");
-
-            // Validation for specific provider types
-            RuleFor(x => x.ConnectionString)
-                .Must(BeValidConnectionString)
-                .When(x => x.ProviderType == PosProviderType.SamanKish)
-                .WithMessage("رشته اتصال برای Samank نامعتبر است");
-
-            RuleFor(x => x.ConnectionString)
-                .Must(BeValidConnectionString)
-                .When(x => x.ProviderType == PosProviderType.AsanPardakht)
-                .WithMessage("رشته اتصال برای Parsian نامعتبر است");
-        }
-
-        private bool BeValidConnectionString(string connectionString)
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-                return false;
-
-            // Basic validation for connection string format
-            return connectionString.Contains("=") && connectionString.Contains(";");
         }
     }
 
@@ -102,35 +97,30 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .IsInEnum()
                 .WithMessage("پروتکل نامعتبر است");
 
-            RuleFor(x => x.ConnectionString)
+            RuleFor(x => x.IpAddress)
                 .NotEmpty()
-                .WithMessage("رشته اتصال الزامی است")
-                .MaximumLength(500)
-                .WithMessage("رشته اتصال نمی‌تواند بیشتر از 500 کاراکتر باشد");
+                .WithMessage("آدرس IP الزامی است")
+                .MaximumLength(50)
+                .WithMessage("آدرس IP نمی‌تواند بیشتر از 50 کاراکتر باشد")
+                .Matches(@"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+                .WithMessage("آدرس IP معتبر وارد کنید (مثال: 192.168.1.100)");
+
+            RuleFor(x => x.Port)
+                .NotNull()
+                .WithMessage("پورت الزامی است")
+                .InclusiveBetween(1, 65535)
+                .WithMessage("پورت باید بین 1 تا 65535 باشد");
+
+            RuleFor(x => x.MacAddress)
+                .MaximumLength(50)
+                .WithMessage("MAC Address نمی‌تواند بیشتر از 50 کاراکتر باشد")
+                .Matches(@"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$|^$")
+                .When(x => !string.IsNullOrEmpty(x.MacAddress))
+                .WithMessage("فرمت MAC Address نامعتبر است (مثال: 10-7C-61-21-F3-F1 یا 10:7C:61:21:F3:F1)");
 
             RuleFor(x => x.Description)
                 .MaximumLength(500)
                 .WithMessage("توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد");
-
-            // Validation for specific provider types
-            RuleFor(x => x.ConnectionString)
-                .Must(BeValidConnectionString)
-                .When(x => x.ProviderType == PosProviderType.SamanKish)
-                .WithMessage("رشته اتصال برای Samank نامعتبر است");
-
-            RuleFor(x => x.ConnectionString)
-                .Must(BeValidConnectionString)
-                .When(x => x.ProviderType == PosProviderType.AsanPardakht)
-                .WithMessage("رشته اتصال برای Parsian نامعتبر است");
-        }
-
-        private bool BeValidConnectionString(string connectionString)
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-                return false;
-
-            // Basic validation for connection string format
-            return connectionString.Contains("=") && connectionString.Contains(";");
         }
     }
 

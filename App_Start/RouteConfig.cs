@@ -374,9 +374,41 @@ namespace ClinicApp
 
             // 🏥 POS Terminal API Routes
             routes.MapRoute(
+                name: "PosTerminalApi_GetById",
+                url: "api/v1/pos/terminals/{id}",
+                defaults: new { controller = "PosTerminalApi", action = "Get" },
+                constraints: new { id = @"\d+", httpMethod = new HttpMethodConstraint("GET") },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
+                name: "PosTerminalApi_Update",
+                url: "api/v1/pos/terminals/{id}",
+                defaults: new { controller = "PosTerminalApi", action = "Update" },
+                constraints: new { id = @"\d+", httpMethod = new HttpMethodConstraint("PUT") },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
                 name: "PosTerminalApi_Default",
                 url: "api/v1/pos/terminals/default",
                 defaults: new { controller = "PosTerminalApi", action = "GetDefault" },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
+                name: "PosTerminalApi_SetDefault",
+                url: "api/v1/pos/terminals/{id}/default",
+                defaults: new { controller = "PosTerminalApi", action = "SetDefault" },
+                constraints: new { id = @"\d+", httpMethod = new HttpMethodConstraint("POST") },
+                namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
+            );
+            
+            routes.MapRoute(
+                name: "PosTerminalApi_ToggleActive",
+                url: "api/v1/pos/terminals/{id}/active",
+                defaults: new { controller = "PosTerminalApi", action = "ToggleActive" },
+                constraints: new { id = @"\d+", httpMethod = new HttpMethodConstraint("POST") },
                 namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
             );
             

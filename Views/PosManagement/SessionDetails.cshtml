@@ -1,0 +1,334 @@
+@model ClinicApp.ViewModels.Payment.POS.CashSessionDetailsViewModel
+@using System.Linq
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@{
+    ViewBag.Title = "جزئیات جلسه نقدی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // Helper function برای دریافت Display Name از Enum
+    Func<Enum, string> getDisplayName = (enumValue) => {
+        var field = enumValue.GetType().GetField(enumValue.ToString());
+        if (field == null) return enumValue.ToString();
+        var displayAttr = field.GetCustomAttributes(typeof(DisplayAttribute), false)
+            .FirstOrDefault() as DisplayAttribute;
+        return displayAttr?.Name ?? enumValue.ToString();
+    };
+    
+    var isOpen = Model.Status == ClinicApp.Models.Enums.CashSessionStatus.Open || Model.Status == ClinicApp.Models.Enums.CashSessionStatus.Active;
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">جزئیات جلسه نقدی</h5>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Index", "PosManagement")">
+                    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+                </a>
+            </div>
+
+            <!-- اطلاعات جلسه -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>اطلاعات جلسه</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">شماره جلسه:</label>
+                            <p class="form-control-plaintext">@Model.SessionNumber</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">کاربر:</label>
+                            <p class="form-control-plaintext">@Model.UserName</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">وضعیت:</label>
+                            <p class="form-control-plaintext">
+                                @if (isOpen)
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>@getDisplayName(Model.Status)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="fas fa-times-circle me-1"></i>@getDisplayName(Model.Status)</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">زمان شروع:</label>
+                            <p class="form-control-plaintext">@Model.StartTime.ToString("yyyy/MM/dd HH:mm:ss")</p>
+                        </div>
+                    </div>
+                    @if (Model.EndTime.HasValue)
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">زمان پایان:</label>
+                                <p class="form-control-plaintext">@Model.EndTime.Value.ToString("yyyy/MM/dd HH:mm:ss")</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">مدت زمان:</label>
+                                <p class="form-control-plaintext">
+                                    @if (Model.Duration.HasValue)
+                                    {
+                                        var duration = Model.Duration.Value;
+                                        if (duration.Days > 0)
+                                        {
+                                            @($"{duration.Days} روز و {duration.Hours} ساعت")
+                                        }
+                                        else if (duration.Hours > 0)
+                                        {
+                                            @($"{duration.Hours} ساعت و {duration.Minutes} دقیقه")
+                                        }
+                                        else
+                                        {
+                                            @($"{duration.Minutes} دقیقه")
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">توضیحات:</label>
+                                <p class="form-control-plaintext">@Model.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- اطلاعات مالی -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>اطلاعات مالی</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h5 class="text-primary mb-1">@Model.InitialCashAmount.ToString("N0")</h5>
+                                <small class="text-muted">مبلغ اولیه (ریال)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h5 class="text-success mb-1">@Model.TotalIncome.ToString("N0")</h5>
+                                <small class="text-muted">کل درآمد (ریال)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h5 class="text-danger mb-1">@Model.TotalExpense.ToString("N0")</h5>
+                                <small class="text-muted">کل هزینه (ریال)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h5 class="text-info mb-1">@Model.CurrentBalance.ToString("N0")</h5>
+                                <small class="text-muted">موجودی فعلی (ریال)</small>
+                            </div>
+                        </div>
+                    </div>
+                    @if (Model.EndTime.HasValue)
+                    {
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h5 class="mb-1">@Model.FinalCashAmount.ToString("N0")</h5>
+                                    <small class="text-muted">مبلغ نهایی (ریال)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="text-center p-3 rounded @(Model.Difference == 0 ? "bg-success" : "bg-warning")">
+                                    <h5 class="mb-1 @(Model.Difference == 0 ? "text-white" : "")">@Model.Difference.ToString("N0")</h5>
+                                    <small class="@(Model.Difference == 0 ? "text-white" : "text-dark")">اختلاف (ریال)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h5 class="text-secondary mb-1">@Model.ExpectedBalance.ToString("N0")</h5>
+                                    <small class="text-muted">موجودی مورد انتظار (ریال)</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- آمار تراکنش‌ها -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>آمار تراکنش‌ها</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4 class="text-primary">@Model.TotalTransactions</h4>
+                                <small class="text-muted">کل تراکنش‌ها</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4 class="text-success">@Model.CashTransactions</h4>
+                                <small class="text-muted">تراکنش‌های نقدی</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4 class="text-info">@Model.PosTransactions</h4>
+                                <small class="text-muted">تراکنش‌های POS</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات ردیابی -->
+            @if (Model.EndTime.HasValue && !string.IsNullOrWhiteSpace(Model.EndedByUserName))
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-history me-2"></i>اطلاعات پایان جلسه</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">پایان داده شده توسط:</label>
+                                <p class="form-control-plaintext">@Model.EndedByUserName</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">زمان پایان:</label>
+                                <p class="form-control-plaintext">@Model.EndTime.Value.ToString("yyyy/MM/dd HH:mm:ss")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- دکمه‌های عملیاتی -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="@Url.Action("Index", "PosManagement")" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            @if (isOpen)
+                            {
+                                <button type="button" class="btn btn-danger" onclick="openEndSessionModal()">
+                                    <i class="fas fa-stop-circle me-2"></i>پایان جلسه
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal پایان جلسه -->
+@if (isOpen)
+{
+    <div class="modal fade" id="endSessionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">پایان جلسه نقدی</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                @using (Html.BeginForm("EndSession", "PosManagement", FormMethod.Post, new { id = "endSessionForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">موجودی فعلی:</label>
+                            <p class="form-control-plaintext">@Model.CurrentBalance.ToString("N0") ریال</p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="FinalCashAmount" class="form-label">
+                                مبلغ نهایی نقدی <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="FinalCashAmount" name="FinalCashAmount" 
+                                   step="1" min="0" required value="@Model.CurrentBalance" />
+                            <small class="form-text text-muted">مبلغ نقدی موجود در صندوق را وارد کنید</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Description" class="form-label">توضیحات</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="3" maxlength="500"></textarea>
+                        </div>
+                        <div id="differenceAlert" class="alert alert-warning d-none">
+                            <strong>اختلاف:</strong> <span id="differenceAmount"></span> ریال
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-stop-circle me-2"></i>پایان جلسه
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section scripts {
+    <script>
+        function openEndSessionModal() {
+            var modal = new bootstrap.Modal(document.getElementById('endSessionModal'));
+            modal.show();
+        }
+
+        // Calculate difference
+        $('#FinalCashAmount').on('input', function() {
+            var finalAmount = parseFloat($(this).val()) || 0;
+            var expectedAmount = @Model.ExpectedBalance;
+            var difference = finalAmount - expectedAmount;
+            
+            var alertDiv = $('#differenceAlert');
+            var differenceSpan = $('#differenceAmount');
+            
+            if (difference !== 0) {
+                alertDiv.removeClass('d-none');
+                if (difference > 0) {
+                    alertDiv.removeClass('alert-danger').addClass('alert-warning');
+                    differenceSpan.text('+' + difference.toLocaleString('fa-IR'));
+                } else {
+                    alertDiv.removeClass('alert-warning').addClass('alert-danger');
+                    differenceSpan.text(difference.toLocaleString('fa-IR'));
+                }
+            } else {
+                alertDiv.addClass('d-none');
+            }
+        });
+
+        // Form validation
+        $('#endSessionForm').on('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
+    </script>
+}
+

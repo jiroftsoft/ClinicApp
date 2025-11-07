@@ -57,17 +57,21 @@ namespace ClinicApp.Controllers.Payment.POS
 
                 var pageData = data.Skip((page - 1) * pageSize).Take(pageSize).Select(t => new
                 {
-                    t.PosTerminalId,
-                    t.Title,
-                    t.TerminalId,
-                    t.MerchantId,
-                    t.Provider,
-                    t.Protocol,
-                    t.IpAddress,
-                    t.Port,
-                    t.MacAddress,
-                    t.IsActive,
-                    t.IsDefault
+                    Id = t.PosTerminalId,
+                    PosTerminalId = t.PosTerminalId,
+                    Title = t.Title,
+                    Name = t.Title,
+                    TerminalId = t.TerminalId,
+                    MerchantId = t.MerchantId,
+                    SerialNumber = t.SerialNumber,
+                    Provider = t.Provider,
+                    ProviderType = t.Provider,
+                    Protocol = t.Protocol, // enum به صورت عدد برمی‌گردد
+                    IpAddress = t.IpAddress,
+                    Port = t.Port,
+                    MacAddress = t.MacAddress,
+                    IsActive = t.IsActive,
+                    IsDefault = t.IsDefault
                 });
                 return Json(ServiceResult<object>.Successful(new { items = pageData }), JsonRequestBehavior.AllowGet);
             }
@@ -85,7 +89,38 @@ namespace ClinicApp.Controllers.Payment.POS
             try
             {
                 var res = await _service.GetPosTerminalAsync(id);
-                return Json(res, JsonRequestBehavior.AllowGet);
+                if (!res.Success || res.Data == null)
+                {
+                    return Json(ServiceResult.Failed("ترمینال POS یافت نشد"), JsonRequestBehavior.AllowGet);
+                }
+                
+                var terminal = res.Data;
+                
+                // ساخت DTO ساده بدون navigation properties برای جلوگیری از circular reference
+                var dto = new
+                {
+                    Id = terminal.PosTerminalId,
+                    PosTerminalId = terminal.PosTerminalId,
+                    Title = terminal.Title,
+                    Name = terminal.Title,
+                    TerminalId = terminal.TerminalId,
+                    MerchantId = terminal.MerchantId,
+                    SerialNumber = terminal.SerialNumber,
+                    Provider = terminal.Provider,
+                    ProviderType = terminal.Provider,
+                    Protocol = terminal.Protocol,
+                    IpAddress = terminal.IpAddress,
+                    Port = terminal.Port,
+                    MacAddress = terminal.MacAddress,
+                    IsActive = terminal.IsActive,
+                    IsDefault = terminal.IsDefault,
+                    CreatedByUserId = terminal.CreatedByUserId,
+                    UpdatedByUserId = terminal.UpdatedByUserId,
+                    CreatedAt = terminal.CreatedAt,
+                    UpdatedAt = terminal.UpdatedAt
+                };
+                
+                return Json(ServiceResult<object>.Successful(dto), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -111,7 +146,7 @@ namespace ClinicApp.Controllers.Payment.POS
         }
 
         // PUT /api/v1/pos/terminals/{id}
-        [HttpPut, ValidateAntiForgeryToken, Route("terminals/{id:int}")]
+        [HttpPut, ValidateAntiForgeryTokenOnPosts, Route("terminals/{id:int}")]
         public async Task<ActionResult> Update(int id, UpdatePosTerminalRequest request)
         {
             try
@@ -122,46 +157,107 @@ namespace ClinicApp.Controllers.Payment.POS
                 }
                 
                 request.Id = id;
-                request.UpdatedByUserId = User?.Identity?.Name;
+                
+                // دریافت userId با fallback
+                var userId = User?.Identity?.Name;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از User.Identity.Name null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+                request.UpdatedByUserId = userId;
+                
+                _logger.Information("درخواست به‌روزرسانی ترمینال POS. شناسه: {TerminalId}, Protocol: {Protocol}, IP: {IpAddress}, Port: {Port}, کاربر: {UserId}", 
+                    id, request.Protocol, request.IpAddress, request.Port, userId);
                 
                 var res = await _service.UpdatePosTerminalAsync(request);
                 return Json(res);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "POS: update error");
+                _logger.Error(ex, "POS: update error. TerminalId: {TerminalId}", id);
                 return Json(ServiceResult.Failed("خطا در به‌روزرسانی ترمینال"));
             }
         }
 
         // POST /api/v1/pos/terminals/{id}/default
-        [HttpPost, ValidateAntiForgeryToken, Route("terminals/{id:int}/default")]
+        [HttpPost, ValidateAntiForgeryTokenOnPosts, Route("terminals/{id:int}/default")]
         public async Task<ActionResult> SetDefault(int id)
         {
             try
             {
-                var res = await _service.SetDefaultPosTerminalAsync(id, User?.Identity?.Name);
+                // دریافت userId با fallback
+                var userId = User?.Identity?.Name;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از User.Identity.Name null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+                
+                _logger.Information("درخواست تنظیم ترمینال پیش‌فرض POS. شناسه: {TerminalId}, کاربر: {UserId}", id, userId);
+                
+                var res = await _service.SetDefaultPosTerminalAsync(id, userId);
                 return Json(res);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "POS: set default error");
+                _logger.Error(ex, "POS: set default error. TerminalId: {TerminalId}", id);
                 return Json(ServiceResult.Failed("خطا در تنظیم پیش‌فرض"));
             }
         }
 
         // POST /api/v1/pos/terminals/{id}/active
-        [HttpPost, ValidateAntiForgeryToken, Route("terminals/{id:int}/active")]
-        public async Task<ActionResult> ToggleActive(int id, bool isActive)
+        [HttpPost, ValidateAntiForgeryTokenOnPosts, Route("terminals/{id:int}/active")]
+        public async Task<ActionResult> ToggleActive(int id)
         {
             try
             {
-                var res = await _service.TogglePosTerminalStatusAsync(id, isActive, User?.Identity?.Name);
+                // دریافت isActive از query string یا form data
+                var isActiveParam = Request.QueryString["isActive"];
+                bool isActive = true; // default value
+                
+                if (!string.IsNullOrEmpty(isActiveParam))
+                {
+                    if (!bool.TryParse(isActiveParam, out isActive))
+                    {
+                        // اگر parse نشد، از form data یا JSON body استفاده کن
+                        var formValue = Request.Form["isActive"];
+                        if (!string.IsNullOrEmpty(formValue))
+                        {
+                            bool.TryParse(formValue, out isActive);
+                        }
+                    }
+                }
+                else
+                {
+                    // اگر در query string نبود، از form data استفاده کن
+                    var formValue = Request.Form["isActive"];
+                    if (!string.IsNullOrEmpty(formValue))
+                    {
+                        bool.TryParse(formValue, out isActive);
+                    }
+                }
+
+                // دریافت userId با fallback
+                var userId = User?.Identity?.Name;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از User.Identity.Name null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
+                _logger.Information("درخواست تغییر وضعیت ترمینال POS. شناسه: {TerminalId}, وضعیت: {IsActive}, کاربر: {UserId}", 
+                    id, isActive, userId);
+
+                var res = await _service.TogglePosTerminalStatusAsync(id, isActive, userId);
                 return Json(res);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "POS: toggle active error");
+                _logger.Error(ex, "POS: toggle active error. TerminalId: {TerminalId}", id);
                 return Json(ServiceResult.Failed("خطا در تغییر وضعیت ترمینال"));
             }
         }

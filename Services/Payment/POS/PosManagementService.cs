@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Data.Entity.Infrastructure;
 using ClinicApp.Interfaces.Payment;
 
 namespace ClinicApp.Services.Payment.POS
@@ -96,8 +97,9 @@ namespace ClinicApp.Services.Payment.POS
                     SerialNumber = request.SerialNumber,
                     Provider = request.ProviderType,
                     Protocol = request.Protocol,
-                    IpAddress = ParseConnectionStringIp(request.ConnectionString),
-                    Port = ParseConnectionStringPort(request.ConnectionString),
+                    IpAddress = !string.IsNullOrWhiteSpace(request.IpAddress) ? request.IpAddress : ParseConnectionStringIp(request.ConnectionString),
+                    Port = request.Port ?? ParseConnectionStringPort(request.ConnectionString),
+                    MacAddress = string.IsNullOrWhiteSpace(request.MacAddress) ? null : request.MacAddress,
                     IsActive = true,
                     IsDefault = request.IsDefault,
                     CreatedByUserId = request.CreatedByUserId,
@@ -129,7 +131,8 @@ namespace ClinicApp.Services.Payment.POS
         {
             try
             {
-                _logger.Information("شروع به‌روزرسانی ترمینال POS: {TerminalId}", request.Id);
+                _logger.Information("شروع به‌روزرسانی ترمینال POS: {TerminalId}, Name: {Name}, IP: {IpAddress}, Port: {Port}, MacAddress: {MacAddress}", 
+                    request.Id, request.Name, request.IpAddress, request.Port, request.MacAddress);
 
                 // اعتبارسنجی درخواست
                 var validationResult = await ValidateUpdatePosTerminalRequestAsync(request);
@@ -170,42 +173,46 @@ namespace ClinicApp.Services.Payment.POS
                 terminal.Provider = request.Provider != default(PosProviderType) ? request.Provider : request.ProviderType;
                 terminal.Protocol = request.Protocol;
                 
+                // TerminalId و MerchantId را فقط در صورت وجود در request به‌روزرسانی می‌کنیم
+                if (!string.IsNullOrEmpty(request.TerminalId))
+                {
+                    terminal.TerminalId = request.TerminalId;
+                }
+                if (!string.IsNullOrEmpty(request.MerchantId))
+                {
+                    terminal.MerchantId = request.MerchantId;
+                }
+                
                 // به‌روزرسانی اطلاعات شبکه
                 if (!string.IsNullOrEmpty(request.IpAddress))
                 {
                     terminal.IpAddress = request.IpAddress;
                 }
+                else if (!string.IsNullOrEmpty(request.ConnectionString))
+                {
+                    // Fallback: اگر IpAddress نبود، از ConnectionString استفاده کن
+                    terminal.IpAddress = ParseConnectionStringIp(request.ConnectionString);
+                }
+                
                 if (request.Port.HasValue)
                 {
                     terminal.Port = request.Port.Value;
                 }
-                if (!string.IsNullOrEmpty(request.MacAddress))
+                else if (!string.IsNullOrEmpty(request.ConnectionString))
                 {
-                    terminal.MacAddress = request.MacAddress;
-                }
-                
-                // Parse ConnectionString to IpAddress and Port (if provided and not already set)
-                if (!string.IsNullOrEmpty(request.ConnectionString) && string.IsNullOrEmpty(request.IpAddress))
-                {
-                    if (request.ConnectionString.Contains(':'))
+                    // Fallback: اگر Port نبود، از ConnectionString استفاده کن
+                    var parsedPort = ParseConnectionStringPort(request.ConnectionString);
+                    if (parsedPort.HasValue)
                     {
-                        var parts = request.ConnectionString.Split(':');
-                        if (parts.Length >= 2)
-                        {
-                            terminal.IpAddress = parts[0].Trim();
-                            if (int.TryParse(parts[1].Trim(), out int port))
-                            {
-                                terminal.Port = port;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        terminal.IpAddress = request.ConnectionString;
+                        terminal.Port = parsedPort.Value;
                     }
                 }
                 
-                terminal.IsActive = request.IsActive;
+                // MacAddress: اگر null یا empty باشد، null ست می‌شود
+                terminal.MacAddress = string.IsNullOrWhiteSpace(request.MacAddress) ? null : request.MacAddress;
+                
+                _logger.Debug("به‌روزرسانی فیلدهای ترمینال. Title: {Title}, IP: {IpAddress}, Port: {Port}, MacAddress: {MacAddress}", 
+                    terminal.Title, terminal.IpAddress, terminal.Port, terminal.MacAddress ?? "null");
                 terminal.IsDefault = request.IsDefault;
                 terminal.UpdatedByUserId = request.UpdatedByUserId;
                 terminal.UpdatedAt = DateTime.UtcNow;
@@ -220,6 +227,32 @@ namespace ClinicApp.Services.Payment.POS
 
                 _logger.Information("ترمینال POS با موفقیت به‌روزرسانی شد. شناسه: {TerminalId}", terminal.Id);
                 return ServiceResult<PosTerminal>.Successful(terminal, "ترمینال POS با موفقیت به‌روزرسانی شد");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.Error(dbEx, "خطای دیتابیس در به‌روزرسانی ترمینال POS: {TerminalId}. InnerException: {InnerException}", 
+                    request.Id, dbEx.InnerException?.Message);
+                
+                // بررسی نوع خطای دیتابیس
+                if (dbEx.InnerException != null && !string.IsNullOrEmpty(dbEx.InnerException.Message))
+                {
+                    var innerMsg = dbEx.InnerException.Message.ToLower();
+                    if (innerMsg.Contains("constraint") || innerMsg.Contains("foreign key"))
+                    {
+                        return ServiceResult<PosTerminal>.Failed("خطا در به‌روزرسانی: محدودیت دیتابیس نقض شده است");
+                    }
+                    if (innerMsg.Contains("unique") || innerMsg.Contains("duplicate"))
+                    {
+                        return ServiceResult<PosTerminal>.Failed("خطا در به‌روزرسانی: شماره سریال یا شناسه تکراری است");
+                    }
+                }
+                
+                return ServiceResult<PosTerminal>.Failed("خطا در به‌روزرسانی ترمینال POS در دیتابیس");
+            }
+            catch (InvalidOperationException ioEx)
+            {
+                _logger.Error(ioEx, "خطای عملیاتی در به‌روزرسانی ترمینال POS: {TerminalId}", request.Id);
+                return ServiceResult<PosTerminal>.Failed(ioEx.Message);
             }
             catch (Exception ex)
             {
@@ -252,6 +285,14 @@ namespace ClinicApp.Services.Payment.POS
                     return ServiceResult.Failed("نمی‌توان ترمینال پیش‌فرض را غیرفعال کرد");
                 }
 
+                // Fallback برای userId
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
                 // تغییر وضعیت
                 terminal.IsActive = isActive;
                 terminal.UpdatedByUserId = userId;
@@ -267,6 +308,17 @@ namespace ClinicApp.Services.Payment.POS
 
                 _logger.Information("وضعیت ترمینال POS با موفقیت تغییر کرد. شناسه: {TerminalId}", terminalId);
                 return ServiceResult.Successful("وضعیت ترمینال POS با موفقیت تغییر کرد");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.Error(dbEx, "خطای دیتابیس در تغییر وضعیت ترمینال POS: {TerminalId}. InnerException: {InnerException}", 
+                    terminalId, dbEx.InnerException?.Message);
+                return ServiceResult.Failed("خطا در تغییر وضعیت ترمینال POS در دیتابیس");
+            }
+            catch (InvalidOperationException ioEx)
+            {
+                _logger.Error(ioEx, "خطای عملیاتی در تغییر وضعیت ترمینال POS: {TerminalId}", terminalId);
+                return ServiceResult.Failed(ioEx.Message);
             }
             catch (Exception ex)
             {
@@ -616,9 +668,9 @@ namespace ClinicApp.Services.Payment.POS
             }
         }
 
-        public Task<ServiceResult<PosTerminal>> GetTerminalByIdAsync(int terminalId)
+        public async Task<ServiceResult<PosTerminal>> GetTerminalByIdAsync(int terminalId)
         {
-            return _posManagementServiceImplementation.GetTerminalByIdAsync(terminalId);
+            return await GetPosTerminalAsync(terminalId);
         }
 
         public Task<ServiceResult<PosTerminal>> CreateTerminalAsync(PosTerminal terminal)

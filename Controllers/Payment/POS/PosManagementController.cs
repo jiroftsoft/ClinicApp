@@ -79,7 +79,13 @@ namespace ClinicApp.Controllers.Payment.POS
                 var result = await _posManagementService.GetTerminalByIdAsync(id);
                 if (!result.Success)
                 {
-                    return HandleServiceError(result);
+                    if (Request.IsAjaxRequest())
+                    {
+                        return HandleServiceError(result);
+                    }
+                    // برای درخواست‌های غیر-AJAX، به صفحه Index redirect می‌کنیم
+                    TempData["ErrorMessage"] = result.Message ?? "ترمینال POS یافت نشد";
+                    return RedirectToAction("Index");
                 }
 
                 var viewModel = new PosTerminalDetailsViewModel
@@ -109,7 +115,14 @@ namespace ClinicApp.Controllers.Payment.POS
             }
             catch (Exception ex)
             {
-                return HandleException(ex, "نمایش جزئیات ترمینال POS");
+                _logger.Error(ex, "خطا در نمایش جزئیات ترمینال POS. شناسه: {TerminalId}", id);
+                if (Request.IsAjaxRequest())
+                {
+                    return HandleException(ex, "نمایش جزئیات ترمینال POS");
+                }
+                // برای درخواست‌های غیر-AJAX، به صفحه Index redirect می‌کنیم
+                TempData["ErrorMessage"] = "خطا در نمایش جزئیات ترمینال POS. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
             }
         }
 
@@ -162,16 +175,28 @@ namespace ClinicApp.Controllers.Payment.POS
                 }
 
                 // ایجاد ترمینال
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    // استفاده از SystemUsers یا مقدار پیش‌فرض
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
                 var createRequest = new CreatePosTerminalRequest
                 {
                     Name = model.Name,
                     SerialNumber = model.SerialNumber,
                     ProviderType = model.ProviderType,
                     Protocol = model.Protocol,
-                    ConnectionString = model.ConnectionString,
+                    IpAddress = model.IpAddress,
+                    Port = model.Port,
+                    MacAddress = model.MacAddress,
+                    ConnectionString = $"{model.IpAddress}:{model.Port}", // ساخت ConnectionString از IP و Port
                     Description = model.Description,
                     IsDefault = model.IsDefault,
-                    CreatedByUserId = _currentUserService.UserId
+                    CreatedByUserId = userId
                 };
 
                 var result = await _posManagementService.CreatePosTerminalAsync(createRequest);
@@ -221,7 +246,9 @@ namespace ClinicApp.Controllers.Payment.POS
                     SerialNumber = result.Data.SerialNumber,
                     ProviderType = result.Data.ProviderType,
                     Protocol = result.Data.Protocol,
-                    ConnectionString = result.Data.ConnectionString,
+                    IpAddress = result.Data.IpAddress,
+                    Port = result.Data.Port,
+                    MacAddress = result.Data.MacAddress,
                     Description = result.Data.Description,
                     IsActive = result.Data.IsActive,
                     IsDefault = result.Data.IsDefault
@@ -255,26 +282,49 @@ namespace ClinicApp.Controllers.Payment.POS
                 if (!validation.IsValid)
                 {
                     await PopulateTerminalEditViewModel(model);
-                    return HandleValidationErrors(validation.Errors.Select(e => e.ErrorMessage));
+                    foreach (var error in validation.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    }
+                    return View(model);
                 }
 
                 // ویرایش ترمینال
-                var result = await _posManagementService.UpdateTerminalAsync(new PosTerminal
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    PosTerminalId = model.Id,
+                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    // استفاده از SystemUsers یا مقدار پیش‌فرض
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
+                var updateRequest = new UpdatePosTerminalRequest
+                {
+                    Id = model.Id,
+                    Name = model.Name,
                     Title = model.Name,
                     SerialNumber = model.SerialNumber,
+                    ProviderType = model.ProviderType,
                     Provider = model.ProviderType,
                     Protocol = model.Protocol,
+                    IpAddress = model.IpAddress,
+                    Port = model.Port,
+                    MacAddress = model.MacAddress,
+                    ConnectionString = $"{model.IpAddress}:{model.Port}", // ساخت ConnectionString از IP و Port
+                    Description = model.Description,
                     IsActive = model.IsActive,
                     IsDefault = model.IsDefault,
-                    UpdatedByUserId = _currentUserService.UserId
-                });
+                    UpdatedByUserId = userId
+                };
+
+                var result = await _posManagementService.UpdatePosTerminalAsync(updateRequest);
 
                 if (!result.Success)
                 {
                     await PopulateTerminalEditViewModel(model);
-                    return HandleServiceError(result);
+                    ModelState.AddModelError("", result.Message);
+                    return View(model);
                 }
 
                 _logger.Information("ترمینال POS با موفقیت ویرایش شد. شناسه: {TerminalId}, کاربر: {UserName}",
@@ -284,7 +334,10 @@ namespace ClinicApp.Controllers.Payment.POS
             }
             catch (Exception ex)
             {
-                return HandleException(ex, "ویرایش ترمینال POS");
+                _logger.Error(ex, "خطا در ویرایش ترمینال POS");
+                await PopulateTerminalEditViewModel(model);
+                ModelState.AddModelError("", "خطا در ویرایش ترمینال POS. لطفاً مجدداً تلاش کنید.");
+                return View(model);
             }
         }
 
@@ -300,19 +353,41 @@ namespace ClinicApp.Controllers.Payment.POS
                 _logger.Information("درخواست حذف ترمینال POS. شناسه: {TerminalId}, کاربر: {UserName}",
                     id, _currentUserService.UserName);
 
-                var result = await _posManagementService.DeleteTerminalAsync(id, _currentUserService.UserId);
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
+                var result = await _posManagementService.DeleteTerminalAsync(id, userId);
                 if (!result.Success)
                 {
+                    if (Request.IsAjaxRequest())
+                    {
+                        return StandardJsonResponse(false, result.Message);
+                    }
                     return HandleServiceError(result);
                 }
 
                 _logger.Information("ترمینال POS با موفقیت حذف شد. شناسه: {TerminalId}, کاربر: {UserName}",
                     id, _currentUserService.UserName);
 
+                if (Request.IsAjaxRequest())
+                {
+                    return StandardJsonResponse(true, "ترمینال با موفقیت حذف شد");
+                }
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
+                _logger.Error(ex, "خطا در حذف ترمینال POS");
+                if (Request.IsAjaxRequest())
+                {
+                    return StandardJsonResponse(false, "خطا در حذف ترمینال POS");
+                }
                 return HandleException(ex, "حذف ترمینال POS");
             }
         }
@@ -391,8 +466,16 @@ namespace ClinicApp.Controllers.Payment.POS
                 }
 
                 // شروع جلسه
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
                 var result = await _posManagementService.StartCashSessionAsync(
-                    _currentUserService.UserId,
+                    userId,
                     model.InitialCashAmount,
                     model.Description);
 
@@ -432,10 +515,18 @@ namespace ClinicApp.Controllers.Payment.POS
                 }
 
                 // پایان جلسه
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
+                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
+                }
+
                 var result = await _posManagementService.EndCashSessionAsync(
                     sessionId,
                     model.FinalCashAmount,
-                    _currentUserService.UserId,
+                    userId,
                     model.Description);
 
                 if (!result.Success)

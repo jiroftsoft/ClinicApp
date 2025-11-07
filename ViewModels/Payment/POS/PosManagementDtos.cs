@@ -16,7 +16,10 @@ namespace ClinicApp.ViewModels.Payment.POS
         public string SerialNumber { get; set; }
         public PosProviderType ProviderType { get; set; }
         public PosProtocol Protocol { get; set; }
-        public string ConnectionString { get; set; }
+        public string IpAddress { get; set; }
+        public int? Port { get; set; }
+        public string MacAddress { get; set; }
+        public string ConnectionString { get; set; } // برای سازگاری با کدهای قدیمی - از IpAddress و Port ساخته می‌شود
         public string Description { get; set; }
         public bool IsDefault { get; set; }
         public string CreatedByUserId { get; set; }

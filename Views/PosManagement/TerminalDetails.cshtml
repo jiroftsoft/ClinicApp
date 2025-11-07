@@ -1,0 +1,296 @@
+@model ClinicApp.ViewModels.Payment.POS.PosTerminalDetailsViewModel
+@using System.Linq
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@{
+    ViewBag.Title = "جزئیات ترمینال POS";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // Helper function برای دریافت Display Name از Enum
+    Func<Enum, string> getDisplayName = (enumValue) => {
+        var field = enumValue.GetType().GetField(enumValue.ToString());
+        if (field == null) return enumValue.ToString();
+        var displayAttr = field.GetCustomAttributes(typeof(DisplayAttribute), false)
+            .FirstOrDefault() as DisplayAttribute;
+        return displayAttr?.Name ?? enumValue.ToString();
+    };
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">جزئیات ترمینال POS</h5>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary" href="@Url.Action("EditTerminal", "PosManagement", new { id = Model.Id })">
+                        <i class="fas fa-edit me-2"></i>ویرایش
+                    </a>
+                    <a class="btn btn-outline-secondary" href="@Url.Action("Index", "PosManagement")">
+                        <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+
+            <!-- اطلاعات اصلی -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>اطلاعات اصلی</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">نام ترمینال:</label>
+                            <p class="form-control-plaintext">@Model.Name</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">شماره سریال:</label>
+                            <p class="form-control-plaintext">@Model.SerialNumber</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">نوع ارائه‌دهنده:</label>
+                            <p class="form-control-plaintext">
+                                <span class="badge bg-info">@getDisplayName(Model.ProviderType)</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">پروتکل:</label>
+                            <p class="form-control-plaintext">
+                                <span class="badge bg-secondary">@getDisplayName(Model.Protocol)</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">وضعیت:</label>
+                            <p class="form-control-plaintext">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>غیرفعال</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">پیش‌فرض:</label>
+                            <p class="form-control-plaintext">
+                                @if (Model.IsDefault)
+                                {
+                                    <span class="badge bg-warning"><i class="fas fa-star me-1"></i>پیش‌فرض</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">خیر</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">توضیحات:</label>
+                                <p class="form-control-plaintext">@Model.Description</p>
+                            </div>
+                        </div>
+                    }
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">رشته اتصال:</label>
+                            <p class="form-control-plaintext font-monospace">@Model.ConnectionString</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- آمار و اطلاعات تراکنش -->
+            @if (Model.TotalTransactions > 0 || Model.TotalAmount > 0)
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>آمار تراکنش‌ها</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="text-center">
+                                    <h4 class="text-primary">@Model.TotalTransactions</h4>
+                                    <small class="text-muted">تعداد تراکنش‌ها</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-center">
+                                    <h4 class="text-success">@Model.TotalAmount.ToString("N0")</h4>
+                                    <small class="text-muted">مبلغ کل (ریال)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-center">
+                                    <h4 class="text-info">@Model.SuccessRate.ToString("F1")%</h4>
+                                    <small class="text-muted">نرخ موفقیت</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-center">
+                                    <h4 class="text-secondary">
+                                        @if (Model.LastTransactionDate.HasValue)
+                                        {
+                                            @Model.LastTransactionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </h4>
+                                    <small class="text-muted">آخرین تراکنش</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- اطلاعات ردیابی -->
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>اطلاعات ردیابی</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">ایجاد شده توسط:</label>
+                            <p class="form-control-plaintext">
+                                @if (!string.IsNullOrWhiteSpace(Model.CreatedByUserName))
+                                {
+                                    @Model.CreatedByUserName
+                                }
+                                else
+                                {
+                                    <span class="text-muted">نامشخص</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">تاریخ ایجاد:</label>
+                            <p class="form-control-plaintext">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</p>
+                        </div>
+                    </div>
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ویرایش شده توسط:</label>
+                                <p class="form-control-plaintext">
+                                    @if (!string.IsNullOrWhiteSpace(Model.UpdatedByUserName))
+                                    {
+                                        @Model.UpdatedByUserName
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">نامشخص</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">تاریخ ویرایش:</label>
+                                <p class="form-control-plaintext">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- دکمه‌های عملیاتی -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="@Url.Action("Index", "PosManagement")" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="@Url.Action("EditTerminal", "PosManagement", new { id = Model.Id })" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>ویرایش ترمینال
+                            </a>
+                            @if (!Model.IsDefault)
+                            {
+                                <button type="button" class="btn btn-danger" onclick="confirmDelete(@Model.Id)">
+                                    <i class="fas fa-trash me-2"></i>حذف ترمینال
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تأیید حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف ترمینال</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف این ترمینال POS اطمینان دارید؟</p>
+                <p class="text-danger small">این عمل قابل بازگشت نیست.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form id="deleteForm" method="post" action="@Url.Action("DeleteTerminal", "PosManagement")" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteTerminalId" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>حذف
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        function confirmDelete(terminalId) {
+            $('#deleteTerminalId').val(terminalId);
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        // Handle form submission
+        $('#deleteForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var formData = form.serialize();
+            
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response && (response.success || response.Success)) {
+                        toastr.success('ترمینال با موفقیت حذف شد');
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index", "PosManagement")';
+                        }, 1000);
+                    } else {
+                        toastr.error('خطا در حذف ترمینال: ' + (response?.message || response?.Message || 'خطای نامشخص'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Delete error:', error);
+                    toastr.error('خطا در ارتباط با سرور');
+                }
+            });
+        });
+    </script>
+}
+
