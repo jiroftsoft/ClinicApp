@@ -143,7 +143,7 @@ namespace ClinicApp.Controllers.ReceptionV2
 
                 // شروع query با logging و null safety
                 // 🏥 MEDICAL: استفاده از AsNoTracking برای performance بهتر در محیط درمانی
-                // ⚠️ مهم: ترتیب صحیح: AsNoTracking باید قبل از Include باشد
+                // ⚠️ مهم: Doctor را Include نمی‌کنیم چون Degree enum مشکل دارد - از Select projection استفاده می‌کنیم
                 _logger.Information("📋 V2: شروع ساخت query");
                 
                 IQueryable<ReceptionEntity> query;
@@ -151,17 +151,17 @@ namespace ClinicApp.Controllers.ReceptionV2
                 {
                     _logger.Debug("📋 V2: شروع ساخت query با AsNoTracking و Include ها");
                     
-                    // ساخت query پایه - ترتیب صحیح: AsNoTracking قبل از Include
+                    // ساخت query پایه - Doctor را Include نمی‌کنیم (مشکل Degree enum)
                     query = _context.Receptions
                         .AsNoTracking() // 🚀 Performance: عدم track کردن entity ها برای read-only operations
                         .Include(r => r.Patient)
-                        .Include(r => r.Doctor)
+                        // .Include(r => r.Doctor) // ❌ حذف شد: مشکل Degree enum (string در DB اما enum در model)
                         .Include(r => r.Department)
                         .Include(r => r.Transactions)
                         .Include(r => r.ReceptionItems)
                         .Where(r => !r.IsDeleted);
                     
-                    _logger.Information("📋 V2: Query اولیه با AsNoTracking و Include ها ساخته شد");
+                    _logger.Information("📋 V2: Query اولیه با AsNoTracking و Include ها ساخته شد (بدون Doctor)");
                 }
                 catch (Exception queryEx)
                 {
@@ -346,6 +346,34 @@ namespace ClinicApp.Controllers.ReceptionV2
                 _logger.Information("📋 V2: شروع تبدیل به ViewModel");
                 var items = new List<ReceptionListItemViewModel>();
                 
+                // دریافت اطلاعات Doctor ها به صورت جداگانه برای جلوگیری از مشکل Degree enum
+                var doctorIds = receptions.Select(r => r.DoctorId).Distinct().ToList();
+                var doctors = new Dictionary<int, string>();
+                
+                if (doctorIds.Any())
+                {
+                    try
+                    {
+                        _logger.Debug("📋 V2: دریافت اطلاعات Doctor ها - تعداد: {Count}", doctorIds.Count);
+                        var doctorNames = await _context.Doctors
+                            .AsNoTracking()
+                            .Where(d => doctorIds.Contains(d.DoctorId) && !d.IsDeleted)
+                            .Select(d => new { d.DoctorId, FirstName = d.FirstName ?? "", LastName = d.LastName ?? "" })
+                            .ToListAsync();
+                        
+                        foreach (var doc in doctorNames)
+                        {
+                            doctors[doc.DoctorId] = $"{doc.FirstName} {doc.LastName}".Trim();
+                        }
+                        
+                        _logger.Debug("📋 V2: اطلاعات {Count} Doctor دریافت شد", doctors.Count);
+                    }
+                    catch (Exception docEx)
+                    {
+                        _logger.Warning(docEx, "⚠️ V2: خطا در دریافت اطلاعات Doctor ها - ادامه بدون آن");
+                    }
+                }
+                
                 foreach (var r in receptions)
                 {
                     try
@@ -360,6 +388,13 @@ namespace ClinicApp.Controllers.ReceptionV2
                             paidAmount = successfulTransactions.Sum(t => (decimal?)t.Amount) ?? 0m;
                         }
                         
+                        // دریافت نام Doctor از dictionary
+                        var doctorName = "—";
+                        if (r.DoctorId > 0 && doctors.ContainsKey(r.DoctorId))
+                        {
+                            doctorName = doctors[r.DoctorId];
+                        }
+                        
                         var item = new ReceptionListItemViewModel
                         {
                             ReceptionId = r.ReceptionId,
@@ -368,9 +403,7 @@ namespace ClinicApp.Controllers.ReceptionV2
                                 ? $"{r.Patient.FirstName ?? ""} {r.Patient.LastName ?? ""}".Trim()
                                 : "—",
                             PatientNationalCode = r.Patient?.NationalCode ?? "—",
-                            DoctorName = r.Doctor != null 
-                                ? $"{r.Doctor.FirstName ?? ""} {r.Doctor.LastName ?? ""}".Trim()
-                                : "—",
+                            DoctorName = doctorName,
                             DepartmentName = r.Department?.Name ?? "—",
                             ReceptionDate = r.ReceptionDate,
                             ReceptionDateShamsi = r.ReceptionDate.ToPersianDate(),

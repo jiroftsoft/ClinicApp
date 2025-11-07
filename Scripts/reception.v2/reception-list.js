@@ -540,10 +540,29 @@
 
             // Get default terminal
             $.get('/api/v1/pos/terminals/default')
-                .done(function(terminal) {
-                    if (!terminal || !terminal.Id) {
-                        throw new Error('ترمینال POS پیش‌فرض یافت نشد');
+                .done(function(response) {
+                    // بررسی ساختار ServiceResult
+                    const successValue = response?.Success ?? response?.success;
+                    const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+                    
+                    // استخراج Data از ServiceResult
+                    let terminal = response?.Data || response?.data;
+                    if (API && API.ok && typeof API.ok === 'function') {
+                        terminal = API.ok(response);
                     }
+                    
+                    if (!isSuccess || !terminal) {
+                        const errorMsg = response?.Message || response?.message || 'ترمینال POS پیش‌فرض یافت نشد';
+                        throw new Error(errorMsg);
+                    }
+                    
+                    // استفاده از posTerminalId یا Id
+                    const terminalId = terminal.posTerminalId || terminal.PosTerminalId || terminal.Id || terminal.id;
+                    if (!terminalId) {
+                        throw new Error('شناسه ترمینال یافت نشد');
+                    }
+
+                    console.log('🏥 Reception List: Terminal found', { terminal, terminalId });
 
                     // Process payment
                     const token = getAntiForgeryToken();
@@ -557,7 +576,7 @@
                         data: JSON.stringify({
                             ReceptionId: receptionId,
                             AmountIRR: amount,
-                            TerminalId: terminal.Id
+                            TerminalId: terminalId
                         }),
                         dataType: 'json'
                     });
@@ -590,12 +609,37 @@
                     }
                 })
                 .fail(function(xhr, status, error) {
-                    console.error('❌ Reception List: POS payment failed', error);
+                    console.error('❌ Reception List: POS payment failed', { xhr, status, error });
+                    
+                    // استخراج پیام خطا
+                    let errorMessage = 'خطا در پردازش پرداخت';
+                    try {
+                        if (xhr.responseJSON) {
+                            const jsonResponse = xhr.responseJSON;
+                            errorMessage = jsonResponse.Message || jsonResponse.message || errorMessage;
+                            
+                            // اگر ServiceResult است، از Data استفاده کن
+                            if (jsonResponse.Success === false && jsonResponse.Data) {
+                                errorMessage = jsonResponse.Data.Message || errorMessage;
+                            }
+                        } else if (xhr.responseText) {
+                            try {
+                                const parsed = JSON.parse(xhr.responseText);
+                                errorMessage = parsed.Message || parsed.message || errorMessage;
+                            } catch (e) {
+                                // Ignore parse errors
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Reception List: Error parsing error response', e);
+                    }
+                    
+                    // نمایش خطا
                     $('#posPaymentLoading').addClass('d-none');
                     $('#posPaymentError').removeClass('d-none');
-                    $('#posPaymentErrorMsg').text(xhr.responseJSON?.Message || 'خطا در پردازش پرداخت');
+                    $('#posPaymentErrorMsg').text(errorMessage);
                     $('#posPaymentCancelBtn').removeClass('d-none');
-                    toastr.error('خطا در پردازش پرداخت');
+                    toastr.error(errorMessage);
                 });
         }
 
