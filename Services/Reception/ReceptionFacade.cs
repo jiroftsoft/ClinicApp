@@ -1419,17 +1419,64 @@ namespace ClinicApp.Services.Reception
 
         /// <summary>
         /// ایجاد پیش‌نویس پذیرش
+        /// 🏥 MEDICAL: با Duplicate Check برای جلوگیری از ایجاد Draft های تکراری
         /// </summary>
         public async Task<ServiceResult<CreateDraftResponse>> CreateDraftAsync(CreateDraftRequest request)
         {
             try
             {
-                _logger.Information("🏥 FACADE: ایجاد پیش‌نویس پذیرش");
+                _logger.Information("🏥 FACADE: ایجاد پیش‌نویس پذیرش - PatientId: {PatientId}, DoctorId: {DoctorId}, ClinicId: {ClinicId}, DepartmentId: {DepartmentId}", 
+                    request.PatientId, request.DoctorId, request.ClinicId, request.DepartmentId);
 
                 // Validate required fields for creating a draft using Reception entity (non-nullable columns)
                 if (!request.PatientId.HasValue || !request.DoctorId.HasValue || !request.ClinicId.HasValue || !request.DepartmentId.HasValue)
                 {
                     return ServiceResult<CreateDraftResponse>.Failed("اطلاعات بیمار/کلینیک/بخش/پزشک ناقص است. ابتدا فیلدهای لازم را تکمیل کنید.");
+                }
+
+                // 🏥 MEDICAL: بررسی Duplicate - Draft خالی در 5 دقیقه گذشته با همان مشخصات
+                var fiveMinutesAgo = DateTime.Now.AddMinutes(-5);
+                var existingDraft = await _context.Receptions
+                    .AsNoTracking()
+                    .Where(r => 
+                        r.PatientId == request.PatientId.Value &&
+                        r.DoctorId == request.DoctorId.Value &&
+                        r.ClinicId == request.ClinicId.Value &&
+                        r.DepartmentId == request.DepartmentId.Value &&
+                        r.Status == ReceptionStatus.Pending &&
+                        r.TotalAmount == 0 &&
+                        !r.IsDeleted &&
+                        r.CreatedAt > fiveMinutesAgo &&
+                        r.CreatedByUserId == _currentUserService.UserId)
+                    .OrderByDescending(r => r.CreatedAt)
+                    .FirstOrDefaultAsync();
+                
+                if (existingDraft != null)
+                {
+                    _logger.Warning("⚠️ FACADE: Draft تکراری شناسایی شد - ReceptionId: {ReceptionId}, CreatedAt: {CreatedAt}, TimeDiff: {TimeDiff}ms", 
+                        existingDraft.ReceptionId, 
+                        existingDraft.CreatedAt,
+                        (DateTime.Now - existingDraft.CreatedAt).TotalMilliseconds);
+                    
+                    // بررسی اینکه آیا Draft واقعاً خالی است (هیچ ReceptionItem ندارد)
+                    var hasItems = await _context.ReceptionItems
+                        .AnyAsync(ri => ri.ReceptionId == existingDraft.ReceptionId && !ri.IsDeleted);
+                    
+                    if (!hasItems)
+                    {
+                        _logger.Information("✅ FACADE: استفاده از Draft موجود (خالی) - ReceptionId: {ReceptionId}", 
+                            existingDraft.ReceptionId);
+                        return ServiceResult<CreateDraftResponse>.Successful(new CreateDraftResponse 
+                        { 
+                            ReceptionId = existingDraft.ReceptionId, 
+                            Status = "Draft" 
+                        });
+                    }
+                    else
+                    {
+                        _logger.Information("ℹ️ FACADE: Draft موجود دارای آیتم است، ایجاد Draft جدید - ExistingReceptionId: {ReceptionId}", 
+                            existingDraft.ReceptionId);
+                    }
                 }
 
                 // 🔍 اعتبارسنجی: بررسی عضویت پزشک به دپارتمان
@@ -1462,6 +1509,7 @@ namespace ClinicApp.Services.Reception
                 // دریافت سال مالی جاری
                 var financialYear = _financialYearService.GetCurrentYear();
 
+                // 🏥 MEDICAL: ایجاد Draft جدید با logging دقیق
                 var draft = new Models.Entities.Reception.Reception
                 {
                     PatientId = request.PatientId.Value,
@@ -1475,11 +1523,17 @@ namespace ClinicApp.Services.Reception
                     TotalAmount = 0,
                     PatientCoPay = 0,
                     InsurerShareAmount = 0,
-                    FinancialYear = financialYear
+                    FinancialYear = financialYear,
+                    CreatedByUserId = _currentUserService.UserId,
+                    CreatedAt = DateTime.Now,
+                    IsDeleted = false
                 };
                 
                 _context.Receptions.Add(draft);
                 await _context.SaveChangesAsync();
+
+                _logger.Information("✅ FACADE: Draft جدید ایجاد شد - ReceptionId: {ReceptionId}, CreatedAt: {CreatedAt}", 
+                    draft.ReceptionId, draft.CreatedAt);
 
                 return ServiceResult<CreateDraftResponse>.Successful(new CreateDraftResponse 
                 { 
@@ -1489,7 +1543,8 @@ namespace ClinicApp.Services.Reception
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ FACADE: خطا در ایجاد پیش‌نویس");
+                _logger.Error(ex, "❌ FACADE: خطا در ایجاد پیش‌نویس - ExceptionType: {ExceptionType}, Message: {Message}", 
+                    ex.GetType().Name, ex.Message);
                 return ServiceResult<CreateDraftResponse>.Failed("خطا در ایجاد پیش‌نویس پذیرش");
             }
         }

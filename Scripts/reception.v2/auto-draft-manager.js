@@ -4,11 +4,28 @@
   let currentDraftId = null;
   let autoSaveTimeout = null;
   let isDraftCreated = false;
+  let isCreatingDraft = false; // 🏥 MEDICAL: Request Lock برای جلوگیری از Race Condition
+  let draftCreationPromise = null; // 🏥 MEDICAL: Promise برای wait کردن request در حال اجرا
+  let draftCreationTimeout = null; // 🏥 MEDICAL: Debounce timeout
   
-  // Auto-draft creation when user starts entering data
+  /**
+   * 🏥 MEDICAL: ایجاد پیش‌نویس با Request Lock و Race Condition Prevention
+   * این تابع از ایجاد duplicate Draft جلوگیری می‌کند
+   */
   function createAutoDraft() {
-    if (isDraftCreated) return Promise.resolve(currentDraftId);
+    // ✅ بررسی 1: اگر Draft قبلاً ایجاد شده، برگردان
+    if (isDraftCreated && currentDraftId) {
+      console.log('🏥 V2: Draft already created:', currentDraftId);
+      return Promise.resolve(currentDraftId);
+    }
     
+    // ✅ بررسی 2: اگر request در حال اجرا است، منتظر بمان
+    if (isCreatingDraft && draftCreationPromise) {
+      console.log('🏥 V2: Draft creation already in progress, waiting for completion...');
+      return draftCreationPromise;
+    }
+    
+    // ✅ بررسی 3: بررسی فیلدهای الزامی
     const patientId = $("#Patient_PatientId").val();
     const nationalCode = $("#Patient_NationalCode").val();
     const clinicId = $("#ClinicId").val();
@@ -21,7 +38,9 @@
       return Promise.resolve(null);
     }
     
-    console.log('🏥 V2: Creating auto-draft...');
+    // ✅ Set Lock: جلوگیری از duplicate request
+    isCreatingDraft = true;
+    console.log('🏥 V2: Creating auto-draft with lock...');
     
     const payload = {
       patientId: patientId || null,
@@ -32,10 +51,18 @@
       financialYear: (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) || 1404
     };
     
-    return API.post("/draft/create", payload)
+    // ✅ ایجاد Promise و ذخیره برای wait کردن
+    draftCreationPromise = API.post("/draft/create", payload)
       .then(API.ok)
       .then(d => {
-        console.log('🏥 V2: Auto-draft created:', d);
+        console.log('🏥 V2: Auto-draft created successfully:', d);
+        
+        // ✅ بررسی duplicate: اگر Draft دیگری در این فاصله ایجاد شده، از آن استفاده کن
+        if (isDraftCreated && currentDraftId && currentDraftId !== d.receptionId) {
+          console.warn('⚠️ V2: Another draft was created during request. Using existing:', currentDraftId, 'New:', d.receptionId);
+          return currentDraftId;
+        }
+        
         currentDraftId = d.receptionId;
         isDraftCreated = true;
         
@@ -51,7 +78,40 @@
         console.error('🏥 V2: Auto-draft creation failed:', err);
         toastr.error('خطا در ایجاد پذیرش موقت');
         throw err;
+      })
+      .finally(() => {
+        // ✅ Reset Lock: آزاد کردن lock در هر صورت (success یا error)
+        isCreatingDraft = false;
+        draftCreationPromise = null;
       });
+    
+    return draftCreationPromise;
+  }
+  
+  /**
+   * 🏥 MEDICAL: ایجاد پیش‌نویس با Debouncing برای بهبود UX
+   * این تابع از ایجاد multiple request در زمان کوتاه جلوگیری می‌کند
+   */
+  function scheduleDraftCreation() {
+    // ✅ Clear existing timeout
+    if (draftCreationTimeout) {
+      clearTimeout(draftCreationTimeout);
+      draftCreationTimeout = null;
+    }
+    
+    // ✅ اگر Draft قبلاً ایجاد شده، نیازی به ایجاد نیست
+    if (isDraftCreated && currentDraftId) {
+      return;
+    }
+    
+    // ✅ Set new timeout با debounce 500ms
+    draftCreationTimeout = setTimeout(() => {
+      draftCreationTimeout = null;
+      createAutoDraft().catch(err => {
+        console.error('🏥 V2: Scheduled draft creation error:', err);
+        // Don't show error to user - it's auto-creation
+      });
+    }, 500); // 500ms debounce برای محیط درمانی
   }
 
   /**
@@ -181,16 +241,15 @@
       $('<input type="hidden" id="ReceptionId" name="ReceptionId" />').appendTo('body');
     }
     
-    // Auto-create draft when patient data is entered
+    // Auto-create draft when patient data is entered - با Debouncing
     $(document).on('blur', '#Patient_NationalCode, #Patient_FullName, #Patient_Mobile', function() {
       const nationalCode = $("#Patient_NationalCode").val();
       const fullName = $("#Patient_FullName").val();
       const mobile = $("#Patient_Mobile").val();
       
       if ((nationalCode && nationalCode.length >= 10) || fullName || mobile) {
-        createAutoDraft().catch(err => {
-          console.error('🏥 V2: Auto-draft creation error:', err);
-        });
+        // ✅ استفاده از Debounced version
+        scheduleDraftCreation();
       }
     });
     
@@ -201,7 +260,7 @@
       }
     });
     
-    // Auto-create draft when clinic/department is selected
+    // Auto-create draft when clinic/department is selected - با Debouncing
     $(document).on('change', '#ClinicId, #DepartmentId, #DoctorId', function() {
       if (isDraftCreated) {
         autoSave();
@@ -212,14 +271,13 @@
         const mobile = $("#Patient_Mobile").val();
         
         if ((nationalCode && nationalCode.length >= 10) || fullName || mobile) {
-          createAutoDraft().catch(err => {
-            console.error('🏥 V2: Auto-draft creation error:', err);
-          });
+          // ✅ استفاده از Debounced version
+          scheduleDraftCreation();
         }
       }
     });
     
-    // Auto-create draft when insurance is selected
+    // Auto-create draft when insurance is selected - با Debouncing
     $(document).on('change', '#BasePlanId, #SuppPlanId', function() {
       if (isDraftCreated) {
         autoSave();
@@ -230,9 +288,8 @@
         const mobile = $("#Patient_Mobile").val();
         
         if ((nationalCode && nationalCode.length >= 10) || fullName || mobile) {
-          createAutoDraft().catch(err => {
-            console.error('🏥 V2: Auto-draft creation error:', err);
-          });
+          // ✅ استفاده از Debounced version
+          scheduleDraftCreation();
         }
       }
     });
@@ -266,9 +323,15 @@
     reset: () => {
       currentDraftId = null;
       isDraftCreated = false;
+      isCreatingDraft = false; // ✅ Reset Lock
+      draftCreationPromise = null; // ✅ Reset Promise
       if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
         autoSaveTimeout = null;
+      }
+      if (draftCreationTimeout) {
+        clearTimeout(draftCreationTimeout);
+        draftCreationTimeout = null;
       }
       $("#ReceptionId").val('');
     }
