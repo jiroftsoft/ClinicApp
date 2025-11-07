@@ -653,11 +653,12 @@ namespace ClinicApp.Controllers.Api
                     .Include(r => r.Doctor)
                     .Include(r => r.Department)
                     .Include(r => r.ReceptionItems.Select(receptionItem => receptionItem.Service))
+                    .Include(reception => reception.ActivePatientInsurance)
                     .FirstOrDefaultAsync(r => r.ReceptionId == id);
 
                 if (reception == null)
                 {
-                    return Json(ServiceResult<object>.Failed("پذیرش یافت نشد"));
+                    return Json(ServiceResult<object>.Failed("پذیرش یافت نشد"), JsonRequestBehavior.AllowGet);
                 }
 
                 var result = new
@@ -674,13 +675,39 @@ namespace ClinicApp.Controllers.Api
                     InsurerShareAmount = reception.InsurerShareAmount,
                     PatientCoPay = reception.PatientCoPay,
                     PaymentMethod = reception.PaymentMethod ?? "نقدی",
-                    Items = reception.ReceptionItems.Select(ri => new
+                    Items = reception.ReceptionItems.Where(ri => !ri.IsDeleted).Select(ri => new
                     {
                         ServiceName = ri.Service?.Title,
                         Quantity = ri.Quantity,
                         UnitPrice = ri.UnitPrice,
-                        TotalPrice = ri.UnitPrice * ri.Quantity
-                    }).ToList()
+                        TotalPrice = ri.UnitPrice * ri.Quantity,
+                        SnapshotJson = ri.SnapshotJson,
+                        PatientShareAmount = ri.PatientShareAmount,
+                        InsurerShareAmount = ri.InsurerShareAmount
+                    }).ToList(),
+                    BasePlanId = reception.BasePlanId,
+                    SupplementaryPlanId = reception.SupplementaryPlanId,
+                    SupplementaryInsuranceName = reception.SupplementaryPlanId.HasValue ? 
+                        (await _context.InsurancePlans
+                            .Where(p => p.InsurancePlanId == reception.SupplementaryPlanId.Value)
+                            .Select(p => p.Name)
+                            .FirstOrDefaultAsync()) : null,
+                    // 🏥 MEDICAL: دریافت اطلاعات بیمه تکمیلی از PatientInsurance
+                    // اگر ActivePatientInsurance وجود دارد و InsurancePlanId آن با SupplementaryPlanId مطابقت دارد
+                    SupplementaryPolicyNumber = reception.SupplementaryPlanId.HasValue && reception.ActivePatientInsurance != null ?
+                        (await _context.PatientInsurances
+                            .Where(pi => pi.PatientId == reception.PatientId && 
+                                        pi.InsurancePlanId == reception.SupplementaryPlanId.Value &&
+                                        pi.IsActive && !pi.IsDeleted)
+                            .Select(pi => pi.PolicyNumber)
+                            .FirstOrDefaultAsync()) : null,
+                    SupplementaryCardNumber = reception.SupplementaryPlanId.HasValue && reception.ActivePatientInsurance != null ?
+                        (await _context.PatientInsurances
+                            .Where(pi => pi.PatientId == reception.PatientId && 
+                                        pi.InsurancePlanId == reception.SupplementaryPlanId.Value &&
+                                        pi.IsActive && !pi.IsDeleted)
+                            .Select(pi => pi.CardNumber)
+                            .FirstOrDefaultAsync()) : null
                 };
 
                 return Json(ServiceResult<object>.Successful(result), JsonRequestBehavior.AllowGet);
@@ -688,7 +715,7 @@ namespace ClinicApp.Controllers.Api
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت جزئیات پذیرش");
-                return Json(ServiceResult<object>.Failed("خطا در دریافت جزئیات پذیرش"));
+                return Json(ServiceResult<object>.Failed("خطا در دریافت جزئیات پذیرش"), JsonRequestBehavior.AllowGet);
             }
         }
     }

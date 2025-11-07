@@ -13,6 +13,7 @@ using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.Insurance;
@@ -2341,7 +2342,8 @@ namespace ClinicApp.Services.Reception
                 }
                 
                 // ✅ اعتبارسنجی تطابق مبلغ ارسالی با محاسبه شده
-                if (totals.Data.Totals.Patient != request.AmountIRR)
+                // 🏥 MEDICAL: اگر Patient = 0 و AmountIRR = 0، این حالت معتبر است (بیمه 100% پوشش می‌دهد)
+                if (totals.Data.Totals.Patient != request.AmountIRR && !(totals.Data.Totals.Patient == 0 && request.AmountIRR == 0))
                 {
                     _logger.Warning("⚠️ FACADE: مبلغ پرداخت با مجموع مطابقت ندارد (Cash) - Calculated: {Calculated}, Requested: {Requested}", 
                         totals.Data.Totals.Patient, request.AmountIRR);
@@ -2408,11 +2410,42 @@ namespace ClinicApp.Services.Reception
                 draft.InsurerShareAmount = (decimal)(totalsDto.BaseCoveredIRR + totalsDto.SuppCoveredIRR);
                 draft.UpdatedAt = DateTime.Now;
                 
+                // 🏥 MEDICAL: اگر سهم بیمار صفر است و بیمه 100% پوشش می‌دهد، به صورت خودکار نهایی کن
+                // این منطق برای حالتی است که کاربر دکمه نهایی‌سازی را نزده اما سهم بیمار صفر است
+                if (draft.PatientCoPay == 0 && draft.TotalAmount > 0 && 
+                    draft.InsurerShareAmount >= draft.TotalAmount && 
+                    draft.Status == ReceptionStatus.Pending)
+                {
+                    // بررسی اینکه آیا پرداختی ثبت شده است یا نه
+                    var hasPayment = await _context.PaymentTransactions
+                        .AnyAsync(t => t.ReceptionId == draft.ReceptionId && 
+                                      t.Status == PaymentStatus.Success && 
+                                      !t.IsDeleted);
+                    
+                    if (!hasPayment)
+                    {
+                        // ثبت پرداخت صفر برای ردیابی
+                        var zeroPayment = new PaymentTransaction
+                        {
+                            ReceptionId = draft.ReceptionId,
+                            Amount = 0,
+                            Status = PaymentStatus.Success,
+                            Method = PaymentMethod.Cash,
+                            IdempotencyKey = Guid.NewGuid().ToString()
+                        };
+                        _context.PaymentTransactions.Add(zeroPayment);
+                    }
+                    
+                    draft.Status = ReceptionStatus.Completed;
+                    _logger.Information("✅ FACADE: پذیرش به صورت خودکار نهایی شد (سهم بیمار صفر) - ReceptionId: {ReceptionId}, PatientCoPay: {PatientCoPay}, TotalAmount: {TotalAmount}", 
+                        draft.ReceptionId, draft.PatientCoPay, draft.TotalAmount);
+                }
+                
                 // ذخیره تغییرات
                 await _context.SaveChangesAsync();
                 
-                _logger.Information("✅ FACADE: مقادیر Reception به‌روزرسانی شد - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}", 
-                    draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount);
+                _logger.Information("✅ FACADE: مقادیر Reception به‌روزرسانی شد - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}, Status: {Status}", 
+                    draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount, draft.Status);
 
                 // دریافت اطلاعات خدمات برای ساخت DTO
                 var serviceIds = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(i => i.ServiceId).Distinct().ToList();

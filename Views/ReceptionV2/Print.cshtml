@@ -1,4 +1,4 @@
-@model int
+@model int?
 @{
     ViewBag.Title = "چاپ رسید پذیرش";
     Layout = "~/Views/Shared/_PrintLayout.cshtml";
@@ -66,7 +66,12 @@
 
 <script>
     $(document).ready(function() {
-        loadReceptionData(@Model);
+        var receptionId = @(Model.HasValue && Model.Value > 0 ? Model.Value : 0);
+        if (receptionId > 0) {
+            loadReceptionData(receptionId);
+        } else {
+            alert('شناسه پذیرش نامعتبر است');
+        }
     });
 
     function loadReceptionData(receptionId) {

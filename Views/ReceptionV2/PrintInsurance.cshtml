@@ -1,4 +1,4 @@
-@model int
+@model int?
 @{
     ViewBag.Title = "چاپ قبض بیمه تکمیلی";
     Layout = "~/Views/Shared/_PrintLayout.cshtml";
@@ -76,7 +76,7 @@
 
 <script>
     $(document).ready(function() {
-        var receptionId = @(Model > 0 ? Model : 0);
+        var receptionId = @(Model.HasValue && Model.Value > 0 ? Model.Value : 0);
         if (receptionId > 0) {
             loadReceptionData(receptionId);
         } else {
