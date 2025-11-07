@@ -685,6 +685,10 @@
     <Compile Include="Migrations\202510311331187_AddSnapshotJsonAndServiceEligibilityFields.Designer.cs">
       <DependentUpon>202510311331187_AddSnapshotJsonAndServiceEligibilityFields.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202511070812475_ElectronicReceptionNumber.cs" />
+    <Compile Include="Migrations\202511070812475_ElectronicReceptionNumber.Designer.cs">
+      <DependentUpon>202511070812475_ElectronicReceptionNumber.cs</DependentUpon>
+    </Compile>
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -1133,6 +1137,7 @@
     <Compile Include="Services\Reception\ReceptionInformationService.cs" />
     <Compile Include="Services\Reception\ReceptionInsuranceAutoService.cs" />
     <Compile Include="Services\Reception\ReceptionNavigationService.cs" />
+    <Compile Include="Services\Reception\ReceptionNumberGenerator.cs" />
     <Compile Include="Services\Reception\ReceptionPatientIdentityService.cs" />
     <Compile Include="Services\Reception\ReceptionPatientService.cs" />
     <Compile Include="Services\Reception\ReceptionPaymentService.cs" />
@@ -4826,6 +4831,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510311331187_AddSnapshotJsonAndServiceEligibilityFields.resx">
       <DependentUpon>202510311331187_AddSnapshotJsonAndServiceEligibilityFields.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202511070812475_ElectronicReceptionNumber.resx">
+      <DependentUpon>202511070812475_ElectronicReceptionNumber.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

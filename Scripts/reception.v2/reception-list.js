@@ -102,7 +102,9 @@
                 PatientName: $('#filterPatientName').val()?.trim() || null,
                 DateFrom: $('#filterDateFrom').val()?.trim() || null,
                 DateTo: $('#filterDateTo').val()?.trim() || null,
-                Status: $('#filterStatus').val() ? parseInt($('#filterStatus').val()) : null
+                Status: $('#filterStatus').val() ? parseInt($('#filterStatus').val()) : null,
+                ReceptionNo: $('#filterReceptionNo').val()?.trim() || null, // 🏥 MEDICAL: فیلتر شماره پذیرش
+                ElectronicReceptionNumber: $('#filterElectronicReceptionNumber').val()?.trim() || null // 🏥 MEDICAL: فیلتر شماره الکترونیکی
             };
 
             // حذف null values برای بهینه‌سازی
@@ -330,6 +332,8 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>شماره رسید</th>
+                                <th>شماره پذیرش</th>
+                                <th>شماره الکترونیکی</th>
                                 <th>بیمار</th>
                                 <th>کد ملی</th>
                                 <th>پزشک</th>
@@ -349,9 +353,19 @@
                 const hasDebt = item.RemainingAmount > 0;
                 const statusBadge = getStatusBadgeClass(item.Status);
                 
+                // 🏥 MEDICAL: استخراج ReceptionNo و ElectronicReceptionNumber
+                const receptionNo = item.ReceptionNo || item.ReceiptNo || '—';
+                const electronicNumber = item.ElectronicReceptionNumber || '—';
+                
                 html += `
                     <tr data-reception-id="${item.ReceptionId}" class="${hasDebt ? 'table-warning' : ''}">
                         <td>${item.ReceiptNo || '—'}</td>
+                        <td>
+                            <span class="badge bg-primary" title="شماره پذیرش رسمی">${receptionNo}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted" title="شماره الکترونیکی - برای گروه‌بندی پذیرش‌های بیمار">${electronicNumber}</small>
+                        </td>
                         <td>${item.PatientName || '—'}</td>
                         <td>${item.PatientNationalCode || '—'}</td>
                         <td>${item.DoctorName || '—'}</td>
@@ -718,6 +732,7 @@
             }
         });
 
+        // 🏥 MEDICAL: Reset filters - شامل فیلترهای جدید
         $('#btnReset').on('click', function(e) {
             e.preventDefault();
             $('#filterNationalCode').val('');
@@ -725,6 +740,8 @@
             $('#filterDateFrom').val('');
             $('#filterDateTo').val('');
             $('#filterStatus').val('');
+            $('#filterReceptionNo').val(''); // 🏥 MEDICAL: پاک کردن فیلتر شماره پذیرش
+            $('#filterElectronicReceptionNumber').val(''); // 🏥 MEDICAL: پاک کردن فیلتر شماره الکترونیکی
             if (!isLoading) {
                 loadReceptionList(1);
             }

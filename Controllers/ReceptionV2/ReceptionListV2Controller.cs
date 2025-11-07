@@ -263,6 +263,36 @@ namespace ClinicApp.Controllers.ReceptionV2
                     _logger.Information("📋 V2: فیلتر بدهی اعمال شد");
                 }
 
+                // 🏥 MEDICAL: فیلتر بر اساس شماره پذیرش رسمی (ReceptionNo)
+                if (filters != null && !string.IsNullOrWhiteSpace(filters.ReceptionNo))
+                {
+                    query = query.Where(r => r.ReceptionNo != null && r.ReceptionNo.Contains(filters.ReceptionNo.Trim()));
+                    _logger.Information("📋 V2: فیلتر شماره پذیرش اعمال شد: {ReceptionNo}", filters.ReceptionNo);
+                }
+
+                // 🏥 MEDICAL: فیلتر بر اساس شماره الکترونیکی (ElectronicReceptionNumber)
+                if (filters != null && !string.IsNullOrWhiteSpace(filters.ElectronicReceptionNumber))
+                {
+                    var electronicNumber = filters.ElectronicReceptionNumber.Trim();
+                    
+                    // استخراج PatientId از ElectronicReceptionNumber برای جستجوی سریع‌تر
+                    var parts = electronicNumber.Split('-');
+                    if (parts.Length >= 1 && int.TryParse(parts[0], out int patientId))
+                    {
+                        // جستجو بر اساس PatientId (سریع‌تر)
+                        query = query.Where(r => r.PatientId == patientId);
+                        _logger.Information("📋 V2: فیلتر شماره الکترونیکی اعمال شد (بر اساس PatientId): {PatientId}, ElectronicNumber: {ElectronicNumber}", 
+                            patientId, electronicNumber);
+                    }
+                    else
+                    {
+                        // جستجو بر اساس خود ElectronicReceptionNumber
+                        query = query.Where(r => r.ElectronicReceptionNumber != null && 
+                            r.ElectronicReceptionNumber.Contains(electronicNumber));
+                        _logger.Information("📋 V2: فیلتر شماره الکترونیکی اعمال شد (مستقیم): {ElectronicNumber}", electronicNumber);
+                    }
+                }
+
                 // شمارش کل با error handling
                 int totalCount = 0;
                 try
@@ -418,6 +448,8 @@ namespace ClinicApp.Controllers.ReceptionV2
                                 .FirstOrDefault()?.Method,
                             ServiceCount = r.ReceptionItems?.Count(i => !i.IsDeleted) ?? 0,
                             ReceiptNo = r.ReceptionNo ?? r.ReceptionNumber ?? "—",
+                            ReceptionNo = r.ReceptionNo ?? "—", // 🏥 MEDICAL: شماره پذیرش رسمی
+                            ElectronicReceptionNumber = r.ElectronicReceptionNumber ?? "—", // 🏥 MEDICAL: شماره الکترونیکی
                             Notes = r.Notes
                         };
                         

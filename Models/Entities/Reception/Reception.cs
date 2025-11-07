@@ -39,10 +39,22 @@ public class Reception : ISoftDelete, ITrackable
     public string ReceptionNumber => $"R{ReceptionId:D6}";
 
     /// <summary>
-    /// شماره پذیرش رسمی (مثل 1404-000123)
+    /// شماره پذیرش رسمی (الگوی استاندارد: YYYY-MMDD-XXXXX)
+    /// مثال: 1404-0816-00123
+    /// این شماره باید منحصر به فرد باشد و در سطح دیتابیس Unique است
     /// </summary>
     [MaxLength(20, ErrorMessage = "شماره پذیرش نمی‌تواند بیش از 20 کاراکتر باشد.")]
+    [Index(IsUnique = true)]
     public string ReceptionNo { get; set; }
+
+    /// <summary>
+    /// شماره الکترونیکی پذیرش (الگوی استاندارد: PATIENTID-YYYY-MMDD-XXXXX)
+    /// مثال: 167-1404-0816-00123
+    /// این شماره برای گروه‌بندی تمام پذیرش‌های یک بیمار استفاده می‌شود
+    /// </summary>
+    [MaxLength(30, ErrorMessage = "شماره الکترونیکی نمی‌تواند بیش از 30 کاراکتر باشد.")]
+    [Index]
+    public string ElectronicReceptionNumber { get; set; }
 
     /// <summary>
     /// شناسه کلینیک
@@ -418,11 +430,19 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
                 new IndexAnnotation(new IndexAttribute("IX_Reception_SupplementaryPlanId")));
 
         // فیلدهای جدید برای Reception V2
+        // 🏥 MEDICAL: ReceptionNo باید Unique باشد
         Property(r => r.ReceptionNo)
             .IsOptional()
             .HasMaxLength(20)
             .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_Reception_ReceptionNo")));
+                new IndexAnnotation(new IndexAttribute("IX_Reception_ReceptionNo") { IsUnique = true }));
+
+        // 🏥 MEDICAL: شماره الکترونیکی برای گروه‌بندی پذیرش‌های یک بیمار
+        Property(r => r.ElectronicReceptionNumber)
+            .IsOptional()
+            .HasMaxLength(30)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_ElectronicReceptionNumber")));
 
         Property(r => r.ClinicId)
             .IsRequired()

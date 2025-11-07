@@ -134,6 +134,83 @@ namespace ClinicApp.Repositories
         }
 
         /// <summary>
+        /// 🏥 MEDICAL: دریافت پذیرش‌های بیمار بر اساس شماره الکترونیکی
+        /// این متد تمام پذیرش‌های یک بیمار را بر اساس ElectronicReceptionNumber برمی‌گرداند
+        /// </summary>
+        /// <param name="electronicReceptionNumber">شماره الکترونیکی پذیرش (مثل: 167-1404-0816-00123)</param>
+        /// <returns>لیست پذیرش‌های بیمار</returns>
+        public async Task<List<Models.Entities.Reception.Reception>> GetByElectronicReceptionNumberAsync(string electronicReceptionNumber)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(electronicReceptionNumber))
+                {
+                    _logger.Warning("⚠️ ElectronicReceptionNumber خالی است");
+                    return new List<Models.Entities.Reception.Reception>();
+                }
+
+                // استخراج PatientId از ElectronicReceptionNumber
+                // الگو: PATIENTID-YYYY-MMDD-XXXXX
+                var parts = electronicReceptionNumber.Split('-');
+                if (parts.Length < 1 || !int.TryParse(parts[0], out int patientId))
+                {
+                    _logger.Warning("⚠️ فرمت ElectronicReceptionNumber نامعتبر: {ElectronicNumber}", electronicReceptionNumber);
+                    // اگر فرمت نامعتبر است، سعی می‌کنیم با خود ElectronicReceptionNumber جستجو کنیم
+                    return await _context.Receptions
+                        .Where(r => r.ElectronicReceptionNumber == electronicReceptionNumber && !r.IsDeleted)
+                        .AsNoTracking()
+                        .OrderByDescending(r => r.ReceptionDate)
+                        .ToListAsync();
+                }
+
+                // جستجو بر اساس PatientId (سریع‌تر از جستجوی مستقیم ElectronicReceptionNumber)
+                _logger.Information("🏥 دریافت پذیرش‌های بیمار بر اساس ElectronicReceptionNumber - PatientId: {PatientId}, ElectronicNumber: {ElectronicNumber}", 
+                    patientId, electronicReceptionNumber);
+
+                return await _context.Receptions
+                    .Where(r => r.PatientId == patientId && !r.IsDeleted)
+                    .AsNoTracking()
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت پذیرش‌های بیمار بر اساس ElectronicReceptionNumber. ElectronicNumber: {ElectronicNumber}", 
+                    electronicReceptionNumber);
+                throw new InvalidOperationException($"خطا در دریافت پذیرش‌های بیمار بر اساس شماره الکترونیکی {electronicReceptionNumber}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: دریافت پذیرش بر اساس شماره پذیرش رسمی (ReceptionNo)
+        /// </summary>
+        /// <param name="receptionNo">شماره پذیرش رسمی (مثل: 1404-0816-00123)</param>
+        /// <returns>پذیرش یا null</returns>
+        public async Task<Models.Entities.Reception.Reception> GetByReceptionNoAsync(string receptionNo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(receptionNo))
+                {
+                    _logger.Warning("⚠️ ReceptionNo خالی است");
+                    return null;
+                }
+
+                _logger.Information("🏥 دریافت پذیرش بر اساس ReceptionNo - {ReceptionNo}", receptionNo);
+
+                return await _context.Receptions
+                    .Where(r => r.ReceptionNo == receptionNo && !r.IsDeleted)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت پذیرش بر اساس ReceptionNo. ReceptionNo: {ReceptionNo}", receptionNo);
+                throw new InvalidOperationException($"خطا در دریافت پذیرش بر اساس شماره پذیرش {receptionNo}", ex);
+            }
+        }
+
+        /// <summary>
         /// دریافت پذیرش‌های پزشک
         /// </summary>
         public async Task<List<Models.Entities.Reception.Reception>> GetByDoctorIdAsync(int doctorId)

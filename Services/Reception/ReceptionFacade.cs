@@ -1509,14 +1509,21 @@ namespace ClinicApp.Services.Reception
                 // دریافت سال مالی جاری
                 var financialYear = _financialYearService.GetCurrentYear();
 
-                // 🏥 MEDICAL: ایجاد Draft جدید با logging دقیق
+                // 🏥 MEDICAL: تولید شماره پذیرش استاندارد
+                var receptionDate = DateTime.Now;
+                var numberGenerator = new ReceptionNumberGenerator(_context, _logger);
+                var (receptionNo, electronicReceptionNumber) = await numberGenerator.GenerateBothAsync(
+                    request.PatientId.Value, 
+                    receptionDate);
+
+                // 🏥 MEDICAL: ایجاد Draft جدید با logging دقیق و شماره‌های استاندارد
                 var draft = new Models.Entities.Reception.Reception
                 {
                     PatientId = request.PatientId.Value,
                     DoctorId = request.DoctorId.Value,
                     ClinicId = request.ClinicId.Value,
                     DepartmentId = request.DepartmentId.Value,
-                    ReceptionDate = DateTime.Now,
+                    ReceptionDate = receptionDate,
                     Status = ReceptionStatus.Pending, // Draft status
                     Type = ReceptionType.Normal,
                     Priority = AppointmentPriority.Normal,
@@ -1524,6 +1531,8 @@ namespace ClinicApp.Services.Reception
                     PatientCoPay = 0,
                     InsurerShareAmount = 0,
                     FinancialYear = financialYear,
+                    ReceptionNo = receptionNo, // 🏥 MEDICAL: شماره پذیرش رسمی
+                    ElectronicReceptionNumber = electronicReceptionNumber, // 🏥 MEDICAL: شماره الکترونیکی
                     CreatedByUserId = _currentUserService.UserId,
                     CreatedAt = DateTime.Now,
                     IsDeleted = false

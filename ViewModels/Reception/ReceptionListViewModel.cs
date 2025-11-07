@@ -57,6 +57,19 @@ namespace ClinicApp.ViewModels.Reception
 
         [Display(Name = "دارای بدهی")]
         public bool? HasDebt { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: جستجو بر اساس شماره الکترونیکی پذیرش
+        /// برای نمایش تمام پذیرش‌های یک بیمار
+        /// </summary>
+        [Display(Name = "شماره الکترونیکی")]
+        public string ElectronicReceptionNumber { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: جستجو بر اساس شماره پذیرش رسمی
+        /// </summary>
+        [Display(Name = "شماره پذیرش")]
+        public string ReceptionNo { get; set; }
     }
 
     /// <summary>
@@ -114,6 +127,19 @@ namespace ClinicApp.ViewModels.Reception
 
         [Display(Name = "شماره رسید")]
         public string ReceiptNo { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: شماره پذیرش رسمی (الگوی استاندارد: YYYY-MMDD-XXXXX)
+        /// </summary>
+        [Display(Name = "شماره پذیرش")]
+        public string ReceptionNo { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: شماره الکترونیکی پذیرش (الگوی استاندارد: PATIENTID-YYYY-MMDD-XXXXX)
+        /// برای گروه‌بندی تمام پذیرش‌های یک بیمار
+        /// </summary>
+        [Display(Name = "شماره الکترونیکی")]
+        public string ElectronicReceptionNumber { get; set; }
 
         [Display(Name = "یادداشت")]
         public string Notes { get; set; }
