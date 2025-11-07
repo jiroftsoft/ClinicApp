@@ -243,6 +243,7 @@
     get: (path, params) => ajaxWithFallback('GET', path + (params ? ('?' + $.param(params)) : ''), null),
     post: (path, body) => ajaxWithFallback('POST', path, body),
     ok: ok,
-    setInsurancesAndReprice: setInsurancesAndReprice // ✅ جدید: برای Reprice با Token
+    setInsurancesAndReprice: setInsurancesAndReprice, // ✅ جدید: برای Reprice با Token
+    handleErrorJson: handleErrorJson // ✅ Export برای استفاده در ماژول‌های دیگر
   };
 })(window, jQuery);

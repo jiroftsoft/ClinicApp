@@ -10,6 +10,14 @@
       </div>
       <div class="modal-body">
         <div id="posPaymentStatus" class="text-center">
+          <div id="posPaymentReady" class="">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle fa-2x mb-3"></i>
+              <h5>آماده برای پرداخت</h5>
+              <p class="text-muted">لطفاً روی دکمه "پرداخت با POS" کلیک کنید تا پرداخت شروع شود</p>
+            </div>
+          </div>
+          
           <div id="posPaymentLoading" class="d-none">
             <div class="spinner-border text-primary mb-3" role="status">
               <span class="visually-hidden">در حال پردازش...</span>
@@ -52,7 +60,15 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="posPaymentCancelBtn">انصراف</button>
-        <button type="button" class="btn btn-primary d-none" id="posPaymentConfirmBtn">تأیید و ادامه</button>
+        <button type="button" class="btn btn-primary" id="posPaymentStartBtn">
+          <i class="fas fa-credit-card me-2"></i>پرداخت با POS
+        </button>
+        <button type="button" class="btn btn-success d-none" id="posPaymentConfirmBtn">
+          <i class="fas fa-check me-2"></i>تأیید و نهایی‌سازی
+        </button>
+        <button type="button" class="btn btn-info d-none" id="posPaymentPrintBtn">
+          <i class="fas fa-print me-2"></i>چاپ قبض
+        </button>
       </div>
     </div>
   </div>

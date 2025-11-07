@@ -296,7 +296,7 @@ namespace ClinicApp.Controllers.Payment.POS
         }
 
         // POST /api/v1/pos/process-payment
-        [HttpPost, ValidateAntiForgeryToken, Route("process-payment")]
+        [HttpPost, ValidateAntiForgeryTokenOnPosts, Route("process-payment")]
         public async Task<ActionResult> ProcessPayment(ProcessPosPaymentRequest request)
         {
             try

@@ -1321,8 +1321,10 @@
     <Compile Include="ViewModels\Reception\ReceptionInsuranceShareViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionInsuranceUpdateResult.cs" />
     <Compile Include="ViewModels\Reception\ReceptionInsuranceViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionListViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionMonthlyStatsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionPatientHistoryViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPatientIdentityViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPaymentErrorViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPaymentHistoryViewModel.cs" />
@@ -4261,6 +4263,27 @@
     <Content Include="Docs\reception-v2-module-analysis.md" />
     <Content Include="Docs\ssl-completely-disabled.md" />
     <Content Include="Docs\system-web-mvc-version-fix.md" />
+    <Content Include="Docs\comprehensive-module-audit-report.md" />
+    <Content Include="Docs\essential-implementation-summary.md" />
+    <Content Include="Docs\gap-analysis-vs-linkage-map.md" />
+    <Content Include="Docs\insurance-module-blueprint-gap-analysis.md" />
+    <Content Include="Docs\migration-completed-summary.md" />
+    <Content Include="Docs\reception-v2-fixes-summary.md" />
+    <Content Include="Docs\reception-v2-readiness-audit.md" />
+    <Content Include="Docs\reception-v2-ux-enhancement-summary.md" />
+    <Content Include="Docs\RECEPTION_V2_ARCHITECTURE_ALIGNMENT.md" />
+    <Content Include="Docs\RECEPTION_V2_BUGFIX_ENSUREDRAFTORSKIP.md" />
+    <Content Include="Docs\RECEPTION_V2_OPTIMIZATION_PLAN.md" />
+    <Content Include="Docs\RECEPTION_V2_OPTIMIZATION_SUMMARY.md" />
+    <Content Include="Docs\RECEPTION_V2_STEP8_SUMMARY.md" />
+    <Content Include="Documentation\Database-Connection-Guide.md" />
+    <Content Include="Docs\DATABASE_SCHEMA_AND_RELATIONSHIPS_REPORT.md" />
+    <Content Include="Docs\DATABASE_CONNECTION_STATUS_REPORT.md" />
+    <Content Include="Docs\DOCUMENTATION_FOLDER_COMPREHENSIVE_REVIEW.md" />
+    <Content Include="Docs\RECEPTION_V2_COMPLETION_REPORT.md" />
+    <Content Include="Docs\RECEPTION_V2_FINALIZATION_REPORT.md" />
+    <Content Include="Docs\RECEPTION_V2_FORM_AUDIT_REPORT.md" />
+    <Content Include="Docs\RECEPTION_V2_VIEWS_COMPREHENSIVE_REVIEW.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4620,6 +4643,7 @@
     <Content Include="Views\PosManagement\EditTerminal.cshtml" />
     <Content Include="Views\PosManagement\SessionDetails.cshtml" />
     <Content Include="Views\PosManagement\TerminalDetails.cshtml" />
+    <Content Include="Views\Reception\ReceptionList\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

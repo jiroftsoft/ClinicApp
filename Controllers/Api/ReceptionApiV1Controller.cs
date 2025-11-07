@@ -570,13 +570,22 @@ namespace ClinicApp.Controllers.Api
                     
                     if (result.Success && result.Data != null)
                     {
+                        // ✅ دریافت نام دپارتمان از دیتابیس
+                        var department = await _context.Departments
+                            .AsNoTracking()
+                            .Where(d => d.DepartmentId == deptId && !d.IsDeleted)
+                            .Select(d => new { d.Name })
+                            .FirstOrDefaultAsync();
+                        
+                        var departmentName = department?.Name ?? "";
+                        
                         // ✅ تبدیل DoctorDto به DoctorOptionDto برای پاسخ یکنواخت
                         var doctors = result.Data.Select(d => new DoctorOptionDto
                         {
                             DoctorId = d.DoctorId,
                             FullName = d.FullName ?? $"{d.FirstName} {d.LastName}".Trim(),
                             Title = d.Specialization ?? "",
-                            DepartmentName = "", // TODO: از Department بگیریم اگر لازم است
+                            DepartmentName = departmentName, // ✅ از Department گرفته شد
                             IsActive = d.IsActive
                         }).ToList();
 
@@ -1303,13 +1312,22 @@ namespace ClinicApp.Controllers.Api
                     
                     if (result.Success && result.Data != null)
                     {
+                        // ✅ دریافت نام دپارتمان از دیتابیس
+                        var department = await _context.Departments
+                            .AsNoTracking()
+                            .Where(d => d.DepartmentId == deptId && !d.IsDeleted)
+                            .Select(d => new { d.Name })
+                            .FirstOrDefaultAsync();
+                        
+                        var departmentName = department?.Name ?? "";
+                        
                         // ✅ تبدیل DoctorDto به DoctorOptionDto برای پاسخ یکنواخت
                         var doctors = result.Data.Select(d => new DoctorOptionDto
                         {
                             DoctorId = d.DoctorId,
                             FullName = d.FullName ?? $"{d.FirstName} {d.LastName}".Trim(),
                             Title = d.Specialization ?? "",
-                            DepartmentName = "", // TODO: از Department بگیریم اگر لازم است
+                            DepartmentName = departmentName, // ✅ از Department گرفته شد
                             IsActive = d.IsActive
                         }).ToList();
 

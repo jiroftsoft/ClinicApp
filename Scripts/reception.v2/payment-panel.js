@@ -1,9 +1,215 @@
 (function(API, U){
-  // Payment method toggle
-  $("#PayPOS, #PayCash").on('click', function() {
-    $("#PayPOS, #PayCash").removeClass('active btn-primary').addClass('btn-outline-secondary');
-    $(this).removeClass('btn-outline-secondary').addClass('active btn-primary');
+  'use strict';
+  
+  // ✅ اطمینان از لود شدن DOM قبل از attach کردن event handlers
+  $(document).ready(function() {
+    console.log('🏥 V2: Payment Panel - DOM Ready, attaching event handlers...');
+    
+    // Payment method toggle
+    $("#PayPOS, #PayCash").on('click', function() {
+      $("#PayPOS, #PayCash").removeClass('active btn-primary').addClass('btn-outline-secondary');
+      $(this).removeClass('btn-outline-secondary').addClass('active btn-primary');
+    });
+
+    /**
+     * ✅ دکمه "ذخیره پذیرش"
+     * پس از ذخیره، مودال پرداخت باز می‌شود
+     */
+    $("#BtnSaveReception").on("click", function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('🏥 V2: BtnSaveReception clicked');
+      
+      const receptionId = $("#ReceptionId").val();
+      
+      if(!receptionId || receptionId <= 0) {
+        // Try to create auto-draft first
+        if (window.AutoDraftManager && typeof window.AutoDraftManager.createDraft === 'function') {
+          window.AutoDraftManager.createDraft().then(draftId => {
+            if (draftId) {
+              $("#ReceptionId").val(draftId);
+              saveReceptionAndOpenPaymentModal(draftId);
+            } else {
+              toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+            }
+          }).catch(err => {
+            console.error('🏥 V2: Auto-draft creation error:', err);
+            toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+          });
+          return;
+        } else {
+          toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+          return;
+        }
+      }
+      
+      saveReceptionAndOpenPaymentModal(receptionId);
+    });
+    
+    // ✅ بررسی وجود دکمه در DOM
+    if ($("#BtnSaveReception").length === 0) {
+      console.error('🏥 V2: ❌ BtnSaveReception not found in DOM!');
+    } else {
+      console.log('🏥 V2: ✅ BtnSaveReception found:', $("#BtnSaveReception")[0]);
+    }
   });
+  
+  // ✅ Event Delegation برای اطمینان از کار کردن حتی اگر دکمه بعداً اضافه شود
+  $(document).on('click', '#BtnSaveReception', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🏥 V2: BtnSaveReception clicked (via delegation)');
+    
+    const receptionId = $("#ReceptionId").val();
+    
+    if(!receptionId || receptionId <= 0) {
+      // Try to create auto-draft first
+      if (window.AutoDraftManager && typeof window.AutoDraftManager.createDraft === 'function') {
+        window.AutoDraftManager.createDraft().then(draftId => {
+          if (draftId) {
+            $("#ReceptionId").val(draftId);
+            saveReceptionAndOpenPaymentModal(draftId);
+          } else {
+            toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+          }
+        }).catch(err => {
+          console.error('🏥 V2: Auto-draft creation error:', err);
+          toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+        });
+        return;
+      } else {
+        toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
+        return;
+      }
+    }
+    
+    saveReceptionAndOpenPaymentModal(receptionId);
+  });
+  
+  /**
+   * ✅ ذخیره پذیرش و باز کردن مودال پرداخت
+   */
+  function saveReceptionAndOpenPaymentModal(receptionId) {
+    console.log('🏥 V2: Saving reception and opening payment modal:', receptionId);
+    
+    // ✅ بررسی وجود آیتم‌ها
+    const $items = $('[data-reception-item-id]');
+    if (!$items.length) {
+      toastr.warning('هیچ خدمتی به پذیرش افزوده نشده است. لطفاً ابتدا خدمت اضافه کنید.');
+      return;
+    }
+    
+    // ✅ ذخیره پذیرش (Update Draft)
+    const formData = {
+      receptionId: receptionId,
+      patientId: $("#Patient_PatientId").val(),
+      nationalCode: $("#Patient_NationalCode").val(),
+      clinicId: $("#ClinicId").val(),
+      departmentId: $("#DepartmentId").val(),
+      doctorId: $("#DoctorId").val(),
+      basePlanId: $("#BasePlanId").val() || null,
+      supplementaryPlanId: $("#SuppPlanId").val() || null
+    };
+    
+    API.post("/draft/update", formData)
+      .then(function(response) {
+        console.log('🏥 V2: Draft update response:', response);
+        
+        // ✅ بررسی موفقیت درخواست
+        const success = response?.Success ?? response?.success;
+        const isSuccess = success === true || success === "true" || success === 1;
+        
+        if (!isSuccess) {
+          const errorMsg = response?.Message || response?.message || 'خطا در ذخیره پذیرش';
+          throw new Error(errorMsg);
+        }
+        
+        return API.ok(response);
+      })
+      .then(function() {
+        console.log('🏥 V2: Reception saved successfully');
+        toastr.success('پذیرش با موفقیت ذخیره شد', 'موفق', {
+          timeOut: 3000
+        });
+        
+        // ✅ خواندن مبلغ قابل پرداخت
+        ensurePricingUpToDate(receptionId).then(function() {
+          let amountIRR = U.parseFaInt($("#PatientPayable").attr("data-value")) || 0;
+          
+          if (amountIRR <= 0) {
+            const patientText = $("#PatientPayable").text().trim();
+            amountIRR = U.parseFaInt(patientText) || 0;
+          }
+          
+          if (amountIRR <= 0) {
+            amountIRR = U.parseFaInt($("#SumPatient").attr("data-value")) || 
+                        U.parseFaInt($("#SumPatient").text()) || 0;
+          }
+          
+          // ✅ بررسی نوع پرداخت
+          const isPOS = $("#PayPOS").hasClass('active');
+          
+          if (isPOS && amountIRR > 0) {
+            // ✅ باز کردن مودال پرداخت POS
+            openPosPaymentModal(receptionId, amountIRR);
+            
+            // ✅ مخفی کردن دکمه "ذخیره پذیرش" و نمایش دکمه "پرداخت و نهایی‌سازی"
+            $("#BtnSaveReception").addClass('d-none');
+            $("#BtnFinalizePOS").removeClass('d-none');
+          } else if (!isPOS) {
+            // ✅ برای نقدی، مستقیماً Finalize انجام شود
+            const payload = {
+              receptionId: receptionId,
+              amountIRR: amountIRR,
+              idempotencyKey: U.guid(),
+              cash: {
+                cashSessionId: $("#CashSessionId").val() || null
+              }
+            };
+            
+            finalizeReception(payload, false);
+          } else {
+            // ✅ مبلغ صفر - بیمه 100% پوشش می‌دهد
+            toastr.info('مبلغ قابل پرداخت صفر است زیرا بیمه 100% هزینه را پوشش می‌دهد. می‌توانید پذیرش را نهایی کنید.', 'اطلاع', {
+              timeOut: 5000
+            });
+            
+            const payload = {
+              receptionId: receptionId,
+              amountIRR: 0,
+              idempotencyKey: U.guid(),
+              cash: {
+                cashSessionId: $("#CashSessionId").val() || null
+              }
+            };
+            
+            finalizeReception(payload, false);
+          }
+        });
+      })
+      .catch(function(err) {
+        console.error('🏥 V2: Save reception error:', err);
+        
+        // ✅ بررسی ANTIFORGERY_MISSING
+        if (err?.responseJSON && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+          if (API.handleErrorJson(err.responseJSON)) {
+            return; // خطا توسط handleErrorJson مدیریت شد
+          }
+        }
+        
+        const errorMsg = err?.responseJSON?.Message || 
+                        err?.responseJSON?.message || 
+                        err?.message || 
+                        'خطا در ذخیره پذیرش';
+        toastr.error(errorMsg, 'خطا', {
+          timeOut: 7000,
+          positionClass: 'toast-top-center',
+          closeButton: true
+        });
+      });
+  }
 
   $("#BtnFinalizePOS").on("click", function(){
     const receptionId = $("#ReceptionId").val();
@@ -227,6 +433,30 @@
   }
   
   /**
+   * ✅ نهایی‌سازی پس از پرداخت موفق
+   */
+  function finalizeAfterPayment(receptionId, amountIRR, posData) {
+    console.log('🏥 V2: Finalizing after successful payment:', { receptionId, amountIRR, posData });
+    
+    const payload = {
+      receptionId: receptionId,
+      amountIRR: amountIRR,
+      idempotencyKey: U.guid(),
+      pos: {
+        rrn: posData.rrn,
+        traceNo: posData.traceNo,
+        terminalId: posData.terminalId,
+        cardLast4: posData.cardLast4 || null
+      }
+    };
+    
+    // ✅ بستن Modal قبل از Finalize
+    $('#posPaymentModal').modal('hide');
+    
+    finalizeReception(payload, true);
+  }
+  
+  /**
    * ✅ نهایی‌سازی پذیرش
    */
   function finalizeReception(payload, isPOS) {
@@ -242,8 +472,19 @@
           timeOut: 5000
         });
         
+        // ✅ نمایش گزینه چاپ
         if(d.receipt && d.receipt.printedUrl) {
-          window.open(d.receipt.printedUrl, '_blank');
+          setTimeout(function() {
+            if (confirm('آیا می‌خواهید قبض پرداخت را چاپ کنید؟')) {
+              window.open(d.receipt.printedUrl, '_blank');
+            }
+            
+            // ✅ نمایش گزینه چاپ قبض بیمه تکمیلی (اگر وجود دارد)
+            if (confirm('آیا می‌خواهید قبض بیمه تکمیلی را چاپ کنید؟')) {
+              // TODO: اضافه کردن URL چاپ قبض بیمه تکمیلی
+              // window.open(`/ReceptionV2/PrintInsurance/${payload.receptionId}`, '_blank');
+            }
+          }, 1000);
         }
         
         // Reset form and auto-draft system
@@ -257,7 +498,7 @@
         // ✅ کمی تاخیر قبل از reload برای نمایش پیام موفقیت
         setTimeout(function() {
           location.reload();
-        }, 1500);
+        }, 2000);
       })
       .catch(function(err) {
         console.error('🏥 V2: Finalize error:', err);
@@ -279,17 +520,24 @@
   /**
    * ✅ باز کردن Modal پرداخت POS و ارتباط با دستگاه کارتخوان
    */
-  function openPosPaymentModal(receptionId, amountIRR, callback) {
+  function openPosPaymentModal(receptionId, amountIRR) {
     const $modal = $('#posPaymentModal');
     
     // ✅ Reset Modal state
-    $('#posPaymentLoading').removeClass('d-none');
+    $('#posPaymentReady').removeClass('d-none');
+    $('#posPaymentLoading').addClass('d-none');
     $('#posPaymentSuccess').addClass('d-none');
     $('#posPaymentError').addClass('d-none');
+    $('#posPaymentStartBtn').removeClass('d-none');
     $('#posPaymentConfirmBtn').addClass('d-none');
+    $('#posPaymentPrintBtn').addClass('d-none');
     $('#posPaymentCancelBtn').removeClass('d-none');
     
-    // ✅ نمایش اطلاعات تراکنش - بررسی مقدار
+    // ✅ ذخیره ReceptionId و AmountIRR برای استفاده در callback
+    $modal.data('receptionId', receptionId);
+    $modal.data('amountIRR', amountIRR);
+    
+    // ✅ نمایش اطلاعات تراکنش
     console.log('🏥 V2: Opening POS Payment Modal - ReceptionId:', receptionId, 'AmountIRR:', amountIRR);
     if (amountIRR && amountIRR > 0) {
       $('#posAmount').text(U.toIRR(amountIRR) + ' ریال');
@@ -308,9 +556,7 @@
         if (response && response.Success && response.Data) {
           const terminal = response.Data;
           $('#posTerminalName').text(terminal.title || terminal.Title || 'دستگاه کارتخوان');
-          
-          // ✅ شروع پردازش پرداخت
-          processPosPayment(receptionId, amountIRR, terminal, callback);
+          $modal.data('terminal', terminal);
         } else {
           const errorMsg = response?.Message || response?.message || 'ترمینال POS پیش‌فرض یافت نشد. لطفاً ابتدا ترمینال را تنظیم کنید.';
           console.error('🏥 V2: Terminal not found:', errorMsg);
@@ -326,21 +572,41 @@
       }
     });
     
+    // ✅ مدیریت دکمه "پرداخت با POS"
+    $('#posPaymentStartBtn').off('click').on('click', function() {
+      const terminal = $modal.data('terminal');
+      if (!terminal) {
+        toastr.error('اطلاعات ترمینال یافت نشد');
+        return;
+      }
+      
+      // ✅ شروع پردازش پرداخت
+      $('#posPaymentReady').addClass('d-none');
+      $('#posPaymentLoading').removeClass('d-none');
+      $('#posPaymentStartBtn').addClass('d-none');
+      
+      processPosPayment(receptionId, amountIRR, terminal);
+    });
+    
     // ✅ نمایش Modal
     $modal.modal('show');
     
     // ✅ مدیریت بستن Modal
     $modal.off('hidden.bs.modal').on('hidden.bs.modal', function() {
+      $('#posPaymentReady').removeClass('d-none');
       $('#posPaymentLoading').addClass('d-none');
       $('#posPaymentSuccess').addClass('d-none');
       $('#posPaymentError').addClass('d-none');
+      $('#posPaymentStartBtn').removeClass('d-none');
+      $('#posPaymentConfirmBtn').addClass('d-none');
+      $('#posPaymentPrintBtn').addClass('d-none');
     });
   }
   
   /**
    * ✅ پردازش پرداخت POS از طریق دستگاه کارتخوان
    */
-  function processPosPayment(receptionId, amountIRR, terminal, callback) {
+  function processPosPayment(receptionId, amountIRR, terminal) {
     $.ajax({
       url: '/api/v1/pos/process-payment',
       method: 'POST',
@@ -362,6 +628,7 @@
           $('#posPaymentLoading').addClass('d-none');
           $('#posPaymentSuccess').removeClass('d-none');
           $('#posPaymentConfirmBtn').removeClass('d-none');
+          $('#posPaymentPrintBtn').removeClass('d-none');
           $('#posPaymentCancelBtn').addClass('d-none');
           
           // ✅ نمایش جزئیات تراکنش
@@ -378,13 +645,15 @@
             cardLast4: posData.cardLast4
           };
           
-          // ✅ مدیریت دکمه تأیید
-          const $modalInstance = $('#posPaymentModal');
+          // ✅ مدیریت دکمه تأیید و نهایی‌سازی
           $('#posPaymentConfirmBtn').off('click').on('click', function() {
-            $modalInstance.modal('hide');
-            if (callback && typeof callback === 'function') {
-              callback(window.posPaymentData);
-            }
+            finalizeAfterPayment(receptionId, amountIRR, window.posPaymentData);
+          });
+          
+          // ✅ مدیریت دکمه چاپ
+          $('#posPaymentPrintBtn').off('click').on('click', function() {
+            // چاپ قبض پرداخت
+            window.open(`/ReceptionV2/Print/${receptionId}`, '_blank');
           });
         } else {
           showPosPaymentError(response?.Message || response?.message || 'خطا در پردازش پرداخت');
@@ -395,6 +664,21 @@
                         xhr?.responseJSON?.message || 
                         'خطا در ارتباط با دستگاه کارتخوان';
         showPosPaymentError(errorMsg);
+        
+        // ✅ اگر پرداخت ناموفق بود، پذیرش به لیست پذیرش‌ها می‌رود (Status = Pending)
+        // این کار در backend انجام می‌شود - فقط پیام نمایش می‌دهیم
+        toastr.warning('پرداخت ناموفق بود. پذیرش در لیست پذیرش‌ها ذخیره شد و می‌توانید بعداً پرداخت کنید.', 'هشدار', {
+          timeOut: 8000,
+          positionClass: 'toast-top-center',
+          closeButton: true
+        });
+        
+        // ✅ هدایت به لیست پذیرش‌ها (اختیاری)
+        setTimeout(function() {
+          if (confirm('آیا می‌خواهید به لیست پذیرش‌ها بروید؟')) {
+            window.location.href = '/Reception/Index';
+          }
+        }, 2000);
       }
     });
   }
@@ -404,10 +688,38 @@
    */
   function showPosPaymentError(message) {
     const $modal = $('#posPaymentModal');
+    $('#posPaymentReady').addClass('d-none');
     $('#posPaymentLoading').addClass('d-none');
+    $('#posPaymentSuccess').addClass('d-none');
     $('#posPaymentError').removeClass('d-none');
     $('#posErrorMessage').text(message);
+    $('#posPaymentStartBtn').addClass('d-none');
     $('#posPaymentConfirmBtn').addClass('d-none');
+    $('#posPaymentPrintBtn').addClass('d-none');
     $('#posPaymentCancelBtn').removeClass('d-none');
+  }
+  
+  /**
+   * ✅ نهایی‌سازی پس از پرداخت موفق
+   */
+  function finalizeAfterPayment(receptionId, amountIRR, posData) {
+    console.log('🏥 V2: Finalizing after successful payment:', { receptionId, amountIRR, posData });
+    
+    const payload = {
+      receptionId: receptionId,
+      amountIRR: amountIRR,
+      idempotencyKey: U.guid(),
+      pos: {
+        rrn: posData.rrn,
+        traceNo: posData.traceNo,
+        terminalId: posData.terminalId,
+        cardLast4: posData.cardLast4 || null
+      }
+    };
+    
+    // ✅ بستن Modal قبل از Finalize
+    $('#posPaymentModal').modal('hide');
+    
+    finalizeReception(payload, true);
   }
 })(window.ReceptionAPI, window.RxUtils);

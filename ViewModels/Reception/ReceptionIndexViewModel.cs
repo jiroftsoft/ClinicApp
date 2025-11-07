@@ -91,39 +91,5 @@ namespace ClinicApp.ViewModels.Reception
         public ReceptionSearchCriteria SearchCriteria { get; set; } = new ReceptionSearchCriteria();
     }
 
-    /// <summary>
-    /// ViewModel برای نمایش آیتم پذیرش در لیست
-    /// </summary>
-    public class ReceptionListItemViewModel
-    {
-        [Display(Name = "شناسه")]
-        public int ReceptionId { get; set; }
-
-        [Display(Name = "نام بیمار")]
-        public string PatientName { get; set; }
-
-        [Display(Name = "کد ملی")]
-        public string PatientNationalCode { get; set; }
-
-        [Display(Name = "نام پزشک")]
-        public string DoctorName { get; set; }
-
-        [Display(Name = "تاریخ پذیرش")]
-        public string ReceptionDate { get; set; }
-
-        [Display(Name = "وضعیت")]
-        public string Status { get; set; }
-
-        [Display(Name = "نوع")]
-        public string Type { get; set; }
-
-        [Display(Name = "مجموع مبلغ")]
-        public decimal TotalAmount { get; set; }
-
-        [Display(Name = "مبلغ پرداخت شده")]
-        public decimal PaidAmount { get; set; }
-
-        [Display(Name = "مبلغ باقی‌مانده")]
-        public decimal RemainingAmount { get; set; }
-    }
+    // ReceptionListItemViewModel moved to ReceptionListViewModel.cs to avoid duplication
 }
