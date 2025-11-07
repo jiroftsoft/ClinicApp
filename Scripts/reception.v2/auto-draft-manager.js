@@ -13,16 +13,48 @@
    * این تابع از ایجاد duplicate Draft جلوگیری می‌کند
    */
   function createAutoDraft() {
-    // ✅ بررسی 1: اگر Draft قبلاً ایجاد شده، برگردان
-    if (isDraftCreated && currentDraftId) {
-      console.log('🏥 V2: Draft already created:', currentDraftId);
+    // 🏥 MEDICAL: بررسی اولویت 1: بررسی DOM برای ReceptionId (ممکن است از جای دیگری set شده باشد)
+    const domReceptionId = $("#ReceptionId").val();
+    if (domReceptionId) {
+      const receptionIdNum = parseInt(domReceptionId);
+      if (receptionIdNum && receptionIdNum > 0) {
+        console.log('🏥 V2: ReceptionId found in DOM, syncing with memory:', receptionIdNum);
+        currentDraftId = receptionIdNum;
+        isDraftCreated = true;
+        return Promise.resolve(currentDraftId);
+      }
+    }
+    
+    // ✅ بررسی 1: اگر Draft قبلاً در memory ایجاد شده، برگردان
+    if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+      console.log('🏥 V2: Draft already created in memory:', currentDraftId);
+      // اطمینان از sync بودن با DOM
+      $("#ReceptionId").val(currentDraftId);
       return Promise.resolve(currentDraftId);
     }
     
     // ✅ بررسی 2: اگر request در حال اجرا است، منتظر بمان
     if (isCreatingDraft && draftCreationPromise) {
       console.log('🏥 V2: Draft creation already in progress, waiting for completion...');
-      return draftCreationPromise;
+      return draftCreationPromise.then(function(draftId) {
+        // بعد از اتمام request، بررسی کن که آیا Draft ایجاد شد
+        if (draftId && draftId > 0) {
+          console.log('🏥 V2: Draft creation completed, returning:', draftId);
+          return draftId;
+        }
+        // اگر null برگشت، بررسی کن که آیا Draft در DOM وجود دارد
+        const domId = $("#ReceptionId").val();
+        if (domId) {
+          const domIdNum = parseInt(domId);
+          if (domIdNum && domIdNum > 0) {
+            console.log('🏥 V2: Draft found in DOM after promise:', domIdNum);
+            currentDraftId = domIdNum;
+            isDraftCreated = true;
+            return domIdNum;
+          }
+        }
+        return null;
+      });
     }
     
     // ✅ بررسی 3: بررسی فیلدهای الزامی
@@ -53,21 +85,75 @@
     
     // ✅ ایجاد Promise و ذخیره برای wait کردن
     draftCreationPromise = API.post("/draft/create", payload)
-      .then(API.ok)
+      .then(function(rawResponse) {
+        console.log('🏥 V2: Draft create raw response:', rawResponse);
+        console.log('🏥 V2: Raw response type:', typeof rawResponse);
+        console.log('🏥 V2: Raw response Success:', rawResponse?.Success, rawResponse?.success);
+        console.log('🏥 V2: Raw response Data:', rawResponse?.Data, rawResponse?.data);
+        console.log('🏥 V2: Raw response keys:', rawResponse ? Object.keys(rawResponse) : 'null');
+        
+        const okResult = API.ok(rawResponse);
+        console.log('🏥 V2: API.ok result:', okResult);
+        console.log('🏥 V2: API.ok result type:', typeof okResult);
+        console.log('🏥 V2: API.ok result keys:', okResult ? Object.keys(okResult) : 'null');
+        
+        return okResult;
+      })
       .then(d => {
-        console.log('🏥 V2: Auto-draft created successfully:', d);
+        console.log('🏥 V2: Auto-draft created successfully (after API.ok):', d);
+        console.log('🏥 V2: Response type:', typeof d, 'Keys:', d ? Object.keys(d) : 'null');
+        console.log('🏥 V2: Full response object:', JSON.stringify(d, null, 2));
+        
+        // 🏥 MEDICAL: استخراج receptionId با پشتیبانی از چندین format
+        let receptionId = null;
+        if (d) {
+          // بررسی تمام احتمالات
+          receptionId = d.receptionId || d.ReceptionId || d.reception_id || d.id || d.Id || d.ReceptionID;
+          
+          // اگر هنوز null است، بررسی کن که آیا d خودش یک عدد است
+          if (!receptionId && typeof d === 'number') {
+            receptionId = d;
+          }
+          
+          // اگر هنوز null است، بررسی کن که آیا d یک object با property های مختلف است
+          if (!receptionId && typeof d === 'object') {
+            // بررسی تمام keys
+            for (const key in d) {
+              if (key.toLowerCase().includes('reception') || key.toLowerCase() === 'id') {
+                const value = d[key];
+                if (typeof value === 'number' && value > 0) {
+                  receptionId = value;
+                  console.log('🏥 V2: Found receptionId in key:', key, 'value:', value);
+                  break;
+                }
+              }
+            }
+          }
+          
+          console.log('🏥 V2: Extracted receptionId:', receptionId, 'from:', d);
+        }
+        
+        if (!receptionId || receptionId <= 0) {
+          console.error('❌ V2: Invalid receptionId extracted:', receptionId, 'from response:', d);
+          console.error('❌ V2: Full response for debugging:', JSON.stringify(d, null, 2));
+          throw new Error('Invalid receptionId in draft creation response: ' + JSON.stringify(d));
+        }
         
         // ✅ بررسی duplicate: اگر Draft دیگری در این فاصله ایجاد شده، از آن استفاده کن
-        if (isDraftCreated && currentDraftId && currentDraftId !== d.receptionId) {
-          console.warn('⚠️ V2: Another draft was created during request. Using existing:', currentDraftId, 'New:', d.receptionId);
+        if (isDraftCreated && currentDraftId && currentDraftId > 0 && currentDraftId !== receptionId) {
+          console.warn('⚠️ V2: Another draft was created during request. Using existing:', currentDraftId, 'New:', receptionId);
           return currentDraftId;
         }
         
-        currentDraftId = d.receptionId;
+        currentDraftId = parseInt(receptionId);
         isDraftCreated = true;
         
         // Update hidden field
         $("#ReceptionId").val(currentDraftId);
+        
+        console.log('🏥 V2: Draft state updated - currentDraftId:', currentDraftId, 'isDraftCreated:', isDraftCreated);
+        console.log('🏥 V2: DOM ReceptionId after update:', $("#ReceptionId").val());
+        console.log('🏥 V2: Memory state - currentDraftId:', currentDraftId, 'isDraftCreated:', isDraftCreated);
         
         // Show success message
         toastr.success('پذیرش موقت ایجاد شد');
@@ -76,11 +162,32 @@
       })
       .catch(err => {
         console.error('🏥 V2: Auto-draft creation failed:', err);
+        console.error('🏥 V2: Error details:', err.message, err.stack);
+        
+        // 🏥 MEDICAL: بررسی DOM و memory در صورت خطا
+        const domId = $("#ReceptionId").val();
+        if (domId) {
+          const domIdNum = parseInt(domId);
+          if (domIdNum && domIdNum > 0) {
+            console.log('🏥 V2: Draft found in DOM after error:', domIdNum);
+            currentDraftId = domIdNum;
+            isDraftCreated = true;
+            // Don't show error if draft exists in DOM
+            return domIdNum;
+          }
+        }
+        if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+          console.log('🏥 V2: Draft found in memory after error:', currentDraftId);
+          // Don't show error if draft exists in memory
+          return currentDraftId;
+        }
+        
         toastr.error('خطا در ایجاد پذیرش موقت');
         throw err;
       })
-      .finally(() => {
+      .always(() => {
         // ✅ Reset Lock: آزاد کردن lock در هر صورت (success یا error)
+        // استفاده از .always() به جای .finally() برای jQuery Deferred
         isCreatingDraft = false;
         draftCreationPromise = null;
       });
@@ -123,13 +230,71 @@
   async function ensureDraftOrSkip(state) {
     const { patientId, clinicId, departmentId, doctorId, receptionId } = state || {};
     
-    // اگر ReceptionId موجود است، برگردان
-    const existingReceptionId = receptionId || $("#ReceptionId").val();
-    if (existingReceptionId && existingReceptionId > 0) {
-      console.log('🏥 V2: ReceptionId already exists:', existingReceptionId);
-      currentDraftId = parseInt(existingReceptionId);
-      isDraftCreated = true;
+    // 🏥 MEDICAL: بررسی اولویت 1: اگر Draft قبلاً در memory ایجاد شده، برگردان
+    if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+      console.log('🏥 V2: Draft already exists in memory:', currentDraftId);
+      // اطمینان از sync بودن با DOM
+      $("#ReceptionId").val(currentDraftId);
       return Promise.resolve(currentDraftId);
+    }
+    
+    // 🏥 MEDICAL: بررسی اولویت 2: اگر ReceptionId در DOM موجود است، استفاده کن
+    const existingReceptionId = receptionId || $("#ReceptionId").val();
+    if (existingReceptionId) {
+      const receptionIdNum = parseInt(existingReceptionId);
+      if (receptionIdNum && receptionIdNum > 0) {
+        console.log('🏥 V2: ReceptionId found in DOM:', receptionIdNum);
+        // Sync با memory
+        currentDraftId = receptionIdNum;
+        isDraftCreated = true;
+        return Promise.resolve(currentDraftId);
+      }
+    }
+    
+    // 🏥 MEDICAL: بررسی اولویت 3: اگر request در حال اجرا است، منتظر بمان
+    if (isCreatingDraft && draftCreationPromise) {
+      console.log('🏥 V2: Draft creation in progress, waiting...');
+      try {
+        const draftId = await draftCreationPromise;
+        if (draftId && draftId > 0) {
+          console.log('🏥 V2: Draft creation promise resolved:', draftId);
+          return draftId;
+        }
+        // اگر null برگشت، بررسی کن که آیا Draft در DOM یا memory وجود دارد
+        const domId = $("#ReceptionId").val();
+        if (domId) {
+          const domIdNum = parseInt(domId);
+          if (domIdNum && domIdNum > 0) {
+            console.log('🏥 V2: Draft found in DOM after promise (null response):', domIdNum);
+            currentDraftId = domIdNum;
+            isDraftCreated = true;
+            return domIdNum;
+          }
+        }
+        // بررسی memory
+        if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+          console.log('🏥 V2: Draft found in memory after promise (null response):', currentDraftId);
+          return currentDraftId;
+        }
+      } catch (err) {
+        console.error('🏥 V2: Draft creation promise failed:', err);
+        // بررسی DOM و memory در صورت خطا
+        const domId = $("#ReceptionId").val();
+        if (domId) {
+          const domIdNum = parseInt(domId);
+          if (domIdNum && domIdNum > 0) {
+            console.log('🏥 V2: Draft found in DOM after promise error:', domIdNum);
+            currentDraftId = domIdNum;
+            isDraftCreated = true;
+            return domIdNum;
+          }
+        }
+        if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+          console.log('🏥 V2: Draft found in memory after promise error:', currentDraftId);
+          return currentDraftId;
+        }
+        // ادامه برای ایجاد Draft جدید
+      }
     }
     
     // اگر ReceptionId موجود نیست، بررسی شرایط
@@ -149,16 +314,46 @@
     console.log('🏥 V2: Required fields complete, creating draft...');
     return createAutoDraft()
       .then(function(draftId) {
-        if (draftId) {
+        if (draftId && draftId > 0) {
           console.log('🏥 V2: Draft created successfully:', draftId);
           return draftId;
         } else {
-          console.warn('🏥 V2: Draft creation returned null');
+          console.warn('🏥 V2: Draft creation returned null or invalid, checking DOM and memory...');
+          // 🏥 MEDICAL: بررسی مجدد DOM و memory در صورت null
+          const domId = $("#ReceptionId").val();
+          if (domId) {
+            const domIdNum = parseInt(domId);
+            if (domIdNum && domIdNum > 0) {
+              console.log('🏥 V2: Draft found in DOM after null response:', domIdNum);
+              currentDraftId = domIdNum;
+              isDraftCreated = true;
+              return domIdNum;
+            }
+          }
+          if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+            console.log('🏥 V2: Draft found in memory after null response:', currentDraftId);
+            return currentDraftId;
+          }
           return null;
         }
       })
       .catch(function(err) {
         console.error('🏥 V2: Draft creation failed:', err);
+        // 🏥 MEDICAL: بررسی DOM و memory در صورت خطا
+        const domId = $("#ReceptionId").val();
+        if (domId) {
+          const domIdNum = parseInt(domId);
+          if (domIdNum && domIdNum > 0) {
+            console.log('🏥 V2: Draft found in DOM after error:', domIdNum);
+            currentDraftId = domIdNum;
+            isDraftCreated = true;
+            return domIdNum;
+          }
+        }
+        if (isDraftCreated && currentDraftId && currentDraftId > 0) {
+          console.log('🏥 V2: Draft found in memory after error:', currentDraftId);
+          return currentDraftId;
+        }
         return null;
       });
   }
@@ -334,6 +529,34 @@
         draftCreationTimeout = null;
       }
       $("#ReceptionId").val('');
+    },
+    /**
+     * 🏥 MEDICAL: حذف Draft ناقص (بدون خدمت) هنگام خروج از فرم
+     */
+    deleteIncompleteDraft: async function(receptionId) {
+      if (!receptionId || receptionId <= 0) {
+        console.log('🏥 V2: No draft to delete');
+        return Promise.resolve();
+      }
+
+      try {
+        console.log('🏥 V2: Deleting incomplete draft:', receptionId);
+        const result = await API.post('/draft/delete-incomplete', { receptionId: receptionId });
+        const okResult = API.ok(result);
+        
+        if (okResult && (okResult.Success === true || okResult.success === true)) {
+          console.log('✅ V2: Incomplete draft deleted successfully:', receptionId);
+          // Reset local state
+          currentDraftId = null;
+          isDraftCreated = false;
+          $("#ReceptionId").val('');
+        } else {
+          console.warn('⚠️ V2: Failed to delete incomplete draft:', okResult);
+        }
+      } catch (err) {
+        console.error('❌ V2: Error deleting incomplete draft:', err);
+        // Don't show error to user - it's cleanup
+      }
     }
   };
   

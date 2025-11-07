@@ -60,6 +60,16 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<CreateDraftResponse>> CreateDraftAsync(CreateDraftRequest request);
 
         /// <summary>
+        /// 🏥 MEDICAL: حذف Draft ناقص (بدون خدمت)
+        /// </summary>
+        Task<ServiceResult> DeleteIncompleteDraftAsync(int receptionId);
+
+        /// <summary>
+        /// 🏥 MEDICAL: پاکسازی Draft های ناقص قدیمی (بیش از 24 ساعت)
+        /// </summary>
+        Task<ServiceResult<int>> CleanupOldIncompleteDraftsAsync(int hoursOld = 24);
+
+        /// <summary>
         /// افزودن آیتم به پیش‌نویس
         /// </summary>
         Task<ServiceResult<ItemsAndTotalsDto>> AddItemAsync(AddItemRequest request);

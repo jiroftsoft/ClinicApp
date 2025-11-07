@@ -1418,6 +1418,119 @@ namespace ClinicApp.Services.Reception
         #region Draft Management
 
         /// <summary>
+        /// 🏥 MEDICAL: حذف Draft ناقص (بدون خدمت)
+        /// این متد برای حذف Draft هایی استفاده می‌شود که کاربر از ثبت آنها منصرف شده است
+        /// </summary>
+        public async Task<ServiceResult> DeleteIncompleteDraftAsync(int receptionId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: حذف Draft ناقص - ReceptionId: {ReceptionId}", receptionId);
+
+                var draft = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+
+                if (draft == null)
+                {
+                    return ServiceResult.Failed("پذیرش یافت نشد.", "NOT_FOUND");
+                }
+
+                // 🏥 MEDICAL: بررسی اینکه Draft واقعاً ناقص است (بدون خدمت یا TotalAmount = 0)
+                var hasItems = draft.ReceptionItems != null && draft.ReceptionItems.Any(ri => !ri.IsDeleted);
+                var hasAmount = draft.TotalAmount > 0;
+
+                if (hasItems || hasAmount)
+                {
+                    _logger.Warning("⚠️ FACADE: Draft دارای خدمت یا مبلغ است - ReceptionId: {ReceptionId}, ItemsCount: {ItemsCount}, TotalAmount: {TotalAmount}", 
+                        receptionId, draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0, draft.TotalAmount);
+                    return ServiceResult.Failed("این پذیرش دارای خدمت است و نمی‌تواند حذف شود.", "HAS_ITEMS");
+                }
+
+                // 🏥 MEDICAL: بررسی اینکه Draft هنوز در وضعیت Pending است
+                if (draft.Status != ReceptionStatus.Pending)
+                {
+                    _logger.Warning("⚠️ FACADE: Draft در وضعیت نهایی است - ReceptionId: {ReceptionId}, Status: {Status}", 
+                        receptionId, draft.Status);
+                    return ServiceResult.Failed("این پذیرش نهایی شده است و نمی‌تواند حذف شود.", "FINALIZED");
+                }
+
+                // 🏥 MEDICAL: بررسی دسترسی کاربر (فقط کاربر ایجادکننده می‌تواند حذف کند)
+                if (draft.CreatedByUserId != _currentUserService.UserId)
+                {
+                    _logger.Warning("⚠️ FACADE: کاربر مجاز به حذف این Draft نیست - ReceptionId: {ReceptionId}, CreatedBy: {CreatedBy}, CurrentUser: {CurrentUser}", 
+                        receptionId, draft.CreatedByUserId, _currentUserService.UserId);
+                    return ServiceResult.Failed("شما مجاز به حذف این پذیرش نیستید.", "UNAUTHORIZED");
+                }
+
+                // 🏥 MEDICAL: Soft Delete
+                draft.IsDeleted = true;
+                draft.DeletedAt = DateTime.Now;
+                draft.DeletedByUserId = _currentUserService.UserId;
+
+                await _context.SaveChangesAsync();
+
+                _logger.Information("✅ FACADE: Draft ناقص حذف شد - ReceptionId: {ReceptionId}", receptionId);
+                return ServiceResult.Successful("پذیرش ناقص با موفقیت حذف شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در حذف Draft ناقص - ReceptionId: {ReceptionId}", receptionId);
+                return ServiceResult.Failed("خطا در حذف پذیرش ناقص: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: پاکسازی Draft های ناقص قدیمی (بیش از 24 ساعت)
+        /// این متد باید به صورت scheduled job اجرا شود
+        /// </summary>
+        public async Task<ServiceResult<int>> CleanupOldIncompleteDraftsAsync(int hoursOld = 24)
+        {
+            try
+            {
+                var cutoffDate = DateTime.Now.AddHours(-hoursOld);
+                
+                _logger.Information("🏥 FACADE: شروع پاکسازی Draft های ناقص قدیمی - CutoffDate: {CutoffDate}", cutoffDate);
+
+                var incompleteDrafts = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .Where(r => 
+                        r.Status == ReceptionStatus.Pending &&
+                        r.TotalAmount == 0 &&
+                        !r.IsDeleted &&
+                        r.CreatedAt < cutoffDate &&
+                        (r.ReceptionItems == null || !r.ReceptionItems.Any(ri => !ri.IsDeleted)))
+                    .ToListAsync();
+
+                var count = 0;
+                foreach (var draft in incompleteDrafts)
+                {
+                    draft.IsDeleted = true;
+                    draft.DeletedAt = DateTime.Now;
+                    draft.DeletedByUserId = "system"; // System cleanup
+                    count++;
+                }
+
+                if (count > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.Information("✅ FACADE: {Count} Draft ناقص قدیمی پاکسازی شد", count);
+                }
+                else
+                {
+                    _logger.Information("ℹ️ FACADE: هیچ Draft ناقص قدیمی یافت نشد");
+                }
+
+                return ServiceResult<int>.Successful(count, $"{count} Draft ناقص قدیمی پاکسازی شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در پاکسازی Draft های ناقص قدیمی");
+                return ServiceResult<int>.Failed("خطا در پاکسازی Draft های ناقص قدیمی: " + ex.Message);
+            }
+        }
+
+        /// <summary>
         /// ایجاد پیش‌نویس پذیرش
         /// 🏥 MEDICAL: با Duplicate Check برای جلوگیری از ایجاد Draft های تکراری
         /// </summary>

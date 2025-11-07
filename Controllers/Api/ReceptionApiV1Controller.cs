@@ -209,6 +209,71 @@ namespace ClinicApp.Controllers.Api
         }
 
         /// <summary>
+        /// POST /api/v1/reception/draft/delete-incomplete
+        /// حذف Draft ناقص (بدون خدمت)
+        /// </summary>
+        [HttpPost, Route("draft/delete-incomplete")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> DeleteIncompleteDraft()
+        {
+            try
+            {
+                // خواندن receptionId از Request Body
+                int receptionId = 0;
+                try
+                {
+                    var requestBody = new System.IO.StreamReader(Request.InputStream).ReadToEnd();
+                    if (!string.IsNullOrWhiteSpace(requestBody))
+                    {
+                        var json = System.Web.Helpers.Json.Decode(requestBody);
+                        if (json != null)
+                        {
+                            receptionId = json.receptionId ?? json.ReceptionId ?? 0;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warning(ex, "⚠️ V1 API: خطا در خواندن Request Body");
+                }
+
+                _logger?.Information("🏥 V1 API: Delete Incomplete Draft - ReceptionId: {ReceptionId}", receptionId);
+
+                if (receptionId <= 0)
+                {
+                    return Json(ServiceResult.Failed("شناسه پذیرش نامعتبر است.", "VALIDATION"));
+                }
+
+                if (_facade != null)
+                {
+                    var result = await _facade.DeleteIncompleteDraftAsync(receptionId);
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: Draft ناقص حذف شد - ReceptionId: {ReceptionId}", receptionId);
+                        return Json(ServiceResult.Successful(result.Message ?? "پذیرش ناقص با موفقیت حذف شد."));
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: حذف Draft ناقص ناموفق - {Error}", result.Message);
+                        return Json(ServiceResult.Failed(result.Message ?? "خطا در حذف پذیرش ناقص", result.Code ?? "DELETE_FAILED"));
+                    }
+                }
+
+                _logger?.Warning("⚠️ V1 API: Facade not available");
+                return Json(ServiceResult.Failed("سرویس پذیرش در دسترس نیست.", "SERVICE_UNAVAILABLE"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در حذف Draft ناقص");
+#if DEBUG
+                return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
+#else
+                return Json(ServiceResult.Failed("خطای غیرمنتظره رخ داد.", "UNHANDLED"));
+#endif
+            }
+        }
+
+        /// <summary>
         /// POST /api/v1/reception/patient/lookup-or-create
         /// جستجو یا ایجاد بیمار (Idempotent: هم lookup هم quick create)
         /// </summary>

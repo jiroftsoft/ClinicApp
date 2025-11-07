@@ -159,7 +159,11 @@ namespace ClinicApp.Controllers.ReceptionV2
                         .Include(r => r.Department)
                         .Include(r => r.Transactions)
                         .Include(r => r.ReceptionItems)
-                        .Where(r => !r.IsDeleted);
+                        .Where(r => !r.IsDeleted)
+                        // 🏥 MEDICAL: فیلتر Draft های ناقص (بدون خدمت) - فقط Draft هایی که دارای خدمت هستند نمایش داده می‌شوند
+                        .Where(r => r.Status != ReceptionStatus.Pending || 
+                                   r.TotalAmount > 0 || 
+                                   r.ReceptionItems.Any(ri => !ri.IsDeleted));
                     
                     _logger.Information("📋 V2: Query اولیه با AsNoTracking و Include ها ساخته شد (بدون Doctor)");
                 }
