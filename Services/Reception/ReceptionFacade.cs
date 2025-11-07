@@ -2390,6 +2390,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <summary>
         /// بازمحاسبه پیش‌نویس - استفاده از ReceptionPricingService برای محاسبه دقیق
+        /// 🏥 MEDICAL: به‌روزرسانی PatientCoPay, TotalAmount, و InsurerShareAmount در Reception entity
         /// </summary>
         private async Task<ServiceResult<ItemsAndTotalsDto>> RecalculateDraftAsync(Models.Entities.Reception.Reception draft)
         {
@@ -2400,6 +2401,18 @@ namespace ClinicApp.Services.Reception
                 // ✅ استفاده از ReceptionPricingService برای محاسبه دقیق Totals
                 // این سرویس از SnapshotJson و PatientShareAmount استفاده می‌کند
                 var totalsDto = await _receptionPricingService.CalculateTotalsAsync(draft.ReceptionId);
+
+                // 🏥 MEDICAL: به‌روزرسانی مقادیر در Reception entity
+                draft.TotalAmount = (decimal)totalsDto.GrossIRR;
+                draft.PatientCoPay = (decimal)totalsDto.PatientPayableIRR;
+                draft.InsurerShareAmount = (decimal)(totalsDto.BaseCoveredIRR + totalsDto.SuppCoveredIRR);
+                draft.UpdatedAt = DateTime.Now;
+                
+                // ذخیره تغییرات
+                await _context.SaveChangesAsync();
+                
+                _logger.Information("✅ FACADE: مقادیر Reception به‌روزرسانی شد - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}", 
+                    draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount);
 
                 // دریافت اطلاعات خدمات برای ساخت DTO
                 var serviceIds = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(i => i.ServiceId).Distinct().ToList();
@@ -2605,18 +2618,82 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<Controllers.Api.PricePreviewResultDto>.Failed("خطا در محاسبه قیمت خدمت", "CALCULATION_ERROR");
                 }
 
-                // 3) دریافت پوشش مؤثر
-                var coverage = await GetInsuranceCoverageAsync(request.PatientId ?? 0, request.BasePlanId, request.SupplementaryPlanId);
+                // 3) 🏥 MEDICAL: استفاده از PricingEngine برای محاسبه واقعی سهم بیمار (به جای محاسبه تئوری)
+                // این روش سقف‌ها و محدودیت‌های واقعی را در نظر می‌گیرد
+                decimal patientShare = 0m;
                 decimal effPct = 0m;
-                if (coverage.Success && coverage.Data != null)
+                
+                if (request.BasePlanId.HasValue || request.SupplementaryPlanId.HasValue)
                 {
-                    effPct = coverage.Data.Effective.EffectiveCoveragePercent;
+                    // 🏥 MEDICAL: استخراج ClinicId از DepartmentId (در صورت وجود)
+                    int clinicId = 0;
+                    if (request.DepartmentId.HasValue)
+                    {
+                        var department = await _context.Departments
+                            .AsNoTracking()
+                            .Where(d => d.DepartmentId == request.DepartmentId.Value && !d.IsDeleted)
+                            .Select(d => new { d.ClinicId })
+                            .FirstOrDefaultAsync();
+                        if (department != null)
+                        {
+                            clinicId = department.ClinicId;
+                        }
+                    }
+                    
+                    // استفاده از PricingEngine برای محاسبه واقعی
+                    var quoteRequest = new Services.Pricing.Models.QuoteRequestDto
+                    {
+                        ClinicId = clinicId,
+                        DepartmentId = request.DepartmentId ?? 0,
+                        DoctorId = request.DoctorId ?? 0,
+                        ServiceId = service.ServiceId,
+                        FinancialYearId = financialYear,
+                        Primary = request.BasePlanId.HasValue
+                            ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = request.BasePlanId.Value }
+                            : null,
+                        Supplementary = request.SupplementaryPlanId.HasValue
+                            ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = request.SupplementaryPlanId.Value }
+                            : null
+                    };
+
+                    var quoteResult = await _pricingEngine.QuoteAsync(quoteRequest);
+                    
+                    if (quoteResult != null && quoteResult.ApprovedTariff > 0)
+                    {
+                        // استفاده از سهم بیمار واقعی از QuoteResult
+                        patientShare = (decimal)quoteResult.PatientFinal;
+                        
+                        // محاسبه درصد پوشش مؤثر واقعی
+                        var totalCovered = quoteResult.Primary.Pays + quoteResult.Supplementary.Pays;
+                        effPct = quoteResult.ApprovedTariff > 0 
+                            ? Math.Round((totalCovered / (decimal)quoteResult.ApprovedTariff) * 100m, 2)
+                            : 0m;
+                        
+                        _logger.Information("✅ FACADE: محاسبه واقعی سهم بیمار از PricingEngine - PatientShare: {PatientShare}, EffectiveCoverage: {EffPct}%, ApprovedTariff: {ApprovedTariff}, PrimaryPays: {PrimaryPays}, SuppPays: {SuppPays}", 
+                            patientShare, effPct, quoteResult.ApprovedTariff, quoteResult.Primary.Pays, quoteResult.Supplementary.Pays);
+                    }
+                    else
+                    {
+                        // Fallback: اگر PricingEngine خطا داد، از محاسبه تئوری استفاده کن
+                        var coverage = await GetInsuranceCoverageAsync(request.PatientId ?? 0, request.BasePlanId, request.SupplementaryPlanId);
+                        if (coverage.Success && coverage.Data != null)
+                        {
+                            effPct = coverage.Data.Effective.EffectiveCoveragePercent;
+                            patientShare = Math.Round(unitPrice * (1m - effPct / 100m), 0);
+                        }
+                        else
+                        {
+                            patientShare = unitPrice; // بدون بیمه، کل مبلغ سهم بیمار است
+                        }
+                    }
+                }
+                else
+                {
+                    // بدون بیمه، کل مبلغ سهم بیمار است
+                    patientShare = unitPrice;
                 }
 
-                // 4) محاسبه سهم بیمار
-                decimal patientShare = Math.Round(unitPrice * (1m - effPct / 100m), 0);
-
-                // 5) فرمت مبالغ
+                // 4) فرمت مبالغ
                 var priceStr = unitPrice.ToString("N0") + " ریال";
                 var patientShareStr = patientShare.ToString("N0") + " ریال";
 

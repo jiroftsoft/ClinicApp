@@ -257,14 +257,16 @@ namespace ClinicApp.Controllers.ReceptionV2
                 }
 
                 // فیلتر بر اساس بدهی - استفاده از subquery برای بهینه‌سازی
+                // 🏥 MEDICAL: بدهی باید بر اساس سهم بیمار (PatientCoPay) باشد، نه TotalAmount
                 if (filters != null && filters.HasDebt.HasValue && filters.HasDebt.Value)
                 {
                     // استفاده از navigation property بعد از Include
-                    query = query.Where(r => r.Transactions != null && 
-                        r.TotalAmount > (r.Transactions
+                    // بدهی = سهم بیمار - مبلغ پرداخت شده > 0
+                    query = query.Where(r => 
+                        r.PatientCoPay > (r.Transactions
                             .Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted)
                             .Sum(t => (decimal?)t.Amount) ?? 0m));
-                    _logger.Information("📋 V2: فیلتر بدهی اعمال شد");
+                    _logger.Information("📋 V2: فیلتر بدهی اعمال شد (بر اساس سهم بیمار)");
                 }
 
                 // 🏥 MEDICAL: فیلتر بر اساس شماره پذیرش رسمی (ReceptionNo)
@@ -422,6 +424,24 @@ namespace ClinicApp.Controllers.ReceptionV2
                             paidAmount = successfulTransactions.Sum(t => (decimal?)t.Amount) ?? 0m;
                         }
                         
+                        // 🏥 MEDICAL: محاسبه سهم بیمار (PatientCoPay) از ReceptionItems یا از Reception.PatientCoPay
+                        // RemainingAmount باید بر اساس سهم بیمار باشد، نه TotalAmount
+                        var patientShareAmount = r.PatientCoPay;
+                        
+                        // Fallback: اگر PatientCoPay صفر است اما ReceptionItems وجود دارد، از مجموع PatientShareAmount استفاده کن
+                        if (patientShareAmount == 0 && r.ReceptionItems != null && r.ReceptionItems.Any(i => !i.IsDeleted))
+                        {
+                            patientShareAmount = r.ReceptionItems
+                                .Where(i => !i.IsDeleted)
+                                .Sum(i => (decimal?)i.PatientShareAmount) ?? 0m;
+                        }
+                        
+                        // 🏥 MEDICAL: محاسبه RemainingAmount بر اساس سهم بیمار، نه TotalAmount
+                        // RemainingAmount = سهم بیمار - مبلغ پرداخت شده
+                        var remainingAmount = patientShareAmount - paidAmount;
+                        if (remainingAmount < 0)
+                            remainingAmount = 0m;
+                        
                         // دریافت نام Doctor از dictionary
                         var doctorName = "—";
                         if (r.DoctorId > 0 && doctors.ContainsKey(r.DoctorId))
@@ -445,7 +465,7 @@ namespace ClinicApp.Controllers.ReceptionV2
                             StatusText = GetStatusText(r.Status),
                             TotalAmount = r.TotalAmount,
                             PaidAmount = paidAmount,
-                            RemainingAmount = r.TotalAmount - paidAmount,
+                            RemainingAmount = remainingAmount,
                             PaymentMethod = r.Transactions?
                                 .Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted)
                                 .OrderByDescending(t => t.CreatedAt)
