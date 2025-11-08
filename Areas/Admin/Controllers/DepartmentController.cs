@@ -73,14 +73,35 @@ namespace ClinicApp.Areas.Admin.Controllers
                 // برای AJAX requests، تمام اطلاعات مورد نیاز را return کنیم
                 if (pageViewModel.Departments != null)
                 {
-                    return Json(pageViewModel.Departments, JsonRequestBehavior.AllowGet);
+                    // ✅ Wrap در anonymous object برای serialize صحیح
+                    // چون PagedResult implements IEnumerable، به Array serialize می‌شود
+                    // پس باید explicitly property ها را expose کنیم
+                    var response = new
+                    {
+                        Items = pageViewModel.Departments.Items,
+                        TotalCount = pageViewModel.Departments.TotalCount,
+                        PageNumber = pageViewModel.Departments.PageNumber,
+                        PageSize = pageViewModel.Departments.PageSize,
+                        TotalPages = pageViewModel.Departments.TotalPages,
+                        HasPreviousPage = pageViewModel.Departments.HasPreviousPage,
+                        HasNextPage = pageViewModel.Departments.HasNextPage
+                    };
+                    return Json(response, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     // اگر دپارتمانی نداریم، یک پاسخ خالی return کنیم
-                    var emptyResult = new ClinicApp.Interfaces.PagedResult<DepartmentIndexViewModel>(
-                        new List<DepartmentIndexViewModel>(), 0, 1, 10);
-                    return Json(emptyResult, JsonRequestBehavior.AllowGet);
+                    var response = new
+                    {
+                        Items = new List<DepartmentIndexViewModel>(),
+                        TotalCount = 0,
+                        PageNumber = 1,
+                        PageSize = 10,
+                        TotalPages = 0,
+                        HasPreviousPage = false,
+                        HasNextPage = false
+                    };
+                    return Json(response, JsonRequestBehavior.AllowGet);
                 }
             }
 

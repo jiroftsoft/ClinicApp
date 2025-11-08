@@ -6,6 +6,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -40,23 +41,46 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _log.Warning("🏥 MEDICAL: خطا در دریافت لیست کلینیک‌ها. Message: {Message}, User: {UserId}",
                     result.Message, _currentUserService?.UserId ?? "Anonymous");
 
-                // در صورت بروز خطا در سرویس، یک پیام خطا نمایش می‌دهیم
-                if (isAjax)
-                {
-                    return Json(new PagedResult<ClinicIndexViewModel>(), JsonRequestBehavior.AllowGet);
-                }
-                TempData["ErrorMessage"] = result.Message;
-                return View(new PagedResult<ClinicIndexViewModel>()); // یک مدل خالی به ویو پاس می‌دهیم
-            }
-
-            _log.Information("🏥 MEDICAL: لیست کلینیک‌ها با موفقیت دریافت شد. Count: {Count}, User: {UserId}",
-                result.Data?.Items?.Count ?? 0, _currentUserService?.UserId ?? "Anonymous");
-
-            // ✅ بازگرداندن JSON برای درخواست‌های AJAX
+            // در صورت بروز خطا در سرویس، یک پیام خطا نمایش می‌دهیم
             if (isAjax)
             {
-                return Json(result.Data, JsonRequestBehavior.AllowGet);
+                // ✅ Wrap در anonymous object برای serialize صحیح
+                var emptyResponse = new
+                {
+                    Items = new List<ClinicIndexViewModel>(),
+                    TotalCount = 0,
+                    PageNumber = 1,
+                    PageSize = 10,
+                    TotalPages = 0,
+                    HasPreviousPage = false,
+                    HasNextPage = false
+                };
+                return Json(emptyResponse, JsonRequestBehavior.AllowGet);
             }
+            TempData["ErrorMessage"] = result.Message;
+            return View(new PagedResult<ClinicIndexViewModel>()); // یک مدل خالی به ویو پاس می‌دهیم
+        }
+
+        _log.Information("🏥 MEDICAL: لیست کلینیک‌ها با موفقیت دریافت شد. Count: {Count}, User: {UserId}",
+            result.Data?.Items?.Count ?? 0, _currentUserService?.UserId ?? "Anonymous");
+
+        // ✅ بازگرداندن JSON برای درخواست‌های AJAX
+        if (isAjax)
+        {
+            // ✅ Wrap در anonymous object برای serialize صحیح
+            // چون PagedResult implements IEnumerable، به Array serialize می‌شود
+            var response = new
+            {
+                Items = result.Data.Items,
+                TotalCount = result.Data.TotalCount,
+                PageNumber = result.Data.PageNumber,
+                PageSize = result.Data.PageSize,
+                TotalPages = result.Data.TotalPages,
+                HasPreviousPage = result.Data.HasPreviousPage,
+                HasNextPage = result.Data.HasNextPage
+            };
+            return Json(response, JsonRequestBehavior.AllowGet);
+        }
 
             return View(result.Data);
         }
