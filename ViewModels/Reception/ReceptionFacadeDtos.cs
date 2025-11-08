@@ -270,7 +270,14 @@ namespace ClinicApp.ViewModels.Reception
         public int PatientId { get; set; }
         public string PatientFullName { get; set; }
         public string PatientNationalCode { get; set; }
+        public string PatientFirstName { get; set; }
+        public string PatientLastName { get; set; }
+        public string PatientFatherName { get; set; }
+        public string PatientGender { get; set; }
+        public string PatientBirthDateShamsi { get; set; }
         public string PatientMobile { get; set; }
+        public string PatientPhone { get; set; }
+        public string PatientAddress { get; set; }
         
         // اطلاعات پزشک و دپارتمان
         public int DoctorId { get; set; }

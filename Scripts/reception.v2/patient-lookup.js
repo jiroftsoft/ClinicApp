@@ -18,7 +18,8 @@
   const $btnS = $('#btnSaveIdentity');
   const $btnC = $('#btnCancelIdentity');
 
-  let cache = null; // برای انصراف
+  // ❌ هیچ cache داده - فقط برای انصراف از ویرایش (UI state)
+  let cancelCache = null; // برای انصراف از ویرایش (نه cache داده‌ها)
 
   /**
    * تنظیم حالت ReadOnly/Editable
@@ -62,6 +63,7 @@
 
   /**
    * جستجوی بیمار بر اساس کد ملی
+   * ✅ Realtime - هیچ cache استفاده نمی‌شود
    */
   function lookup() {
     const nc = ($nc.val() || '').trim();
@@ -70,12 +72,13 @@
     if (!/^\d{10}$/.test(nc)) {
       console.warn('🏥 V2: کد ملی نامعتبر:', nc);
       toastr.warning('کد ملی باید 10 رقم باشد');
-      return;
+      return $.Deferred().reject('Invalid national code').promise();
     }
 
     console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc);
 
     // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
+    // ❌ هیچ cache - همیشه realtime query
     const lookupRequest = API.post('/patient/lookup-or-create', { NationalCode: nc });
     
     lookupRequest.done(function(fullResponse) {
@@ -138,7 +141,7 @@
         console.log('🏥 V2: Identity extracted:', identity);
         
           if (identity) {
-            cache = JSON.parse(JSON.stringify(identity));
+            cancelCache = JSON.parse(JSON.stringify(identity)); // فقط برای انصراف از ویرایش
             
             // پر کردن اطلاعات هویتی
             fillIdentity(identity);
@@ -187,8 +190,24 @@
     
     lookupRequest.fail(function(err) {
       console.error('🏥 V2: Patient lookup error:', err);
+      
+      // بررسی response JSON برای خطاهای خاص
+      try {
+        if (err.responseJSON) {
+          if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+            if (API.handleErrorJson(err.responseJSON)) {
+              return; // خطا handle شد
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+      
       toastr.error('خطا در جستجوی بیمار');
     });
+    
+    return lookupRequest; // Return promise برای استفاده در performLookup
   }
 
   /**
@@ -493,7 +512,7 @@
       if (identity) {
         // Fill form with patient data
         fillIdentity(identity);
-        cache = JSON.parse(JSON.stringify(identity));
+        cancelCache = JSON.parse(JSON.stringify(identity)); // فقط برای انصراف از ویرایش
         
         // Set insurances if provided
         if (window.insPanel && insurance) {
@@ -587,7 +606,7 @@
 
       const updated = API.ok(fullResponse);
       fillIdentity(updated.Identity || updated.identity || updated);
-      cache = JSON.parse(JSON.stringify(updated.Identity || updated.identity || updated));
+        cancelCache = JSON.parse(JSON.stringify(updated.Identity || updated.identity || updated)); // فقط برای انصراف از ویرایش
       setReadonly(true);
       toastr.success('اطلاعات به‌روزرسانی شد');
     });
@@ -602,27 +621,145 @@
    * لغو ویرایش و بازگشت به مقادیر قبلی
    */
   function cancelEdit() {
-    if (cache) {
-      fillIdentity(cache);
+    if (cancelCache) {
+      fillIdentity(cancelCache);
     }
     setReadonly(true);
     toastr.info('ویرایش لغو شد');
   }
 
-  // Event handlers
-  $('#BtnPatientLookup').on('click', lookup);
+  // ✅ رویکرد حرفه‌ای: Auto-lookup با debounce + Enter key + Blur fallback
+  // ❌ هیچ cache - همه چیز realtime برای محیط درمانی
   
+  let lookupTimeout = null;
+  let isLookingUp = false; // Flag برای جلوگیری از درخواست‌های همزمان
+  
+  /**
+   * Lookup با debounce و loading state
+   */
+  function triggerLookup() {
+    const nc = ($nc.val() || '').trim();
+    
+    // ✅ اگر فیلد readonly است (edit mode)، lookup نکن
+    if ($nc.prop('readonly')) {
+      console.log('🏥 V2: National code field is readonly (edit mode), skipping lookup');
+      return;
+    }
+    
+    // اگر در حال lookup هستیم، skip کن
+    if (isLookingUp) {
+      console.warn('🏥 V2: Lookup already in progress, skipping...');
+      return;
+    }
+    
+    // Clear timeout قبلی
+    if (lookupTimeout) {
+      clearTimeout(lookupTimeout);
+      lookupTimeout = null;
+    }
+    
+    // اگر کد ملی کامل نیست، skip کن
+    if (!/^\d{10}$/.test(nc)) {
+      return;
+    }
+    
+    // اگر قبلاً lookup شده (PatientId وجود دارد) و کد ملی تغییر نکرده، skip کن
+    if ($pid.val() && $nc.data('last-looked-up') === nc) {
+      console.log('🏥 V2: Patient already loaded for this national code, skipping lookup');
+      return;
+    }
+    
+    // Debounce: 500ms delay
+    lookupTimeout = setTimeout(function() {
+      lookupTimeout = null;
+      performLookup();
+    }, 500);
+  }
+  
+  /**
+   * انجام lookup با loading state
+   */
+  function performLookup() {
+    // ✅ اگر فیلد readonly است (edit mode)، lookup نکن
+    if ($nc.prop('readonly')) {
+      console.log('🏥 V2: National code field is readonly (edit mode), skipping lookup');
+      return;
+    }
+    
+    if (isLookingUp) {
+      return;
+    }
+    
+    const nc = ($nc.val() || '').trim();
+    if (!/^\d{10}$/.test(nc)) {
+      return;
+    }
+    
+    isLookingUp = true;
+    
+    // نمایش loading state
+    const $lookupBtn = $('#BtnPatientLookup');
+    const originalHtml = $lookupBtn.html();
+    $lookupBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال جستجو...');
+    $nc.prop('readonly', true).addClass('is-loading');
+    
+    // ذخیره کد ملی برای جلوگیری از lookup تکراری
+    $nc.data('last-looked-up', nc);
+    
+    // انجام lookup
+    lookup()
+      .always(function() {
+        // بازگرداندن UI state
+        isLookingUp = false;
+        $lookupBtn.prop('disabled', false).html(originalHtml);
+        $nc.prop('readonly', false).removeClass('is-loading');
+      });
+  }
+  
+  // Event handlers
+  $('#BtnPatientLookup').on('click', function(e) {
+    e.preventDefault();
+    if (lookupTimeout) {
+      clearTimeout(lookupTimeout);
+      lookupTimeout = null;
+    }
+    performLookup();
+  });
+  
+  // ✅ Auto-lookup با تایپ (debounce 500ms)
+  $nc.on('input', function() {
+    // Clear data برای lookup مجدد
+    $nc.removeData('last-looked-up');
+    triggerLookup();
+  });
+  
+  // ✅ Enter key برای lookup فوری
   $nc.on('keypress', function(e) {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.which === 13) {
       e.preventDefault();
-      lookup();
+      if (lookupTimeout) {
+        clearTimeout(lookupTimeout);
+        lookupTimeout = null;
+      }
+      performLookup();
     }
   });
 
+  // ✅ Blur fallback برای سازگاری (فقط اگر lookup نشده باشد)
   $nc.on('blur', function() {
+    // ✅ اگر فیلد readonly است (edit mode)، lookup نکن
+    if ($nc.prop('readonly')) {
+      return;
+    }
+    
     const nc = ($nc.val() || '').trim();
-    if (/^\d{10}$/.test(nc) && !$pid.val()) {
-      lookup();
+    if (/^\d{10}$/.test(nc) && !$pid.val() && !isLookingUp) {
+      // اگر timeout وجود دارد، آن را cancel کن و lookup کن
+      if (lookupTimeout) {
+        clearTimeout(lookupTimeout);
+        lookupTimeout = null;
+      }
+      performLookup();
     }
   });
 

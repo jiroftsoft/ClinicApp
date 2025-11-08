@@ -8,13 +8,18 @@
   const $btnRemoveSupp = $('#btnRemoveSupp');
   const $btnSetInsurances = $('#BtnSetInsurances');
 
-  // Cache برای ذخیره وضعیت قبلی بیمه‌ها (مثل patient-lookup)
-  let cache = {
+  // ❌ هیچ cache - همه چیز realtime برای محیط درمانی
+  // فقط برای مقایسه تغییرات استفاده می‌شود (نه برای cache کردن داده‌ها)
+  let lastState = {
     basePlanId: null,
     basePlanName: null,
     suppPlanId: null,
     suppPlanName: null
   };
+  
+  // ✅ Race condition prevention
+  let repriceTimeout = null;
+  let isRepricing = false;
 
   /**
    * بارگذاری لیست پلن‌های بیمه
@@ -60,20 +65,21 @@
   }
 
   /**
-   * ذخیره وضعیت فعلی بیمه‌ها در cache
+   * ذخیره وضعیت فعلی بیمه‌ها (برای مقایسه تغییرات - نه cache)
+   * ❌ هیچ cache - همه چیز realtime
    */
-  function saveToCache() {
+  function saveLastState() {
     const basePlanId = $basePlan.val();
     const suppPlanId = $suppPlan.val();
     
-    cache = {
+    lastState = {
       basePlanId: (basePlanId && basePlanId !== '') ? parseInt(basePlanId) : null,
       basePlanName: getInsuranceName($basePlan, basePlanId),
       suppPlanId: (suppPlanId && suppPlanId !== '') ? parseInt(suppPlanId) : null,
       suppPlanName: getInsuranceName($suppPlan, suppPlanId)
     };
     
-    console.log('🏥 V2: Insurance state cached:', cache);
+    console.log('🏥 V2: Insurance last state saved:', lastState);
   }
 
   /**
@@ -106,7 +112,8 @@
           // چک کن که آیا option با این value وجود دارد
           const basePlanExists = $basePlan.find(`option[value="${basePlanIdToSet}"]`).length > 0;
           if (basePlanExists) {
-            $basePlan.val(basePlanIdToSet).trigger('change');
+            // ✅ بدون trigger('change') برای جلوگیری از race condition - reprice در انتهای set() انجام می‌شود
+            $basePlan.val(basePlanIdToSet);
             console.log('🏥 V2: Base plan set successfully');
           } else {
             console.warn('🏥 V2: Base plan ID not found in dropdown:', basePlanIdToSet);
@@ -128,7 +135,9 @@
           // چک کن که آیا option با این value وجود دارد
           const suppPlanExists = $suppPlan.find(`option[value="${suppPlanIdToSet}"]`).length > 0;
           if (suppPlanExists) {
-            $suppPlan.val(suppPlanIdToSet).trigger('change');
+            // ✅ بدون trigger('change') برای جلوگیری از race condition - reprice در انتهای set() انجام می‌شود
+            $suppPlan.val(suppPlanIdToSet);
+            toggleRemoveButton(); // Update button visibility
             console.log('🏥 V2: Supplementary plan set successfully');
           } else {
             console.warn('🏥 V2: Supplementary plan ID not found in dropdown:', suppPlanIdToSet);
@@ -142,17 +151,17 @@
           toggleRemoveButton(); // Hide button
         }
 
-        // ذخیره وضعیت فعلی در cache
-        saveToCache();
+        // ذخیره وضعیت فعلی (برای مقایسه - نه cache)
+        saveLastState();
         
         // به‌روزرسانی نمایش وضعیت در UI
         updateInsuranceStatus();
 
-        // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن
+        // اگر پذیرش وجود دارد، بیمه‌ها را ذخیره کن با debounce
         const receptionId = $('#ReceptionId').val();
         if (receptionId && receptionId > 0) {
-          console.log('🏥 V2: Reception ID exists, persisting insurances');
-          persist();
+          console.log('🏥 V2: Reception ID exists, triggering persist with debounce');
+          triggerReprice(); // استفاده از triggerReprice به جای persist مستقیم برای جلوگیری از race condition
         } else {
           console.log('🏥 V2: No reception ID yet, skipping persist');
         }
@@ -301,11 +310,11 @@
         const currentBasePlanName = getInsuranceName($basePlan, currentBasePlanId);
         const currentSuppPlanName = getInsuranceName($suppPlan, currentSuppPlanId);
         
-        // تشخیص تغییرات
+        // تشخیص تغییرات (مقایسه با lastState - نه cache)
         let changes = [];
-        if (cache.basePlanId !== currentBasePlanId) {
-          if (cache.basePlanId && currentBasePlanId) {
-            changes.push(`بیمه پایه: "${cache.basePlanName}" → "${currentBasePlanName}"`);
+        if (lastState.basePlanId !== currentBasePlanId) {
+          if (lastState.basePlanId && currentBasePlanId) {
+            changes.push(`بیمه پایه: "${lastState.basePlanName}" → "${currentBasePlanName}"`);
           } else if (currentBasePlanId) {
             changes.push(`بیمه پایه: "${currentBasePlanName}" انتخاب شد`);
           } else {
@@ -313,9 +322,9 @@
           }
         }
         
-        if (cache.suppPlanId !== currentSuppPlanId) {
-          if (cache.suppPlanId && currentSuppPlanId) {
-            changes.push(`بیمه تکمیلی: "${cache.suppPlanName}" → "${currentSuppPlanName}"`);
+        if (lastState.suppPlanId !== currentSuppPlanId) {
+          if (lastState.suppPlanId && currentSuppPlanId) {
+            changes.push(`بیمه تکمیلی: "${lastState.suppPlanName}" → "${currentSuppPlanName}"`);
           } else if (currentSuppPlanId) {
             changes.push(`بیمه تکمیلی: "${currentSuppPlanName}" انتخاب شد`);
           } else {
@@ -345,8 +354,8 @@
           toastr.success('بیمه‌ها ذخیره شدند. تغییر جدیدی انجام نشد.');
         }
         
-        // به‌روزرسانی cache با مقادیر فعلی
-        saveToCache();
+        // به‌روزرسانی lastState با مقادیر فعلی (برای مقایسه - نه cache)
+        saveLastState();
         
         // به‌روزرسانی نمایش وضعیت در UI
         updateInsuranceStatus();
@@ -437,16 +446,59 @@
     });
   }
 
-  // ✅ Event handlers - هوشمندسازی: تغییر بیمه → Reprice همه آیتم‌ها + به‌روزرسانی Totals
+  /**
+   * Trigger Reprice با debounce و race condition prevention
+   * ✅ رویکرد حرفه‌ای: debounce 500ms + isRepricing flag
+   * ❌ هیچ cache - همیشه realtime
+   */
+  function triggerReprice() {
+    // اگر در حال reprice هستیم، skip کن
+    if (isRepricing) {
+      console.warn('🏥 V2: Reprice already in progress, skipping...');
+      return;
+    }
+    
+    // Clear timeout قبلی
+    if (repriceTimeout) {
+      clearTimeout(repriceTimeout);
+      repriceTimeout = null;
+    }
+    
+    // Debounce: 500ms delay
+    repriceTimeout = setTimeout(function() {
+      repriceTimeout = null;
+      performReprice();
+    }, 500);
+  }
+  
+  /**
+   * انجام Reprice با loading state
+   */
+  async function performReprice() {
+    if (isRepricing) {
+      return;
+    }
+    
+    isRepricing = true;
+    
+    try {
+      // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
+      updateInsuranceStatus();
+      
+      // انجام persist (که خودش reprice می‌کند)
+      await persist();
+    } catch (err) {
+      console.error('🏥 V2: Reprice error:', err);
+      toastr.error('خطا در بازمحاسبه قیمت‌ها');
+    } finally {
+      isRepricing = false;
+    }
+  }
+  
+  // ✅ Event handlers - هوشمندسازی: تغییر بیمه → Reprice با debounce
   $basePlan.on('change', function() {
     console.log('🏥 V2: Base plan changed - Triggering smart recalculation...');
-    
-    // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
-    updateInsuranceStatus();
-    
-    // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
-    // persist() خودش totals را از API دریافت و به‌روزرسانی می‌کند
-    persist();
+    triggerReprice();
   });
   
   $suppPlan.on('change', function() {
@@ -456,18 +508,13 @@
     // نمایش/مخفی کردن دکمه حذف
     toggleRemoveButton();
     
-    // به‌روزرسانی نمایش وضعیت در UI (قبل از persist)
-    updateInsuranceStatus();
-    
-    // persist() اجرا می‌شود و در آن cache به‌روزرسانی می‌شود و پیغام نمایش داده می‌شود
-    // persist() خودش totals را از API دریافت و به‌روزرسانی می‌کند
     if (!selectedValue || selectedValue === '' || selectedValue === null) {
       console.log('🏥 V2: Supplementary plan cleared → Patient has NO supplementary insurance');
     } else {
       console.log('🏥 V2: Supplementary plan selected:', selectedValue, '- Persisting...');
     }
     
-    persist();
+    triggerReprice();
   });
 
   if ($btnRemoveSupp.length) {
@@ -484,7 +531,7 @@
           window.AutoDraftManager.createDraft().then(function(draftId) {
             if (draftId) {
               $('#ReceptionId').val(draftId);
-              persist();
+              triggerReprice(); // با debounce برای جلوگیری از race condition
             } else {
               toastr.warning('لطفاً ابتدا پذیرش را ایجاد کنید');
             }
@@ -499,7 +546,7 @@
         }
       }
       
-      persist();
+      triggerReprice(); // با debounce برای جلوگیری از race condition
     });
   }
 
@@ -591,9 +638,9 @@
     // بارگذاری لیست بیمه‌ها
     loadPlans()
       .then(function() {
-        // پس از لود شدن بیمه‌ها، وضعیت فعلی را در cache ذخیره کن
-        saveToCache();
-        console.log('🏥 V2: Initial insurance state cached:', cache);
+        // پس از لود شدن بیمه‌ها، وضعیت فعلی را ذخیره کن (برای مقایسه - نه cache)
+        saveLastState();
+        console.log('🏥 V2: Initial insurance state saved:', lastState);
         
         // به‌روزرسانی نمایش وضعیت در UI
         updateInsuranceStatus();

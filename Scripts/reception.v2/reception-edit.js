@@ -46,31 +46,45 @@
         console.log('🏥 Reception Edit: Loading reception data - ReceptionId:', receptionId);
 
         const API = window.ReceptionAPI || window.API || {};
-        const baseUrl = '/api/v1/reception';
 
-        $.ajax({
-            url: `${baseUrl}/edit/${receptionId}`,
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                console.log('🏥 Reception Edit: Raw response:', response);
+        // ✅ استفاده از ReceptionAPI.get() برای سازگاری با سایر ماژول‌ها
+        API.get(`/edit/${receptionId}`)
+            .then(function(fullResponse) {
+                console.log('🏥 Reception Edit: Raw response:', fullResponse);
 
-                // بررسی موفقیت
-                if (!response || !response.Success) {
-                    const errorMsg = response?.Message || 'خطا در بارگذاری اطلاعات پذیرش';
+                // 🔍 چک Success - پشتیبانی از Success و success (camelCase/PascalCase)
+                const successValue = fullResponse?.Success ?? fullResponse?.success;
+                const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+                
+                console.log('🏥 Reception Edit: Success check - successValue:', successValue, 'isSuccess:', isSuccess);
+
+                // بررسی دقیق‌تر: اگر Success false است اما Data وجود دارد، ممکن است مشکل از ساختار response باشد
+                if (!fullResponse || (!isSuccess && !fullResponse.Data)) {
+                    const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در بارگذاری اطلاعات پذیرش';
+                    console.error('❌ Reception Edit: API returned error', {
+                        response: fullResponse,
+                        successValue: successValue,
+                        isSuccess: isSuccess,
+                        hasData: !!fullResponse?.Data
+                    });
+                    
                     toastr.error(errorMsg, 'خطا');
+                    
+                    // استفاده از handleErrorJson اگر موجود باشد
+                    if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                        API.handleErrorJson(fullResponse);
+                    }
                     return;
                 }
 
-                // استخراج داده‌ها
-                let data = response.Data || response.data;
+                // ✅ Extract data using API.ok (handles ServiceResult structure)
+                let data = fullResponse.Data || fullResponse.data;
                 if (API && API.ok && typeof API.ok === 'function') {
-                    data = API.ok(response);
+                    data = API.ok(fullResponse);
                 }
 
                 if (!data) {
+                    console.error('❌ Reception Edit: No data extracted from response');
                     toastr.error('داده‌ای دریافت نشد', 'خطا');
                     return;
                 }
@@ -81,18 +95,40 @@
                 populateForm(data);
 
                 // اعمال محدودیت‌های ویرایش
-                applyEditPermissions(data.Permissions);
+                if (data.Permissions) {
+                    applyEditPermissions(data.Permissions);
+                }
 
                 // به‌روزرسانی وضعیت
-                updateStatusBadge(data.Status);
+                if (data.Status !== undefined) {
+                    updateStatusBadge(data.Status);
+                }
 
                 toastr.success('اطلاعات پذیرش بارگذاری شد', 'موفق');
-            },
-            error: function(xhr, status, error) {
-                console.error('❌ Reception Edit: Error loading reception:', error);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('❌ Reception Edit: Error loading reception:', {
+                    status: jqXHR?.status,
+                    statusText: jqXHR?.statusText,
+                    error: errorThrown,
+                    responseText: jqXHR?.responseText
+                });
+                
+                // بررسی response JSON برای خطاهای خاص
+                try {
+                    if (jqXHR.responseJSON) {
+                        if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                            if (API.handleErrorJson(jqXHR.responseJSON)) {
+                                return; // خطا handle شد
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+                
                 toastr.error('خطا در بارگذاری اطلاعات پذیرش', 'خطا');
-            }
-        });
+            });
     }
 
     /**
@@ -101,20 +137,37 @@
     function populateForm(data) {
         console.log('🏥 Reception Edit: Populating form with data:', data);
 
-        // اطلاعات بیمار (readonly)
-        $('#Patient_NationalCode').val(data.PatientNationalCode || '').prop('readonly', true);
-        $('#Patient_FullName').val(data.PatientFullName || '').prop('readonly', true);
-        $('#Patient_Mobile').val(data.PatientMobile || '').prop('readonly', true);
+        // اطلاعات بیمار (readonly) - کامل
+        // ✅ ابتدا readonly را set کن، سپس value - برای جلوگیری از patient lookup در edit mode
+        $('#Patient_NationalCode').prop('readonly', true).val(data.PatientNationalCode || '');
+        $('#firstName').val(data.PatientFirstName || '');
+        $('#lastName').val(data.PatientLastName || '');
+        $('#fatherName').val(data.PatientFatherName || '');
+        $('#gender').val(data.PatientGender || '');
+        $('#birthSh').val(data.PatientBirthDateShamsi || '');
+        $('#mobile').val(data.PatientMobile || '');
+        $('#phone').val(data.PatientPhone || '');
+        $('#address').val(data.PatientAddress || '');
 
-        // اطلاعات پزشک و دپارتمان
-        if (data.DoctorId) {
-            $('#DoctorId').val(data.DoctorId);
-        }
-        if (data.DepartmentId) {
-            $('#DepartmentId').val(data.DepartmentId);
-        }
+        // اطلاعات کلینیک و دپارتمان
         if (data.ClinicId) {
             $('#ClinicId').val(data.ClinicId);
+        }
+        
+        // ✅ ابتدا department را set کن و trigger کن تا doctors load شوند
+        if (data.DepartmentId) {
+            $('#DepartmentId').val(data.DepartmentId).trigger('change');
+            
+            // سپس با delay کوتاه، doctor را set کن (منتظر load شدن doctors)
+            if (data.DoctorId) {
+                setTimeout(function() {
+                    $('#DoctorId').val(data.DoctorId);
+                    console.log('🏥 Reception Edit: Doctor set to:', data.DoctorId);
+                }, 300); // 300ms delay برای load شدن doctors
+            }
+        } else if (data.DoctorId) {
+            // اگر department نداریم اما doctor داریم، مستقیماً set کن
+            $('#DoctorId').val(data.DoctorId);
         }
 
         // تاریخ پذیرش
@@ -122,13 +175,43 @@
             $('#ReceptionDate').val(data.ReceptionDateShamsi);
         }
 
-        // بیمه‌ها
-        if (data.BasePlanId) {
-            $('#BasePlanId').val(data.BasePlanId);
-        }
-        if (data.SupplementaryPlanId) {
-            $('#SupplementaryPlanId').val(data.SupplementaryPlanId);
-        }
+        // بیمه‌ها - ✅ استفاده از delay برای اطمینان از load شدن options
+        // insurance-panel.js در initialization خودش loadPlans() را call می‌کند
+        // پس با یک delay کوتاه، اطمینان می‌دهیم که options load شده‌اند
+        setTimeout(function() {
+            console.log('🏥 Reception Edit: Setting insurance values');
+            
+            // حالا که option‌ها از insurance-panel initialization load شده‌اند، مقادیر را set کن
+            if (data.BasePlanId) {
+                const $basePlan = $('#BasePlanId');
+                const basePlanOption = $basePlan.find('option[value="' + data.BasePlanId + '"]');
+                console.log('🏥 Reception Edit: Base plan - ID:', data.BasePlanId, 'Option exists:', basePlanOption.length > 0);
+                $basePlan.val(data.BasePlanId);
+            }
+            if (data.SupplementaryPlanId) {
+                const $suppPlan = $('#SuppPlanId');
+                const suppPlanOption = $suppPlan.find('option[value="' + data.SupplementaryPlanId + '"]');
+                console.log('🏥 Reception Edit: Supplementary plan - ID:', data.SupplementaryPlanId, 'Option exists:', suppPlanOption.length > 0);
+                
+                // Log تمام options موجود برای debug
+                const allOptions = [];
+                $suppPlan.find('option').each(function() {
+                    allOptions.push({ value: $(this).val(), text: $(this).text() });
+                });
+                console.log('🏥 Reception Edit: All supplementary plan options:', allOptions);
+                
+                $suppPlan.val(data.SupplementaryPlanId);
+                
+                // چک کنیم که آیا value واقعاً set شده است
+                const actualValue = $suppPlan.val();
+                console.log('🏥 Reception Edit: Supplementary plan set to:', data.SupplementaryPlanId, 'Actual value after set:', actualValue);
+            }
+            
+            // به‌روزرسانی نمایش insurance status و toggle remove button
+            if (window.insPanel && typeof window.insPanel.updateInsuranceStatus === 'function') {
+                window.insPanel.updateInsuranceStatus();
+            }
+        }, 400); // 400ms delay برای اطمینان از load شدن insurance options
 
         // یادداشت‌ها
         if (data.Notes) {
@@ -230,15 +313,23 @@
 
     /**
      * به‌روزرسانی مجموع‌ها
+     * ✅ با selector های صحیح مطابق با View
      */
     function updateTotals(data) {
         console.log('🏥 Reception Edit: Updating totals:', data);
 
-        $('#TotalAmount').text(formatIRR(data.TotalAmount || 0));
-        $('#InsurerShareAmount').text(formatIRR(data.InsurerShareAmount || 0));
-        $('#PatientCoPay').text(formatIRR(data.PatientCoPay || 0));
-        $('#PaidAmount').text(formatIRR(data.PaidAmount || 0));
-        $('#RemainingAmount').text(formatIRR(data.RemainingAmount || 0));
+        // ✅ Selector های صحیح مطابق با _Totals.cshtml
+        $('#Gross').text(formatIRR(data.TotalAmount || 0));
+        $('#InsurancePayable').text(formatIRR(data.InsurerShareAmount || 0));
+        $('#PatientPayable').text(formatIRR(data.PatientCoPay || 0));
+        
+        // این دو در _Totals.cshtml نیستند، احتمالاً در _Payment.cshtml هستند
+        if ($('#PaidAmount').length) {
+            $('#PaidAmount').text(formatIRR(data.PaidAmount || 0));
+        }
+        if ($('#RemainingAmount').length) {
+            $('#RemainingAmount').text(formatIRR(data.RemainingAmount || 0));
+        }
     }
 
     /**
@@ -339,40 +430,46 @@
         console.log('🏥 Reception Edit: Update request:', request);
 
         const API = window.ReceptionAPI || window.API || {};
-        const baseUrl = '/api/v1/reception';
 
         // غیرفعال کردن دکمه ذخیره
         const $btn = $('#BtnSaveChanges');
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> در حال ذخیره...');
 
-        $.ajax({
-            url: `${baseUrl}/update`,
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-            },
-            contentType: 'application/json',
-            data: JSON.stringify(request),
-            success: function(response) {
-                console.log('🏥 Reception Edit: Update response:', response);
+        API.post('/update', request)
+            .then(function(fullResponse) {
+                console.log('🏥 Reception Edit: Update response:', fullResponse);
 
-                if (!response || !response.Success) {
-                    const errorMsg = response?.Message || 'خطا در ذخیره تغییرات';
+                // 🔍 چک Success
+                const successValue = fullResponse?.Success ?? fullResponse?.success;
+                const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+                if (!fullResponse || !isSuccess) {
+                    const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در ذخیره تغییرات';
                     toastr.error(errorMsg, 'خطا');
                     $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> ذخیره تغییرات');
+                    
+                    // استفاده از handleErrorJson اگر موجود باشد
+                    if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                        API.handleErrorJson(fullResponse);
+                    }
                     return;
                 }
 
                 toastr.success('تغییرات با موفقیت ذخیره شد', 'موفق');
 
+                // Extract data using API.ok
+                let responseData = fullResponse.Data || fullResponse.data;
+                if (API && API.ok && typeof API.ok === 'function') {
+                    responseData = API.ok(fullResponse);
+                }
+
                 // به‌روزرسانی نمایش
-                if (response.Data) {
-                    if (response.Data.Items) {
-                        populateItems(response.Data.Items);
+                if (responseData) {
+                    if (responseData.Items) {
+                        populateItems(responseData.Items);
                     }
-                    if (response.Data.Totals) {
-                        updateTotalsFromResponse(response.Data.Totals);
+                    if (responseData.Totals) {
+                        updateTotalsFromResponse(responseData.Totals);
                     }
                 }
 
@@ -380,13 +477,32 @@
                 setTimeout(function() {
                     window.location.href = '/ReceptionV2/ReceptionList';
                 }, 2000);
-            },
-            error: function(xhr, status, error) {
-                console.error('❌ Reception Edit: Error saving changes:', error);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('❌ Reception Edit: Error saving changes:', {
+                    status: jqXHR?.status,
+                    statusText: jqXHR?.statusText,
+                    error: errorThrown,
+                    responseText: jqXHR?.responseText
+                });
+                
+                // بررسی response JSON برای خطاهای خاص
+                try {
+                    if (jqXHR.responseJSON) {
+                        if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                            if (API.handleErrorJson(jqXHR.responseJSON)) {
+                                $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> ذخیره تغییرات');
+                                return; // خطا handle شد
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+                
                 toastr.error('خطا در ذخیره تغییرات', 'خطا');
                 $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> ذخیره تغییرات');
-            }
-        });
+            });
     }
 
     /**
@@ -441,10 +557,10 @@
             totalInsurerShare += insurerShare * quantity;
         });
 
-        // به‌روزرسانی نمایش
-        $('#TotalAmount').text(formatIRR(totalAmount));
-        $('#PatientCoPay').text(formatIRR(totalPatientShare));
-        $('#InsurerShareAmount').text(formatIRR(totalInsurerShare));
+        // به‌روزرسانی نمایش با selector های صحیح
+        $('#Gross').text(formatIRR(totalAmount));
+        $('#PatientPayable').text(formatIRR(totalPatientShare));
+        $('#InsurancePayable').text(formatIRR(totalInsurerShare));
     }
 
     /**
@@ -453,9 +569,10 @@
     function updateTotalsFromResponse(totals) {
         if (!totals) return;
 
-        $('#TotalAmount').text(formatIRR(totals.GrossAmount || 0));
-        $('#InsurerShareAmount').text(formatIRR(totals.BaseInsurancePayable || 0));
-        $('#PatientCoPay').text(formatIRR(totals.PatientPayable || 0));
+        // ✅ Selector های صحیح مطابق با View
+        $('#Gross').text(formatIRR(totals.GrossAmount || 0));
+        $('#InsurancePayable').text(formatIRR(totals.BaseInsurancePayable || 0));
+        $('#PatientPayable').text(formatIRR(totals.PatientPayable || 0));
     }
 
     /**
@@ -474,33 +591,33 @@
 
         // دریافت اطلاعات پذیرش برای نمایش PaidAmount
         const API = window.ReceptionAPI || window.API || {};
-        const baseUrl = '/api/v1/reception';
 
-        $.ajax({
-            url: `${baseUrl}/edit/${receptionId}`,
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                if (!response || !response.Success) {
-                    toastr.error('خطا در دریافت اطلاعات پذیرش', 'خطا');
+        API.get(`/edit/${receptionId}`)
+            .then(function(fullResponse) {
+                // 🔍 چک Success
+                const successValue = fullResponse?.Success ?? fullResponse?.success;
+                const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+                if (!fullResponse || !isSuccess) {
+                    console.warn('⚠️ Reception Edit: Failed to load reception for cancel, using PaidAmount = 0');
+                    showCancelModal(receptionId, 0);
                     return;
                 }
 
-                let data = response.Data || response.data;
+                // Extract data using API.ok
+                let data = fullResponse.Data || fullResponse.data;
                 if (API && API.ok && typeof API.ok === 'function') {
-                    data = API.ok(response);
+                    data = API.ok(fullResponse);
                 }
 
-                const paidAmount = data.PaidAmount || 0;
+                const paidAmount = data?.PaidAmount || 0;
                 showCancelModal(receptionId, paidAmount);
-            },
-            error: function() {
+            })
+            .fail(function() {
                 // اگر خطا رخ داد، با PaidAmount صفر ادامه بده
+                console.warn('⚠️ Reception Edit: Error loading reception for cancel, using PaidAmount = 0');
                 showCancelModal(receptionId, 0);
-            }
-        });
+            });
     }
 
     /**
@@ -601,7 +718,6 @@
      */
     function cancelReceptionRequest(receptionId, reason, processRefund, modal) {
         const API = window.ReceptionAPI || window.API || {};
-        const baseUrl = '/api/v1/reception';
 
         const request = {
             ReceptionId: receptionId,
@@ -612,43 +728,69 @@
 
         console.log('🚫 Reception Edit: Sending cancel request:', request);
 
-        $.ajax({
-            url: `${baseUrl}/cancel`,
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-            },
-            contentType: 'application/json',
-            data: JSON.stringify(request),
-            success: function(response) {
-                console.log('🚫 Reception Edit: Cancel response:', response);
+        API.post('/cancel', request)
+            .then(function(fullResponse) {
+                console.log('🚫 Reception Edit: Cancel response:', fullResponse);
 
-                if (!response || !response.Success) {
-                    const errorMsg = response?.Message || 'خطا در لغو پذیرش';
+                // 🔍 چک Success
+                const successValue = fullResponse?.Success ?? fullResponse?.success;
+                const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+                if (!fullResponse || !isSuccess) {
+                    const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در لغو پذیرش';
                     toastr.error(errorMsg, 'خطا');
                     $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                    
+                    // استفاده از handleErrorJson اگر موجود باشد
+                    if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                        API.handleErrorJson(fullResponse);
+                    }
                     return;
                 }
 
                 // بستن مودال
                 modal.hide();
 
+                // Extract data using API.ok
+                let responseData = fullResponse.Data || fullResponse.data;
+                if (API && API.ok && typeof API.ok === 'function') {
+                    responseData = API.ok(fullResponse);
+                }
+
                 // نمایش پیام موفقیت
-                const message = response.Data?.Message || 'پذیرش با موفقیت لغو شد';
+                const message = responseData?.Message || 'پذیرش با موفقیت لغو شد';
                 toastr.success(message, 'موفق');
 
                 // بازگشت به لیست پس از 2 ثانیه
                 setTimeout(function() {
                     window.location.href = '/ReceptionV2/ReceptionList';
                 }, 2000);
-            },
-            error: function(xhr, status, error) {
-                console.error('❌ Reception Edit: Error canceling reception:', error);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('❌ Reception Edit: Error canceling reception:', {
+                    status: jqXHR?.status,
+                    statusText: jqXHR?.statusText,
+                    error: errorThrown,
+                    responseText: jqXHR?.responseText
+                });
+                
+                // بررسی response JSON برای خطاهای خاص
+                try {
+                    if (jqXHR.responseJSON) {
+                        if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                            if (API.handleErrorJson(jqXHR.responseJSON)) {
+                                $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                                return; // خطا handle شد
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+                
                 toastr.error('خطا در لغو پذیرش', 'خطا');
                 $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
-            }
-        });
+            });
     }
 
 })(window.API || window.ReceptionAPI || {}, jQuery);

@@ -1958,73 +1958,140 @@ namespace ClinicApp.Services.Reception
                 await _context.SaveChangesAsync();
 
                 // 🔥 به‌روزرسانی PatientInsurances (بیمه‌های واقعی بیمار)
+                // ✅ رویکرد حرفه‌ای: استفاده از AsNoTracking + ReloadAsync برای جلوگیری از Optimistic Concurrency Exception
                 var patientId = draft.PatientId;
                 var userId = _currentUserService?.UserId ?? "system";
 
-                // یافتن PatientInsurance فعال و Primary این بیمار (که بیمه پایه و تکمیلی در همان رکورد است)
-                var patientInsurance = await _context.PatientInsurances
-                    .FirstOrDefaultAsync(pi => pi.PatientId == patientId && pi.IsPrimary && pi.IsActive && !pi.IsDeleted);
+                // ✅ Step 1: Query با AsNoTracking برای جلوگیری از tracking conflict
+                var patientInsuranceId = await _context.PatientInsurances
+                    .AsNoTracking()
+                    .Where(pi => pi.PatientId == patientId && pi.IsPrimary && pi.IsActive && !pi.IsDeleted)
+                    .Select(pi => (int?)pi.PatientInsuranceId)
+                    .FirstOrDefaultAsync();
                 
-                if (patientInsurance != null)
+                if (patientInsuranceId.HasValue)
                 {
-                    bool hasChanges = false;
-
-                    // به‌روزرسانی بیمه پایه در PatientInsurances (از basePlan قبلاً query شده استفاده می‌کنیم)
-                    if (request.BasePlanId.HasValue && basePlan != null)
+                    // ✅ Step 2: Load entity با tracking برای update
+                    var patientInsurance = await _context.PatientInsurances
+                        .FirstOrDefaultAsync(pi => pi.PatientInsuranceId == patientInsuranceId.Value);
+                    
+                    if (patientInsurance != null)
                     {
-                        if (patientInsurance.InsurancePlanId != request.BasePlanId.Value || 
-                            patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
-                        {
-                            // به‌روزرسانی InsurancePlanId و InsuranceProviderId
-                            patientInsurance.InsurancePlanId = request.BasePlanId.Value;
-                            patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
-                            hasChanges = true;
-                            
-                            _logger.Information("🔄 FACADE: به‌روزرسانی بیمه پایه در PatientInsurances - PatientId: {PatientId}, PlanId: {PlanId}, ProviderId: {ProviderId}",
-                                patientId, request.BasePlanId.Value, basePlan.InsuranceProviderId);
-                        }
-                    }
-
-                    // به‌روزرسانی بیمه تکمیلی در PatientInsurances (از suppPlan قبلاً query شده استفاده می‌کنیم)
-                    if (request.SupplementaryPlanId.HasValue && suppPlan != null)
-                    {
-                        if (patientInsurance.SupplementaryInsurancePlanId != request.SupplementaryPlanId.Value || 
-                            patientInsurance.SupplementaryInsuranceProviderId != suppPlan.InsuranceProviderId)
-                        {
-                            // به‌روزرسانی SupplementaryInsurancePlanId و SupplementaryInsuranceProviderId
-                            patientInsurance.SupplementaryInsurancePlanId = request.SupplementaryPlanId.Value;
-                            patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
-                            hasChanges = true;
-                            
-                            _logger.Information("🔄 FACADE: به‌روزرسانی بیمه تکمیلی در PatientInsurances - PatientId: {PatientId}, SuppPlanId: {SuppPlanId}, SuppProviderId: {SuppProviderId}",
-                                patientId, request.SupplementaryPlanId.Value, suppPlan.InsuranceProviderId);
-                        }
-                    }
-                    else
-                    {
-                        // اگر SupplementaryPlanId null باشد، بیمه تکمیلی را حذف می‌کنیم
-                        if (patientInsurance.SupplementaryInsurancePlanId.HasValue)
-                        {
-                            patientInsurance.SupplementaryInsurancePlanId = null;
-                            patientInsurance.SupplementaryInsuranceProviderId = null;
-                            hasChanges = true;
-                            
-                            _logger.Information("🔄 FACADE: حذف بیمه تکمیلی از PatientInsurances - PatientId: {PatientId}", patientId);
-                        }
-                    }
-
-                    // ذخیره تغییرات PatientInsurances (فقط در صورت تغییر)
-                    if (hasChanges)
-                    {
-                        patientInsurance.UpdatedAt = DateTime.Now;
-                        patientInsurance.UpdatedByUserId = userId;
-                        await _context.SaveChangesAsync();
+                        // ✅ Step 3: Reload برای دریافت RowVersion به‌روز (realtime - no cache)
+                        await _context.Entry(patientInsurance).ReloadAsync();
                         
-                        _logger.Information("✅ FACADE: PatientInsurances با موفقیت به‌روزرسانی شد - PatientId: {PatientId}", patientId);
-                    }
-                    else
-                    {
-                        _logger.Information("ℹ️ FACADE: PatientInsurances تغییری نداشت - PatientId: {PatientId}", patientId);
+                        bool hasChanges = false;
+
+                        // به‌روزرسانی بیمه پایه در PatientInsurances
+                        if (request.BasePlanId.HasValue && basePlan != null)
+                        {
+                            if (patientInsurance.InsurancePlanId != request.BasePlanId.Value || 
+                                patientInsurance.InsuranceProviderId != basePlan.InsuranceProviderId)
+                            {
+                                patientInsurance.InsurancePlanId = request.BasePlanId.Value;
+                                patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
+                                hasChanges = true;
+                                
+                                _logger.Information("🔄 FACADE: به‌روزرسانی بیمه پایه در PatientInsurances - PatientId: {PatientId}, PlanId: {PlanId}, ProviderId: {ProviderId}",
+                                    patientId, request.BasePlanId.Value, basePlan.InsuranceProviderId);
+                            }
+                        }
+
+                        // به‌روزرسانی بیمه تکمیلی در PatientInsurances
+                        if (request.SupplementaryPlanId.HasValue && suppPlan != null)
+                        {
+                            if (patientInsurance.SupplementaryInsurancePlanId != request.SupplementaryPlanId.Value || 
+                                patientInsurance.SupplementaryInsuranceProviderId != suppPlan.InsuranceProviderId)
+                            {
+                                patientInsurance.SupplementaryInsurancePlanId = request.SupplementaryPlanId.Value;
+                                patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                hasChanges = true;
+                                
+                                _logger.Information("🔄 FACADE: به‌روزرسانی بیمه تکمیلی در PatientInsurances - PatientId: {PatientId}, SuppPlanId: {SuppPlanId}, SuppProviderId: {SuppProviderId}",
+                                    patientId, request.SupplementaryPlanId.Value, suppPlan.InsuranceProviderId);
+                            }
+                        }
+                        else
+                        {
+                            // اگر SupplementaryPlanId null باشد، بیمه تکمیلی را حذف می‌کنیم
+                            if (patientInsurance.SupplementaryInsurancePlanId.HasValue)
+                            {
+                                patientInsurance.SupplementaryInsurancePlanId = null;
+                                patientInsurance.SupplementaryInsuranceProviderId = null;
+                                hasChanges = true;
+                                
+                                _logger.Information("🔄 FACADE: حذف بیمه تکمیلی از PatientInsurances - PatientId: {PatientId}", patientId);
+                            }
+                        }
+
+                        // ✅ Step 4: Save با Retry Logic برای Handle Optimistic Concurrency
+                        if (hasChanges)
+                        {
+                            patientInsurance.UpdatedAt = DateTime.Now;
+                            patientInsurance.UpdatedByUserId = userId;
+                            
+                            // Retry logic برای Optimistic Concurrency (3 بار با exponential backoff)
+                            int maxRetries = 3;
+                            int retryCount = 0;
+                            bool saved = false;
+                            
+                            while (retryCount < maxRetries && !saved)
+                            {
+                                try
+                                {
+                                    await _context.SaveChangesAsync();
+                                    saved = true;
+                                    _logger.Information("✅ FACADE: PatientInsurance به‌روزرسانی شد - PatientId: {PatientId}, RetryCount: {RetryCount}",
+                                        patientId, retryCount);
+                                }
+                                catch (System.Data.Entity.Infrastructure.DbUpdateConcurrencyException ex)
+                                {
+                                    retryCount++;
+                                    _logger.Warning("⚠️ FACADE: Optimistic Concurrency Exception در SetInsurances - PatientId: {PatientId}, RetryCount: {RetryCount}",
+                                        patientId, retryCount);
+                                    
+                                    if (retryCount >= maxRetries)
+                                    {
+                                        _logger.Error(ex, "❌ FACADE: حداکثر تعداد retry برای SetInsurances - PatientId: {PatientId}", patientId);
+                                        throw new InvalidOperationException(
+                                            "اطلاعات بیمه در جای دیگری تغییر کرده است. لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.",
+                                            ex);
+                                    }
+                                    
+                                    // Reload entity برای retry
+                                    await _context.Entry(patientInsurance).ReloadAsync();
+                                    
+                                    // اعمال مجدد تغییرات
+                                    if (request.BasePlanId.HasValue && basePlan != null)
+                                    {
+                                        patientInsurance.InsurancePlanId = request.BasePlanId.Value;
+                                        patientInsurance.InsuranceProviderId = basePlan.InsuranceProviderId;
+                                    }
+                                    if (request.SupplementaryPlanId.HasValue && suppPlan != null)
+                                    {
+                                        patientInsurance.SupplementaryInsurancePlanId = request.SupplementaryPlanId.Value;
+                                        patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                    }
+                                    else if (!request.SupplementaryPlanId.HasValue)
+                                    {
+                                        patientInsurance.SupplementaryInsurancePlanId = null;
+                                        patientInsurance.SupplementaryInsuranceProviderId = null;
+                                    }
+                                    
+                                    patientInsurance.UpdatedAt = DateTime.Now;
+                                    patientInsurance.UpdatedByUserId = userId;
+                                    
+                                    // Exponential backoff: 100ms, 200ms, 400ms
+                                    await Task.Delay(100 * (int)Math.Pow(2, retryCount - 1));
+                                }
+                            }
+                            
+                            _logger.Information("✅ FACADE: PatientInsurances با موفقیت به‌روزرسانی شد - PatientId: {PatientId}", patientId);
+                        }
+                        else
+                        {
+                            _logger.Information("ℹ️ FACADE: PatientInsurances تغییری نداشت - PatientId: {PatientId}", patientId);
+                        }
                     }
                 }
                 else
@@ -2766,13 +2833,17 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("🏥 FACADE: بارگذاری پذیرش برای ویرایش - ReceptionId: {ReceptionId}", receptionId);
 
                 // 1. دریافت پذیرش با تمام جزئیات
+                // ⚠️ مشکل: Include(r => r.Doctor) باعث materialize شدن کامل Doctor entity می‌شود و ممکن است با enum Degree مشکل ایجاد کند
+                // ✅ راه‌حل: از query جداگانه برای Doctor استفاده می‌کنیم تا فقط FirstName و LastName را بگیریم
                 var reception = await _context.Receptions
                     .Include(r => r.Patient)
-                    .Include(r => r.Doctor)
                     .Include(r => r.Department)
                     .Include(r => r.Clinic)
                     .Include(r => r.ActivePatientInsurance)
+                    .Include(r => r.ActivePatientInsurance.InsurancePlan)
+                    .Include(r => r.ActivePatientInsurance.SupplementaryInsurancePlan)
                     .Include(r => r.ReceptionItems.Select(ri => ri.Service))
+                    .Include(r => r.Transactions)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(r => r.ReceptionId == receptionId);
 
@@ -2782,28 +2853,53 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<ReceptionEditLoadDto>.Failed($"پذیرش با شناسه {receptionId} یافت نشد", "NOT_FOUND");
                 }
 
-                // 2. بررسی مجوز ویرایش بر اساس وضعیت
+                // 2. دریافت نام پزشک به صورت جداگانه (فقط FirstName و LastName)
+                // ⚠️ مشکل: Include(r => r.Doctor) باعث materialize شدن کامل Doctor entity می‌شود و ممکن است با enum Degree مشکل ایجاد کند
+                // ✅ راه‌حل: از query جداگانه برای Doctor استفاده می‌کنیم تا فقط FirstName و LastName را بگیریم
+                string doctorFullName = string.Empty;
+                if (reception.DoctorId > 0)
+                {
+                    var doctorInfo = await _context.Doctors
+                        .AsNoTracking()
+                        .Where(d => d.DoctorId == reception.DoctorId)
+                        .Select(d => new { d.FirstName, d.LastName })
+                        .FirstOrDefaultAsync();
+                    
+                    if (doctorInfo != null)
+                    {
+                        doctorFullName = $"{doctorInfo.FirstName} {doctorInfo.LastName}".Trim();
+                    }
+                }
+
+                // 3. بررسی مجوز ویرایش بر اساس وضعیت
                 var permissions = DetermineEditPermissions(reception.Status);
 
-                // 3. ساخت DTO
+                // 4. ساخت DTO
                 var result = new ReceptionEditLoadDto
                 {
                     ReceptionId = reception.ReceptionId,
                     Status = reception.Status,
                     
-                    // اطلاعات بیمار
+                    // اطلاعات بیمار (کامل برای نمایش در فرم ویرایش)
                     PatientId = reception.PatientId,
                     PatientFullName = reception.Patient != null 
                         ? $"{reception.Patient.FirstName} {reception.Patient.LastName}".Trim()
                         : string.Empty,
                     PatientNationalCode = reception.Patient?.NationalCode ?? string.Empty,
+                    PatientFirstName = reception.Patient?.FirstName ?? string.Empty,
+                    PatientLastName = reception.Patient?.LastName ?? string.Empty,
+                    PatientFatherName = reception.Patient?.FatherName ?? string.Empty,
+                    PatientGender = reception.Patient?.Gender.ToString() ?? string.Empty,
+                    PatientBirthDateShamsi = reception.Patient?.BirthDate != null 
+                        ? PersianDateHelper.ToPersianDate(reception.Patient.BirthDate.Value)
+                        : string.Empty,
                     PatientMobile = reception.Patient?.PhoneNumber ?? string.Empty,
+                    PatientPhone = reception.Patient?.PhoneNumber ?? string.Empty,
+                    PatientAddress = reception.Patient?.Address ?? string.Empty,
                     
                     // اطلاعات پزشک و دپارتمان
                     DoctorId = reception.DoctorId,
-                    DoctorFullName = reception.Doctor != null
-                        ? $"{reception.Doctor.FirstName} {reception.Doctor.LastName}".Trim()
-                        : string.Empty,
+                    DoctorFullName = doctorFullName,
                     DepartmentId = reception.DepartmentId,
                     DepartmentName = reception.Department?.Name ?? string.Empty,
                     ClinicId = reception.ClinicId,

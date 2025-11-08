@@ -1026,6 +1026,7 @@ namespace ClinicApp.Controllers.Api
                         {
                             // پیدا کردن آخرین ReceptionItem برای این Reception
                             var lastItem = await _context.ReceptionItems
+                                .Include(i => i.Service)  // ✅ Load Service برای دریافت Code و Name
                                 .Where(i => i.ReceptionId == request.ReceptionId && 
                                            i.ServiceId == request.ServiceId && 
                                            !i.IsDeleted)
