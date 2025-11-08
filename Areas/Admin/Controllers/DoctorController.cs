@@ -306,11 +306,11 @@ namespace ClinicApp.Areas.Admin.Controllers
             Response.Cache.SetExpires(DateTime.UtcNow.AddHours(-1));
             Response.Cache.SetNoStore();
             Response.Cache.SetRevalidation(HttpCacheRevalidation.AllCaches);
+            
+            try
             {
-                try
-                {
-                    if (!ValidateId(id))
-                        return RedirectToAction("Index");
+                if (!ValidateId(id))
+                    return RedirectToAction("Index");
 
                     var result = await _doctorCrudService.GetDoctorDetailsAsync(id);
 
@@ -329,7 +329,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return RedirectToAction("Index");
                 }
             }
-        }
+        
 
         #endregion
 
@@ -516,10 +516,21 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// </summary>
         private DoctorIndexPageViewModel CreateIndexPageViewModel(PagedResult<DoctorIndexViewModel> data, DoctorSearchViewModel searchModel)
         {
+            // ✅ بررسی null بودن data
+            if (data == null)
+            {
+                _logger.Warning("data در CreateIndexPageViewModel null است");
+                return new DoctorIndexPageViewModel
+                {
+                    Doctors = new PagedResult<DoctorIndexViewModel>(),
+                    SearchModel = searchModel ?? new DoctorSearchViewModel()
+                };
+            }
+
             return new DoctorIndexPageViewModel
             {
                 Doctors = data,
-                SearchModel = searchModel,
+                SearchModel = searchModel ?? new DoctorSearchViewModel(),
                 TotalCount = data.TotalItems,
                 ActiveCount = data.Items?.Count(d => d.IsActive) ?? 0,
                 InactiveCount = data.Items?.Count(d => !d.IsActive) ?? 0,

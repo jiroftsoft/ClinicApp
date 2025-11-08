@@ -133,5 +133,12 @@ public interface IDoctorCrudRepository
     /// <returns>تعداد پزشکان فعال</returns>
     Task<int> GetActiveDoctorsCountAsync();
 
+    /// <summary>
+    /// دریافت تعداد پزشکان فیلتر شده بر اساس فیلترهای جستجو
+    /// </summary>
+    /// <param name="filter">فیلترهای جستجو</param>
+    /// <returns>تعداد پزشکان مطابق با فیلترها</returns>
+    Task<int> GetFilteredDoctorsCountAsync(DoctorSearchViewModel filter);
+
     #endregion
 }

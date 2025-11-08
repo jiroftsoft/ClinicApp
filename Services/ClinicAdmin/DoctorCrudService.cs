@@ -86,10 +86,39 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // دریافت پزشکان از repository
                 var doctors = await _doctorRepository.SearchDoctorsAsync(filter);
-                var totalCount = await _doctorRepository.GetAllDoctorsCountAsync();
+                // ✅ استفاده از تعداد فیلتر شده به جای تعداد کل
+                var totalCount = await _doctorRepository.GetFilteredDoctorsCountAsync(filter);
 
-                // تبدیل به ViewModel
-                var doctorViewModels = doctors.Select(DoctorIndexViewModel.FromEntity).ToList();
+                _logger.Information("🔍 دیباگ: تعداد پزشکان دریافت شده: {DoctorsCount}, تعداد کل فیلتر شده: {TotalCount}", 
+                    doctors?.Count ?? 0, totalCount);
+
+                // تبدیل به ViewModel با مدیریت خطا
+                var doctorViewModels = new List<DoctorIndexViewModel>();
+                if (doctors != null && doctors.Any())
+                {
+                    foreach (var doctor in doctors)
+                    {
+                        try
+                        {
+                            var viewModel = DoctorIndexViewModel.FromEntity(doctor);
+                            if (viewModel != null)
+                            {
+                                doctorViewModels.Add(viewModel);
+                            }
+                            else
+                            {
+                                _logger.Warning("🔍 دیباگ: FromEntity برای پزشک {DoctorId} null برگرداند", doctor?.DoctorId ?? 0);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "🔍 دیباگ: خطا در تبدیل پزشک {DoctorId} به ViewModel", doctor?.DoctorId ?? 0);
+                        }
+                    }
+                }
+
+                _logger.Information("🔍 دیباگ: تعداد ViewModelهای ایجاد شده: {ViewModelCount} از {DoctorsCount} پزشک", 
+                    doctorViewModels.Count, doctors?.Count ?? 0);
 
                 // ایجاد نتیجه صفحه‌بندی شده
                 var pagedResult = new PagedResult<DoctorIndexViewModel>(
@@ -98,6 +127,9 @@ namespace ClinicApp.Services.ClinicAdmin
                     filter.PageNumber, 
                     filter.PageSize
                 ).WithMedicalInfo(containsSensitiveData: true, SecurityLevel.High);
+
+                _logger.Information("🔍 دیباگ: PagedResult ایجاد شد - TotalItems: {TotalItems}, Items.Count: {ItemsCount}, PageNumber: {PageNumber}, PageSize: {PageSize}", 
+                    pagedResult.TotalItems, pagedResult.Items?.Count ?? 0, pagedResult.PageNumber, pagedResult.PageSize);
 
                 _logger.Information("لیست پزشکان با موفقیت دریافت شد. تعداد: {Count}", doctorViewModels.Count);
 

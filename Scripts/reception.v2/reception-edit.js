@@ -186,7 +186,7 @@
                 const $basePlan = $('#BasePlanId');
                 const basePlanOption = $basePlan.find('option[value="' + data.BasePlanId + '"]');
                 console.log('🏥 Reception Edit: Base plan - ID:', data.BasePlanId, 'Option exists:', basePlanOption.length > 0);
-                $basePlan.val(data.BasePlanId);
+                $basePlan.val(data.BasePlanId).trigger('change'); // ✅ Trigger change event
             }
             if (data.SupplementaryPlanId) {
                 const $suppPlan = $('#SuppPlanId');
@@ -200,17 +200,20 @@
                 });
                 console.log('🏥 Reception Edit: All supplementary plan options:', allOptions);
                 
-                $suppPlan.val(data.SupplementaryPlanId);
+                $suppPlan.val(data.SupplementaryPlanId).trigger('change'); // ✅ Trigger change event
                 
                 // چک کنیم که آیا value واقعاً set شده است
                 const actualValue = $suppPlan.val();
                 console.log('🏥 Reception Edit: Supplementary plan set to:', data.SupplementaryPlanId, 'Actual value after set:', actualValue);
             }
             
-            // به‌روزرسانی نمایش insurance status و toggle remove button
-            if (window.insPanel && typeof window.insPanel.updateInsuranceStatus === 'function') {
-                window.insPanel.updateInsuranceStatus();
-            }
+            // ✅ به‌روزرسانی نمایش insurance status با یک delay کوچک برای اطمینان از update شدن DOM
+            setTimeout(function() {
+                if (window.insPanel && typeof window.insPanel.updateInsuranceStatus === 'function') {
+                    console.log('🏥 Reception Edit: Calling updateInsuranceStatus after DOM update');
+                    window.insPanel.updateInsuranceStatus();
+                }
+            }, 50); // 50ms کافی است برای update شدن DOM
         }, 400); // 400ms delay برای اطمینان از load شدن insurance options
 
         // یادداشت‌ها

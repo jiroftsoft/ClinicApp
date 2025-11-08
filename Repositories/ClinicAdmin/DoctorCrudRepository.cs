@@ -332,11 +332,23 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ بررسی null بودن filter
+                if (filter == null)
+                {
+                    filter = new DoctorSearchViewModel();
+                }
+
                 var query = _context.Doctors
                     .Where(d => !d.IsDeleted)
                     .Include(d => d.DoctorSpecializations)
                     .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
+                    .Include(d => d.DoctorDepartments)  // ✅ برای فیلتر ClinicId و DepartmentId
+                    .Include(d => d.DoctorDepartments.Select(dd => dd.Department))  // ✅ برای فیلتر ClinicId
+                    .Include(d => d.DoctorServiceCategories)  // ✅ برای شمارش در ViewModel
                     .AsQueryable();
+
+                Serilog.Log.Information("🔍 SearchDoctorsAsync: شروع با فیلتر - SearchTerm: {SearchTerm}, IsActive: {IsActive}, ClinicId: {ClinicId}, DepartmentId: {DepartmentId}, SpecializationId: {SpecializationId}, PageNumber: {PageNumber}, PageSize: {PageSize}", 
+                    filter.SearchTerm, filter.IsActive, filter.ClinicId, filter.DepartmentId, filter.SpecializationId, filter.PageNumber, filter.PageSize);
 
                 // اعمال فیلترهای جستجو
                 if (!string.IsNullOrWhiteSpace(filter?.SearchTerm))
@@ -353,13 +365,15 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 if (filter?.ClinicId.HasValue == true)
                 {
                     // فیلتر بر اساس کلینیک (از طریق دپارتمان‌ها)
-                    query = query.Where(d => d.DoctorDepartments.Any(dd => dd.Department.ClinicId == filter.ClinicId.Value));
+                    // ✅ هماهنگ با GetFilteredDoctorsCountAsync: چک کردن IsDeleted و null
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => !dd.IsDeleted && dd.Department != null && dd.Department.ClinicId == filter.ClinicId.Value));
                 }
 
                 if (filter?.DepartmentId.HasValue == true)
                 {
                     // فیلتر بر اساس دپارتمان
-                    query = query.Where(d => d.DoctorDepartments.Any(dd => dd.DepartmentId == filter.DepartmentId.Value));
+                    // ✅ هماهنگ با GetFilteredDoctorsCountAsync: چک کردن IsDeleted
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => !dd.IsDeleted && dd.DepartmentId == filter.DepartmentId.Value));
                 }
 
                 if (filter?.SpecializationId.HasValue == true)
@@ -377,11 +391,21 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 query = query.OrderBy(d => d.LastName)
                             .ThenBy(d => d.FirstName);
 
-                return await query.ToListAsync();
+                // ✅ Pagination در database برای performance
+                if (filter.PageNumber > 0 && filter.PageSize > 0)
+                {
+                    query = query.Skip((filter.PageNumber - 1) * filter.PageSize)
+                                 .Take(filter.PageSize);
+                }
+
+                var doctors = await query.ToListAsync();
+                Serilog.Log.Information("🔍 SearchDoctorsAsync: تعداد پزشکان دریافت شده: {Count}", doctors?.Count ?? 0);
+                return doctors;
             }
             catch (Exception ex)
             {
                 // لاگ خطا برای سیستم‌های پزشکی
+                Serilog.Log.Error(ex, "🔍 SearchDoctorsAsync: خطا در جستجوی پزشکان");
                 throw new InvalidOperationException($"خطا در جستجوی پزشکان", ex);
             }
         }
@@ -419,6 +443,95 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 // لاگ خطا برای سیستم‌های پزشکی
                 throw new InvalidOperationException("خطا در شمارش پزشکان فعال", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پزشکان فیلتر شده بر اساس فیلترهای جستجو
+        /// Performance: استفاده از همان منطق فیلتر SearchDoctorsAsync بدون pagination
+        /// </summary>
+        public async Task<int> GetFilteredDoctorsCountAsync(DoctorSearchViewModel filter)
+        {
+            try
+            {
+                // ✅ بررسی null بودن filter
+                if (filter == null)
+                {
+                    // اگر filter null باشد، تعداد کل پزشکان غیرحذف شده را برگردان
+                    var totalCount = await _context.Doctors
+                        .Where(d => !d.IsDeleted)
+                        .CountAsync();
+                    Serilog.Log.Information("🔍 GetFilteredDoctorsCountAsync: filter null - تعداد کل: {Count}", totalCount);
+                    return totalCount;
+                }
+
+                var query = _context.Doctors
+                    .Where(d => !d.IsDeleted)
+                    .AsQueryable();
+
+                Serilog.Log.Information("🔍 GetFilteredDoctorsCountAsync: شروع با فیلتر - SearchTerm: {SearchTerm}, IsActive: {IsActive}, ClinicId: {ClinicId}, DepartmentId: {DepartmentId}, SpecializationId: {SpecializationId}", 
+                    filter.SearchTerm, filter.IsActive, filter.ClinicId, filter.DepartmentId, filter.SpecializationId);
+
+                // ✅ Include navigation properties فقط در صورت نیاز (برای performance)
+                bool needsDepartmentInclude = filter.ClinicId.HasValue || filter.DepartmentId.HasValue;
+                bool needsSpecializationInclude = filter.SpecializationId.HasValue;
+
+                if (needsDepartmentInclude)
+                {
+                    query = query.Include(d => d.DoctorDepartments)
+                                 .Include(d => d.DoctorDepartments.Select(dd => dd.Department));
+                }
+
+                if (needsSpecializationInclude)
+                {
+                    query = query.Include(d => d.DoctorSpecializations);
+                }
+
+                // اعمال فیلترهای جستجو (همان منطق SearchDoctorsAsync)
+                if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+                {
+                    var searchTerm = filter.SearchTerm.Trim();
+                    query = query.Where(d =>
+                        d.FirstName.Contains(searchTerm) ||
+                        d.LastName.Contains(searchTerm) ||
+                        d.NationalCode.Contains(searchTerm) ||
+                        d.MedicalCouncilCode.Contains(searchTerm)
+                    );
+                }
+
+                if (filter.ClinicId.HasValue)
+                {
+                    // فیلتر بر اساس کلینیک (از طریق دپارتمان‌ها)
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => !dd.IsDeleted && dd.Department != null && dd.Department.ClinicId == filter.ClinicId.Value));
+                }
+
+                if (filter.DepartmentId.HasValue)
+                {
+                    // فیلتر بر اساس دپارتمان
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => !dd.IsDeleted && dd.DepartmentId == filter.DepartmentId.Value));
+                }
+
+                if (filter.SpecializationId.HasValue)
+                {
+                    // فیلتر بر اساس تخصص
+                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
+                }
+
+                if (filter.IsActive.HasValue)
+                {
+                    query = query.Where(d => d.IsActive == filter.IsActive.Value);
+                    Serilog.Log.Information("🔍 GetFilteredDoctorsCountAsync: فیلتر IsActive اعمال شد: {IsActive}", filter.IsActive.Value);
+                }
+
+                var count = await query.CountAsync();
+                Serilog.Log.Information("🔍 GetFilteredDoctorsCountAsync: تعداد نهایی: {Count}", count);
+                return count;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                Serilog.Log.Error(ex, "🔍 GetFilteredDoctorsCountAsync: خطا در شمارش پزشکان فیلتر شده");
+                throw new InvalidOperationException("خطا در شمارش پزشکان فیلتر شده", ex);
             }
         }
 

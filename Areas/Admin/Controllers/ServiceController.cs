@@ -800,6 +800,55 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         /// <summary>
+        /// دریافت لیست خدمات فعال برای یک دسته‌بندی (AJAX)
+        /// </summary>
+        public async Task<ActionResult> GetActiveServices(int serviceCategoryId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست AJAX لیست خدمات. CategoryId: {CategoryId}, User: {UserId}",
+                    serviceCategoryId, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.GetServicesAsync(
+                    serviceCategoryId, searchTerm: "", pageNumber: 1, pageSize: 1000);
+
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: سرویس ناموفق. Message: {Message}", result.Message);
+                    // Return empty array در صورت خطا
+                    return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+                }
+
+                _log.Information("🏥 MEDICAL: تعداد خدمات یافت شده: {Count}", result.Data?.Items?.Count ?? 0);
+
+                // ✅ Return JSON با لیست خدمات (مستقیماً Array برای سازگاری با Frontend)
+                var services = result.Data.Items.Select(s => new
+                {
+                    ServiceId = s.ServiceId,
+                    Title = s.Title,
+                    ServiceCode = s.ServiceCode,
+                    IsActive = s.IsActive,
+                    PriceFormatted = s.PriceFormatted
+                }).ToList();
+
+                _log.Information("🏥 MEDICAL: برگرداندن {Count} خدمت به صورت JSON Array", services.Count);
+
+                // ✅ Force JSON Array serialization
+                return Content(
+                    System.Web.Helpers.Json.Encode(services),
+                    "application/json"
+                );
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطای غیرمنتظره در دریافت لیست خدمات. CategoryId: {CategoryId}, User: {UserId}",
+                    serviceCategoryId, _currentUserService.UserId);
+                // Return empty array در صورت exception
+                return Content("[]", "application/json");
+            }
+        }
+
+        /// <summary>
         /// نمایش فرم ایجاد خدمت - Medical Environment
         /// </summary>
         public async Task<ActionResult> Create(int serviceCategoryId)

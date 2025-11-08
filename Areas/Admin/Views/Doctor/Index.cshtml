@@ -248,7 +248,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 کل پزشکان
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Doctors.TotalItems.ToString("N0")</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalCount.ToString("N0")</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-user-md fa-2x text-gray-300"></i>
@@ -321,7 +321,7 @@
             <h6 class="m-0 font-weight-bold text-primary">
                 <i class="fas fa-list"></i>
                 لیست پزشکان
-                <span class="badge badge-primary ml-2">@Model.Doctors.Items.Count() از @Model.Doctors.TotalItems</span>
+                <span class="badge badge-primary ml-2">@(Model.Doctors?.Items?.Count() ?? 0) از @Model.TotalCount</span>
             </h6>
             <div class="dropdown no-arrow">
                 <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
@@ -350,6 +350,19 @@
                 </div>
                 <p class="mt-2">در حال بارگذاری اطلاعات...</p>
             </div>
+            
+            @* 🔍 دیباگ: بررسی وضعیت Model - برای دیباگ موقت فعال کنید *@
+            @if (false) //@* برای فعال کردن دیباگ، false را به true تغییر دهید *@
+            {
+                <div class="alert alert-info">
+                    <strong>🔍 دیباگ:</strong><br />
+                    Model.Doctors: @(Model.Doctors != null ? "NotNull" : "Null")<br />
+                    Model.Doctors.Items: @(Model.Doctors?.Items != null ? "NotNull" : "Null")<br />
+                    Model.Doctors.Items.Count: @(Model.Doctors?.Items?.Count() ?? 0)<br />
+                    Model.TotalCount: @Model.TotalCount<br />
+                    Model.Doctors.TotalItems: @(Model.Doctors?.TotalItems ?? 0)
+                </div>
+            }
             
             @if (Model.Doctors != null && Model.Doctors.Items != null && Model.Doctors.Items.Any())
             {
@@ -512,8 +525,8 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="pagination-info">
                 نمایش @((Model.Doctors.PageNumber - 1) * Model.Doctors.PageSize + 1) تا 
-                @Math.Min(Model.Doctors.PageNumber * Model.Doctors.PageSize, Model.Doctors.TotalItems) 
-                از @Model.Doctors.TotalItems رکورد
+                @Math.Min(Model.Doctors.PageNumber * Model.Doctors.PageSize, Model.TotalCount) 
+                از @Model.TotalCount رکورد
             </div>
             <nav aria-label="صفحه‌بندی">
                 <ul class="pagination">

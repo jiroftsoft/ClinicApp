@@ -701,6 +701,10 @@
     <Compile Include="Migrations\202511070812475_ElectronicReceptionNumber.Designer.cs">
       <DependentUpon>202511070812475_ElectronicReceptionNumber.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202511081650067_MakeChangeDeegree.cs" />
+    <Compile Include="Migrations\202511081650067_MakeChangeDeegree.Designer.cs">
+      <DependentUpon>202511081650067_MakeChangeDeegree.cs</DependentUpon>
+    </Compile>
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -4861,6 +4865,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202511070812475_ElectronicReceptionNumber.resx">
       <DependentUpon>202511070812475_ElectronicReceptionNumber.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202511081650067_MakeChangeDeegree.resx">
+      <DependentUpon>202511081650067_MakeChangeDeegree.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

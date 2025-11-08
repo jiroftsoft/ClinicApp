@@ -60,7 +60,7 @@ public class Doctor : ISoftDelete, ITrackable
     /// مدرک تحصیلی پزشک
     /// </summary>
     [Required(ErrorMessage = "مدرک تحصیلی الزامی است.")]
-    public Degree Degree { get; set; }
+    public Degree? Degree { get; set; }
 
     /// <summary>
     /// سال فارغ‌التحصیلی
@@ -380,7 +380,8 @@ public class DoctorConfig : EntityTypeConfiguration<Doctor>
                 new IndexAnnotation(new IndexAttribute("IX_Doctor_IsActive")));
 
         Property(d => d.Degree)
-            .IsRequired()
+            .IsOptional()  // ✅ تغییر به Optional چون Degree nullable شد
+            .HasColumnType("tinyint")  // ✅ تبدیل enum به tinyint برای EF6
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Doctor_Degree")));
 

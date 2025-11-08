@@ -512,8 +512,37 @@
             $.ajax({
                 url: '@Url.Action("GetActiveServices")',
                 type: 'GET',
+                dataType: 'json',  // ✅ Force jQuery to parse JSON
                 data: { serviceCategoryId: @Model.ServiceCategoryId },
-                success: function(services) {
+                success: function(response) {
+                    console.log('🔍 Raw response:', response);
+                    console.log('🔍 Response type:', typeof response);
+                    console.log('🔍 Is Array?', Array.isArray(response));
+                    
+                    // ✅ اگر string است، parse کن
+                    if (typeof response === 'string') {
+                        try {
+                            response = JSON.parse(response);
+                            console.log('✅ Parsed string to JSON:', response);
+                        } catch (e) {
+                            console.error('❌ Failed to parse JSON:', e);
+                            $('#servicesContainer').html(`
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    خطا در پردازش داده‌های JSON
+                                </div>
+                            `);
+                            return;
+                        }
+                    }
+                    
+                    // ✅ اگر response یک object با property d باشد (ASP.NET wrapping)
+                    var services = response.d || response;
+                    
+                    console.log('🔍 Services:', services);
+                    console.log('🔍 Services type:', typeof services);
+                    console.log('🔍 Services is Array?', Array.isArray(services));
+                    
                     renderServices(services);
                 },
                 error: function() {
@@ -529,7 +558,39 @@
 
         // نمایش خدمات
         function renderServices(services) {
-            if (!services || services.length === 0) {
+            console.log('📋 renderServices called with:', services);
+            console.log('📋 Type:', typeof services);
+            console.log('📋 Is Array?', Array.isArray(services));
+            
+            // ✅ اگر services یک object است، سعی کن array را extract کنی
+            if (services && typeof services === 'object' && !Array.isArray(services)) {
+                console.log('⚠️ Response is object, trying to extract array...');
+                console.log('Keys:', Object.keys(services));
+                
+                // Common wrapping patterns
+                if (services.d) services = services.d;
+                else if (services.Data) services = services.Data;
+                else if (services.data) services = services.data;
+                else if (services.items) services = services.items;
+                else if (services.Items) services = services.Items;
+                
+                console.log('📋 After extraction:', services);
+                console.log('📋 Is Array now?', Array.isArray(services));
+            }
+            
+            // ✅ اگر هنوز array نیست، error نشان بده
+            if (!Array.isArray(services)) {
+                console.error('❌ Services is not an array:', services);
+                $('#servicesContainer').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        خطا در ساختار داده‌ها (نوع داده: ${typeof services})
+                    </div>
+                `);
+                return;
+            }
+            
+            if (services.length === 0) {
                 $('#servicesContainer').html(`
                     <div class="empty-services">
                         <i class="fas fa-clipboard-list"></i>
@@ -540,6 +601,7 @@
                 return;
             }
 
+            console.log('✅ Rendering', services.length, 'services');
             let html = '';
             services.forEach(service => {
                 const statusBadge = service.IsActive 

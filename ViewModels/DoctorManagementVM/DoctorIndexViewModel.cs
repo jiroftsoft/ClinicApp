@@ -29,10 +29,10 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string FullName { get; set; }
 
         [Display(Name = "مدرک تحصیلی")]
-        public Degree Degree { get; set; }
+        public Degree? Degree { get; set; }
 
         [Display(Name = "نام مدرک تحصیلی")]
-        public string DegreeName => Degree.ToString();
+        public string DegreeName => Degree?.ToString() ?? "تعیین نشده";
 
         [Display(Name = "سال فارغ‌التحصیلی")]
         public int? GraduationYear { get; set; }

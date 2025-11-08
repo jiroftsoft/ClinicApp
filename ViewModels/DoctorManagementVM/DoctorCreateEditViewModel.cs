@@ -57,7 +57,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Required(ErrorMessage = "مدرک تحصیلی الزامی است.")]
         [Display(Name = "مدرک تحصیلی")]
-        public Degree Degree { get; set; }
+        public Degree? Degree { get; set; }
 
         /// <summary>
         /// سال فارغ‌التحصیلی
