@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Extensions;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services;
@@ -62,9 +63,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                     FinancialYear = f.FinancialYear,
                     IsActive = f.IsActive,
                     CreatedAt = f.CreatedAt,
-                    CreatedBy = f.CreatedByUserId,
+                    CreatedBy = f.CreatedByUser != null ? $"{f.CreatedByUser.FirstName} {f.CreatedByUser.LastName}".Trim() : "نامشخص",
                     UpdatedAt = f.UpdatedAt,
-                    UpdatedBy = f.UpdatedByUserId
+                    UpdatedBy = f.UpdatedByUser != null ? $"{f.UpdatedByUser.FirstName} {f.UpdatedByUser.LastName}".Trim() : null
                 }).ToList();
 
                 // اطلاعات Pagination
@@ -141,9 +142,11 @@ namespace ClinicApp.Areas.Admin.Controllers
                     FinancialYear = factor.FinancialYear,
                     IsActive = factor.IsActive,
                     CreatedAt = factor.CreatedAt,
-                    CreatedBy = factor.CreatedByUserId,
+                    CreatedBy = factor.CreatedByUser != null ? $"{factor.CreatedByUser.FirstName} {factor.CreatedByUser.LastName}".Trim() : "نامشخص",
+                    CreatedAtShamsi = factor.CreatedAt.ToPersianDateString(),
                     UpdatedAt = factor.UpdatedAt,
-                    UpdatedBy = factor.UpdatedByUserId
+                    UpdatedBy = factor.UpdatedByUser != null ? $"{factor.UpdatedByUser.FirstName} {factor.UpdatedByUser.LastName}".Trim() : factor.UpdatedByUserId,
+                    UpdatedAtShamsi = factor.UpdatedAt?.ToPersianDateString()
                 };
 
                 return View(viewModel);

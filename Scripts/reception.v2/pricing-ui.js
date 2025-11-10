@@ -32,10 +32,34 @@
   }
 
   /**
-   * ✅ رندر Badge پوشش
+   * ✅ رندر Badge پوشش (با هشدار تعرفه)
    */
   function renderCoverageBadge(itemId, coverage) {
     if (!coverage) return '';
+
+    // ⚠️ بررسی وجود تعرفه
+    var hasTariff = coverage.HasTariff !== false; // اگر undefined باشد، true فرض می‌کنیم
+    var missingBaseTariff = coverage.MissingBaseTariff === true;
+    var missingSuppTariff = coverage.MissingSuppTariff === true;
+    
+    // اگر تعرفه وجود ندارد، badge قرمز نمایش بده
+    if (!hasTariff || missingBaseTariff || missingSuppTariff) {
+      var warningMsg = [];
+      if (missingBaseTariff) warningMsg.push('بیمه پایه');
+      if (missingSuppTariff) warningMsg.push('بیمه تکمیلی');
+      
+      var tariffWarning = warningMsg.length > 0 
+        ? 'تعرفه ' + warningMsg.join(' و ') + ' ثبت نشده'
+        : 'تعرفه ثبت نشده';
+      
+      return (
+        '<span class="badge bg-danger coverage-badge tariff-warning"' +
+        '        data-itemid="' + itemId + '"' +
+        '        title="⚠️ ' + tariffWarning + ' - لطفاً با واحد بیمه تماس بگیرید">' +
+        '<i class="fas fa-exclamation-triangle me-1"></i>' + tariffWarning +
+        '</span>'
+      );
+    }
 
     var s = covStateClass(coverage.State || 0);
     var segments = coverage.Segments || [];

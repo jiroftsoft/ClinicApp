@@ -2,400 +2,605 @@
 @using ClinicApp.Helpers
 @model ClinicApp.ViewModels.ServiceCreateEditViewModel
 @{
-    ViewBag.Title = "ویرایش خدمات";
+    ViewBag.Title = "ویرایش خدمات: " + Model.Title;
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<!-- بسته‌های CSS مورد نیاز -->
 @section Styles {
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <style>
-        /* استایل‌های اختصاصی برای فرم ویرایش خدمات پزشکی */
-        .form-section {
-            background-color: #fff;
+        /* ========== فونت Vazir ========== */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Regular.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* فونت اعداد فارسی */
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('/Content/Fonts/vazirmatn/Vazir-FD.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-FD.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* اعمال فونت به کل صفحه */
+        body, .page-content, .form-section, .form-label, .form-control, 
+        .btn, .badge, h1, h2, h3, h4, h5, h6, .alert {
+            font-family: 'Vazir', Tahoma, Arial, sans-serif !important;
+        }
+
+        /* اعمال فونت اعداد فارسی */
+        .stat-value, .info-value, .badge, .price-display, input[type="number"] {
+            font-family: 'Vazir-FD', 'Vazir', Tahoma, Arial, sans-serif !important;
+        }
+
+        /* ========== Navigation سلسله مراتبی ========== */
+        .hierarchy-nav {
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .hierarchy-title {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hierarchy-path {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .hierarchy-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hierarchy-item a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+
+        .hierarchy-item a:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+            color: #1d4ed8;
+        }
+
+        .hierarchy-item.current {
+            color: #1e293b;
+            font-weight: 600;
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border-radius: 5px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .hierarchy-separator {
+            color: #cbd5e1;
+            font-size: 1.2rem;
+        }
+
+        /* ========== Form Sections ========== */
+        .form-section {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
             margin-bottom: 20px;
         }
 
         .form-section-title {
             font-weight: 600;
-            color: #1a6dcc;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
+            color: #1e293b;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
             display: flex;
             align-items: center;
         }
 
-            .form-section-title i {
-                margin-left: 8px;
-                font-size: 1.1rem;
-            }
+        .form-section-title i {
+            margin-left: 10px;
+            font-size: 1.1rem;
+            color: #2563eb;
+        }
+
+        /* ========== Form Controls ========== */
+        .form-label {
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
 
         .required:after {
             content: " *";
-            color: #d32f2f;
+            color: #dc2626;
             margin-right: 2px;
+            font-weight: 700;
         }
 
-        .btn-submit {
-            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-weight: 500;
+        .form-control {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
             transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.05rem;
         }
-
-            .btn-submit:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(26, 109, 204, 0.4);
-            }
-
-            .btn-submit i {
-                margin-left: 8px;
-            }
-
-        .btn-cancel {
-            background-color: #f1f3f5;
-            color: #495057;
-            border-radius: 25px;
-            padding: 10px 25px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.05rem;
-        }
-
-            .btn-cancel:hover {
-                background-color: #e9ecef;
-                transform: translateY(-2px);
-            }
-
-            .btn-cancel i {
-                margin-left: 8px;
-            }
 
         .form-control:focus {
-            border-color: #1a6dcc;
-            box-shadow: 0 0 0 0.2rem rgba(26, 109, 204, 0.25);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .select2-container .select2-selection--single {
-            height: 42px;
-            padding: 6px 12px;
+        .form-control-lg {
+            padding: 12px 16px;
             font-size: 1rem;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 28px;
-            padding-right: 10px;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 40px;
         }
 
         .form-note {
             font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 4px;
-            font-style: italic;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.5;
         }
 
+        /* ========== Select2 Styling ========== */
+        .select2-container .select2-selection--single {
+            height: 44px !important;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 22px;
+            padding-right: 10px;
+            color: #1e293b;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* ========== Buttons ========== */
+        .btn-submit {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        }
+
+        .btn-submit i {
+            margin-left: 8px;
+        }
+
+        .btn-cancel {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-cancel:hover {
+            background-color: #e2e8f0;
+            color: #475569;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel i {
+            margin-left: 8px;
+        }
+
+        /* ========== Validation ========== */
         .validation-summary-errors {
-            background-color: #ffebee;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-right: 3px solid #d32f2f;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-right: 4px solid #dc2626;
         }
 
-            .validation-summary-errors ul {
-                margin-bottom: 0;
-                padding-left: 20px;
-            }
-
-            .validation-summary-errors li {
-                margin-bottom: 4px;
-            }
-
-        .audit-info {
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            padding: 15px;
-            margin-top: 15px;
-            border-left: 3px solid #1a6dcc;
+        .validation-summary-errors ul {
+            margin-bottom: 0;
+            padding-right: 20px;
         }
 
-            .audit-info h6 {
-                color: #1a6dcc;
-                margin-top: 0;
-                display: flex;
-                align-items: center;
-            }
-
-                .audit-info h6 i {
-                    margin-left: 8px;
-                }
-
-            .audit-info .info-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px 0;
-                border-bottom: 1px dashed #eee;
-            }
-
-                .audit-info .info-row:last-child {
-                    border-bottom: none;
-                }
-
-            .audit-info .info-label {
-                font-weight: 500;
-                color: #495057;
-            }
-
-            .audit-info .info-value {
-                font-weight: 500;
-            }
-
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+        .validation-summary-errors li {
+            margin-bottom: 6px;
+            color: #991b1b;
         }
 
-        .medical-highlight {
-            background-color: #e3f2fd;
-            border-left: 3px solid #1a6dcc;
-            padding: 15px;
-            border-radius: 0 4px 4px 0;
-            margin-bottom: 15px;
+        .text-danger {
+            color: #dc2626 !important;
         }
 
-            .medical-highlight h5 {
-                margin-top: 0;
-                color: #1a6dcc;
-            }
+        /* ========== Price Highlight ========== */
+        .price-highlight {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
 
-            .medical-highlight ul {
-                padding-right: 20px;
-            }
+        .price-label {
+            font-size: 0.9rem;
+            color: #1e40af;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
 
-            .medical-highlight li {
-                margin-bottom: 8px;
-            }
-
-        .service-status {
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: inline-block;
+        .price-currency {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e40af;
             margin-top: 5px;
         }
 
+        /* ========== Audit Info ========== */
+        .audit-info {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 15px;
+            border-right: 3px solid #2563eb;
+        }
+
+        .audit-info h6 {
+            color: #1e40af;
+            margin: 0 0 12px 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .audit-info h6 i {
+            margin-left: 8px;
+        }
+
+        .audit-info .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .audit-info .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .audit-info .info-label {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .audit-info .info-value {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        /* ========== Stats ========== */
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 10px 0;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* ========== Status Badge ========== */
+        .service-status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
         .status-active {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
         }
 
         .status-inactive {
-            background-color: #ffebee;
-            color: #c62828;
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
         }
 
-        /* استایل‌های موبایل */
+        /* ========== Medical Highlight ========== */
+        .medical-highlight {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-right: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .medical-highlight h5 {
+            margin: 0 0 15px 0;
+            color: #065f46;
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .medical-highlight h5 i {
+            margin-left: 10px;
+            color: #10b981;
+        }
+
+        .medical-highlight ul {
+            padding-right: 25px;
+            margin: 0;
+        }
+
+        .medical-highlight li {
+            margin-bottom: 10px;
+            color: #047857;
+            line-height: 1.6;
+        }
+
+        /* ========== Alert Status ========== */
+        .alert-status {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-right: 4px solid #2563eb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-status i {
+            font-size: 2rem;
+            color: #2563eb;
+        }
+
+        .alert-status h5 {
+            margin: 0 0 8px 0;
+            color: #1e40af;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .alert-status p {
+            margin: 0;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+
+        /* ========== Form Actions ========== */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* ========== Responsive ========== */
         @@media (max-width: 768px) {
-            .form-section {
+            .hierarchy-nav {
                 padding: 15px;
+            }
+
+            .hierarchy-path {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .hierarchy-separator {
+                transform: rotate(90deg);
+                margin: -5px 0;
+            }
+
+            .form-section {
+                padding: 18px;
             }
 
             .btn-submit, .btn-cancel {
                 width: 100%;
-                margin-bottom: 10px;
-            }
-
-            .form-note {
-                font-size: 0.8rem;
             }
 
             .form-actions {
                 flex-direction: column;
             }
 
-            .audit-info .info-row {
+            .stat-value {
+                font-size: 1.3rem;
+            }
+
+            .alert-status {
                 flex-direction: column;
+                text-align: center;
             }
-
-            .audit-info .info-label {
-                margin-bottom: 4px;
-            }
-
-            .medical-highlight {
-                padding: 12px;
-            }
-        }
-
-        /* استایل‌های مربوط به محیط پزشکی */
-        .medical-environment {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-            .medical-environment h5 {
-                color: #1a6dcc;
-                margin-bottom: 12px;
-                display: flex;
-                align-items: center;
-            }
-
-                .medical-environment h5 i {
-                    margin-left: 8px;
-                }
-
-            .medical-environment .info-item {
-                display: flex;
-                align-items: center;
-                margin-bottom: 8px;
-                padding: 8px 0;
-            }
-
-                .medical-environment .info-item i {
-                    margin-left: 10px;
-                    color: #1a6dcc;
-                    width: 20px;
-                }
-
-            .medical-environment .info-value {
-                font-weight: 500;
-            }
-
-        /* استایل‌های مربوط به امنیت اطلاعات پزشکی */
-        .security-badge {
-            display: inline-block;
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            margin-right: 5px;
-        }
-
-        .sensitive-data {
-            background-color: #fff8e1;
-            border-left: 3px solid #ffa000;
-            padding: 10px 15px;
-            border-radius: 0 4px 4px 0;
-            margin: 10px 0;
-        }
-
-            .sensitive-data h6 {
-                margin-top: 0;
-                color: #ef6c00;
-                display: flex;
-                align-items: center;
-            }
-
-                .sensitive-data h6 i {
-                    margin-left: 8px;
-                }
-
-        .usage-statistics {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-            .usage-statistics h5 {
-                color: #1a6dcc;
-                margin-bottom: 15px;
-                display: flex;
-                align-items: center;
-            }
-
-                .usage-statistics h5 i {
-                    margin-left: 8px;
-                }
-
-        .stat-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 15px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1a6dcc;
-            margin: 5px 0;
-        }
-
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
         }
     </style>
 }
 
 <div class="page-content">
     <div class="container-fluid">
-        <!-- هدر صفحه -->
-        <div class="row align-items-center mb-4">
-            <div class="col-md-6">
-                <h1 class="page-title mb-0">
-                    <i class="fas fa-edit text-primary me-2"></i>
-                    ویرایش خدمات: @Model.Title
-                </h1>
-                <p class="text-muted mb-0">ویرایش اطلاعات خدمات پزشکی در کلینیک شفا</p>
+        <!-- Navigation سلسله مراتبی -->
+        <div class="hierarchy-nav">
+            <div class="hierarchy-title">
+                <i class="fas fa-sitemap me-2"></i>
+                مسیر سلسله مراتبی
             </div>
-            <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                <a href="@Url.Action("Index", "Service")" class="btn btn-cancel">
-                    <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
-                </a>
-            </div>
-        </div>
-
-        <!-- اطلاعات وضعیت خدمات -->
-        <div class="alert alert-info mb-4">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
-                <div>
-                    <h5 class="mb-1">وضعیت فعلی خدمات</h5>
-                    <p class="mb-0">
-                        این خدمات
-                        <span class="service-status @(Model.IsActive ? "status-active" : "status-inactive")">
-                            @(Model.IsActive ? "فعال" : "غیرفعال")
-                        </span>
-                        است و
-                        @if (Model.IsActive)
+            <div class="hierarchy-path">
+                <div class="hierarchy-item">
+                    <i class="fas fa-hospital" style="color: #2563eb;"></i>
+                    <a href="@Url.Action("Index", "Clinic", new { area = "Admin" })">
+                        @if (!string.IsNullOrEmpty(Model.ClinicName))
                         {
-                            <text>در سیستم قابل استفاده است.</text>
+                            <text>@Model.ClinicName</text>
                         }
                         else
                         {
-                            <text>در سیستم قابل استفاده نیست.</text>
+                            <text>کلینیک‌ها</text>
                         }
-                    </p>
+                    </a>
+                </div>
+                
+                <span class="hierarchy-separator">◄</span>
+                
+                <div class="hierarchy-item">
+                    <i class="fas fa-building" style="color: #2563eb;"></i>
+                    <a href="@Url.Action("Index", "Department", new { area = "Admin", clinicId = Model.ClinicId })">
+                        @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                        {
+                            <text>@Model.DepartmentName</text>
+                        }
+                        else
+                        {
+                            <text>دپارتمان‌ها</text>
+                        }
+                    </a>
+                </div>
+                
+                <span class="hierarchy-separator">◄</span>
+                
+                <div class="hierarchy-item">
+                    <i class="fas fa-layer-group" style="color: #2563eb;"></i>
+                    <a href="@Url.Action("Categories", new { departmentId = Model.DepartmentId })">
+                        دسته‌بندی خدمات
+                    </a>
+                </div>
+                
+                <span class="hierarchy-separator">◄</span>
+                
+                <div class="hierarchy-item">
+                    <i class="fas fa-folder-open" style="color: #2563eb;"></i>
+                    <a href="@Url.Action("Index", "Service", new { serviceCategoryId = Model.ServiceCategoryId })">
+                        خدمات
+                    </a>
+                </div>
+                
+                <span class="hierarchy-separator">◄</span>
+                
+                <div class="hierarchy-item current">
+                    <i class="fas fa-edit" style="color: #2563eb;"></i>
+                    <span>ویرایش: @Model.Title</span>
                 </div>
             </div>
         </div>
 
-        <!-- فرم ویرایش خدمات -->
+        <!-- وضعیت فعلی خدمات -->
+        <div class="alert-status">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <h5>وضعیت فعلی خدمات</h5>
+                <p>
+                    این خدمات 
+                    <span class="service-status @(Model.IsActive ? "status-active" : "status-inactive")">
+                        <i class="fas fa-circle" style="font-size: 0.6rem; margin-left: 5px;"></i>
+                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                    </span>
+                    است @if (Model.IsActive) { <text>و در سیستم قابل استفاده می‌باشد</text> } else { <text>و در سیستم غیرفعال است</text> }
+                </p>
+            </div>
+        </div>
+
+        <!-- محتوای اصلی -->
         <div class="row">
             <div class="col-lg-8">
                 @using (Html.BeginForm("Edit", "Service", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
@@ -403,6 +608,7 @@
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(model => model.ServiceId)
 
+                    <!-- اطلاعات اصلی خدمات -->
                     <div class="form-section">
                         <h5 class="form-section-title">
                             <i class="fas fa-edit"></i> اطلاعات اصلی خدمات
@@ -414,14 +620,20 @@
                             @Html.LabelFor(model => model.Title, new { @class = "form-label required" })
                             @Html.TextBoxFor(model => model.Title, new { @class = "form-control form-control-lg", placeholder = "عنوان خدمات را وارد کنید" })
                             @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">مثال: "معاینه اولیه دندانپزشکی"، "تزریق واکسن آنفلوانزا"</div>
+                            <div class="form-note">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                مثال: "معاینه اولیه دندانپزشکی"، "تزریق واکسن آنفلوانزا"
+                            </div>
                         </div>
 
                         <div class="mb-4">
                             @Html.LabelFor(model => model.ServiceCode, new { @class = "form-label required" })
-                            @Html.TextBoxFor(model => model.ServiceCode, new { @class = "form-control form-control-lg", placeholder = "کد خدمات را وارد کنید", pattern = "[a-zA-Z0-9_]+" })
+                            @Html.TextBoxFor(model => model.ServiceCode, new { @class = "form-control form-control-lg", placeholder = "کد خدمات (فقط اعداد)", pattern = "[0-9]+" })
                             @Html.ValidationMessageFor(model => model.ServiceCode, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">مثال: "DENT-001"، "VACC-005" - فقط حروف لاتین، اعداد و زیرخط مجاز است</div>
+                            <div class="form-note">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                فقط اعداد مجاز است - مثال: "978001"، "100205"
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -437,101 +649,73 @@
                                 </select>
                             }
                             @Html.ValidationMessageFor(model => model.ServiceCategoryId, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">دسته‌بندی مربوط به این خدمات را انتخاب کنید</div>
+                            <div class="form-note">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                دسته‌بندی مربوط به این خدمات را انتخاب کنید
+                            </div>
                         </div>
 
                         <div class="mb-4">
                             @Html.LabelFor(model => model.Price, new { @class = "form-label required" })
-                            @Html.TextBoxFor(model => model.Price, new { @class = "form-control form-control-lg", type = "number", min = "0", step = "1000", placeholder = "قیمت را وارد کنید" })
+                            @Html.TextBoxFor(model => model.Price, new { @class = "form-control form-control-lg price-input", type = "number", min = "0", step = "1000", placeholder = "قیمت به ریال" })
                             @Html.ValidationMessageFor(model => model.Price, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">قیمت خدمات به تومان (بدون علامت) - مثال: 500000</div>
+                            <div class="form-note">
+                                <i class="fas fa-money-bill-wave me-1"></i>
+                                قیمت خدمات به <strong>ریال</strong> (بدون اعشار) - مثال: 5000000
+                            </div>
                         </div>
 
-                        <!-- بخش محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای -->
-                        <div class="form-section">
-                            <h5 class="form-section-title">
-                                <i class="fas fa-calculator"></i>
-                                محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای
-                            </h5>
-
-                            <!-- فیلدهای TechnicalPart و ProfessionalPart حذف شدند -->
-                            <!-- استفاده از ServiceComponents به عنوان روش اصلی محاسبه -->
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <strong>نکته:</strong> اجزای فنی و حرفه‌ای خدمات از طریق جدول ServiceComponents مدیریت می‌شوند.
-                                        برای مشاهده و ویرایش اجزای محاسباتی، از بخش مدیریت اجزای خدمات استفاده کنید.
-                                    </div>
-                                </div>
+                        <div class="mb-4">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input", id = "IsHashtagged" })
+                                @Html.LabelFor(model => model.IsHashtagged, "خدمت هشتگ‌دار", new { @class = "form-check-label" })
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        @Html.LabelFor(model => model.IsHashtagged, new { @class = "form-label" })
-                                        <div class="form-check">
-                                            @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input" })
-                                            @Html.LabelFor(model => model.IsHashtagged, "آیا این خدمت هشتگ‌دار است؟", new { @class = "form-check-label" })
-                                        </div>
-                                        @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
-                                        <div class="form-note">خدمات هشتگ‌دار از کای‌های متفاوتی استفاده می‌کنند</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        @Html.LabelFor(model => model.PriceCalculationType, new { @class = "form-label" })
-                                        @Html.DropDownListFor(model => model.PriceCalculationType,
-                                            new SelectList(new[] {
-                                                new { Value = "1", Text = "قیمت ثابت" },
-                                                new { Value = "2", Text = "محاسبه بر اساس اجزای فنی و حرفه‌ای" }
-                                            }, "Value", "Text", "2"),
-                                            new { @class = "form-control" })
-                                        @Html.ValidationMessageFor(model => model.PriceCalculationType, "", new { @class = "text-danger small mt-1" })
-                                        <div class="form-note">نوع محاسبه قیمت خدمت</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- نمایش محاسبه قیمت -->
-                            <div class="alert alert-info" id="price-calculation-info" style="display: none;">
-                                <h6><i class="fas fa-info-circle"></i> محاسبه قیمت</h6>
-                                <p class="mb-0" id="price-calculation-text"></p>
+                            @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">
+                                <i class="fas fa-hashtag me-1"></i>
+                                خدمات هشتگ‌دار از ضرایب کای متفاوتی استفاده می‌کنند
                             </div>
                         </div>
 
                         <div class="mb-4">
                             @Html.LabelFor(model => model.Description, new { @class = "form-label" })
-                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control form-control-lg", rows = "4", placeholder = "توضیحات خدمات را وارد کنید" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = "4", placeholder = "توضیحات تکمیلی (اختیاری)" })
                             @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">توضیحات تکمیلی درباره این خدمات (اختیاری)</div>
+                            <div class="form-note">
+                                <i class="fas fa-align-right me-1"></i>
+                                توضیحات تکمیلی درباره این خدمات
+                            </div>
                         </div>
 
                         <div class="form-actions">
                             <button type="submit" class="btn btn-submit">
                                 <i class="fas fa-save"></i> به‌روزرسانی خدمات
                             </button>
-                            <a href="@Url.Action("Index", "Service")" class="btn btn-cancel">
+                            <a href="@Url.Action("Index", "Service", new { serviceCategoryId = Model.ServiceCategoryId })" class="btn btn-cancel">
                                 <i class="fas fa-times"></i> انصراف
                             </a>
                         </div>
                     </div>
 
-                    <!-- بخش راهنمای سریع برای محیط پزشکی -->
+                    <!-- راهنمای سریع -->
                     <div class="medical-highlight">
-                        <h5><i class="fas fa-lightbulb"></i> راهنمای سریع برای محیط پزشکی</h5>
+                        <h5>
+                            <i class="fas fa-lightbulb"></i>
+                            راهنمای سریع برای محیط پزشکی
+                        </h5>
                         <ul>
-                            <li>برای افزایش سرعت در محیط پزشکی، از کلیدهای میانبر استفاده کنید: <strong>Tab</strong> برای حرکت بین فیلدها و <strong>Ctrl + Enter</strong> برای ذخیره سریع</li>
-                            <li>کدهای خدمات باید به گونه‌ای باشند که به راحتی قابل تشخیص و یادآوری باشند (مثال: DENT-001 برای دندانپزشکی)</li>
-                            <li>قیمت‌ها باید با افزایش 1000 تومانی وارد شوند (برای ساده‌سازی محاسبات در محیط پزشکی)</li>
-                            <li>توضیحات خدمات باید شامل نکات ایمنی و پروتکل‌های مربوطه باشد</li>
+                            <li>برای سرعت بیشتر، از کلید <strong>Tab</strong> برای حرکت بین فیلدها استفاده کنید</li>
+                            <li>کد خدمات باید منحصر به فرد و فقط شامل <strong>اعداد</strong> باشد</li>
+                            <li>قیمت‌ها به <strong>ریال</strong> وارد می‌شوند (نه تومان)</li>
+                            <li>برای محاسبه خودکار قیمت، از سیستم ضرایب کای استفاده کنید</li>
+                            <li>تمام تغییرات در سیستم ردیابی می‌شوند</li>
                         </ul>
                     </div>
                 }
             </div>
 
             <div class="col-lg-4">
-                <!-- اطلاعات ردیابی (Audit Trail) -->
+                <!-- اطلاعات ردیابی -->
                 <div class="form-section">
                     <h5 class="form-section-title">
                         <i class="fas fa-history"></i> اطلاعات ردیابی
@@ -570,96 +754,71 @@
                     </div>
                 </div>
 
-                <!-- آمار استفاده از خدمات -->
-                <div class="usage-statistics">
-                    <h5><i class="fas fa-chart-line"></i> آمار استفاده از خدمات</h5>
+                <!-- آمار استفاده -->
+                <div class="form-section">
+                    <h5 class="form-section-title">
+                        <i class="fas fa-chart-line"></i> آمار استفاده از خدمات
+                    </h5>
                     <div class="stat-card">
-                        <div class="stat-label">تعداد استفاده‌ها</div>
+                        <div class="stat-label">
+                            <i class="fas fa-users me-1"></i>
+                            تعداد استفاده‌ها
+                        </div>
                         <div class="stat-value">@Model.UsageCount</div>
                         <div class="text-muted small">در کل دوره زمانی</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">درآمد کل</div>
-                        <div class="stat-value">@Model.TotalRevenue.ToString("N0") تومان</div>
-                        <div class="text-muted small">در کل دوره زمانی</div>
+                        <div class="stat-label">
+                            <i class="fas fa-coins me-1"></i>
+                            درآمد کل
+                        </div>
+                        <div class="stat-value">@Model.TotalRevenue.ToString("N0")</div>
+                        <div class="text-muted small">ریال • در کل دوره زمانی</div>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="@Url.Action("Report", "Service", new { id = Model.ServiceId })" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-chart-bar me-1"></i> مشاهده گزارش کامل
-                        </a>
-                    </div>
+                    @if (Model.UsageCount > 0)
+                    {
+                        <div class="text-center mt-3">
+                            <a href="@Url.Action("Report", "Service", new { id = Model.ServiceId })" 
+                               class="btn btn-sm btn-outline-primary w-100">
+                                <i class="fas fa-chart-bar me-1"></i> مشاهده گزارش تفصیلی
+                            </a>
+                        </div>
+                    }
                 </div>
 
                 <!-- اطلاعات سیستم -->
                 <div class="form-section">
                     <h5 class="form-section-title">
-                        <i class="fas fa-info-circle"></i> اطلاعات سیستم
+                        <i class="fas fa-server"></i> اطلاعات سیستم
                     </h5>
-                    <div class="text-muted">
-                        <div class="medical-environment">
-                            <div class="info-item">
-                                <i class="fas fa-user"></i>
-                                <span class="info-value">@ViewBag.CurrentUserName</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span class="info-value">@DateTime.Now.ToPersianDateTime()</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-clock"></i>
-                                <span class="info-value">@DateTime.Now.ToString("HH:mm")</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-info-circle"></i>
-                                <span class="info-value">آخرین ویرایش توسط شما انجام خواهد شد</span>
-                            </div>
+                    <div class="audit-info">
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="fas fa-user me-1"></i>
+                                کاربر فعلی:
+                            </span>
+                            <span class="info-value">@ViewBag.CurrentUserName</span>
                         </div>
-
-                        <div class="sensitive-data">
-                            <h6><i class="fas fa-lock"></i> امنیت اطلاعات پزشکی</h6>
-                            <p class="mb-0">تمام تغییرات ایجاد شده در این صفحه تحت پوشش قانون حفظ حریم خصوصی ایران قرار دارند و در سیستم ردیابی دقیق خواهند شد.</p>
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                تاریخ:
+                            </span>
+                            <span class="info-value">@DateTime.Now.ToPersianDateTime()</span>
                         </div>
-
-                        <div class="d-flex align-items-center mt-3">
-                            <i class="fas fa-shield-alt text-success me-2"></i>
-                            <span class="security-badge">داده‌های پزشکی رمزگذاری شده</span>
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="fas fa-clock me-1"></i>
+                                ساعت:
+                            </span>
+                            <span class="info-value">@DateTime.Now.ToString("HH:mm")</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- دسته‌بندی‌های پیشنهادی -->
-                <div class="form-section">
-                    <h5 class="form-section-title">
-                        <i class="fas fa-list"></i> دسته‌بندی‌های پیشنهادی
-                    </h5>
-                    <div class="text-muted">
-                        <ul class="list-group">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                معاینات اولیه
-                                <span class="badge bg-primary rounded-pill">12</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                تزریقات و واکسیناسیون
-                                <span class="badge bg-primary rounded-pill">8</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                آزمایش‌های تشخیصی
-                                <span class="badge bg-primary rounded-pill">15</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                خدمات تصویربرداری
-                                <span class="badge bg-primary rounded-pill">7</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                خدمات دندانپزشکی
-                                <span class="badge bg-primary rounded-pill">10</span>
-                            </li>
-                        </ul>
-                        <div class="mt-3 text-center">
-                            <a href="@Url.Action("Create", "ServiceCategory")" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-plus me-1"></i> افزودن دسته‌بندی جدید
-                            </a>
-                        </div>
+                    <div class="mt-3 p-3" style="background: #ecfdf5; border-radius: 8px; border-right: 3px solid #10b981;">
+                        <small style="color: #065f46; line-height: 1.6;">
+                            <i class="fas fa-shield-alt me-2" style="color: #10b981;"></i>
+                            <strong>امنیت اطلاعات:</strong> تمام تغییرات ایجاد شده در سیستم ردیابی و ثبت می‌شوند.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -675,7 +834,7 @@
         $(document).ready(function () {
             console.log('🏥 MEDICAL: شروع راه‌اندازی فرم ویرایش خدمت');
             
-            // فعال‌سازی select2 برای انتخاب دسته‌بندی - Medical Environment
+            // فعال‌سازی select2
             $('.select2').select2({
                 placeholder: "انتخاب دسته‌بندی",
                 language: "fa",
@@ -689,21 +848,6 @@
             if (selectedCategoryId > 0) {
                 console.log('🏥 MEDICAL: دسته‌بندی انتخاب شده:', selectedCategoryId);
                 $('#ServiceCategoryId').val(selectedCategoryId).trigger('change');
-            }
-
-            // بررسی وضعیت dropdown
-            var dropdown = $('#ServiceCategoryId');
-            if (dropdown.length > 0) {
-                var options = dropdown.find('option');
-                console.log('🏥 MEDICAL: تعداد گزینه‌های dropdown:', options.length);
-                
-                if (options.length <= 1) {
-                    console.warn('🏥 MEDICAL: dropdown خالی است یا فقط یک گزینه دارد');
-                    // تلاش برای بارگذاری مجدد
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
-                }
             }
 
             // اعتبارسنجی فرم
@@ -723,200 +867,21 @@
                 }, false);
             })();
 
-            // افزودن کلیدهای میانبر برای محیط پزشکی
+            // کلیدهای میانبر
             $(document).keydown(function(e) {
-                // کلیدهای میانبر برای محیط پزشکی
                 if (e.ctrlKey && e.key === 'Enter') {
-                    // ذخیره سریع با Ctrl + Enter
                     $('form button[type="submit"]').click();
                     return false;
                 }
             });
 
-            // فرمت‌دهی قیمت - Medical Environment (فقط نمایش، نه ورود)
-            $('#Price').on('blur', function() {
-                var value = $(this).val();
-                if (value && !isNaN(value)) {
-                    // فقط نمایش فرمت شده، بدون تغییر مقدار اصلی
-                    var numericValue = parseInt(value);
-                    if (numericValue > 0) {
-                        // نمایش فرمت شده در tooltip یا کنار فیلد
-                        $(this).attr('title', 'مبلغ: ' + numericValue.toLocaleString('fa-IR') + ' تومان');
-                    }
-                }
-            });
-
-            // اطمینان از بارگذاری قیمت در فرم ویرایش - Medical Environment
-            $(document).ready(function() {
-                var priceValue = @Html.Raw(Json.Encode(Model.Price));
-                console.log('🏥 MEDICAL: Model.Price value:', priceValue);
-                console.log('🏥 MEDICAL: Model.Price type:', typeof priceValue);
-                
-                if (priceValue && priceValue > 0) {
-                    console.log('🏥 MEDICAL: Setting price value:', priceValue);
-                    $('#Price').val(priceValue);
-                    
-                    // تأیید تنظیم مقدار
-                    setTimeout(function() {
-                        var currentValue = $('#Price').val();
-                        console.log('🏥 MEDICAL: Current price field value:', currentValue);
-                        if (currentValue != priceValue) {
-                            console.error('🏥 MEDICAL: Price value not set correctly!');
-                            $('#Price').val(priceValue); // تلاش مجدد
-                        }
-                    }, 100);
-                } else {
-                    console.warn('🏥 MEDICAL: Price value not found or invalid:', priceValue);
-                }
-            });
-
-            // محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای
-            function calculatePriceFromComponents() {
-                // فیلدهای TechnicalPart و ProfessionalPart حذف شدند
-                // محاسبه از طریق ServiceComponents انجام می‌شود
-                var isHashtagged = $('#IsHashtagged').is(':checked');
-                var calculationType = $('#PriceCalculationType').val();
-
-                if (calculationType === '2') {
-                    // محاسبه از طریق ServiceComponents - نیاز به UI جدید
-                    $('#price-calculation-info').hide();
-                    showServiceComponentsInfo();
-                } else {
-                    $('#price-calculation-info').hide();
-                }
-            }
-
-            // نمایش اطلاعات ServiceComponents
-            function showServiceComponentsInfo() {
-                $('#price-calculation-text').html(
-                    '<div class="alert alert-warning">' +
-                    '<i class="fas fa-exclamation-triangle"></i> ' +
-                    '<strong>توجه:</strong> برای محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای، ' +
-                    'اجزای محاسباتی را در بخش مدیریت اجزای خدمات ویرایش کنید.' +
-                    '</div>'
-                );
-                $('#price-calculation-info').show();
-            }
-
-            // دریافت کای‌ها از سرور
-            function fetchKaiFactors(technicalPart, professionalPart, isHashtagged) {
-                var currentYear = 1404; // سال مالی جاری
-
-                // نمایش لودینگ
-                $('#price-calculation-text').html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
-                $('#price-calculation-info').show();
-
-                // درخواست‌های موازی برای دریافت کای‌های فنی و حرفه‌ای
-                var technicalPromise = $.get('@Url.Action("GetFactorsByType", "FactorSetting")', {
-                    factorType: 1, // Technical
-                    financialYear: currentYear
-                });
-
-                var professionalPromise = $.get('@Url.Action("GetFactorsByType", "FactorSetting")', {
-                    factorType: 2, // Professional
-                    financialYear: currentYear
-                });
-
-                $.when(technicalPromise, professionalPromise).done(function(technicalResponse, professionalResponse) {
-                    var technicalFactors = technicalResponse[0];
-                    var professionalFactors = professionalResponse[0];
-
-                    // پیدا کردن کای مناسب
-                    var technicalKai = findAppropriateKai(technicalFactors, isHashtagged);
-                    var professionalKai = findAppropriateKai(professionalFactors, isHashtagged);
-
-                    if (technicalKai && professionalKai) {
-                        calculateAndDisplayPrice(technicalPart, professionalPart, technicalKai, professionalKai);
-                    } else {
-                        showKaiNotFoundError(isHashtagged, currentYear);
-                    }
-                }).fail(function() {
-                    $('#price-calculation-text').html('<span class="text-danger">خطا در دریافت کای‌ها از سرور</span>');
-                });
-            }
-
-            // پیدا کردن کای مناسب
-            function findAppropriateKai(factors, isHashtagged) {
-                // ابتدا کای مطابق با وضعیت هشتگ را جستجو کن
-                var exactMatch = factors.find(function(f) {
-                    return f.isActive && f.isHashtagged === isHashtagged;
-                });
-
-                if (exactMatch) {
-                    return exactMatch;
-                }
-
-                // اگر یافت نشد، اولین کای فعال را برگردان
-                var fallback = factors.find(function(f) {
-                    return f.isActive;
-                });
-
-                return fallback;
-            }
-
-            // محاسبه و نمایش قیمت
-            function calculateAndDisplayPrice(technicalPart, professionalPart, technicalKai, professionalKai) {
-                var technicalTotal = technicalPart * technicalKai.value;
-                var professionalTotal = professionalPart * professionalKai.value;
-                var calculatedPrice = technicalTotal + professionalTotal;
-
-                var calculationHtml = '';
-                
-                if (technicalPart > 0) {
-                    calculationHtml += 'جزء فنی: ' + technicalPart + ' × کای فنی (' + technicalKai.name + '): ' + 
-                                     technicalKai.value.toFixed(2) + ' = ' + technicalTotal.toFixed(0) + ' ریال<br>';
-                    calculationHtml += '<small style="color: #666;">(' + (technicalTotal / 10).toFixed(0) + ' تومان)</small><br>';
-                }
-                
-                if (professionalPart > 0) {
-                    calculationHtml += 'جزء حرفه‌ای: ' + professionalPart + ' × کای حرفه‌ای (' + professionalKai.name + '): ' + 
-                                     professionalKai.value.toFixed(2) + ' = ' + professionalTotal.toFixed(0) + ' ریال<br>';
-                    calculationHtml += '<small style="color: #666;">(' + (professionalTotal / 10).toFixed(0) + ' تومان)</small><br>';
-                }
-                
-                calculationHtml += '<hr><strong>قیمت کل: ' + calculatedPrice.toFixed(0) + ' ریال</strong><br>';
-                calculationHtml += '<small style="color: #666;">(' + (calculatedPrice / 10).toFixed(0) + ' تومان)</small>';
-
-                $('#price-calculation-text').html(calculationHtml);
-                $('#price-calculation-info').show();
-
-                // به‌روزرسانی فیلد قیمت
-                $('#Price').val(Math.round(calculatedPrice));
-            }
-
-            // نمایش خطای عدم وجود کای
-            function showKaiNotFoundError(isHashtagged, currentYear) {
-                var hashtagText = isHashtagged ? 'هشتگ‌دار' : 'عادی';
-                $('#price-calculation-text').html(
-                    '<span class="text-warning">' +
-                    '<i class="fas fa-exclamation-triangle"></i> ' +
-                    'کای‌های مورد نیاز برای خدمات ' + hashtagText + ' در سال مالی ' + currentYear + ' یافت نشد.<br>' +
-                    'لطفاً ابتدا کای‌های مربوطه را در <a href="@Url.Action("Index", "FactorSetting")" target="_blank">بخش مدیریت کای‌ها</a> تعریف کنید.' +
-                    '</span>'
-                );
-            }
-
-            // رویدادهای محاسبه قیمت
-            $('#IsHashtagged, #PriceCalculationType').on('change keyup', function() {
-                calculatePriceFromComponents();
-            });
-
-            // حذف محدودیت‌های اضافی برای ورود مستقیم
-            $('#Price').on('keypress', function(e) {
-                // اجازه ورود اعداد، نقطه و کلیدهای کنترل
-                if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
-                    e.preventDefault();
-                }
-            });
-
-            // اعتبارسنجی کد خدمات - Medical Environment (فقط اعداد)
+            // اعتبارسنجی کد خدمات - فقط اعداد
             $('#ServiceCode').on('blur', function() {
                 var serviceCode = $(this).val();
                 var serviceId = $('#ServiceId').val();
                 var $field = $(this);
                 
-                // حذف خطاهای قبلی
-                $field.removeClass('is-invalid').addClass('is-valid');
+                $field.removeClass('is-invalid is-valid');
                 $field.siblings('.text-danger').remove();
                 
                 if (!serviceCode) {
@@ -926,7 +891,7 @@
                     return;
                 }
                 
-                // اعتبارسنجی الگو - فقط اعداد
+                // فقط اعداد
                 if (!/^\d+$/.test(serviceCode)) {
                     var errorDiv = $('<div class="text-danger small mt-1">کد خدمت باید فقط شامل اعداد باشد</div>');
                     $field.after(errorDiv);
@@ -934,7 +899,7 @@
                     return;
                 }
                 
-                // اعتبارسنجی طول - Medical Environment
+                // بررسی طول
                 if (serviceCode.length < 3 || serviceCode.length > 10) {
                     var errorDiv = $('<div class="text-danger small mt-1">کد خدمت باید بین 3 تا 10 رقم باشد</div>');
                     $field.after(errorDiv);
@@ -972,6 +937,27 @@
                     }
                 });
             });
+
+            // اعتبارسنجی قیمت - فقط اعداد مثبت
+            $('#Price').on('keypress', function(e) {
+                if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
+                    e.preventDefault();
+                }
+            });
+
+            // اطمینان از بارگذاری قیمت
+            var priceValue = @Html.Raw(Json.Encode(Model.Price));
+            console.log('🏥 MEDICAL: Model.Price value:', priceValue);
+            if (priceValue && priceValue > 0) {
+                $('#Price').val(priceValue);
+                setTimeout(function() {
+                    var currentValue = $('#Price').val();
+                    console.log('🏥 MEDICAL: Current price field value:', currentValue);
+                    if (currentValue != priceValue) {
+                        $('#Price').val(priceValue);
+                    }
+                }, 100);
+            }
         });
     </script>
 }

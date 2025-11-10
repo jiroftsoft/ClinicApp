@@ -6,6 +6,7 @@ using FluentValidation;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -569,7 +570,15 @@ namespace ClinicApp.Services
                     return ServiceResult<ServiceCreateEditViewModel>.Failed("شناسه خدمت معتبر نیست.");
                 }
 
-                var service = await _serviceRepo.GetByIdAsync(serviceId);
+                // دریافت خدمت با eager loading برای ServiceCategory، Department و Clinic
+                var service = await _context.Services
+                    .Include("ServiceCategory")
+                    .Include("ServiceCategory.Department")
+                    .Include("ServiceCategory.Department.Clinic")
+                    .Include("CreatedByUser")
+                    .Include("UpdatedByUser")
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
                 if (service == null)
                 {
                     return ServiceResult<ServiceCreateEditViewModel>.Failed("خدمت مورد نظر یافت نشد.");

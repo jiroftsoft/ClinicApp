@@ -279,6 +279,23 @@
         const response = API.ok(responseObj);
         console.log('🏥 V2: Insurances persisted successfully:', response);
         
+        // ✅ به‌روزرسانی state.insurances برای Coverage Modal
+        const basePlanName = getInsuranceName($basePlan, basePlanId);
+        const suppPlanName = getInsuranceName($suppPlan, supplementaryPlanId);
+        
+        if (window.ClinicApp && window.ClinicApp.ReceptionV2 && window.ClinicApp.ReceptionV2.state) {
+          window.ClinicApp.ReceptionV2.state.insurances = {
+            BasePlanId: basePlanId,
+            BasePlanName: basePlanName,
+            SupplementaryPlanId: supplementaryPlanId,
+            SupplementaryPlanName: suppPlanName
+          };
+          console.log('🏥 V2: state.insurances updated:', window.ClinicApp.ReceptionV2.state.insurances);
+          
+          // Trigger state change event
+          $(document).trigger('rv2:stateChanged', [{ insurances: window.ClinicApp.ReceptionV2.state.insurances }]);
+        }
+        
         // ✅ گام 3.3: به‌روزرسانی همه ردیف‌ها با pricings
         const pricings = response.pricings || response.Pricings || responseObj?.Data?.pricings || responseObj?.Data?.Pricings || [];
         if (pricings && Array.isArray(pricings) && pricings.length > 0) {

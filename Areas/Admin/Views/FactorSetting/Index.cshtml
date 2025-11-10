@@ -27,138 +27,505 @@
 <!-- بسته‌های CSS مورد نیاز -->
 @section Styles {
     <style>
+        /* 🎨 فونت وزیر فارسی */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Vazir.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Medium.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir-Light.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Light.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Light.ttf') format('truetype');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* 🔢 فونت وزیر با اعداد فارسی */
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff') format('woff'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* اعمال فونت وزیر به تمام عناصر */
+        body, .page-content, .factor-card, h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, button {
+            font-family: 'Vazir', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+        }
+
+        /* اعمال فونت با اعداد فارسی به اعداد و ارقام */
+        .factor-value, .stat-number, .factor-year, .badge, .page-link {
+            font-family: 'Vazir-FD', 'Vazir', Arial, sans-serif !important;
+        }
+
+        /* 📋 راهنمای کای‌ها */
+        .guide-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .guide-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .guide-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            line-height: 1.9;
+        }
+
+        .guide-formula {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 15px 0;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+        }
+
+        .guide-examples {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .guide-example {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px;
+            border-radius: 6px;
+            border-right: 4px solid #fff;
+        }
+
+        .guide-example-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .guide-example-text {
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        /* 📊 کارت‌های کای */
         .factor-card {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            transition: transform 0.2s ease;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
 
         .factor-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #2c5aa0;
         }
 
         .factor-header {
-            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            background: linear-gradient(135deg, #2c5aa0 0%, #1a3d6b 100%);
             color: white;
-            padding: 15px 20px;
-            border-radius: 8px 8px 0 0;
+            padding: 20px 25px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .factor-header h5 {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0;
         }
 
         .factor-body {
-            padding: 20px;
+            padding: 25px;
         }
 
         .factor-type-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            padding: 6px 15px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .factor-technical {
             background-color: #e3f2fd;
-            color: #1976d2;
+            color: #1565c0;
+            border: 2px solid #1976d2;
         }
 
         .factor-professional {
             background-color: #f3e5f5;
-            color: #7b1fa2;
+            color: #6a1b9a;
+            border: 2px solid #7b1fa2;
         }
 
         .scope-badge {
-            padding: 3px 8px;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-left: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .scope-general { background-color: #e8f5e8; color: #2e7d32; }
-        .scope-hash-1-7 { background-color: #fff3e0; color: #f57c00; }
-        .scope-hash-8-9 { background-color: #fce4ec; color: #c2185b; }
-        .scope-dental { background-color: #e1f5fe; color: #0277bd; }
-        .scope-professional { background-color: #f3e5f5; color: #7b1fa2; }
+        .scope-general { 
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); 
+            color: #2e7d32; 
+            border: 2px solid #4caf50;
+        }
+        
+        .scope-hash-1-7 { 
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); 
+            color: #e65100; 
+            border: 2px solid #ff9800;
+        }
+        
+        .scope-hash-8-9 { 
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); 
+            color: #c2185b; 
+            border: 2px solid #e91e63;
+        }
+        
+        .scope-dental { 
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%); 
+            color: #01579b; 
+            border: 2px solid #03a9f4;
+        }
+        
+        .scope-professional { 
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); 
+            color: #6a1b9a; 
+            border: 2px solid #9c27b0;
+        }
+
+        .factor-value-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+            border: 3px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
         .factor-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1565c0;
+            display: block;
+            margin-bottom: 5px;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .factor-value-label {
+            color: #1976d2;
+            font-size: 1rem;
             font-weight: 600;
-            color: #1a6dcc;
         }
 
         .factor-year {
-            background-color: #f8f9fa;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            color: #495057;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border: 2px solid #ffc107;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #f57c00;
+            font-weight: 600;
+            display: inline-block;
         }
 
         .status-active {
-            color: #28a745;
+            color: #2e7d32;
+            font-weight: 600;
         }
 
         .status-inactive {
-            color: #dc3545;
+            color: #c62828;
+            font-weight: 600;
         }
 
         .hashtag-badge {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            color: #f57c00;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid #ffc107;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .btn-create {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 500;
-            transition: all 0.2s;
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
         }
 
         .btn-create:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+            color: white;
         }
 
         .filters-section {
             background: white;
-            padding: 20px;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+        }
+
+        .filters-section .form-label {
+            font-weight: 600;
+            color: #424242;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .filters-section .form-control {
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 10px 15px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .filters-section .form-control:focus {
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
         }
 
         .stats-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
         }
 
         .stat-item {
             text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            background: white;
+            border: 2px solid #e3f2fd;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-item:hover {
+            transform: translateY(-3px);
+            border-color: #2196f3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
         }
 
         .stat-number {
             font-size: 2rem;
-            font-weight: 600;
-            color: #1a6dcc;
+            font-weight: 700;
+            color: #1565c0;
+            display: block;
+            margin-bottom: 8px;
+            line-height: 1.2;
         }
 
         .stat-label {
-            color: #6c757d;
+            color: #616161;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a3d6b;
+        }
+
+        .text-muted {
+            font-size: 1rem !important;
+        }
+
+        /* 🔘 دکمه‌های عملیات */
+        .btn-group .btn {
+            font-size: 0.95rem;
+            padding: 10px 15px;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #2196f3;
+            color: #1565c0;
+        }
+
+        .btn-outline-primary:hover {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-outline-warning {
+            border: 2px solid #ff9800;
+            color: #e65100;
+        }
+
+        .btn-outline-warning:hover {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-outline-danger {
+            border: 2px solid #f44336;
+            color: #c62828;
+        }
+
+        .btn-outline-danger:hover {
+            background: #f44336;
+            color: white;
+        }
+
+        /* 📝 بخش توضیحات */
+        .factor-description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 4px solid #2196f3;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        /* 👤 اطلاعات کاربر */
+        .creator-info {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
             font-size: 0.9rem;
+        }
+
+        .creator-info i {
+            color: #2196f3;
+        }
+
+        /* 📄 Pagination */
+        .pagination .page-link {
+            border: 2px solid #e0e0e0;
+            color: #1565c0;
+            font-weight: 600;
+            padding: 10px 15px;
+            margin: 0 3px;
+            border-radius: 8px;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: #2196f3;
+            border-color: #2196f3;
+        }
+
+        .pagination-info {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #616161;
+            margin-top: 15px;
+        }
+
+        /* 🎯 Empty State */
+        .alert-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 3px solid #2196f3;
+            border-radius: 12px;
+            padding: 40px;
+        }
+
+        .alert-info h5 {
+            color: #1565c0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .alert-info p {
+            color: #424242;
+            font-size: 1.1rem;
         }
     </style>
 }
@@ -181,41 +548,86 @@
             </div>
         </div>
 
+        <!-- 📚 راهنمای کای‌ها -->
+        <div class="guide-section">
+            <div class="guide-title">
+                <i class="fas fa-book-medical"></i>
+                راهنمای سیستم کای‌ها (ضرایب نسبی ارزش)
+            </div>
+            <div class="guide-content">
+                <p style="margin-bottom: 15px;">
+                    <strong>کای (RVU - Relative Value Unit)</strong> یک ضریب عددی است که براساس دستورالعمل‌های وزارت بهداشت، 
+                    برای محاسبه قیمت نهایی خدمات پزشکی استفاده می‌شود. هر خدمت پزشکی از دو بخش تشکیل شده است:
+                </p>
+
+                <div class="guide-examples">
+                    <div class="guide-example">
+                        <div class="guide-example-title">🔧 کای فنی (Technical Factor)</div>
+                        <div class="guide-example-text">
+                            شامل هزینه‌های تجهیزات، مواد مصرفی، فضا و امکانات بیمارستانی
+                        </div>
+                    </div>
+                    <div class="guide-example">
+                        <div class="guide-example-title">👨‍⚕️ کای حرفه‌ای (Professional Factor)</div>
+                        <div class="guide-example-text">
+                            شامل دستمزد پزشک، تخصص، مهارت و زمان صرف شده برای ارائه خدمت
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-formula">
+                    💰 فرمول محاسبه: قیمت نهایی = (کای فنی × کای حرفه‌ای) × قیمت پایه خدمت
+                </div>
+
+                <p style="margin-top: 15px; font-size: 0.95rem;">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>نکته مهم:</strong> کای‌ها براساس نوع خدمت (عمومی، هشتگ‌دار، دندانپزشکی) و سال مالی تعریف می‌شوند 
+                    و به‌طور دوره‌ای توسط وزارت بهداشت به‌روزرسانی می‌گردند.
+                </p>
+            </div>
+        </div>
+
         <!-- آمار کلی -->
         <div class="stats-section">
             <div class="row">
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-calculator" style="color: #2196f3; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@ViewBag.TotalCount</div>
                         <div class="stat-label">کل کای‌ها</div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-check-circle" style="color: #4caf50; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@Model.Count(f => f.IsActive)</div>
                         <div class="stat-label">کای‌های فعال</div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-cogs" style="color: #2196f3; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@Model.Count(f => f.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical)</div>
                         <div class="stat-label">کای‌های فنی</div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-user-md" style="color: #9c27b0; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@Model.Count(f => f.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Professional)</div>
                         <div class="stat-label">کای‌های حرفه‌ای</div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-hashtag" style="color: #ff9800; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@Model.Count(f => f.IsHashtagged)</div>
                         <div class="stat-label">هشتگ‌دار</div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="stat-item">
+                        <i class="fas fa-times-circle" style="color: #f44336; font-size: 2rem; margin-bottom: 10px;"></i>
                         <div class="stat-number">@Model.Count(f => !f.IsActive)</div>
                         <div class="stat-label">غیرفعال</div>
                     </div>
@@ -225,19 +637,29 @@
 
         <!-- فیلترها -->
         <div class="filters-section">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;">
+                <i class="fas fa-filter" style="color: #2c5aa0; font-size: 1.3rem;"></i>
+                <h5 style="margin: 0; color: #1a3d6b; font-weight: 700;">فیلترهای جستجو</h5>
+            </div>
             <div class="row">
                 <div class="col-md-2">
-                    <label class="form-label">نوع کای:</label>
+                    <label class="form-label">
+                        <i class="fas fa-layer-group me-1" style="color: #2196f3;"></i>
+                        نوع کای:
+                    </label>
                     <select id="typeFilter" class="form-control">
-                        <option value="">همه</option>
-                        <option value="Technical">فنی</option>
-                        <option value="Professional">حرفه‌ای</option>
+                        <option value="">همه انواع</option>
+                        <option value="Technical">🔧 فنی</option>
+                        <option value="Professional">👨‍⚕️ حرفه‌ای</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">دامنه کای:</label>
+                    <label class="form-label">
+                        <i class="fas fa-tag me-1" style="color: #9c27b0;"></i>
+                        دامنه کای:
+                    </label>
                     <select id="scopeFilter" class="form-control">
-                        <option value="">همه</option>
+                        <option value="">همه دامنه‌ها</option>
                         @if (ViewBag.Scopes != null)
                         {
                             foreach (var scope in ViewBag.Scopes)
@@ -248,7 +670,10 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">سال مالی:</label>
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt me-1" style="color: #ff9800;"></i>
+                        سال مالی:
+                    </label>
                     <select id="yearFilter" class="form-control">
                         <option value="">همه سال‌ها</option>
                         @foreach (var year in Model.Select(f => f.FinancialYear).Distinct().OrderByDescending(y => y))
@@ -258,16 +683,30 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">وضعیت:</label>
+                    <label class="form-label">
+                        <i class="fas fa-power-off me-1" style="color: #4caf50;"></i>
+                        وضعیت:
+                    </label>
                     <select id="statusFilter" class="form-control">
-                        <option value="">همه</option>
-                        <option value="true">فعال</option>
-                        <option value="false">غیرفعال</option>
+                        <option value="">همه وضعیت‌ها</option>
+                        <option value="true">✓ فعال</option>
+                        <option value="false">✗ غیرفعال</option>
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">جستجو:</label>
-                    <input type="text" id="searchInput" class="form-control" placeholder="جستجو در نام یا توضیحات...">
+                    <label class="form-label">
+                        <i class="fas fa-search me-1" style="color: #607d8b;"></i>
+                        جستجو سریع:
+                    </label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="نام کای، توضیحات یا کد را جستجو کنید...">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilters">
+                        <i class="fas fa-eraser me-1"></i>
+                        پاک کردن فیلترها
+                    </button>
                 </div>
             </div>
         </div>
@@ -286,55 +725,91 @@
                          data-search="@(factor.Name + " " + factor.Description)">
                         <div class="factor-card">
                             <div class="factor-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">@factor.Name</h5>
+                                <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 10px;">
                                     <div>
-                                        <span class="factor-type-badge @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "factor-technical" : "factor-professional")">
-                                            @factor.FactorTypeText
-                                        </span>
-                                        <span class="scope-badge @GetScopeCssClass(factor.Scope)">
-                                            @factor.ScopeDisplayName
-                                        </span>
+                                        <h5 class="mb-2" style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "fa-cogs" : "fa-user-md")" 
+                                               style="font-size: 1.3rem;"></i>
+                                            @factor.Name
+                                        </h5>
+                                        <small style="opacity: 0.9; font-size: 0.9rem;">
+                                            <i class="fas fa-user-tie me-1" style="font-size: 0.85rem;"></i>
+                                            ایجادکننده: @factor.CreatedBy
+                                        </small>
+                                    </div>
+                                    <div style="text-align: left;">
+                                        <div class="mb-2">
+                                            <span class="factor-type-badge @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "factor-technical" : "factor-professional")">
+                                                <i class="fas @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "fa-wrench" : "fa-graduation-cap")"></i>
+                                                @factor.FactorTypeText
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="scope-badge @GetScopeCssClass(factor.Scope)">
+                                                <i class="fas fa-tag"></i>
+                                                @factor.ScopeDisplayName
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="factor-body">
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        <div class="factor-value">@factor.Value.ToString("N2")</div>
-                                        <small class="text-muted">مقدار کای</small>
-                                    </div>
-                                    <div class="col-6 text-end">
-                                        <span class="factor-year">@factor.FinancialYear</span>
-                                        <br>
-                                        <small class="text-muted">سال مالی</small>
-                                    </div>
+                                <!-- مقدار کای و سال مالی -->
+                                <div class="factor-value-container">
+                                    <span class="factor-value">@factor.Value.ToString("N0")</span>
+                                    <div class="factor-value-label">مقدار ضریب کای (ریال)</div>
                                 </div>
-
-                                @if (!string.IsNullOrEmpty(factor.Description))
-                                {
-                                    <p class="text-muted small mb-3">@factor.Description</p>
-                                }
 
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <i class="fas fa-circle @(factor.IsActive ? "status-active" : "status-inactive")"></i>
-                                        <span class="@(factor.IsActive ? "status-active" : "status-inactive")">
-                                            @(factor.IsActive ? "فعال" : "غیرفعال")
-                                        </span>
+                                        <i class="fas fa-calendar-alt" style="color: #f57c00; margin-left: 5px;"></i>
+                                        <span class="factor-year">سال مالی: @factor.FinancialYear</span>
                                     </div>
                                     @if (factor.IsHashtagged)
                                     {
-                                        <span class="hashtag-badge"># هشتگ‌دار</span>
+                                        <span class="hashtag-badge">
+                                            <i class="fas fa-hashtag"></i>
+                                            هشتگ‌دار
+                                        </span>
                                     }
                                 </div>
 
-                                <div class="text-muted small mb-3">
-                                    <i class="fas fa-user me-1"></i> @factor.CreatedBy
-                                    <br>
-                                    <i class="fas fa-calendar me-1"></i> @factor.CreatedAtShamsi
+                                <!-- توضیحات -->
+                                @if (!string.IsNullOrEmpty(factor.Description))
+                                {
+                                    <div class="factor-description">
+                                        <i class="fas fa-comment-dots me-2" style="color: #2196f3;"></i>
+                                        @factor.Description
+                                    </div>
+                                }
+
+                                <!-- وضعیت فعال/غیرفعال -->
+                                <div class="d-flex justify-content-between align-items-center mb-3" style="padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                                    <div>
+                                        <i class="fas fa-power-off me-2" style="font-size: 1rem;"></i>
+                                        <strong>وضعیت:</strong>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-circle @(factor.IsActive ? "status-active" : "status-inactive")" style="font-size: 0.6rem;"></i>
+                                        <span class="@(factor.IsActive ? "status-active" : "status-inactive")" style="font-weight: 700; font-size: 1rem;">
+                                            @(factor.IsActive ? "فعال" : "غیرفعال")
+                                        </span>
+                                    </div>
                                 </div>
 
+                                <!-- اطلاعات ایجادکننده -->
+                                <div class="creator-info">
+                                    <div style="margin-bottom: 5px;">
+                                        <i class="fas fa-user me-2"></i>
+                                        <strong>ایجادکننده:</strong> @factor.CreatedBy
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-calendar me-2"></i>
+                                        <strong>تاریخ ایجاد:</strong> @factor.CreatedAtShamsi
+                                    </div>
+                                </div>
+
+                                <!-- دکمه‌های عملیات -->
                                 <div class="btn-group w-100" role="group">
                                     <a href="@Url.Action("Details", new { id = factor.Id })" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-eye"></i> جزئیات
@@ -429,16 +904,29 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            console.log('🎯 FactorSetting Index page loaded');
+
             // فیلترها
             function applyFilters() {
                 var typeFilter = $('#typeFilter').val();
+                var scopeFilter = $('#scopeFilter').val();
                 var yearFilter = $('#yearFilter').val();
                 var statusFilter = $('#statusFilter').val();
                 var searchText = $('#searchInput').val().toLowerCase();
 
+                console.log('🔍 Applying filters:', {
+                    type: typeFilter,
+                    scope: scopeFilter,
+                    year: yearFilter,
+                    status: statusFilter,
+                    search: searchText
+                });
+
+                var visibleCount = 0;
                 $('.factor-item').each(function() {
                     var $item = $(this);
                     var itemType = $item.data('type');
+                    var itemScope = $item.data('scope');
                     var itemYear = $item.data('year').toString();
                     var itemStatus = $item.data('status').toString();
                     var itemSearch = $item.data('search').toLowerCase();
@@ -447,6 +935,11 @@
 
                     // فیلتر نوع
                     if (typeFilter && itemType !== typeFilter) {
+                        showItem = false;
+                    }
+
+                    // فیلتر دامنه
+                    if (scopeFilter && itemScope !== scopeFilter) {
                         showItem = false;
                     }
 
@@ -466,12 +959,62 @@
                     }
 
                     $item.toggle(showItem);
+                    if (showItem) visibleCount++;
                 });
+
+                console.log('✅ Filters applied. Visible items:', visibleCount);
+
+                // نمایش پیام اگر نتیجه‌ای یافت نشد
+                if (visibleCount === 0 && $('.factor-item').length > 0) {
+                    if ($('#noResultsMessage').length === 0) {
+                        $('#factorsContainer').append(
+                            '<div id="noResultsMessage" class="col-12">' +
+                            '<div class="alert alert-info text-center" style="padding: 40px;">' +
+                            '<i class="fas fa-search fa-3x mb-3" style="color: #2196f3;"></i>' +
+                            '<h5>نتیجه‌ای یافت نشد</h5>' +
+                            '<p>با فیلترهای انتخاب شده هیچ کای‌ای پیدا نشد. لطفاً فیلترهای دیگری را امتحان کنید.</p>' +
+                            '</div>' +
+                            '</div>'
+                        );
+                    }
+                } else {
+                    $('#noResultsMessage').remove();
+                }
+            }
+
+            // پاک کردن فیلترها
+            function clearFilters() {
+                console.log('🧹 Clearing all filters');
+                $('#typeFilter').val('');
+                $('#scopeFilter').val('');
+                $('#yearFilter').val('');
+                $('#statusFilter').val('');
+                $('#searchInput').val('');
+                applyFilters();
             }
 
             // رویدادهای فیلتر
-            $('#typeFilter, #yearFilter, #statusFilter').on('change', applyFilters);
+            $('#typeFilter, #scopeFilter, #yearFilter, #statusFilter').on('change', applyFilters);
             $('#searchInput').on('keyup', applyFilters);
+            $('#clearFilters').on('click', clearFilters);
+
+            // انیمیشن ورود کارت‌ها
+            $('.factor-card').each(function(index) {
+                $(this).css({
+                    'opacity': '0',
+                    'transform': 'translateY(20px)'
+                });
+                var $card = $(this);
+                setTimeout(function() {
+                    $card.css({
+                        'transition': 'all 0.3s ease',
+                        'opacity': '1',
+                        'transform': 'translateY(0)'
+                    });
+                }, index * 50); // تاخیر برای هر کارت
+            });
+
+            console.log('✅ FactorSetting Index initialized successfully');
         });
     </script>
 }

@@ -226,8 +226,8 @@
             <label for="componentType" class="form-label">نوع جزء</label>
             <select class="form-select" id="componentType" name="componentType">
                 <option value="">همه انواع</option>
-                <option value="Technical" @(ViewBag.ComponentType == "Technical" ? "selected" : "")>فنی</option>
-                <option value="Professional" @(ViewBag.ComponentType == "Professional" ? "selected" : "")>حرفه‌ای</option>
+                <option value="Technical" @(ViewBag.ComponentType?.ToString() == "Technical" ? "selected" : "")>فنی</option>
+                <option value="Professional" @(ViewBag.ComponentType?.ToString() == "Professional" ? "selected" : "")>حرفه‌ای</option>
             </select>
         </div>
         <div class="col-md-3">

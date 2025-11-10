@@ -7,13 +7,112 @@
 @section Styles {
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <style>
+        /* ========== فونت Vazir ========== */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Regular.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* اعمال فونت */
+        body, .form-header, .form-container, .breadcrumb, .form-control, 
+        .form-select, .btn, label, .help-text {
+            font-family: 'Vazir', Tahoma, Arial, sans-serif !important;
+        }
+
+        /* ========== Navigation سلسله مراتبی ========== */
+        .hierarchy-nav {
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .hierarchy-title {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hierarchy-path {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .hierarchy-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hierarchy-item a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+
+        .hierarchy-item a:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+            color: #1d4ed8;
+        }
+
+        .hierarchy-item.current {
+            color: #1e293b;
+            font-weight: 600;
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border-radius: 5px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .hierarchy-separator {
+            color: #cbd5e1;
+            font-size: 1.2rem;
+        }
+
         /* استایل‌های اختصاصی برای فرم ایجاد دسته‌بندی */
         .form-header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
             color: white;
-            padding: 2rem 0;
+            padding: 1.8rem 0;
             margin: -15px -15px 25px -15px;
-            border-radius: 0 0 15px 15px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .form-header .container {
@@ -24,25 +123,26 @@
 
         .form-header h1 {
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
+            letter-spacing: -0.3px;
         }
 
         .form-header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-            font-size: 1rem;
+            margin: 8px 0 0 0;
+            opacity: 0.95;
+            font-size: 0.95rem;
         }
 
         .form-container {
             background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
             margin-bottom: 25px;
         }
 
@@ -51,15 +151,15 @@
         }
 
         .section-title {
-            color: #2c3e50;
-            font-size: 1.1rem;
+            color: #1e293b;
+            font-size: 1.05rem;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
         }
 
         .form-group {
@@ -67,23 +167,26 @@
         }
 
         .form-label {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 500;
+            color: #334155;
             margin-bottom: 8px;
             display: block;
+            font-size: 0.9rem;
         }
 
         .form-control, .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px 14px;
             font-size: 0.95rem;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            color: #1e293b;
         }
 
         .form-control:focus, .form-select:focus {
-            border-color: #28a745;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
         }
 
         .form-control.is-invalid {
@@ -107,27 +210,60 @@
         }
 
         .form-actions {
-            background: #f8f9fa;
+            background: #f8fafc;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 25px;
+            margin-top: 28px;
+            gap: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
         }
 
         .btn-action {
-            padding: 12px 25px;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 6px;
             font-weight: 500;
             border: none;
-            transition: all 0.3s ease;
-            min-width: 120px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
         }
 
         .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+            border-color: #059669;
+        }
+
+        .btn-outline-primary {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #2563eb;
+            color: white;
         }
 
         .help-text {
@@ -142,21 +278,24 @@
         }
 
         .department-info {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 15px;
+            background: linear-gradient(to bottom, #eff6ff, #ffffff);
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 16px;
             margin-bottom: 20px;
+            border-right: 4px solid #2563eb;
         }
 
         .department-info h6 {
-            margin: 0 0 5px 0;
-            color: #1976d2;
+            margin: 0 0 6px 0;
+            color: #1e40af;
             font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .department-info small {
-            color: #424242;
+            color: #475569;
+            font-size: 0.9rem;
         }
 
         .character-counter {
@@ -166,28 +305,38 @@
             margin-top: 5px;
         }
 
-        .breadcrumb-custom {
-            background: transparent;
-            padding: 0;
-            margin-bottom: 20px;
-        }
-
-        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
-            content: "◀";
-            color: #6c757d;
-        }
-
+        /* ========== Media Queries ========== */
         @@media (max-width: 768px) {
+            .hierarchy-nav {
+                padding: 15px;
+            }
+
+            .hierarchy-path {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .hierarchy-separator {
+                transform: rotate(90deg);
+                margin: -5px 0;
+            }
+
             .form-container {
                 margin: 0 -10px;
-                border-radius: 10px;
+                border-radius: 8px;
                 padding: 20px;
             }
 
             .form-actions {
                 flex-direction: column;
                 gap: 10px;
-                text-align: center;
+            }
+
+            .action-buttons,
+            .navigation-buttons {
+                width: 100%;
+                flex-direction: column;
             }
 
             .btn-action {
@@ -197,20 +346,60 @@
     </style>
 }
 
-<!-- Breadcrumb -->
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb breadcrumb-custom">
-        <li class="breadcrumb-item">
-            <a href="@Url.Action("Index", "Home", new { area = "Admin" })">
-                <i class="fas fa-home"></i> داشبورد
+<!-- Navigation سلسله مراتبی -->
+<div class="hierarchy-nav">
+    <div class="hierarchy-title">
+        <i class="fas fa-sitemap me-2"></i>
+        مسیر سلسله مراتبی
+    </div>
+    <div class="hierarchy-path">
+        <div class="hierarchy-item">
+            <i class="fas fa-hospital" style="color: #2563eb;"></i>
+            <a href="@Url.Action("Index", "Clinic", new { area = "Admin" })">
+                @if (!string.IsNullOrEmpty(Model?.ClinicName))
+                {
+                    <text>@Model.ClinicName</text>
+                }
+                else
+                {
+                    <text>کلینیک‌ها</text>
+                }
             </a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="@Url.Action("Categories")">دسته‌بندی خدمات</a>
-        </li>
-        <li class="breadcrumb-item active">ایجاد دسته‌بندی جدید</li>
-    </ol>
-</nav>
+        </div>
+        
+        <span class="hierarchy-separator">◄</span>
+        
+        <div class="hierarchy-item">
+            <i class="fas fa-building" style="color: #2563eb;"></i>
+            <a href="@Url.Action("Index", "Department", new { area = "Admin", clinicId = Model?.ClinicId })">
+                @if (!string.IsNullOrEmpty(Model?.DepartmentName))
+                {
+                    <text>@Model.DepartmentName</text>
+                }
+                else
+                {
+                    <text>دپارتمان‌ها</text>
+                }
+            </a>
+        </div>
+        
+        <span class="hierarchy-separator">◄</span>
+        
+        <div class="hierarchy-item">
+            <i class="fas fa-layer-group" style="color: #2563eb;"></i>
+            <a href="@Url.Action("Categories", new { departmentId = Model?.DepartmentId })">
+                دسته‌بندی خدمات
+            </a>
+        </div>
+        
+        <span class="hierarchy-separator">◄</span>
+        
+        <div class="hierarchy-item current">
+            <i class="fas fa-plus-circle" style="color: #10b981;"></i>
+            <span>ایجاد دسته‌بندی جدید</span>
+        </div>
+    </div>
+</div>
 
 <!-- Header -->
 <div class="form-header">
@@ -384,7 +573,6 @@
                 }
             }, 3000);
         }
-        });
 
         // تنظیم شمارنده کاراکتر
         function setupCharacterCounter(inputSelector, counterSelector) {

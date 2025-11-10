@@ -34,14 +34,21 @@ namespace ClinicApp.Extensions
 
         /// <summary>
         /// دریافت DisplayName از Enum value
+        /// پشتیبانی از DisplayAttribute و DisplayNameAttribute
         /// </summary>
         public static string GetDisplayName(this Enum enumValue)
         {
             var field = enumValue.GetType().GetField(enumValue.ToString());
             if (field == null) return enumValue.ToString();
 
-            var attribute = field.GetCustomAttribute<DisplayNameAttribute>();
-            return attribute?.DisplayName ?? enumValue.ToString();
+            // ابتدا DisplayAttribute را بررسی می‌کنیم (System.ComponentModel.DataAnnotations)
+            var displayAttribute = field.GetCustomAttribute<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+            if (displayAttribute != null)
+                return displayAttribute.Name ?? enumValue.ToString();
+
+            // سپس DisplayNameAttribute را بررسی می‌کنیم (System.ComponentModel)
+            var displayNameAttribute = field.GetCustomAttribute<DisplayNameAttribute>();
+            return displayNameAttribute?.DisplayName ?? enumValue.ToString();
         }
 
         /// <summary>

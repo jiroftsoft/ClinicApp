@@ -37,31 +37,115 @@
   }
 
   /**
-   * رندر Key-Value pairs در تب‌ها
+   * رندر Key-Value pairs در تب‌ها - بهبود یافته برای محیط درمانی
    */
-  function renderKeyValues($host, data) {
+  function renderKeyValues($host, data, isBase) {
+    // اگر بیمه انتخاب نشده
     if (!data || Object.keys(data).length === 0) {
-      $host.html('<div class="text-center text-muted py-3">اطلاعاتی برای نمایش وجود ندارد</div>');
+      $host.html(
+        '<div class="coverage-empty-state">' +
+        '<i class="fas fa-info-circle"></i>' +
+        '<p class="mb-0">اطلاعات بیمه‌ای برای نمایش وجود ندارد</p>' +
+        '<small>لطفاً بیمه بیمار را انتخاب کنید</small>' +
+        '</div>'
+      );
       return;
     }
+    
+    // ✅ بررسی تعرفه برای خدمت خاص
+    var hasTariff = data.HasTariff !== false; // اگر undefined باشد، true فرض می‌کنیم
+    var insuranceType = isBase ? 'بیمه پایه' : 'بیمه تکمیلی';
 
-    var html = '<div class="row g-2">';
-    var pairs = [
-      ['نام بیمه', data.PlanName],
-      ['فرانشیز', data.FranchisePercent != null ? data.FranchisePercent + '%' : '—'],
-      ['درصد پوشش', data.CoveragePercent != null ? data.CoveragePercent + '%' : '—'],
-      ['سقف هر خدمت', data.CeilingPerServiceStr || '—'],
-      ['سقف هر ویزیت', data.CeilingPerVisitStr || '—'],
-      ['سقف ماهانه', data.CeilingMonthlyStr || '—'],
-      ['باقی‌مانده سقف', data.RemainingCeilingStr || '—']
-    ];
-
-    pairs.forEach(function (p) {
-      html += '<div class="col-6 col-md-4"><div class="border rounded p-2 small bg-light">' +
-              '<span class="text-muted d-block mb-1">' + p[0] + '</span>' +
-              '<div class="fw-bold">' + (p[1] || '—') + '</div></div></div>';
-    });
+    var html = '';
+    
+    // ⚠️ هشدار تعرفه نشده
+    if (!hasTariff) {
+      html += '<div class="coverage-info-card" style="border-right-color: #ef4444; background: linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);">' +
+              '<div style="display: flex; align-items: center; gap: 0.75rem;">' +
+              '<i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ef4444;"></i>' +
+              '<div>' +
+              '<span class="coverage-label" style="color: #991b1b;"><i class="fas fa-alert-triangle me-1"></i>هشدار تعرفه</span>' +
+              '<div class="coverage-value" style="color: #dc2626; font-size: 1rem; font-weight: 700;">این خدمت برای ' + insuranceType + ' تعرفه‌گذاری نشده است</div>' +
+              '<small style="color: #7f1d1d; display: block; margin-top: 0.5rem;">لطفاً قبل از ادامه، تعرفه این خدمت را در سیستم ثبت کنید یا با واحد بیمه تماس بگیرید.</small>' +
+              '</div>' +
+              '</div>' +
+              '</div>';
+    }
+    
+    // نام بیمه - Card اصلی
+    if (data.PlanName) {
+      html += '<div class="coverage-info-card" style="border-right-color: #2c5aa0; background: linear-gradient(135deg, #dbeafe 0%, #ffffff 100%);">' +
+              '<span class="coverage-label"><i class="fas fa-hospital me-1"></i>نام بیمه</span>' +
+              '<div class="coverage-value highlight">' + data.PlanName + '</div>' +
+              '</div>';
+    }
+    
+    // Grid برای سایر اطلاعات
+    html += '<div class="row g-3">';
+    
+    // فرانشیز
+    if (data.FranchisePercent != null) {
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card" style="border-right-color: #f59e0b;">' +
+              '<span class="coverage-label"><i class="fas fa-percentage me-1"></i>فرانشیز</span>' +
+              '<div class="coverage-value">' + data.FranchisePercent + '%</div>' +
+              '</div></div>';
+    }
+    
+    // درصد پوشش
+    if (data.CoveragePercent != null) {
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card" style="border-right-color: #10b981;">' +
+              '<span class="coverage-label"><i class="fas fa-shield-alt me-1"></i>درصد پوشش</span>' +
+              '<div class="coverage-value" style="color: #10b981;">' + data.CoveragePercent + '%</div>' +
+              '</div></div>';
+    }
+    
+    // سقف هر خدمت
+    if (data.CeilingPerServiceStr && data.CeilingPerServiceStr !== '—') {
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card">' +
+              '<span class="coverage-label"><i class="fas fa-hand-holding-medical me-1"></i>سقف هر خدمت</span>' +
+              '<div class="coverage-value">' + data.CeilingPerServiceStr + '</div>' +
+              '</div></div>';
+    }
+    
+    // سقف هر ویزیت
+    if (data.CeilingPerVisitStr && data.CeilingPerVisitStr !== '—') {
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card">' +
+              '<span class="coverage-label"><i class="fas fa-user-md me-1"></i>سقف هر ویزیت</span>' +
+              '<div class="coverage-value">' + data.CeilingPerVisitStr + '</div>' +
+              '</div></div>';
+    }
+    
+    // سقف ماهانه
+    if (data.CeilingMonthlyStr && data.CeilingMonthlyStr !== '—') {
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card">' +
+              '<span class="coverage-label"><i class="fas fa-calendar-alt me-1"></i>سقف ماهانه</span>' +
+              '<div class="coverage-value">' + data.CeilingMonthlyStr + '</div>' +
+              '</div></div>';
+    }
+    
+    // باقی‌مانده سقف
+    if (data.RemainingCeilingStr && data.RemainingCeilingStr !== '—') {
+      var remainingColor = '#ef4444'; // قرمز برای باقی‌مانده کم
+      if (data.RemainingCeilingPercent && data.RemainingCeilingPercent > 50) {
+        remainingColor = '#10b981'; // سبز برای باقی‌مانده زیاد
+      } else if (data.RemainingCeilingPercent && data.RemainingCeilingPercent > 20) {
+        remainingColor = '#f59e0b'; // نارنجی برای باقی‌مانده متوسط
+      }
+      
+      html += '<div class="col-md-6">' +
+              '<div class="coverage-info-card" style="border-right-color: ' + remainingColor + ';">' +
+              '<span class="coverage-label"><i class="fas fa-chart-line me-1"></i>باقی‌مانده سقف</span>' +
+              '<div class="coverage-value" style="color: ' + remainingColor + ';">' + data.RemainingCeilingStr + '</div>' +
+              '</div></div>';
+    }
+    
     html += '</div>';
+    
     $host.html(html);
   }
 
@@ -85,7 +169,12 @@
     };
 
     // نمایش Loading
-    $('#cov-base, #cov-supp, #cov-eff').html('<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</div>');
+    $('#cov-base, #cov-supp, #cov-eff').html(
+      '<div class="coverage-loading">' +
+      '<i class="fas fa-spinner fa-spin"></i>' +
+      '<p class="mt-2">در حال بارگذاری اطلاعات بیمه...</p>' +
+      '</div>'
+    );
 
     // فراخوانی API
     API.get('/insurance/coverage', req)
@@ -94,29 +183,56 @@
         
         if (!response || (response.Success !== true && response.Success !== undefined)) {
           var errorMsg = response?.Message || response?.message || 'خطا در دریافت پوشش';
-          $('#cov-base, #cov-supp, #cov-eff').html('<div class="text-danger py-3">' + errorMsg + '</div>');
+          $('#cov-base, #cov-supp, #cov-eff').html(
+            '<div class="coverage-empty-state">' +
+            '<i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>' +
+            '<p class="mb-0" style="color: #ef4444;">' + errorMsg + '</p>' +
+            '</div>'
+          );
           return;
         }
 
         var data = response.Data || response.data || response;
-        renderKeyValues($('#cov-base'), data.Base);
-        renderKeyValues($('#cov-supp'), data.Supplementary);
+        renderKeyValues($('#cov-base'), data.Base, true);  // true = isBase
+        renderKeyValues($('#cov-supp'), data.Supplementary, false);  // false = not base
         
         // رندر جمع مؤثر
         if (data.Effective) {
           var eff = data.Effective;
-          var effHtml = '<div class="row g-2">' +
-            '<div class="col-12"><div class="border rounded p-3 bg-info bg-opacity-10">' +
-            '<div class="fw-bold mb-2">پوشش مؤثر نهایی</div>' +
-            '<div class="row">' +
-            '<div class="col-6"><span class="text-muted">درصد پوشش مؤثر:</span> <strong>' + (eff.EffectiveCoveragePercent || 0) + '%</strong></div>' +
-            '<div class="col-6"><span class="text-muted">سهم بیمار:</span> <strong>' + (eff.PatientSharePercent || 0) + '%</strong></div>' +
+          var coveragePercent = eff.EffectiveCoveragePercent || 0;
+          var patientPercent = eff.PatientSharePercent || 0;
+          
+          // تعیین رنگ بر اساس درصد پوشش
+          var coverageColor = '#ef4444'; // قرمز برای کم
+          if (coveragePercent >= 70) {
+            coverageColor = '#10b981'; // سبز برای زیاد
+          } else if (coveragePercent >= 40) {
+            coverageColor = '#f59e0b'; // نارنجی برای متوسط
+          }
+          
+          var effHtml = '<div class="coverage-info-card" style="border-right-color: ' + coverageColor + '; background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%);">' +
+            '<span class="coverage-label"><i class="fas fa-chart-pie me-1"></i>پوشش مؤثر نهایی</span>' +
+            '<div class="row g-3 mt-2">' +
+            '<div class="col-md-6">' +
+            '<div class="coverage-info-card" style="border-right-color: ' + coverageColor + ';">' +
+            '<span class="coverage-label">درصد پوشش مؤثر</span>' +
+            '<div class="coverage-value" style="color: ' + coverageColor + '; font-size: 2rem;">' + coveragePercent + '%</div>' +
+            '</div></div>' +
+            '<div class="col-md-6">' +
+            '<div class="coverage-info-card" style="border-right-color: #ef4444;">' +
+            '<span class="coverage-label">سهم بیمار</span>' +
+            '<div class="coverage-value" style="color: #ef4444; font-size: 2rem;">' + patientPercent + '%</div>' +
+            '</div></div>' +
             '</div>';
           
           if (eff.Notes) {
-            effHtml += '<div class="mt-2 small text-muted"><i class="fas fa-info-circle me-1"></i>' + eff.Notes + '</div>';
+            effHtml += '<div class="mt-3 p-3 rounded" style="background-color: #fef3c7; border-right: 4px solid #f59e0b;">' +
+                      '<i class="fas fa-info-circle me-2" style="color: #f59e0b;"></i>' +
+                      '<strong style="color: #92400e;">توجه:</strong> ' +
+                      '<span style="color: #78350f;">' + eff.Notes + '</span>' +
+                      '</div>';
           }
-          effHtml += '</div></div></div>';
+          effHtml += '</div>';
           $('#cov-eff').html(effHtml);
         } else {
           renderKeyValues($('#cov-eff'), null);
@@ -124,7 +240,13 @@
       })
       .catch(function(err) {
         console.error('🏥 V2: Coverage API error:', err);
-        $('#cov-base, #cov-supp, #cov-eff').html('<div class="text-danger py-3">خطا در دریافت اطلاعات پوشش</div>');
+        $('#cov-base, #cov-supp, #cov-eff').html(
+          '<div class="coverage-empty-state">' +
+          '<i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>' +
+          '<p class="mb-0" style="color: #ef4444;">خطا در دریافت اطلاعات پوشش</p>' +
+          '<small>لطفاً مجدداً تلاش کنید</small>' +
+          '</div>'
+        );
       });
   }
 
@@ -169,12 +291,20 @@
         var priceStr = d.PriceStr || formatIrr(d.Price);
         var patientShareStr = d.PatientShareStr || formatIrr(d.PatientShare);
         var effPct = d.EffectiveCoveragePercent || 0;
+        
+        // تعیین رنگ بر اساس درصد پوشش
+        var coverageColor = '#ef4444';
+        if (effPct >= 70) {
+          coverageColor = '#10b981';
+        } else if (effPct >= 40) {
+          coverageColor = '#f59e0b';
+        }
 
         $('#cov-preview-result').html(
-          '<div class="small">' +
-          '<div><strong>قیمت:</strong> ' + priceStr + '</div>' +
-          '<div><strong>پوشش مؤثر:</strong> ' + effPct + '%</div>' +
-          '<div><strong>سهم بیمار:</strong> ' + patientShareStr + '</div>' +
+          '<div style="width: 100%;">' +
+          '<div style="margin-bottom: 0.5rem;"><strong style="color: #78350f;">قیمت:</strong> <span style="color: #1f2937; font-weight: 700;">' + priceStr + '</span></div>' +
+          '<div style="margin-bottom: 0.5rem;"><strong style="color: #78350f;">پوشش:</strong> <span style="color: ' + coverageColor + '; font-weight: 700; font-size: 1.1rem;">' + effPct + '%</span></div>' +
+          '<div><strong style="color: #78350f;">سهم بیمار:</strong> <span style="color: #ef4444; font-weight: 700;">' + patientShareStr + '</span></div>' +
           '</div>'
         );
       })

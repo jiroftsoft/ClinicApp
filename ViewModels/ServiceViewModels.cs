@@ -38,6 +38,7 @@ namespace ClinicApp.ViewModels
         // For context in the view
         public string DepartmentName { get; set; }
         public int ClinicId { get; set; }
+        public string ClinicName { get; set; }
 
         // اطلاعات ردیابی (فقط برای خواندن)
         public DateTime CreatedAt { get; set; }
@@ -182,6 +183,7 @@ namespace ClinicApp.ViewModels
         public string Description { get; set; }
         public int DepartmentId { get; set; }
         public string DepartmentName { get; set; }
+        public int ClinicId { get; set; }
         public string ClinicName { get; set; }
         public int ServiceCount { get; set; }
         public bool IsActive { get; set; }
@@ -211,6 +213,7 @@ namespace ClinicApp.ViewModels
                 Description = sc.Description,
                 DepartmentId = sc.DepartmentId,
                 DepartmentName = sc.Department?.Name,
+                ClinicId = sc.Department?.ClinicId ?? 0,
                 ClinicName = sc.Department?.Clinic?.Name,
                 ServiceCount = sc.Services?.Count(s => !s.IsDeleted) ?? 0,
                 IsActive = sc.IsActive,
@@ -286,6 +289,9 @@ namespace ClinicApp.ViewModels
         // For context in the view
         public string ServiceCategoryTitle { get; set; }
         public int DepartmentId { get; set; }
+        public string DepartmentName { get; set; }
+        public int ClinicId { get; set; }
+        public string ClinicName { get; set; }
         
         // اطلاعات ردیابی (فقط برای خواندن)
         public DateTime CreatedAt { get; set; }
@@ -320,6 +326,9 @@ namespace ClinicApp.ViewModels
                 
                 ServiceCategoryTitle = service.ServiceCategory?.Title,
                 DepartmentId = service.ServiceCategory?.DepartmentId ?? 0,
+                DepartmentName = service.ServiceCategory?.Department?.Name,
+                ClinicId = service.ServiceCategory?.Department?.ClinicId ?? 0,
+                ClinicName = service.ServiceCategory?.Department?.Clinic?.Name,
                 
                 // اطلاعات ردیابی
                 CreatedAt = service.CreatedAt,

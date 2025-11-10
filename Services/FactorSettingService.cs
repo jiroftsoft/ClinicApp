@@ -54,6 +54,8 @@ namespace ClinicApp.Services
             try
             {
                 return await _context.FactorSettings
+                    .Include(f => f.CreatedByUser)
+                    .Include(f => f.UpdatedByUser)
                     .Where(f => f.FactorSettingId == id && !f.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -327,6 +329,8 @@ namespace ClinicApp.Services
                 }
 
                 return await query
+                    .Include(f => f.CreatedByUser)
+                    .Include(f => f.UpdatedByUser)
                     .OrderByDescending(f => f.FinancialYear)
                     .ThenBy(f => f.FactorType)
                     .ThenBy(f => f.IsHashtagged)

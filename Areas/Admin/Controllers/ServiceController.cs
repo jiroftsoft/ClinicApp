@@ -402,8 +402,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return View("Error");
                 }
 
+                // دریافت اطلاعات دپارتمان و کلینیک برای Navigation سلسله مراتبی
+                var department = await _context.Departments
+                    .Include(d => d.Clinic)
+                    .FirstOrDefaultAsync(d => d.DepartmentId == departmentId.Value && !d.IsDeleted);
+
                 // آماده‌سازی ViewBag برای UI
                 ViewBag.DepartmentId = departmentId.Value;
+                ViewBag.DepartmentName = department?.Name;
+                ViewBag.ClinicId = department?.ClinicId;
+                ViewBag.ClinicName = department?.Clinic?.Name;
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.CurrentPage = page;
                 ViewBag.PageSize = pageSize;
@@ -490,9 +498,17 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _log.Information("درخواست فرم ایجاد دسته‌بندی. DepartmentId: {DepartmentId}, User: {UserId}",
                     departmentId, _currentUserService.UserId);
 
+                // دریافت اطلاعات دپارتمان برای نمایش مسیر سلسله مراتبی
+                var department = await _context.Departments
+                    .Include(d => d.Clinic)
+                    .FirstOrDefaultAsync(d => d.DepartmentId == departmentId && !d.IsDeleted);
+
                 var model = new ServiceCategoryCreateEditViewModel
                 {
                     DepartmentId = departmentId,
+                    DepartmentName = department?.Name,
+                    ClinicId = department?.ClinicId ?? 0,
+                    ClinicName = department?.Clinic?.Name,
                     IsActive = true
                 };
 
@@ -618,6 +634,18 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 var model = result.Data;
+                
+                // دریافت اطلاعات دپارتمان و کلینیک برای نمایش مسیر سلسله مراتبی
+                var department = await _context.Departments
+                    .Include(d => d.Clinic)
+                    .FirstOrDefaultAsync(d => d.DepartmentId == model.DepartmentId && !d.IsDeleted);
+
+                if (department != null)
+                {
+                    model.DepartmentName = department.Name;
+                    model.ClinicId = department.ClinicId;
+                    model.ClinicName = department.Clinic?.Name;
+                }
                 
                 // تنظیم ViewBag برای DropDownList
                 await SetDepartmentsViewBag(model.DepartmentId);
@@ -772,7 +800,31 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return View("Error");
                 }
 
+                // دریافت اطلاعات ServiceCategory، Department و Clinic برای Navigation سلسله مراتبی
+                var serviceCategory = await _context.ServiceCategories
+                    .Include(sc => sc.Department)
+                    .Include(sc => sc.Department.Clinic)
+                    .FirstOrDefaultAsync(sc => sc.ServiceCategoryId == serviceCategoryId.Value && !sc.IsDeleted);
+
+                // دریافت لیست تمام ServiceCategories برای dropdown
+                var allCategories = await _context.ServiceCategories
+                    .Where(sc => !sc.IsDeleted)
+                    .OrderBy(sc => sc.Title)
+                    .Select(sc => new SelectListItem
+                    {
+                        Value = sc.ServiceCategoryId.ToString(),
+                        Text = sc.Title,
+                        Selected = sc.ServiceCategoryId == serviceCategoryId.Value
+                    })
+                    .ToListAsync();
+
                 ViewBag.ServiceCategoryId = serviceCategoryId.Value;
+                ViewBag.ServiceCategoryName = serviceCategory?.Title;
+                ViewBag.DepartmentId = serviceCategory?.DepartmentId;
+                ViewBag.DepartmentName = serviceCategory?.Department?.Name;
+                ViewBag.ClinicId = serviceCategory?.Department?.ClinicId;
+                ViewBag.ClinicName = serviceCategory?.Department?.Clinic?.Name;
+                ViewBag.ServiceCategories = allCategories;
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.CurrentPage = page;
                 ViewBag.PageSize = pageSize;
@@ -858,9 +910,13 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _log.Information("🏥 MEDICAL: درخواست فرم ایجاد خدمت. CategoryId: {CategoryId}, User: {UserId}",
                     serviceCategoryId, _currentUserService.UserId);
 
-                // ابتدا اطلاعات ServiceCategory را دریافت کنیم تا departmentId را بدانیم
-                var categoryResult = await _serviceManagementService.GetServiceCategoryDetailsAsync(serviceCategoryId);
-                if (!categoryResult.Success)
+                // ابتدا اطلاعات ServiceCategory را دریافت کنیم تا departmentId و سلسله مراتب کامل را بدانیم
+                var serviceCategory = await _context.ServiceCategories
+                    .Include(sc => sc.Department)
+                    .Include(sc => sc.Department.Clinic)
+                    .FirstOrDefaultAsync(sc => sc.ServiceCategoryId == serviceCategoryId && !sc.IsDeleted);
+
+                if (serviceCategory == null)
                 {
                     _log.Warning("🏥 MEDICAL: دسته‌بندی خدمات یافت نشد. CategoryId: {CategoryId}", serviceCategoryId);
                     TempData["ErrorMessage"] = "دسته‌بندی خدمات مورد نظر یافت نشد.";
@@ -874,15 +930,19 @@ namespace ClinicApp.Areas.Admin.Controllers
                 };
 
                 // تنظیم ViewBag برای DropDownList - Medical Environment
-                await SetServiceCategoriesViewBagForMedicalEnvironment(categoryResult.Data.DepartmentId, serviceCategoryId);
+                await SetServiceCategoriesViewBagForMedicalEnvironment(serviceCategory.DepartmentId, serviceCategoryId);
 
-                // اضافه کردن اطلاعات اضافی برای UI
+                // اضافه کردن اطلاعات اضافی برای UI و سلسله‌مراتب ناوبری
                 ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
-                ViewBag.ServiceCategoryName = categoryResult.Data.Title;
-                ViewBag.DepartmentName = categoryResult.Data.DepartmentName;
+                ViewBag.ServiceCategoryId = serviceCategoryId;
+                ViewBag.ServiceCategoryName = serviceCategory.Title;
+                ViewBag.DepartmentId = serviceCategory.DepartmentId;
+                ViewBag.DepartmentName = serviceCategory.Department?.Name;
+                ViewBag.ClinicId = serviceCategory.Department?.ClinicId;
+                ViewBag.ClinicName = serviceCategory.Department?.Clinic?.Name;
 
-                _log.Information("🏥 MEDICAL: فرم ایجاد خدمت آماده شد. CategoryId: {CategoryId}, DepartmentId: {DepartmentId}",
-                    serviceCategoryId, categoryResult.Data.DepartmentId);
+                _log.Information("🏥 MEDICAL: فرم ایجاد خدمت آماده شد. CategoryId: {CategoryId}, DepartmentId: {DepartmentId}, ClinicId: {ClinicId}",
+                    serviceCategoryId, serviceCategory.DepartmentId, serviceCategory.Department?.ClinicId);
 
                 return View("Create", model);
             }

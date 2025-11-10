@@ -7,17 +7,70 @@
 
 @section Styles {
     <style>
+        /* 🎨 فونت وزیر فارسی */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir.woff') format('woff');
+            font-weight: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff');
+            font-weight: 500;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('~/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff');
+            font-weight: bold;
+            font-display: swap;
+        }
+
+        /* 🔢 فونت وزیر با اعداد فارسی */
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff') format('woff');
+            font-weight: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff2') format('woff2'),
+                 url('~/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff') format('woff');
+            font-weight: bold;
+            font-display: swap;
+        }
+
+        /* اعمال فونت وزیر */
+        body, .page-content, .details-container, h1, h2, h3, h4, h5, h6, p, span, div, label, button, a {
+            font-family: 'Vazir', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
+        }
+
+        /* اعمال فونت با اعداد فارسی */
+        .value-display, .calculation-result, .audit-value, .info-value {
+            font-family: 'Vazir-FD', 'Vazir', Arial, sans-serif !important;
+        }
+
         .details-container {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            margin-bottom: 30px;
         }
 
         .details-header {
-            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            background: linear-gradient(135deg, #2c5aa0 0%, #1a3d6b 100%);
             color: white;
-            padding: 25px;
+            padding: 30px;
             position: relative;
         }
 
@@ -70,19 +123,20 @@
         }
 
         .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #1a6dcc;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2c5aa0;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e3f2fd;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #e3f2fd;
             display: flex;
             align-items: center;
         }
 
         .section-title i {
-            margin-left: 10px;
-            font-size: 1.1rem;
+            margin-left: 12px;
+            font-size: 1.2rem;
+            color: #2196f3;
         }
 
         .info-grid {
@@ -105,16 +159,19 @@
         }
 
         .info-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 8px;
-            font-weight: 500;
+            font-size: 1rem;
+            color: #616161;
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
         }
 
         .info-value {
             font-size: 1.1rem;
             color: #212529;
             font-weight: 600;
+            line-height: 1.6;
         }
 
         .status-badge {
@@ -170,14 +227,16 @@
         }
 
         .value-display {
-            font-size: 2rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            color: #1a6dcc;
+            color: #1565c0;
             text-align: center;
             padding: 20px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
             border-radius: 12px;
-            border: 2px solid #dee2e6;
+            border: 3px solid #2196f3;
+            word-break: break-word;
+            line-height: 1.4;
         }
 
         .calculation-preview {
@@ -196,15 +255,16 @@
         }
 
         .calculation-formula {
-            font-family: 'Courier New', monospace;
+            font-family: 'Vazir', Arial, sans-serif !important;
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #c3e6cb;
+            padding: 18px;
+            border-radius: 10px;
+            border: 2px solid #4caf50;
             margin-bottom: 15px;
             text-align: center;
             font-size: 1.1rem;
-            color: #155724;
+            font-weight: 600;
+            color: #2e7d32;
         }
 
         .calculation-result {
@@ -256,58 +316,62 @@
         }
 
         .btn-action {
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: 500;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.05rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            gap: 8px;
             transition: all 0.3s ease;
             border: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
         }
 
         .btn-edit {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
         }
 
         .btn-edit:hover {
-            background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
-            color: #212529;
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+            color: white;
         }
 
         .btn-delete {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
             color: white;
         }
 
         .btn-delete:hover {
-            background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+            background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
             color: white;
-            transform: translateY(-2px);
         }
 
         .btn-back {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
             color: white;
         }
 
         .btn-back:hover {
-            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            background: linear-gradient(135deg, #455a64 0%, #37474f 100%);
             color: white;
-            transform: translateY(-2px);
         }
 
         .btn-freeze {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
             color: white;
         }
 
         .btn-freeze:hover {
-            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
             color: white;
-            transform: translateY(-2px);
         }
 
         .warning-box {
@@ -402,7 +466,10 @@
                     </h3>
                     <div class="info-grid">
                         <div class="info-item">
-                            <div class="info-label">نوع کای</div>
+                            <div class="info-label">
+                                <i class="fas fa-layer-group me-2" style="color: #2c5aa0;"></i>
+                                نوع کای
+                            </div>
                             <div class="info-value">
                                 <span class="type-badge @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "type-technical" : "type-professional")">
                                     <i class="fas fa-@(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "cogs" : "user-md")"></i>
@@ -418,23 +485,30 @@
                         </div>
 
                         <div class="info-item">
-                            <div class="info-label">دامنه کای</div>
+                            <div class="info-label">
+                                <i class="fas fa-tags me-2" style="color: #9c27b0;"></i>
+                                دامنه کای
+                            </div>
                             <div class="info-value">
-                                <i class="fas fa-tags"></i>
                                 @Model.ScopeDisplayName
                             </div>
                         </div>
 
                         <div class="info-item">
-                            <div class="info-label">سال مالی</div>
+                            <div class="info-label">
+                                <i class="fas fa-calendar-alt me-2" style="color: #ff9800;"></i>
+                                سال مالی
+                            </div>
                             <div class="info-value">
-                                <i class="fas fa-calendar-alt"></i>
                                 @Model.FinancialYear
                             </div>
                         </div>
 
                         <div class="info-item">
-                            <div class="info-label">وضعیت</div>
+                            <div class="info-label">
+                                <i class="fas fa-power-off me-2" style="color: #4caf50;"></i>
+                                وضعیت
+                            </div>
                             <div class="info-value">
                                 <span class="status-badge @(Model.IsActive ? "status-active" : "status-inactive")">
                                     <i class="fas fa-circle"></i>
@@ -444,52 +518,58 @@
                         </div>
 
                         <div class="info-item">
-                            <div class="info-label">مقدار کای</div>
+                            <div class="info-label">
+                                <i class="fas fa-coins me-2" style="color: #2c5aa0;"></i>
+                                مقدار ضریب کای
+                            </div>
                             <div class="value-display">
-                                @if (Model.Value > 0)
-                                {
-                                    @Model.Value.ToString("N0") <text>ریال</text>
-                                    <br />
-                                    <small style="color: #666;">(@(Model.Value / 10).ToString("N0") تومان)</small>
-                                }
-                                else
-                                {
-                                    <span style="color: red;">خطا در مقدار: @Model.Value</span>
-                                }
-                                <br />
-                                <small style="color: #666;">مقدار خام: @Model.Value.ToString("F2") | نوع: @Model.Value.GetType().Name | FactorType: @Model.FactorType | IsHashtagged: @Model.IsHashtagged</small>
+                                @Model.Value.ToString("N0")
+                                <div style="font-size: 1rem; font-weight: 500; color: #666; margin-top: 8px;">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    ریال
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- پیش‌نمایش محاسبه -->
+                <!-- 💡 راهنمای محاسبه -->
                 <div class="info-section">
                     <h3 class="section-title">
                         <i class="fas fa-calculator"></i>
-                        پیش‌نمایش محاسبه
+                        راهنمای محاسبه
                     </h3>
                     <div class="calculation-preview">
                         <div class="calculation-title">
-                            <i class="fas fa-chart-line"></i>
-                            نحوه محاسبه قیمت خدمت
+                            <i class="fas fa-info-circle me-2"></i>
+                            نحوه استفاده در محاسبه قیمت خدمات
                         </div>
                         <div class="calculation-formula">
-                            قیمت نهایی = (جزء @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") × کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای"))
+                            قیمت نهایی = ضریب @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") خدمت × کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")
                         </div>
-                        <div class="calculation-result">
-                            @if (Model.Value > 0)
-                            {
-                                <text>مثال: جزء @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") 3.0 × کای @Model.Value.ToString("N0") = @((3.0m * Model.Value).ToString("N0")) ریال</text>
-                                <br />
-                                <small style="color: #666;">(@((3.0m * Model.Value / 10).ToString("N0")) تومان)</small>
-                            }
-                            else
-                            {
-                                <span style="color: red;">خطا در محاسبه: مقدار کای نامعتبر است</span>
-                            }
-                            <br />
-                            <small style="color: #666;">محاسبه خام: 3.0 × @Model.Value.ToString("F2") = @(Model.Value > 0 ? (3.0m * Model.Value).ToString("F2") : "خطا")</small>
+                        <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                            <div style="font-size: 1.1rem; font-weight: 600; color: #2c5aa0; margin-bottom: 15px;">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                مثال محاسبه:
+                            </div>
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div style="color: #666; font-size: 0.95rem;">ضریب @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") خدمت:</div>
+                                <div style="font-weight: 600; color: #2c5aa0;">۳.۰</div>
+                                
+                                <div style="color: #666; font-size: 0.95rem;">کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای"):</div>
+                                <div style="font-weight: 600; color: #2c5aa0;">@Model.Value.ToString("N0") ریال</div>
+                                
+                                <div style="color: #666; font-size: 0.95rem; border-top: 2px solid #e0e0e0; padding-top: 15px;">قیمت نهایی:</div>
+                                <div style="font-weight: 700; color: #28a745; font-size: 1.2rem; border-top: 2px solid #e0e0e0; padding-top: 15px;">
+                                    @((3.0m * Model.Value).ToString("N0")) ریال
+                                </div>
+                            </div>
+                            <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; border-right: 4px solid #2196f3;">
+                                <small style="color: #1565c0;">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>نکته:</strong> این مثال برای یک خدمت با ضریب ۳ است. هر خدمت پزشکی دارای ضریب @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") مخصوص خود می‌باشد.
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -626,8 +706,8 @@
                 }
             });
 
-            // انیمیشن شمارش برای مقدار کای
-            var valueElement = $('.value-display');
+            // انیمیشن شمارش برای مقدار کای (ریال)
+            var valueElement = $('.value-display').first();
             var finalValue = @Model.Value;
             var currentValue = 0;
             var increment = finalValue / 50;
@@ -637,8 +717,12 @@
                 if (currentValue >= finalValue) {
                     currentValue = finalValue;
                     clearInterval(counter);
+                    // ✅ نمایش نهایی با فرمت کامل
+                    valueElement.html('@Model.Value.ToString("N0")' + '<div style="font-size: 1rem; font-weight: 500; color: #666; margin-top: 8px;"><i class="fas fa-info-circle me-1"></i>ریال</div>');
+                } else {
+                    // در حین انیمیشن فقط عدد
+                    valueElement.text(Math.floor(currentValue).toLocaleString('fa-IR'));
                 }
-                valueElement.text(Math.floor(currentValue).toLocaleString('fa-IR') + ' تومان');
             }, 30);
         });
     </script>
