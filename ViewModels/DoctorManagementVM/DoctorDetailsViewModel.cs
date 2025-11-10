@@ -313,7 +313,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 Address = doctor.HomeAddress,
                 EmergencyContact = doctor.EmergencyContact,
                 LicenseNumber = doctor.LicenseNumber,
-                Education = $"{doctor.Degree} - {doctor.University} ({doctor.GraduationYear})",
+                Education = $"{(doctor.Degree?.ToString() ?? "تعیین نشده")}{(string.IsNullOrEmpty(doctor.University) ? "" : $" - {doctor.University}")}{(doctor.GraduationYear.HasValue ? $" ({doctor.GraduationYear})" : "")}",
                 SecurityLevel = "متوسط", // این فیلد نیاز به پیاده‌سازی دارد
                 Biography = doctor.Bio,
                 SpecializationNames = doctor.DoctorSpecializations?.Where(ds => ds.Specialization != null).Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),

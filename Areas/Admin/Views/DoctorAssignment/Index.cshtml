@@ -4,20 +4,426 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@section Styles {
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        /* ============================================
+           استایل‌های بهینه برای محیط درمانی - ساده و خوانا
+           ============================================ */
+        
+        :root {
+            --medical-blue: #2c5aa0;
+            --medical-green: #10b981;
+            --medical-orange: #f59e0b;
+            --medical-red: #ef4444;
+            --medical-gray: #6b7280;
+            --bg-light: #f9fafb;
+            --border-light: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: var(--bg-light);
+        }
+
+        /* Header Section - ساده و تمیز */
+        .page-header-medical {
+            background: white;
+            border-bottom: 3px solid var(--medical-blue);
+            padding: 1.5rem 0;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .page-header-medical h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-header-medical .subtitle {
+            font-size: 0.95rem;
+            color: var(--medical-gray);
+        }
+
+        /* Stats Cards - ساده و بدون gradient زیاد */
+        .stats-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            border-left: 4px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .stat-card.blue { border-left-color: var(--medical-blue); }
+        .stat-card.green { border-left-color: var(--medical-green); }
+        .stat-card.orange { border-left-color: var(--medical-orange); }
+        .stat-card.red { border-left-color: var(--medical-red); }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .stat-icon.blue { background-color: var(--medical-blue); }
+        .stat-icon.green { background-color: var(--medical-green); }
+        .stat-icon.orange { background-color: var(--medical-orange); }
+        .stat-icon.red { background-color: var(--medical-red); }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--medical-gray);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1;
+        }
+
+        .stat-description {
+            font-size: 0.8rem;
+            color: var(--medical-gray);
+            margin-top: 0.5rem;
+        }
+
+        /* Filter Section - ساده و کاربرپسند */
+        .filter-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-card-title i {
+            color: var(--medical-blue);
+        }
+
+        .filter-card-body {
+            padding: 1.5rem;
+        }
+
+        /* Form Controls - خوانا و ساده */
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--medical-blue);
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        /* Buttons - واضح و قابل تشخیص */
+        .btn-medical {
+            padding: 0.6rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-medical-primary {
+            background-color: var(--medical-blue);
+            color: white;
+        }
+
+        .btn-medical-primary:hover {
+            background-color: #234780;
+            color: white;
+        }
+
+        .btn-medical-success {
+            background-color: var(--medical-green);
+            color: white;
+        }
+
+        .btn-medical-success:hover {
+            background-color: #059669;
+            color: white;
+        }
+
+        .btn-medical-secondary {
+            background-color: var(--medical-gray);
+            color: white;
+        }
+
+        .btn-medical-secondary:hover {
+            background-color: #4b5563;
+            color: white;
+        }
+
+        /* Table Section - تمیز و خوانا */
+        .table-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .table-card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-card-title i {
+            color: var(--medical-blue);
+        }
+
+        .table-card-tools {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--medical-gray);
+        }
+
+        .tool-btn:hover {
+            background: var(--medical-blue);
+            border-color: var(--medical-blue);
+            color: white;
+        }
+
+        .table-card-body {
+            padding: 1.5rem;
+        }
+
+        /* DataTables Customization - ساده و خوانا */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 1rem;
+        }
+
+        #assignmentsTable {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #assignmentsTable thead th {
+            background-color: #f3f4f6;
+            color: #374151;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-light);
+            font-size: 0.9rem;
+        }
+
+        #assignmentsTable tbody td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-light);
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        #assignmentsTable tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Status Badges - واضح و قابل تشخیص */
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .status-badge.active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Action Buttons - واضح و ساده */
+        .action-btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .action-btn-view {
+            background-color: var(--medical-blue);
+            color: white;
+        }
+
+        .action-btn-view:hover {
+            background-color: #234780;
+        }
+
+        .action-btn-edit {
+            background-color: var(--medical-orange);
+            color: white;
+        }
+
+        .action-btn-edit:hover {
+            background-color: #d97706;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .page-header-medical h1 {
+                font-size: 1.5rem;
+            }
+
+            .action-btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <div class="content-header">
+    <!-- Header Section -->
+    <div class="page-header-medical">
         <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">@Model.PageTitle</h1>
-                    <p class="text-muted">@Model.PageSubtitle</p>
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>
+                        <i class="fas fa-user-md text-primary"></i>
+                        @Model.PageTitle
+                    </h1>
+                    <p class="subtitle">@Model.PageSubtitle</p>
                 </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home", new { area = "Admin" })">خانه</a></li>
-                        <li class="breadcrumb-item active">مدیریت انتسابات</li>
-                    </ol>
+                <div class="col-md-4 text-left">
+                    <button class="btn btn-medical btn-medical-success" id="newAssignmentBtn" 
+                            data-url="@Url.Action("Create", "DoctorAssignment")">
+                        <i class="fas fa-plus-circle"></i>
+                        انتساب جدید
+                    </button>
                 </div>
             </div>
         </div>
@@ -27,42 +433,229 @@
     <section class="content">
         <div class="container-fluid">
 
-            <!-- آمار کلی -->
+            <!-- Stats Section -->
             @if (Model.IsDataLoaded && Model.Stats != null)
             {
-                @Html.Partial("_AssignmentStats", Model.Stats)
+                <div class="stats-section">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card blue">
+                                <div class="stat-card-header">
+                                    <div class="stat-icon blue">
+                                        <i class="fas fa-clipboard-list"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">کل انتسابات</div>
+                                    </div>
+                                </div>
+                                <div class="stat-value">@Model.Stats.TotalAssignments</div>
+                                <div class="stat-description">مجموع کلیه انتسابات</div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card green">
+                                <div class="stat-card-header">
+                                    <div class="stat-icon green">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">انتسابات فعال</div>
+                                    </div>
+                                </div>
+                                <div class="stat-value">@Model.Stats.ActiveAssignments</div>
+                                <div class="stat-description">در حال حاضر فعال</div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card orange">
+                                <div class="stat-card-header">
+                                    <div class="stat-icon orange">
+                                        <i class="fas fa-user-md"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">پزشکان</div>
+                                    </div>
+                                </div>
+                                <div class="stat-value">@Model.Stats.AssignedDoctors</div>
+                                <div class="stat-description">پزشکان دارای انتساب</div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card red">
+                                <div class="stat-card-header">
+                                    <div class="stat-icon red">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">درصد تکمیل</div>
+                                    </div>
+                                </div>
+                                <div class="stat-value">@Model.Stats.CompletionPercentage%</div>
+                                <div class="stat-description">میزان پیشرفت</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
 
-            <!-- فیلترها -->
+            <!-- Filter Section -->
             @if (Model.Filters != null)
             {
-                @Html.Partial("_AssignmentFilters", Model.Filters)
+                <div class="filter-card">
+                    <div class="filter-card-header">
+                        <h3 class="filter-card-title">
+                            <i class="fas fa-filter"></i>
+                            جستجو و فیلتر
+                        </h3>
+                        <button type="button" class="tool-btn" id="toggleFiltersBtn" title="بستن/باز کردن">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="filter-card-body" id="filterSection">
+                        <form id="filterForm">
+                            <div class="row">
+                                <!-- Search -->
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-group">
+                                        <label for="doctorSearchFilter">
+                                            <i class="fas fa-search text-primary"></i>
+                                            جستجو
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="doctorSearchFilter" 
+                                               name="searchTerm" 
+                                               placeholder="نام پزشک، کد ملی، تخصص..."
+                                               value="@Model.Filters.SearchTerm">
+                                    </div>
+                                </div>
+
+                                <!-- Department Filter -->
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-group">
+                                        <label for="departmentFilter">
+                                            <i class="fas fa-building text-primary"></i>
+                                            دپارتمان
+                                        </label>
+                                        @Html.DropDownListFor(m => m.Filters.DepartmentId, 
+                                            new SelectList(Model.Filters.Departments, "Value", "Text", Model.Filters.DepartmentId), 
+                                            "همه دپارتمان‌ها",
+                                            new { @class = "form-control select2", @id = "departmentFilter" })
+                                    </div>
+                                </div>
+
+                                <!-- Service Category Filter -->
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-group">
+                                        <label for="serviceCategoryFilter">
+                                            <i class="fas fa-list-alt text-primary"></i>
+                                            سرفصل خدماتی
+                                        </label>
+                                        @Html.DropDownListFor(m => m.Filters.ServiceCategoryId, 
+                                            new SelectList(Model.Filters.ServiceCategories, "Value", "Text", Model.Filters.ServiceCategoryId),
+                                            "همه سرفصل‌ها",
+                                            new { @class = "form-control select2", @id = "serviceCategoryFilter" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Date From -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-group">
+                                        <label for="dateFromFilter">
+                                            <i class="fas fa-calendar text-primary"></i>
+                                            از تاریخ
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control persian-datepicker" 
+                                               id="dateFromFilter" 
+                                               name="dateFrom" 
+                                               placeholder="انتخاب تاریخ"
+                                               value="@Model.Filters.DateFrom">
+                                    </div>
+                                </div>
+
+                                <!-- Date To -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-group">
+                                        <label for="dateToFilter">
+                                            <i class="fas fa-calendar text-primary"></i>
+                                            تا تاریخ
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control persian-datepicker" 
+                                               id="dateToFilter" 
+                                               name="dateTo" 
+                                               placeholder="انتخاب تاریخ"
+                                               value="@Model.Filters.DateTo">
+                                    </div>
+                                </div>
+
+                                <!-- Status Filter -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-group">
+                                        <label for="statusFilter">
+                                            <i class="fas fa-toggle-on text-primary"></i>
+                                            وضعیت
+                                        </label>
+                                        <select class="form-control" id="statusFilter" name="status">
+                                            <option value="">همه</option>
+                                            <option value="Active" @(Model.Filters.Status == "Active" ? "selected" : "")>فعال</option>
+                                            <option value="Inactive" @(Model.Filters.Status == "Inactive" ? "selected" : "")>غیرفعال</option>
+                                            <option value="Pending" @(Model.Filters.Status == "Pending" ? "selected" : "")>در انتظار</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-group">
+                                        <label>&nbsp;</label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button type="button" class="btn btn-medical btn-medical-primary" id="applyFiltersBtn" style="flex: 1;">
+                                                <i class="fas fa-search"></i>
+                                                فیلتر
+                                            </button>
+                                            <button type="button" class="btn btn-medical btn-medical-secondary" id="clearFiltersBtn">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             }
 
-            <!-- جدول انتسابات -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-list"></i>
+            <!-- Table Section -->
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3 class="table-card-title">
+                        <i class="fas fa-table"></i>
                         لیست انتسابات پزشکان
                     </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" id="refreshBtn" title="بروزرسانی">
+                    <div class="table-card-tools">
+                        <button type="button" class="tool-btn" id="refreshBtn" title="به‌روزرسانی">
                             <i class="fas fa-sync-alt"></i>
                         </button>
-                        <button type="button" class="btn btn-tool" id="clearFiltersBtn" title="پاک کردن فیلترها">
-                            <i class="fas fa-filter"></i>
+                        <button type="button" class="tool-btn" id="exportBtn" title="خروجی Excel">
+                            <i class="fas fa-file-excel"></i>
                         </button>
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="کوچک کردن">
-                            <i class="fas fa-minus"></i>
+                        <button type="button" class="tool-btn" id="printBtn" title="چاپ">
+                            <i class="fas fa-print"></i>
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="table-card-body">
                     @Html.AntiForgeryToken()
                     <div class="table-responsive">
                         <table id="assignmentsTable" 
-                               class="table table-hover table-striped"
+                               class="table table-hover"
                                data-refresh-url="@Url.Action("GetAssignmentsData", "DoctorAssignment")"
                                data-filter-url="@Url.Action("FilterAssignments", "DoctorAssignment")"
                                data-export-url="@Url.Action("ExportAssignments", "DoctorAssignment")"
@@ -70,16 +663,16 @@
                                data-assignments-url="@Url.Action("GetDoctorAssignmentsAjax", "DoctorAssignment")">
                             <thead>
                                 <tr>
-                                    <th>نام پزشک</th>
-                                    <th>دپارتمان</th>
-                                    <th>سرفصل خدماتی</th>
-                                    <th>تاریخ انتساب</th>
-                                    <th>وضعیت</th>
-                                    <th>عملیات</th>
+                                    <th><i class="fas fa-user-md"></i> نام پزشک</th>
+                                    <th><i class="fas fa-building"></i> دپارتمان</th>
+                                    <th><i class="fas fa-list-alt"></i> سرفصل خدماتی</th>
+                                    <th><i class="fas fa-calendar"></i> تاریخ انتساب</th>
+                                    <th><i class="fas fa-toggle-on"></i> وضعیت</th>
+                                    <th><i class="fas fa-cogs"></i> عملیات</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
+                                <!-- Data loaded via AJAX -->
                             </tbody>
                         </table>
                     </div>
@@ -90,7 +683,37 @@
     </section>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">در حال بارگذاری...</span>
+        </div>
+        <p class="mt-2 mb-0">لطفاً صبر کنید...</p>
+    </div>
+</div>
+
 @section Scripts {
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/app/utility.js"></script>
     <script src="~/Scripts/app/doctor-assignment-index.js"></script>
+    
+    <script>
+        // Toggle Filters
+        $('#toggleFiltersBtn').on('click', function() {
+            $('#filterSection').slideToggle(300);
+            $(this).find('i').toggleClass('fa-chevron-up fa-chevron-down');
+        });
+
+        // Export Button
+        $('#exportBtn').on('click', function() {
+            const table = $('#assignmentsTable').DataTable();
+            table.button('.buttons-excel').trigger();
+        });
+
+        // Print Button
+        $('#printBtn').on('click', function() {
+            window.print();
+        });
+    </script>
 }

@@ -312,24 +312,23 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!ValidateId(id))
                     return RedirectToAction("Index");
 
-                    var result = await _doctorCrudService.GetDoctorDetailsAsync(id);
+                var result = await _doctorCrudService.GetDoctorDetailsAsync(id);
 
-                    if (!result.Success || result.Data == null)
-                    {
-                        TempData["Error"] = result.Message ?? "پزشک مورد نظر یافت نشد.";
-                        return RedirectToAction("Index");
-                    }
-
-                    return View(result.Data);
-                }
-                catch (Exception ex)
+                if (!result.Success || result.Data == null)
                 {
-                    _logger.Error(ex, "خطا در نمایش جزئیات پزشک {DoctorId}", id);
-                    TempData["Error"] = "خطا در بارگذاری جزئیات پزشک";
+                    TempData["Error"] = result.Message ?? "پزشک مورد نظر یافت نشد.";
                     return RedirectToAction("Index");
                 }
+
+                return View(result.Data);
             }
-        
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش جزئیات پزشک {DoctorId}", id);
+                TempData["Error"] = "خطا در بارگذاری جزئیات پزشک";
+                return RedirectToAction("Index");
+            }
+        }
 
         #endregion
 

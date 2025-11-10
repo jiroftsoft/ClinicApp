@@ -70,7 +70,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
                     .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
-                    .Include(d => d.Schedules)
+                    // ✅ Schedules حذف شد چون رابطه configure نشده است
                     .Include(d => d.CreatedByUser)
                     .Include(d => d.UpdatedByUser)
                     .Include(d => d.DeletedByUser)
