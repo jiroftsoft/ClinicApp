@@ -691,26 +691,37 @@ namespace ClinicApp.Services
                 }
 
                 Console.WriteLine($"✅ [CALCULATION] ضرایب یافت شد:");
-                Console.WriteLine($"   🔧 Technical Factor: {technicalFactor.Value:N0} (IsHashtagged: {service.IsHashtagged})");
-                Console.WriteLine($"   👨‍⚕️ Professional Factor: {professionalFactor.Value:N0}");
+                Console.WriteLine($"   🔧 Technical Factor (K): {technicalFactor.Value:N0} (IsHashtagged: {service.IsHashtagged})");
+                Console.WriteLine($"   👨‍⚕️ Professional Factor (K): {professionalFactor.Value:N0}");
 
-                // محاسبه قیمت با فرمول صحیح
-                decimal finalTechnicalFactor = overrideTechnicalFactor ?? technicalFactor.Value;
-                decimal finalProfessionalFactor = overrideProfessionalFactor ?? professionalFactor.Value;
+                // ✅ محاسبه قیمت با فرمول صحیح:
+                // Price = (coefficient_tech × K_tech) + (coefficient_prof × K_prof)
+                // Override فقط coefficient را تغییر می‌دهد، نه K-factor را!
                 
-                Console.WriteLine($"🔧 [CALCULATION] ضرایب نهایی:");
-                Console.WriteLine($"   🔧 Final Technical Factor: {finalTechnicalFactor:N0}");
-                Console.WriteLine($"   👨‍⚕️ Final Professional Factor: {finalProfessionalFactor:N0}");
-                Console.WriteLine($"   🔧 Override Technical: {overrideTechnicalFactor?.ToString() ?? "None"}");
-                Console.WriteLine($"   👨‍⚕️ Override Professional: {overrideProfessionalFactor?.ToString() ?? "None"}");
+                decimal finalTechnicalCoefficient = overrideTechnicalFactor ?? technicalComponent.Coefficient;
+                decimal finalProfessionalCoefficient = overrideProfessionalFactor ?? professionalComponent.Coefficient;
                 
-                decimal technicalAmount = technicalComponent.Coefficient * finalTechnicalFactor;
-                decimal professionalAmount = professionalComponent.Coefficient * finalProfessionalFactor;
+                // K-factors همیشه از FactorSettings می‌آیند (Override نمی‌شوند!)
+                decimal kTech = technicalFactor.Value;
+                decimal kProf = professionalFactor.Value;
+                
+                Console.WriteLine($"🔧 [CALCULATION] ضرایب (Coefficients) نهایی:");
+                Console.WriteLine($"   🔧 Final Technical Coefficient: {finalTechnicalCoefficient}");
+                Console.WriteLine($"   👨‍⚕️ Final Professional Coefficient: {finalProfessionalCoefficient}");
+                Console.WriteLine($"   🔧 Override Technical Coefficient: {overrideTechnicalFactor?.ToString() ?? "None"}");
+                Console.WriteLine($"   👨‍⚕️ Override Professional Coefficient: {overrideProfessionalFactor?.ToString() ?? "None"}");
+                
+                Console.WriteLine($"📊 [CALCULATION] کای (K-Factors) پایه:");
+                Console.WriteLine($"   🔧 K Technical: {kTech:N0}");
+                Console.WriteLine($"   👨‍⚕️ K Professional: {kProf:N0}");
+                
+                decimal technicalAmount = finalTechnicalCoefficient * kTech;
+                decimal professionalAmount = finalProfessionalCoefficient * kProf;
                 decimal calculatedPrice = technicalAmount + professionalAmount;
 
                 Console.WriteLine($"💰 [CALCULATION] محاسبه قیمت:");
-                Console.WriteLine($"   🔧 Technical Amount: {technicalComponent.Coefficient} × {finalTechnicalFactor:N0} = {technicalAmount:N0}");
-                Console.WriteLine($"   👨‍⚕️ Professional Amount: {professionalComponent.Coefficient} × {finalProfessionalFactor:N0} = {professionalAmount:N0}");
+                Console.WriteLine($"   🔧 Technical Amount: {finalTechnicalCoefficient} × {kTech:N0} = {technicalAmount:N0}");
+                Console.WriteLine($"   👨‍⚕️ Professional Amount: {finalProfessionalCoefficient} × {kProf:N0} = {professionalAmount:N0}");
                 Console.WriteLine($"   💰 Total Price: {technicalAmount:N0} + {professionalAmount:N0} = {calculatedPrice:N0}");
 
                 var details = new ServiceCalculationDetails
@@ -719,10 +730,10 @@ namespace ClinicApp.Services
                     ServiceTitle = service.Title,
                     ServiceCode = service.ServiceCode,
                     IsHashtagged = service.IsHashtagged,
-                    TechnicalPart = technicalComponent.Coefficient,
-                    ProfessionalPart = professionalComponent.Coefficient,
-                    TechnicalFactor = finalTechnicalFactor,
-                    ProfessionalFactor = finalProfessionalFactor,
+                    TechnicalPart = finalTechnicalCoefficient,
+                    ProfessionalPart = finalProfessionalCoefficient,
+                    TechnicalFactor = kTech,
+                    ProfessionalFactor = kProf,
                     TechnicalAmount = technicalAmount,
                     ProfessionalAmount = professionalAmount,
                     TotalAmount = calculatedPrice,
@@ -732,7 +743,7 @@ namespace ClinicApp.Services
                 };
 
                 // فرمول صحیح برای نمایش
-                string calculationFormula = $"({technicalComponent.Coefficient} × {finalTechnicalFactor:N0}) + ({professionalComponent.Coefficient} × {finalProfessionalFactor:N0}) = {calculatedPrice:N0}";
+                string calculationFormula = $"({finalTechnicalCoefficient} × {kTech:N0}) + ({finalProfessionalCoefficient} × {kProf:N0}) = {calculatedPrice:N0}";
                 
                 Console.WriteLine($"📝 [CALCULATION] فرمول محاسبه: {calculationFormula}");
                 Console.WriteLine($"✅ [CALCULATION] محاسبه موفق - ServiceId: {serviceId}, Price: {calculatedPrice:N0}");

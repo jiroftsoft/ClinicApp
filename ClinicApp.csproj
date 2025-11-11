@@ -4304,6 +4304,9 @@
     <Content Include="Docs\RECEPTION_V2_FORM_AUDIT_REPORT.md" />
     <Content Include="Docs\RECEPTION_V2_VIEWS_COMPREHENSIVE_REVIEW.md" />
     <Content Include="Docs\reception-v2-readiness.md" />
+    <Content Include="Areas\Admin\Views\Shared\_PatientInsuranceSelector.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PatientInsuranceStatusCard.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_ReceptionInsuranceSelector.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

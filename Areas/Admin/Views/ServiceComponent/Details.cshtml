@@ -236,7 +236,7 @@
     <div class="info-row">
         <span class="info-label">ضریب (کای):</span>
         <span class="info-value">
-            <span class="coefficient-display">@Model.Coefficient.ToString("N2")</span>
+            <span class="coefficient-display">@Model.Coefficient.ToString("0.##")</span>
         </span>
     </div>
     
@@ -297,16 +297,110 @@
         <i class="fas fa-edit"></i> ویرایش
     </a>
     
-    <a href="@Url.Action("Delete", new { id = Model.ServiceComponentId })" class="btn-action btn-delete">
+    <button type="button" id="deleteBtn" class="btn-action btn-delete" 
+            data-id="@Model.ServiceComponentId" 
+            data-title="@Model.ServiceTitle - @Model.ComponentTypeName">
         <i class="fas fa-trash"></i> حذف
-    </a>
+    </button>
 </div>
 
+<!-- فرم مخفی برای حذف -->
+<form id="deleteForm" method="post" action="" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Styles {
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+}
+
 @section Scripts {
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script>
         $(document).ready(function() {
-            // Add any specific JavaScript functionality here
-            console.log('ServiceComponent Details page loaded');
+            // 🗑️ Handle Delete Button Click با SweetAlert2
+            $('#deleteBtn').on('click', function(e) {
+                e.preventDefault();
+                
+                var id = $(this).data('id');
+                var title = $(this).data('title');
+                
+                // نمایش دیالوگ تأیید حذف با SweetAlert2
+                Swal.fire({
+                    title: 'تأیید حذف',
+                    html: '<div style="text-align: right; direction: rtl;">' +
+                          '<p style="font-size: 1.1rem; margin-bottom: 1rem;">آیا مطمئن هستید که می‌خواهید این جزء خدمت را حذف کنید؟</p>' +
+                          '<div style="background: #f0f9ff; border-right: 4px solid #2c5aa0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+                          '<strong style="color: #2c5aa0;">جزء خدمت:</strong><br>' +
+                          '<span style="color: #1e3a6f;">' + title + '</span>' +
+                          '</div>' +
+                          '<div style="background: #fff3e0; border-right: 4px solid #f57c00; padding: 0.75rem; border-radius: 8px;">' +
+                          '<i class="fas fa-exclamation-triangle" style="color: #f57c00; margin-left: 0.5rem;"></i>' +
+                          '<strong style="color: #f57c00;">توجه:</strong> این عملیات قابل بازگشت نیست!' +
+                          '</div>' +
+                          '</div>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#c62828',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: '<i class="fas fa-trash"></i> بله، حذف شود',
+                    cancelButtonText: '<i class="fas fa-times"></i> انصراف',
+                    reverseButtons: true,
+                    focusCancel: true,
+                    customClass: {
+                        popup: 'swal2-rtl',
+                        title: 'swal2-title-rtl',
+                        confirmButton: 'swal2-confirm-btn',
+                        cancelButton: 'swal2-cancel-btn'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // نمایش Loading
+                        Swal.fire({
+                            title: 'در حال حذف...',
+                            html: 'لطفاً صبر کنید',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                        
+                        // تنظیم action فرم و ارسال
+                        $('#deleteForm').attr('action', '@Url.Action("Delete", "ServiceComponent")/' + id);
+                        $('#deleteForm').submit();
+                    }
+                });
+            });
         });
     </script>
+    <style>
+        /* استایل‌های سفارشی برای SweetAlert2 */
+        .swal2-rtl {
+            font-family: 'Vazir', Arial, sans-serif !important;
+            text-align: right !important;
+            direction: rtl !important;
+        }
+        
+        .swal2-title-rtl {
+            font-family: 'Vazir', Arial, sans-serif !important;
+            color: #2c5aa0 !important;
+            font-size: 1.5rem !important;
+        }
+        
+        .swal2-confirm-btn {
+            font-family: 'Vazir', Arial, sans-serif !important;
+            padding: 0.625rem 1.5rem !important;
+            font-size: 1rem !important;
+        }
+        
+        .swal2-cancel-btn {
+            font-family: 'Vazir', Arial, sans-serif !important;
+            padding: 0.625rem 1.5rem !important;
+            font-size: 1rem !important;
+        }
+        
+        .swal2-popup {
+            border-radius: 12px !important;
+        }
+    </style>
 }

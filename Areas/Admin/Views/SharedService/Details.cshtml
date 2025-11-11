@@ -186,11 +186,11 @@
                                     </tr>
                                     <tr>
                                         <td><strong>ضریب فنی Override:</strong></td>
-                                        <td>@(Model.OverrideTechnicalFactor?.ToString("N2") ?? "استفاده از مقدار پیش‌فرض")</td>
+                                        <td>@(Model.OverrideTechnicalFactor?.ToString("0.##") ?? "استفاده از مقدار پیش‌فرض")</td>
                                     </tr>
                                     <tr>
                                         <td><strong>ضریب حرفه‌ای Override:</strong></td>
-                                        <td>@(Model.OverrideProfessionalFactor?.ToString("N2") ?? "استفاده از مقدار پیش‌فرض")</td>
+                                        <td>@(Model.OverrideProfessionalFactor?.ToString("0.##") ?? "استفاده از مقدار پیش‌فرض")</td>
                                     </tr>
                                 </tbody>
                             </table>

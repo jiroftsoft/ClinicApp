@@ -613,8 +613,10 @@ namespace ClinicApp.Areas.Admin.Controllers
                     serviceCode = calculationResult.Details.ServiceCode,
                     departmentId = departmentId,
                     calculatedPrice = calculationResult.CalculatedPrice,
-                    technicalComponent = calculationResult.Details.TechnicalPart,
-                    professionalComponent = calculationResult.Details.ProfessionalPart,
+                    technicalComponent = calculationResult.Details.TechnicalAmount,  // ✅ مبلغ فنی
+                    professionalComponent = calculationResult.Details.ProfessionalAmount,  // ✅ مبلغ حرفه‌ای
+                    technicalCoefficient = calculationResult.Details.TechnicalPart,  // ضریب فنی
+                    professionalCoefficient = calculationResult.Details.ProfessionalPart,  // ضریب حرفه‌ای
                     technicalFactor = calculationResult.Details.TechnicalFactor,
                     professionalFactor = calculationResult.Details.ProfessionalFactor,
                     calculationFormula = calculationResult.CalculationFormula,

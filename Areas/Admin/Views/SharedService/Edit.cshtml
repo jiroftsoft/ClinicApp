@@ -84,7 +84,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.OverrideTechnicalFactor, htmlAttributes: new { @class = "control-label" })
-                                    @Html.TextBoxFor(model => model.OverrideTechnicalFactor, new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب فنی Override (اختیاری)" })
+                                    @Html.TextBoxFor(model => model.OverrideTechnicalFactor, "{0:0.##}", new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب فنی Override (اختیاری)" })
                                     @Html.ValidationMessageFor(model => model.OverrideTechnicalFactor, "", new { @class = "text-danger" })
                                     <small class="form-text text-muted">ضریب فنی خاص این دپارتمان (اختیاری)</small>
                                 </div>
@@ -94,7 +94,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.OverrideProfessionalFactor, htmlAttributes: new { @class = "control-label" })
-                                    @Html.TextBoxFor(model => model.OverrideProfessionalFactor, new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب حرفه‌ای Override (اختیاری)" })
+                                    @Html.TextBoxFor(model => model.OverrideProfessionalFactor, "{0:0.##}", new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب حرفه‌ای Override (اختیاری)" })
                                     @Html.ValidationMessageFor(model => model.OverrideProfessionalFactor, "", new { @class = "text-danger" })
                                     <small class="form-text text-muted">ضریب حرفه‌ای خاص این دپارتمان (اختیاری)</small>
                                 </div>

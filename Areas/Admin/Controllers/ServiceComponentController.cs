@@ -460,6 +460,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 var serviceComponent = await _context.ServiceComponents
                     .Include(sc => sc.Service)
+                    .Include(sc => sc.Service.ServiceCategory)
+                    .Include(sc => sc.Service.ServiceCategory.Department)
+                    .Include(sc => sc.Service.ServiceCategory.Department.Clinic)
                     .FirstOrDefaultAsync(sc => sc.ServiceComponentId == id && !sc.IsDeleted);
 
                 if (serviceComponent == null)
@@ -489,6 +492,35 @@ namespace ClinicApp.Areas.Admin.Controllers
                     Text = $"{s.ServiceCode} - {s.Title}",
                     Selected = s.ServiceId == serviceComponent.ServiceId
                 }).ToList(), "Value", "Text", serviceComponent.ServiceId);
+
+                // اطلاعات سلسله‌مراتبی برای Navigation
+                if (serviceComponent.Service != null)
+                {
+                    ViewBag.ServiceTitle = serviceComponent.Service.Title;
+                    ViewBag.ServiceCode = serviceComponent.Service.ServiceCode;
+                    ViewBag.ServiceId = serviceComponent.Service.ServiceId;
+
+                    if (serviceComponent.Service.ServiceCategory != null)
+                    {
+                        ViewBag.ServiceCategoryId = serviceComponent.Service.ServiceCategory.ServiceCategoryId;
+                        ViewBag.ServiceCategoryName = serviceComponent.Service.ServiceCategory.Title;
+
+                        if (serviceComponent.Service.ServiceCategory.Department != null)
+                        {
+                            ViewBag.DepartmentId = serviceComponent.Service.ServiceCategory.Department.DepartmentId;
+                            ViewBag.DepartmentName = serviceComponent.Service.ServiceCategory.Department.Name;
+
+                            if (serviceComponent.Service.ServiceCategory.Department.Clinic != null)
+                            {
+                                ViewBag.ClinicId = serviceComponent.Service.ServiceCategory.Department.Clinic.ClinicId;
+                                ViewBag.ClinicName = serviceComponent.Service.ServiceCategory.Department.Clinic.Name;
+                            }
+                        }
+                    }
+                }
+
+                // نام نوع جزء برای نمایش
+                ViewBag.ComponentTypeName = serviceComponent.ComponentType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای";
 
                 return View(viewModel);
             }
