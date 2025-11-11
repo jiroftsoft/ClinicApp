@@ -133,16 +133,13 @@ namespace ClinicApp.Areas.Admin.Controllers
                     result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت باید بزرگتر از صفر باشد"));
                     result.IsValid = false;
                 }
-                else if (model.Price > 999999999) // حداکثر 999 میلیون تومان
+                else if (model.Price > 9999999999) // حداکثر 9,999,999,999 ریال
                 {
-                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت نمی‌تواند بیشتر از 999,999,999 تومان باشد"));
+                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت نمی‌تواند بیشتر از 9,999,999,999 ریال باشد"));
                     result.IsValid = false;
                 }
-                else if (model.Price % 1000 != 0) // باید مضرب 1000 باشد
-                {
-                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت باید مضرب 1000 تومان باشد"));
-                    result.IsValid = false;
-                }
+                // ✅ حذف اعتبارسنجی مضرب 1000 - قیمت‌ها به ریال هستند و می‌توانند هر مقدار صحیحی داشته باشند
+                // قیمت‌های محاسبه شده ممکن است مضرب 1000 نباشند (مثلاً 2,376,000 ریال)
 
                 // 🔒 4. اعتبارسنجی دسته‌بندی
                 if (model.ServiceCategoryId <= 0)

@@ -286,6 +286,15 @@ namespace ClinicApp.ViewModels
         [Display(Name = "نوع محاسبه قیمت")]
         public ServicePriceCalculationType PriceCalculationType { get; set; } = ServicePriceCalculationType.ComponentBased;
 
+        // ضرایب فنی و حرفه‌ای برای ایجاد خودکار ServiceComponents
+        [Range(0.01, 999999.99, ErrorMessage = "ضریب فنی باید بین 0.01 تا 999,999.99 باشد.")]
+        [Display(Name = "ضریب فنی (کای)")]
+        public decimal? TechnicalCoefficient { get; set; }
+
+        [Range(0.01, 999999.99, ErrorMessage = "ضریب حرفه‌ای باید بین 0.01 تا 999,999.99 باشد.")]
+        [Display(Name = "ضریب حرفه‌ای (کای)")]
+        public decimal? ProfessionalCoefficient { get; set; }
+
         // For context in the view
         public string ServiceCategoryTitle { get; set; }
         public int DepartmentId { get; set; }
@@ -308,6 +317,13 @@ namespace ClinicApp.ViewModels
         public static ServiceCreateEditViewModel FromEntity(Service service)
         {
             if (service == null) return null;
+            
+            // ✅ لود کردن ضرایب از ServiceComponents
+            var technicalComponent = service.ServiceComponents?
+                .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Technical && sc.IsActive && !sc.IsDeleted);
+            var professionalComponent = service.ServiceComponents?
+                .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Professional && sc.IsActive && !sc.IsDeleted);
+            
             return new ServiceCreateEditViewModel
             {
                 ServiceId = service.ServiceId,
@@ -320,9 +336,12 @@ namespace ClinicApp.ViewModels
                 Notes = service.Notes,
                 
                 // فیلدهای جدید
-                // TechnicalPart و ProfessionalPart حذف شدند - استفاده از ServiceComponents
                 IsHashtagged = service.IsHashtagged,
                 PriceCalculationType = ServicePriceCalculationType.ComponentBased, // پیش‌فرض
+                
+                // ✅ لود کردن ضرایب از ServiceComponents
+                TechnicalCoefficient = technicalComponent?.Coefficient,
+                ProfessionalCoefficient = professionalComponent?.Coefficient,
                 
                 ServiceCategoryTitle = service.ServiceCategory?.Title,
                 DepartmentId = service.ServiceCategory?.DepartmentId ?? 0,

@@ -304,17 +304,65 @@ namespace ClinicApp.Services
             if (professionalFactor == null)
                 throw new InvalidOperationException($"ضریب حرفه‌ای برای خدمات {(service.IsHashtagged ? "هشتگ‌دار" : "بدون هشتگ")} در سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای حرفه‌ای مربوطه را تعریف کنید.");
 
-            // دریافت ضریب فنی (بر اساس هشتگ)
-            var technicalFactor = context.FactorSettings
-                .Where(fs => fs.FactorType == ServiceComponentType.Technical &&
-                            fs.IsHashtagged == service.IsHashtagged &&
-                            fs.FinancialYear == currentFinancialYear &&
-                            fs.IsActive && !fs.IsDeleted &&
-                            !fs.IsFrozen && // بررسی فریز نبودن
-                            fs.EffectiveFrom <= calculationDate &&
-                            (fs.EffectiveTo == null || fs.EffectiveTo >= calculationDate))
-                .OrderByDescending(fs => fs.EffectiveFrom)
-                .FirstOrDefault();
+            // ✅ دریافت ضریب فنی (بر اساس هشتگ و کد خدمت)
+            // طبق دستورالعمل وزارت بهداشت 1404:
+            // - کدهای 1-7 (100xxx تا 700xxx): K-Factor = 2,750,000 ریال (Hash_1_7)
+            // - کدهای 97xxxx (ویزیت‌ها): K-Factor = 2,750,000 ریال (Hash_1_7) - در کد 7 کتاب ارزش نسبی
+            // - کدهای 8-9 (800xxx, 900xxx غیر از 97xxxx): K-Factor = 2,600,000 ریال (Hash_8_9)
+            FactorSetting technicalFactor = null;
+            
+            if (service.IsHashtagged && !string.IsNullOrEmpty(service.ServiceCode))
+            {
+                var firstDigit = GetFirstDigit(service.ServiceCode);
+                FactorScope? targetScope = null;
+                
+                // بررسی کدهای 97xxxx (ویزیت‌ها) - طبق دستورالعمل در کد 7 کتاب ارزش نسبی
+                if (service.ServiceCode.StartsWith("97"))
+                {
+                    // کدهای 97xxxx (ویزیت‌ها) از K-Factor کد 7 استفاده می‌کنند
+                    targetScope = FactorScope.Hash_1_7;
+                }
+                else if (firstDigit >= 1 && firstDigit <= 7)
+                {
+                    // کدهای 100xxx تا 700xxx
+                    targetScope = FactorScope.Hash_1_7;
+                }
+                else if (firstDigit == 8 || (firstDigit == 9 && !service.ServiceCode.StartsWith("97")))
+                {
+                    // کدهای 800xxx و 900xxx (غیر از 97xxxx)
+                    targetScope = FactorScope.Hash_8_9;
+                }
+                
+                if (targetScope.HasValue)
+                {
+                    technicalFactor = context.FactorSettings
+                        .Where(fs => fs.FactorType == ServiceComponentType.Technical &&
+                                    fs.IsHashtagged == true &&
+                                    fs.Scope == targetScope.Value &&
+                                    fs.FinancialYear == currentFinancialYear &&
+                                    fs.IsActive && !fs.IsDeleted &&
+                                    !fs.IsFrozen &&
+                                    fs.EffectiveFrom <= calculationDate &&
+                                    (fs.EffectiveTo == null || fs.EffectiveTo >= calculationDate))
+                        .OrderByDescending(fs => fs.EffectiveFrom)
+                        .FirstOrDefault();
+                }
+            }
+            
+            // Fallback: اگر بر اساس Scope یافت نشد، از منطق قبلی استفاده کن
+            if (technicalFactor == null)
+            {
+                technicalFactor = context.FactorSettings
+                    .Where(fs => fs.FactorType == ServiceComponentType.Technical &&
+                                fs.IsHashtagged == service.IsHashtagged &&
+                                fs.FinancialYear == currentFinancialYear &&
+                                fs.IsActive && !fs.IsDeleted &&
+                                !fs.IsFrozen &&
+                                fs.EffectiveFrom <= calculationDate &&
+                                (fs.EffectiveTo == null || fs.EffectiveTo >= calculationDate))
+                    .OrderByDescending(fs => fs.EffectiveFrom)
+                    .FirstOrDefault();
+            }
 
             if (technicalFactor == null)
                 throw new InvalidOperationException($"ضریب فنی برای خدمات {(service.IsHashtagged ? "هشتگ‌دار" : "بدون هشتگ")} در سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای فنی مربوطه را تعریف کنید.");
@@ -457,6 +505,27 @@ namespace ClinicApp.Services
                 DepartmentId = departmentId,
                 CalculationDate = calculationDate
             };
+        }
+
+        /// <summary>
+        /// استخراج رقم اول از کد خدمت
+        /// </summary>
+        private int GetFirstDigit(string serviceCode)
+        {
+            if (string.IsNullOrWhiteSpace(serviceCode))
+                return 0;
+            
+            // حذف فاصله‌ها و کاراکترهای غیرعددی
+            var cleanCode = new string(serviceCode.Where(char.IsDigit).ToArray());
+            
+            if (string.IsNullOrEmpty(cleanCode))
+                return 0;
+            
+            // استخراج رقم اول
+            if (int.TryParse(cleanCode[0].ToString(), out int firstDigit))
+                return firstDigit;
+            
+            return 0;
         }
 
         /// <summary>

@@ -13,6 +13,7 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Enums;
 using ClinicApp.Models;
+using ClinicApp.DataSeeding;
 
 namespace ClinicApp.Services
 {
@@ -570,13 +571,14 @@ namespace ClinicApp.Services
                     return ServiceResult<ServiceCreateEditViewModel>.Failed("شناسه خدمت معتبر نیست.");
                 }
 
-                // دریافت خدمت با eager loading برای ServiceCategory، Department و Clinic
+                // دریافت خدمت با eager loading برای ServiceCategory، Department، Clinic و ServiceComponents
                 var service = await _context.Services
                     .Include("ServiceCategory")
                     .Include("ServiceCategory.Department")
                     .Include("ServiceCategory.Department.Clinic")
                     .Include("CreatedByUser")
                     .Include("UpdatedByUser")
+                    .Include(s => s.ServiceComponents) // ✅ لود کردن ServiceComponents برای ضرایب
                     .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
 
                 if (service == null)
@@ -635,28 +637,119 @@ namespace ClinicApp.Services
                 _serviceRepo.Add(service);
                 await _serviceRepo.SaveChangesAsync();
 
+                // ایجاد خودکار ServiceComponents اگر ضرایب وارد شده باشند
+                if (model.TechnicalCoefficient.HasValue || model.ProfessionalCoefficient.HasValue)
+                {
+                    try
+                    {
+                        // ایجاد جزء فنی (Technical)
+                        if (model.TechnicalCoefficient.HasValue && model.TechnicalCoefficient.Value > 0)
+                        {
+                            var technicalComponent = new ServiceComponent
+                            {
+                                ServiceId = service.ServiceId,
+                                ComponentType = ServiceComponentType.Technical,
+                                Coefficient = model.TechnicalCoefficient.Value,
+                                Description = "جزء فنی - ایجاد شده به صورت خودکار",
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedByUserId = _currentUserService.UserId,
+                                IsDeleted = false
+                            };
+                            _serviceRepo.AddServiceComponent(technicalComponent);
+                            
+                            _log.Information("جزء فنی به صورت خودکار ایجاد شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                service.ServiceId, model.TechnicalCoefficient.Value);
+                        }
+
+                        // ایجاد جزء حرفه‌ای (Professional)
+                        if (model.ProfessionalCoefficient.HasValue && model.ProfessionalCoefficient.Value > 0)
+                        {
+                            var professionalComponent = new ServiceComponent
+                            {
+                                ServiceId = service.ServiceId,
+                                ComponentType = ServiceComponentType.Professional,
+                                Coefficient = model.ProfessionalCoefficient.Value,
+                                Description = "جزء حرفه‌ای - ایجاد شده به صورت خودکار",
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedByUserId = _currentUserService.UserId,
+                                IsDeleted = false
+                            };
+                            _serviceRepo.AddServiceComponent(professionalComponent);
+                            
+                            _log.Information("جزء حرفه‌ای به صورت خودکار ایجاد شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                service.ServiceId, model.ProfessionalCoefficient.Value);
+                        }
+
+                        // ذخیره ServiceComponents
+                        await _serviceRepo.SaveChangesAsync();
+                    }
+                    catch (Exception componentEx)
+                    {
+                        _log.Warning(componentEx, "خطا در ایجاد خودکار ServiceComponents. ServiceId: {ServiceId}",
+                            service.ServiceId);
+                        // در صورت خطا، ادامه می‌دهیم - ServiceComponents می‌توانند بعداً به صورت دستی اضافه شوند
+                    }
+                }
+
                 // محاسبه و بروزرسانی قیمت بر اساس نوع محاسبه
                 if (model.PriceCalculationType == ServicePriceCalculationType.ComponentBased)
                 {
                     try
                     {
-                        // محاسبه قیمت بر اساس اجزای خدمت (اگر موجود باشند)
-                        var calculatedPrice = _serviceCalculationService.CalculateServicePrice(service.ServiceId, _context);
+                        // ✅ بارگذاری مجدد Service با Include ServiceComponents برای اطمینان از لود شدن
+                        var serviceWithComponents = await _context.Services
+                            .Include(s => s.ServiceComponents)
+                            .FirstOrDefaultAsync(s => s.ServiceId == service.ServiceId && !s.IsDeleted);
                         
-                        // اگر قیمت محاسبه شده با قیمت اولیه متفاوت است، بروزرسانی کن
-                        if (calculatedPrice != model.Price)
+                        if (serviceWithComponents == null)
                         {
-                            service.Price = calculatedPrice;
-                            await _serviceRepo.SaveChangesAsync();
+                            _log.Warning("خدمت {ServiceId} یافت نشد. قیمت اولیه ({Price}) استفاده می‌شود.",
+                                service.ServiceId, model.Price);
+                        }
+                        else
+                        {
+                            // بررسی وجود ServiceComponents
+                            var hasComponents = serviceWithComponents.ServiceComponents != null && 
+                                              serviceWithComponents.ServiceComponents.Any(sc => !sc.IsDeleted && sc.IsActive);
                             
-                            _log.Information("قیمت خدمت بر اساس اجزای خدمت محاسبه و بروزرسانی شد. ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}, CalculatedPrice: {CalculatedPrice}",
-                                service.ServiceId, model.Price, calculatedPrice);
+                            if (hasComponents)
+                            {
+                                // ✅ استفاده از CalculateServicePriceWithFactorSettings برای محاسبه دقیق
+                                // این متد از FactorSettings در دیتابیس استفاده می‌کند و IsHashtagged را در نظر می‌گیرد
+                                var currentFinancialYear = SeedConstants.FactorSettings1404.FinancialYear; // سال مالی جاری (از Constants)
+                                var calculatedPrice = _serviceCalculationService.CalculateServicePriceWithFactorSettings(
+                                    serviceWithComponents, 
+                                    _context, 
+                                    DateTime.Now,  // تاریخ فعلی
+                                    null,         // بدون Override دپارتمان
+                                    currentFinancialYear  // سال مالی جاری
+                                );
+                                
+                                // اگر قیمت محاسبه شده با قیمت اولیه متفاوت است، بروزرسانی کن
+                                if (calculatedPrice > 0 && calculatedPrice != model.Price)
+                                {
+                                    serviceWithComponents.Price = Math.Round(calculatedPrice, 0, MidpointRounding.AwayFromZero);
+                                    serviceWithComponents.UpdatedAt = DateTime.UtcNow;
+                                    serviceWithComponents.UpdatedByUserId = _currentUserService.UserId;
+                                    await _serviceRepo.SaveChangesAsync();
+                                    
+                                    _log.Information("قیمت خدمت بر اساس اجزای خدمت و FactorSettings محاسبه و بروزرسانی شد. ServiceId: {ServiceId}, IsHashtagged: {IsHashtagged}, OriginalPrice: {OriginalPrice}, CalculatedPrice: {CalculatedPrice}",
+                                        serviceWithComponents.ServiceId, serviceWithComponents.IsHashtagged, model.Price, calculatedPrice);
+                                }
+                            }
+                            else
+                            {
+                                _log.Warning("خدمت {ServiceId} فاقد ServiceComponents است. قیمت اولیه ({Price}) استفاده می‌شود.",
+                                    serviceWithComponents.ServiceId, model.Price);
+                            }
                         }
                     }
                     catch (Exception calcEx)
                     {
-                        _log.Warning(calcEx, "خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}",
-                            service.ServiceId, model.Price);
+                        _log.Warning(calcEx, "خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, IsHashtagged: {IsHashtagged}, OriginalPrice: {OriginalPrice}",
+                            service.ServiceId, service.IsHashtagged, model.Price);
                         // در صورت خطا، از قیمت اولیه استفاده کن
                     }
                 }
@@ -693,8 +786,11 @@ namespace ClinicApp.Services
                     return ServiceResult.FailedWithValidationErrors("اطلاعات ورودی نامعتبر است.", errors);
                 }
 
-                // Get existing entity
-                var service = await _serviceRepo.GetByIdAsync(model.ServiceId);
+                // Get existing entity with ServiceComponents
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == model.ServiceId && !s.IsDeleted);
+                
                 if (service == null)
                 {
                     return ServiceResult.Failed("خدمت مورد نظر یافت نشد.");
@@ -707,12 +803,151 @@ namespace ClinicApp.Services
                 service.Description = model.Description?.Trim();
                 service.ServiceCategoryId = model.ServiceCategoryId;
                 service.IsActive = model.IsActive;
+                service.IsHashtagged = model.IsHashtagged; // ✅ به‌روزرسانی IsHashtagged
                 service.UpdatedAt = DateTime.UtcNow;
                 service.UpdatedByUserId = _currentUserService.UserId;
 
                 // Save changes
                 _serviceRepo.Update(service);
                 await _serviceRepo.SaveChangesAsync();
+
+                // به‌روزرسانی یا ایجاد ServiceComponents اگر ضرایب وارد شده باشند
+                if (model.TechnicalCoefficient.HasValue || model.ProfessionalCoefficient.HasValue)
+                {
+                    try
+                    {
+                        // به‌روزرسانی یا ایجاد جزء فنی (Technical)
+                        if (model.TechnicalCoefficient.HasValue && model.TechnicalCoefficient.Value > 0)
+                        {
+                            var existingTechnical = service.ServiceComponents?
+                                .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Technical && !sc.IsDeleted);
+                            
+                            if (existingTechnical != null)
+                            {
+                                // به‌روزرسانی جزء موجود
+                                existingTechnical.Coefficient = model.TechnicalCoefficient.Value;
+                                existingTechnical.IsActive = true;
+                                existingTechnical.UpdatedAt = DateTime.UtcNow;
+                                existingTechnical.UpdatedByUserId = _currentUserService.UserId;
+                                _log.Information("جزء فنی به‌روزرسانی شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                    service.ServiceId, model.TechnicalCoefficient.Value);
+                            }
+                            else
+                            {
+                                // ایجاد جزء جدید
+                                var technicalComponent = new ServiceComponent
+                                {
+                                    ServiceId = service.ServiceId,
+                                    ComponentType = ServiceComponentType.Technical,
+                                    Coefficient = model.TechnicalCoefficient.Value,
+                                    Description = "جزء فنی - ایجاد شده به صورت خودکار",
+                                    IsActive = true,
+                                    CreatedAt = DateTime.UtcNow,
+                                    CreatedByUserId = _currentUserService.UserId,
+                                    IsDeleted = false
+                                };
+                                _serviceRepo.AddServiceComponent(technicalComponent);
+                                _log.Information("جزء فنی به صورت خودکار ایجاد شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                    service.ServiceId, model.TechnicalCoefficient.Value);
+                            }
+                        }
+
+                        // به‌روزرسانی یا ایجاد جزء حرفه‌ای (Professional)
+                        if (model.ProfessionalCoefficient.HasValue && model.ProfessionalCoefficient.Value > 0)
+                        {
+                            var existingProfessional = service.ServiceComponents?
+                                .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Professional && !sc.IsDeleted);
+                            
+                            if (existingProfessional != null)
+                            {
+                                // به‌روزرسانی جزء موجود
+                                existingProfessional.Coefficient = model.ProfessionalCoefficient.Value;
+                                existingProfessional.IsActive = true;
+                                existingProfessional.UpdatedAt = DateTime.UtcNow;
+                                existingProfessional.UpdatedByUserId = _currentUserService.UserId;
+                                _log.Information("جزء حرفه‌ای به‌روزرسانی شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                    service.ServiceId, model.ProfessionalCoefficient.Value);
+                            }
+                            else
+                            {
+                                // ایجاد جزء جدید
+                                var professionalComponent = new ServiceComponent
+                                {
+                                    ServiceId = service.ServiceId,
+                                    ComponentType = ServiceComponentType.Professional,
+                                    Coefficient = model.ProfessionalCoefficient.Value,
+                                    Description = "جزء حرفه‌ای - ایجاد شده به صورت خودکار",
+                                    IsActive = true,
+                                    CreatedAt = DateTime.UtcNow,
+                                    CreatedByUserId = _currentUserService.UserId,
+                                    IsDeleted = false
+                                };
+                                _serviceRepo.AddServiceComponent(professionalComponent);
+                                _log.Information("جزء حرفه‌ای به صورت خودکار ایجاد شد. ServiceId: {ServiceId}, Coefficient: {Coefficient}",
+                                    service.ServiceId, model.ProfessionalCoefficient.Value);
+                            }
+                        }
+
+                        // ذخیره ServiceComponents
+                        await _serviceRepo.SaveChangesAsync();
+                    }
+                    catch (Exception componentEx)
+                    {
+                        _log.Warning(componentEx, "خطا در به‌روزرسانی ServiceComponents. ServiceId: {ServiceId}",
+                            service.ServiceId);
+                        // در صورت خطا، ادامه می‌دهیم
+                    }
+                }
+
+                // محاسبه و بروزرسانی قیمت بر اساس نوع محاسبه
+                if (model.PriceCalculationType == ServicePriceCalculationType.ComponentBased)
+                {
+                    try
+                    {
+                        // ✅ بارگذاری مجدد Service با Include ServiceComponents برای اطمینان از لود شدن
+                        var serviceWithComponents = await _context.Services
+                            .Include(s => s.ServiceComponents)
+                            .FirstOrDefaultAsync(s => s.ServiceId == service.ServiceId && !s.IsDeleted);
+                        
+                        if (serviceWithComponents != null)
+                        {
+                            // بررسی وجود ServiceComponents
+                            var hasComponents = serviceWithComponents.ServiceComponents != null && 
+                                              serviceWithComponents.ServiceComponents.Any(sc => !sc.IsDeleted && sc.IsActive);
+                            
+                            if (hasComponents)
+                            {
+                                // ✅ استفاده از CalculateServicePriceWithFactorSettings برای محاسبه دقیق
+                                var currentFinancialYear = SeedConstants.FactorSettings1404.FinancialYear;
+                                var calculatedPrice = _serviceCalculationService.CalculateServicePriceWithFactorSettings(
+                                    serviceWithComponents, 
+                                    _context, 
+                                    DateTime.Now,
+                                    null,
+                                    currentFinancialYear
+                                );
+                                
+                                // اگر قیمت محاسبه شده با قیمت اولیه متفاوت است، بروزرسانی کن
+                                if (calculatedPrice > 0 && calculatedPrice != model.Price)
+                                {
+                                    serviceWithComponents.Price = Math.Round(calculatedPrice, 0, MidpointRounding.AwayFromZero);
+                                    serviceWithComponents.UpdatedAt = DateTime.UtcNow;
+                                    serviceWithComponents.UpdatedByUserId = _currentUserService.UserId;
+                                    await _serviceRepo.SaveChangesAsync();
+                                    
+                                    _log.Information("قیمت خدمت بر اساس اجزای خدمت و FactorSettings محاسبه و بروزرسانی شد. ServiceId: {ServiceId}, IsHashtagged: {IsHashtagged}, OriginalPrice: {OriginalPrice}, CalculatedPrice: {CalculatedPrice}",
+                                        serviceWithComponents.ServiceId, serviceWithComponents.IsHashtagged, model.Price, calculatedPrice);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception calcEx)
+                    {
+                        _log.Warning(calcEx, "خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, IsHashtagged: {IsHashtagged}, OriginalPrice: {OriginalPrice}",
+                            service.ServiceId, service.IsHashtagged, model.Price);
+                        // در صورت خطا، از قیمت اولیه استفاده کن
+                    }
+                }
                 
                 _log.Information("خدمت به‌روزرسانی شد. Id: {Id}. User: {UserId}",
                     service.ServiceId, _currentUserService.UserId);

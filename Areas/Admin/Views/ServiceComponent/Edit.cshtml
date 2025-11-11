@@ -131,11 +131,6 @@
         padding: 1rem 1.5rem;
     }
 
-    .card-header.audit {
-        background: linear-gradient(to bottom, #f1f3f4 0%, #e8eaed 100%);
-        color: var(--medical-gray);
-    }
-
     .card-header.info {
         background: linear-gradient(to bottom, #fff3e0 0%, #ffe0b2 100%);
         color: #e65100;
@@ -296,40 +291,6 @@
         font-size: 0.8rem;
     }
 
-    /* ==================== Audit Section ==================== */
-    .audit-item {
-        background: #f8f9fa;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 1.25rem;
-        height: 100%;
-    }
-
-    .audit-item h6 {
-        color: var(--medical-blue-dark);
-        font-weight: 600;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-    }
-
-    .audit-item ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .audit-item ul li {
-        padding: 0.5rem 0;
-        font-size: 0.85rem;
-        color: var(--medical-gray);
-    }
-
-    .audit-item ul li strong {
-        color: var(--medical-gray);
-        display: inline-block;
-        min-width: 100px;
-    }
-
     /* ==================== Select2 Customization ==================== */
     .select2-container--default .select2-selection--single {
         border: 2px solid #e2e8f0 !important;
@@ -348,7 +309,7 @@
     }
 
     /* ==================== Responsive ==================== */
-    @media (max-width: 768px) {
+    @@media (max-width: 768px) {
         .hierarchy-navigation .breadcrumb {
             font-size: 0.85rem;
         }
@@ -503,46 +464,6 @@
                 </div>
             </div>
 
-            <!-- Audit Trail -->
-            <div class="card">
-                <div class="card-header audit">
-                    <h5>
-                        <i class="fas fa-history"></i>
-                        اطلاعات حسابرسی
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="audit-item">
-                                <h6>
-                                    <i class="fas fa-plus-circle text-success"></i>
-                                    ایجاد
-                                </h6>
-                                <ul>
-                                    <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
-                                    <li><strong>کاربر:</strong> @Model.CreatedByUserName</li>
-                                </ul>
-                            </div>
-                        </div>
-                        @if (Model.UpdatedAt.HasValue)
-                        {
-                            <div class="col-md-6">
-                                <div class="audit-item">
-                                    <h6>
-                                        <i class="fas fa-edit text-warning"></i>
-                                        آخرین ویرایش
-                                    </h6>
-                                    <ul>
-                                        <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
-                                        <li><strong>کاربر:</strong> @Model.UpdatedByUserName</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="col-lg-4">

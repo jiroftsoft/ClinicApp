@@ -657,23 +657,96 @@
 
                         <div class="mb-4">
                             @Html.LabelFor(model => model.Price, new { @class = "form-label required" })
-                            @Html.TextBoxFor(model => model.Price, new { @class = "form-control form-control-lg price-input", type = "number", min = "0", step = "1000", placeholder = "قیمت به ریال" })
+                            @Html.TextBoxFor(model => model.Price, new { @class = "form-control form-control-lg price-input", type = "number", min = "0", step = "1", placeholder = "قیمت به ریال" })
                             @Html.ValidationMessageFor(model => model.Price, "", new { @class = "text-danger small mt-1" })
                             <div class="form-note">
                                 <i class="fas fa-money-bill-wave me-1"></i>
-                                قیمت خدمات به <strong>ریال</strong> (بدون اعشار) - مثال: 5000000
+                                قیمت خدمات به <strong>ریال</strong> (بدون اعشار) - مثال: 85800، 5000000
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <div class="form-check">
-                                @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input", id = "IsHashtagged" })
-                                @Html.LabelFor(model => model.IsHashtagged, "خدمت هشتگ‌دار", new { @class = "form-check-label" })
+                        <!-- بخش محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">
+                                <i class="fas fa-calculator"></i>
+                                محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>نکته:</strong> با وارد کردن ضرایب فنی و حرفه‌ای، اجزای خدمت به صورت خودکار به‌روزرسانی می‌شوند و قیمت خدمت محاسبه می‌گردد.
+                                    </div>
+                                </div>
                             </div>
-                            @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
-                            <div class="form-note">
-                                <i class="fas fa-hashtag me-1"></i>
-                                خدمات هشتگ‌دار از ضرایب کای متفاوتی استفاده می‌کنند
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.TechnicalCoefficient, new { @class = "form-label" })
+                                        @Html.TextBoxFor(model => model.TechnicalCoefficient, "{0:0.##}", new { 
+                                            @class = "form-control farsi-number", 
+                                            @type = "number", 
+                                            step = "0.01", 
+                                            min = "0.01", 
+                                            max = "999999.99", 
+                                            placeholder = "مثال: 0.5",
+                                            @id = "TechnicalCoefficient"
+                                        })
+                                        @Html.ValidationMessageFor(model => model.TechnicalCoefficient, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">ضریب فنی برای محاسبه قیمت (اختیاری - می‌توانید بعداً اضافه کنید)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.ProfessionalCoefficient, new { @class = "form-label" })
+                                        @Html.TextBoxFor(model => model.ProfessionalCoefficient, "{0:0.##}", new { 
+                                            @class = "form-control farsi-number", 
+                                            @type = "number", 
+                                            step = "0.01", 
+                                            min = "0.01", 
+                                            max = "999999.99", 
+                                            placeholder = "مثال: 1.3",
+                                            @id = "ProfessionalCoefficient"
+                                        })
+                                        @Html.ValidationMessageFor(model => model.ProfessionalCoefficient, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">ضریب حرفه‌ای برای محاسبه قیمت (اختیاری - می‌توانید بعداً اضافه کنید)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.IsHashtagged, new { @class = "form-label" })
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input", id = "IsHashtagged" })
+                                            @Html.LabelFor(model => model.IsHashtagged, "آیا این خدمت هشتگ‌دار است؟", new { @class = "form-check-label" })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">خدمات هشتگ‌دار از کای‌های متفاوتی استفاده می‌کنند</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.PriceCalculationType, new { @class = "form-label" })
+                                        @Html.DropDownListFor(model => model.PriceCalculationType, 
+                                            new SelectList(new[] {
+                                                new { Value = "1", Text = "قیمت ثابت" },
+                                                new { Value = "2", Text = "محاسبه بر اساس اجزای فنی و حرفه‌ای" }
+                                            }, "Value", "Text", "2"), 
+                                            new { @class = "form-control", id = "PriceCalculationType" })
+                                        @Html.ValidationMessageFor(model => model.PriceCalculationType, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">نوع محاسبه قیمت خدمت</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- نمایش محاسبه قیمت -->
+                            <div class="alert alert-info" id="price-calculation-info" style="display: none;">
+                                <h6><i class="fas fa-info-circle"></i> محاسبه قیمت</h6>
+                                <p class="mb-0" id="price-calculation-text"></p>
                             </div>
                         </div>
 
@@ -872,6 +945,163 @@
                 if (e.ctrlKey && e.key === 'Enter') {
                     $('form button[type="submit"]').click();
                     return false;
+                }
+            });
+
+            // ========== محاسبه خودکار قیمت بر اساس ضرایب ==========
+            
+            // پیدا کردن کای مناسب
+            function findAppropriateKai(factors, isHashtagged) {
+                if (!Array.isArray(factors) || factors.length === 0) {
+                    console.warn('⚠️ findAppropriateKai: factors is not an array or is empty:', factors);
+                    return null;
+                }
+
+                var exactMatch = factors.find(function(f) {
+                    return f && f.isActive && f.isHashtagged === isHashtagged;
+                });
+
+                if (exactMatch) {
+                    return exactMatch;
+                }
+
+                var fallback = factors.find(function(f) {
+                    return f && f.isActive;
+                });
+
+                return fallback;
+            }
+
+            // محاسبه خودکار قیمت بر اساس ضرایب فنی و حرفه‌ای
+            function calculatePriceFromCoefficients() {
+                var technicalCoeff = parseFloat($('#TechnicalCoefficient').val()) || 0;
+                var professionalCoeff = parseFloat($('#ProfessionalCoefficient').val()) || 0;
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+
+                if (technicalCoeff <= 0 && professionalCoeff <= 0) {
+                    $('#price-calculation-info').hide();
+                    return;
+                }
+
+                var currentYear = 1404;
+                var technicalPromise = $.ajax({
+                    url: '@Url.Action("GetFactorsByType", "FactorSetting")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        factorType: 1, // Technical
+                        financialYear: currentYear
+                    }
+                });
+
+                var professionalPromise = $.ajax({
+                    url: '@Url.Action("GetFactorsByType", "FactorSetting")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        factorType: 2, // Professional
+                        financialYear: currentYear
+                    }
+                });
+
+                $.when(technicalPromise, professionalPromise).done(function(technicalResponse, professionalResponse) {
+                    var technicalFactors = Array.isArray(technicalResponse[0]) ? technicalResponse[0] : [];
+                    var professionalFactors = Array.isArray(professionalResponse[0]) ? professionalResponse[0] : [];
+
+                    if (!Array.isArray(technicalFactors)) {
+                        console.error('❌ Technical Factors is not an array:', technicalFactors);
+                        $('#price-calculation-text').html(
+                            '<div class="alert alert-danger">خطا در دریافت K-Factors فنی از سرور</div>'
+                        );
+                        $('#price-calculation-info').show();
+                        return;
+                    }
+
+                    if (!Array.isArray(professionalFactors)) {
+                        console.error('❌ Professional Factors is not an array:', professionalFactors);
+                        $('#price-calculation-text').html(
+                            '<div class="alert alert-danger">خطا در دریافت K-Factors حرفه‌ای از سرور</div>'
+                        );
+                        $('#price-calculation-info').show();
+                        return;
+                    }
+
+                    var technicalK = findAppropriateKai(technicalFactors, isHashtagged);
+                    var professionalK = findAppropriateKai(professionalFactors, isHashtagged);
+
+                    if (technicalK && professionalK) {
+                        var technicalAmount = technicalCoeff * technicalK.value;
+                        var professionalAmount = professionalCoeff * professionalK.value;
+                        var calculatedPrice = technicalAmount + professionalAmount;
+
+                        var hashtagText = isHashtagged ? '<span class="badge bg-warning text-dark">هشتگ‌دار</span>' : '<span class="badge bg-info">عادی</span>';
+                        var calculationHtml = '<div class="alert alert-success">';
+                        calculationHtml += '<h6><i class="fas fa-calculator"></i> محاسبه قیمت ' + hashtagText + '</h6>';
+                        calculationHtml += '<small class="text-muted">نوع خدمت: ' + (isHashtagged ? 'هشتگ‌دار (استفاده از K-Factors هشتگ‌دار)' : 'عادی (استفاده از K-Factors عادی)') + '</small><hr>';
+                        
+                        if (technicalCoeff > 0) {
+                            calculationHtml += '<p>جزء فنی: <strong>' + technicalCoeff + '</strong> × <strong>' + 
+                                technicalK.value.toLocaleString('fa-IR') + '</strong> ریال = <strong>' + 
+                                technicalAmount.toLocaleString('fa-IR') + '</strong> ریال</p>';
+                            calculationHtml += '<small class="text-muted">(K-Factor فنی ' + (isHashtagged ? 'هشتگ‌دار' : 'عادی') + ': ' + technicalK.value.toLocaleString('fa-IR') + ' ریال)</small>';
+                        }
+                        
+                        if (professionalCoeff > 0) {
+                            calculationHtml += '<p>جزء حرفه‌ای: <strong>' + professionalCoeff + '</strong> × <strong>' + 
+                                professionalK.value.toLocaleString('fa-IR') + '</strong> ریال = <strong>' + 
+                                professionalAmount.toLocaleString('fa-IR') + '</strong> ریال</p>';
+                            calculationHtml += '<small class="text-muted">(K-Factor حرفه‌ای ' + (isHashtagged ? 'هشتگ‌دار' : 'عادی') + ': ' + professionalK.value.toLocaleString('fa-IR') + ' ریال)</small>';
+                        }
+                        
+                        calculationHtml += '<hr><p class="mb-0"><strong>قیمت کل: ' + 
+                            calculatedPrice.toLocaleString('fa-IR') + ' ریال</strong></p>';
+                        calculationHtml += '</div>';
+
+                        $('#price-calculation-text').html(calculationHtml);
+                        $('#price-calculation-info').show();
+
+                        $('#Price').val(Math.round(calculatedPrice));
+                    } else {
+                        $('#price-calculation-text').html(
+                            '<div class="alert alert-warning">' +
+                            '<i class="fas fa-exclamation-triangle"></i> ' +
+                            'K-Factors مورد نیاز یافت نشد. لطفاً ابتدا K-Factors را در بخش FactorSettings تعریف کنید.' +
+                            '</div>'
+                        );
+                        $('#price-calculation-info').show();
+                    }
+                }).fail(function(xhr, status, error) {
+                    console.error('❌ Error fetching K-Factors:', { xhr: xhr, status: status, error: error });
+                    $('#price-calculation-text').html(
+                        '<div class="alert alert-danger">' +
+                        '<i class="fas fa-exclamation-triangle"></i> ' +
+                        'خطا در دریافت K-Factors از سرور. لطفاً دوباره تلاش کنید.' +
+                        '</div>'
+                    );
+                    $('#price-calculation-info').show();
+                });
+            }
+
+            // رویدادهای محاسبه قیمت
+            $('#TechnicalCoefficient, #ProfessionalCoefficient').on('input change', function() {
+                var calculationType = $('#PriceCalculationType').val();
+                if (calculationType === '2') { // ComponentBased
+                    calculatePriceFromCoefficients();
+                }
+            });
+
+            $('#IsHashtagged, #PriceCalculationType').on('change', function() {
+                var calculationType = $('#PriceCalculationType').val();
+                if (calculationType === '2') { // ComponentBased
+                    var technicalCoeff = parseFloat($('#TechnicalCoefficient').val()) || 0;
+                    var professionalCoeff = parseFloat($('#ProfessionalCoefficient').val()) || 0;
+                    if (technicalCoeff > 0 || professionalCoeff > 0) {
+                        calculatePriceFromCoefficients();
+                    } else {
+                        $('#price-calculation-info').hide();
+                    }
+                } else {
+                    $('#price-calculation-info').hide();
                 }
             });
 
