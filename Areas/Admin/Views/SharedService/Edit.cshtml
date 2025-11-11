@@ -4,34 +4,515 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<style>
+    /* ==================== متغیرهای رنگی مخصوص محیط درمانی ==================== */
+    :root {
+        --medical-blue: #2c5aa0;
+        --medical-blue-light: #4a7bc8;
+        --medical-blue-dark: #1e3a70;
+        --medical-green: #2d8659;
+        --medical-green-light: #45a572;
+        --medical-orange: #e67e22;
+        --medical-red: #c0392b;
+        --medical-gray: #5a6c7d;
+        --medical-gray-light: #95a5a6;
+    }
+
+    /* ==================== فونت‌های فارسی ==================== */
+    body, .form-control, .btn, label, .card, input, select, textarea {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    }
+
+    .farsi-number, .price-value, .total-price-value, .calc-row strong {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+        direction: rtl;
+    }
+
+    /* ==================== Header Section ==================== */
+    .page-header-card {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #d35400 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header-card .card-header {
+        background: transparent;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .page-header-card h4 {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header-card p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* ==================== Hierarchical Navigation ==================== */
+    .hierarchy-navigation {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .hierarchy-navigation .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hierarchy-navigation .breadcrumb-item {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .hierarchy-navigation .breadcrumb-item + .breadcrumb-item::before {
+        content: "◄";
+        color: var(--medical-blue);
+        font-weight: bold;
+        padding: 0 0.75rem;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a {
+        color: var(--medical-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a:hover {
+        background: var(--medical-blue);
+        color: white;
+    }
+
+    .hierarchy-navigation .breadcrumb-item.active {
+        color: var(--medical-orange);
+        font-weight: 700;
+        background: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ==================== Cards ==================== */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-header h5, .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* ==================== Form Controls ==================== */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: var(--medical-blue-dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.65rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--medical-blue);
+        box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+    }
+
+    .form-control::placeholder {
+        color: var(--medical-gray-light);
+        font-style: italic;
+    }
+
+    .form-text {
+        color: var(--medical-gray);
+        font-size: 0.85rem;
+        margin-top: 0.35rem;
+    }
+
+    /* ==================== Calculation Section - Professional Design ==================== */
+    .price-calculation-section {
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .calculation-card {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .calculation-header {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .calculation-header h6 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* کارت قیمت کل */
+    .total-price-card {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(45, 134, 89, 0.25);
+    }
+
+    .total-price-icon {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-left: 1.5rem;
+    }
+
+    .total-price-content {
+        flex: 1;
+        color: white;
+    }
+
+    .total-price-label {
+        font-size: 0.95rem;
+        opacity: 0.95;
+        margin-bottom: 0.5rem;
+    }
+
+    .total-price-value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+
+    .total-price-unit {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    /* کارت‌های جزئیات */
+    .calc-detail-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        height: 100%;
+    }
+
+    .calc-detail-card.technical .calc-detail-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .calc-detail-card.professional .calc-detail-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    .calc-detail-header {
+        color: white;
+        padding: 0.875rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .calc-detail-header i {
+        margin-left: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .calc-detail-body {
+        background: white;
+        padding: 1rem;
+    }
+
+    .calc-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .calc-row span {
+        color: var(--medical-gray);
+    }
+
+    .calc-row strong {
+        color: var(--medical-blue-dark);
+        font-size: 1rem;
+    }
+
+    .calc-row.total {
+        padding-top: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .calc-row.total strong {
+        color: var(--medical-green);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .calc-divider {
+        border-top: 2px dashed #e2e8f0;
+        margin: 0.5rem 0;
+    }
+
+    /* کارت فرمول */
+    .formula-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .formula-header {
+        background: white;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--medical-blue-dark);
+        display: flex;
+        align-items: center;
+    }
+
+    .formula-header i {
+        margin-left: 0.5rem;
+        color: var(--medical-orange);
+    }
+
+    .formula-body {
+        padding: 1rem;
+    }
+
+    .formula-body code {
+        display: block;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        color: var(--medical-blue-dark);
+        font-size: 0.95rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* Badge */
+    .badge-lg {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%) !important;
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-warning i {
+        margin-left: 0.5rem;
+        font-size: 1rem;
+    }
+
+    /* ==================== دکمه‌های اقدام ==================== */
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #d35400 100%);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #d35400 0%, var(--medical-orange) 100%);
+        box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, var(--medical-blue-light) 0%, var(--medical-blue) 100%);
+        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        color: var(--medical-blue-dark);
+        border: 2px solid #dee2e6;
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    /* ==================== Audit Information ==================== */
+    .audit-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .audit-card .card-header {
+        background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-gray-light) 100%);
+    }
+
+    /* ==================== Help Section ==================== */
+    .help-card {
+        background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+    }
+
+    .help-card .card-header {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+    }
+
+    /* ==================== Responsive ==================== */
+    @@media (max-width: 768px) {
+        .total-price-value {
+            font-size: 1.75rem;
+        }
+        
+        .hierarchy-navigation .breadcrumb {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+
 <div class="container-fluid">
-    <!-- Header Section -->
+    <!-- Hierarchical Navigation -->
+    <div class="hierarchy-navigation">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                        <i class="fas fa-home"></i>
+                        داشبورد
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "SharedService")">
+                        <i class="fas fa-share-alt"></i>
+                        خدمات مشترک
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Details", "SharedService", new { id = Model.SharedServiceId })">
+                        <i class="fas fa-info-circle"></i>
+                        جزئیات
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-edit"></i>
+                    ویرایش خدمت مشترک
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Page Header -->
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-warning text-white">
-                    <h4 class="mb-0">
+            <div class="card page-header-card">
+                <div class="card-header">
+                    <h4>
                         <i class="fas fa-edit"></i>
                         ویرایش خدمت مشترک
                     </h4>
-                    <p class="mb-0">ویرایش اطلاعات خدمت مشترک</p>
+                    <p>ویرایش اطلاعات و تنظیمات خدمت مشترک بین دپارتمان‌ها</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Form Section -->
-    <div class="row mt-3">
+    <!-- Main Form -->
+    <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h5>
                         <i class="fas fa-edit"></i>
                         اطلاعات خدمت مشترک
                     </h5>
                 </div>
                 <div class="card-body">
-                    @using (Html.BeginForm("Edit", "SharedService", FormMethod.Post, new { @class = "form-horizontal" }))
+                    @using (Html.BeginForm("Edit", "SharedService", FormMethod.Post, new { @id = "sharedServiceForm", @class = "form-horizontal" }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.HiddenFor(model => model.SharedServiceId)
@@ -49,9 +530,9 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.ServiceId, htmlAttributes: new { @class = "control-label required" })
-                                    @Html.DropDownListFor(model => model.ServiceId, Model.Services, "انتخاب خدمت...", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(model => model.ServiceId, Model.Services, "انتخاب خدمت...", new { @id = "ServiceId", @class = "form-control", @required = "required" })
                                     @Html.ValidationMessageFor(model => model.ServiceId, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">خدمتی که می‌خواهید در دپارتمان‌ها مشترک باشد</small>
+                                    <small class="form-text">خدمتی که می‌خواهید در دپارتمان‌ها مشترک باشد</small>
                                 </div>
                             </div>
 
@@ -59,9 +540,9 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.DepartmentId, htmlAttributes: new { @class = "control-label required" })
-                                    @Html.DropDownListFor(model => model.DepartmentId, Model.Departments, "انتخاب دپارتمان...", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(model => model.DepartmentId, Model.Departments, "انتخاب دپارتمان...", new { @id = "DepartmentId", @class = "form-control", @required = "required" })
                                     @Html.ValidationMessageFor(model => model.DepartmentId, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">دپارتمانی که این خدمت در آن مشترک خواهد بود</small>
+                                    <small class="form-text">دپارتمانی که این خدمت در آن مشترک خواهد بود</small>
                                 </div>
                             </div>
                         </div>
@@ -74,7 +555,7 @@
                                         @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
                                         @Html.LabelFor(model => model.IsActive, htmlAttributes: new { @class = "form-check-label" })
                                     </div>
-                                    <small class="form-text text-muted">آیا این خدمت مشترک فعال باشد؟</small>
+                                    <small class="form-text">آیا این خدمت مشترک فعال باشد؟</small>
                                 </div>
                             </div>
                         </div>
@@ -84,9 +565,9 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.OverrideTechnicalFactor, htmlAttributes: new { @class = "control-label" })
-                                    @Html.TextBoxFor(model => model.OverrideTechnicalFactor, "{0:0.##}", new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب فنی Override (اختیاری)" })
+                                    @Html.TextBoxFor(model => model.OverrideTechnicalFactor, "{0:0.##}", new { @id = "OverrideTechnicalFactor", @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب فنی Override (اختیاری)", value = "" })
                                     @Html.ValidationMessageFor(model => model.OverrideTechnicalFactor, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">ضریب فنی خاص این دپارتمان (اختیاری)</small>
+                                    <small class="form-text">ضریب فنی خاص این دپارتمان (اختیاری - برای override کردن ضریب پیش‌فرض)</small>
                                 </div>
                             </div>
 
@@ -94,9 +575,9 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.OverrideProfessionalFactor, htmlAttributes: new { @class = "control-label" })
-                                    @Html.TextBoxFor(model => model.OverrideProfessionalFactor, "{0:0.##}", new { @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب حرفه‌ای Override (اختیاری)" })
+                                    @Html.TextBoxFor(model => model.OverrideProfessionalFactor, "{0:0.##}", new { @id = "OverrideProfessionalFactor", @class = "form-control", @type = "number", @step = "0.01", @placeholder = "ضریب حرفه‌ای Override (اختیاری)", value = "" })
                                     @Html.ValidationMessageFor(model => model.OverrideProfessionalFactor, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">ضریب حرفه‌ای خاص این دپارتمان (اختیاری)</small>
+                                    <small class="form-text">ضریب حرفه‌ای خاص این دپارتمان (اختیاری - برای override کردن ضریب پیش‌فرض)</small>
                                 </div>
                             </div>
                         </div>
@@ -108,60 +589,146 @@
                                     @Html.LabelFor(model => model.DepartmentSpecificNotes, htmlAttributes: new { @class = "control-label" })
                                     @Html.TextAreaFor(model => model.DepartmentSpecificNotes, new { @class = "form-control", rows = 4, placeholder = "توضیحات خاص این دپارتمان..." })
                                     @Html.ValidationMessageFor(model => model.DepartmentSpecificNotes, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">توضیحات خاص این دپارتمان در مورد این خدمت (اختیاری)</small>
+                                    <small class="form-text">توضیحات خاص این دپارتمان در مورد این خدمت (اختیاری)</small>
                                 </div>
                             </div>
                         </div>
 
-        <!-- Price Calculation Section -->
-        <div class="row" id="price-calculation-section" style="display: none;">
-            <div class="col-12">
-                <div class="card border-2" id="price-calculation-card">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0">
-                            <i class="fas fa-calculator"></i>
-                            محاسبه قیمت خدمت مشترک
-                        </h6>
+        <!-- بخش محاسبه قیمت - طراحی حرفه‌ای -->
+        <div class="price-calculation-section" id="priceCalculationSection" style="display: none;">
+            <div class="card calculation-card" id="calculationCard">
+                <div class="calculation-header">
+                    <h6>
+                        <i class="fas fa-calculator"></i>
+                        پیش‌نمایش محاسبه قیمت خدمت مشترک
+                    </h6>
+                </div>
+                <div class="card-body" id="calculationBody">
+                    <!-- Loading State -->
+                    <div id="loadingState" style="display: none;">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">در حال محاسبه...</span>
+                            </div>
+                            <p class="mt-3 text-muted">در حال محاسبه قیمت...</p>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label font-weight-bold">قیمت محاسبه شده:</label>
-                                    <div class="input-group input-group-lg">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-success text-white">
-                                                <i class="fas fa-money-bill-wave"></i> ریال
-                                            </span>
-                                        </div>
-                                        <input type="text" class="form-control text-success font-weight-bold" id="calculated-price" readonly style="font-size: 1.2em;">
+
+                    <!-- Success State -->
+                    <div id="successState" style="display: none;">
+                        <!-- قیمت کل -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="total-price-card">
+                                    <div class="total-price-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
                                     </div>
-                                    <small class="form-text text-muted">قیمت نهایی بر اساس فرمول وزارت بهداشت</small>
+                                    <div class="total-price-content">
+                                        <div class="total-price-label">قیمت نهایی خدمت</div>
+                                        <div class="total-price-value farsi-number" id="totalPrice">—</div>
+                                        <div class="total-price-unit">ریال</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label font-weight-bold">جزئیات محاسبه:</label>
-                                    <div id="calculation-details" class="border rounded p-3 bg-light" style="min-height: 120px;">
-                                        <div class="text-center text-muted">
-                                            <i class="fas fa-info-circle"></i>
-                                            لطفاً خدمت و دپارتمان را انتخاب کنید
+                        </div>
+
+                        <!-- جزئیات محاسبه -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="calc-detail-card technical">
+                                    <div class="calc-detail-header">
+                                        <i class="fas fa-cog"></i>
+                                        <span>جزء فنی</span>
+                                    </div>
+                                    <div class="calc-detail-body">
+                                        <div class="calc-row">
+                                            <span>ضریب:</span>
+                                            <strong class="farsi-number" id="techCoef">—</strong>
+                                        </div>
+                                        <div class="calc-row">
+                                            <span>کای (K):</span>
+                                            <strong class="farsi-number" id="techK">—</strong>
+                                        </div>
+                                        <div class="calc-divider"></div>
+                                        <div class="calc-row total">
+                                            <span>مبلغ:</span>
+                                            <strong class="farsi-number" id="techAmount">—</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="calc-detail-card professional">
+                                    <div class="calc-detail-header">
+                                        <i class="fas fa-user-md"></i>
+                                        <span>جزء حرفه‌ای</span>
+                                    </div>
+                                    <div class="calc-detail-body">
+                                        <div class="calc-row">
+                                            <span>ضریب:</span>
+                                            <strong class="farsi-number" id="profCoef">—</strong>
+                                        </div>
+                                        <div class="calc-row">
+                                            <span>کای (K):</span>
+                                            <strong class="farsi-number" id="profK">—</strong>
+                                        </div>
+                                        <div class="calc-divider"></div>
+                                        <div class="calc-row total">
+                                            <span>مبلغ:</span>
+                                            <strong class="farsi-number" id="profAmount">—</strong>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- فرمول محاسبه -->
                         <div class="row">
                             <div class="col-12">
-                                <button type="button" class="btn btn-info btn-sm" id="calculate-price-btn">
-                                    <i class="fas fa-calculator"></i>
-                                    محاسبه مجدد قیمت
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm ml-2" onclick="clearCalculation()">
-                                    <i class="fas fa-eraser"></i>
-                                    پاک کردن محاسبه
-                                </button>
+                                <div class="formula-card">
+                                    <div class="formula-header">
+                                        <i class="fas fa-calculator"></i>
+                                        فرمول محاسبه
+                                    </div>
+                                    <div class="formula-body">
+                                        <code id="formulaText" class="farsi-number">—</code>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Override Badge -->
+                        <div class="row mt-2" id="overrideBadgeRow" style="display: none;">
+                            <div class="col-12 text-center">
+                                <span class="badge badge-warning badge-lg">
+                                    <i class="fas fa-star"></i>
+                                    استفاده از ضرایب سفارشی (Override)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="errorState" style="display: none;">
+                        <div class="alert alert-danger mb-0" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-circle fa-2x ml-3"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1">خطا در محاسبه قیمت</h6>
+                                    <p class="mb-0" id="errorMessage">—</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های اقدام -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-info btn-sm" id="recalculateBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                محاسبه مجدد
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -169,14 +736,14 @@
         </div>
 
                         <!-- Form Actions -->
-                        <div class="form-group">
-                            <div class="d-flex justify-content-between">
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between flex-wrap">
                                 <div>
                                     <button type="submit" class="btn btn-warning">
                                         <i class="fas fa-save"></i>
                                         به‌روزرسانی خدمت مشترک
                                     </button>
-                                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                    <button type="button" class="btn btn-secondary" id="resetFormBtn">
                                         <i class="fas fa-undo"></i>
                                         بازنشانی تغییرات
                                     </button>
@@ -199,32 +766,32 @@
         </div>
     </div>
 
-    <!-- Audit Information Section -->
-    <div class="row mt-3">
+    <!-- Audit Information -->
+    <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card audit-card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h5>
                         <i class="fas fa-history"></i>
-                        اطلاعات ردیابی
+                        اطلاعات حسابرسی
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="fas fa-plus-circle text-success"></i> اطلاعات ایجاد:</h6>
+                            <h6><i class="fas fa-plus-circle text-success"></i> ایجاد:</h6>
                             <ul class="list-unstyled">
-                                <li><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</li>
-                                <li><strong>ایجادکننده:</strong> @Model.CreatedByUserName</li>
+                                <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
+                                <li><strong>کاربر:</strong> @Model.CreatedByUserName</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="fas fa-edit text-warning"></i> اطلاعات آخرین ویرایش:</h6>
+                            <h6><i class="fas fa-edit text-warning"></i> آخرین ویرایش:</h6>
                             <ul class="list-unstyled">
                                 @if (Model.UpdatedAt.HasValue)
                                 {
-                                    <li><strong>تاریخ ویرایش:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</li>
-                                    <li><strong>ویرایش‌کننده:</strong> @Model.UpdatedByUserName</li>
+                                    <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
+                                    <li><strong>کاربر:</strong> @Model.UpdatedByUserName</li>
                                 }
                                 else
                                 {
@@ -239,11 +806,11 @@
     </div>
 
     <!-- Help Section -->
-    <div class="row mt-3">
+    <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card help-card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h5>
                         <i class="fas fa-info-circle"></i>
                         راهنمای ویرایش
                     </h5>
@@ -252,17 +819,19 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6><i class="fas fa-lightbulb text-warning"></i> نکات مهم:</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-check text-success"></i> تغییر خدمت یا دپارتمان ممکن است بر سایر بخش‌ها تأثیر بگذارد</li>
-                                <li><i class="fas fa-check text-success"></i> غیرفعال کردن خدمت، آن را از لیست خدمات قابل استفاده حذف می‌کند</li>
-                                <li><i class="fas fa-check text-success"></i> تمام تغییرات در سیستم ثبت می‌شوند</li>
+                            <ul>
+                                <li>تغییر خدمت یا دپارتمان ممکن است بر سایر بخش‌ها تأثیر بگذارد</li>
+                                <li>غیرفعال کردن خدمت، آن را از لیست خدمات قابل استفاده حذف می‌کند</li>
+                                <li>تمام تغییرات در سیستم ثبت می‌شوند</li>
+                                <li>ضرایب Override برای تنظیم قیمت خاص دپارتمان استفاده می‌شوند</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <h6><i class="fas fa-exclamation-triangle text-danger"></i> هشدارها:</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-warning text-warning"></i> تغییر خدمت ممکن است بر محاسبات قیمت تأثیر بگذارد</li>
-                                <li><i class="fas fa-warning text-warning"></i> تغییر دپارتمان ممکن است دسترسی‌ها را تغییر دهد</li>
+                            <ul>
+                                <li>تغییر خدمت ممکن است بر محاسبات قیمت تأثیر بگذارد</li>
+                                <li>تغییر دپارتمان ممکن است دسترسی‌ها را تغییر دهد</li>
+                                <li>حذف ضرایب Override، قیمت را به حالت پیش‌فرض برمی‌گرداند</li>
                             </ul>
                         </div>
                     </div>
@@ -275,6 +844,12 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            console.log('🔧 [BROWSER] SharedService Edit initialized');
+            
+            // دریافت Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            console.log('🔐 [BROWSER] Anti-Forgery Token:', token ? 'موجود' : 'ناموجود');
+
             // ذخیره مقادیر اولیه برای بازنشانی
             var initialValues = {
                 serviceId: $('#ServiceId').val(),
@@ -286,13 +861,12 @@
             };
 
             // محاسبه خودکار در بارگذاری صفحه اگر خدمت و دپارتمان انتخاب شده باشند
-            console.log('🔄 [BROWSER] بررسی محاسبه خودکار در بارگذاری صفحه');
             if (initialValues.serviceId && initialValues.departmentId) {
-                console.log('✅ [BROWSER] خدمت و دپارتمان از قبل انتخاب شده - شروع محاسبه');
-                checkAndShowPriceCalculation();
+                console.log('✅ [BROWSER] خدمت و دپارتمان از قبل انتخاب شده - شروع محاسبه خودکار');
+                checkAndShowCalculation();
             } else {
                 console.log('❌ [BROWSER] خدمت یا دپارتمان انتخاب نشده - مخفی کردن بخش محاسبه');
-                $('#price-calculation-section').hide();
+                $('#priceCalculationSection').hide();
             }
 
             // اعتبارسنجی فرم
@@ -300,13 +874,11 @@
                 var isValid = true;
                 var errors = [];
 
-                // بررسی انتخاب خدمت
                 if (!$('#ServiceId').val()) {
                     errors.push('انتخاب خدمت الزامی است');
                     isValid = false;
                 }
 
-                // بررسی انتخاب دپارتمان
                 if (!$('#DepartmentId').val()) {
                     errors.push('انتخاب دپارتمان الزامی است');
                     isValid = false;
@@ -318,65 +890,70 @@
                 }
             });
 
-            // تغییر خدمت - نمایش اطلاعات خدمت
+            // تغییر خدمت
             $('#ServiceId').change(function() {
                 var serviceId = $(this).val();
                 console.log('🔄 [BROWSER] تغییر خدمت - ServiceId:', serviceId);
                 if (serviceId) {
-                    console.log('✅ [BROWSER] خدمت انتخاب شده:', serviceId);
-                    checkAndShowPriceCalculation();
+                    checkAndShowCalculation();
                 } else {
-                    console.log('❌ [BROWSER] خدمت انتخاب نشده');
+                    hideCalculation();
                 }
             });
 
-            // تغییر دپارتمان - نمایش اطلاعات دپارتمان
+            // تغییر دپارتمان
             $('#DepartmentId').change(function() {
                 var departmentId = $(this).val();
                 console.log('🔄 [BROWSER] تغییر دپارتمان - DepartmentId:', departmentId);
                 if (departmentId) {
-                    console.log('✅ [BROWSER] دپارتمان انتخاب شده:', departmentId);
-                    checkAndShowPriceCalculation();
+                    checkAndShowCalculation();
                 } else {
-                    console.log('❌ [BROWSER] دپارتمان انتخاب نشده');
+                    hideCalculation();
                 }
             });
 
             // تغییر ضرایب Override
-            $('#OverrideTechnicalFactor, #OverrideProfessionalFactor').on('input', function() {
-                var fieldName = $(this).attr('id');
-                var fieldValue = $(this).val();
-                console.log('🔄 [BROWSER] تغییر فیلد Override - Field:', fieldName, 'Value:', fieldValue);
-                
+            $('#OverrideTechnicalFactor, #OverrideProfessionalFactor').on('input', debounce(function() {
+                console.log('🔄 [BROWSER] تغییر ضریب Override');
                 if ($('#ServiceId').val() && $('#DepartmentId').val()) {
-                    console.log('✅ [BROWSER] محاسبه مجدد به دلیل تغییر Override');
                     calculatePrice();
-                } else {
-                    console.log('❌ [BROWSER] نمی‌توان محاسبه کرد - ServiceId یا DepartmentId خالی است');
                 }
-            });
+            }, 500));
 
-            // دکمه محاسبه قیمت
-            $('#calculate-price-btn').click(function() {
-                console.log('🔘 [BROWSER] کلیک روی دکمه محاسبه قیمت');
+            // دکمه محاسبه مجدد
+            $('#recalculateBtn').click(function() {
+                console.log('🔘 [BROWSER] کلیک روی محاسبه مجدد');
                 calculatePrice();
             });
 
-            // بررسی و نمایش بخش محاسبه قیمت
-            function checkAndShowPriceCalculation() {
+            // دکمه بازنشانی فرم
+            $('#resetFormBtn').click(function() {
+                if (confirm('آیا از بازنشانی فرم اطمینان دارید؟ تمام تغییرات پاک خواهد شد.')) {
+                    $('#ServiceId').val(initialValues.serviceId);
+                    $('#DepartmentId').val(initialValues.departmentId);
+                    $('#IsActive').prop('checked', initialValues.isActive);
+                    $('#DepartmentSpecificNotes').val(initialValues.notes);
+                    $('#OverrideTechnicalFactor').val(initialValues.overrideTechnicalFactor);
+                    $('#OverrideProfessionalFactor').val(initialValues.overrideProfessionalFactor);
+                    hideCalculation();
+                    checkAndShowCalculation();
+                }
+            });
+
+            // بررسی و نمایش بخش محاسبه
+            function checkAndShowCalculation() {
                 var serviceId = $('#ServiceId').val();
                 var departmentId = $('#DepartmentId').val();
                 
-                console.log('🔍 [BROWSER] بررسی نمایش بخش محاسبه');
-                console.log('🔍 [BROWSER] ServiceId:', serviceId, 'DepartmentId:', departmentId);
+                console.log('🔍 [BROWSER] بررسی نمایش محاسبه - Service:', serviceId, 'Department:', departmentId);
                 
                 if (serviceId && departmentId) {
-                    console.log('✅ [BROWSER] نمایش بخش محاسبه و شروع محاسبه');
-                    $('#price-calculation-section').show();
+                    console.log('✅ [BROWSER] نمایش بخش محاسبه');
+                    $('#priceCalculationSection').fadeIn(300);
                     calculatePrice();
                 } else {
                     console.log('❌ [BROWSER] مخفی کردن بخش محاسبه');
-                    $('#price-calculation-section').hide();
+                    hideCalculation();
                 }
             }
 
@@ -384,167 +961,162 @@
             function calculatePrice() {
                 var serviceId = $('#ServiceId').val();
                 var departmentId = $('#DepartmentId').val();
-                var overrideTechnicalFactor = $('#OverrideTechnicalFactor').val();
-                var overrideProfessionalFactor = $('#OverrideProfessionalFactor').val();
+                var overrideTech = $('#OverrideTechnicalFactor').val();
+                var overrideProf = $('#OverrideProfessionalFactor').val();
 
                 console.log('🚀 [BROWSER] شروع محاسبه قیمت');
-                console.log('🚀 [BROWSER] ServiceId:', serviceId);
-                console.log('🚀 [BROWSER] DepartmentId:', departmentId);
-                console.log('🚀 [BROWSER] Override Technical Factor:', overrideTechnicalFactor);
-                console.log('🚀 [BROWSER] Override Professional Factor:', overrideProfessionalFactor);
+                console.log('📋 [BROWSER] Parameters:', {
+                    serviceId: serviceId,
+                    departmentId: departmentId,
+                    overrideTech: overrideTech,
+                    overrideProf: overrideProf
+                });
 
                 if (!serviceId || !departmentId) {
-                    console.log('❌ [BROWSER] ServiceId یا DepartmentId خالی است');
+                    console.log('❌ [BROWSER] پارامترهای ناقص');
                     return;
                 }
 
-                console.log('📡 [BROWSER] ارسال درخواست AJAX...');
+                // نمایش Loading State
+                showLoadingState();
+
+                // ✅ ارسال AJAX با Anti-Forgery Token
                 $.ajax({
                     url: '@Url.Action("CalculateSharedServicePriceForCreate")',
                     type: 'POST',
+                    dataType: 'json',
+                    headers: {
+                        'RequestVerificationToken': token
+                    },
                     data: {
+                        __RequestVerificationToken: token,
                         serviceId: serviceId,
                         departmentId: departmentId,
-                        overrideTechnicalFactor: overrideTechnicalFactor,
-                        overrideProfessionalFactor: overrideProfessionalFactor
+                        overrideTechnicalFactor: overrideTech || null,
+                        overrideProfessionalFactor: overrideProf || null
                     },
                     success: function(response) {
-                        console.log('✅ [BROWSER] دریافت پاسخ از سرور');
-                        console.log('📊 [BROWSER] Raw Response:', response);
-                        console.log('📊 [BROWSER] Response Type:', typeof response);
+                        console.log('✅ [BROWSER] دریافت پاسخ موفق');
+                        console.log('📊 [BROWSER] Response:', response);
                         
-                        // Parse response if it's a string
-                        var parsedResponse = response;
-                        if (typeof response === 'string') {
-                            try {
-                                parsedResponse = JSON.parse(response);
-                                console.log('🔄 [BROWSER] Response parsed successfully');
-                            } catch (parseError) {
-                                console.error('❌ [BROWSER] خطا در parse کردن response:', parseError);
-                                $('#calculated-price').val('خطا در پردازش پاسخ');
-                                $('#calculation-details').html('<div class="alert alert-danger">خطا در پردازش پاسخ سرور</div>');
-                                return;
-                            }
-                        }
-                        
-                        console.log('📊 [BROWSER] Parsed Response:', parsedResponse);
-                        console.log('📊 [BROWSER] Response Success:', parsedResponse ? parsedResponse.success : 'undefined');
-                        
-                        try {
-                            if (parsedResponse && parsedResponse.success) {
-                                console.log('✅ [BROWSER] محاسبه موفق');
-                                console.log('💰 [BROWSER] Calculated Price:', parsedResponse.calculatedPrice);
-                                console.log('🔧 [BROWSER] Technical Component:', parsedResponse.technicalComponent);
-                                console.log('👨‍⚕️ [BROWSER] Professional Component:', parsedResponse.professionalComponent);
-                                console.log('🔧 [BROWSER] Technical Factor:', parsedResponse.technicalFactor);
-                                console.log('👨‍⚕️ [BROWSER] Professional Factor:', parsedResponse.professionalFactor);
-                                console.log('📝 [BROWSER] Calculation Formula:', parsedResponse.calculationFormula);
-                                console.log('🔄 [BROWSER] Has Override:', parsedResponse.hasOverride);
-                                console.log('📅 [BROWSER] Financial Year:', parsedResponse.financialYear);
-                                // فرمت کردن قیمت با جداکننده هزارگان
-                                console.log('🎨 [BROWSER] فرمت کردن قیمت...');
-                                var formattedPrice = new Intl.NumberFormat('fa-IR').format(parsedResponse.calculatedPrice);
-                                console.log('🎨 [BROWSER] Formatted Price:', formattedPrice);
-                                $('#calculated-price').val(formattedPrice);
-                                
-                                // نمایش جزئیات محاسبه
-                                console.log('🎨 [BROWSER] ایجاد HTML جزئیات...');
-                                var detailsHtml = '<div class="calculation-details">' +
-                                    '<strong>جزئیات محاسبه:</strong><br>' +
-                                    '<div class="row mt-2">' +
-                                    '<div class="col-6">' +
-                                    '<small class="text-muted">جزء فنی:</small><br>' +
-                                    '<strong>' + parsedResponse.technicalComponent + '</strong>' +
-                                    '</div>' +
-                                    '<div class="col-6">' +
-                                    '<small class="text-muted">جزء حرفه‌ای:</small><br>' +
-                                    '<strong>' + parsedResponse.professionalComponent + '</strong>' +
-                                    '</div>' +
-                                    '</div>' +
-                                    '<div class="row mt-2">' +
-                                    '<div class="col-6">' +
-                                    '<small class="text-muted">ضریب فنی:</small><br>' +
-                                    '<strong>' + new Intl.NumberFormat('fa-IR').format(parsedResponse.technicalFactor) + '</strong>' +
-                                    '</div>' +
-                                    '<div class="col-6">' +
-                                    '<small class="text-muted">ضریب حرفه‌ای:</small><br>' +
-                                    '<strong>' + new Intl.NumberFormat('fa-IR').format(parsedResponse.professionalFactor) + '</strong>' +
-                                    '</div>' +
-                                    '</div>' +
-                                    '<div class="mt-2">' +
-                                    '<small class="text-muted">فرمول محاسبه:</small><br>' +
-                                    '<code>' + parsedResponse.calculationFormula + '</code>' +
-                                    '</div>';
-                                
-                                if (parsedResponse.hasOverride) {
-                                    detailsHtml += '<div class="mt-2"><span class="badge badge-warning">استفاده از ضرایب Override</span></div>';
-                                }
-                                
-                                detailsHtml += '</div>';
-                                console.log('🎨 [BROWSER] HTML جزئیات:', detailsHtml);
-                                $('#calculation-details').html(detailsHtml);
-                                
-                                // نمایش موفقیت
-                                console.log('✅ [BROWSER] نمایش موفقیت در UI');
-                                $('#price-calculation-section').removeClass('border-danger').addClass('border-success');
-                            } else {
-                                console.log('❌ [BROWSER] محاسبه ناموفق');
-                                console.log('❌ [BROWSER] Error Message:', parsedResponse ? parsedResponse.message : 'undefined');
-                                $('#calculated-price').val('خطا در محاسبه');
-                                $('#calculation-details').html('<div class="alert alert-danger">خطا: ' + (parsedResponse.message || 'خطای نامشخص') + '</div>');
-                                $('#price-calculation-section').removeClass('border-success').addClass('border-danger');
-                            }
-                        } catch (e) {
-                            console.error('❌ [BROWSER] خطا در پردازش response:', e);
-                            console.error('❌ [BROWSER] Error Stack:', e.stack);
-                            $('#calculated-price').val('خطا در پردازش');
-                            $('#calculation-details').html('<div class="alert alert-danger">خطا در پردازش نتیجه محاسبه</div>');
-                            $('#price-calculation-section').removeClass('border-success').addClass('border-danger');
+                        if (response && response.success === true) {
+                            console.log('✅ [BROWSER] Success = true, calling displayCalculation');
+                            displayCalculation(response);
+                        } else {
+                            console.log('❌ [BROWSER] Success = false');
+                            displayError(response.message || response.Message || 'خطا در محاسبه قیمت');
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('❌ [BROWSER] خطا در AJAX:');
-                        console.error('❌ [BROWSER] XHR:', xhr);
-                        console.error('❌ [BROWSER] Status:', status);
-                        console.error('❌ [BROWSER] Error:', error);
-                        console.error('❌ [BROWSER] Response Text:', xhr.responseText);
-                        $('#calculated-price').val('خطا در ارتباط');
-                        $('#calculation-details').html('<div class="alert alert-danger">خطا در ارتباط با سرور: ' + error + '</div>');
-                        $('#price-calculation-section').removeClass('border-success').addClass('border-danger');
+                        console.error('❌ [BROWSER] خطای AJAX:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
+                        
+                        var errorMsg = 'خطا در ارتباط با سرور';
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                        } catch (e) {
+                            console.error('❌ [BROWSER] خطا در parse پاسخ خطا:', e);
+                        }
+                        
+                        displayError(errorMsg);
                     }
                 });
             }
 
-            // تابع پاک کردن محاسبه
-            window.clearCalculation = function() {
-                $('#calculated-price').val('');
-                $('#calculation-details').html(
-                    '<div class="text-center text-muted">' +
-                    '<i class="fas fa-info-circle"></i>' +
-                    ' لطفاً خدمت و دپارتمان را انتخاب کنید' +
-                    '</div>'
-                );
-                $('#price-calculation-section').hide();
-                $('#price-calculation-card').removeClass('border-success border-danger');
-            };
+            // نمایش Loading State
+            function showLoadingState() {
+                console.log('⏳ [BROWSER] نمایش Loading State');
+                $('#loadingState').show();
+                $('#successState').hide();
+                $('#errorState').hide();
+            }
 
-            // تابع بازنشانی فرم
-            window.resetForm = function() {
-                if (confirm('آیا از بازنشانی تغییرات اطمینان دارید؟ تمام تغییرات انجام شده پاک خواهد شد.')) {
-                    $('#ServiceId').val(initialValues.serviceId);
-                    $('#DepartmentId').val(initialValues.departmentId);
-                    $('#IsActive').prop('checked', initialValues.isActive);
-                    $('#DepartmentSpecificNotes').val(initialValues.notes);
-                    $('#OverrideTechnicalFactor').val(initialValues.overrideTechnicalFactor);
-                    $('#OverrideProfessionalFactor').val(initialValues.overrideProfessionalFactor);
+            // نمایش نتیجه محاسبه - طراحی حرفه‌ای
+            function displayCalculation(data) {
+                console.log('🎨 [BROWSER] شروع نمایش محاسبه');
+                console.log('📊 [BROWSER] Data:', data);
+                
+                try {
+                    // مخفی کردن Loading و Error
+                    $('#loadingState').hide();
+                    $('#errorState').hide();
                     
-                    // پاک کردن محاسبه
-                    clearCalculation();
+                    // نمایش قیمت کل
+                    var formattedPrice = new Intl.NumberFormat('fa-IR').format(data.calculatedPrice);
+                    $('#totalPrice').text(formattedPrice);
+                    console.log('💰 [BROWSER] قیمت کل:', formattedPrice);
                     
-                    // بررسی مجدد نمایش بخش محاسبه
-                    checkAndShowPriceCalculation();
+                    // نمایش جزئیات فنی
+                    $('#techCoef').text(data.technicalCoefficient || '—');
+                    $('#techK').text(new Intl.NumberFormat('fa-IR').format(data.technicalFactor));
+                    $('#techAmount').text(new Intl.NumberFormat('fa-IR').format(data.technicalComponent) + ' ریال');
+                    console.log('🔧 [BROWSER] جزء فنی:', data.technicalComponent);
+                    
+                    // نمایش جزئیات حرفه‌ای
+                    $('#profCoef').text(data.professionalCoefficient || '—');
+                    $('#profK').text(new Intl.NumberFormat('fa-IR').format(data.professionalFactor));
+                    $('#profAmount').text(new Intl.NumberFormat('fa-IR').format(data.professionalComponent) + ' ریال');
+                    console.log('👨‍⚕️ [BROWSER] جزء حرفه‌ای:', data.professionalComponent);
+                    
+                    // نمایش فرمول
+                    $('#formulaText').text(data.calculationFormula || '—');
+                    console.log('📝 [BROWSER] فرمول:', data.calculationFormula);
+                    
+                    // نمایش Override Badge
+                    if (data.hasOverride) {
+                        $('#overrideBadgeRow').show();
+                        console.log('⭐ [BROWSER] Override: فعال');
+                    } else {
+                        $('#overrideBadgeRow').hide();
+                        console.log('⭐ [BROWSER] Override: غیرفعال');
+                    }
+                    
+                    // نمایش Success State
+                    $('#successState').fadeIn(300);
+                    console.log('✅ [BROWSER] نمایش محاسبه کامل شد');
+                    
+                } catch (error) {
+                    console.error('❌ [BROWSER] خطا در نمایش محاسبه:', error);
+                    displayError('خطا در نمایش اطلاعات محاسبه');
                 }
-            };
+            }
+
+            // نمایش خطا - طراحی حرفه‌ای
+            function displayError(message) {
+                console.log('❌ [BROWSER] نمایش خطا:', message);
+                $('#loadingState').hide();
+                $('#successState').hide();
+                $('#errorMessage').text(message || 'خطای نامشخص');
+                $('#errorState').fadeIn(300);
+            }
+
+            // مخفی کردن بخش محاسبه
+            function hideCalculation() {
+                console.log('🚫 [BROWSER] مخفی کردن بخش محاسبه');
+                $('#priceCalculationSection').fadeOut(300);
+                $('#loadingState').hide();
+                $('#successState').hide();
+                $('#errorState').hide();
+            }
+
+            // Debounce helper
+            function debounce(func, wait) {
+                var timeout;
+                return function() {
+                    var context = this, args = arguments;
+                    var later = function() {
+                        timeout = null;
+                        func.apply(context, args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
         });
     </script>
 }

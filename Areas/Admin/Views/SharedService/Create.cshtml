@@ -199,116 +199,189 @@
     }
 
     .calculation-card {
-        border: 3px solid var(--medical-blue);
+        border: none;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
-    }
-
-    .calculation-card.success {
-        border-color: var(--medical-green);
-    }
-
-    .calculation-card.error {
-        border-color: var(--medical-red);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     }
 
     .calculation-header {
         background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
         color: white;
-        padding: 1rem 1.5rem;
+        padding: 1.25rem 1.5rem;
     }
 
     .calculation-header h6 {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         font-weight: 600;
     }
 
-    .price-display {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        border: 2px solid var(--medical-blue);
-        border-radius: 8px;
-        padding: 1.25rem;
-        text-align: center;
+    /* کارت قیمت کل */
+    .total-price-card {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(45, 134, 89, 0.25);
     }
 
-    .price-label {
-        color: var(--medical-blue-dark);
-        font-size: 0.9rem;
-        font-weight: 600;
+    .total-price-icon {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-left: 1.5rem;
+    }
+
+    .total-price-content {
+        flex: 1;
+        color: white;
+    }
+
+    .total-price-label {
+        font-size: 0.95rem;
+        opacity: 0.95;
         margin-bottom: 0.5rem;
     }
 
-    .price-value {
-        font-family: 'Vazir', 'Tahoma', sans-serif !important;
-        font-size: 2rem;
+    .total-price-value {
+        font-size: 2.25rem;
         font-weight: 700;
-        color: var(--medical-green);
-        direction: rtl;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
     }
 
-    .price-unit {
-        font-size: 1rem;
-        color: var(--medical-gray);
-        margin-right: 0.5rem;
+    .total-price-unit {
+        font-size: 0.9rem;
+        opacity: 0.9;
     }
 
-    .calculation-details-box {
+    /* کارت‌های جزئیات */
+    .calc-detail-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        height: 100%;
+    }
+
+    .calc-detail-card.technical .calc-detail-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .calc-detail-card.professional .calc-detail-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    .calc-detail-header {
+        color: white;
+        padding: 0.875rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .calc-detail-header i {
+        margin-left: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .calc-detail-body {
         background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.25rem;
-        min-height: 180px;
+        padding: 1rem;
     }
 
-    .detail-row {
+    .calc-row {
         display: flex;
         justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: var(--medical-gray);
+        padding: 0.5rem 0;
         font-size: 0.9rem;
     }
 
-    .detail-value {
-        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    .calc-row span {
+        color: var(--medical-gray);
+    }
+
+    .calc-row strong {
         color: var(--medical-blue-dark);
-        font-weight: 600;
         font-size: 1rem;
     }
 
-    .formula-box {
+    .calc-row.total {
+        padding-top: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .calc-row.total strong {
+        color: var(--medical-green);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .calc-divider {
+        border-top: 2px dashed #e2e8f0;
+        margin: 0.5rem 0;
+    }
+
+    /* کارت فرمول */
+    .formula-card {
         background: #f8fafc;
-        border-right: 4px solid var(--medical-blue);
-        border-radius: 4px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .formula-header {
+        background: white;
+        border-bottom: 2px solid #e2e8f0;
         padding: 0.75rem 1rem;
-        margin-top: 0.75rem;
-    }
-
-    .formula-box code {
-        color: var(--medical-blue-dark);
-        font-family: 'Vazir', 'Tahoma', sans-serif !important;
-        font-size: 0.9rem;
-    }
-
-    .override-badge {
-        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
-        color: white;
-        padding: 0.35rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.85rem;
         font-weight: 600;
-        display: inline-block;
-        margin-top: 0.5rem;
+        font-size: 0.95rem;
+        color: var(--medical-blue-dark);
+        display: flex;
+        align-items: center;
     }
+
+    .formula-header i {
+        margin-left: 0.5rem;
+        color: var(--medical-orange);
+    }
+
+    .formula-body {
+        padding: 1rem;
+    }
+
+    .formula-body code {
+        display: block;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        color: var(--medical-blue-dark);
+        font-size: 0.95rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* Badge */
+    .badge-lg {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%) !important;
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-warning i {
+        margin-left: 0.5rem;
+        font-size: 1rem;
+    }
+
 
     /* ==================== دکمه‌های اقدام ==================== */
     .btn {
@@ -570,50 +643,146 @@
                             </div>
                         </div>
 
-                        <!-- بخش محاسبه قیمت -->
-                        <div class="price-calculation-section" id="priceCalculationSection" style="display: none;">
-                            <div class="card calculation-card" id="calculationCard">
-                                <div class="calculation-header">
-                                    <h6>
-                                        <i class="fas fa-calculator"></i>
-                                        محاسبه قیمت خدمت مشترک
-                                    </h6>
+        <!-- بخش محاسبه قیمت - طراحی حرفه‌ای -->
+        <div class="price-calculation-section" id="priceCalculationSection" style="display: none;">
+            <div class="card calculation-card" id="calculationCard">
+                <div class="calculation-header">
+                    <h6>
+                        <i class="fas fa-calculator"></i>
+                        پیش‌نمایش محاسبه قیمت خدمت مشترک
+                    </h6>
+                </div>
+                <div class="card-body" id="calculationBody">
+                    <!-- Loading State -->
+                    <div id="loadingState" style="display: none;">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">در حال محاسبه...</span>
+                            </div>
+                            <p class="mt-3 text-muted">در حال محاسبه قیمت...</p>
+                        </div>
+                    </div>
+
+                    <!-- Success State -->
+                    <div id="successState" style="display: none;">
+                        <!-- قیمت کل -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="total-price-card">
+                                    <div class="total-price-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div class="total-price-content">
+                                        <div class="total-price-label">قیمت نهایی خدمت</div>
+                                        <div class="total-price-value farsi-number" id="totalPrice">—</div>
+                                        <div class="total-price-unit">ریال</div>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="price-display">
-                                                <div class="price-label">قیمت محاسبه شده</div>
-                                                <div class="price-value farsi-number" id="calculatedPrice">
-                                                    <span class="loading-spinner"></span>
-                                                </div>
-                                                <div class="price-unit">ریال</div>
-                                            </div>
+                            </div>
+                        </div>
+
+                        <!-- جزئیات محاسبه -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="calc-detail-card technical">
+                                    <div class="calc-detail-header">
+                                        <i class="fas fa-cog"></i>
+                                        <span>جزء فنی</span>
+                                    </div>
+                                    <div class="calc-detail-body">
+                                        <div class="calc-row">
+                                            <span>ضریب:</span>
+                                            <strong class="farsi-number" id="techCoef">—</strong>
                                         </div>
-                                        <div class="col-md-8">
-                                            <div class="calculation-details-box" id="calculationDetails">
-                                                <div class="text-center text-muted">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    در حال محاسبه...
-                                                </div>
-                                            </div>
+                                        <div class="calc-row">
+                                            <span>کای (K):</span>
+                                            <strong class="farsi-number" id="techK">—</strong>
+                                        </div>
+                                        <div class="calc-divider"></div>
+                                        <div class="calc-row total">
+                                            <span>مبلغ:</span>
+                                            <strong class="farsi-number" id="techAmount">—</strong>
                                         </div>
                                     </div>
-                                    <div class="row mt-3">
-                                        <div class="col-12">
-                                            <button type="button" class="btn btn-info btn-sm" id="recalculateBtn">
-                                                <i class="fas fa-sync-alt"></i>
-                                                محاسبه مجدد
-                                            </button>
-                                            <button type="button" class="btn btn-secondary btn-sm" id="clearCalculationBtn">
-                                                <i class="fas fa-eraser"></i>
-                                                پاک کردن محاسبه
-                                            </button>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="calc-detail-card professional">
+                                    <div class="calc-detail-header">
+                                        <i class="fas fa-user-md"></i>
+                                        <span>جزء حرفه‌ای</span>
+                                    </div>
+                                    <div class="calc-detail-body">
+                                        <div class="calc-row">
+                                            <span>ضریب:</span>
+                                            <strong class="farsi-number" id="profCoef">—</strong>
+                                        </div>
+                                        <div class="calc-row">
+                                            <span>کای (K):</span>
+                                            <strong class="farsi-number" id="profK">—</strong>
+                                        </div>
+                                        <div class="calc-divider"></div>
+                                        <div class="calc-row total">
+                                            <span>مبلغ:</span>
+                                            <strong class="farsi-number" id="profAmount">—</strong>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- فرمول محاسبه -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="formula-card">
+                                    <div class="formula-header">
+                                        <i class="fas fa-calculator"></i>
+                                        فرمول محاسبه
+                                    </div>
+                                    <div class="formula-body">
+                                        <code id="formulaText" class="farsi-number">—</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Override Badge -->
+                        <div class="row mt-2" id="overrideBadgeRow" style="display: none;">
+                            <div class="col-12 text-center">
+                                <span class="badge badge-warning badge-lg">
+                                    <i class="fas fa-star"></i>
+                                    استفاده از ضرایب سفارشی (Override)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="errorState" style="display: none;">
+                        <div class="alert alert-danger mb-0" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-circle fa-2x ml-3"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1">خطا در محاسبه قیمت</h6>
+                                    <p class="mb-0" id="errorMessage">—</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های اقدام -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-info btn-sm" id="recalculateBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                محاسبه مجدد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
                         <!-- دکمه‌های اقدام -->
                         <div class="form-group mt-4">
@@ -745,12 +914,6 @@
                 calculatePrice();
             });
 
-            // دکمه پاک کردن محاسبه
-            $('#clearCalculationBtn').click(function() {
-                console.log('🔘 [BROWSER] کلیک روی پاک کردن محاسبه');
-                hideCalculation();
-            });
-
             // دکمه بازنشانی فرم
             $('#resetFormBtn').click(function() {
                 if (confirm('آیا از بازنشانی فرم اطمینان دارید؟ تمام اطلاعات وارد شده پاک خواهد شد.')) {
@@ -798,19 +961,19 @@
                     return;
                 }
 
-                // نمایش loading
-                $('#calculatedPrice').html('<span class="loading-spinner"></span>');
-                $('#calculationDetails').html('<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> در حال محاسبه...</div>');
+                // نمایش Loading State
+                showLoadingState();
 
                 // ✅ ارسال AJAX با Anti-Forgery Token
                 $.ajax({
                     url: '@Url.Action("CalculateSharedServicePriceForCreate")',
                     type: 'POST',
+                    dataType: 'json',  // ⭐ اطمینان از parse صحیح JSON
                     headers: {
-                        'RequestVerificationToken': token  // ⭐ کلید اصلی: اضافه کردن Token
+                        'RequestVerificationToken': token
                     },
                     data: {
-                        __RequestVerificationToken: token,  // ⭐ برای سازگاری بیشتر
+                        __RequestVerificationToken: token,
                         serviceId: serviceId,
                         departmentId: departmentId,
                         overrideTechnicalFactor: overrideTech || null,
@@ -819,13 +982,17 @@
                     success: function(response) {
                         console.log('✅ [BROWSER] دریافت پاسخ موفق');
                         console.log('📊 [BROWSER] Response:', response);
+                        console.log('🔍 [BROWSER] Response Type:', typeof response);
+                        console.log('🔍 [BROWSER] response.success:', response.success);
+                        console.log('🔍 [BROWSER] response.success Type:', typeof response.success);
                         
-                        if (response && response.success) {
+                        if (response && response.success === true) {
+                            console.log('✅ [BROWSER] Success = true, calling displayCalculation');
                             displayCalculation(response);
-                            $('#calculationCard').removeClass('error').addClass('success');
                         } else {
-                            displayError(response.message || 'خطا در محاسبه قیمت');
-                            $('#calculationCard').removeClass('success').addClass('error');
+                            console.log('❌ [BROWSER] Success = false');
+                            console.log('🔍 [BROWSER] Condition failed: response:', response, 'response.success:', response.success);
+                            displayError(response.message || response.Message || 'خطا در محاسبه قیمت');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -839,108 +1006,90 @@
                         var errorMsg = 'خطا در ارتباط با سرور';
                         try {
                             var errorResponse = JSON.parse(xhr.responseText);
-                            errorMsg = errorResponse.Message || errorMsg;
+                            errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
                         } catch (e) {
                             console.error('❌ [BROWSER] خطا در parse پاسخ خطا:', e);
                         }
                         
                         displayError(errorMsg);
-                        $('#calculationCard').removeClass('success').addClass('error');
                     }
                 });
             }
 
-            // نمایش نتیجه محاسبه
+            // نمایش Loading State
+            function showLoadingState() {
+                console.log('⏳ [BROWSER] نمایش Loading State');
+                $('#loadingState').show();
+                $('#successState').hide();
+                $('#errorState').hide();
+            }
+
+            // نمایش نتیجه محاسبه - طراحی حرفه‌ای
             function displayCalculation(data) {
                 console.log('🎨 [BROWSER] شروع نمایش محاسبه');
                 console.log('📊 [BROWSER] Data:', data);
                 
-                // نمایش قیمت
-                var formattedPrice = new Intl.NumberFormat('fa-IR').format(data.calculatedPrice);
-                $('#calculatedPrice').text(formattedPrice);
-                console.log('✅ [BROWSER] قیمت نمایش داده شد:', formattedPrice);
-
-                // نمایش جزئیات
-                var detailsHtml = '';
-                
-                // مبالغ اجزا
-                if (data.technicalComponent !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">مبلغ جزء فنی:</span>' +
-                        '<span class="detail-value farsi-number">' + new Intl.NumberFormat('fa-IR').format(data.technicalComponent) + ' ریال</span>' +
-                        '</div>';
+                try {
+                    // مخفی کردن Loading و Error
+                    $('#loadingState').hide();
+                    $('#errorState').hide();
+                    
+                    // نمایش قیمت کل
+                    var formattedPrice = new Intl.NumberFormat('fa-IR').format(data.calculatedPrice);
+                    $('#totalPrice').text(formattedPrice);
+                    console.log('💰 [BROWSER] قیمت کل:', formattedPrice);
+                    
+                    // نمایش جزئیات فنی
+                    $('#techCoef').text(data.technicalCoefficient || '—');
+                    $('#techK').text(new Intl.NumberFormat('fa-IR').format(data.technicalFactor));
+                    $('#techAmount').text(new Intl.NumberFormat('fa-IR').format(data.technicalComponent) + ' ریال');
+                    console.log('🔧 [BROWSER] جزء فنی:', data.technicalComponent);
+                    
+                    // نمایش جزئیات حرفه‌ای
+                    $('#profCoef').text(data.professionalCoefficient || '—');
+                    $('#profK').text(new Intl.NumberFormat('fa-IR').format(data.professionalFactor));
+                    $('#profAmount').text(new Intl.NumberFormat('fa-IR').format(data.professionalComponent) + ' ریال');
+                    console.log('👨‍⚕️ [BROWSER] جزء حرفه‌ای:', data.professionalComponent);
+                    
+                    // نمایش فرمول
+                    $('#formulaText').text(data.calculationFormula || '—');
+                    console.log('📝 [BROWSER] فرمول:', data.calculationFormula);
+                    
+                    // نمایش Override Badge
+                    if (data.hasOverride) {
+                        $('#overrideBadgeRow').show();
+                        console.log('⭐ [BROWSER] Override: فعال');
+                    } else {
+                        $('#overrideBadgeRow').hide();
+                        console.log('⭐ [BROWSER] Override: غیرفعال');
+                    }
+                    
+                    // نمایش Success State
+                    $('#successState').fadeIn(300);
+                    console.log('✅ [BROWSER] نمایش محاسبه کامل شد');
+                    
+                } catch (error) {
+                    console.error('❌ [BROWSER] خطا در نمایش محاسبه:', error);
+                    displayError('خطا در نمایش اطلاعات محاسبه');
                 }
-                
-                if (data.professionalComponent !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">مبلغ جزء حرفه‌ای:</span>' +
-                        '<span class="detail-value farsi-number">' + new Intl.NumberFormat('fa-IR').format(data.professionalComponent) + ' ریال</span>' +
-                        '</div>';
-                }
-                
-                // ضرایب (Coefficients)
-                if (data.technicalCoefficient !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">ضریب فنی (Coefficient):</span>' +
-                        '<span class="detail-value farsi-number">' + data.technicalCoefficient + '</span>' +
-                        '</div>';
-                }
-                
-                if (data.professionalCoefficient !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">ضریب حرفه‌ای (Coefficient):</span>' +
-                        '<span class="detail-value farsi-number">' + data.professionalCoefficient + '</span>' +
-                        '</div>';
-                }
-                
-                // K-Factors
-                if (data.technicalFactor !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">کای فنی (K-Factor):</span>' +
-                        '<span class="detail-value farsi-number">' + new Intl.NumberFormat('fa-IR').format(data.technicalFactor) + '</span>' +
-                        '</div>';
-                }
-                
-                if (data.professionalFactor !== undefined) {
-                    detailsHtml += '<div class="detail-row">' +
-                        '<span class="detail-label">کای حرفه‌ای (K-Factor):</span>' +
-                        '<span class="detail-value farsi-number">' + new Intl.NumberFormat('fa-IR').format(data.professionalFactor) + '</span>' +
-                        '</div>';
-                }
-                
-                // فرمول محاسبه
-                if (data.calculationFormula) {
-                    detailsHtml += '<div class="formula-box">' +
-                        '<div class="detail-label">فرمول محاسبه:</div>' +
-                        '<code>' + data.calculationFormula + '</code>' +
-                        '</div>';
-                }
-
-                if (data.hasOverride) {
-                    detailsHtml += '<div><span class="override-badge"><i class="fas fa-star"></i> استفاده از ضرایب سفارشی</span></div>';
-                }
-
-                $('#calculationDetails').html(detailsHtml);
-                console.log('✅ [BROWSER] جزئیات نمایش داده شد');
-                console.log('✅ [BROWSER] نمایش محاسبه کامل شد');
             }
 
-            // نمایش خطا
+            // نمایش خطا - طراحی حرفه‌ای
             function displayError(message) {
-                $('#calculatedPrice').text('—');
-                $('#calculationDetails').html(
-                    '<div class="alert alert-danger mb-0">' +
-                    '<i class="fas fa-exclamation-triangle"></i> ' + message +
-                    '</div>'
-                );
+                console.log('❌ [BROWSER] نمایش خطا:', message);
+                $('#loadingState').hide();
+                $('#successState').hide();
+                $('#errorMessage').text(message || 'خطای نامشخص');
+                $('#errorState').fadeIn(300);
             }
 
             // مخفی کردن بخش محاسبه
             function hideCalculation() {
+                console.log('🚫 [BROWSER] مخفی کردن بخش محاسبه');
                 $('#priceCalculationSection').fadeOut(300);
-                $('#calculatedPrice').text('—');
-                $('#calculationDetails').html('<div class="text-center text-muted"><i class="fas fa-info-circle"></i> لطفاً خدمت و دپارتمان را انتخاب کنید</div>');
-                $('#calculationCard').removeClass('success error');
+                $('#loadingState').hide();
+                $('#successState').hide();
+                $('#errorState').hide();
             }
 
             // Debounce helper

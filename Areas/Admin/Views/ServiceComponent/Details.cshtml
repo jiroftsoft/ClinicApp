@@ -5,303 +5,739 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-@section Styles {
-    <style>
-        /* استایل‌های اختصاصی برای صفحه جزئیات جزء خدمت */
-        .component-header {
-            background-color: #28a745;
-            color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
+<style>
+    /* ==================== رنگ‌های ملایم و حرفه‌ای مخصوص محیط درمانی ==================== */
+    :root {
+        --medical-blue: #4a90e2;
+        --medical-blue-light: #6fa8ef;
+        --medical-blue-dark: #2e5c8a;
+        --medical-green: #5cb85c;
+        --medical-green-light: #7bc87b;
+        --medical-orange: #f0ad4e;
+        --medical-red: #d9534f;
+        --medical-gray: #6c757d;
+        --medical-gray-light: #adb5bd;
+        --bg-light: #f8f9fa;
+        --bg-soft: #e9ecef;
+        --border-color: #dee2e6;
+    }
 
-        .component-status {
-            padding: 3px 10px;
-            border-radius: 20px;
+    /* ==================== فونت‌های فارسی ==================== */
+    body, .form-control, .btn, label, .card, input, select, textarea {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    }
+
+    .farsi-number {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+        direction: rtl;
+    }
+
+    /* ==================== Header Section ==================== */
+    .page-header-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 1px solid #90caf9;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header-card .card-header {
+        background: transparent;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .page-header-card h4 {
+        color: #1976d2;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header-card p {
+        color: #1e88e5;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* ==================== Hierarchical Navigation ==================== */
+    .hierarchy-navigation {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .hierarchy-navigation .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hierarchy-navigation .breadcrumb-item {
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .hierarchy-navigation .breadcrumb-item + .breadcrumb-item::before {
+        content: "◄";
+        color: var(--medical-gray-light);
+        font-weight: normal;
+        padding: 0 0.75rem;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a {
+        color: var(--medical-blue);
+        text-decoration: none;
+        transition: all 0.2s;
+        padding: 0.35rem 0.75rem;
+        border-radius: 5px;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a:hover {
+        background: #e3f2fd;
+        color: var(--medical-blue-dark);
+    }
+
+    .hierarchy-navigation .breadcrumb-item.active {
+        color: var(--medical-blue);
+        font-weight: 600;
+        background: #e3f2fd;
+        padding: 0.35rem 0.75rem;
+        border-radius: 5px;
+    }
+
+    /* ==================== Cards ==================== */
+    .card {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+        background: #ffffff;
+    }
+
+    .card-header {
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        color: var(--medical-blue-dark);
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 8px 8px 0 0 !important;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-header.service {
+        background: linear-gradient(to bottom, #f0f7ff 0%, #e3f2fd 100%);
+        color: var(--medical-blue-dark);
+    }
+
+    .card-header.audit {
+        background: linear-gradient(to bottom, #f1f3f4 0%, #e8eaed 100%);
+        color: var(--medical-gray);
+    }
+
+    .card-header h5, .card-header h6 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* ==================== Info Cards ==================== */
+    .info-card {
+        background: #f8f9fa;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+
+    .info-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .info-card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-card-icon.blue {
+        background: #e3f2fd;
+        color: var(--medical-blue);
+    }
+
+    .info-card-icon.green {
+        background: #f1f8f4;
+        color: var(--medical-green);
+    }
+
+    .info-card-icon.orange {
+        background: #fff3e0;
+        color: var(--medical-orange);
+    }
+
+    .info-card-icon.purple {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .info-card-label {
+        color: var(--medical-gray);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card-value {
+        color: var(--medical-blue-dark);
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    /* ==================== Badge Styles ==================== */
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .badge-success {
+        background: #f1f8f4;
+        color: var(--medical-green);
+        border: 1px solid #c8e6c9;
+    }
+
+    .badge-danger {
+        background: #ffebee;
+        color: var(--medical-red);
+        border: 1px solid #ffcdd2;
+    }
+
+    .badge-info {
+        background: #e3f2fd;
+        color: var(--medical-blue);
+        border: 1px solid #90caf9;
+    }
+
+    .badge-warning {
+        background: #fff3e0;
+        color: var(--medical-orange);
+        border: 1px solid #ffcc80;
+    }
+
+    .badge-purple {
+        background: #f3e5f5;
+        color: #7b1fa2;
+        border: 1px solid #e1bee7;
+    }
+
+    /* ==================== Detail Section ==================== */
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--medical-gray);
+        min-width: 140px;
+        font-size: 0.9rem;
+    }
+
+    .detail-value {
+        color: var(--medical-blue-dark);
+        text-align: left;
+        font-size: 0.95rem;
+    }
+
+    /* ==================== Audit Section ==================== */
+    .audit-item {
+        background: #f8f9fa;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 1.25rem;
+        height: 100%;
+    }
+
+    .audit-item h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .audit-item ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .audit-item ul li {
+        padding: 0.5rem 0;
+        font-size: 0.85rem;
+        color: var(--medical-gray);
+    }
+
+    .audit-item ul li strong {
+        color: var(--medical-gray);
+        display: inline-block;
+        min-width: 100px;
+    }
+
+    /* ==================== Buttons ==================== */
+    .btn {
+        border: none;
+        border-radius: 6px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-warning {
+        background: var(--medical-orange);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #ff9800;
+        box-shadow: 0 2px 6px rgba(240, 173, 78, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        background: var(--medical-red);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #e53935;
+        box-shadow: 0 2px 6px rgba(217, 83, 79, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        color: var(--medical-gray);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        color: var(--medical-gray);
+        transform: translateY(-1px);
+    }
+
+    /* ==================== Service Info Banner ==================== */
+    .service-info-banner {
+        background: #f0f7ff;
+        border: 1px solid #bbdefb;
+        border-right: 3px solid var(--medical-blue);
+        border-radius: 6px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .service-info-banner h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .service-info-banner p {
+        color: var(--medical-gray);
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+    }
+
+    .service-info-banner strong {
+        color: var(--medical-blue-dark);
+    }
+
+    /* ==================== Responsive ==================== */
+    @media (max-width: 768px) {
+        .hierarchy-navigation .breadcrumb {
             font-size: 0.85rem;
-            display: inline-block;
-            margin-top: 5px;
         }
 
-        .status-active {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
         }
 
-        .status-inactive {
-            background-color: #ffebee;
-            color: #c62828;
+        .info-card {
+            margin-bottom: 1rem;
         }
+    }
+</style>
 
-        .component-card {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-
-        .component-card-title {
-            font-weight: 600;
-            color: #28a745;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-
-        .component-card-title i {
-            margin-left: 8px;
-            font-size: 1.1rem;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #495057;
-            min-width: 120px;
-        }
-
-        .info-value {
-            color: #212529;
-            text-align: left;
-        }
-
-        .component-type-badge {
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .component-type-technical {
-            background-color: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .component-type-professional {
-            background-color: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .coefficient-display {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #28a745;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-action {
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-edit {
-            background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
-            color: white;
-        }
-
-        .btn-edit:hover {
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
-        }
-
-        .btn-delete {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-        }
-
-        .btn-delete:hover {
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-back {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-            color: white;
-        }
-
-        .btn-back:hover {
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-        }
-
-        .service-info {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .service-info h5 {
-            color: #495057;
-            margin-bottom: 10px;
-        }
-
-        .service-info p {
-            margin: 5px 0;
-            color: #6c757d;
-        }
-
-        .audit-info {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-
-        .audit-info h6 {
-            color: #495057;
-            margin-bottom: 10px;
-        }
-
-        .audit-info p {
-            margin: 5px 0;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-    </style>
-}
-
-<!-- Header Section -->
-<div class="component-header">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h2><i class="fas fa-cogs"></i> جزئیات جزء خدمت</h2>
-            <p class="mb-0">مشاهده اطلاعات کامل جزء خدمت</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <span class="component-status status-@(Model.IsActive ? "active" : "inactive")">
-                @(Model.IsActive ? "فعال" : "غیرفعال")
-            </span>
-        </div>
+<div class="container-fluid">
+    <!-- Hierarchical Navigation -->
+    <div class="hierarchy-navigation">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                        <i class="fas fa-home"></i>
+                        داشبورد
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "ServiceComponent")">
+                        <i class="fas fa-cogs"></i>
+                        اجزای خدمات
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-info-circle"></i>
+                    جزئیات جزء
+                </li>
+            </ol>
+        </nav>
     </div>
-</div>
 
-<!-- Service Information -->
-<div class="service-info">
-    <h5><i class="fas fa-stethoscope"></i> اطلاعات خدمت مرتبط</h5>
-    <p><strong>عنوان خدمت:</strong> @Model.ServiceTitle</p>
-    <p><strong>کد خدمت:</strong> <code>@Model.ServiceCode</code></p>
-</div>
-
-<!-- Component Details -->
-<div class="component-card">
-    <h4 class="component-card-title">
-        <i class="fas fa-info-circle"></i> اطلاعات جزء خدمت
-    </h4>
-    
-    <div class="info-row">
-        <span class="info-label">شناسه جزء:</span>
-        <span class="info-value">@Model.ServiceComponentId</span>
-    </div>
-    
-    <div class="info-row">
-        <span class="info-label">نوع جزء:</span>
-        <span class="info-value">
-            <span class="component-type-badge component-type-@(Model.ComponentType.ToString().ToLower())">
-                @Model.ComponentTypeName
-            </span>
-        </span>
-    </div>
-    
-    <div class="info-row">
-        <span class="info-label">ضریب (کای):</span>
-        <span class="info-value">
-            <span class="coefficient-display">@Model.Coefficient.ToString("0.##")</span>
-        </span>
-    </div>
-    
-    <div class="info-row">
-        <span class="info-label">توضیحات:</span>
-        <span class="info-value">
-            @if (!string.IsNullOrEmpty(Model.Description))
-            {
-                @Model.Description
-            }
-            else
-            {
-                <span class="text-muted">توضیحاتی ارائه نشده است</span>
-            }
-        </span>
-    </div>
-    
-    <div class="info-row">
-        <span class="info-label">وضعیت:</span>
-        <span class="info-value">
-            <span class="component-status status-@(Model.IsActive ? "active" : "inactive")">
-                @(Model.IsActive ? "فعال" : "غیرفعال")
-            </span>
-        </span>
-    </div>
-</div>
-
-<!-- Audit Information -->
-<div class="audit-info">
-    <h6><i class="fas fa-history"></i> اطلاعات ردیابی</h6>
-    
+    <!-- Page Header -->
     <div class="row">
-        <div class="col-md-6">
-            <p><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</p>
-            <p><strong>ایجاد شده توسط:</strong> @Model.CreatedBy</p>
-        </div>
-        <div class="col-md-6">
-            @if (Model.UpdatedAt.HasValue)
-            {
-                <p><strong>آخرین بروزرسانی:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</p>
-                <p><strong>بروزرسانی شده توسط:</strong> @Model.UpdatedBy</p>
-            }
-            else
-            {
-                <p><strong>آخرین بروزرسانی:</strong> <span class="text-muted">هیچ بروزرسانی انجام نشده</span></p>
-            }
+        <div class="col-12">
+            <div class="card page-header-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4>
+                                <i class="fas fa-info-circle"></i>
+                                جزئیات جزء خدمت
+                            </h4>
+                            <p>مشاهده اطلاعات کامل و جزئیات جزء خدمت</p>
+                        </div>
+                        <div>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    فعال
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times-circle"></i>
+                                    غیرفعال
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Action Buttons -->
-<div class="action-buttons">
-    <a href="@Url.Action("Index")" class="btn-action btn-back">
-        <i class="fas fa-arrow-right"></i> بازگشت به لیست
-    </a>
-    
-    <a href="@Url.Action("Edit", new { id = Model.ServiceComponentId })" class="btn-action btn-edit">
-        <i class="fas fa-edit"></i> ویرایش
-    </a>
-    
-    <button type="button" id="deleteBtn" class="btn-action btn-delete" 
-            data-id="@Model.ServiceComponentId" 
-            data-title="@Model.ServiceTitle - @Model.ComponentTypeName">
-        <i class="fas fa-trash"></i> حذف
-    </button>
+    <!-- Service Info Banner -->
+    <div class="row">
+        <div class="col-12">
+            <div class="service-info-banner">
+                <h6>
+                    <i class="fas fa-stethoscope"></i>
+                    خدمت مرتبط
+                </h6>
+                <p><strong>عنوان خدمت:</strong> @Model.ServiceTitle</p>
+                <p><strong>کد خدمت:</strong> <code>@Model.ServiceCode</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Summary Cards -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon blue">
+                    <i class="fas fa-hashtag"></i>
+                </div>
+                <div class="info-card-label">شناسه جزء</div>
+                <div class="info-card-value farsi-number">@Model.ServiceComponentId</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon @(Model.ComponentType.ToString().ToLower() == "technical" ? "blue" : "purple")">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="info-card-label">نوع جزء</div>
+                <div class="info-card-value">
+                    @if (Model.ComponentType.ToString().ToLower() == "technical")
+                    {
+                        <span class="badge badge-info">@Model.ComponentTypeName</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-purple">@Model.ComponentTypeName</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon green">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="info-card-label">ضریب (کای)</div>
+                <div class="info-card-value farsi-number">@Model.Coefficient.ToString("0.##")</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon @(Model.IsActive ? "green" : "orange")">
+                    <i class="fas fa-@(Model.IsActive ? "check-circle" : "pause-circle")"></i>
+                </div>
+                <div class="info-card-label">وضعیت</div>
+                <div class="info-card-value">
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge badge-success">فعال</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-danger">غیرفعال</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-list-alt"></i>
+                        اطلاعات تفصیلی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="detail-label">شناسه جزء:</span>
+                        <span class="detail-value farsi-number">@Model.ServiceComponentId</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">خدمت پزشکی:</span>
+                        <span class="detail-value">@Model.ServiceTitle</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">کد خدمت:</span>
+                        <span class="detail-value"><code>@Model.ServiceCode</code></span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">نوع جزء:</span>
+                        <span class="detail-value">
+                            @if (Model.ComponentType.ToString().ToLower() == "technical")
+                            {
+                                <span class="badge badge-info">@Model.ComponentTypeName</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-purple">@Model.ComponentTypeName</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">ضریب (کای):</span>
+                        <span class="detail-value farsi-number" style="font-size: 1.2rem; font-weight: 700; color: var(--medical-green);">
+                            @Model.Coefficient.ToString("0.##")
+                        </span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">توضیحات:</span>
+                        <span class="detail-value">
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                @Model.Description
+                            }
+                            else
+                            {
+                                <span class="text-muted" style="font-style: italic;">توضیحاتی ارائه نشده است</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">وضعیت:</span>
+                        <span class="detail-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    فعال
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times-circle"></i>
+                                    غیرفعال
+                                </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Trail -->
+            <div class="card">
+                <div class="card-header audit">
+                    <h5>
+                        <i class="fas fa-history"></i>
+                        اطلاعات حسابرسی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="audit-item">
+                                <h6>
+                                    <i class="fas fa-plus-circle text-success"></i>
+                                    ایجاد
+                                </h6>
+                                <ul>
+                                    <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
+                                    <li><strong>کاربر:</strong> @Model.CreatedBy</li>
+                                </ul>
+                            </div>
+                        </div>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="audit-item">
+                                    <h6>
+                                        <i class="fas fa-edit text-warning"></i>
+                                        آخرین ویرایش
+                                    </h6>
+                                    <ul>
+                                        <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)</span></li>
+                                        <li><strong>کاربر:</strong> @Model.UpdatedBy</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-6">
+                                <div class="audit-item">
+                                    <h6>
+                                        <i class="fas fa-edit text-muted"></i>
+                                        آخرین ویرایش
+                                    </h6>
+                                    <ul>
+                                        <li class="text-muted" style="font-style: italic;">هیچ بروزرسانی انجام نشده است</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <a href="@Url.Action("Index")" class="btn btn-light btn-block">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="@Url.Action("Edit", new { id = Model.ServiceComponentId })" class="btn btn-warning btn-block">
+                        <i class="fas fa-edit"></i>
+                        ویرایش
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" id="deleteBtn" class="btn btn-danger btn-block" 
+                            data-id="@Model.ServiceComponentId" 
+                            data-title="@Model.ServiceTitle - @Model.ComponentTypeName">
+                        <i class="fas fa-trash"></i>
+                        حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Component Type Info -->
+            <div class="card">
+                <div class="card-header service">
+                    <h6>
+                        <i class="fas fa-info-circle"></i>
+                        درباره نوع جزء
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.ComponentType.ToString().ToLower() == "technical")
+                    {
+                        <div style="background: #f0f7ff; border: 1px solid #bbdefb; border-right: 3px solid var(--medical-blue); border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+                            <h6 style="color: var(--medical-blue-dark); font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                                <i class="fas fa-cogs"></i>
+                                جزء فنی (Technical)
+                            </h6>
+                            <p style="color: var(--medical-gray); margin: 0; font-size: 0.85rem; line-height: 1.6;">
+                                شامل هزینه‌های فنی، تجهیزات، امکانات و زیرساخت‌های مورد نیاز برای ارائه این خدمت پزشکی می‌باشد.
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="background: #faf5ff; border: 1px solid #e1bee7; border-right: 3px solid #7b1fa2; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+                            <h6 style="color: #6a1b9a; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                                <i class="fas fa-user-md"></i>
+                                جزء حرفه‌ای (Professional)
+                            </h6>
+                            <p style="color: var(--medical-gray); margin: 0; font-size: 0.85rem; line-height: 1.6;">
+                                شامل دستمزد، تخصص، حق‌الزحمه و خدمات حرفه‌ای پزشک یا ارائه‌دهنده خدمت می‌باشد.
+                            </p>
+                        </div>
+                    }
+
+                    <div style="background: #fff9f5; border: 1px solid #ffe0b2; border-right: 3px solid var(--medical-orange); border-radius: 6px; padding: 1rem;">
+                        <h6 style="color: var(--medical-blue-dark); font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                            <i class="fas fa-calculator"></i>
+                            نقش ضریب در قیمت‌گذاری
+                        </h6>
+                        <p style="color: var(--medical-gray); margin: 0; font-size: 0.85rem; line-height: 1.6;">
+                            ضریب (کای) به همراه K-factors در فرمول قیمت‌گذاری وزارت بهداشت برای محاسبه نهایی قیمت خدمت استفاده می‌شود.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- فرم مخفی برای حذف -->
@@ -309,15 +745,14 @@
     @Html.AntiForgeryToken()
 </form>
 
-@section Styles {
-    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
-}
-
 @section Scripts {
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script>
         $(document).ready(function() {
-            // 🗑️ Handle Delete Button Click با SweetAlert2
+            console.log('🔧 [BROWSER] ServiceComponent Details initialized');
+
+            // Handle Delete Button Click با SweetAlert2
             $('#deleteBtn').on('click', function(e) {
                 e.preventDefault();
                 
@@ -329,19 +764,19 @@
                     title: 'تأیید حذف',
                     html: '<div style="text-align: right; direction: rtl;">' +
                           '<p style="font-size: 1.1rem; margin-bottom: 1rem;">آیا مطمئن هستید که می‌خواهید این جزء خدمت را حذف کنید؟</p>' +
-                          '<div style="background: #f0f9ff; border-right: 4px solid #2c5aa0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
-                          '<strong style="color: #2c5aa0;">جزء خدمت:</strong><br>' +
-                          '<span style="color: #1e3a6f;">' + title + '</span>' +
+                          '<div style="background: #f0f7ff; border-right: 4px solid #4a90e2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+                          '<strong style="color: #2e5c8a;">جزء خدمت:</strong><br>' +
+                          '<span style="color: #2e5c8a;">' + title + '</span>' +
                           '</div>' +
-                          '<div style="background: #fff3e0; border-right: 4px solid #f57c00; padding: 0.75rem; border-radius: 8px;">' +
-                          '<i class="fas fa-exclamation-triangle" style="color: #f57c00; margin-left: 0.5rem;"></i>' +
-                          '<strong style="color: #f57c00;">توجه:</strong> این عملیات قابل بازگشت نیست!' +
+                          '<div style="background: #fff3e0; border-right: 4px solid #f0ad4e; padding: 0.75rem; border-radius: 8px;">' +
+                          '<i class="fas fa-exclamation-triangle" style="color: #f0ad4e; margin-left: 0.5rem;"></i>' +
+                          '<strong style="color: #f0ad4e;">توجه:</strong> این عملیات قابل بازگشت نیست!' +
                           '</div>' +
                           '</div>',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#c62828',
-                    cancelButtonColor: '#6b7280',
+                    confirmButtonColor: '#d9534f',
+                    cancelButtonColor: '#6c757d',
                     confirmButtonText: '<i class="fas fa-trash"></i> بله، حذف شود',
                     cancelButtonText: '<i class="fas fa-times"></i> انصراف',
                     reverseButtons: true,
@@ -383,7 +818,7 @@
         
         .swal2-title-rtl {
             font-family: 'Vazir', Arial, sans-serif !important;
-            color: #2c5aa0 !important;
+            color: #4a90e2 !important;
             font-size: 1.5rem !important;
         }
         

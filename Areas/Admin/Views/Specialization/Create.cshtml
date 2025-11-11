@@ -4,99 +4,484 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<style>
+    /* ==================== متغیرهای رنگی مخصوص محیط درمانی ==================== */
+    :root {
+        --medical-blue: #2c5aa0;
+        --medical-blue-light: #4a7bc8;
+        --medical-blue-dark: #1e3a70;
+        --medical-green: #2d8659;
+        --medical-green-light: #45a572;
+        --medical-orange: #e67e22;
+        --medical-red: #c0392b;
+        --medical-gray: #5a6c7d;
+        --medical-gray-light: #95a5a6;
+    }
+
+    /* ==================== فونت‌های فارسی ==================== */
+    body, .form-control, .btn, label, .card, input, select, textarea {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    }
+
+    .farsi-number {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+        direction: rtl;
+    }
+
+    /* ==================== Header Section ==================== */
+    .page-header-card {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(45, 134, 89, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header-card .card-header {
+        background: transparent;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .page-header-card h4 {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header-card p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* ==================== Hierarchical Navigation ==================== */
+    .hierarchy-navigation {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .hierarchy-navigation .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hierarchy-navigation .breadcrumb-item {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .hierarchy-navigation .breadcrumb-item + .breadcrumb-item::before {
+        content: "◄";
+        color: var(--medical-blue);
+        font-weight: bold;
+        padding: 0 0.75rem;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a {
+        color: var(--medical-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a:hover {
+        background: var(--medical-blue);
+        color: white;
+    }
+
+    .hierarchy-navigation .breadcrumb-item.active {
+        color: var(--medical-green);
+        font-weight: 700;
+        background: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ==================== Cards ==================== */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-header.info {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+    }
+
+    .card-header h5, .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* ==================== Form Controls ==================== */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: var(--medical-blue-dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.65rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--medical-blue);
+        box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+    }
+
+    .form-control::placeholder {
+        color: var(--medical-gray-light);
+        font-style: italic;
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--medical-red);
+    }
+
+    .form-control.is-valid {
+        border-color: var(--medical-green);
+    }
+
+    .text-danger {
+        color: var(--medical-red) !important;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .form-text {
+        color: var(--medical-gray);
+        font-size: 0.85rem;
+        margin-top: 0.35rem;
+    }
+
+    /* ==================== Custom Switch ==================== */
+    .custom-switch-card {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border: 2px solid var(--medical-green);
+        border-radius: 10px;
+        padding: 1rem;
+        transition: all 0.3s;
+    }
+
+    .custom-switch-card:hover {
+        box-shadow: 0 2px 8px rgba(45, 134, 89, 0.2);
+    }
+
+    .custom-control-label {
+        font-weight: 600;
+        color: var(--medical-blue-dark);
+        font-size: 1rem;
+        padding-right: 0.5rem;
+    }
+
+    /* ==================== Buttons ==================== */
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, var(--medical-green-light) 0%, var(--medical-green) 100%);
+        box-shadow: 0 4px 12px rgba(45, 134, 89, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        color: var(--medical-blue-dark);
+        border: 2px solid #dee2e6;
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    /* ==================== Help Section ==================== */
+    .help-item {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-right: 4px solid var(--medical-orange);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .help-item h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .help-item ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .help-item ul li {
+        padding: 0.35rem 0;
+        color: var(--medical-gray);
+        font-size: 0.9rem;
+    }
+
+    .help-item ul li i {
+        color: var(--medical-orange);
+        margin-left: 0.5rem;
+    }
+
+    /* ==================== Responsive ==================== */
+    @@media (max-width: 768px) {
+        .hierarchy-navigation .breadcrumb {
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+
 <div class="container-fluid">
-    <!-- Header -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">افزودن تخصص جدید</h1>
-        <a href="@Url.Action("Index")" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
-            <i class="fas fa-arrow-right fa-sm text-white-50"></i> بازگشت به لیست
-        </a>
+    <!-- Hierarchical Navigation -->
+    <div class="hierarchy-navigation">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                        <i class="fas fa-home"></i>
+                        داشبورد
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Specialization")">
+                        <i class="fas fa-user-md"></i>
+                        تخصص‌ها
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-plus-circle"></i>
+                    افزودن تخصص جدید
+                </li>
+            </ol>
+        </nav>
     </div>
 
-    <!-- Form Card -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">اطلاعات تخصص</h6>
-        </div>
-        <div class="card-body">
-            @using (Html.BeginForm("Create", "Specialization", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-            {
-                @Html.AntiForgeryToken()
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Name, new { @class = "control-label" })
-                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "مثال: قلب و عروق" })
-                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.DisplayOrder, new { @class = "control-label" })
-                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0", max = "1000", placeholder = "مثال: 1" })
-                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card page-header-card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-plus-circle"></i>
+                        افزودن تخصص پزشکی جدید
+                    </h4>
+                    <p>ایجاد و ثبت تخصص پزشکی جدید در سیستم</p>
                 </div>
-
-                <div class="form-group">
-                    @Html.LabelFor(m => m.Description, new { @class = "control-label" })
-                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4", placeholder = "توضیحات مربوط به این تخصص..." })
-                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
-                </div>
-
-                <div class="form-group">
-                    <div class="custom-control custom-switch">
-                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input" })
-                        <label class="custom-control-label" for="@Html.IdFor(m => m.IsActive)">
-                            @Html.DisplayNameFor(m => m.IsActive)
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-save"></i> ذخیره
-                            </button>
-                        </div>
-                        <div class="col-md-6">
-                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-block">
-                                <i class="fas fa-times"></i> انصراف
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            }
+            </div>
         </div>
     </div>
 
-    <!-- Help Card -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-info">
-                <i class="fas fa-info-circle"></i> راهنما
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="font-weight-bold">نام تخصص:</h6>
-                    <ul class="list-unstyled">
-                        <li>• باید به فارسی وارد شود</li>
-                        <li>• حداکثر 100 کاراکتر</li>
-                        <li>• مثال: قلب و عروق، مغز و اعصاب</li>
-                    </ul>
+    <!-- Main Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-edit"></i>
+                        اطلاعات تخصص
+                    </h5>
                 </div>
-                <div class="col-md-6">
-                    <h6 class="font-weight-bold">ترتیب نمایش:</h6>
-                    <ul class="list-unstyled">
-                        <li>• عدد بین 0 تا 1000</li>
-                        <li>• برای تعیین ترتیب نمایش در لیست‌ها</li>
-                        <li>• عدد کمتر = نمایش بالاتر</li>
-                    </ul>
+                <div class="card-body">
+                    @using (Html.BeginForm("Create", "Specialization", FormMethod.Post, new { @id = "specializationForm", @class = "form-horizontal" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Name, new { @class = "control-label" })
+                                    <span class="text-danger">*</span>
+                                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "مثال: قلب و عروق", maxlength = "100", @id = "Name" })
+                                    @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                                    <small class="form-text">حداکثر 100 کاراکتر</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DisplayOrder, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control farsi-number", @type = "number", min = "0", max = "1000", placeholder = "مثال: 1", @id = "DisplayOrder" })
+                                    @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                                    <small class="form-text">عدد بین 0 تا 1000</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Description, new { @class = "control-label" })
+                            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4", placeholder = "توضیحات مربوط به این تخصص...", @id = "Description" })
+                            @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                            <small class="form-text">توضیحات اختیاری در مورد این تخصص</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-switch-card">
+                                <div class="custom-control custom-switch">
+                                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", @id = "IsActive" })
+                                    <label class="custom-control-label" for="IsActive">
+                                        <i class="fas fa-toggle-on"></i>
+                                        @Html.DisplayNameFor(m => m.IsActive)
+                                    </label>
+                                </div>
+                                <small class="form-text">تخصص‌های فعال در سیستم قابل استفاده هستند</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-success btn-block">
+                                        <i class="fas fa-save"></i>
+                                        ذخیره تخصص
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("Index")" class="btn btn-light btn-block">
+                                        <i class="fas fa-arrow-right"></i>
+                                        بازگشت به لیست
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Help Section -->
+            <div class="card">
+                <div class="card-header info">
+                    <h6>
+                        <i class="fas fa-info-circle"></i>
+                        راهنمای تکمیل فرم
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="help-item">
+                        <h6>
+                            <i class="fas fa-user-md"></i>
+                            نام تخصص
+                        </h6>
+                        <ul>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                باید به فارسی وارد شود
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                حداکثر 100 کاراکتر
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                مثال: قلب و عروق، مغز و اعصاب
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="help-item">
+                        <h6>
+                            <i class="fas fa-sort-amount-down"></i>
+                            ترتیب نمایش
+                        </h6>
+                        <ul>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                عدد بین 0 تا 1000
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                برای تعیین ترتیب در لیست‌ها
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                عدد کمتر = نمایش بالاتر
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="help-item">
+                        <h6>
+                            <i class="fas fa-toggle-on"></i>
+                            وضعیت فعال
+                        </h6>
+                        <ul>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                تخصص فعال قابل انتخاب است
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                می‌توان بعداً تغییر داد
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,32 +491,79 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Real-time validation
-            $('#@Html.IdFor(m => m.Name)').on('input', function () {
-                var value = $(this).val();
-                if (value.length > 100) {
-                    $(this).addClass('is-invalid');
+            console.log('🔧 [BROWSER] Specialization Create initialized');
+
+            // Real-time validation برای نام
+            $('#Name').on('input', function () {
+                var value = $(this).val().trim();
+                var $input = $(this);
+
+                if (value.length === 0) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                } else if (value.length > 100) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
                 } else {
-                    $(this).removeClass('is-invalid');
+                    $input.removeClass('is-invalid').addClass('is-valid');
+                }
+            });
+
+            // Real-time validation برای DisplayOrder
+            $('#DisplayOrder').on('input', function () {
+                var value = parseInt($(this).val());
+                var $input = $(this);
+
+                if (isNaN(value)) {
+                    $input.removeClass('is-valid is-invalid');
+                } else if (value < 0 || value > 1000) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                } else {
+                    $input.removeClass('is-invalid').addClass('is-valid');
                 }
             });
 
             // Form validation
-            $('form').submit(function (e) {
+            $('#specializationForm').submit(function (e) {
                 var isValid = true;
-                
-                // Check required fields
-                if (!$('#@Html.IdFor(m => m.Name)').val().trim()) {
-                    $('#@Html.IdFor(m => m.Name)').addClass('is-invalid');
+
+                // بررسی نام
+                var name = $('#Name').val().trim();
+                if (!name) {
+                    $('#Name').addClass('is-invalid');
+                    isValid = false;
+                } else if (name.length > 100) {
+                    $('#Name').addClass('is-invalid');
                     isValid = false;
                 } else {
-                    $('#@Html.IdFor(m => m.Name)').removeClass('is-invalid');
+                    $('#Name').removeClass('is-invalid');
+                }
+
+                // بررسی DisplayOrder
+                var displayOrder = parseInt($('#DisplayOrder').val());
+                if (!isNaN(displayOrder)) {
+                    if (displayOrder < 0 || displayOrder > 1000) {
+                        $('#DisplayOrder').addClass('is-invalid');
+                        isValid = false;
+                    } else {
+                        $('#DisplayOrder').removeClass('is-invalid');
+                    }
                 }
 
                 if (!isValid) {
                     e.preventDefault();
-                    toastr.error('لطفاً خطاهای فرم را برطرف کنید');
+                    
+                    // نمایش پیام خطا
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('لطفاً خطاهای فرم را برطرف کنید', 'خطای اعتبارسنجی');
+                    } else {
+                        alert('لطفاً خطاهای فرم را برطرف کنید');
+                    }
                 }
+            });
+
+            // Textarea auto-resize
+            $('#Description').on('input', function () {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
             });
         });
     </script>

@@ -4,250 +4,678 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<style>
+    /* ==================== متغیرهای رنگی مخصوص محیط درمانی ==================== */
+    :root {
+        --medical-blue: #2c5aa0;
+        --medical-blue-light: #4a7bc8;
+        --medical-blue-dark: #1e3a70;
+        --medical-green: #2d8659;
+        --medical-green-light: #45a572;
+        --medical-orange: #e67e22;
+        --medical-red: #c0392b;
+        --medical-gray: #5a6c7d;
+        --medical-gray-light: #95a5a6;
+    }
+
+    /* ==================== فونت‌های فارسی ==================== */
+    body, .form-control, .btn, label, .card, input, select, textarea {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    }
+
+    .farsi-number {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+        direction: rtl;
+    }
+
+    /* ==================== Header Section ==================== */
+    .page-header-card {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(44, 90, 160, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header-card .card-header {
+        background: transparent;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .page-header-card h4 {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header-card p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* ==================== Hierarchical Navigation ==================== */
+    .hierarchy-navigation {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .hierarchy-navigation .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hierarchy-navigation .breadcrumb-item {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .hierarchy-navigation .breadcrumb-item + .breadcrumb-item::before {
+        content: "◄";
+        color: var(--medical-blue);
+        font-weight: bold;
+        padding: 0 0.75rem;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a {
+        color: var(--medical-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a:hover {
+        background: var(--medical-blue);
+        color: white;
+    }
+
+    .hierarchy-navigation .breadcrumb-item.active {
+        color: var(--medical-blue-dark);
+        font-weight: 700;
+        background: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ==================== Cards ==================== */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-header h5, .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* ==================== Info Cards ==================== */
+    .info-card {
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .info-card.service {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-right: 5px solid var(--medical-blue);
+    }
+
+    .info-card.department {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-right: 5px solid var(--medical-green);
+    }
+
+    .info-card.status {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-right: 5px solid var(--medical-orange);
+    }
+
+    .info-card.price {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        border-right: 5px solid #9c27b0;
+    }
+
+    .info-card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+
+    .info-card-icon.blue { color: var(--medical-blue); }
+    .info-card-icon.green { color: var(--medical-green); }
+    .info-card-icon.orange { color: var(--medical-orange); }
+    .info-card-icon.purple { color: #9c27b0; }
+
+    .info-card-title {
+        font-size: 0.9rem;
+        color: var(--medical-gray);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .info-card-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--medical-blue-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card-subtitle {
+        font-size: 0.85rem;
+        color: var(--medical-gray);
+    }
+
+    /* ==================== Detail Table ==================== */
+    .detail-table {
+        width: 100%;
+    }
+
+    .detail-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .detail-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .detail-table tbody td {
+        padding: 0.875rem 0.5rem;
+        vertical-align: top;
+    }
+
+    .detail-table tbody td:first-child {
+        color: var(--medical-gray);
+        font-weight: 600;
+        width: 40%;
+    }
+
+    .detail-table tbody td:last-child {
+        color: var(--medical-blue-dark);
+        font-weight: 500;
+    }
+
+    /* ==================== Override Badge ==================== */
+    .override-badge {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        display: inline-block;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+    }
+
+    .override-badge i {
+        margin-left: 0.5rem;
+    }
+
+    /* ==================== Status Badges ==================== */
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        display: inline-block;
+        font-size: 0.95rem;
+    }
+
+    .status-badge.active {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(45, 134, 89, 0.4);
+    }
+
+    .status-badge.inactive {
+        background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-gray-light) 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(90, 108, 125, 0.4);
+    }
+
+    /* ==================== Audit Section ==================== */
+    .audit-item {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 1.25rem;
+        height: 100%;
+    }
+
+    .audit-item h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .audit-item ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .audit-item ul li {
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .audit-item ul li strong {
+        color: var(--medical-gray);
+        display: inline-block;
+        min-width: 100px;
+    }
+
+    /* ==================== Buttons ==================== */
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #d35400 100%);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #d35400 0%, var(--medical-orange) 100%);
+        box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--medical-red) 0%, #e74c3c 100%);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #e74c3c 0%, var(--medical-red) 100%);
+        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, var(--medical-green-light) 0%, var(--medical-green) 100%);
+        box-shadow: 0 4px 12px rgba(45, 134, 89, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        color: var(--medical-blue-dark);
+        border: 2px solid #dee2e6;
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    /* ==================== Responsive ==================== */
+    @@media (max-width: 768px) {
+        .hierarchy-navigation .breadcrumb {
+            font-size: 0.85rem;
+        }
+
+        .info-card-value {
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
 <div class="container-fluid">
-    <!-- Header Section -->
+    <!-- Hierarchical Navigation -->
+    <div class="hierarchy-navigation">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                        <i class="fas fa-home"></i>
+                        داشبورد
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "SharedService")">
+                        <i class="fas fa-share-alt"></i>
+                        خدمات مشترک
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-eye"></i>
+                    جزئیات خدمت مشترک
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Page Header -->
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">
+            <div class="card page-header-card">
+                <div class="card-header">
+                    <h4>
                         <i class="fas fa-eye"></i>
                         جزئیات خدمت مشترک
                     </h4>
-                    <p class="mb-0">مشاهده اطلاعات کامل خدمت مشترک</p>
+                    <p>مشاهده کامل اطلاعات و تنظیمات خدمت مشترک بین دپارتمان‌ها</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Information Section -->
-    <div class="row mt-3">
-        <div class="col-12">
+    <!-- Info Cards -->
+    <div class="row">
+        <div class="col-md-6 col-lg-3">
+            <div class="info-card service">
+                <div class="info-card-icon blue">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="info-card-title">خدمت</div>
+                <div class="info-card-value">@Model.ServiceTitle</div>
+                <div class="info-card-subtitle">
+                    <i class="fas fa-barcode"></i>
+                    کد: <span class="farsi-number">@Model.ServiceCode</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="info-card department">
+                <div class="info-card-icon green">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="info-card-title">دپارتمان</div>
+                <div class="info-card-value">@Model.DepartmentName</div>
+                <div class="info-card-subtitle">
+                    <i class="fas fa-hashtag"></i>
+                    شناسه: <span class="farsi-number">@Model.DepartmentId</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="info-card status">
+                <div class="info-card-icon orange">
+                    <i class="fas fa-@(Model.IsActive ? "check-circle" : "pause-circle")"></i>
+                </div>
+                <div class="info-card-title">وضعیت</div>
+                <div class="info-card-value">
+                    <span class="status-badge @(Model.IsActive ? "active" : "inactive")">
+                        @Model.IsActiveText
+                    </span>
+                </div>
+                <div class="info-card-subtitle">
+                    @(Model.IsActive ? "خدمت در دسترس است" : "خدمت غیرفعال است")
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="info-card price">
+                <div class="info-card-icon purple">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="info-card-title">قیمت خدمت</div>
+                <div class="info-card-value farsi-number">@Model.ServicePriceFormatted</div>
+                <div class="info-card-subtitle">ریال</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Details -->
+    <div class="row">
+        <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle"></i>
-                        اطلاعات اصلی
+                    <h5>
+                        <i class="fas fa-cogs"></i>
+                        اطلاعات خدمت
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <!-- Service Information -->
-                        <div class="col-md-6">
-                            <div class="info-box bg-light">
-                                <span class="info-box-icon bg-primary">
-                                    <i class="fas fa-cogs"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">اطلاعات خدمت</span>
-                                    <span class="info-box-number">@Model.ServiceTitle</span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-primary" style="width: 100%"></div>
-                                    </div>
-                                    <span class="progress-description">
-                                        کد: @Model.ServiceCode
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Department Information -->
-                        <div class="col-md-6">
-                            <div class="info-box bg-light">
-                                <span class="info-box-icon bg-success">
-                                    <i class="fas fa-building"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">اطلاعات دپارتمان</span>
-                                    <span class="info-box-number">@Model.DepartmentName</span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                                    </div>
-                                    <span class="progress-description">
-                                        شناسه: @Model.DepartmentId
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mt-3">
-                        <!-- Status Information -->
-                        <div class="col-md-6">
-                            <div class="info-box bg-light">
-                                <span class="info-box-icon @(Model.IsActive ? "bg-success" : "bg-warning")">
-                                    <i class="fas @(Model.IsActive ? "fa-check-circle" : "fa-pause-circle")"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">وضعیت فعال</span>
-                                    <span class="info-box-number">@Model.IsActiveText</span>
-                                    <div class="progress">
-                                        <div class="progress-bar @(Model.IsActive ? "bg-success" : "bg-warning")" style="width: 100%"></div>
-                                    </div>
-                                    <span class="progress-description">
-                                        @(Model.IsActive ? "خدمت در دسترس است" : "خدمت غیرفعال است")
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Price Information -->
-                        <div class="col-md-6">
-                            <div class="info-box bg-light">
-                                <span class="info-box-icon bg-info">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">قیمت خدمت</span>
-                                    <span class="info-box-number">@Model.ServicePriceFormatted</span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-info" style="width: 100%"></div>
-                                    </div>
-                                    <span class="progress-description">
-                                        قیمت پایه خدمت
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <table class="detail-table">
+                        <tbody>
+                            <tr>
+                                <td>شناسه خدمت:</td>
+                                <td class="farsi-number">@Model.ServiceId</td>
+                            </tr>
+                            <tr>
+                                <td>عنوان خدمت:</td>
+                                <td>@Model.ServiceTitle</td>
+                            </tr>
+                            <tr>
+                                <td>کد خدمت:</td>
+                                <td class="farsi-number">@Model.ServiceCode</td>
+                            </tr>
+                            <tr>
+                                <td>قیمت خدمت:</td>
+                                <td class="farsi-number">@Model.ServicePriceFormatted ریال</td>
+                            </tr>
+                            <tr>
+                                <td>توضیحات خدمت:</td>
+                                <td>@(string.IsNullOrEmpty(Model.ServiceDescription) ? "توضیحی ارائه نشده" : Model.ServiceDescription)</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Detailed Information Section -->
-    <div class="row mt-3">
-        <div class="col-12">
+        <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list-alt"></i>
-                        جزئیات کامل
+                    <h5>
+                        <i class="fas fa-building"></i>
+                        اطلاعات دپارتمان
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>شناسه خدمت مشترک:</strong></td>
-                                        <td>@Model.SharedServiceId</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>شناسه خدمت:</strong></td>
-                                        <td>@Model.ServiceId</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>عنوان خدمت:</strong></td>
-                                        <td>@Model.ServiceTitle</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>کد خدمت:</strong></td>
-                                        <td>@Model.ServiceCode</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>قیمت خدمت:</strong></td>
-                                        <td>@Model.ServicePriceFormatted</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>توضیحات خدمت:</strong></td>
-                                        <td>@(string.IsNullOrEmpty(Model.ServiceDescription) ? "توضیحی ارائه نشده" : Model.ServiceDescription)</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>شناسه دپارتمان:</strong></td>
-                                        <td>@Model.DepartmentId</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>نام دپارتمان:</strong></td>
-                                        <td>@Model.DepartmentName</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>توضیحات دپارتمان:</strong></td>
-                                        <td>@(string.IsNullOrEmpty(Model.DepartmentDescription) ? "توضیحی ارائه نشده" : Model.DepartmentDescription)</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>وضعیت فعال:</strong></td>
-                                        <td>
-                                            <span class="badge @(Model.IsActive ? "badge-success" : "badge-warning")">
-                                                @Model.IsActiveText
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>توضیحات خاص دپارتمان:</strong></td>
-                                        <td>@(string.IsNullOrEmpty(Model.DepartmentSpecificNotes) ? "توضیحی ارائه نشده" : Model.DepartmentSpecificNotes)</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>ضریب فنی Override:</strong></td>
-                                        <td>@(Model.OverrideTechnicalFactor?.ToString("0.##") ?? "استفاده از مقدار پیش‌فرض")</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>ضریب حرفه‌ای Override:</strong></td>
-                                        <td>@(Model.OverrideProfessionalFactor?.ToString("0.##") ?? "استفاده از مقدار پیش‌فرض")</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <table class="detail-table">
+                        <tbody>
+                            <tr>
+                                <td>شناسه دپارتمان:</td>
+                                <td class="farsi-number">@Model.DepartmentId</td>
+                            </tr>
+                            <tr>
+                                <td>نام دپارتمان:</td>
+                                <td>@Model.DepartmentName</td>
+                            </tr>
+                            <tr>
+                                <td>توضیحات دپارتمان:</td>
+                                <td>@(string.IsNullOrEmpty(Model.DepartmentDescription) ? "توضیحی ارائه نشده" : Model.DepartmentDescription)</td>
+                            </tr>
+                            <tr>
+                                <td>توضیحات خاص:</td>
+                                <td>@(string.IsNullOrEmpty(Model.DepartmentSpecificNotes) ? "توضیحی ارائه نشده" : Model.DepartmentSpecificNotes)</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Audit Information Section -->
-    <div class="row mt-3">
+    <!-- Override Coefficients -->
+    @if (Model.OverrideTechnicalFactor.HasValue || Model.OverrideProfessionalFactor.HasValue)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);">
+                        <h5>
+                            <i class="fas fa-star"></i>
+                            ضرایب سفارشی (Override)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i>
+                            این خدمت دارای ضرایب سفارشی برای این دپارتمان است که جایگزین ضرایب پیش‌فرض خدمت می‌شود.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="detail-table">
+                                    <tbody>
+                                        <tr>
+                                            <td>ضریب فنی (Technical):</td>
+                                            <td>
+                                                @if (Model.OverrideTechnicalFactor.HasValue)
+                                                {
+                                                    <span class="override-badge farsi-number">
+                                                        <i class="fas fa-star"></i>
+                                                        @Model.OverrideTechnicalFactor.Value.ToString("0.##")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">استفاده از مقدار پیش‌فرض</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="detail-table">
+                                    <tbody>
+                                        <tr>
+                                            <td>ضریب حرفه‌ای (Professional):</td>
+                                            <td>
+                                                @if (Model.OverrideProfessionalFactor.HasValue)
+                                                {
+                                                    <span class="override-badge farsi-number">
+                                                        <i class="fas fa-star"></i>
+                                                        @Model.OverrideProfessionalFactor.Value.ToString("0.##")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">استفاده از مقدار پیش‌فرض</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Audit Information -->
+    <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-gray-light) 100%);">
+                    <h5>
                         <i class="fas fa-history"></i>
-                        اطلاعات ردیابی
+                        اطلاعات حسابرسی
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <h6><i class="fas fa-plus-circle text-success"></i> اطلاعات ایجاد:</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>تاریخ ایجاد:</strong> @Model.CreatedAtShamsi</li>
-                                <li><strong>ایجادکننده:</strong> @Model.CreatedByUserName</li>
-                            </ul>
+                            <div class="audit-item">
+                                <h6>
+                                    <i class="fas fa-plus-circle text-success"></i>
+                                    ایجاد
+                                </h6>
+                                <ul>
+                                    <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.CreatedAtShamsi</span></li>
+                                    <li><strong>کاربر:</strong> @Model.CreatedByUserName</li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <h6><i class="fas fa-edit text-warning"></i> اطلاعات آخرین ویرایش:</h6>
-                            <ul class="list-unstyled">
-                                @if (Model.UpdatedAt.HasValue)
-                                {
-                                    <li><strong>تاریخ ویرایش:</strong> @Model.UpdatedAtShamsi</li>
-                                    <li><strong>ویرایش‌کننده:</strong> @Model.UpdatedByUserName</li>
-                                }
-                                else
-                                {
-                                    <li><span class="text-muted">هنوز ویرایش نشده است</span></li>
-                                }
-                            </ul>
+                            <div class="audit-item">
+                                <h6>
+                                    <i class="fas fa-edit text-warning"></i>
+                                    آخرین ویرایش
+                                </h6>
+                                <ul>
+                                    @if (Model.UpdatedAt.HasValue)
+                                    {
+                                        <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.UpdatedAtShamsi</span></li>
+                                        <li><strong>کاربر:</strong> @Model.UpdatedByUserName</li>
+                                    }
+                                    else
+                                    {
+                                        <li><span class="text-muted">هنوز ویرایش نشده است</span></li>
+                                    }
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <h6><i class="fas fa-trash text-danger"></i> اطلاعات حذف:</h6>
-                            <ul class="list-unstyled">
-                                @if (Model.IsDeleted)
-                                {
-                                    <li><strong>وضعیت:</strong> <span class="badge badge-danger">حذف شده</span></li>
-                                    <li><strong>تاریخ حذف:</strong> @Model.DeletedAtShamsi</li>
-                                    <li><strong>حذف‌کننده:</strong> @Model.DeletedByUserName</li>
-                                }
-                                else
-                                {
-                                    <li><span class="text-muted">حذف نشده است</span></li>
-                                }
-                            </ul>
+                            <div class="audit-item">
+                                <h6>
+                                    <i class="fas fa-trash text-danger"></i>
+                                    حذف
+                                </h6>
+                                <ul>
+                                    @if (Model.IsDeleted)
+                                    {
+                                        <li><strong>وضعیت:</strong> <span class="badge badge-danger">حذف شده</span></li>
+                                        <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.DeletedAtShamsi</span></li>
+                                        <li><strong>کاربر:</strong> @Model.DeletedByUserName</li>
+                                    }
+                                    else
+                                    {
+                                        <li><span class="text-muted">حذف نشده است</span></li>
+                                    }
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,24 +683,24 @@
         </div>
     </div>
 
-    <!-- Actions Section -->
-    <div class="row mt-3">
+    <!-- Actions -->
+    <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h5>
                         <i class="fas fa-tools"></i>
                         عملیات
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between flex-wrap">
                         <div>
-                            <a href="@Url.Action("Edit", new { id = Model.SharedServiceId })" class="btn btn-warning">
+                            <a href="@Url.Action("Edit", new { id = Model.SharedServiceId })" class="btn btn-warning mb-2">
                                 <i class="fas fa-edit"></i>
                                 ویرایش خدمت مشترک
                             </a>
-                            <button type="button" class="btn @(Model.IsActive ? "btn-secondary" : "btn-success") toggle-active" 
+                            <button type="button" class="btn @(Model.IsActive ? "btn-secondary" : "btn-success") toggle-active mb-2" 
                                     data-id="@Model.SharedServiceId" data-active="@Model.IsActive.ToString().ToLower()" 
                                     title="@(Model.IsActive ? "غیرفعال کردن" : "فعال کردن")">
                                 <i class="fas @(Model.IsActive ? "fa-pause" : "fa-play")"></i>
@@ -280,11 +708,11 @@
                             </button>
                         </div>
                         <div>
-                            <a href="@Url.Action("Delete", new { id = Model.SharedServiceId })" class="btn btn-danger">
+                            <button type="button" class="btn btn-danger delete-btn mb-2" data-id="@Model.SharedServiceId">
                                 <i class="fas fa-trash"></i>
                                 حذف خدمت مشترک
-                            </a>
-                            <a href="@Url.Action("Index")" class="btn btn-light">
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-light mb-2">
                                 <i class="fas fa-arrow-right"></i>
                                 بازگشت به لیست
                             </a>
@@ -295,69 +723,207 @@
         </div>
     </div>
 
-    <!-- Related Information Section -->
-    <div class="row mt-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-link"></i>
-                        اطلاعات مرتبط
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-cogs text-primary"></i> اطلاعات خدمت:</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>شناسه:</strong> @Model.ServiceId</li>
-                                <li><strong>عنوان:</strong> @Model.ServiceTitle</li>
-                                <li><strong>کد:</strong> @Model.ServiceCode</li>
-                                <li><strong>قیمت:</strong> @Model.ServicePriceFormatted</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-building text-success"></i> اطلاعات دپارتمان:</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>شناسه:</strong> @Model.DepartmentId</li>
-                                <li><strong>نام:</strong> @Model.DepartmentName</li>
-                                <li><strong>توضیحات:</strong> @(string.IsNullOrEmpty(Model.DepartmentDescription) ? "توضیحی ارائه نشده" : Model.DepartmentDescription)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Hidden Form for Anti-Forgery Token -->
+    <form id="deleteForm" method="post" style="display: none;" data-ajax="false" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="deleteId" />
+    </form>
 </div>
 
 @section Scripts {
+    <!-- SweetAlert2 for professional delete confirmation -->
+    <link rel="stylesheet" href="~/Content/plugins/sweetalert2-11.15.10/sweetalert2.min.css">
+    <script src="~/Content/plugins/sweetalert2-11.15.10/sweetalert2.min.js"></script>
+
     <script>
         $(document).ready(function() {
+            // دریافت Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            // ✅ غیرفعال کردن validation برای فرم مخفی
+            $('#deleteForm').data('validator', null);
+            $('#deleteForm').off('submit');
+            $.validator.unobtrusive.parse('#deleteForm');
+
             // مدیریت تغییر وضعیت فعال/غیرفعال
             $('.toggle-active').click(function() {
                 var id = $(this).data('id');
                 var isActive = $(this).data('active') === 'true';
                 var newStatus = !isActive;
+                var actionText = newStatus ? 'فعال' : 'غیرفعال';
 
-                if (confirm('آیا از تغییر وضعیت این خدمت مشترک اطمینان دارید؟')) {
-                    $.ajax({
-                        url: '@Url.Action("ToggleActive")',
-                        type: 'POST',
-                        data: { id: id, isActive: newStatus },
-                        success: function(response) {
-                            if (response.success) {
-                                location.reload();
-                            } else {
-                                alert('خطا: ' + response.message);
+                Swal.fire({
+                    title: 'تغییر وضعیت',
+                    text: 'آیا از ' + actionText + ' کردن این خدمت مشترک اطمینان دارید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2c5aa0',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، ' + actionText + ' کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'farsi-font',
+                        confirmButton: 'btn-lg',
+                        cancelButton: 'btn-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("ToggleActive")',
+                            type: 'POST',
+                            data: { 
+                                __RequestVerificationToken: token,
+                                id: id, 
+                                isActive: newStatus 
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'موفقیت!',
+                                        text: 'وضعیت خدمت مشترک با موفقیت تغییر یافت',
+                                        icon: 'success',
+                                        confirmButtonColor: '#2d8659',
+                                        confirmButtonText: 'بستن',
+                                        customClass: {
+                                            popup: 'farsi-font'
+                                        }
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'خطا!',
+                                        text: response.message || 'خطا در تغییر وضعیت',
+                                        icon: 'error',
+                                        confirmButtonColor: '#c0392b',
+                                        confirmButtonText: 'بستن',
+                                        customClass: {
+                                            popup: 'farsi-font'
+                                        }
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'خطا!',
+                                    text: 'خطا در ارتباط با سرور',
+                                    icon: 'error',
+                                    confirmButtonColor: '#c0392b',
+                                    confirmButtonText: 'بستن',
+                                    customClass: {
+                                        popup: 'farsi-font'
+                                    }
+                                });
                             }
-                        },
-                        error: function() {
-                            alert('خطا در ارتباط با سرور');
-                        }
-                    });
-                }
+                        });
+                    }
+                });
+            });
+
+            // مدیریت حذف با SweetAlert2
+            $('.delete-btn').click(function() {
+                var id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'حذف خدمت مشترک',
+                    html: '<div style="text-align: right; font-family: Vazir, Tahoma, sans-serif;">' +
+                          '<p style="font-size: 1.1rem; margin-bottom: 1rem;">آیا از حذف این خدمت مشترک اطمینان دارید؟</p>' +
+                          '<div style="background: #fff3cd; border-right: 4px solid #ffc107; padding: 1rem; border-radius: 4px;">' +
+                          '<strong style="color: #856404;">⚠️ هشدار:</strong>' +
+                          '<p style="margin: 0.5rem 0 0 0; color: #856404;">این عملیات قابل بازگشت نیست!</p>' +
+                          '</div>' +
+                          '</div>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#c0392b',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-trash"></i> بله، حذف کن',
+                    cancelButtonText: '<i class="fas fa-times"></i> انصراف',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'farsi-font',
+                        confirmButton: 'btn-lg',
+                        cancelButton: 'btn-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // استفاده از فرم مخفی برای ارسال POST
+                        $('#deleteId').val(id);
+                        
+                        // نمایش loading
+                        Swal.fire({
+                            title: 'در حال حذف...',
+                            html: 'لطفاً صبر کنید',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            willOpen: () => {
+                                Swal.showLoading();
+                            },
+                            customClass: {
+                                popup: 'farsi-font'
+                            }
+                        });
+
+                        // ارسال فرم با AJAX
+                        var formData = $('#deleteForm').serialize();
+                        
+                        $.ajax({
+                            url: '@Url.Action("Delete")',
+                            type: 'POST',
+                            data: formData,
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'حذف شد!',
+                                        text: 'خدمت مشترک با موفقیت حذف شد',
+                                        icon: 'success',
+                                        confirmButtonColor: '#2d8659',
+                                        confirmButtonText: 'بستن',
+                                        customClass: {
+                                            popup: 'farsi-font'
+                                        }
+                                    }).then(() => {
+                                        window.location.href = '@Url.Action("Index")';
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'خطا!',
+                                        text: response.message || 'خطا در حذف خدمت مشترک',
+                                        icon: 'error',
+                                        confirmButtonColor: '#c0392b',
+                                        confirmButtonText: 'بستن',
+                                        customClass: {
+                                            popup: 'farsi-font'
+                                        }
+                                    });
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Delete Error:', xhr.responseText);
+                                Swal.fire({
+                                    title: 'خطا!',
+                                    text: 'خطا در ارتباط با سرور',
+                                    icon: 'error',
+                                    confirmButtonColor: '#c0392b',
+                                    confirmButtonText: 'بستن',
+                                    customClass: {
+                                        popup: 'farsi-font'
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>
+
+    <style>
+        .farsi-font {
+            font-family: 'Vazir', 'Tahoma', sans-serif !important;
+            direction: rtl !important;
+        }
+    </style>
 }

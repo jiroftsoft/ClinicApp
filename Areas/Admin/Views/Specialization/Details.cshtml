@@ -4,103 +4,534 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<style>
+    /* ==================== متغیرهای رنگی مخصوص محیط درمانی ==================== */
+    :root {
+        --medical-blue: #2c5aa0;
+        --medical-blue-light: #4a7bc8;
+        --medical-blue-dark: #1e3a70;
+        --medical-green: #2d8659;
+        --medical-green-light: #45a572;
+        --medical-orange: #e67e22;
+        --medical-red: #c0392b;
+        --medical-gray: #5a6c7d;
+        --medical-gray-light: #95a5a6;
+        --medical-purple: #8e44ad;
+    }
+
+    /* ==================== فونت‌های فارسی ==================== */
+    body, .form-control, .btn, label, .card, input, select, textarea, table {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+    }
+
+    .farsi-number {
+        font-family: 'Vazir', 'Tahoma', sans-serif !important;
+        direction: rtl;
+    }
+
+    /* ==================== Header Section ==================== */
+    .page-header-card {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(44, 90, 160, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header-card .card-header {
+        background: transparent;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .page-header-card h4 {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header-card p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* ==================== Hierarchical Navigation ==================== */
+    .hierarchy-navigation {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .hierarchy-navigation .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hierarchy-navigation .breadcrumb-item {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .hierarchy-navigation .breadcrumb-item + .breadcrumb-item::before {
+        content: "◄";
+        color: var(--medical-blue);
+        font-weight: bold;
+        padding: 0 0.75rem;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a {
+        color: var(--medical-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+    }
+
+    .hierarchy-navigation .breadcrumb-item a:hover {
+        background: var(--medical-blue);
+        color: white;
+    }
+
+    .hierarchy-navigation .breadcrumb-item.active {
+        color: var(--medical-blue);
+        font-weight: 700;
+        background: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ==================== Cards ==================== */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-header.audit {
+        background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-gray-light) 100%);
+    }
+
+    .card-header.doctors {
+        background: linear-gradient(135deg, var(--medical-purple) 0%, #9b59b6 100%);
+    }
+
+    .card-header h5, .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* ==================== Info Cards ==================== */
+    .info-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 1.25rem;
+        height: 100%;
+        transition: all 0.3s;
+    }
+
+    .info-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .info-card-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-card-icon.blue {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+    }
+
+    .info-card-icon.green {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+    }
+
+    .info-card-icon.purple {
+        background: linear-gradient(135deg, var(--medical-purple) 0%, #9b59b6 100%);
+        color: white;
+    }
+
+    .info-card-icon.orange {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+        color: white;
+    }
+
+    .info-card-label {
+        color: var(--medical-gray);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card-value {
+        color: var(--medical-blue-dark);
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    /* ==================== Badge Styles ==================== */
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+        color: white;
+    }
+
+    .badge-info {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+    }
+
+    /* ==================== Description Section ==================== */
+    .description-section {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-right: 4px solid var(--medical-orange);
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-top: 1.5rem;
+    }
+
+    .description-section h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .description-section p {
+        color: var(--medical-gray);
+        margin: 0;
+        line-height: 1.8;
+    }
+
+    /* ==================== Doctors Table ==================== */
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: var(--medical-blue);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 1rem;
+    }
+
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        border-color: #e9ecef;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* ==================== Empty State ==================== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: var(--medical-gray-light);
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h5 {
+        color: var(--medical-gray);
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state p {
+        color: var(--medical-gray-light);
+        margin-bottom: 1.5rem;
+    }
+
+    /* ==================== Audit Section ==================== */
+    .audit-item {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 1.25rem;
+        height: 100%;
+    }
+
+    .audit-item h6 {
+        color: var(--medical-blue-dark);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .audit-item ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .audit-item ul li {
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .audit-item ul li strong {
+        color: var(--medical-gray);
+        display: inline-block;
+        min-width: 100px;
+    }
+
+    /* ==================== Buttons ==================== */
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--medical-orange) 0%, #ff9800 100%);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #ff9800 0%, var(--medical-orange) 100%);
+        box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        color: var(--medical-blue-dark);
+        border: 2px solid #dee2e6;
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, var(--medical-blue-light) 0%, var(--medical-blue) 100%);
+        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--medical-green-light) 0%, var(--medical-green) 100%);
+        box-shadow: 0 4px 12px rgba(45, 134, 89, 0.3);
+        transform: translateY(-2px);
+    }
+
+    /* ==================== Responsive ==================== */
+    @@media (max-width: 768px) {
+        .hierarchy-navigation .breadcrumb {
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
 <div class="container-fluid">
-    <!-- Header -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">جزئیات تخصص: @Model.Name</h1>
-        <div>
-            <a href="@Url.Action("Edit", new { id = Model.SpecializationId })" class="d-none d-sm-inline-block btn btn-warning shadow-sm mr-2">
-                <i class="fas fa-edit fa-sm text-white-50"></i> ویرایش
-            </a>
-            <a href="@Url.Action("Index")" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
-                <i class="fas fa-arrow-right fa-sm text-white-50"></i> بازگشت به لیست
-            </a>
-        </div>
+    <!-- Hierarchical Navigation -->
+    <div class="hierarchy-navigation">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                        <i class="fas fa-home"></i>
+                        داشبورد
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Specialization")">
+                        <i class="fas fa-user-md"></i>
+                        تخصص‌ها
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-info-circle"></i>
+                    جزئیات: @Model.Name
+                </li>
+            </ol>
+        </nav>
     </div>
 
-    <!-- Basic Information Card -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-info-circle"></i> اطلاعات پایه
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <table class="table table-borderless">
-                        <tr>
-                            <td><strong>نام تخصص:</strong></td>
-                            <td>@Model.Name</td>
-                        </tr>
-                        <tr>
-                            <td><strong>وضعیت:</strong></td>
-                            <td>
-                                @if (Model.StatusText == "فعال")
-                                {
-                                    <span class="badge badge-success">@Model.StatusText</span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-warning">@Model.StatusText</span>
-                                }
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>ترتیب نمایش:</strong></td>
-                            <td>@Model.DisplayOrder</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-borderless">
-                        <tr>
-                            <td><strong>تعداد پزشکان:</strong></td>
-                            <td>
-                                <span class="badge badge-info">@Model.DoctorCount</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>تاریخ ایجاد:</strong></td>
-                            <td>@Model.CreatedAtShamsi</td>
-                        </tr>
-                        <tr>
-                            <td><strong>ایجاد کننده:</strong></td>
-                            <td>@Model.CreatedBy</td>
-                        </tr>
-                    </table>
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card page-header-card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-info-circle"></i>
+                        جزئیات تخصص پزشکی
+                    </h4>
+                    <p>مشاهده اطلاعات کامل تخصص: <strong>@Model.Name</strong></p>
                 </div>
             </div>
-
-            @if (!string.IsNullOrEmpty(Model.Description))
-            {
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6 class="font-weight-bold">توضیحات:</h6>
-                        <p class="text-muted">@Model.Description</p>
-                    </div>
-                </div>
-            }
         </div>
     </div>
+
+    <!-- Info Summary Cards -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon blue">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="info-card-label">نام تخصص</div>
+                <div class="info-card-value">@Model.Name</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon @(Model.StatusText == "فعال" ? "green" : "orange")">
+                    <i class="fas fa-@(Model.StatusText == "فعال" ? "check-circle" : "pause-circle")"></i>
+                </div>
+                <div class="info-card-label">وضعیت</div>
+                <div class="info-card-value">
+                    @if (Model.StatusText == "فعال")
+                    {
+                        <span class="badge badge-success">@Model.StatusText</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-warning">@Model.StatusText</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon purple">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="info-card-label">تعداد پزشکان</div>
+                <div class="info-card-value">
+                    <span class="badge badge-info farsi-number">@Model.DoctorCount</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="info-card">
+                <div class="info-card-icon orange">
+                    <i class="fas fa-sort-amount-down"></i>
+                </div>
+                <div class="info-card-label">ترتیب نمایش</div>
+                <div class="info-card-value farsi-number">@Model.DisplayOrder</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description Section -->
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="description-section">
+                    <h6>
+                        <i class="fas fa-align-right"></i>
+                        توضیحات
+                    </h6>
+                    <p>@Model.Description</p>
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- Related Doctors Card -->
     @if (Model.Doctors.Any())
     {
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-user-md"></i> پزشکان مرتبط (@Model.DoctorCount)
-                </h6>
+        <div class="card">
+            <div class="card-header doctors">
+                <h5>
+                    <i class="fas fa-user-md"></i>
+                    پزشکان مرتبط (<span class="farsi-number">@Model.DoctorCount</span>)
+                </h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>نام پزشک</th>
-                                <th>وضعیت</th>
-                                <th>عملیات</th>
+                                <th>
+                                    <i class="fas fa-user"></i>
+                                    نام پزشک
+                                </th>
+                                <th>
+                                    <i class="fas fa-toggle-on"></i>
+                                    وضعیت
+                                </th>
+                                <th style="width: 120px;">
+                                    <i class="fas fa-cog"></i>
+                                    عملیات
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,7 +551,7 @@
                                     </td>
                                     <td>
                                         <a href="@Url.Action("Details", "Doctor", new { id = doctor.DoctorId })" 
-                                           class="btn btn-info btn-sm" title="مشاهده">
+                                           class="btn btn-info btn-sm" title="مشاهده جزئیات">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>
@@ -134,47 +565,64 @@
     }
     else
     {
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-user-md"></i> پزشکان مرتبط
-                </h6>
+        <div class="card">
+            <div class="card-header doctors">
+                <h5>
+                    <i class="fas fa-user-md"></i>
+                    پزشکان مرتبط
+                </h5>
             </div>
-            <div class="card-body text-center py-4">
-                <i class="fas fa-user-md fa-3x text-gray-300 mb-3"></i>
-                <h5 class="text-gray-500">هیچ پزشکی به این تخصص اختصاص داده نشده است</h5>
-                <p class="text-gray-400">برای اختصاص پزشک به این تخصص، از بخش مدیریت پزشکان استفاده کنید.</p>
-                <a href="@Url.Action("Index", "Doctor")" class="btn btn-primary">
-                    <i class="fas fa-users"></i> مدیریت پزشکان
-                </a>
+            <div class="card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h5>هیچ پزشکی به این تخصص اختصاص داده نشده است</h5>
+                    <p>برای اختصاص پزشک به این تخصص، از بخش مدیریت پزشکان استفاده کنید.</p>
+                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-primary">
+                        <i class="fas fa-users"></i>
+                        مدیریت پزشکان
+                    </a>
+                </div>
             </div>
         </div>
     }
 
-    <!-- Audit Trail Card -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-info">
-                <i class="fas fa-history"></i> تاریخچه تغییرات
-            </h6>
+    <!-- Audit Trail -->
+    <div class="card">
+        <div class="card-header audit">
+            <h5>
+                <i class="fas fa-history"></i>
+                اطلاعات حسابرسی
+            </h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <h6 class="font-weight-bold">اطلاعات ایجاد:</h6>
-                    <ul class="list-unstyled">
-                        <li><strong>تاریخ:</strong> @Model.CreatedAtShamsi</li>
-                        <li><strong>ایجاد کننده:</strong> @Model.CreatedBy</li>
-                    </ul>
+                    <div class="audit-item">
+                        <h6>
+                            <i class="fas fa-plus-circle text-success"></i>
+                            ایجاد
+                        </h6>
+                        <ul>
+                            <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.CreatedAtShamsi</span></li>
+                            <li><strong>کاربر:</strong> @Model.CreatedBy</li>
+                        </ul>
+                    </div>
                 </div>
                 @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
                 {
                     <div class="col-md-6">
-                        <h6 class="font-weight-bold">آخرین ویرایش:</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>تاریخ:</strong> @Model.UpdatedAtShamsi</li>
-                            <li><strong>ویرایش کننده:</strong> @Model.UpdatedBy</li>
-                        </ul>
+                        <div class="audit-item">
+                            <h6>
+                                <i class="fas fa-edit text-warning"></i>
+                                آخرین ویرایش
+                            </h6>
+                            <ul>
+                                <li><strong>تاریخ:</strong> <span class="farsi-number">@Model.UpdatedAtShamsi</span></li>
+                                <li><strong>کاربر:</strong> @Model.UpdatedBy</li>
+                            </ul>
+                        </div>
                     </div>
                 }
             </div>
@@ -182,16 +630,32 @@
     </div>
 
     <!-- Action Buttons -->
-    <div class="row">
-        <div class="col-md-6">
+    <div class="row mb-4">
+        <div class="col-md-4">
             <a href="@Url.Action("Edit", new { id = Model.SpecializationId })" class="btn btn-warning btn-block">
-                <i class="fas fa-edit"></i> ویرایش تخصص
+                <i class="fas fa-edit"></i>
+                ویرایش تخصص
             </a>
         </div>
-        <div class="col-md-6">
-            <a href="@Url.Action("Index")" class="btn btn-secondary btn-block">
-                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+        <div class="col-md-4">
+            <a href="@Url.Action("Index", "Doctor")" class="btn btn-primary btn-block">
+                <i class="fas fa-users"></i>
+                مدیریت پزشکان
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="@Url.Action("Index")" class="btn btn-light btn-block">
+                <i class="fas fa-arrow-right"></i>
+                بازگشت به لیست
             </a>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            console.log('🔧 [BROWSER] Specialization Details initialized');
+        });
+    </script>
+}
