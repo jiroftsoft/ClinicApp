@@ -333,30 +333,48 @@ namespace ClinicApp.Repositories.Insurance
         #region Business Logic Operations
 
         /// <summary>
-        /// دریافت تعرفه بیمه بر اساس طرح و خدمت
+        /// دریافت تعرفه بیمه بر اساس طرح بیمه و خدمت (فقط تعرفه‌های فعال)
+        /// 🚨 PROFESSIONAL FIX: افزودن شرط IsActive برای اطمینان از استفاده از تعرفه‌های فعال
         /// </summary>
         public async Task<InsuranceTariff> GetByPlanAndServiceAsync(int planId, int serviceId)
         {
+            return await GetByPlanAndServiceAsync(planId, serviceId, includeInactive: false);
+        }
+        
+        /// <summary>
+        /// دریافت تعرفه بیمه بر اساس طرح بیمه و خدمت (با امکان شامل کردن تعرفه‌های غیرفعال)
+        /// برای استفاده در validation و بررسی وجود تعرفه
+        /// </summary>
+        public async Task<InsuranceTariff> GetByPlanAndServiceAsync(int planId, int serviceId, bool includeInactive)
+        {
             try
             {
-                _logger.Debug("🏥 MEDICAL: شروع GetByPlanAndServiceAsync - PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
+                _logger.Debug("🏥 MEDICAL: شروع GetByPlanAndServiceAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, IncludeInactive: {IncludeInactive}", 
+                    planId, serviceId, includeInactive);
 
-                var tariff = await _context.InsuranceTariffs
+                var query = _context.InsuranceTariffs
                     .AsNoTracking() // بهینه‌سازی عملکرد برای محیط درمانی
                     .Where(t => t.InsurancePlanId == planId &&
                                t.ServiceId == serviceId &&
-                               !t.IsDeleted)
-                    .FirstOrDefaultAsync();
+                               !t.IsDeleted);
+                
+                // 🚨 PROFESSIONAL FIX: افزودن شرط IsActive فقط اگر includeInactive = false باشد
+                if (!includeInactive)
+                {
+                    query = query.Where(t => t.IsActive);
+                }
+                
+                var tariff = await query.FirstOrDefaultAsync();
 
-                _logger.Information("🏥 MEDICAL: GetByPlanAndServiceAsync تکمیل شد - Found: {Found}, PlanId: {PlanId}, ServiceId: {ServiceId}", 
-                    tariff != null, planId, serviceId);
+                _logger.Information("🏥 MEDICAL: GetByPlanAndServiceAsync تکمیل شد - Found: {Found}, PlanId: {PlanId}, ServiceId: {ServiceId}, IncludeInactive: {IncludeInactive}, IsActive: {IsActive}", 
+                    tariff != null, planId, serviceId, includeInactive, tariff?.IsActive ?? false);
 
                 return tariff;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت تعرفه بر اساس طرح بیمه و خدمت - PlanId: {PlanId}, ServiceId: {ServiceId}", 
-                    planId, serviceId);
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت تعرفه بر اساس طرح بیمه و خدمت - PlanId: {PlanId}, ServiceId: {ServiceId}, IncludeInactive: {IncludeInactive}", 
+                    planId, serviceId, includeInactive);
                 throw new InvalidOperationException("خطا در دریافت تعرفه بر اساس طرح بیمه و خدمت", ex);
             }
         }

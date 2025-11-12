@@ -107,8 +107,8 @@ namespace ClinicApp.Services.Insurance
 
                 var errors = new List<string>();
 
-                // 1. قواعد یکتایی - بررسی وجود تعرفه مشابه
-                var existingTariff = await _tariffRepository.GetByPlanAndServiceAsync(tariff.InsurancePlanId ?? 0, tariff.ServiceId);
+                // 1. قواعد یکتایی - بررسی وجود تعرفه مشابه (شامل تعرفه‌های غیرفعال برای validation)
+                var existingTariff = await _tariffRepository.GetByPlanAndServiceAsync(tariff.InsurancePlanId ?? 0, tariff.ServiceId, includeInactive: true);
                 if (existingTariff != null && existingTariff.InsuranceTariffId != tariff.InsuranceTariffId)
                 {
                     errors.Add($"تعرفه‌ای برای این طرح بیمه و خدمت قبلاً وجود دارد (ID: {existingTariff.InsuranceTariffId})");

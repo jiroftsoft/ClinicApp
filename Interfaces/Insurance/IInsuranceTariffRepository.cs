@@ -100,12 +100,23 @@ namespace ClinicApp.Interfaces.Insurance
         #region Business Logic Operations
 
         /// <summary>
-        /// دریافت تعرفه بیمه بر اساس طرح و خدمت
+        /// دریافت تعرفه بیمه بر اساس طرح بیمه و خدمت (فقط تعرفه‌های فعال)
+        /// 🚨 PROFESSIONAL FIX: این متد فقط تعرفه‌های فعال را برمی‌گرداند
         /// </summary>
         /// <param name="planId">شناسه طرح بیمه</param>
         /// <param name="serviceId">شناسه خدمت</param>
-        /// <returns>تعرفه بیمه مورد نظر</returns>
+        /// <returns>تعرفه بیمه مورد نظر (فقط اگر فعال باشد)</returns>
         Task<InsuranceTariff> GetByPlanAndServiceAsync(int planId, int serviceId);
+        
+        /// <summary>
+        /// دریافت تعرفه بیمه بر اساس طرح بیمه و خدمت (با امکان شامل کردن تعرفه‌های غیرفعال)
+        /// برای استفاده در validation و بررسی وجود تعرفه
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="includeInactive">آیا تعرفه‌های غیرفعال هم شامل شوند؟</param>
+        /// <returns>تعرفه بیمه مورد نظر</returns>
+        Task<InsuranceTariff> GetByPlanAndServiceAsync(int planId, int serviceId, bool includeInactive);
 
         /// <summary>
         /// دریافت تعرفه‌های بیمه بر اساس طرح بیمه

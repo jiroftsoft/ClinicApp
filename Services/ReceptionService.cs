@@ -1366,41 +1366,42 @@ namespace ClinicApp.Services
                     };
 
                     // 🏥 MEDICAL: محاسبه سهم بیمه با استفاده از CombinedInsuranceCalculationService
+                    // 🚨 PROFESSIONAL FIX: همیشه محاسبه بیمه را انجام بده، حتی اگر بیمه ترکیبی نداشته باشد
                     if (insuranceId.HasValue)
                     {
                         try
                         {
+                            ServiceResult<CombinedInsuranceCalculationResult> combinedResult;
+                            
                             if (hasCombinedInsurance)
                             {
                                 // استفاده از CombinedInsuranceCalculationService برای محاسبه ترکیبی پیشرفته
-                                var combinedResult = await _combinedInsuranceCalculationService.CalculateAdvancedCombinedInsuranceAsync(
+                                combinedResult = await _combinedInsuranceCalculationService.CalculateAdvancedCombinedInsuranceAsync(
                                     patientId, service.ServiceId, calculatedPrice, receptionDate, GetAdvancedCalculationSettings());
-
-                                if (combinedResult.Success)
-                                {
-                                    var combinedData = combinedResult.Data;
-                                    serviceCost.InsuranceShare = combinedData.TotalInsuranceCoverage;
-                                    serviceCost.PatientShare = combinedData.FinalPatientShare;
-                                    serviceCost.CoveragePercentage = combinedData.TotalCoveragePercent;
-                                    
-                                    _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی پیشرفته موفق - ServiceId: {ServiceId}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
-                                        service.ServiceId, combinedData.PrimaryCoverage, combinedData.SupplementaryCoverage, combinedData.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
-                                }
-                                else
-                                {
-                                    // Fallback به محاسبه عادی در صورت خطا
-                                    _logger.Warning("🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی، استفاده از محاسبه عادی - ServiceId: {ServiceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
-                                        service.ServiceId, combinedResult.Message, _currentUserService.UserName, _currentUserService.UserId);
-                                    
-                                    // محاسبه عادی بیمه
-                                    serviceCost.InsuranceShare = 0;
-                                    serviceCost.PatientShare = calculatedPrice;
-                                    serviceCost.CoveragePercentage = 0;
-                                }
                             }
                             else
                             {
-                                // محاسبه عادی بیمه (بدون بیمه ترکیبی)
+                                // 🚨 PROFESSIONAL FIX: حتی اگر بیمه ترکیبی نداشته باشد، باز هم بیمه اصلی را محاسبه کن
+                                combinedResult = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
+                                    patientId, service.ServiceId, calculatedPrice, receptionDate);
+                            }
+
+                            if (combinedResult.Success)
+                            {
+                                var combinedData = combinedResult.Data;
+                                serviceCost.InsuranceShare = combinedData.TotalInsuranceCoverage;
+                                serviceCost.PatientShare = combinedData.FinalPatientShare;
+                                serviceCost.CoveragePercentage = combinedData.TotalCoveragePercent;
+                                
+                                _logger.Information("🏥 MEDICAL: محاسبه بیمه موفق - ServiceId: {ServiceId}, HasCombined: {HasCombined}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
+                                    service.ServiceId, hasCombinedInsurance, combinedData.PrimaryCoverage, combinedData.SupplementaryCoverage, combinedData.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+                            }
+                            else
+                            {
+                                // Fallback: بدون پوشش در صورت خطا
+                                _logger.Warning("🏥 MEDICAL: خطا در محاسبه بیمه - ServiceId: {ServiceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                                    service.ServiceId, combinedResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+                                
                                 serviceCost.InsuranceShare = 0;
                                 serviceCost.PatientShare = calculatedPrice;
                                 serviceCost.CoveragePercentage = 0;
@@ -1408,7 +1409,7 @@ namespace ClinicApp.Services
                         }
                         catch (Exception ex)
                         {
-                            _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی - ServiceId: {ServiceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                            _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه - ServiceId: {ServiceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                                 service.ServiceId, patientId, _currentUserService.UserName, _currentUserService.UserId);
                             
                             // Fallback به محاسبه عادی

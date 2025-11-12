@@ -478,6 +478,7 @@ namespace ClinicApp.Services.Insurance
         /// <summary>
         /// محاسبه پوشش بیمه با استفاده از تعرفه بیمه (اگر موجود باشد)
         /// 🏥 استفاده از تعرفه‌های خاص بیمه برای محاسبات دقیق‌تر
+        /// 🚨 PROFESSIONAL FIX: استفاده از GetTariffByTypeAsync برای اطمینان از نوع بیمه (Primary)
         /// </summary>
         public async Task<InsuranceCalculationResultViewModel> CalculateInsuranceCoverageWithTariffAsync(
             decimal serviceAmount,
@@ -490,10 +491,13 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("Starting insurance coverage calculation with tariff for ServiceId: {ServiceId}, PlanId: {PlanId}, Amount: {Amount}", 
                     serviceId, insurancePlan.InsurancePlanId, serviceAmount);
 
-                // بررسی وجود تعرفه بیمه برای این خدمت و طرح
-                var tariff = await _insuranceTariffRepository.GetByPlanAndServiceAsync(insurancePlan.InsurancePlanId, serviceId);
+                // 🚨 PROFESSIONAL FIX: استفاده از GetTariffByTypeAsync برای اطمینان از نوع بیمه (Primary) و IsActive
+                var tariff = await _insuranceTariffRepository.GetTariffByTypeAsync(
+                    serviceId, 
+                    insurancePlan.InsurancePlanId, 
+                    InsuranceType.Primary);
                 
-                if (tariff != null && !tariff.IsDeleted)
+                if (tariff != null)
                 {
                     _log.Information("Insurance tariff found for ServiceId: {ServiceId}, PlanId: {PlanId}, TariffPrice: {TariffPrice}", 
                         serviceId, insurancePlan.InsurancePlanId, tariff.TariffPrice);

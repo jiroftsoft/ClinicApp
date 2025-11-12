@@ -10,10 +10,10 @@ var PatientInsuranceEnhanced = (function() {
     var config = {
         selectors: {
             patientId: '#PatientIdSelect',
-            primaryInsuranceProviderId: '#InsuranceProviderId',
-            primaryInsurancePlanId: '#InsurancePlanId',
-            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderId',
-            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanId',
+            primaryInsuranceProviderId: '#PrimaryInsuranceProviderId',
+            primaryInsurancePlanId: '#PrimaryInsurancePlanId',
+            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderIdSelect',
+            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanIdSelect',
             policyNumber: '#PolicyNumber',
             supplementaryPolicyNumber: '#SupplementaryPolicyNumber',
             startDate: '#StartDateShamsi',
@@ -198,10 +198,13 @@ var PatientInsuranceEnhanced = (function() {
             return;
         }
         
-        // 🚨 FIX: بارگذاری اولیه بیمه‌گذاران فقط در مرحله ۲
-        // setTimeout(function() {
-        //     loadPrimaryInsuranceProviders();
-        // }, 100);
+        // 🚨 PROFESSIONAL FIX: Load primary insurance providers on initial page load
+        // Check if primary tab is active
+        var isPrimaryTabActive = $('.insurance-tab[data-type="primary"]').hasClass('active');
+        if (isPrimaryTabActive) {
+            console.log('🏥 Medical Environment: Primary tab is active on load, loading providers...');
+            loadPrimaryInsuranceProviders();
+        }
         
         $('.insurance-tab').on('click', function() {
             var type = $(this).data('type');
@@ -388,12 +391,22 @@ var PatientInsuranceEnhanced = (function() {
                         });
                     }
                     
+                    // 🚨 PROFESSIONAL FIX: Use insurance-selection-container as dropdownParent
+                    // This is the most reliable method - use the main container
+                    var $insuranceContainer = $('.insurance-selection-container');
+                    var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+                    
+                    console.log('🏥 Medical Environment: Primary Provider dropdownParent (enhanced):', dropdownParent[0]);
+                    
                     // Initialize Select2 with proper configuration
                     $providerSelect.select2({
+                        theme: 'bootstrap4',
+                        dropdownParent: dropdownParent,
                         placeholder: 'انتخاب بیمه‌گذار پایه',
                         allowClear: true,
                         language: 'fa',
-                        dir: 'rtl'
+                        dir: 'rtl',
+                        width: '100%'
                     });
                     
                     // Enable control if disabled
@@ -457,12 +470,21 @@ var PatientInsuranceEnhanced = (function() {
                         });
                     }
                     
+                    // 🚨 PROFESSIONAL FIX: Use insurance-selection-container as dropdownParent
+                    var $insuranceContainer = $('.insurance-selection-container');
+                    var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+                    
+                    console.log('🏥 Medical Environment: Supplementary Provider dropdownParent (enhanced):', dropdownParent[0]);
+                    
                     // Initialize Select2 for supplementary providers
                     $providerSelect.select2({
+                        theme: 'bootstrap4',
+                        dropdownParent: dropdownParent,
                         placeholder: 'انتخاب بیمه‌گذار تکمیلی',
                         allowClear: true,
                         language: 'fa',
-                        dir: 'rtl'
+                        dir: 'rtl',
+                        width: '100%'
                     });
                     
                     // Enable control if disabled
@@ -521,6 +543,11 @@ var PatientInsuranceEnhanced = (function() {
                 console.log('🏥 Medical Environment: Plans Data:', data);
                 
                 if (isSuccess) {
+                    // 🚨 CRITICAL FIX: Destroy existing Select2 if present
+                    if ($planSelect.hasClass('select2-hidden-accessible')) {
+                        $planSelect.select2('destroy');
+                    }
+                    
                     $planSelect.empty();
                     $planSelect.append('<option value="">انتخاب طرح بیمه</option>');
                     
@@ -530,6 +557,22 @@ var PatientInsuranceEnhanced = (function() {
                             $planSelect.append('<option value="' + plan.id + '">' + plan.name + '</option>');
                         });
                     }
+                    
+                    // 🚨 PROFESSIONAL FIX: Use insurance-selection-container as dropdownParent
+                    var $insuranceContainer = $('.insurance-selection-container');
+                    var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+                    
+                    console.log('🏥 Medical Environment: Plan dropdownParent (enhanced):', dropdownParent[0]);
+                    
+                    $planSelect.select2({
+                        theme: 'bootstrap4',
+                        dropdownParent: dropdownParent,
+                        placeholder: 'انتخاب طرح بیمه',
+                        allowClear: true,
+                        language: 'fa',
+                        dir: 'rtl',
+                        width: '100%'
+                    });
                     
                     $planSelect.prop('disabled', false);
                     

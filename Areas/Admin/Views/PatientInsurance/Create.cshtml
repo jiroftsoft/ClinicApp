@@ -15,85 +15,186 @@
     
     <!-- 🏥 Medical Environment - Advanced Admin Styles -->
     <style>
+        /* 🔤 فونت وزیر برای متن‌ها */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Vazir.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* 🔢 فونت وزیر با اعداد فارسی */
+        @@font-face {
+            font-family: 'Vazir-FD';
+            src: url('/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Farsi-Digits/Vazir-FD.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* اعمال فونت به کل صفحه */
+        body, .form-control, .form-label, .btn, h1, h2, h3, h4, h5, h6, p, span, div, input, textarea, select {
+            font-family: 'Vazir', Arial, sans-serif !important;
+        }
+
+        /* اعمال فونت با اعداد فارسی به اعداد */
+        .badge, .info-value, input[type="number"], .farsi-number {
+            font-family: 'Vazir-FD', 'Vazir', Arial, sans-serif !important;
+        }
+
+        /* 🎨 رنگ‌های رسمی پزشکی */
+        :root {
+            --medical-blue: #2c5aa0;
+            --medical-blue-light: #3d6bb3;
+            --medical-green: #10b981;
+            --medical-orange: #f59e0b;
+            --medical-red: #ef4444;
+            --medical-gray: #6b7280;
+            --medical-gray-light: #f3f4f6;
+        }
+
+        /* 🧭 سلسله‌مراتب ناوبری */
+        .breadcrumb-custom {
+            background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(44, 90, 160, 0.05);
+        }
+
+        .breadcrumb-custom .breadcrumb {
+            margin-bottom: 0;
+            background: transparent;
+            padding: 0;
+        }
+
+        .breadcrumb-custom .breadcrumb-item {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+            content: "◄";
+            color: var(--medical-blue);
+            font-weight: bold;
+            padding: 0 0.75rem;
+        }
+
+        .breadcrumb-custom .breadcrumb-item a {
+            color: var(--medical-blue);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .breadcrumb-custom .breadcrumb-item a:hover {
+            color: var(--medical-blue-light);
+            transform: translateX(3px);
+        }
+
+        .breadcrumb-custom .breadcrumb-item.active {
+            color: var(--medical-gray);
+            font-weight: 600;
+        }
+
+        .breadcrumb-custom i {
+            font-size: 0.9rem;
+        }
+        
         /* 🏥 Advanced Admin Layout */
         .admin-insurance-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             min-height: 100vh;
             padding: 2rem 0;
         }
         
         .admin-form-wrapper {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.08);
+            overflow: visible !important;
             margin: 0 auto;
             max-width: 1400px;
+            border: 1px solid #e5e7eb;
+            position: relative;
         }
         
         .admin-form-header {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
             color: white;
             padding: 2rem;
             text-align: center;
         }
         
         .admin-form-header h1 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .admin-form-header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+            font-size: 1.1rem;
+            opacity: 0.95;
             margin-bottom: 0;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .admin-form-body {
-            padding: 3rem;
+            padding: 2.5rem;
+            position: relative;
+            overflow: visible !important;
         }
         
         .medical-form-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 2px solid #dee2e6;
-            border-radius: 15px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.08);
             transition: all 0.3s ease;
         }
         
         .medical-form-section:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.12);
         }
         
         .medical-section-title {
-            color: #2c5aa0;
-            font-weight: 700;
-            font-size: 1.5rem;
+            color: var(--medical-blue);
+            font-weight: 600;
+            font-size: 1.3rem;
             margin-bottom: 1.5rem;
-            border-bottom: 3px solid #2c5aa0;
+            border-bottom: 2px solid var(--medical-gray-light);
             padding-bottom: 0.75rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .medical-section-title i {
-            font-size: 1.8rem;
-            color: #2c5aa0;
+            font-size: 1.4rem;
+            color: var(--medical-blue);
         }
         
         /* 🏥 Advanced Patient Selection */
         .patient-selection-container {
-            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-            border: 2px solid #2196f3;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+            border: 1px solid #bbdefb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             position: relative;
             overflow: hidden;
         }
@@ -104,8 +205,8 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #2196f3, #9c27b0, #ff9800);
+            height: 3px;
+            background: linear-gradient(90deg, var(--medical-blue), var(--medical-blue-light));
         }
         
         /* 🏥 Advanced Select2 Patient Selection */
@@ -161,12 +262,12 @@
         }
         
         .select2-results__option--highlighted {
-            background: #2196f3 !important;
+            background: var(--medical-blue) !important;
             color: white !important;
         }
         
         .select2-results__option--selected {
-            background: #4caf50 !important;
+            background: var(--medical-green) !important;
             color: white !important;
         }
         
@@ -180,7 +281,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4caf50, #8bc34a);
+            background: linear-gradient(135deg, var(--medical-blue), var(--medical-blue-light));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -194,9 +295,10 @@
         }
         
         .patient-details-complete h5 {
-            color: #2c5aa0;
-            font-weight: 700;
+            color: var(--medical-blue);
+            font-weight: 600;
             margin-bottom: 1rem;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .patient-details-complete .row {
@@ -224,12 +326,12 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #2196f3, #9c27b0);
+            background: linear-gradient(135deg, var(--medical-blue), var(--medical-blue-light));
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 1rem;
         }
         
@@ -345,7 +447,7 @@
         }
         
         .selected-patient {
-            background: linear-gradient(135deg, #4caf50, #8bc34a);
+            background: linear-gradient(135deg, var(--medical-green), #059669);
             color: white;
             padding: 1.5rem;
             border-radius: 12px;
@@ -370,34 +472,36 @@
         }
         
         .required-indicator {
-            color: #dc3545;
+            color: var(--medical-red);
             font-weight: bold;
         }
         
         .medical-form-control {
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             padding: 0.75rem 1rem;
             transition: all 0.3s ease;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .medical-form-control:focus {
-            border-color: #2c5aa0;
-            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+            border-color: var(--medical-blue);
+            box-shadow: 0 0 0 0.25rem rgba(44, 90, 160, 0.15);
         }
         
         .medical-info-box {
-            background: #e3f2fd;
+            background: #f0f9ff;
             border: 1px solid #bbdefb;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 1rem;
             margin-top: 0.5rem;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .medical-validation-alert {
-            border-left: 4px solid #dc3545;
-            background: #f8d7da;
-            border-color: #f5c6cb;
+            border-left: 4px solid var(--medical-red);
+            background: #fef2f2;
+            border-color: #fecaca;
         }
         
         .medical-validation-list {
@@ -415,44 +519,371 @@
             margin-top: 0.25rem;
         }
         
-        /* 🏥 Advanced Insurance Selection */
-        .insurance-selection-container {
-            background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
-            border: 2px solid #ff9800;
-            border-radius: 15px;
-            padding: 2rem;
+        /* 🏥 Advanced Insurance Selection - Redesigned */
+        .insurance-section-header {
             margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--medical-gray-light);
+        }
+        
+        .insurance-section-description {
+            color: var(--medical-gray);
+            font-size: 0.95rem;
+            margin-top: 0.75rem;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-section-description i {
+            color: var(--medical-blue);
+        }
+        
+        .insurance-selection-container {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            position: relative !important;
+            overflow: visible !important;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.05);
+            z-index: 1;
+        }
+        
+        /* 🚨 PROFESSIONAL FIX: Ensure Select2 dropdown is positioned correctly */
+        .insurance-selection-container .select2-dropdown {
+            position: absolute !important;
+            z-index: 99999 !important;
+            margin-top: 4px !important;
+        }
+        
+        .insurance-selection-container .select2-container--open .select2-dropdown {
+            position: absolute !important;
+            z-index: 99999 !important;
+        }
+        
+        .insurance-content {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        .insurance-content .form-group {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        /* 🚨 PROFESSIONAL FIX: Select2 Container Positioning */
+        .insurance-selection-container .select2-container {
+            position: relative;
+            width: 100% !important;
+        }
+        
+        /* Insurance Type Tabs - Redesigned */
+        .insurance-type-tabs-wrapper {
+            margin-bottom: 2.5rem;
         }
         
         .insurance-type-tabs {
             display: flex;
             gap: 1rem;
-            margin-bottom: 2rem;
+            background: var(--medical-gray-light);
+            padding: 0.5rem;
+            border-radius: 12px;
         }
         
         .insurance-tab {
             flex: 1;
-            padding: 1rem 2rem;
+            padding: 1.25rem 1.5rem;
             background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-tab .tab-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: var(--medical-gray-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--medical-gray);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .insurance-tab .tab-content {
+            flex: 1;
+        }
+        
+        .insurance-tab .tab-title {
             font-weight: 600;
+            font-size: 1rem;
+            color: var(--medical-gray);
+            margin-bottom: 0.25rem;
+        }
+        
+        .insurance-tab .tab-subtitle {
+            font-size: 0.85rem;
+            color: var(--medical-gray);
+            opacity: 0.7;
         }
         
         .insurance-tab.active {
-            background: linear-gradient(135deg, #4caf50, #8bc34a);
-            color: white;
-            border-color: #4caf50;
+            background: linear-gradient(135deg, var(--medical-blue), var(--medical-blue-light));
+            border-color: var(--medical-blue);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+        }
+        
+        .insurance-tab.active .tab-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .insurance-tab.active .tab-title,
+        .insurance-tab.active .tab-subtitle {
+            color: white;
         }
         
         .insurance-tab:hover:not(.active) {
-            background: #f8f9fa;
-            border-color: #ff9800;
+            background: white;
+            border-color: var(--medical-blue);
+            transform: translateY(-1px);
+        }
+        
+        .insurance-tab:hover:not(.active) .tab-icon {
+            background: var(--medical-blue);
+            color: white;
+        }
+        
+        /* Insurance Content Header */
+        .insurance-content-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--medical-gray-light);
+        }
+        
+        .insurance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-badge.primary-badge {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: var(--medical-blue);
+            border: 1px solid #93c5fd;
+        }
+        
+        .insurance-badge.supplementary-badge {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #d97706;
+            border: 1px solid #fcd34d;
+        }
+        
+        .insurance-help-text {
+            color: var(--medical-gray);
+            font-size: 0.9rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-help-text i {
+            color: var(--medical-blue);
+        }
+        
+        /* Insurance Form Grid */
+        .insurance-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @@media (max-width: 768px) {
+            .insurance-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .insurance-form-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .insurance-form-card:hover {
+            border-color: var(--medical-blue);
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1);
+        }
+        
+        .insurance-form-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--medical-blue);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-form-label i {
+            color: var(--medical-blue);
+            font-size: 1rem;
+        }
+        
+        .select-wrapper,
+        .input-wrapper {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        /* 🚨 PROFESSIONAL FIX: Select2 Dropdown Positioning using wrapper */
+        .select-wrapper {
+            position: relative !important;
+            overflow: visible !important;
+            z-index: 1;
+        }
+        
+        /* Ensure Select2 dropdown is positioned relative to its wrapper */
+        .select-wrapper .select2-container {
+            position: relative;
+            width: 100% !important;
+        }
+        
+        .select-wrapper .select2-dropdown {
+            position: absolute !important;
+            z-index: 99999 !important;
+            width: 100% !important;
+        }
+        
+        .insurance-select,
+        .insurance-input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: 'Vazir', Arial, sans-serif;
+            background: white;
+        }
+        
+        .insurance-select:focus,
+        .insurance-input:focus {
+            border-color: var(--medical-blue);
+            box-shadow: 0 0 0 0.25rem rgba(44, 90, 160, 0.15);
+            outline: none;
+        }
+        
+        .insurance-input[readonly] {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+        
+        /* Select2 Styling for Insurance Selects */
+        .insurance-selection-container .select2-container--default .select2-selection--single {
+            height: 48px !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            padding: 0.5rem 2.5rem 0.5rem 1rem !important;
+            background: white !important;
+            font-family: 'Vazir', Arial, sans-serif !important;
+        }
+        
+        .insurance-selection-container .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: var(--medical-blue) !important;
+            box-shadow: 0 0 0 0.25rem rgba(44, 90, 160, 0.15) !important;
+        }
+        
+        .insurance-selection-container .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 0 !important;
+            color: #333 !important;
+            font-size: 0.95rem !important;
+            font-family: 'Vazir', Arial, sans-serif !important;
+        }
+        
+        .insurance-selection-container .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+            right: 1rem !important;
+        }
+        
+        .insurance-selection-container .select2-dropdown {
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15) !important;
+            font-family: 'Vazir', Arial, sans-serif !important;
+        }
+        
+        .insurance-selection-container .select2-results__option {
+            padding: 0.75rem 1rem !important;
+            font-family: 'Vazir', Arial, sans-serif !important;
+        }
+        
+        .insurance-selection-container .select2-results__option--highlighted {
+            background: var(--medical-blue) !important;
+            color: white !important;
+        }
+        
+        .select-arrow {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medical-gray);
+            pointer-events: none;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medical-blue);
+            pointer-events: none;
+        }
+        
+        .insurance-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--medical-gray);
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        
+        .insurance-hint i {
+            color: var(--medical-orange);
+        }
+        
+        .insurance-error {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            font-family: 'Vazir', Arial, sans-serif;
         }
         
         .insurance-content {
@@ -476,39 +907,41 @@
         }
         
         .btn-medical-primary {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-light) 100%);
             border: none;
             color: white;
-            font-weight: 700;
-            padding: 1rem 3rem;
-            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
             transition: all 0.3s ease;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 1rem;
+            font-family: 'Vazir', Arial, sans-serif;
+            box-shadow: 0 4px 6px rgba(44, 90, 160, 0.2);
         }
         
         .btn-medical-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(44, 90, 160, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+            color: white;
         }
         
         .btn-medical-secondary {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            background: linear-gradient(135deg, var(--medical-orange) 0%, #d97706 100%);
             border: none;
             color: white;
-            font-weight: 700;
-            padding: 1rem 3rem;
-            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
             transition: all 0.3s ease;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 1rem;
+            font-family: 'Vazir', Arial, sans-serif;
+            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);
         }
         
         .btn-medical-secondary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            color: white;
         }
         
         .medical-form-group {
@@ -576,13 +1009,37 @@
 
 <div class="admin-insurance-container">
     <div class="admin-form-wrapper">
+        <!-- 🧭 سلسله‌مراتب ناوبری -->
+        <div class="breadcrumb-custom">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">
+                            <i class="fas fa-home"></i>
+                            داشبورد
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "PatientInsurance", new { area = "Admin" })">
+                            <i class="fas fa-shield-alt"></i>
+                            مدیریت بیمه‌های بیماران
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="fas fa-plus-circle"></i>
+                        افزودن بیمه بیمار جدید
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
         <!-- 🏥 Advanced Admin Header -->
         <div class="admin-form-header">
             <h1>
                 <i class="fas fa-user-md mr-3"></i>
                 افزودن بیمه بیمار جدید
             </h1>
-            <p>سیستم مدیریت بیمه‌های بیماران - محیط ادمین پیشرفته</p>
+            <p>سیستم مدیریت بیمه‌های بیماران - محیط ادمین</p>
         </div>
         
         <!-- 🏥 Advanced Admin Body -->
@@ -649,7 +1106,7 @@
                                                     <strong>نام و نام خانوادگی:</strong> <span id="selectedPatientFullName">-</span>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <strong>کد ملی:</strong> <span id="selectedPatientNationalCode">-</span>
+                                                    <strong>کد ملی:</strong> <span id="selectedPatientNationalCode" class="farsi-number">-</span>
                                                 </div>
                                             </div>
                                             <div class="row mt-2">
@@ -657,7 +1114,7 @@
                                                     <strong>نام پدر:</strong> <span id="selectedPatientFatherName">-</span>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <strong>شماره تلفن:</strong> <span id="selectedPatientPhone">-</span>
+                                                    <strong>شماره تلفن:</strong> <span id="selectedPatientPhone" class="farsi-number">-</span>
                                                 </div>
                                             </div>
                                             <div class="row mt-2">
@@ -682,124 +1139,212 @@
                 </div>
             </div>
 
-            <!-- 🏥 Step 2: Advanced Insurance Selection -->
+            <!-- 🏥 Step 2: Advanced Insurance Selection - Redesigned -->
             <div class="medical-form-section patient-insurance-form">
-                <h4 class="medical-section-title">
-                    <i class="fas fa-shield-alt"></i>
-                    مرحله ۲: انتخاب نوع بیمه
-                    <span class="required-indicator">*</span>
-                </h4>
+                <div class="insurance-section-header">
+                    <h4 class="medical-section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        مرحله ۲: انتخاب نوع بیمه
+                        <span class="required-indicator">*</span>
+                    </h4>
+                    <p class="insurance-section-description">
+                        <i class="fas fa-info-circle"></i>
+                        انتخاب بیمه پایه الزامی است. بیمه تکمیلی اختیاری می‌باشد.
+                    </p>
+                </div>
                 
                 <div class="insurance-selection-container">
                     <!-- Insurance Status Containers -->
-                    <div class="row mb-3">
+                    <div class="row mb-4" id="insuranceStatusRow" style="display: none;">
                         <div class="col-md-6" id="primaryInsuranceStatus"></div>
                         <div class="col-md-6" id="supplementaryInsuranceStatus"></div>
                     </div>
                     
-                    <div class="insurance-type-tabs">
-                        <div class="insurance-tab active" data-type="primary">
-                            <i class="fas fa-star mr-2"></i>
-                            بیمه پایه (اصلی)
-                        </div>
-                        <div class="insurance-tab" data-type="supplementary">
-                            <i class="fas fa-plus-circle mr-2"></i>
-                            بیمه تکمیلی
+                    <!-- Insurance Type Tabs - Redesigned -->
+                    <div class="insurance-type-tabs-wrapper">
+                        <div class="insurance-type-tabs">
+                            <div class="insurance-tab active" data-type="primary">
+                                <div class="tab-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="tab-content">
+                                    <div class="tab-title">بیمه پایه (اصلی)</div>
+                                    <div class="tab-subtitle">الزامی</div>
+                                </div>
+                            </div>
+                            <div class="insurance-tab" data-type="supplementary">
+                                <div class="tab-icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <div class="tab-content">
+                                    <div class="tab-title">بیمه تکمیلی</div>
+                                    <div class="tab-subtitle">اختیاری</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- بیمه پایه -->
+                    <!-- بیمه پایه - Redesigned -->
                     <div class="insurance-content active" id="primaryInsuranceContent">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group" style="min-height: 80px;">
-                                    <label class="form-label">انتخاب بیمه‌گذار پایه:</label>
-                        <select id="PrimaryInsuranceProviderId" 
-                                class="form-control medical-form-control" 
-                                required="required"
-                                data-medical-field="insurance-provider"
-                                style="width: 100%; min-width: 100%;">
-                            <option value="">انتخاب بیمه‌گذار پایه</option>
-                        </select>
-                        @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "text-danger", id = "InsuranceProviderId-error" })
-                                </div>
+                        <div class="insurance-content-header">
+                            <div class="insurance-badge primary-badge">
+                                <i class="fas fa-shield-alt"></i>
+                                بیمه پایه (اصلی)
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group" style="min-height: 80px;">
-                                    <label class="form-label">انتخاب طرح بیمه پایه:</label>
-                        <select id="PrimaryInsurancePlanId" 
-                                class="form-control medical-form-control" 
-                                required="required"
-                                data-medical-field="insurance-plan"
-                                style="width: 100%; min-width: 100%;"
-                                disabled>
-                            <option value="">ابتدا بیمه‌گذار را انتخاب کنید</option>
-                        </select>
-                        @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger", id = "InsurancePlanId-error" })
+                            <p class="insurance-help-text">
+                                <i class="fas fa-info-circle"></i>
+                                بیمه پایه اصلی بیمار است و برای دریافت خدمات درمانی الزامی می‌باشد.
+                            </p>
+                        </div>
+                        
+                        <div class="insurance-form-grid">
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-building"></i>
+                                    انتخاب بیمه‌گذار پایه
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <div class="select-wrapper">
+                                    <select id="PrimaryInsuranceProviderId" 
+                                            class="form-control medical-form-control insurance-select" 
+                                            required="required"
+                                            data-medical-field="insurance-provider">
+                                        <option value="">انتخاب بیمه‌گذار پایه</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
                                 </div>
+                                @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "text-danger insurance-error", id = "InsuranceProviderId-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    بیمه‌گذار اصلی بیمار را انتخاب کنید
+                                </small>
+                            </div>
+                            
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-file-medical"></i>
+                                    انتخاب طرح بیمه پایه
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <div class="select-wrapper">
+                                    <select id="PrimaryInsurancePlanId" 
+                                            class="form-control medical-form-control insurance-select" 
+                                            required="required"
+                                            data-medical-field="insurance-plan"
+                                            disabled>
+                                        <option value="">ابتدا بیمه‌گذار را انتخاب کنید</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger insurance-error", id = "InsurancePlanId-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    پس از انتخاب بیمه‌گذار، طرح بیمه نمایش داده می‌شود
+                                </small>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">شماره بیمه‌نامه:</label>
+                        
+                        <div class="insurance-form-grid">
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-id-card"></i>
+                                    شماره بیمه‌نامه
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <div class="input-wrapper">
                                     <input type="text" 
                                            id="PolicyNumber" 
                                            name="PolicyNumber" 
-                                           class="form-control medical-form-control" 
+                                           class="form-control medical-form-control insurance-input farsi-number" 
                                            placeholder="خودکار با کد ملی پر می‌شود"
                                            data-medical-field="policy-number">
-                                    @Html.ValidationMessageFor(m => m.PolicyNumber, "", new { @class = "text-danger", id = "PolicyNumber-error" })
+                                    <i class="fas fa-key input-icon"></i>
                                 </div>
+                                @Html.ValidationMessageFor(m => m.PolicyNumber, "", new { @class = "text-danger insurance-error", id = "PolicyNumber-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    شماره بیمه‌نامه به صورت خودکار با کد ملی بیمار پر می‌شود
+                                </small>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">شماره بیمه‌نامه (تکمیلی):</label>
+                            
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-id-badge"></i>
+                                    شماره معرفی نامه (تکمیلی)
+                                </label>
+                                <div class="input-wrapper">
                                     <input type="text" 
                                            id="SupplementaryPolicyNumber" 
                                            name="SupplementaryPolicyNumber" 
-                                           class="form-control medical-form-control" 
+                                           class="form-control medical-form-control insurance-input farsi-number" 
                                            placeholder="اختیاری - برای بیمه تکمیلی"
                                            data-medical-field="supplementary-policy-number">
-                                    @Html.ValidationMessageFor(m => m.SupplementaryPolicyNumber, "", new { @class = "text-danger", id = "SupplementaryPolicyNumber-error" })
+                                    <i class="fas fa-file-alt input-icon"></i>
                                 </div>
+                                @Html.ValidationMessageFor(m => m.SupplementaryPolicyNumber, "", new { @class = "text-danger insurance-error", id = "SupplementaryPolicyNumber-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    در صورت وجود بیمه تکمیلی، شماره معرفی نامه را وارد کنید
+                                </small>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- بیمه تکمیلی (اختیاری) -->
+                    <!-- بیمه تکمیلی (اختیاری) - Redesigned -->
                     <div class="insurance-content" id="supplementaryInsuranceContent">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>نکته:</strong> بیمه تکمیلی اختیاری است. در صورت نیاز می‌توانید بیمه تکمیلی اضافه کنید.
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group" style="min-height: 80px;">
-                                    <label class="form-label">انتخاب بیمه‌گذار تکمیلی:</label>
-                        <select id="SupplementaryInsuranceProviderIdSelect" 
-                                class="form-control medical-form-control" 
-                                data-medical-field="supplementary-insurance-provider"
-                                data-optional="true"
-                                style="width: 100%; min-width: 100%;">
-                            <option value="">انتخاب بیمه‌گذار تکمیلی (اختیاری)</option>
-                        </select>
-                        @Html.ValidationMessageFor(m => m.SupplementaryInsuranceProviderId, "", new { @class = "text-danger", id = "SupplementaryInsuranceProviderId-error" })
-                                </div>
+                        <div class="insurance-content-header">
+                            <div class="insurance-badge supplementary-badge">
+                                <i class="fas fa-plus-circle"></i>
+                                بیمه تکمیلی (اختیاری)
                             </div>
-                            <div class="col-md-6">
-                              <div class="form-group" style="min-height: 80px;">
-                                    <label class="form-label">انتخاب طرح بیمه تکمیلی:</label>
-                        <select id="SupplementaryInsurancePlanIdSelect" 
-                                           class="form-control medical-form-control" 
-                                data-medical-field="supplementary-insurance-plan"
-                                data-optional="true"
-                                style="width: 100%; min-width: 100%;"
-                                disabled>
-                            <option value="">ابتدا بیمه‌گذار تکمیلی را انتخاب کنید</option>
-                        </select>
-                        @Html.ValidationMessageFor(m => m.SupplementaryInsurancePlanId, "", new { @class = "text-danger", id = "SupplementaryInsurancePlanId-error" })
+                            <p class="insurance-help-text">
+                                <i class="fas fa-info-circle"></i>
+                                بیمه تکمیلی برای پوشش هزینه‌های اضافی استفاده می‌شود و اختیاری است.
+                            </p>
+                        </div>
+                        
+                        <div class="insurance-form-grid">
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-building"></i>
+                                    انتخاب بیمه‌گذار تکمیلی
+                                </label>
+                                <div class="select-wrapper">
+                                    <select id="SupplementaryInsuranceProviderIdSelect" 
+                                            class="form-control medical-form-control insurance-select" 
+                                            data-medical-field="supplementary-insurance-provider"
+                                            data-optional="true">
+                                        <option value="">انتخاب بیمه‌گذار تکمیلی (اختیاری)</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
                                 </div>
+                                @Html.ValidationMessageFor(m => m.SupplementaryInsuranceProviderId, "", new { @class = "text-danger insurance-error", id = "SupplementaryInsuranceProviderId-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    در صورت وجود بیمه تکمیلی، بیمه‌گذار را انتخاب کنید
+                                </small>
+                            </div>
+                            
+                            <div class="insurance-form-card">
+                                <label class="insurance-form-label">
+                                    <i class="fas fa-file-medical"></i>
+                                    انتخاب طرح بیمه تکمیلی
+                                </label>
+                                <div class="select-wrapper">
+                                    <select id="SupplementaryInsurancePlanIdSelect" 
+                                            class="form-control medical-form-control insurance-select" 
+                                            data-medical-field="supplementary-insurance-plan"
+                                            data-optional="true"
+                                            disabled>
+                                        <option value="">ابتدا بیمه‌گذار تکمیلی را انتخاب کنید</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.SupplementaryInsurancePlanId, "", new { @class = "text-danger insurance-error", id = "SupplementaryInsurancePlanId-error" })
+                                <small class="form-text text-muted insurance-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    پس از انتخاب بیمه‌گذار تکمیلی، طرح بیمه نمایش داده می‌شود
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -877,19 +1422,20 @@
 
             <!-- 🏥 Form Actions -->
             <div class="text-center mt-5">
-
-                    <button type="submit" class="btn btn-medical-primary btn-lg mr-3" id="saveButton">
-                        <i class="fas fa-save mr-2"></i> ذخیره بیمه بیمار
+                <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
+                    <button type="submit" class="btn btn-medical-primary" id="saveButton">
+                        <i class="fas fa-save ml-2"></i> ذخیره بیمه بیمار
                     </button>
-                    <button type="button" class="btn btn-medical-secondary btn-lg mr-3" id="createDefaultFreeInsuranceBtn">
-                        <i class="fas fa-plus-circle mr-2"></i> ایجاد بیمه پیش‌فرض آزاد
+                    <button type="button" class="btn btn-medical-secondary" id="createDefaultFreeInsuranceBtn">
+                        <i class="fas fa-plus-circle ml-2"></i> ایجاد بیمه پیش‌فرض آزاد
                     </button>
-                    <button type="button" class="btn btn-info btn-lg mr-3" id="validatePatientInsuranceBtn">
-                        <i class="fas fa-check-circle mr-2"></i> اعتبارسنجی بیمه بیمار
-                                </button>
-                                <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-times mr-2"></i> انصراف
-                                </a>
+                    <button type="button" class="btn btn-info" id="validatePatientInsuranceBtn">
+                        <i class="fas fa-check-circle ml-2"></i> اعتبارسنجی بیمه بیمار
+                    </button>
+                    <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary">
+                        <i class="fas fa-times ml-2"></i> انصراف
+                    </a>
+                </div>
                             
                     <!-- Loading Indicator -->
                             <div class="text-center mt-3" id="loadingIndicator" style="display: none;">
@@ -915,20 +1461,21 @@
     <style>
         /* Enhanced Fallback Date Input Styling */
         .form-control.is-invalid {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            border-color: var(--medical-red);
+            box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.15);
         }
         
         .persian-date-input {
-            background-color: #f8f9fa;
-            border: 2px solid #e9ecef;
+            background-color: var(--medical-gray-light);
+            border: 1px solid #e5e7eb;
             transition: all 0.3s ease;
+            font-family: 'Vazir-FD', 'Vazir', Arial, sans-serif;
         }
         
         .persian-date-input:focus {
             background-color: #fff;
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            border-color: var(--medical-blue);
+            box-shadow: 0 0 0 0.25rem rgba(44, 90, 160, 0.15);
         }
         
         .persian-date-input[placeholder*="مثال"] {
@@ -943,18 +1490,20 @@
         
         /* Enhanced validation styling */
         .persian-date-input.is-invalid {
-            border-color: #dc3545;
-            background-color: #fff5f5;
+            border-color: var(--medical-red);
+            background-color: #fef2f2;
         }
         
         .persian-date-input.is-valid {
-            border-color: #28a745;
-            background-color: #f8fff8;
+            border-color: var(--medical-green);
+            background-color: #f0fdf4;
         }
         
         /* Fix dropdown resize issues */
         .insurance-content {
             min-height: 200px; /* Prevent height collapse */
+            position: relative;
+            overflow: visible !important;
         }
         
         .insurance-content.active {
@@ -985,10 +1534,25 @@
         /* Prevent dropdown from shrinking */
         .insurance-content .form-group {
             min-height: 60px;
+            position: relative;
+            overflow: visible !important;
         }
         
         .insurance-content .form-control {
             transition: none !important;
+        }
+        
+        /* 🚨 CRITICAL FIX: Ensure Select2 dropdown appears in correct position */
+        .insurance-selection-container .select2-dropdown {
+            z-index: 9999 !important;
+        }
+        
+        .medical-form-section {
+            overflow: visible !important;
+        }
+        
+        .admin-form-body {
+            overflow: visible !important;
         }
     </style>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
@@ -1144,30 +1708,95 @@
         function initializeFallbackInsuranceSelection() {
             console.log('🏥 Medical Environment: Initializing Fallback Insurance Selection');
             
-            // Load primary insurance providers
-            $.ajax({
-                url: '/Admin/PatientInsurance/GetPrimaryInsuranceProviders',
-                type: 'GET',
-                success: function(response) {
-                    var isSuccess = (response && response.Success) || (response && response.success);
-                    var data = (response && response.Data) || (response && response.data);
-                    
-                    if (isSuccess && data) {
-                        var $providerSelect = $('#PrimaryInsuranceProviderId');
-                        $providerSelect.empty().append('<option value="">انتخاب بیمه‌گذار پایه</option>');
-                        
-                        data.forEach(function(provider) {
-                            $providerSelect.append('<option value="' + provider.id + '">' + provider.name + '</option>');
-                        });
-                        
-                        $providerSelect.prop('disabled', false);
-                        console.log('🏥 Medical Environment: Primary insurance providers loaded in fallback');
-                    }
-                },
-                error: function() {
-                    console.error('🏥 Medical Environment: Error loading primary insurance providers in fallback');
+            // 🚨 PROFESSIONAL FIX: Use insurance-selection-container as dropdownParent
+            // This is the most reliable method - use the main container, not individual wrappers
+            var $insuranceContainer = $('.insurance-selection-container');
+            var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+            
+            console.log('🏥 Medical Environment: Using insurance-selection-container as dropdownParent:', dropdownParent[0]);
+            
+            // Initialize Select2 for Primary Insurance Provider
+            if ($('#PrimaryInsuranceProviderId').length > 0) {
+                var $primaryProviderSelect = $('#PrimaryInsuranceProviderId');
+                
+                // Destroy existing Select2 if present
+                if ($primaryProviderSelect.hasClass('select2-hidden-accessible')) {
+                    $primaryProviderSelect.select2('destroy');
                 }
-            });
+                
+                $primaryProviderSelect.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: dropdownParent,
+                    width: '100%',
+                    placeholder: 'انتخاب بیمه‌گذار پایه',
+                    language: {
+                        noResults: function() {
+                            return 'هیچ بیمه‌گذاری یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    dir: 'rtl'
+                });
+            }
+            
+            // Initialize Select2 for Supplementary Insurance Provider
+            if ($('#SupplementaryInsuranceProviderIdSelect').length > 0) {
+                var $suppProviderSelect = $('#SupplementaryInsuranceProviderIdSelect');
+                
+                // Destroy existing Select2 if present
+                if ($suppProviderSelect.hasClass('select2-hidden-accessible')) {
+                    $suppProviderSelect.select2('destroy');
+                }
+                
+                $suppProviderSelect.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: dropdownParent,
+                    width: '100%',
+                    placeholder: 'انتخاب بیمه‌گذار تکمیلی (اختیاری)',
+                    language: {
+                        noResults: function() {
+                            return 'هیچ بیمه‌گذاری یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    dir: 'rtl'
+                });
+            }
+            
+            // 🚨 PROFESSIONAL FIX: Load primary insurance providers on initial page load
+            // Check if primary tab is active
+            var isPrimaryTabActive = $('.insurance-tab[data-type="primary"]').hasClass('active');
+            if (isPrimaryTabActive) {
+                console.log('🏥 Medical Environment: Primary tab is active on load, loading providers...');
+                // Load primary insurance providers
+                $.ajax({
+                    url: '/Admin/PatientInsurance/GetPrimaryInsuranceProviders',
+                    type: 'GET',
+                    success: function(response) {
+                        var isSuccess = (response && response.Success) || (response && response.success);
+                        var data = (response && response.Data) || (response && response.data);
+                        
+                        if (isSuccess && data) {
+                            var $providerSelect = $('#PrimaryInsuranceProviderId');
+                            $providerSelect.empty().append('<option value="">انتخاب بیمه‌گذار پایه</option>');
+                            
+                            data.forEach(function(provider) {
+                                $providerSelect.append('<option value="' + provider.id + '">' + provider.name + '</option>');
+                            });
+                            
+                            $providerSelect.prop('disabled', false).trigger('change.select2');
+                            console.log('🏥 Medical Environment: Primary insurance providers loaded on initial load');
+                        }
+                    },
+                    error: function() {
+                        console.error('🏥 Medical Environment: Error loading primary insurance providers on initial load');
+                    }
+                });
+            }
             
             // Load supplementary insurance providers
             $.ajax({
@@ -1185,7 +1814,7 @@
                             $suppProviderSelect.append('<option value="' + provider.id + '">' + provider.name + '</option>');
                         });
                         
-                        $suppProviderSelect.prop('disabled', false);
+                        $suppProviderSelect.prop('disabled', false).trigger('change.select2');
                         console.log('🏥 Medical Environment: Supplementary insurance providers loaded in fallback');
                     }
                 },
@@ -1193,6 +1822,63 @@
                     console.error('🏥 Medical Environment: Error loading supplementary insurance providers in fallback');
                 }
             });
+            
+            // 🚨 PROFESSIONAL FIX: Initialize Select2 for Insurance Plans with insurance-selection-container as dropdownParent
+            // Use the same dropdownParent as providers for consistency
+            var $insuranceContainer = $('.insurance-selection-container');
+            var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+            
+            // Initialize Select2 for Primary Insurance Plan
+            if ($('#PrimaryInsurancePlanId').length > 0) {
+                var $primaryPlanSelect = $('#PrimaryInsurancePlanId');
+                
+                // Destroy existing Select2 if present
+                if ($primaryPlanSelect.hasClass('select2-hidden-accessible')) {
+                    $primaryPlanSelect.select2('destroy');
+                }
+                
+                $primaryPlanSelect.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: dropdownParent,
+                    width: '100%',
+                    placeholder: 'ابتدا بیمه‌گذار را انتخاب کنید',
+                    language: {
+                        noResults: function() {
+                            return 'هیچ طرح بیمه‌ای یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    dir: 'rtl'
+                });
+            }
+            
+            // Initialize Select2 for Supplementary Insurance Plan
+            if ($('#SupplementaryInsurancePlanIdSelect').length > 0) {
+                var $suppPlanSelect = $('#SupplementaryInsurancePlanIdSelect');
+                
+                // Destroy existing Select2 if present
+                if ($suppPlanSelect.hasClass('select2-hidden-accessible')) {
+                    $suppPlanSelect.select2('destroy');
+                }
+                
+                $suppPlanSelect.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: dropdownParent,
+                    width: '100%',
+                    placeholder: 'ابتدا بیمه‌گذار تکمیلی را انتخاب کنید',
+                    language: {
+                        noResults: function() {
+                            return 'هیچ طرح بیمه‌ای یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    dir: 'rtl'
+                });
+            }
             
             // Handle primary insurance provider change
             $('#PrimaryInsuranceProviderId').on('change', function() {
@@ -1209,17 +1895,43 @@
                             var data = (response && response.Data) || (response && response.data);
                             
                             if (isSuccess && data) {
+                                // 🚨 PROFESSIONAL FIX: Re-initialize Select2 with insurance-selection-container as dropdownParent
+                                var $insuranceContainer = $('.insurance-selection-container');
+                                var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+                                
+                                // Destroy existing Select2 if present
+                                if ($planSelect.hasClass('select2-hidden-accessible')) {
+                                    $planSelect.select2('destroy');
+                                }
+                                
                                 $planSelect.empty().append('<option value="">انتخاب طرح بیمه</option>');
                                 
                                 data.forEach(function(plan) {
                                     $planSelect.append('<option value="' + plan.id + '">' + plan.name + '</option>');
                                 });
                                 
-                                $planSelect.prop('disabled', false);
+                                // Re-initialize Select2 with correct dropdownParent
+                                $planSelect.select2({
+                                    theme: 'bootstrap4',
+                                    dropdownParent: dropdownParent,
+                                    width: '100%',
+                                    placeholder: 'انتخاب طرح بیمه',
+                                    language: {
+                                        noResults: function() {
+                                            return 'هیچ طرح بیمه‌ای یافت نشد';
+                                        },
+                                        searching: function() {
+                                            return 'در حال جستجو...';
+                                        }
+                                    },
+                                    dir: 'rtl'
+                                });
+                                
+                                $planSelect.prop('disabled', false).trigger('change.select2');
                                 
                                 // Auto-select if only one plan
                                 if (data.length === 1) {
-                                    $planSelect.val(data[0].id);
+                                    $planSelect.val(data[0].id).trigger('change');
                                 }
                             }
                         },
@@ -1247,17 +1959,43 @@
                             var data = (response && response.Data) || (response && response.data);
                             
                             if (isSuccess && data) {
+                                // 🚨 PROFESSIONAL FIX: Re-initialize Select2 with insurance-selection-container as dropdownParent
+                                var $insuranceContainer = $('.insurance-selection-container');
+                                var dropdownParent = $insuranceContainer.length > 0 ? $insuranceContainer : $('body');
+                                
+                                // Destroy existing Select2 if present
+                                if ($planSelect.hasClass('select2-hidden-accessible')) {
+                                    $planSelect.select2('destroy');
+                                }
+                                
                                 $planSelect.empty().append('<option value="">انتخاب طرح بیمه تکمیلی</option>');
                                 
                                 data.forEach(function(plan) {
                                     $planSelect.append('<option value="' + plan.id + '">' + plan.name + '</option>');
                                 });
                                 
-                                $planSelect.prop('disabled', false);
+                                // Re-initialize Select2 with correct dropdownParent
+                                $planSelect.select2({
+                                    theme: 'bootstrap4',
+                                    dropdownParent: dropdownParent,
+                                    width: '100%',
+                                    placeholder: 'انتخاب طرح بیمه تکمیلی',
+                                    language: {
+                                        noResults: function() {
+                                            return 'هیچ طرح بیمه‌ای یافت نشد';
+                                        },
+                                        searching: function() {
+                                            return 'در حال جستجو...';
+                                        }
+                                    },
+                                    dir: 'rtl'
+                                });
+                                
+                                $planSelect.prop('disabled', false).trigger('change.select2');
                                 
                                 // Auto-select if only one plan
                                 if (data.length === 1) {
-                                    $planSelect.val(data[0].id);
+                                    $planSelect.val(data[0].id).trigger('change');
                                 }
                             }
                         },
@@ -1623,9 +2361,9 @@
                             '<div class="patient-info-small">' +
                                 '<div class="patient-name-small">' + patient.patient.name + '</div>' +
                                 '<div class="patient-details-small">' +
-                                    'کد ملی: ' + (patient.patient.nationalCode || '') + 
-                                    (patient.patient.phoneNumber ? ' | تلفن: ' + patient.patient.phoneNumber : '') +
-                                    (patient.patient.birthDate ? ' | سن: ' + calculateAge(patient.patient.birthDate) : '') +
+                                    'کد ملی: ' + (patient.patient.nationalCode ? toPersianNumber(patient.patient.nationalCode) : '') + 
+                                    (patient.patient.phoneNumber ? ' | تلفن: ' + toPersianNumber(patient.patient.phoneNumber) : '') +
+                                    (patient.patient.birthDate ? ' | سن: ' + toPersianNumber(calculateAge(patient.patient.birthDate)) : '') +
                                 '</div>' +
                             '</div>' +
                         '</div>'
@@ -1699,6 +2437,17 @@
                 $('#SupplementaryPolicyNumber').val('');
             });
             
+            /**
+             * 🔢 تبدیل اعداد انگلیسی به فارسی
+             */
+            function toPersianNumber(str) {
+                if (!str) return str;
+                var persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                return str.toString().replace(/\d/g, function(w) {
+                    return persianDigits[parseInt(w)];
+                });
+            }
+
             function showSelectedPatientInfo(patient) {
                 console.log('🏥 Medical Environment: Patient data:', patient);
                 
@@ -1730,30 +2479,30 @@
                 $('#selectedPatientName').text(fullName);
                 $('#selectedPatientFullName').text(fullName);
                 
-                // نمایش سایر اطلاعات
-                $('#selectedPatientNationalCode').text(patient.nationalCode || '-');
+                // نمایش سایر اطلاعات با اعداد فارسی
+                $('#selectedPatientNationalCode').text(toPersianNumber(patient.nationalCode || '-'));
                 $('#selectedPatientFatherName').text(patient.fatherName || 'نامشخص');
-                $('#selectedPatientPhone').text(patient.phone || patient.phoneNumber || '-');
+                $('#selectedPatientPhone').text(toPersianNumber(patient.phone || patient.phoneNumber || '-'));
                 
-                // استفاده از داده‌های سمت سرور (شمسی و سن)
+                // استفاده از داده‌های سمت سرور (شمسی و سن) با اعداد فارسی
                 var ageText = '-';
                 if (patient.birthDateShamsi && patient.age) {
-                    ageText = patient.birthDateShamsi + ' (' + patient.age + ' سال)';
+                    ageText = toPersianNumber(patient.birthDateShamsi) + ' (' + toPersianNumber(patient.age) + ' سال)';
                 } else if (patient.birthDateShamsi) {
-                    ageText = patient.birthDateShamsi;
+                    ageText = toPersianNumber(patient.birthDateShamsi);
                 } else if (patient.birthDate && patient.birthDate !== 'null' && patient.birthDate !== 'undefined') {
                     // Fallback: استفاده از JavaScript (در صورت عدم وجود داده‌های سمت سرور)
                     try {
                         var persianDate = formatPersianDate(patient.birthDate);
                         var age = calculateAge(patient.birthDate);
                         if (age && age !== 'undefined') {
-                    ageText = persianDate + ' (' + age + ')';
+                            ageText = toPersianNumber(persianDate) + ' (' + toPersianNumber(age) + ')';
                         } else {
-                            ageText = persianDate;
+                            ageText = toPersianNumber(persianDate);
                         }
                     } catch (e) {
                         console.error('🏥 Medical Environment: Error calculating age:', e);
-                        ageText = patient.birthDate;
+                        ageText = toPersianNumber(patient.birthDate);
                     }
                 }
                 console.log('🏥 Medical Environment: Birth date (server):', patient.birthDateShamsi, 'Age (server):', patient.age, 'Age text:', ageText);
@@ -2629,52 +3378,48 @@
                     url: '@Url.Action("CreateAjax", "PatientInsurance")',
                     type: 'POST',
                     data: formData, // This is now a serialized string
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
                     dataType: 'json', // Expect JSON response
                     success: function(response) {
-                        // 🏥 MEDICAL DEBUG: لاگ کامل AJAX Response
-                        console.log('🏥 MEDICAL: === AJAX SUCCESS RESPONSE ===');
-                        console.log('🏥 MEDICAL: Response type:', typeof response);
-                        console.log('🏥 MEDICAL: Response:', response);
-                        console.log('🏥 MEDICAL: Response.success:', response ? response.success : 'undefined');
-                        console.log('🏥 MEDICAL: Response.message:', response ? response.message : 'undefined');
-                        console.log('🏥 MEDICAL: Response.Success:', response ? response.Success : 'undefined');
-                        console.log('🏥 MEDICAL: Response.Message:', response ? response.Message : 'undefined');
-                        
-                        // 🏥 MEDICAL DEBUG: بررسی تمام فیلدهای response
-                        if (response) {
-                            console.log('🏥 MEDICAL: === RESPONSE FIELD ANALYSIS ===');
-                            for (let key in response) {
-                                console.log(`🏥 MEDICAL: Response.${key}:`, response[key]);
+                        // 🚨 PROFESSIONAL FIX: Parse response if it's a string
+                        var parsedResponse = response;
+                        if (typeof response === 'string') {
+                            try {
+                                parsedResponse = JSON.parse(response);
+                                console.log('🏥 MEDICAL: Response was string, parsed successfully');
+                            } catch (e) {
+                                console.error('🏥 MEDICAL: Failed to parse response as JSON:', e);
+                                showToastError('خطا در پردازش پاسخ سرور', 'خطا');
+                                return;
                             }
-                            console.log('🏥 MEDICAL: === END RESPONSE FIELD ANALYSIS ===');
                         }
                         
-                        console.log('🏥 Medical Environment: === AJAX SUCCESS RESPONSE ===');
-                        console.log('🏥 Medical Environment: Response type:', typeof response);
-                        console.log('🏥 Medical Environment: Response:', response);
-                        console.log('🏥 Medical Environment: Response.success:', response ? response.success : 'undefined');
-                        console.log('🏥 Medical Environment: Response.message:', response ? response.message : 'undefined');
-                        console.log('🏥 Medical Environment: Response.Success:', response ? response.Success : 'undefined');
-                        console.log('🏥 Medical Environment: Response.Message:', response ? response.Message : 'undefined');
+                        // 🏥 MEDICAL DEBUG: لاگ کامل AJAX Response
+                        console.log('🏥 MEDICAL: === AJAX SUCCESS RESPONSE ===');
+                        console.log('🏥 MEDICAL: Response type:', typeof parsedResponse);
+                        console.log('🏥 MEDICAL: Response:', parsedResponse);
+                        console.log('🏥 MEDICAL: Response.success:', parsedResponse ? parsedResponse.success : 'undefined');
+                        console.log('🏥 MEDICAL: Response.message:', parsedResponse ? parsedResponse.message : 'undefined');
                         
                         // Handle both success and Success (case-insensitive)
-                        var isSuccess = getResponseSuccess(response);
-                        var message = getResponseMessage(response);
-                        var data = getResponseData(response);
-                        var errors = getResponseErrors(response);
+                        var isSuccess = getResponseSuccess(parsedResponse);
+                        var message = getResponseMessage(parsedResponse);
+                        var data = getResponseData(parsedResponse);
+                        var errors = getResponseErrors(parsedResponse);
                         
                         if (isSuccess) {
-                            // 🎉 Show Toast Success Message
-                            showToastSuccess('بیمه بیمار با موفقیت ایجاد شد', 'موفقیت');
+                            // 🎉 Show Toast Success Message with actual message from server
+                            var successMessage = message || 'بیمه بیمار با موفقیت ایجاد شد';
+                            showToastSuccess(successMessage, 'موفقیت');
                             
-                            // Redirect to details page after a short delay
+                            // Redirect to index page after a short delay
                             setTimeout(function() {
                                 window.location.href = '@Url.Action("Index", "PatientInsurance")';
                             }, 2000);
                         } else {
                             var errorMessage = 'خطا در ایجاد بیمه بیمار';
                             if (message) {
-                                errorMessage += ': ' + message;
+                                errorMessage = message; // Use server message directly
                             } else if (errors && errors.length > 0) {
                                 errorMessage += ': ' + errors.join(', ');
                             } else {
@@ -3263,20 +4008,62 @@
          * 🎉 Show Toast Success Message
          */
         function showToastSuccess(message, title = "موفقیت") {
-            toastr.success(message, title);
+            // 🚨 PROFESSIONAL FIX: Check if toastr is loaded
+            if (typeof toastr === 'undefined') {
+                console.error('🏥 MEDICAL: toastr is not loaded! Showing alert instead.');
+                alert(title + ': ' + message);
+                return;
+            }
+            
+            try {
+                toastr.success(message, title, {
+                    timeOut: 3000,
+                    extendedTimeOut: 1000,
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right',
+                    rtl: true
+                });
+            } catch (e) {
+                console.error('🏥 MEDICAL: Error showing toast:', e);
+                alert(title + ': ' + message);
+            }
         }
         
         /**
          * 🎉 Show Toast Error Message
          */
         function showToastError(message, title = "خطا") {
-            toastr.error(message, title);
+            // 🚨 PROFESSIONAL FIX: Check if toastr is loaded
+            if (typeof toastr === 'undefined') {
+                console.error('🏥 MEDICAL: toastr is not loaded! Showing alert instead.');
+                alert(title + ': ' + message);
+                return;
+            }
+            
+            try {
+                toastr.error(message, title, {
+                    timeOut: 5000,
+                    extendedTimeOut: 2000,
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right',
+                    rtl: true
+                });
+            } catch (e) {
+                console.error('🏥 MEDICAL: Error showing toast:', e);
+                alert(title + ': ' + message);
+            }
         }
         
         /**
          * 🎉 Show Toast Warning Message
          */
         function showToastWarning(message, title = "هشدار") {
+            if (typeof toastr === 'undefined') {
+                alert(title + ': ' + message);
+                return;
+            }
             toastr.warning(message, title);
         }
         
@@ -3284,6 +4071,10 @@
          * 🎉 Show Toast Info Message
          */
         function showToastInfo(message, title = "اطلاعات") {
+            if (typeof toastr === 'undefined') {
+                alert(title + ': ' + message);
+                return;
+            }
             toastr.info(message, title);
         }
     </script>
