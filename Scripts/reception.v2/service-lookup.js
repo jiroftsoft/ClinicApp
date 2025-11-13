@@ -169,14 +169,14 @@
 
     // تعیین کلاس و badge بر اساس وضعیت
     let statusClass = 'text-danger';
-    let statusBadge = '<span class="badge bg-danger">بدون پوشش</span>';
+    let statusBadge = '<span class="badge bg-danger coverage-badge" role="button" style="cursor:pointer;">بدون پوشش</span>';
     
     if (status === 'پوشش کامل') {
       statusClass = 'text-success';
-      statusBadge = '<span class="badge bg-success">پوشش کامل</span>';
+      statusBadge = '<span class="badge bg-success coverage-badge" role="button" style="cursor:pointer;">پوشش کامل</span>';
     } else if (status === 'پوشش ناقص') {
       statusClass = 'text-warning';
-      statusBadge = '<span class="badge bg-warning">پوشش ناقص</span>';
+      statusBadge = '<span class="badge bg-warning text-dark coverage-badge" role="button" style="cursor:pointer;">پوشش ناقص</span>';
     }
 
     return {
@@ -276,6 +276,9 @@
           const qty = newItem.qty || newItem.Qty || 0;
           const unitPrice = newItem.unitPriceIRR || newItem.UnitPriceIRR || 0;
           const total = newItem.totalIRR || newItem.TotalIRR || 0;
+          const receptionItemId = newItem.receptionItemId || newItem.ReceptionItemId ||
+                                  itemData.ReceptionItemId || itemData.receptionItemId ||
+                                  (pricingData ? (pricingData.ReceptionItemId || pricingData.receptionItemId) : '') || '';
           
           // 🚨 PROFESSIONAL: استخراج اطلاعات محاسبه بیمه از item (اولویت اصلی)
           const itemInsuranceCalc = newItem.InsuranceCalculation || newItem.insuranceCalculation || insuranceCalc || null;
@@ -303,7 +306,7 @@
           }
           
           // افزودن ردیف جدید
-          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" class="${itemInsuranceInfo.statusClass}">
+          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" data-reception-item-id="${receptionItemId}" class="${itemInsuranceInfo.statusClass}">
             <td class="cell-code">${code}</td>
             <td class="cell-name">${name}</td>
             <td class="cell-qty">${qty}</td>
@@ -319,7 +322,13 @@
           // ذخیره اطلاعات بیمه
           const $row = $('#' + rowId);
           $row.data('insurance', itemInsuranceCalc);
+          if (pricingData) {
+            $row.data('pricing', pricingData);
+          }
           $row.data('item', newItem);
+          if (receptionItemId) {
+            $row.attr('data-reception-item-id', receptionItemId);
+          }
           
           console.log('🏥 V2: ✅ Row added - ServiceId:', serviceId, 'CoverageStatus:', itemInsuranceInfo.coverageStatus, 
             'PrimaryCoverage:', baseCovered, 'SupplementaryCoverage:', suppCovered, 'PatientShare:', patientPayable);

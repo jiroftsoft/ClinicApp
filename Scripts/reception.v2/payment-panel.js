@@ -1,6 +1,37 @@
 (function(API, U){
   'use strict';
   
+  function getReceptionItemRows() {
+    let $rows = $('[data-reception-item-id]');
+    console.log('🏥 V2: getReceptionItemRows - rows with data-reception-item-id:', $rows.length);
+    if ($rows.length) {
+      console.log('🏥 V2: getReceptionItemRows - returning rows with data-reception-item-id');
+      return $rows;
+    }
+
+    // fallback: rows rendered without reception-item id (e.g., draft rows)
+    $rows = $('#items-grid tbody tr[data-service-id]');
+    console.log('🏥 V2: getReceptionItemRows - rows with data-service-id inside tbody:', $rows.length);
+    if ($rows.length) {
+      console.log('🏥 V2: getReceptionItemRows - returning rows with data-service-id inside tbody');
+      return $rows;
+    }
+
+    // additional fallback: any row inside items-grid tbody
+    $rows = $('#items-grid tbody tr');
+    console.log('🏥 V2: getReceptionItemRows - rows inside items-grid tbody:', $rows.length);
+    if ($rows.length) {
+      console.log('🏥 V2: getReceptionItemRows - returning rows inside items-grid tbody');
+      return $rows;
+    }
+
+    // ultimate fallback: any row with data-service-id anywhere in DOM
+    $rows = $('tr[data-service-id]');
+    console.log('🏥 V2: getReceptionItemRows - rows with data-service-id (global):', $rows.length);
+    console.log('🏥 V2: getReceptionItemRows - final fallback returning rows with data-service-id (global)');
+    return $rows;
+  }
+
   // ✅ اطمینان از لود شدن DOM قبل از attach کردن event handlers
   $(document).ready(function() {
     console.log('🏥 V2: Payment Panel - DOM Ready, attaching event handlers...');
@@ -95,8 +126,19 @@
     console.log('🏥 V2: Saving reception and opening payment modal:', receptionId);
     
     // ✅ بررسی وجود آیتم‌ها
-    const $items = $('[data-reception-item-id]');
+    let $items = getReceptionItemRows();
+    const countAllReception = $('[data-reception-item-id]').length;
+    const countTbodyService = $('#items-grid tbody tr[data-service-id]').length;
+    const countTbody = $('#items-grid tbody tr').length;
+    const countGlobalService = $('tr[data-service-id]').length;
+    console.log('🏥 V2: saveReceptionAndOpenPaymentModal - rows detected:', $items.length, {
+      countAllReception,
+      countTbodyService,
+      countTbody,
+      countGlobalService
+    });
     if (!$items.length) {
+      console.warn('🏥 V2: saveReceptionAndOpenPaymentModal - no item rows detected in DOM');
       toastr.warning('هیچ خدمتی به پذیرش افزوده نشده است. لطفاً ابتدا خدمت اضافه کنید.');
       return;
     }
@@ -252,7 +294,7 @@
       }
       
       // بررسی اینکه آیا آیتم‌هایی در پذیرش وجود دارد
-      const $items = $('[data-reception-item-id]');
+      const $items = getReceptionItemRows();
       if (!$items.length) {
         console.warn('🏥 V2: No items found in reception');
         resolve(false);
@@ -302,7 +344,7 @@
     }
     
     // ✅ گام 2: بررسی وجود آیتم‌ها
-    const $items = $('[data-reception-item-id]');
+    const $items = getReceptionItemRows();
     if (!$items.length) {
       toastr.warning('هیچ خدمتی به پذیرش افزوده نشده است. لطفاً ابتدا خدمت اضافه کنید.');
       return;
