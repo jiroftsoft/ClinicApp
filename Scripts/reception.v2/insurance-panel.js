@@ -17,6 +17,22 @@
     suppPlanName: null
   };
   
+  // 🚨 PROFESSIONAL: لیسنر برای تغییر ReceptionId (برای persist خودکار بیمه‌ها)
+  $(document).on('receptionId:updated', function(e, receptionId) {
+    console.log('🏥 V2: ReceptionId updated event received:', receptionId);
+    if (receptionId && receptionId > 0) {
+      // اگر بیمه‌ها قبلاً تنظیم شده‌اند، آن‌ها را persist کن
+      const basePlanId = $('#BasePlanId').val();
+      const suppPlanId = $('#SuppPlanId').val();
+      if (basePlanId || suppPlanId) {
+        console.log('🏥 V2: Auto-persisting insurances after ReceptionId update - BasePlanId:', basePlanId, 'SuppPlanId:', suppPlanId);
+        persist().catch(function(err) {
+          console.warn('🏥 V2: Error auto-persisting insurances:', err);
+        });
+      }
+    }
+  });
+  
   // ✅ Race condition prevention
   let repriceTimeout = null;
   let isRepricing = false;

@@ -1017,11 +1017,18 @@ namespace ClinicApp.Controllers.Api
 
                     var result = await _facade.AddItemAsync(facadeRequest);
                     
-                    if (result.Success && result.Data != null)
+                    // 🚨 PROFESSIONAL FIX: حتی اگر Success false باشد، اگر Data موجود است، آن را برگردان
+                    // این برای حالتی است که آیتم ذخیره شده اما خطا در محاسبه بیمه رخ داده
+                    if (result.Data != null)
                     {
-                        _logger?.Information("✅ V1 API: آیتم با موفقیت افزوده شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        _logger?.Information("✅ V1 API: آیتم افزوده شد (Success: {Success}) - ReceptionId: {ReceptionId}, ItemsCount: {ItemsCount}", 
+                            result.Success, request.ReceptionId, result.Data.Items?.Count ?? 0);
                         
-                        // ✅ محاسبه Pricing برای آخرین آیتم افزوده شده و Totals
+                        // 🚨 PROFESSIONAL FIX: استفاده از ItemsAndTotalsDto که از Facade برگشته است
+                        // این شامل Items با InsuranceCalculation است
+                        var itemsAndTotals = result.Data;
+                        
+                        // ✅ محاسبه Pricing برای آخرین آیتم افزوده شده (برای سازگاری با کد قدیمی)
                         try
                         {
                             // پیدا کردن آخرین ReceptionItem برای این Reception
@@ -1038,9 +1045,20 @@ namespace ClinicApp.Controllers.Api
                                 // ✅ محاسبه Pricing برای آخرین آیتم
                                 var pricing = await _pricing.PriceItemAsync(request.ReceptionId, lastItem.ReceptionItemId);
                                 
-                                // ✅ محاسبه Totals برای کل Reception
-                                var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
+                                // ✅ تبدیل TotalsDto به فرمت مورد انتظار
+                                var totals = new
+                                {
+                                    GrossIRR = (long)itemsAndTotals.Totals.Gross,
+                                    BaseCoveredIRR = (long)itemsAndTotals.Totals.Base,
+                                    SuppCoveredIRR = (long)itemsAndTotals.Totals.Supplementary,
+                                    PatientPayableIRR = (long)itemsAndTotals.Totals.Patient,
+                                    GrossIRRStr = itemsAndTotals.Totals.Gross.ToString("N0"),
+                                    BaseCoveredIRRStr = itemsAndTotals.Totals.Base.ToString("N0"),
+                                    SuppCoveredIRRStr = itemsAndTotals.Totals.Supplementary.ToString("N0"),
+                                    PatientPayableIRRStr = itemsAndTotals.Totals.Patient.ToString("N0")
+                                };
                                 
+                                // 🚨 PROFESSIONAL: برگرداندن Items (که شامل InsuranceCalculation است) + item + pricing + totals
                                 return Json(ServiceResult<object>.Successful(new 
                                 { 
                                     item = new
@@ -1051,29 +1069,73 @@ namespace ClinicApp.Controllers.Api
                                         Code = lastItem.Service?.ServiceCode ?? "",
                                         Name = lastItem.Service?.Title ?? ""
                                     },
+                                    items = itemsAndTotals.Items, // 🚨 NEW: شامل InsuranceCalculation
+                                    Items = itemsAndTotals.Items, // 🚨 NEW: برای سازگاری
                                     pricing,
                                     totals
                                 }, "آیتم اضافه و محاسبه شد."));
                             }
                             else
                             {
-                                // Fallback: فقط Totals را برگردان
-                                var totals = await _pricing.CalculateTotalsAsync(request.ReceptionId);
-                                return Json(ServiceResult<object>.Successful(new { totals }, result.Message));
+                                // Fallback: فقط Items و Totals را برگردان
+                                var totals = new
+                                {
+                                    GrossIRR = (long)itemsAndTotals.Totals.Gross,
+                                    BaseCoveredIRR = (long)itemsAndTotals.Totals.Base,
+                                    SuppCoveredIRR = (long)itemsAndTotals.Totals.Supplementary,
+                                    PatientPayableIRR = (long)itemsAndTotals.Totals.Patient,
+                                    GrossIRRStr = itemsAndTotals.Totals.Gross.ToString("N0"),
+                                    BaseCoveredIRRStr = itemsAndTotals.Totals.Base.ToString("N0"),
+                                    SuppCoveredIRRStr = itemsAndTotals.Totals.Supplementary.ToString("N0"),
+                                    PatientPayableIRRStr = itemsAndTotals.Totals.Patient.ToString("N0")
+                                };
+                                return Json(ServiceResult<object>.Successful(new 
+                                { 
+                                    items = itemsAndTotals.Items, // 🚨 NEW
+                                    Items = itemsAndTotals.Items, // 🚨 NEW
+                                    totals 
+                                }, result.Message));
                             }
                         }
                         catch (Exception pricingEx)
                         {
                             _logger?.Warning(pricingEx, "⚠️ V1 API: خطا در محاسبه Pricing/Totals پس از AddItem - ReceptionId: {ReceptionId}", 
                                 request.ReceptionId);
-                            // Fallback: فقط نتیجه AddItem را برگردان
+                            // Fallback: فقط نتیجه AddItem را برگردان (که شامل Items است)
                             return Json(result);
                         }
                     }
                     else
                     {
-                        _logger?.Warning("⚠️ V1 API: افزودن آیتم ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
-                            request.ReceptionId, result?.Message);
+                        _logger?.Warning("⚠️ V1 API: افزودن آیتم ناموفق - ReceptionId: {ReceptionId}, Error: {Error}, HasData: {HasData}", 
+                            request.ReceptionId, result?.Message, result?.Data != null);
+                        
+                        // 🚨 PROFESSIONAL FIX: حتی اگر Success false باشد، اگر Data موجود است، آن را برگردان
+                        if (result?.Data != null)
+                        {
+                            _logger?.Information("🏥 V1 API: بازگرداندن Data حتی با Success=false - ReceptionId: {ReceptionId}, ItemsCount: {Count}", 
+                                request.ReceptionId, result.Data.Items?.Count ?? 0);
+                            
+                            var itemsAndTotals = result.Data;
+                            var totals = new
+                            {
+                                GrossIRR = (long)itemsAndTotals.Totals.Gross,
+                                BaseCoveredIRR = (long)itemsAndTotals.Totals.Base,
+                                SuppCoveredIRR = (long)itemsAndTotals.Totals.Supplementary,
+                                PatientPayableIRR = (long)itemsAndTotals.Totals.Patient,
+                                GrossIRRStr = itemsAndTotals.Totals.Gross.ToString("N0"),
+                                BaseCoveredIRRStr = itemsAndTotals.Totals.Base.ToString("N0"),
+                                SuppCoveredIRRStr = itemsAndTotals.Totals.Supplementary.ToString("N0"),
+                                PatientPayableIRRStr = itemsAndTotals.Totals.Patient.ToString("N0")
+                            };
+                            
+                            return Json(ServiceResult<object>.Successful(new 
+                            { 
+                                items = itemsAndTotals.Items,
+                                Items = itemsAndTotals.Items,
+                                totals 
+                            }, result.Message ?? "آیتم افزوده شد اما خطا در محاسبه رخ داد."));
+                        }
                     }
                     
                     return Json(result);

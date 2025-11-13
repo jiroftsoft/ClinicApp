@@ -123,8 +123,21 @@ namespace ClinicApp.ViewModels.Reception
     }
 
     /// <summary>
-    /// DTO برای نتیجه افزودن آیتم
+    /// DTO برای محاسبه بیمه یک آیتم - Real-Time
+    /// 🚨 PROFESSIONAL: برای محاسبه real-time بیمه در زمان افزودن خدمت
     /// </summary>
+    public class ItemInsuranceCalculationDto
+    {
+        public decimal PrimaryCoverage { get; set; }
+        public decimal SupplementaryCoverage { get; set; }
+        public decimal TotalInsuranceCoverage { get; set; }
+        public decimal PatientShare { get; set; }
+        public string CoverageStatus { get; set; } // "پوشش کامل", "پوشش ناقص", "بدون پوشش"
+        public decimal PrimaryCoveragePercent { get; set; }
+        public decimal SupplementaryCoveragePercent { get; set; }
+        public decimal TotalCoveragePercent { get; set; }
+    }
+
     public class AddItemResultDto
     {
         public int ReceptionId { get; set; }
@@ -132,6 +145,10 @@ namespace ClinicApp.ViewModels.Reception
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal ItemTotal { get; set; }
+        /// <summary>
+        /// 🚨 PROFESSIONAL: محاسبه real-time بیمه برای این آیتم
+        /// </summary>
+        public ItemInsuranceCalculationDto InsuranceCalculation { get; set; }
         public ReceptionTotalsDto ReceptionTotals { get; set; }
     }
 

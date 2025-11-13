@@ -95,48 +95,101 @@ namespace ClinicApp.Services.Pricing.Engines
                     }
                     else
                     {
-                        _log.Information("⚠️ PRICING: بیمه پایه پوشش ندارد - PlanId: {PlanId}, IsCovered: {IsCovered}",
-                            r.Primary.InsurancePlanId.Value, primaryRule.IsCovered);
+                        // اگر بیمه پایه پوشش ندارد، patientAfterPrimary برابر approved است
+                        patientAfterPrimary = approved;
+                        _log.Information("⚠️ PRICING: بیمه پایه پوشش ندارد - PlanId: {PlanId}, IsCovered: {IsCovered}, PatientAfterPrimary: {PatientAfterPrimary}",
+                            r.Primary.InsurancePlanId.Value, primaryRule.IsCovered, patientAfterPrimary);
                     }
                 }
+                else
+                {
+                    // اگر بیمه پایه تنظیم نشده، patientAfterPrimary برابر approved است
+                    patientAfterPrimary = approved;
+                    _log.Information("⚠️ PRICING: بیمه پایه تنظیم نشده - Primary is null or InsurancePlanId is null, PatientAfterPrimary: {PatientAfterPrimary}",
+                        patientAfterPrimary);
+                }
+                
+                // 🔍 بررسی نهایی patientAfterPrimary قبل از محاسبه بیمه تکمیلی
+                _log.Information("🔍 PRICING: بررسی نهایی patientAfterPrimary - Approved: {Approved}, PrimaryPays: {PrimaryPays}, PatientAfterPrimary: {PatientAfterPrimary}",
+                    approved, primaryPays, patientAfterPrimary);
 
                 // 4) SUPPLEMENTARY: محاسبه سهم بیمه تکمیلی (از باقیمانده بعد از پایه)
                 CoverageRule suppRule = CoverageRule.None();
-                if (r.Supplementary?.InsurancePlanId.HasValue == true && patientAfterPrimary > 0)
+                _log.Information("🏥 PRICING: بررسی بیمه تکمیلی - HasSupplementary: {HasSupp}, SuppPlanId: {SuppPlanId}, PatientAfterPrimary: {PatientAfterPrimary}, Approved: {Approved}, PrimaryPays: {PrimaryPays}",
+                    r.Supplementary != null, r.Supplementary?.InsurancePlanId, patientAfterPrimary, approved, primaryPays);
+                
+                if (r.Supplementary?.InsurancePlanId.HasValue == true)
                 {
-                    suppRule = await _coverage.GetSupplementaryRuleAsync(
-                        r.Supplementary.InsurancePlanId.Value,
-                        r.ServiceId,
-                        r.DepartmentId,
-                        r.DoctorId,
-                        fy,
-                        ct);
-
-                    if (suppRule.IsCovered && patientAfterPrimary > 0)
+                    _log.Information("🏥 PRICING: شروع محاسبه بیمه تکمیلی - SuppPlanId: {SuppPlanId}, ServiceId: {ServiceId}, PatientAfterPrimary: {PatientAfterPrimary}, ConditionCheck: {ConditionCheck}",
+                        r.Supplementary.InsurancePlanId.Value, r.ServiceId, patientAfterPrimary, patientAfterPrimary > 0);
+                    
+                    if (patientAfterPrimary > 0)
                     {
-                        // اعمال سقف تکمیلی (اگر وجود دارد)
-                        var allowed = ApplyCap(patientAfterPrimary, suppRule.PerVisitCapIRR);
-                        
-                        // محاسبه سهم تکمیلی (درصد × مبلغ مجاز)
-                        var suppByPercent = Round(allowed * (suppRule.CoveragePercent / 100m));
-                        
-                        // محدود کردن سهم تکمیلی به مبلغ باقیمانده
-                        suppPays = Math.Min(patientAfterPrimary, suppByPercent);
-                        
-                        // محدود کردن به سقف تکمیلی (اگر وجود دارد)
-                        if (suppRule.PerVisitCapIRR.HasValue)
-                        {
-                            suppPays = Math.Min(suppPays, suppRule.PerVisitCapIRR.Value);
-                        }
+                        suppRule = await _coverage.GetSupplementaryRuleAsync(
+                            r.Supplementary.InsurancePlanId.Value,
+                            r.ServiceId,
+                            r.DepartmentId,
+                            r.DoctorId,
+                            fy,
+                            ct);
 
-                        _log.Information("✅ PRICING: سهم بیمه تکمیلی محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, PatientAfterPrimary: {PatientAfterPrimary}, SuppPays: {SuppPays}",
-                            r.Supplementary.InsurancePlanId.Value, suppRule.CoveragePercent, patientAfterPrimary, suppPays);
+                        _log.Information("🏥 PRICING: نتیجه GetSupplementaryRuleAsync - PlanId: {PlanId}, IsCovered: {IsCovered}, CoveragePercent: {CoveragePercent}, RuleName: {RuleName}, PerVisitCap: {PerVisitCap}",
+                            r.Supplementary.InsurancePlanId.Value, suppRule.IsCovered, suppRule.CoveragePercent, suppRule.RuleName, suppRule.PerVisitCapIRR);
+
+                        _log.Information("🔍 PRICING: بررسی شرط محاسبه بیمه تکمیلی - suppRule.IsCovered: {IsCovered}, patientAfterPrimary: {PatientAfterPrimary}, Condition: {Condition}",
+                            suppRule.IsCovered, patientAfterPrimary, suppRule.IsCovered && patientAfterPrimary > 0);
+                        
+                        if (suppRule.IsCovered && patientAfterPrimary > 0)
+                        {
+                            // اعمال سقف تکمیلی (اگر وجود دارد)
+                            var allowed = ApplyCap(patientAfterPrimary, suppRule.PerVisitCapIRR);
+                            _log.Information("🔍 PRICING: بعد از ApplyCap - allowed: {Allowed}, patientAfterPrimary: {PatientAfterPrimary}, PerVisitCap: {PerVisitCap}",
+                                allowed, patientAfterPrimary, suppRule.PerVisitCapIRR);
+                            
+                            // محاسبه سهم تکمیلی (درصد × مبلغ مجاز)
+                            var suppByPercent = Round(allowed * (suppRule.CoveragePercent / 100m));
+                            _log.Information("🔍 PRICING: محاسبه suppByPercent - allowed: {Allowed}, CoveragePercent: {CoveragePercent}, suppByPercent: {SuppByPercent}",
+                                allowed, suppRule.CoveragePercent, suppByPercent);
+                            
+                            // محدود کردن سهم تکمیلی به مبلغ باقیمانده
+                            suppPays = Math.Min(patientAfterPrimary, suppByPercent);
+                            _log.Information("🔍 PRICING: بعد از Math.Min - suppPays: {SuppPays}, patientAfterPrimary: {PatientAfterPrimary}, suppByPercent: {SuppByPercent}",
+                                suppPays, patientAfterPrimary, suppByPercent);
+                            
+                            // محدود کردن به سقف تکمیلی (اگر وجود دارد)
+                            if (suppRule.PerVisitCapIRR.HasValue)
+                            {
+                                var suppPaysBeforeCap = suppPays;
+                                suppPays = Math.Min(suppPays, suppRule.PerVisitCapIRR.Value);
+                                _log.Information("🔍 PRICING: اعمال سقف تکمیلی - suppPaysBeforeCap: {BeforeCap}, PerVisitCap: {PerVisitCap}, suppPaysAfterCap: {AfterCap}",
+                                    suppPaysBeforeCap, suppRule.PerVisitCapIRR.Value, suppPays);
+                            }
+
+                            _log.Information("✅ PRICING: سهم بیمه تکمیلی محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, PatientAfterPrimary: {PatientAfterPrimary}, Allowed: {Allowed}, SuppByPercent: {SuppByPercent}, SuppPays: {SuppPays}, PerVisitCap: {PerVisitCap}",
+                                r.Supplementary.InsurancePlanId.Value, suppRule.CoveragePercent, patientAfterPrimary, allowed, suppByPercent, suppPays, suppRule.PerVisitCapIRR);
+                            
+                            // 🔍 بررسی نهایی suppPays
+                            if (suppPays == 0 && suppRule.IsCovered && suppRule.CoveragePercent > 0 && patientAfterPrimary > 0)
+                            {
+                                _log.Error("❌ PRICING: خطا - suppPays صفر است در حالی که باید محاسبه شود! PlanId: {PlanId}, CoveragePercent: {CoveragePercent}, PatientAfterPrimary: {PatientAfterPrimary}, Allowed: {Allowed}, SuppByPercent: {SuppByPercent}",
+                                    r.Supplementary.InsurancePlanId.Value, suppRule.CoveragePercent, patientAfterPrimary, allowed, suppByPercent);
+                            }
+                        }
+                        else
+                        {
+                            _log.Warning("⚠️ PRICING: بیمه تکمیلی پوشش ندارد یا باقیمانده صفر است - PlanId: {PlanId}, IsCovered: {IsCovered}, CoveragePercent: {CoveragePercent}, PatientAfterPrimary: {PatientAfterPrimary}, RuleName: {RuleName}",
+                                r.Supplementary.InsurancePlanId.Value, suppRule.IsCovered, suppRule.CoveragePercent, patientAfterPrimary, suppRule.RuleName);
+                        }
                     }
                     else
                     {
-                        _log.Information("⚠️ PRICING: بیمه تکمیلی پوشش ندارد یا باقیمانده صفر است - PlanId: {PlanId}, IsCovered: {IsCovered}, PatientAfterPrimary: {PatientAfterPrimary}",
-                            r.Supplementary.InsurancePlanId.Value, suppRule.IsCovered, patientAfterPrimary);
+                        _log.Warning("⚠️ PRICING: PatientAfterPrimary صفر است - SuppPlanId: {SuppPlanId}, PatientAfterPrimary: {PatientAfterPrimary}, Approved: {Approved}, PrimaryPays: {PrimaryPays}",
+                            r.Supplementary.InsurancePlanId.Value, patientAfterPrimary, approved, primaryPays);
                     }
+                }
+                else
+                {
+                    _log.Information("⚠️ PRICING: بیمه تکمیلی تنظیم نشده - Supplementary is null or InsurancePlanId is null");
                 }
 
                 // 5) محاسبه سهم بیمار نهایی
@@ -193,8 +246,11 @@ namespace ClinicApp.Services.Pricing.Engines
                 if (suppRule.PerVisitCapIRR.HasValue)
                     result.Notes.Add($"سقف تکمیلی: {((decimal)suppRule.PerVisitCapIRR.Value).ToIrrString()}");
 
-                _log.Information("✅ PRICING: پیش‌محاسبه تکمیل شد - ServiceId: {ServiceId}, Approved: {Approved}, Primary: {Primary}, Supp: {Supp}, Patient: {Patient}",
-                    r.ServiceId, approved, primaryPays, suppPays, patientFinal);
+                _log.Information("✅ PRICING: پیش‌محاسبه تکمیل شد - ServiceId: {ServiceId}, Approved: {Approved}, Primary: {Primary}, Supp: {Supp}, Patient: {Patient}, PrimaryRule.IsCovered: {PrimaryIsCovered}, SuppRule.IsCovered: {SuppIsCovered}, SuppRule.CoveragePercent: {SuppPercent}, PatientAfterPrimary: {PatientAfterPrimary}",
+                    r.ServiceId, approved, primaryPays, suppPays, patientFinal, primaryRule.IsCovered, suppRule.IsCovered, suppRule.CoveragePercent, patientAfterPrimary);
+                
+                _log.Information("✅ PRICING: QuoteResult نهایی - Primary.Pays: {PrimaryPays}, Primary.IsCovered: {PrimaryIsCovered}, Supplementary.Pays: {SuppPays}, Supplementary.IsCovered: {SuppIsCovered}, Supplementary.CoveragePercent: {SuppPercent}",
+                    result.Primary.Pays, result.Primary.IsCovered, result.Supplementary.Pays, result.Supplementary.IsCovered, result.Supplementary.CoveragePercent);
 
                 return result;
             }
@@ -397,7 +453,7 @@ namespace ClinicApp.Services.Pricing.Engines
 
         private static long ApplyCap(long amount, long? cap)
         {
-            if (cap.HasValue && cap.Value >= 0)
+            if (cap.HasValue && cap.Value > 0)
                 return Math.Min(amount, cap.Value);
             return amount;
         }

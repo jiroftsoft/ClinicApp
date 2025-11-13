@@ -49,6 +49,10 @@ namespace ClinicApp.ViewModels.Reception
         public int Qty { get; set; }
         public decimal UnitPriceIRR { get; set; }
         public decimal TotalIRR { get; set; }
+        /// <summary>
+        /// 🚨 PROFESSIONAL: محاسبه real-time بیمه برای این آیتم
+        /// </summary>
+        public ItemInsuranceCalculationDto InsuranceCalculation { get; set; }
     }
 
     public class TotalsDto

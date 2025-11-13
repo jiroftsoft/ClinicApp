@@ -21,6 +21,10 @@
         console.log('🏥 V2: ReceptionId found in DOM, syncing with memory:', receptionIdNum);
         currentDraftId = receptionIdNum;
         isDraftCreated = true;
+        
+        // 🚨 PROFESSIONAL: Trigger event برای persist خودکار بیمه‌ها
+        $(document).trigger('receptionId:updated', [receptionIdNum]);
+        
         return Promise.resolve(currentDraftId);
       }
     }
@@ -154,6 +158,9 @@
         console.log('🏥 V2: Draft state updated - currentDraftId:', currentDraftId, 'isDraftCreated:', isDraftCreated);
         console.log('🏥 V2: DOM ReceptionId after update:', $("#ReceptionId").val());
         console.log('🏥 V2: Memory state - currentDraftId:', currentDraftId, 'isDraftCreated:', isDraftCreated);
+        
+        // 🚨 PROFESSIONAL: Trigger event برای persist خودکار بیمه‌ها
+        $(document).trigger('receptionId:updated', [currentDraftId]);
         
         // Show success message
         toastr.success('پذیرش موقت ایجاد شد');

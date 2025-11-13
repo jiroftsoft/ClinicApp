@@ -44,41 +44,85 @@ namespace ClinicApp.Services.Pricing.Coverage
                     planId, serviceId, isSupplementary);
 
                 // 1) دریافت InsuranceTariff برای این خدمت و طرح
+                var expectedInsuranceType = isSupplementary ? InsuranceType.Supplementary : InsuranceType.Primary;
+                _log.Information("🔍 PRICING: جستجوی InsuranceTariff - PlanId: {PlanId}, ServiceId: {ServiceId}, IsSupplementary: {IsSupplementary}, ExpectedInsuranceType: {ExpectedType}",
+                    planId, serviceId, isSupplementary, expectedInsuranceType);
+                
                 var tariff = await _db.InsuranceTariffs
                     .AsNoTracking()
                     .Where(t => t.InsurancePlanId == planId &&
                                t.ServiceId == serviceId &&
                                !t.IsDeleted &&
                                t.IsActive &&
-                               t.InsuranceType == (isSupplementary ? InsuranceType.Supplementary : InsuranceType.Primary))
+                               t.InsuranceType == expectedInsuranceType)
                     .FirstOrDefaultAsync(ct);
 
                 if (tariff != null)
                 {
+                    _log.Information("🏥 PRICING: InsuranceTariff پیدا شد - TariffId: {TariffId}, PlanId: {PlanId}, ServiceId: {ServiceId}, IsSupplementary: {IsSupplementary}, InsuranceType: {InsuranceType}, SupplementaryCoveragePercent: {SuppPercent}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}", 
+                        tariff.InsuranceTariffId, planId, serviceId, isSupplementary, tariff.InsuranceType, 
+                        tariff.SupplementaryCoveragePercent, tariff.PatientShare, tariff.InsurerShare);
+                    
                     // ✅ اگر InsuranceTariff موجود است، از آن استفاده کن
-                    var coveragePercent = isSupplementary && tariff.SupplementaryCoveragePercent.HasValue
-                        ? tariff.SupplementaryCoveragePercent.Value
-                        : (tariff.PatientShare.HasValue || tariff.InsurerShare.HasValue)
-                            ? CalculateCoverageFromShares(tariff.PatientShare, tariff.InsurerShare)
-                            : await GetCoverageFromPlanAsync(planId, ct) ?? 0m;
+                    decimal coveragePercent;
+                    if (isSupplementary && tariff.SupplementaryCoveragePercent.HasValue)
+                    {
+                        coveragePercent = tariff.SupplementaryCoveragePercent.Value;
+                        _log.Information("✅ PRICING: استفاده از SupplementaryCoveragePercent - PlanId: {PlanId}, ServiceId: {ServiceId}, CoveragePercent: {CoveragePercent}",
+                            planId, serviceId, coveragePercent);
+                    }
+                    else if (tariff.PatientShare.HasValue || tariff.InsurerShare.HasValue)
+                    {
+                        coveragePercent = CalculateCoverageFromShares(tariff.PatientShare, tariff.InsurerShare);
+                        _log.Information("✅ PRICING: استفاده از CalculateCoverageFromShares - PlanId: {PlanId}, ServiceId: {ServiceId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, CoveragePercent: {CoveragePercent}",
+                            planId, serviceId, tariff.PatientShare, tariff.InsurerShare, coveragePercent);
+                    }
+                    else
+                    {
+                        coveragePercent = await GetCoverageFromPlanAsync(planId, ct) ?? 0m;
+                        _log.Information("✅ PRICING: استفاده از GetCoverageFromPlanAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, CoveragePercent: {CoveragePercent}",
+                            planId, serviceId, coveragePercent);
+                    }
 
-                    var capValue = isSupplementary && tariff.SupplementaryMaxPayment.HasValue
-                        ? (long?)tariff.SupplementaryMaxPayment.Value
-                        : null;
+                    long? capValue = null;
+                    if (isSupplementary && tariff.SupplementaryMaxPayment.HasValue)
+                    {
+                        var rawCap = tariff.SupplementaryMaxPayment.Value;
+                        var capCandidate = (long)Math.Round(rawCap, 0, MidpointRounding.AwayFromZero);
+                        if (capCandidate > 0)
+                        {
+                            capValue = capCandidate;
+                        }
+                        else
+                        {
+                            _log.Information("⚖️ PRICING: سقف تکمیلی مقدار ۰ دارد - به عنوان بدون سقف در نظر گرفته می‌شود - PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
+                        }
+                    }
 
-                    _log.Information("✅ PRICING: قاعده پوشش از InsuranceTariff - PlanId: {PlanId}, ServiceId: {ServiceId}, CoveragePercent: {CoveragePercent}, Cap: {Cap}",
-                        planId, serviceId, coveragePercent, capValue);
+                    _log.Information("✅ PRICING: قاعده پوشش از InsuranceTariff - PlanId: {PlanId}, ServiceId: {ServiceId}, IsSupplementary: {IsSupplementary}, CoveragePercent: {CoveragePercent}, Cap: {Cap}, IsCovered: {IsCovered}",
+                        planId, serviceId, isSupplementary, coveragePercent, capValue, coveragePercent > 0);
 
-                    return new CoverageRule
+                    var rule = new CoverageRule
                     {
                         IsCovered = coveragePercent > 0,
                         CoveragePercent = coveragePercent,
                         PerVisitCapIRR = capValue,
                         RuleName = $"تعرفه {tariff.InsuranceTariffId}"
                     };
+                    
+                    _log.Information("✅ PRICING: CoverageRule ساخته شد - PlanId: {PlanId}, ServiceId: {ServiceId}, IsSupplementary: {IsSupplementary}, IsCovered: {IsCovered}, CoveragePercent: {CoveragePercent}, RuleName: {RuleName}",
+                        planId, serviceId, isSupplementary, rule.IsCovered, rule.CoveragePercent, rule.RuleName);
+                    
+                    return rule;
                 }
+                
+                _log.Warning("⚠️ PRICING: InsuranceTariff پیدا نشد - PlanId: {PlanId}, ServiceId: {ServiceId}, IsSupplementary: {IsSupplementary}, ExpectedInsuranceType: {ExpectedType}",
+                    planId, serviceId, isSupplementary, expectedInsuranceType);
 
                 // 2) Fallback: دریافت پوشش پیش‌فرض از InsurancePlan
+                _log.Information("🔍 PRICING: InsuranceTariff پیدا نشد، جستجوی InsurancePlan - PlanId: {PlanId}, IsSupplementary: {IsSupplementary}", 
+                    planId, isSupplementary);
+                
                 var plan = await _db.InsurancePlans
                     .AsNoTracking()
                     .Where(p => p.InsurancePlanId == planId && !p.IsDeleted && p.IsActive)
@@ -96,10 +140,14 @@ namespace ClinicApp.Services.Pricing.Coverage
                     return CoverageRule.None();
                 }
 
+                _log.Information("🏥 PRICING: InsurancePlan پیدا شد - PlanId: {PlanId}, InsuranceType: {InsuranceType}, CoveragePercent: {CoveragePercent}, IsSupplementary: {IsSupplementary}", 
+                    planId, plan.InsuranceType, plan.CoveragePercent, isSupplementary);
+
                 // ✅ اگر طرح بیمه تکمیلی نیست، پوشش صفر است
                 if (isSupplementary && plan.InsuranceType != InsuranceType.Supplementary)
                 {
-                    _log.Warning("⚠️ PRICING: طرح بیمه تکمیلی نیست - PlanId: {PlanId}, Type: {Type}", planId, plan.InsuranceType);
+                    _log.Warning("⚠️ PRICING: طرح بیمه تکمیلی نیست - PlanId: {PlanId}, Type: {Type}, ExpectedType: {ExpectedType}", 
+                        planId, plan.InsuranceType, InsuranceType.Supplementary);
                     return CoverageRule.None();
                 }
 

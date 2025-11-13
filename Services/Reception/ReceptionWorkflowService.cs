@@ -11,6 +11,7 @@ using Serilog;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 
 namespace ClinicApp.Services.Reception
 {
@@ -340,20 +341,77 @@ namespace ClinicApp.Services.Reception
         {
             try
             {
+                _logger.Information("🏥 WORKFLOW: تنظیم بیمه‌های پذیرش - ReceptionId: {ReceptionId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    receptionId, basePlanId, suppPlanId);
+
                 var reception = await _context.Receptions.FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
                 if (reception == null)
+                {
+                    _logger.Warning("⚠️ WORKFLOW: پذیرش یافت نشد - ReceptionId: {ReceptionId}", receptionId);
                     return ServiceResult<bool>.Failed("پذیرش یافت نشد");
+                }
+
+                // 🚨 PROFESSIONAL FIX: Reload entity برای دریافت RowVersion به‌روز (جلوگیری از Optimistic Concurrency Exception)
+                await _context.Entry(reception).ReloadAsync();
+                
+                _logger.Information("🏥 WORKFLOW: Reception reloaded - ReceptionId: {ReceptionId}, Status: {Status}", 
+                    receptionId, reception.Status);
 
                 reception.BasePlanId = basePlanId;
                 reception.SupplementaryPlanId = suppPlanId;
                 reception.UpdatedAt = DateTime.Now;
-                await _context.SaveChangesAsync();
+                
+                // Retry logic برای Optimistic Concurrency (3 بار با exponential backoff)
+                int maxRetries = 3;
+                int retryCount = 0;
+                bool saved = false;
+                
+                while (retryCount < maxRetries && !saved)
+                {
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        saved = true;
+                        _logger.Information("✅ WORKFLOW: بیمه‌های پذیرش به‌روزرسانی شد - ReceptionId: {ReceptionId}, RetryCount: {RetryCount}", 
+                            receptionId, retryCount);
+                    }
+                    catch (System.Data.Entity.Infrastructure.DbUpdateConcurrencyException ex)
+                    {
+                        retryCount++;
+                        _logger.Warning("⚠️ WORKFLOW: Optimistic Concurrency Exception در SetInsurances - ReceptionId: {ReceptionId}, RetryCount: {RetryCount}", 
+                            receptionId, retryCount);
+                        
+                        if (retryCount >= maxRetries)
+                        {
+                            _logger.Error(ex, "❌ WORKFLOW: حداکثر تعداد retry برای SetInsurances - ReceptionId: {ReceptionId}", receptionId);
+                            return ServiceResult<bool>.Failed("اطلاعات پذیرش در جای دیگری تغییر کرده است. لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.");
+                        }
+                        
+                        // Reload entity برای retry
+                        await _context.Entry(reception).ReloadAsync();
+                        
+                        // اعمال مجدد تغییرات
+                        reception.BasePlanId = basePlanId;
+                        reception.SupplementaryPlanId = suppPlanId;
+                        reception.UpdatedAt = DateTime.Now;
+                        
+                        // Exponential backoff
+                        await Task.Delay(100 * retryCount);
+                    }
+                }
+                
+                if (!saved)
+                {
+                    _logger.Error("❌ WORKFLOW: نتوانست بیمه‌های پذیرش را ذخیره کند - ReceptionId: {ReceptionId}", receptionId);
+                    return ServiceResult<bool>.Failed("خطا در ذخیره بیمه‌ها");
+                }
+                
                 return ServiceResult<bool>.Successful(true);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در تنظیم بیمه‌های پذیرش");
-                return ServiceResult<bool>.Failed("خطا در تنظیم بیمه‌ها");
+                _logger.Error(ex, "❌ WORKFLOW: خطا در تنظیم بیمه‌های پذیرش - ReceptionId: {ReceptionId}", receptionId);
+                return ServiceResult<bool>.Failed("خطا در تنظیم بیمه‌ها: " + ex.Message);
             }
         }
 

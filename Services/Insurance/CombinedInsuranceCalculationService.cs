@@ -623,9 +623,14 @@ namespace ClinicApp.Services.Insurance
                     serviceId, serviceAmount, primaryResult.InsuranceCoverage, supplementaryInsurances.Count, _currentUserService.UserName, _currentUserService.UserId);
 
                 var totalSupplementaryCoverage = 0m;
-                var remainingAmount = serviceAmount - primaryResult.InsuranceCoverage;
+                // 🚨 PROFESSIONAL: remainingAmount = سهم بیمار از بیمه پایه (نه سهم بیمه پایه)
+                // این همان مبلغی است که بیمه تکمیلی باید پوشش دهد
+                var remainingAmount = serviceAmount - primaryResult.InsuranceCoverage; // سهم بیمار از بیمه پایه
                 var supplementaryDetails = new List<SupplementaryInsuranceDetail>();
                 var primaryInsuranceId = supplementaryInsurances.FirstOrDefault()?.PatientInsuranceId ?? 0; // استفاده از PatientInsuranceId صحیح
+
+                _log.Information("🏥 MEDICAL: محاسبه سهم بیمار از بیمه پایه - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}, PatientShareFromPrimary: {PatientShare} (این همان مبلغی است که بیمه تکمیلی باید پوشش دهد). User: {UserName} (Id: {UserId})",
+                    serviceAmount, primaryResult.InsuranceCoverage, remainingAmount, _currentUserService.UserName, _currentUserService.UserId);
 
                 // دریافت تعرفه‌های بیمه تکمیلی برای این خدمت (بهینه‌سازی شده)
                 var supplementaryTariffs = await _tariffRepository.GetSupplementaryTariffsAsync(serviceId);
@@ -633,7 +638,7 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("🏥 MEDICAL: تعرفه‌های بیمه تکمیلی یافت شد - ServiceId: {ServiceId}, Count: {Count}. User: {UserName} (Id: {UserId})",
                     serviceId, supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
 
-                // بررسی اینکه آیا بیمه اصلی کل مبلغ را پوشش داده یا نه
+                // بررسی اینکه آیا بیمه اصلی کل مبلغ را پوشش داده یا نه (یعنی سهم بیمار صفر است)
                 if (remainingAmount <= 0)
                 {
                     _log.Information("🏥 MEDICAL: بیمه اصلی کل مبلغ را پوشش داده - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}. User: {UserName} (Id: {UserId})",
@@ -670,20 +675,43 @@ namespace ClinicApp.Services.Insurance
 
                     if (supplementaryTariff != null)
                     {
-                        // محاسبه بر اساس تعرفه بیمه تکمیلی
+                        // 🚨 PROFESSIONAL FIX: محاسبه بر اساس تعرفه بیمه تکمیلی
+                        // بیمه تکمیلی باید سهم بیمار از بیمه پایه را پوشش دهد (نه سهم بیمه پایه)
+                        // remainingAmount = سهم بیمار از بیمه پایه
                         var supplementaryCoverage = 0m;
                         
-                        // بیمه تکمیلی همیشه 100% است (طبق استانداردهای پزشکی ایران)
-                        supplementaryCoverage = remainingAmount; // 100% از مبلغ باقی‌مانده
+                        // استفاده از درصد پوشش در تعرفه (اگر تعریف شده باشد)
+                        if (supplementaryTariff.SupplementaryCoveragePercent.HasValue && 
+                            supplementaryTariff.SupplementaryCoveragePercent.Value > 0)
+                        {
+                            var coveragePercent = supplementaryTariff.SupplementaryCoveragePercent.Value / 100m;
+                            // محاسبه: درصد پوشش × سهم بیمار از بیمه پایه
+                            supplementaryCoverage = remainingAmount * coveragePercent;
+                            
+                            _log.Information("🏥 MEDICAL: محاسبه بیمه تکمیلی بر اساس درصد تعرفه - PatientShareFromPrimary: {PatientShare} (سهم بیمار از بیمه پایه), CoveragePercent: {CoveragePercent}%, SupplementaryCoverage: {Coverage}. User: {UserName} (Id: {UserId})",
+                                remainingAmount, supplementaryTariff.SupplementaryCoveragePercent.Value, supplementaryCoverage, _currentUserService.UserName, _currentUserService.UserId);
+                        }
+                        else
+                        {
+                            // Fallback: بیمه تکمیلی 100% سهم بیمار را پوشش می‌دهد (طبق استانداردهای پزشکی ایران)
+                            supplementaryCoverage = remainingAmount; // 100% از سهم بیمار از بیمه پایه
+                            
+                            _log.Information("🏥 MEDICAL: محاسبه بیمه تکمیلی بدون درصد تعرفه (100% پیش‌فرض) - PatientShareFromPrimary: {PatientShare} (سهم بیمار از بیمه پایه), SupplementaryCoverage: {Coverage} (100% پوشش). User: {UserName} (Id: {UserId})",
+                                remainingAmount, supplementaryCoverage, _currentUserService.UserName, _currentUserService.UserId);
+                        }
                         
                         // اعمال سقف پرداخت اگر تعریف شده باشد
                         if (supplementaryTariff.SupplementaryMaxPayment.HasValue && 
                             supplementaryCoverage > supplementaryTariff.SupplementaryMaxPayment.Value)
                         {
+                            _log.Information("🏥 MEDICAL: اعمال سقف پرداخت بیمه تکمیلی - Coverage: {Coverage}, MaxPayment: {MaxPayment}. User: {UserName} (Id: {UserId})",
+                                supplementaryCoverage, supplementaryTariff.SupplementaryMaxPayment.Value, _currentUserService.UserName, _currentUserService.UserId);
+                            
                             supplementaryCoverage = supplementaryTariff.SupplementaryMaxPayment.Value;
                         }
 
                         totalSupplementaryCoverage += supplementaryCoverage;
+                        // به‌روزرسانی سهم باقی‌مانده بیمار (بعد از پوشش بیمه تکمیلی)
                         remainingAmount -= supplementaryCoverage;
 
                         supplementaryDetails.Add(new SupplementaryInsuranceDetail
@@ -693,7 +721,7 @@ namespace ClinicApp.Services.Insurance
                             Priority = supplementaryInsurance.Priority
                         });
 
-                        _log.Information("🏥 MEDICAL: بیمه تکمیلی محاسبه شد - InsuranceId: {InsuranceId}, Priority: {Priority}, Coverage: {Coverage}, RemainingAmount: {RemainingAmount}, TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                        _log.Information("🏥 MEDICAL: بیمه تکمیلی محاسبه شد - InsuranceId: {InsuranceId}, Priority: {Priority}, SupplementaryCoverage: {Coverage}, RemainingPatientShare: {RemainingAmount} (سهم باقی‌مانده بیمار), TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                             supplementaryInsurance.PatientInsuranceId, supplementaryInsurance.Priority, supplementaryCoverage, remainingAmount, supplementaryTariff.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
                     }
                     else
@@ -721,14 +749,14 @@ namespace ClinicApp.Services.Insurance
                     SupplementaryInsuranceId = supplementaryInsurances.FirstOrDefault()?.PatientInsuranceId,
                     SupplementaryCoverage = totalSupplementaryCoverage,
                     SupplementaryCoveragePercent = supplementaryCoveragePercent,
-                    FinalPatientShare = remainingAmount,
+                    FinalPatientShare = remainingAmount, // سهم نهایی بیمار (بعد از پوشش بیمه تکمیلی)
                     TotalInsuranceCoverage = primaryResult.InsuranceCoverage + totalSupplementaryCoverage,
                     CalculationDate = calculationDate,
                     HasSupplementaryInsurance = true,
                     Notes = $"بیمه اصلی: {primaryResult.CoveragePercent:F1}%, بیمه تکمیلی: {supplementaryCoveragePercent:F1}% (تعداد: {supplementaryDetails.Count})"
                 };
 
-                _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی پیشرفته تکمیل شد - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}, TotalSupplementaryCoverage: {TotalSupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}, TotalCoverage: {TotalCoverage}. User: {UserName} (Id: {UserId})",
+                _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی پیشرفته تکمیل شد - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage} (پوشش بیمه پایه), TotalSupplementaryCoverage: {TotalSupplementaryCoverage} (پوشش بیمه تکمیلی از سهم بیمار), FinalPatientShare: {FinalPatientShare} (سهم نهایی بیمار), TotalCoverage: {TotalCoverage}. User: {UserName} (Id: {UserId})",
                     serviceAmount, primaryResult.InsuranceCoverage, totalSupplementaryCoverage, 
                     finalResult.FinalPatientShare, finalResult.TotalInsuranceCoverage, _currentUserService.UserName, _currentUserService.UserId);
 

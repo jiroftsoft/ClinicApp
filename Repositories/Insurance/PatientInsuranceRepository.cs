@@ -141,8 +141,9 @@ namespace ClinicApp.Repositories.Insurance
             {
                 _logger.Information("🔍 جستجوی بیمه‌های بیمار {PatientId} در دیتابیس", patientId);
                 
+                // 🚨 PROFESSIONAL FIX: فقط بیمه‌های فعال و حذف نشده را برگردان
                 var result = await _context.PatientInsurances
-                    .Where(pi => pi.PatientId == patientId)
+                    .Where(pi => pi.PatientId == patientId && pi.IsActive && !pi.IsDeleted)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
                     .OrderBy(pi => pi.IsPrimary ? 0 : 1)
                     .ThenBy(pi => pi.StartDate)

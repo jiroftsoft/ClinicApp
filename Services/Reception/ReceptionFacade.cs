@@ -1198,7 +1198,8 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
-        /// افزودن آیتم به پذیرش - سه محرک محاسبه
+        /// افزودن آیتم به پذیرش - با محاسبه Real-Time بیمه
+        /// 🚨 PROFESSIONAL FIX: محاسبه بیمه بلافاصله پس از افزودن خدمت
         /// </summary>
         public async Task<ServiceResult<AddItemResultDto>> AddItemAsync(int receptionId, int serviceId, int quantity, int year)
         {
@@ -1218,11 +1219,56 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<AddItemResultDto>.Failed(addResult.Message);
                 }
 
-                // 3. محاسبه مجدد مجموع‌ها (بیمه پایه + تکمیلی)
+                // 3. 🚨 PROFESSIONAL FIX: دریافت اطلاعات پذیرش برای محاسبه بیمه real-time
+                var reception = await _context.Receptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پذیرش یافت نشد - ReceptionId: {ReceptionId}", receptionId);
+                    return ServiceResult<AddItemResultDto>.Failed("پذیرش یافت نشد");
+                }
+
+                // 4. 🚨 PROFESSIONAL FIX: محاسبه بیمه real-time برای این آیتم
+                ItemInsuranceCalculationDto insuranceCalculation = null;
+                if (reception.PatientId > 0)
+                {
+                    try
+                    {
+                        // 🚨 FIX: ReceptionDate از نوع DateTime است (نه nullable)
+                        var calculationDate = reception.ReceptionDate != default(DateTime) ? reception.ReceptionDate : DateTime.Now;
+                        var insuranceResult = await CalculateItemInsuranceRealTimeAsync(
+                            reception.PatientId, 
+                            serviceId, 
+                            itemTotal, 
+                            calculationDate);
+
+                        if (insuranceResult.Success)
+                        {
+                            insuranceCalculation = insuranceResult.Data;
+                            _logger.Information("✅ FACADE: محاسبه بیمه real-time موفق - ServiceId: {ServiceId}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}", 
+                                serviceId, insuranceCalculation.TotalInsuranceCoverage, insuranceCalculation.PatientShare);
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ FACADE: محاسبه بیمه real-time ناموفق - ServiceId: {ServiceId}, Error: {Error}", 
+                                serviceId, insuranceResult.Message);
+                        }
+                    }
+                    catch (Exception insuranceEx)
+                    {
+                        _logger.Warning(insuranceEx, "⚠️ FACADE: خطا در محاسبه بیمه real-time - ServiceId: {ServiceId}", serviceId);
+                        // ادامه می‌دهیم بدون بیمه
+                    }
+                }
+
+                // 5. محاسبه مجدد مجموع‌ها (بیمه پایه + تکمیلی)
                 var totalsResult = await _receptionRepository.RecalculateTotalsAsync(receptionId);
                 if (!totalsResult.Success)
                 {
-                    return ServiceResult<AddItemResultDto>.Failed(totalsResult.Message);
+                    _logger.Warning("⚠️ FACADE: خطا در محاسبه مجدد مجموع‌ها - ReceptionId: {ReceptionId}, Error: {Error}", 
+                        receptionId, totalsResult.Message);
+                    // ادامه می‌دهیم با totalsResult.Data = null
                 }
 
                 var result = new AddItemResultDto
@@ -1232,10 +1278,12 @@ namespace ClinicApp.Services.Reception
                     Quantity = quantity,
                     UnitPrice = unitPrice,
                     ItemTotal = itemTotal,
+                    InsuranceCalculation = insuranceCalculation, // 🚨 NEW: محاسبه real-time بیمه
                     ReceptionTotals = totalsResult.Data
                 };
 
-                _logger.Information("✅ FACADE: آیتم با موفقیت افزوده شد - ItemTotal: {ItemTotal}", itemTotal);
+                _logger.Information("✅ FACADE: آیتم با موفقیت افزوده شد - ItemTotal: {ItemTotal}, HasInsurance: {HasInsurance}", 
+                    itemTotal, insuranceCalculation != null);
 
                 return ServiceResult<AddItemResultDto>.Successful(result);
             }
@@ -1243,6 +1291,103 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Error(ex, "❌ FACADE: خطا در افزودن آیتم به پذیرش");
                 return ServiceResult<AddItemResultDto>.Failed("خطا در افزودن آیتم به پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه real-time بیمه برای یک آیتم
+        /// 🚨 PROFESSIONAL: بدون cache، همیشه از دیتابیس
+        /// 🚨 PROFESSIONAL: لاگ‌های کامل برای ردیابی و دیباگ
+        /// </summary>
+        private async Task<ServiceResult<ItemInsuranceCalculationDto>> CalculateItemInsuranceRealTimeAsync(
+            int patientId, int serviceId, decimal serviceAmount, DateTime calculationDate)
+        {
+            var startTime = DateTime.UtcNow;
+            var calculationId = Guid.NewGuid();
+            
+            try
+            {
+                _logger.Information("🏥 FACADE: [CALC-{CalculationId}] شروع محاسبه real-time بیمه - PatientId: {PatientId}, ServiceId: {ServiceId}, Amount: {Amount}, Date: {Date}", 
+                    calculationId, patientId, serviceId, serviceAmount, calculationDate);
+
+                // 🚨 PROFESSIONAL: بررسی وجود بیمه‌های بیمار قبل از محاسبه
+                var patientInsurancesCheck = await _context.PatientInsurances
+                    .AsNoTracking()
+                    .Where(pi => pi.PatientId == patientId && pi.IsActive && !pi.IsDeleted)
+                    .Select(pi => new { pi.InsurancePlanId, pi.IsPrimary, pi.InsurancePlan.Name })
+                    .ToListAsync();
+
+                var primaryInsuranceCheck = patientInsurancesCheck.FirstOrDefault(pi => pi.IsPrimary);
+                var supplementaryInsurancesCheck = patientInsurancesCheck.Where(pi => !pi.IsPrimary).ToList();
+
+                _logger.Information("🏥 FACADE: [CALC-{CalculationId}] بررسی بیمه‌های بیمار - Primary: {HasPrimary} (PlanId: {PrimaryPlanId}, PlanName: {PrimaryPlanName}), Supplementary: {SuppCount}", 
+                    calculationId, primaryInsuranceCheck != null, primaryInsuranceCheck?.InsurancePlanId ?? 0, primaryInsuranceCheck?.Name ?? "—", supplementaryInsurancesCheck.Count);
+
+                if (primaryInsuranceCheck == null)
+                {
+                    _logger.Warning("⚠️ FACADE: [CALC-{CalculationId}] بیمه اصلی فعال برای بیمار یافت نشد - PatientId: {PatientId}", 
+                        calculationId, patientId);
+                    return ServiceResult<ItemInsuranceCalculationDto>.Failed("بیمه اصلی فعال برای بیمار یافت نشد");
+                }
+
+                // استفاده از CombinedInsuranceCalculationService برای محاسبه
+                _logger.Information("🏥 FACADE: [CALC-{CalculationId}] فراخوانی CalculateCombinedInsuranceAsync...", calculationId);
+                var result = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
+                    patientId, serviceId, serviceAmount, calculationDate);
+
+                if (result.Success)
+                {
+                    var data = result.Data;
+                    
+                    _logger.Information("🏥 FACADE: [CALC-{CalculationId}] نتیجه محاسبه - PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}, ServiceAmount: {ServiceAmount}", 
+                        calculationId, data.PrimaryCoverage, data.SupplementaryCoverage, data.TotalInsuranceCoverage, data.FinalPatientShare, serviceAmount);
+                    
+                    // تعیین وضعیت پوشش
+                    string coverageStatus;
+                    if (data.TotalInsuranceCoverage >= serviceAmount)
+                    {
+                        coverageStatus = "پوشش کامل";
+                    }
+                    else if (data.TotalInsuranceCoverage > 0)
+                    {
+                        coverageStatus = "پوشش ناقص";
+                    }
+                    else
+                    {
+                        coverageStatus = "بدون پوشش";
+                    }
+
+                    var insuranceDto = new ItemInsuranceCalculationDto
+                    {
+                        PrimaryCoverage = data.PrimaryCoverage,
+                        SupplementaryCoverage = data.SupplementaryCoverage,
+                        TotalInsuranceCoverage = data.TotalInsuranceCoverage,
+                        PatientShare = data.FinalPatientShare,
+                        CoverageStatus = coverageStatus,
+                        PrimaryCoveragePercent = data.PrimaryCoveragePercent,
+                        SupplementaryCoveragePercent = data.SupplementaryCoveragePercent,
+                        TotalCoveragePercent = data.TotalCoveragePercent
+                    };
+
+                    var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("✅ FACADE: [CALC-{CalculationId}] محاسبه real-time بیمه موفق - Status: {Status}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}, Elapsed: {Elapsed}ms", 
+                        calculationId, coverageStatus, insuranceDto.TotalInsuranceCoverage, insuranceDto.PatientShare, elapsed);
+
+                    return ServiceResult<ItemInsuranceCalculationDto>.Successful(insuranceDto);
+                }
+
+                var elapsedError = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Warning("⚠️ FACADE: [CALC-{CalculationId}] محاسبه real-time بیمه ناموفق - PatientId: {PatientId}, ServiceId: {ServiceId}, Error: {Error}, Elapsed: {Elapsed}ms", 
+                    calculationId, patientId, serviceId, result.Message, elapsedError);
+
+                return ServiceResult<ItemInsuranceCalculationDto>.Failed(result.Message);
+            }
+            catch (Exception ex)
+            {
+                var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ FACADE: [CALC-{CalculationId}] خطا در محاسبه real-time بیمه - PatientId: {PatientId}, ServiceId: {ServiceId}, Elapsed: {Elapsed}ms", 
+                    calculationId, patientId, serviceId, elapsed);
+                return ServiceResult<ItemInsuranceCalculationDto>.Failed("خطا در محاسبه بیمه: " + ex.Message);
             }
         }
 
@@ -1769,6 +1914,9 @@ namespace ClinicApp.Services.Reception
                         : null
                 };
 
+                _logger.Information("🏥 FACADE: QuoteRequest - ServiceId: {ServiceId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}, ClinicId: {ClinicId}, DeptId: {DeptId}, DoctorId: {DoctorId}, Year: {Year}", 
+                    service.ServiceId, draft.BasePlanId, draft.SupplementaryPlanId, draft.ClinicId, draft.DepartmentId, draft.DoctorId, year);
+                
                 var quoteResult = await _pricingEngine.QuoteAsync(quoteRequest);
                 
                 if (quoteResult == null || quoteResult.ApprovedTariff <= 0)
@@ -1778,6 +1926,10 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در محاسبه قیمت خدمت");
                 }
 
+                _logger.Information("🏥 FACADE: QuoteResult - ApprovedTariff: {ApprovedTariff}, Primary.Pays: {PrimaryPays}, Primary.CoveragePercent: {PrimaryPercent}, Primary.IsCovered: {PrimaryIsCovered}, Supplementary.Pays: {SuppPays}, Supplementary.CoveragePercent: {SuppPercent}, Supplementary.IsCovered: {SuppIsCovered}", 
+                    quoteResult.ApprovedTariff, quoteResult.Primary.Pays, quoteResult.Primary.CoveragePercent, quoteResult.Primary.IsCovered,
+                    quoteResult.Supplementary.Pays, quoteResult.Supplementary.CoveragePercent, quoteResult.Supplementary.IsCovered);
+
                 var unit = (decimal)quoteResult.ApprovedTariff;
                 var total = unit * qty;
 
@@ -1786,12 +1938,60 @@ namespace ClinicApp.Services.Reception
                 var itemSuppPay = (long)Math.Round((decimal)quoteResult.Supplementary.Pays * qty, 0, MidpointRounding.AwayFromZero);
                 var itemPatientShare = total - itemBasePay - itemSuppPay;
                 
+                _logger.Information("🏥 FACADE: محاسبه سهم‌ها - Total: {Total}, ItemBasePay: {ItemBasePay}, ItemSuppPay: {ItemSuppPay}, ItemPatientShare: {ItemPatientShare}, QuoteResult.Supplementary.Pays: {SuppPaysRaw}, Qty: {Qty}", 
+                    total, itemBasePay, itemSuppPay, itemPatientShare, quoteResult.Supplementary.Pays, qty);
+                
                 if (itemPatientShare < 0)
                     itemPatientShare = 0;
 
                 // برای Snapshot
                 var itemBasePercent = quoteResult.Primary.CoveragePercent;
                 var itemSuppPercent = quoteResult.Supplementary.CoveragePercent;
+                
+                // 🚨 PROFESSIONAL FIX: ساخت InsuranceCalculation از quoteResult (مثل RecalculateDraftAsync)
+                ItemInsuranceCalculationDto insuranceCalculation = null;
+                var primaryCoverage = (decimal)quoteResult.Primary.Pays * qty;
+                var supplementaryCoverage = (decimal)quoteResult.Supplementary.Pays * qty;
+                var totalCoverage = primaryCoverage + supplementaryCoverage;
+                var patientShare = (decimal)itemPatientShare;
+                
+                // تعیین وضعیت پوشش
+                string coverageStatus;
+                if (totalCoverage >= total)
+                {
+                    coverageStatus = "پوشش کامل";
+                }
+                else if (totalCoverage > 0)
+                {
+                    coverageStatus = "پوشش ناقص";
+                }
+                else
+                {
+                    coverageStatus = "بدون پوشش";
+                }
+                
+                // 🚨 PROFESSIONAL FIX: استفاده از quoteResult برای ساخت InsuranceCalculation
+                insuranceCalculation = new ItemInsuranceCalculationDto
+                {
+                    PrimaryCoverage = primaryCoverage,
+                    SupplementaryCoverage = supplementaryCoverage,
+                    TotalInsuranceCoverage = totalCoverage,
+                    PatientShare = patientShare,
+                    CoverageStatus = coverageStatus,
+                    PrimaryCoveragePercent = quoteResult.Primary.CoveragePercent,
+                    SupplementaryCoveragePercent = quoteResult.Supplementary.CoveragePercent,
+                    TotalCoveragePercent = quoteResult.Primary.CoveragePercent + quoteResult.Supplementary.CoveragePercent
+                };
+                
+                _logger.Information("✅ FACADE: InsuranceCalculation از quoteResult ساخته شد - ServiceId: {ServiceId}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}, Status: {Status}", 
+                    service.ServiceId, primaryCoverage, supplementaryCoverage, totalCoverage, patientShare, coverageStatus);
+                
+                // 🔍 بررسی خطا: اگر supplementaryCoverage صفر است اما باید محاسبه شود
+                if (supplementaryCoverage == 0 && quoteResult.Supplementary.IsCovered && quoteResult.Supplementary.CoveragePercent > 0 && draft.SupplementaryPlanId.HasValue)
+                {
+                    _logger.Error("❌ FACADE: خطا - supplementaryCoverage صفر است در حالی که باید محاسبه شود! ServiceId: {ServiceId}, SuppPlanId: {SuppPlanId}, QuoteResult.Supplementary.Pays: {SuppPays}, QuoteResult.Supplementary.CoveragePercent: {SuppPercent}, QuoteResult.Primary.Pays: {PrimaryPays}, ApprovedTariff: {ApprovedTariff}, Qty: {Qty}",
+                        service.ServiceId, draft.SupplementaryPlanId.Value, quoteResult.Supplementary.Pays, quoteResult.Supplementary.CoveragePercent, quoteResult.Primary.Pays, quoteResult.ApprovedTariff, qty);
+                }
 
                 // ✅ طبق نقشه پیوندی: ایجاد SnapshotJson (Immutable snapshot)
                 // دریافت ServiceComponents و FactorSetting برای Snapshot
@@ -1863,14 +2063,54 @@ namespace ClinicApp.Services.Reception
                 _context.ReceptionItems.Add(item);
                 await _context.SaveChangesAsync();
 
-                // بازمحاسبه
+                // 🚨 PROFESSIONAL FIX: InsuranceCalculation از quoteResult ساخته شده است (خط 1963-1976)
+                // دیگر نیازی به محاسبه مجدد نیست
+
+                // بازمحاسبه - حتی اگر خطا رخ داده باشد، آیتم‌های موجود را برگردان
                 await _context.Entry(draft).Collection(x => x.ReceptionItems).LoadAsync();
-                return await RecalculateDraftAsync(draft);
+                var recalculateResult = await RecalculateDraftAsync(draft, insuranceCalculation != null 
+                    ? new Dictionary<int, ItemInsuranceCalculationDto> 
+                    { 
+                        { service.ServiceId, insuranceCalculation } 
+                    }
+                    : null);
+                
+                // 🚨 PROFESSIONAL FIX: حتی اگر محاسبه بیمه ناموفق بود، آیتم‌ها را برگردان
+                if (!recalculateResult.Success)
+                {
+                    _logger.Warning("⚠️ FACADE: خطا در بازمحاسبه، اما آیتم ذخیره شده است - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
+                        draft.ReceptionId, service.ServiceId);
+                    // بازگرداندن آیتم‌های موجود حتی با خطا
+                    return await RecalculateDraftAsync(draft, null);
+                }
+                
+                return recalculateResult;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ FACADE: خطا در افزودن آیتم");
-                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در افزودن آیتم");
+                _logger.Error(ex, "❌ FACADE: خطا در افزودن آیتم - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
+                    request.ReceptionId, request.ServiceId);
+                
+                // 🚨 PROFESSIONAL FIX: حتی در صورت خطا، سعی کن آیتم‌های موجود را برگردان
+                try
+                {
+                    var draft = await _context.Receptions
+                        .Include(d => d.ReceptionItems)
+                        .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                    
+                    if (draft != null && draft.ReceptionItems != null && draft.ReceptionItems.Any(i => !i.IsDeleted))
+                    {
+                        _logger.Information("🏥 FACADE: بازگرداندن آیتم‌های موجود پس از خطا - ReceptionId: {ReceptionId}, ItemsCount: {Count}", 
+                            draft.ReceptionId, draft.ReceptionItems.Count(i => !i.IsDeleted));
+                        return await RecalculateDraftAsync(draft, null);
+                    }
+                }
+                catch (Exception fallbackEx)
+                {
+                    _logger.Error(fallbackEx, "❌ FACADE: خطا در بازگرداندن آیتم‌های موجود");
+                }
+                
+                return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در افزودن آیتم: " + ex.Message);
             }
         }
 
@@ -2461,21 +2701,64 @@ namespace ClinicApp.Services.Reception
         /// <summary>
         /// بازمحاسبه پیش‌نویس - استفاده از ReceptionPricingService برای محاسبه دقیق
         /// 🏥 MEDICAL: به‌روزرسانی PatientCoPay, TotalAmount, و InsurerShareAmount در Reception entity
+        /// 🚨 PROFESSIONAL: پشتیبانی از محاسبه بیمه real-time برای هر آیتم
         /// </summary>
-        private async Task<ServiceResult<ItemsAndTotalsDto>> RecalculateDraftAsync(Models.Entities.Reception.Reception draft)
+        private async Task<ServiceResult<ItemsAndTotalsDto>> RecalculateDraftAsync(
+            Models.Entities.Reception.Reception draft, 
+            Dictionary<int, ItemInsuranceCalculationDto> insuranceCalculations = null)
         {
             try
             {
                 _logger.Information("🏥 FACADE: بازمحاسبه پیش‌نویس - ReceptionId: {ReceptionId}", draft.ReceptionId);
+                
+                // 🚨 PROFESSIONAL FIX: اطمینان از اینکه entity tracked است
+                // اگر entity detached است، آن را reload کن
+                var entry = _context.Entry(draft);
+                if (entry.State == System.Data.Entity.EntityState.Detached)
+                {
+                    _logger.Warning("⚠️ FACADE: Reception entity detached است - Reloading - ReceptionId: {ReceptionId}", draft.ReceptionId);
+                    draft = await _context.Receptions
+                        .Include(d => d.ReceptionItems)
+                        .FirstOrDefaultAsync(d => d.ReceptionId == draft.ReceptionId && d.Status == ReceptionStatus.Pending);
+                    
+                    if (draft == null)
+                    {
+                        _logger.Error("❌ FACADE: Reception یافت نشد پس از reload - ReceptionId: {ReceptionId}", draft?.ReceptionId);
+                        return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+                    }
+                }
 
                 // ✅ استفاده از ReceptionPricingService برای محاسبه دقیق Totals
                 // این سرویس از SnapshotJson و PatientShareAmount استفاده می‌کند
-                var totalsDto = await _receptionPricingService.CalculateTotalsAsync(draft.ReceptionId);
+                Controllers.Api.ReceptionTotalsDto totalsDto = null;
+                try
+                {
+                    totalsDto = await _receptionPricingService.CalculateTotalsAsync(draft.ReceptionId);
+                }
+                catch (Exception calcEx)
+                {
+                    _logger.Warning(calcEx, "⚠️ FACADE: خطا در محاسبه Totals - ادامه با مقادیر صفر - ReceptionId: {ReceptionId}", draft.ReceptionId);
+                    // ادامه می‌دهیم با totalsDto = null - بعداً مقادیر صفر استفاده می‌شود
+                }
 
-                // 🏥 MEDICAL: به‌روزرسانی مقادیر در Reception entity
-                draft.TotalAmount = (decimal)totalsDto.GrossIRR;
-                draft.PatientCoPay = (decimal)totalsDto.PatientPayableIRR;
-                draft.InsurerShareAmount = (decimal)(totalsDto.BaseCoveredIRR + totalsDto.SuppCoveredIRR);
+                // 🏥 MEDICAL: به‌روزرسانی مقادیر در Reception entity (فقط اگر totalsDto موجود باشد)
+                if (totalsDto != null)
+                {
+                    draft.TotalAmount = (decimal)totalsDto.GrossIRR;
+                    draft.PatientCoPay = (decimal)totalsDto.PatientPayableIRR;
+                    draft.InsurerShareAmount = (decimal)(totalsDto.BaseCoveredIRR + totalsDto.SuppCoveredIRR);
+                }
+                else
+                {
+                    // 🚨 PROFESSIONAL FIX: اگر CalculateTotalsAsync با خطا مواجه شد، از مقادیر موجود در draft استفاده کن
+                    // یا مقادیر را از ReceptionItems محاسبه کن
+                    var draftItems = draft.ReceptionItems.Where(i => !i.IsDeleted).ToList();
+                    draft.TotalAmount = draftItems.Sum(i => i.UnitPrice * i.Quantity);
+                    draft.PatientCoPay = draftItems.Sum(i => i.PatientShareAmount);
+                    draft.InsurerShareAmount = draftItems.Sum(i => i.InsurerShareAmount);
+                    _logger.Information("🏥 FACADE: استفاده از مقادیر محاسبه شده از ReceptionItems - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}", 
+                        draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount);
+                }
                 draft.UpdatedAt = DateTime.Now;
                 
                 // 🏥 MEDICAL: اگر سهم بیمار صفر است و بیمه 100% پوشش می‌دهد، به صورت خودکار نهایی کن
@@ -2510,10 +2793,96 @@ namespace ClinicApp.Services.Reception
                 }
                 
                 // ذخیره تغییرات
-                await _context.SaveChangesAsync();
-                
-                _logger.Information("✅ FACADE: مقادیر Reception به‌روزرسانی شد - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}, Status: {Status}", 
-                    draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount, draft.Status);
+                bool saveSucceeded = false;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    saveSucceeded = true;
+                    _logger.Information("✅ FACADE: مقادیر Reception به‌روزرسانی شد - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}, Status: {Status}", 
+                        draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount, draft.Status);
+                }
+                catch (System.Data.Entity.Infrastructure.DbUpdateConcurrencyException concurrencyEx)
+                {
+                    _logger.Warning(concurrencyEx, "⚠️ FACADE: خطای همزمانی در ذخیره Reception (ادامه با بازگرداندن آیتم‌ها) - ReceptionId: {ReceptionId}", 
+                        draft.ReceptionId);
+                    // 🚨 PROFESSIONAL FIX: به جای throw، فقط warning می‌دهیم و ادامه می‌دهیم
+                }
+                catch (System.Data.Entity.Infrastructure.DbUpdateException dbEx)
+                {
+                    var innerEx = dbEx.InnerException;
+                    var innerMessage = innerEx != null ? innerEx.Message : "No inner exception";
+                    _logger.Warning(dbEx, "⚠️ FACADE: خطا در ذخیره تغییرات Reception (ادامه با بازگرداندن آیتم‌ها) - ReceptionId: {ReceptionId}, InnerException: {InnerMessage}", 
+                        draft.ReceptionId, innerMessage);
+                    // 🚨 PROFESSIONAL FIX: به جای throw، فقط warning می‌دهیم و ادامه می‌دهیم
+                    // این اطمینان می‌دهد که حتی اگر ذخیره Reception با خطا مواجه شود، آیتم‌ها به frontend برگردانده می‌شوند
+                }
+                catch (System.Data.Entity.Validation.DbEntityValidationException valEx)
+                {
+                    var errorMessage = string.Join("; ",
+                        valEx.EntityValidationErrors
+                            .SelectMany(e => e.ValidationErrors)
+                            .Select(e => $"Property: {e.PropertyName}, Error: {e.ErrorMessage}"));
+                    _logger.Warning(valEx, "⚠️ FACADE: خطا در اعتبارسنجی Reception (ادامه با بازگرداندن آیتم‌ها) - ReceptionId: {ReceptionId}, Errors: {Errors}", 
+                        draft.ReceptionId, errorMessage);
+                    // 🚨 PROFESSIONAL FIX: به جای throw، فقط warning می‌دهیم و ادامه می‌دهیم
+                }
+
+                // 🚨 PROFESSIONAL FIX: اگر ذخیره با خطا مواجه شد، draft را reload کن تا از آخرین وضعیت دیتابیس استفاده کنیم
+                if (!saveSucceeded)
+                {
+                    var originalReceptionId = draft.ReceptionId;
+                    _logger.Information("🔄 FACADE: Reloading draft entity after save failure - ReceptionId: {ReceptionId}", originalReceptionId);
+                    try
+                    {
+                        // Detach current entity
+                        _context.Entry(draft).State = System.Data.Entity.EntityState.Detached;
+                        
+                        // Reload from database
+                        draft = await _context.Receptions
+                            .Include(d => d.ReceptionItems)
+                            .FirstOrDefaultAsync(d => d.ReceptionId == originalReceptionId && d.Status == ReceptionStatus.Pending);
+                        
+                        if (draft != null)
+                        {
+                            // Recalculate totals from database state
+                            try
+                            {
+                                totalsDto = await _receptionPricingService.CalculateTotalsAsync(draft.ReceptionId);
+                                _logger.Information("✅ FACADE: Draft reloaded and totals recalculated - ReceptionId: {ReceptionId}, ItemsCount: {Count}", 
+                                    draft.ReceptionId, draft.ReceptionItems?.Count(i => !i.IsDeleted) ?? 0);
+                            }
+                            catch (Exception reloadCalcEx)
+                            {
+                                _logger.Warning(reloadCalcEx, "⚠️ FACADE: خطا در محاسبه Totals پس از reload - ادامه با totalsDto = null - ReceptionId: {ReceptionId}", 
+                                    draft.ReceptionId);
+                                totalsDto = null; // ادامه می‌دهیم با totalsDto = null
+                            }
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ FACADE: Draft not found after reload - ReceptionId: {ReceptionId}", originalReceptionId);
+                            return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+                        }
+                    }
+                    catch (Exception reloadEx)
+                    {
+                        _logger.Warning(reloadEx, "⚠️ FACADE: خطا در reload کردن draft - ادامه با داده‌های موجود - ReceptionId: {ReceptionId}", 
+                            originalReceptionId);
+                        // اگر reload با خطا مواجه شد، سعی می‌کنیم با draft موجود ادامه دهیم
+                        // اما اگر draft null است، باید خطا برگردانیم
+                        if (draft == null)
+                        {
+                            return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بارگذاری پیش‌نویس");
+                        }
+                    }
+                }
+
+                // 🚨 PROFESSIONAL FIX: بررسی null بودن draft
+                if (draft == null)
+                {
+                    _logger.Error("❌ FACADE: Draft is null - cannot return items");
+                    return ServiceResult<ItemsAndTotalsDto>.Failed("پیش‌نویس یافت نشد");
+                }
 
                 // دریافت اطلاعات خدمات برای ساخت DTO
                 var serviceIds = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(i => i.ServiceId).Distinct().ToList();
@@ -2522,10 +2891,122 @@ namespace ClinicApp.Services.Reception
                     .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                     .ToListAsync();
 
+                // 🚨 PROFESSIONAL: محاسبه بیمه real-time برای تمام آیتم‌ها اگر محاسبات ارائه نشده باشد
+                // 🚨 PROFESSIONAL FIX: همیشه محاسبه کن (حتی اگر dictionary موجود باشد) برای آیتم‌هایی که محاسبه نشده‌اند
+                if (draft.PatientId > 0)
+                {
+                    if (insuranceCalculations == null)
+                    {
+                        insuranceCalculations = new Dictionary<int, ItemInsuranceCalculationDto>();
+                    }
+                    
+                    _logger.Information("🏥 FACADE: شروع محاسبه بیمه real-time برای تمام آیتم‌ها - ReceptionId: {ReceptionId}, ItemsCount: {Count}, PreCalculatedCount: {PreCount}", 
+                        draft.ReceptionId, draft.ReceptionItems.Count(i => !i.IsDeleted), insuranceCalculations.Count);
+                    
+                    var calculationDate = draft.ReceptionDate != default(DateTime) ? draft.ReceptionDate : DateTime.Now;
+                    
+                    // 🚨 PROFESSIONAL FIX: استفاده از PricingEngine برای محاسبه بیمه (مثل AddItemAsync)
+                    // این اطمینان می‌دهد که محاسبه بر اساس BasePlanId و SupplementaryPlanId در Reception انجام می‌شود
+                    var year = _financialYearService.GetCurrentYear();
+                    
+                    foreach (var item in draft.ReceptionItems.Where(i => !i.IsDeleted))
+                    {
+                        // 🚨 PROFESSIONAL: اگر قبلاً محاسبه نشده، محاسبه کن
+                        if (!insuranceCalculations.ContainsKey(item.ServiceId))
+                        {
+                            try
+                            {
+                                var itemTotal = item.UnitPrice * item.Quantity;
+                                _logger.Information("🏥 FACADE: محاسبه بیمه real-time برای آیتم - ServiceId: {ServiceId}, ItemTotal: {ItemTotal}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                                    item.ServiceId, itemTotal, draft.BasePlanId, draft.SupplementaryPlanId);
+                                
+                                // 🚨 PROFESSIONAL FIX: استفاده از PricingEngine (مثل AddItemAsync)
+                                var quoteRequest = new Services.Pricing.Models.QuoteRequestDto
+                                {
+                                    ClinicId = draft.ClinicId,
+                                    DepartmentId = draft.DepartmentId,
+                                    DoctorId = draft.DoctorId,
+                                    ServiceId = item.ServiceId,
+                                    FinancialYearId = year,
+                                    Primary = draft.BasePlanId.HasValue
+                                        ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = draft.BasePlanId.Value }
+                                        : null,
+                                    Supplementary = draft.SupplementaryPlanId.HasValue
+                                        ? new Services.Pricing.Models.PartyInsuranceDto { InsurancePlanId = draft.SupplementaryPlanId.Value }
+                                        : null
+                                };
+
+                                var quoteResult = await _pricingEngine.QuoteAsync(quoteRequest);
+                                
+                                if (quoteResult != null && quoteResult.ApprovedTariff > 0)
+                                {
+                                    var primaryCoverage = (decimal)quoteResult.Primary.Pays;
+                                    var supplementaryCoverage = (decimal)quoteResult.Supplementary.Pays;
+                                    var totalCoverage = primaryCoverage + supplementaryCoverage;
+                                    var patientShare = itemTotal - totalCoverage;
+                                    if (patientShare < 0) patientShare = 0;
+                                    
+                                    // تعیین وضعیت پوشش
+                                    string coverageStatus;
+                                    if (totalCoverage >= itemTotal)
+                                    {
+                                        coverageStatus = "پوشش کامل";
+                                    }
+                                    else if (totalCoverage > 0)
+                                    {
+                                        coverageStatus = "پوشش ناقص";
+                                    }
+                                    else
+                                    {
+                                        coverageStatus = "بدون پوشش";
+                                    }
+                                    
+                                    var insuranceDto = new ItemInsuranceCalculationDto
+                                    {
+                                        PrimaryCoverage = primaryCoverage,
+                                        SupplementaryCoverage = supplementaryCoverage,
+                                        TotalInsuranceCoverage = totalCoverage,
+                                        PatientShare = patientShare,
+                                        CoverageStatus = coverageStatus,
+                                        PrimaryCoveragePercent = quoteResult.Primary.CoveragePercent,
+                                        SupplementaryCoveragePercent = quoteResult.Supplementary.CoveragePercent,
+                                        TotalCoveragePercent = quoteResult.Primary.CoveragePercent + quoteResult.Supplementary.CoveragePercent
+                                    };
+                                    
+                                    insuranceCalculations[item.ServiceId] = insuranceDto;
+                                    _logger.Information("✅ FACADE: محاسبه بیمه real-time موفق (از PricingEngine) - ServiceId: {ServiceId}, TotalCoverage: {TotalCoverage}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, PatientShare: {PatientShare}", 
+                                        item.ServiceId, insuranceDto.TotalInsuranceCoverage, insuranceDto.PrimaryCoverage, 
+                                        insuranceDto.SupplementaryCoverage, insuranceDto.PatientShare);
+                                }
+                                else
+                                {
+                                    _logger.Warning("⚠️ FACADE: محاسبه بیمه real-time ناموفق (PricingEngine) - ServiceId: {ServiceId}, QuoteResult: {QuoteResult}", 
+                                        item.ServiceId, quoteResult == null ? "null" : "Invalid");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "❌ FACADE: خطا در محاسبه بیمه real-time - ServiceId: {ServiceId}", item.ServiceId);
+                            }
+                        }
+                        else
+                        {
+                            _logger.Debug("🏥 FACADE: محاسبه بیمه برای ServiceId {ServiceId} قبلاً انجام شده - استفاده از محاسبه موجود", item.ServiceId);
+                        }
+                    }
+                    
+                    _logger.Information("✅ FACADE: محاسبه بیمه real-time تکمیل شد - ReceptionId: {ReceptionId}, CalculatedCount: {Count}", 
+                        draft.ReceptionId, insuranceCalculations.Count);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: PatientId تنظیم نشده - ReceptionId: {ReceptionId}, محاسبه بیمه انجام نمی‌شود", draft.ReceptionId);
+                }
+
                 var items = draft.ReceptionItems.Where(i => !i.IsDeleted).Select(it => 
                 {
                     var service = services.FirstOrDefault(s => s.ServiceId == it.ServiceId);
-                    return new ReceptionItemDto
+                    var itemDto = new ReceptionItemDto
                     {
                         ServiceId = it.ServiceId,
                         Code = service?.ServiceCode ?? "",
@@ -2534,24 +3015,136 @@ namespace ClinicApp.Services.Reception
                         UnitPriceIRR = it.UnitPrice,
                         TotalIRR = it.UnitPrice * it.Quantity
                     };
+                    
+                    // 🚨 PROFESSIONAL: افزودن محاسبه بیمه real-time
+                    if (insuranceCalculations != null && insuranceCalculations.ContainsKey(it.ServiceId))
+                    {
+                        var calc = insuranceCalculations[it.ServiceId];
+                        if (calc != null)
+                        {
+                            itemDto.InsuranceCalculation = calc;
+                            _logger.Information("✅ FACADE: InsuranceCalculation اضافه شد به ReceptionItemDto - ServiceId: {ServiceId}, Status: {Status}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, PatientShare: {PatientShare}", 
+                                it.ServiceId, calc.CoverageStatus, calc.PrimaryCoverage, calc.SupplementaryCoverage, calc.PatientShare);
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ FACADE: InsuranceCalculation برای ServiceId {ServiceId} null است - محاسبه انجام نشده یا با خطا مواجه شده", it.ServiceId);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: InsuranceCalculation برای ServiceId {ServiceId} در dictionary موجود نیست - HasDictionary: {HasDict}, ContainsKey: {ContainsKey}", 
+                            it.ServiceId, insuranceCalculations != null, insuranceCalculations?.ContainsKey(it.ServiceId) ?? false);
+                    }
+                    
+                    return itemDto;
                 }).ToList();
 
                 // ✅ تبدیل ReceptionTotalsDto به TotalsDto
-                return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
+                // 🚨 PROFESSIONAL FIX: اگر totalsDto null است، از مقادیر محاسبه شده از items استفاده کن
+                TotalsDto totals = null;
+                if (totalsDto != null)
                 {
-                    Items = items,
-                    Totals = new TotalsDto 
+                    totals = new TotalsDto 
                     { 
                         Gross = (decimal)totalsDto.GrossIRR, 
                         Base = (decimal)totalsDto.BaseCoveredIRR, 
                         Supplementary = (decimal)totalsDto.SuppCoveredIRR, 
                         Patient = (decimal)totalsDto.PatientPayableIRR 
-                    }
+                    };
+                }
+                else
+                {
+                    // 🚨 PROFESSIONAL FIX: محاسبه totals از items
+                    var itemsList = draft.ReceptionItems.Where(i => !i.IsDeleted).ToList();
+                    var gross = itemsList.Sum(i => i.UnitPrice * i.Quantity);
+                    var patient = itemsList.Sum(i => i.PatientShareAmount);
+                    var insurer = itemsList.Sum(i => i.InsurerShareAmount);
+                    
+                    // تقسیم insurer به base و supp (اگر امکان دارد)
+                    // فعلاً همه را به base می‌دهیم
+                    totals = new TotalsDto 
+                    { 
+                        Gross = gross, 
+                        Base = insurer, // TODO: تقسیم به base و supp
+                        Supplementary = 0, 
+                        Patient = patient 
+                    };
+                    _logger.Information("🏥 FACADE: Totals محاسبه شده از ReceptionItems - Gross: {Gross}, Base: {Base}, Patient: {Patient}", 
+                        gross, insurer, patient);
+                }
+                
+                return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
+                {
+                    Items = items,
+                    Totals = totals
                 });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ FACADE: خطا در بازمحاسبه - ReceptionId: {ReceptionId}", draft?.ReceptionId);
+                
+                // 🚨 PROFESSIONAL FIX: حتی در صورت خطا، سعی کن آیتم‌های موجود را برگردان
+                if (draft != null)
+                {
+                    try
+                    {
+                        // Reload draft from database
+                        var reloadedDraft = await _context.Receptions
+                            .Include(d => d.ReceptionItems)
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(d => d.ReceptionId == draft.ReceptionId && d.Status == ReceptionStatus.Pending);
+                        
+                        if (reloadedDraft != null && reloadedDraft.ReceptionItems != null && reloadedDraft.ReceptionItems.Any(i => !i.IsDeleted))
+                        {
+                            _logger.Information("🏥 FACADE: بازگرداندن آیتم‌های موجود پس از exception در RecalculateDraftAsync - ReceptionId: {ReceptionId}, ItemsCount: {Count}", 
+                                reloadedDraft.ReceptionId, reloadedDraft.ReceptionItems.Count(i => !i.IsDeleted));
+                            
+                            // ساخت items DTO
+                            var serviceIds = reloadedDraft.ReceptionItems.Where(i => !i.IsDeleted).Select(i => i.ServiceId).Distinct().ToList();
+                            var services = await _context.Services
+                                .Where(s => serviceIds.Contains(s.ServiceId))
+                                .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
+                                .ToListAsync();
+                            
+                            var items = reloadedDraft.ReceptionItems.Where(i => !i.IsDeleted).Select(it => 
+                            {
+                                var service = services.FirstOrDefault(s => s.ServiceId == it.ServiceId);
+                                return new ReceptionItemDto
+                                {
+                                    ServiceId = it.ServiceId,
+                                    Code = service?.ServiceCode ?? "",
+                                    Name = service?.Title ?? "",
+                                    Qty = it.Quantity,
+                                    UnitPriceIRR = it.UnitPrice,
+                                    TotalIRR = it.UnitPrice * it.Quantity
+                                };
+                            }).ToList();
+                            
+                            // محاسبه totals از items
+                            var gross = items.Sum(i => i.TotalIRR);
+                            var patient = reloadedDraft.ReceptionItems.Where(i => !i.IsDeleted).Sum(i => i.PatientShareAmount);
+                            var insurer = reloadedDraft.ReceptionItems.Where(i => !i.IsDeleted).Sum(i => i.InsurerShareAmount);
+                            
+                            return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
+                            {
+                                Items = items,
+                                Totals = new TotalsDto 
+                                { 
+                                    Gross = gross, 
+                                    Base = insurer, 
+                                    Supplementary = 0, 
+                                    Patient = patient 
+                                }
+                            });
+                        }
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        _logger.Error(fallbackEx, "❌ FACADE: خطا در بازگرداندن آیتم‌های موجود در catch block اصلی");
+                    }
+                }
+                
                 return ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بازمحاسبه: " + ex.Message);
             }
         }

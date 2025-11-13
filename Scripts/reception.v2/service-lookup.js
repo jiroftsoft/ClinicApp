@@ -139,6 +139,61 @@
     });
   });
   
+  /**
+   * 🚨 PROFESSIONAL: تابع کمکی برای نمایش محاسبه بیمه real-time
+   * @param {Object} insuranceCalc - اطلاعات محاسبه بیمه از InsuranceCalculation
+   * @returns {Object} - اطلاعات فرمت شده برای نمایش در UI
+   */
+  function formatInsuranceCalculation(insuranceCalc) {
+    if (!insuranceCalc) {
+      return {
+        primaryCoverage: 0,
+        supplementaryCoverage: 0,
+        totalCoverage: 0,
+        patientShare: 0,
+        coverageStatus: 'بدون پوشش',
+        primaryCoverageStr: U.toIRR(0),
+        supplementaryCoverageStr: U.toIRR(0),
+        totalCoverageStr: U.toIRR(0),
+        patientShareStr: U.toIRR(0),
+        statusClass: 'text-danger',
+        statusBadge: '<span class="badge bg-danger">بدون پوشش</span>'
+      };
+    }
+
+    const primary = insuranceCalc.PrimaryCoverage || insuranceCalc.primaryCoverage || 0;
+    const supplementary = insuranceCalc.SupplementaryCoverage || insuranceCalc.supplementaryCoverage || 0;
+    const total = insuranceCalc.TotalInsuranceCoverage || insuranceCalc.totalInsuranceCoverage || 0;
+    const patient = insuranceCalc.PatientShare || insuranceCalc.patientShare || 0;
+    const status = insuranceCalc.CoverageStatus || insuranceCalc.coverageStatus || 'بدون پوشش';
+
+    // تعیین کلاس و badge بر اساس وضعیت
+    let statusClass = 'text-danger';
+    let statusBadge = '<span class="badge bg-danger">بدون پوشش</span>';
+    
+    if (status === 'پوشش کامل') {
+      statusClass = 'text-success';
+      statusBadge = '<span class="badge bg-success">پوشش کامل</span>';
+    } else if (status === 'پوشش ناقص') {
+      statusClass = 'text-warning';
+      statusBadge = '<span class="badge bg-warning">پوشش ناقص</span>';
+    }
+
+    return {
+      primaryCoverage: primary,
+      supplementaryCoverage: supplementary,
+      totalCoverage: total,
+      patientShare: patient,
+      coverageStatus: status,
+      primaryCoverageStr: U.toIRR(primary),
+      supplementaryCoverageStr: U.toIRR(supplementary),
+      totalCoverageStr: U.toIRR(total),
+      patientShareStr: U.toIRR(patient),
+      statusClass: statusClass,
+      statusBadge: statusBadge
+    };
+  }
+
   function proceedWithAddItem() {
     const serviceId = $("#ServiceId").val();
     const quantity = U.parseFaInt($("#Quantity").val());
@@ -151,6 +206,11 @@
       year: (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) || 1404
     };
     
+    // 🚨 PROFESSIONAL: نمایش loading state
+    const $btn = $("#BtnAddItem");
+    const originalText = $btn.text();
+    $btn.prop('disabled', true).text('در حال افزودن...');
+    
     API.post("/item/add", payload)
       .then(function(fullResponse) {
         console.log('🏥 V2: Add item raw response:', fullResponse);
@@ -159,44 +219,155 @@
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Item added response:', response);
         
-        // ✅ پشتیبانی از ساختار جدید: { item, pricing, totals }
+        // ✅ پشتیبانی از ساختار جدید: { item, pricing, totals, insuranceCalculation }
         const itemData = response.item || response.Item || {};
         const pricingData = response.pricing || response.Pricing || null;
         const totalsData = response.totals || response.Totals || null;
         
+        // 🚨 PROFESSIONAL: استخراج اطلاعات محاسبه بیمه real-time
+        // بررسی در سطح response و Data
+        let insuranceCalc = response.InsuranceCalculation || response.insuranceCalculation || null;
+        
+        // اگر در response نیست، از Data بررسی کن
+        if (!insuranceCalc && response.Data) {
+          insuranceCalc = response.Data.InsuranceCalculation || response.Data.insuranceCalculation || null;
+        }
+        
+        // 🚨 PROFESSIONAL: اگر هنوز null است، از اولین item در Items بررسی کن
+        if (!insuranceCalc && response.Items && response.Items.length > 0) {
+          insuranceCalc = response.Items[0].InsuranceCalculation || response.Items[0].insuranceCalculation || null;
+        }
+        
+        // 🚨 PROFESSIONAL: اگر هنوز null است، از items بررسی کن
+        if (!insuranceCalc && response.items && response.items.length > 0) {
+          insuranceCalc = response.items[0].InsuranceCalculation || response.items[0].insuranceCalculation || null;
+        }
+        
+        console.log('🏥 V2: Insurance calculation from response:', insuranceCalc);
+        console.log('🏥 V2: Full response structure:', JSON.stringify(response, null, 2));
+        
         // ✅ اگر totals در پاسخ نیست، از Data.totals یا Data.Totals استفاده کن
         let totals = totalsData;
         if (!totals && response.Data) {
-          totals = response.Data.totals || response.Data.Totals || null;
+          totals = response.Data.totals || response.Data.Totals || 
+                  (response.Data.ReceptionTotals || response.Data.receptionTotals) || null;
         }
         
         toastr.success('خدمت افزوده شد');
         
-        // ✅ Update items grid - استفاده از pricing اگر موجود باشد
+        // ✅ Update items grid - استفاده از pricing و insuranceCalculation
         const $tb = $("#items-grid tbody");
         
-        // اگر pricing موجود است، ردیف جدید را با اطلاعات کامل pricing اضافه کن
-        if (pricingData) {
+        // 🚨 PROFESSIONAL FIX: اولویت با items است (چون InsuranceCalculation در آن است)
+        // بررسی در چند سطح: response.items, response.Items, response.Data.items, response.Data.Items
+        const items = response.items || response.Items || 
+                     (response.Data && (response.Data.items || response.Data.Items)) || [];
+        
+        console.log('🏥 V2: Checking for items in response - items found:', items && items.length > 0, 'items count:', items ? items.length : 0);
+        
+        if (items && items.length > 0) {
+          // 🚨 PROFESSIONAL: استفاده از items برای نمایش (چون InsuranceCalculation در آن است)
+          // پیدا کردن آخرین آیتم (آیتم جدید)
+          const newItem = items[items.length - 1];
+          
+          const serviceId = newItem.serviceId || newItem.ServiceId || $("#ServiceId").val();
+          const code = newItem.code || newItem.Code || '';
+          const name = newItem.name || newItem.Name || '';
+          const qty = newItem.qty || newItem.Qty || 0;
+          const unitPrice = newItem.unitPriceIRR || newItem.UnitPriceIRR || 0;
+          const total = newItem.totalIRR || newItem.TotalIRR || 0;
+          
+          // 🚨 PROFESSIONAL: استخراج اطلاعات محاسبه بیمه از item (اولویت اصلی)
+          const itemInsuranceCalc = newItem.InsuranceCalculation || newItem.insuranceCalculation || insuranceCalc || null;
+          const itemInsuranceInfo = formatInsuranceCalculation(itemInsuranceCalc);
+          
+          console.log('🏥 V2: ===== ADD ITEM RESPONSE ANALYSIS =====');
+          console.log('🏥 V2: Full response:', JSON.stringify(response, null, 2));
+          console.log('🏥 V2: New item:', JSON.stringify(newItem, null, 2));
+          console.log('🏥 V2: Item insurance calculation:', itemInsuranceCalc);
+          console.log('🏥 V2: Formatted insurance info:', itemInsuranceInfo);
+          console.log('🏥 V2: ======================================');
+          
+          // 🚨 PROFESSIONAL: محاسبه سهم‌ها از InsuranceCalculation (اولویت اصلی)
+          const baseCovered = itemInsuranceInfo.totalCoverage > 0 ? itemInsuranceInfo.primaryCoverage : 0;
+          const suppCovered = itemInsuranceInfo.totalCoverage > 0 ? itemInsuranceInfo.supplementaryCoverage : 0;
+          const patientPayable = itemInsuranceInfo.totalCoverage > 0 ? itemInsuranceInfo.patientShare : total;
+          
+          var rowId = 'row-' + serviceId;
+          
+          // 🚨 PROFESSIONAL FIX: بررسی و حذف ردیف‌های تکراری قبل از افزودن
+          const existingRows = $tb.find(`tr[data-service-id="${serviceId}"]`);
+          if (existingRows.length > 0) {
+            console.log('🏥 V2: Removing duplicate rows for ServiceId:', serviceId, 'Count:', existingRows.length);
+            existingRows.remove();
+          }
+          
+          // افزودن ردیف جدید
+          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" class="${itemInsuranceInfo.statusClass}">
+            <td class="cell-code">${code}</td>
+            <td class="cell-name">${name}</td>
+            <td class="cell-qty">${qty}</td>
+            <td class="cell-unit">${U.toIRR(unitPrice)}</td>
+            <td class="cell-gross">${U.toIRR(total)}</td>
+            <td class="cell-base">${U.toIRR(baseCovered)}</td>
+            <td class="cell-supp">${U.toIRR(suppCovered)}</td>
+            <td class="cell-patient">${U.toIRR(patientPayable)}</td>
+            <td class="cell-coverage">${itemInsuranceInfo.statusBadge}</td>
+            <td class="cell-actions"><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
+          </tr>`);
+          
+          // ذخیره اطلاعات بیمه
+          const $row = $('#' + rowId);
+          $row.data('insurance', itemInsuranceCalc);
+          $row.data('item', newItem);
+          
+          console.log('🏥 V2: ✅ Row added - ServiceId:', serviceId, 'CoverageStatus:', itemInsuranceInfo.coverageStatus, 
+            'PrimaryCoverage:', baseCovered, 'SupplementaryCoverage:', suppCovered, 'PatientShare:', patientPayable);
+        } else if (pricingData) {
+          // Fallback: اگر items موجود نیست، از pricing استفاده کن
           const serviceId = itemData.ServiceId || itemData.serviceId || $("#ServiceId").val();
           const serviceCode = itemData.Code || itemData.code || '';
           const serviceName = itemData.Name || itemData.name || '';
           const qty = pricingData.Quantity || pricingData.quantity || itemData.Quantity || itemData.quantity || 1;
           const unitPrice = pricingData.UnitPriceIRR || pricingData.unitPriceIRR || 0;
           const gross = pricingData.GrossIRR || pricingData.grossIRR || 0;
-          const baseCovered = pricingData.BaseCoveredIRR || pricingData.baseCoveredIRR || 0;
-          const suppCovered = pricingData.SuppCoveredIRR || pricingData.suppCoveredIRR || 0;
-          const patientPayable = pricingData.PatientPayableIRR || pricingData.patientPayableIRR || 0;
+          
+          // 🚨 PROFESSIONAL FIX: تعریف insuranceInfo از insuranceCalc (که قبلاً استخراج شده)
+          // اگر insuranceCalc موجود نیست، از pricing استفاده می‌کنیم
+          const insuranceInfo = formatInsuranceCalculation(insuranceCalc);
+          
+          console.log('🏥 V2: Using pricing fallback - ServiceId:', serviceId, 'InsuranceCalc:', insuranceCalc, 'InsuranceInfo:', insuranceInfo);
+          
+          // 🚨 PROFESSIONAL: استفاده از اطلاعات بیمه real-time اگر موجود باشد، در غیر این صورت از pricing
+          const baseCovered = insuranceInfo.totalCoverage > 0 ? insuranceInfo.primaryCoverage : 
+                              (pricingData.BaseCoveredIRR || pricingData.baseCoveredIRR || 0);
+          const suppCovered = insuranceInfo.totalCoverage > 0 ? insuranceInfo.supplementaryCoverage : 
+                             (pricingData.SuppCoveredIRR || pricingData.suppCoveredIRR || 0);
+          const patientPayable = insuranceInfo.totalCoverage > 0 ? insuranceInfo.patientShare : 
+                                (pricingData.PatientPayableIRR || pricingData.patientPayableIRR || 0);
           
           // استفاده از Friendly strings اگر موجود باشند
           const unitPriceStr = pricingData.UnitPriceIRRStr || pricingData.unitPriceIRRStr || U.toIRR(unitPrice);
           const grossStr = pricingData.GrossIRRStr || pricingData.grossIRRStr || U.toIRR(gross);
-          const baseStr = pricingData.BaseCoveredIRRStr || pricingData.baseCoveredIRRStr || U.toIRR(baseCovered);
-          const suppStr = pricingData.SuppCoveredIRRStr || pricingData.suppCoveredIRRStr || U.toIRR(suppCovered);
-          const patientStr = pricingData.PatientPayableIRRStr || pricingData.patientPayableIRRStr || U.toIRR(patientPayable);
           
-          // ✅ ردیف با ستون‌های کامل: کد، نام، تعداد، فی، مبلغ کل، سهم پایه، سهم تکمیلی، سهم بیمار
+          // 🚨 PROFESSIONAL: استفاده از اطلاعات بیمه real-time برای نمایش
+          const baseStr = insuranceInfo.totalCoverage > 0 ? insuranceInfo.primaryCoverageStr : 
+                         (pricingData.BaseCoveredIRRStr || pricingData.baseCoveredIRRStr || U.toIRR(baseCovered));
+          const suppStr = insuranceInfo.totalCoverage > 0 ? insuranceInfo.supplementaryCoverageStr : 
+                         (pricingData.SuppCoveredIRRStr || pricingData.suppCoveredIRRStr || U.toIRR(suppCovered));
+          const patientStr = insuranceInfo.totalCoverage > 0 ? insuranceInfo.patientShareStr : 
+                            (pricingData.PatientPayableIRRStr || pricingData.patientPayableIRRStr || U.toIRR(patientPayable));
+          
+          // 🚨 PROFESSIONAL FIX: بررسی و حذف ردیف‌های تکراری قبل از افزودن
+          const existingRows = $tb.find(`tr[data-service-id="${serviceId}"]`);
+          if (existingRows.length > 0) {
+            console.log('🏥 V2: Removing duplicate rows for ServiceId:', serviceId, 'Count:', existingRows.length);
+            existingRows.remove();
+          }
+          
+          // ✅ ردیف با ستون‌های کامل: کد، نام، تعداد، فی، مبلغ کل، سهم پایه، سهم تکمیلی، سهم بیمار، وضعیت پوشش
           var rowId = 'row-' + (itemData.ReceptionItemId || itemData.receptionItemId || serviceId);
-          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" data-reception-item-id="${itemData.ReceptionItemId || itemData.receptionItemId || ''}">
+          $tb.append(`<tr id="${rowId}" data-service-id="${serviceId}" data-reception-item-id="${itemData.ReceptionItemId || itemData.receptionItemId || ''}" class="${insuranceInfo.statusClass}">
             <td class="cell-code">${serviceCode}</td>
             <td class="cell-name">${serviceName}</td>
             <td class="cell-qty">${qty}</td>
@@ -205,41 +376,27 @@
             <td class="cell-base">${baseStr}</td>
             <td class="cell-supp">${suppStr}</td>
             <td class="cell-patient">${patientStr}</td>
-            <td class="cell-coverage"><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
+            <td class="cell-coverage">${insuranceInfo.statusBadge}</td>
+            <td class="cell-actions"><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
           </tr>`);
           
-          // ✅ ذخیره item و pricing در data و فراخوانی renderRowWithPricing برای badge + highlight
+          // ✅ ذخیره item، pricing و insuranceCalculation در data
           var $newRow = $('#' + rowId);
           $newRow.data('item', itemData);
           $newRow.data('pricing', pricingData);
+          $newRow.data('insurance', insuranceCalc);
+          
+          console.log('🏥 V2: ✅ Row added (pricing fallback) - ServiceId:', serviceId, 'CoverageStatus:', insuranceInfo.coverageStatus, 
+            'PrimaryCoverage:', baseCovered, 'SupplementaryCoverage:', suppCovered, 'PatientShare:', patientPayable);
           
           // استفاده از renderRowWithPricing اگر موجود است
           if (window.renderRowWithPricing && typeof window.renderRowWithPricing === 'function') {
-            window.renderRowWithPricing(itemData, pricingData);
+            window.renderRowWithPricing(itemData, pricingData, insuranceCalc);
           } else if (window.ClinicApp && window.ClinicApp.ReceptionV2 && window.ClinicApp.ReceptionV2.PricingUI) {
-            window.ClinicApp.ReceptionV2.PricingUI.renderRowWithPricing(itemData, pricingData);
+            window.ClinicApp.ReceptionV2.PricingUI.renderRowWithPricing(itemData, pricingData, insuranceCalc);
           }
         } else {
-          // Fallback: اگر pricing موجود نیست، از items قدیمی استفاده کن
-          const items = response.items || response.Items || [];
-          $tb.empty();
-          
-          if (items && items.length > 0) {
-            items.forEach(function(it) {
-              const code = it.code || it.Code || '';
-              const name = it.name || it.Name || '';
-              const qty = it.qty || it.Qty || 0;
-              const unitPrice = it.unitPriceIRR || it.UnitPriceIRR || 0;
-              const total = it.totalIRR || it.TotalIRR || 0;
-              const serviceId = it.serviceId || it.ServiceId;
-              
-              $tb.append(`<tr>
-                <td>${code}</td><td>${name}</td><td>${qty}</td>
-                <td>${U.toIRR(unitPrice)}</td><td>${U.toIRR(total)}</td>
-                <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
-              </tr>`);
-            });
-          }
+          console.warn('🏥 V2: ⚠️ Neither items nor pricingData found in response');
         }
         
         // ✅ Update totals - استفاده از تابع updateTotalsUI اگر موجود باشد
@@ -274,7 +431,12 @@
       })
       .catch(function(err) {
         console.error('🏥 V2: Add item error:', err);
-        toastr.error('خطا در افزودن خدمت');
+        toastr.error('خطا در افزودن خدمت: ' + (err.message || 'خطای نامشخص'));
+      })
+      .always(function() {
+        // 🚨 PROFESSIONAL FIX: استفاده از .always() به جای .finally() برای jQuery Deferred
+        // 🚨 PROFESSIONAL: بازگرداندن دکمه به حالت عادی
+        $btn.prop('disabled', false).text(originalText);
       });
   }
 

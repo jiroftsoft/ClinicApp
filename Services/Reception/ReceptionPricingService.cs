@@ -71,61 +71,140 @@ namespace ClinicApp.Services.Reception
                     throw new InvalidOperationException($"پذیرش با شناسه {receptionId} یافت نشد");
                 }
 
-                // استفاده از SnapshotJson برای محاسبات
+                // 🚨 PROFESSIONAL FIX: استفاده از QuoteAsync برای محاسبه دقیق سهم‌های بیمه
                 long unitPrice = (long)item.UnitPrice;
                 long gross = unitPrice * item.Quantity;
                 long baseCovered = 0;
                 long suppCovered = 0;
                 long patientPayable = (long)item.PatientShareAmount;
 
-                // تلاش برای استخراج سهم‌ها از SnapshotJson
-                if (!string.IsNullOrEmpty(item.SnapshotJson))
+                // دریافت سال مالی از FactorSetting
+                var financialYear = _context.FactorSettings
+                    .Where(f => !f.IsDeleted && f.IsActiveForCurrentYear)
+                    .OrderByDescending(f => f.FinancialYear)
+                    .Select(f => (int?)f.FinancialYear)
+                    .FirstOrDefault();
+                
+                // Fallback: استفاده از سال جاری شمسی
+                if (!financialYear.HasValue)
                 {
-                    try
+                    var persianCalendar = new System.Globalization.PersianCalendar();
+                    financialYear = persianCalendar.GetYear(DateTime.Now);
+                }
+                
+                var financialYearId = financialYear ?? 0;
+
+                // استفاده از QuoteAsync برای محاسبه دقیق
+                QuoteResultDto quoteResult = null;
+                try
+                {
+                    var quoteRequest = new QuoteRequestDto
                     {
-                        var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
-                        if (snapshot != null)
+                        ClinicId = reception.ClinicId,
+                        DepartmentId = reception.DepartmentId,
+                        DoctorId = reception.DoctorId,
+                        ServiceId = item.ServiceId,
+                        FinancialYearId = financialYearId > 0 ? financialYearId : (int?)null,
+                        Primary = reception.BasePlanId.HasValue
+                            ? new PartyInsuranceDto { InsurancePlanId = reception.BasePlanId.Value }
+                            : null,
+                        Supplementary = reception.SupplementaryPlanId.HasValue
+                            ? new PartyInsuranceDto { InsurancePlanId = reception.SupplementaryPlanId.Value }
+                            : null
+                    };
+
+                    quoteResult = await _pricingEngine.QuoteAsync(quoteRequest);
+                    
+                    _logger.Information("🔍 PRICING SERVICE: QuoteResult دریافت شد - ApprovedTariff: {ApprovedTariff}, Primary.Pays: {PrimaryPays}, Primary.IsCovered: {PrimaryIsCovered}, Primary.CoveragePercent: {PrimaryPercent}, Supplementary.Pays: {SuppPays}, Supplementary.IsCovered: {SuppIsCovered}, Supplementary.CoveragePercent: {SuppPercent}",
+                        quoteResult?.ApprovedTariff ?? 0, quoteResult?.Primary?.Pays ?? 0, quoteResult?.Primary?.IsCovered ?? false, quoteResult?.Primary?.CoveragePercent ?? 0,
+                        quoteResult?.Supplementary?.Pays ?? 0, quoteResult?.Supplementary?.IsCovered ?? false, quoteResult?.Supplementary?.CoveragePercent ?? 0);
+                    
+                    if (quoteResult != null && quoteResult.ApprovedTariff > 0)
+                    {
+                        // محاسبه سهم‌ها بر اساس QuoteResult (ضرب در تعداد)
+                        baseCovered = (long)quoteResult.Primary.Pays * item.Quantity;
+                        suppCovered = (long)quoteResult.Supplementary.Pays * item.Quantity;
+                        var totalCoverage = baseCovered + suppCovered;
+                        patientPayable = gross - totalCoverage;
+                        if (patientPayable < 0) patientPayable = 0;
+
+                        _logger.Information("✅ PRICING SERVICE: محاسبه از QuoteAsync - Gross: {Gross}, Base: {Base}, Supp: {Supp}, Patient: {Patient}, QuoteResult.Supplementary.Pays: {SuppPaysRaw}, Quantity: {Quantity}", 
+                            gross, baseCovered, suppCovered, patientPayable, quoteResult.Supplementary.Pays, item.Quantity);
+                        
+                        // 🔍 بررسی خطا: اگر suppCovered صفر است اما باید محاسبه شود
+                        if (suppCovered == 0 && quoteResult.Supplementary.IsCovered && quoteResult.Supplementary.CoveragePercent > 0 && reception.SupplementaryPlanId.HasValue)
                         {
-                            if (snapshot.PrimaryPays != null)
-                                baseCovered = (long)snapshot.PrimaryPays;
-                            if (snapshot.SupplementaryPays != null)
-                                suppCovered = (long)snapshot.SupplementaryPays;
-                            if (snapshot.PatientShare != null)
-                                patientPayable = (long)snapshot.PatientShare;
+                            _logger.Error("❌ PRICING SERVICE: خطا - suppCovered صفر است در حالی که باید محاسبه شود! ReceptionId: {ReceptionId}, ReceptionItemId: {ReceptionItemId}, SuppPlanId: {SuppPlanId}, Supplementary.Pays: {SuppPays}, Supplementary.CoveragePercent: {SuppPercent}, Primary.Pays: {PrimaryPays}, ApprovedTariff: {ApprovedTariff}",
+                                receptionId, receptionItemId, reception.SupplementaryPlanId.Value, quoteResult.Supplementary.Pays, quoteResult.Supplementary.CoveragePercent, quoteResult.Primary.Pays, quoteResult.ApprovedTariff);
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.Warning(ex, "⚠️ PRICING SERVICE: خطا در parse کردن SnapshotJson - ReceptionItemId: {ReceptionItemId}", 
-                            receptionItemId);
+                        _logger.Warning("⚠️ PRICING SERVICE: QuoteAsync نتیجه نامعتبر - استفاده از SnapshotJson");
+                        // Fallback: استفاده از SnapshotJson
+                        if (!string.IsNullOrEmpty(item.SnapshotJson))
+                        {
+                            try
+                            {
+                                var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                                if (snapshot != null)
+                                {
+                                    if (snapshot.PrimaryPays != null)
+                                        baseCovered = (long)snapshot.PrimaryPays;
+                                    if (snapshot.SupplementaryPays != null)
+                                        suppCovered = (long)snapshot.SupplementaryPays;
+                                    if (snapshot.PatientShare != null)
+                                        patientPayable = (long)snapshot.PatientShare;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Warning(ex, "⚠️ PRICING SERVICE: خطا در parse کردن SnapshotJson - ReceptionItemId: {ReceptionItemId}", 
+                                    receptionItemId);
+                            }
+                        }
                     }
                 }
-
-                // اگر SnapshotJson خالی است یا مقدار ندارد، از مقادیر entity استفاده کن
-                if (baseCovered == 0 && suppCovered == 0)
+                catch (Exception quoteEx)
                 {
-                    var insurerShare = (long)item.InsurerShareAmount;
-                    // برآورد: اگر BasePlanId وجود دارد، احتمالاً بخشی از InsurerShare مربوط به Base است
-                    if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                    _logger.Warning(quoteEx, "⚠️ PRICING SERVICE: خطا در QuoteAsync - استفاده از SnapshotJson - ReceptionItemId: {ReceptionItemId}", 
+                        receptionItemId);
+                    
+                    // Fallback: استفاده از SnapshotJson
+                    if (!string.IsNullOrEmpty(item.SnapshotJson))
                     {
-                        // تقسیم 50/50 (یا می‌توانیم از QuoteAsync استفاده کنیم برای محاسبه دقیق‌تر)
-                        baseCovered = insurerShare / 2;
-                        suppCovered = insurerShare - baseCovered;
-                    }
-                    else if (reception.BasePlanId.HasValue)
-                    {
-                        baseCovered = insurerShare;
-                    }
-                    else if (reception.SupplementaryPlanId.HasValue)
-                    {
-                        suppCovered = insurerShare;
+                        try
+                        {
+                            var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                            if (snapshot != null)
+                            {
+                                if (snapshot.PrimaryPays != null)
+                                    baseCovered = (long)snapshot.PrimaryPays;
+                                if (snapshot.SupplementaryPays != null)
+                                    suppCovered = (long)snapshot.SupplementaryPays;
+                                if (snapshot.PatientShare != null)
+                                    patientPayable = (long)snapshot.PatientShare;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warning(ex, "⚠️ PRICING SERVICE: خطا در parse کردن SnapshotJson - ReceptionItemId: {ReceptionItemId}", 
+                                receptionItemId);
+                        }
                     }
                 }
 
-                // ایجاد Notes از SnapshotJson
+                // ایجاد Notes از quoteResult یا SnapshotJson
                 var notes = new System.Collections.Generic.List<string>();
-                if (!string.IsNullOrEmpty(item.SnapshotJson))
+                
+                // 🚨 PROFESSIONAL FIX: استفاده از quoteResult برای Notes (اگر موجود باشد)
+                if (quoteResult != null && quoteResult.Notes != null && quoteResult.Notes.Count > 0)
                 {
+                    notes.AddRange(quoteResult.Notes);
+                }
+                else if (!string.IsNullOrEmpty(item.SnapshotJson))
+                {
+                    // Fallback: استفاده از SnapshotJson
                     try
                     {
                         var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
