@@ -56,12 +56,10 @@ namespace ClinicApp.ViewModels.Validators
                 .WithMessage("نام خانوادگی باید فقط شامل حروف فارسی باشد.")
                 .WithErrorCode("INVALID_LAST_NAME_FORMAT");
 
-            // اعتبارسنجی تاریخ تولد
+            // اعتبارسنجی تاریخ تولد (اختیاری، در صورت وارد کردن باید معتبر باشد)
             RuleFor(x => x.BirthDate)
-                .NotNull()
-                .WithMessage("تاریخ تولد الزامی است.")
-                .WithErrorCode("REQUIRED_BIRTH_DATE")
                 .Must(BeValidBirthDate)
+                .When(x => x.BirthDate.HasValue)
                 .WithMessage("تاریخ تولد نامعتبر است.")
                 .WithErrorCode("INVALID_BIRTH_DATE");
 
@@ -153,7 +151,7 @@ namespace ClinicApp.ViewModels.Validators
         private bool BeValidBirthDate(DateTime? birthDate)
         {
             if (!birthDate.HasValue)
-                return false;
+                return true;
 
             var today = DateTime.Today;
             var age = today.Year - birthDate.Value.Year;

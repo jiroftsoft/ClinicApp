@@ -32,6 +32,61 @@
     $btnC.toggleClass('d-none', ro);
   }
 
+  function showFastCreateValidationErrors(responseObj) {
+    const validationErrors = responseObj?.ValidationErrors || responseObj?.validationErrors || [];
+    const fieldNameMap = {
+      'NationalCode': 'کد ملی',
+      'FirstName': 'نام',
+      'LastName': 'نام خانوادگی',
+      'FatherName': 'نام پدر',
+      'Mobile': 'موبایل',
+      'BirthDateShamsi': 'تاریخ تولد',
+      'Address': 'آدرس',
+      'PhoneNumber': 'موبایل',
+      'UserName': 'کد ملی / حساب کاربری',
+      'Identity': 'حساب کاربری',
+      'Email': 'ایمیل'
+    };
+    const fieldSelectorMap = {
+      'NationalCode': '#fc_nationalCode',
+      'FirstName': '#fc_firstName',
+      'LastName': '#fc_lastName',
+      'FatherName': '#fc_fatherName',
+      'Mobile': '#fc_mobile',
+      'BirthDateShamsi': '#fc_birth',
+      'Address': '#fc_address',
+      'PhoneNumber': '#fc_mobile',
+      'UserName': '#fc_nationalCode',
+      'Identity': '#fc_nationalCode',
+      'Email': '#fc_email'
+    };
+
+    let handled = false;
+
+    if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+      handled = true;
+      validationErrors.forEach(function(err) {
+        const field = err.Field || err.field || '';
+        const message = err.ErrorMessage || err.Message || err.message || err.errorMessage || '';
+        const fieldName = fieldNameMap[field] || field || 'فیلد';
+        const displayMessage = message || 'مقدار نامعتبر است';
+        const selector = fieldSelectorMap[field];
+
+        if (selector) {
+          $(selector).addClass('is-invalid');
+        }
+
+        toastr.error(`${fieldName}: ${displayMessage}`, 'خطای اعتبارسنجی', {
+          timeOut: 5000,
+          positionClass: 'toast-top-center',
+          closeButton: true
+        });
+      });
+    }
+
+    return handled;
+  }
+
   /**
    * پر کردن فیلدهای هویتی از DTO
    * پشتیبانی از camelCase و PascalCase
@@ -442,57 +497,16 @@
       // Check success
       const successValue = responseObj?.Success ?? responseObj?.success;
       const isSuccess = successValue === true || successValue === "true" || successValue === 1;
-      
-      // ✅ گام ۷: بررسی خطاهای Validation
       const errorCode = responseObj?.Code || responseObj?.code;
-      if (errorCode === 'VALIDATION_ERROR' || errorCode === 'VALIDATION') {
-        console.log('🏥 V2: Validation error detected, Code:', errorCode);
-        console.log('🏥 V2: Response ValidationErrors:', responseObj?.ValidationErrors || responseObj?.validationErrors);
-        
-        const validationErrors = responseObj?.ValidationErrors || responseObj?.validationErrors || [];
-        
-        console.log('🏥 V2: ValidationErrors parsed:', validationErrors, 'Length:', validationErrors.length);
-        
-        if (validationErrors.length > 0) {
-          // ✅ نمایش هر خطای validation
-          validationErrors.forEach(function(err) {
-            // ✅ ValidationError دارای Field و ErrorMessage است
-            const field = err.Field || err.field || '';
-            const message = err.ErrorMessage || err.Message || err.message || err.errorMessage || '';
-            
-            console.log('🏥 V2: Validation error:', { field, message, fullError: err });
-            
-            // ✅ نمایش پیام خطا با نام فیلد فارسی
-            const fieldNameMap = {
-              'NationalCode': 'کد ملی',
-              'FirstName': 'نام',
-              'LastName': 'نام خانوادگی',
-              'FatherName': 'نام پدر',
-              'Mobile': 'موبایل',
-              'BirthDateShamsi': 'تاریخ تولد',
-              'Address': 'آدرس'
-            };
-            
-            const fieldName = fieldNameMap[field] || field;
-            const displayMessage = message || 'مقدار نامعتبر است';
-            
-            toastr.error(`${fieldName}: ${displayMessage}`, 'خطای اعتبارسنجی', {
-              timeOut: 5000,
-              positionClass: 'toast-top-center',
-              closeButton: true
-            });
-          });
-        } else {
-          const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در اعتبارسنجی اطلاعات';
-          console.warn('🏥 V2: Validation error but no ValidationErrors array:', responseObj);
-          toastr.error(errorMsg, 'خطای اعتبارسنجی');
-        }
-        return;
-      }
-      
+
       if (!responseObj || !isSuccess) {
+        console.warn('🏥 V2: Fast Create failed - code:', errorCode, 'response:', responseObj);
+
+        if (showFastCreateValidationErrors(responseObj)) {
+          return;
+        }
+
         const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت سریع بیمار';
-        console.error('🏥 V2: Fast Create failed:', errorMsg, responseObj);
         toastr.error(errorMsg);
         return;
       }
@@ -819,6 +833,28 @@
       } else {
         console.log('🏥 V2: ✅ btnFastCreateSave found:', $btn[0]);
       }
+    });
+
+    $('#patientFastCreateModal').on('hidden.bs.modal', function() {
+      console.log('🏥 V2: Fast Create Modal hidden');
+      const $btn = $('#btnFastCreateSave');
+      $btn.prop('disabled', false)
+          .html('<i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش');
+
+      const $form = $('#patientFastCreateForm');
+      if ($form.length > 0) {
+        $form.trigger('reset');
+        $form.find('input, select').removeClass('is-invalid');
+      }
+
+      if (!($('#Patient_PatientId').val() && parseInt($('#Patient_PatientId').val(), 10) > 0)) {
+        setReadonly(false);
+        $fn.focus();
+      }
+
+      $('#fc_insurancePanel').removeClass('show');
+      $('body').removeClass('modal-open');
+      $('.modal-backdrop').remove();
     });
   });
   

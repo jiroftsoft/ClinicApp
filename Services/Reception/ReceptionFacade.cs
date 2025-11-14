@@ -754,6 +754,20 @@ namespace ClinicApp.Services.Reception
                             });
                         }
                     }
+
+                    if (!createResult.Success)
+                    {
+                        var failedResult = ServiceResult<PatientDto>.Failed(
+                            createResult.Message ?? "خطا در ثبت بیمار.",
+                            createResult.Code ?? "CREATE_FAILED");
+
+                        if (createResult.ValidationErrors != null && createResult.ValidationErrors.Any())
+                        {
+                            failedResult.WithValidationErrors(createResult.ValidationErrors);
+                        }
+
+                        return failedResult;
+                    }
                 }
 
                 return ServiceResult<PatientDto>.Failed("بیمار یافت نشد و اطلاعات ایجاد ارائه نشده");
@@ -824,6 +838,12 @@ namespace ClinicApp.Services.Reception
                 var patientInsurance = await _context.PatientInsurances
                     .FirstOrDefaultAsync(pi => pi.PatientId == patientId && pi.IsPrimary && pi.IsActive && !pi.IsDeleted);
 
+                string BuildPolicyNumber(string prefix)
+                {
+                    var stamp = DateTime.Now;
+                    return $"{prefix}-{patientId}-{stamp:yyyyMMddHHmmss}";
+                }
+
                 if (patientInsurance == null)
                 {
                     // ایجاد PatientInsurance جدید اگر وجود ندارد
@@ -853,6 +873,8 @@ namespace ClinicApp.Services.Reception
                             InsuranceProviderId = basePlan.InsuranceProviderId,
                             IsPrimary = true,
                             IsActive = true,
+                            Priority = InsurancePriority.Primary,
+                            PolicyNumber = BuildPolicyNumber("AUTO-PRIMARY"),
                             StartDate = DateTime.Now,
                             CreatedAt = DateTime.Now,
                             CreatedByUserId = _currentUserService?.UserId ?? "system"
@@ -879,6 +901,7 @@ namespace ClinicApp.Services.Reception
                             {
                                 patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
                                 patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                patientInsurance.SupplementaryPolicyNumber = BuildPolicyNumber("AUTO-SUPP");
                                 _logger.Information("✅ FACADE: بیمه تکمیلی به PatientInsurance اضافه شد - SuppPlanId: {SuppPlanId}", suppPlanId);
                             }
                         }
@@ -934,6 +957,17 @@ namespace ClinicApp.Services.Reception
                             hasChanges = true;
                             _logger.Information("✅ FACADE: بیمه پایه به‌روزرسانی شد - BasePlanId: {BasePlanId}", basePlanId);
                         }
+
+                        if (string.IsNullOrWhiteSpace(patientInsurance.PolicyNumber))
+                        {
+                            patientInsurance.PolicyNumber = BuildPolicyNumber("AUTO-PRIMARY");
+                            hasChanges = true;
+                        }
+                    }
+                    else if (string.IsNullOrWhiteSpace(patientInsurance.PolicyNumber))
+                    {
+                        patientInsurance.PolicyNumber = BuildPolicyNumber("AUTO-PRIMARY");
+                        hasChanges = true;
                     }
 
                     // به‌روزرسانی بیمه تکمیلی
@@ -960,8 +994,14 @@ namespace ClinicApp.Services.Reception
                             {
                                 patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
                                 patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                patientInsurance.SupplementaryPolicyNumber = BuildPolicyNumber("AUTO-SUPP");
                                 hasChanges = true;
                                 _logger.Information("✅ FACADE: بیمه تکمیلی به‌روزرسانی شد - SuppPlanId: {SuppPlanId}", suppPlanId);
+                            }
+                            else if (string.IsNullOrWhiteSpace(patientInsurance.SupplementaryPolicyNumber))
+                            {
+                                patientInsurance.SupplementaryPolicyNumber = BuildPolicyNumber("AUTO-SUPP");
+                                hasChanges = true;
                             }
                         }
                     }
@@ -972,6 +1012,7 @@ namespace ClinicApp.Services.Reception
                         {
                             patientInsurance.SupplementaryInsurancePlanId = null;
                             patientInsurance.SupplementaryInsuranceProviderId = null;
+                            patientInsurance.SupplementaryPolicyNumber = null;
                             hasChanges = true;
                             _logger.Information("✅ FACADE: بیمه تکمیلی حذف شد - PatientId: {PatientId}", patientId);
                         }

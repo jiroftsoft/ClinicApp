@@ -13,71 +13,136 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
           </div>
           <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label required">کدملی</label>
-                <input id="fc_nationalCode" name="NationalCode" class="form-control" maxlength="10" placeholder="10 رقم" autocomplete="off" />
-                <div class="invalid-feedback">کد ملی الزامی است</div>
+            <div id="fc_statusAlert" class="alert alert-info d-none fc-status-alert" role="alert">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="fc_statusText">کد ملی جدید است؛ لطفاً اطلاعات را دقیق وارد کنید.</span>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label required">نام</label>
-                <input id="fc_firstName" name="FirstName" class="form-control" placeholder="نام بیمار" />
-                <div class="invalid-feedback">نام الزامی است</div>
+            </div>
+
+            <div class="fc-section mb-3">
+              <div class="fc-section-head">
+                <span class="fc-section-icon text-primary bg-primary-subtle">
+                  <i class="fas fa-id-card"></i>
+                </span>
+                <div>
+                  <h6 class="mb-0">اطلاعات هویتی</h6>
+                  <small class="text-muted">نام، نام خانوادگی و کد ملی بیمار</small>
+                </div>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label required">نام خانوادگی</label>
-                <input id="fc_lastName" name="LastName" class="form-control" placeholder="نام خانوادگی بیمار" />
-                <div class="invalid-feedback">نام خانوادگی الزامی است</div>
+              <div class="fc-section-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label required" for="fc_nationalCode">کدملی</label>
+                    <div class="input-group input-group-solid">
+                      <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                      <input id="fc_nationalCode" name="NationalCode" class="form-control" maxlength="10" placeholder="۱۰ رقم" autocomplete="off" inputmode="numeric" />
+                    </div>
+                    <div class="invalid-feedback">کد ملی الزامی است</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label required" for="fc_firstName">نام</label>
+                    <input id="fc_firstName" name="FirstName" class="form-control" placeholder="نام بیمار" autocomplete="off" />
+                    <div class="invalid-feedback">نام الزامی است</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label required" for="fc_lastName">نام خانوادگی</label>
+                    <input id="fc_lastName" name="LastName" class="form-control" placeholder="نام خانوادگی بیمار" autocomplete="off" />
+                    <div class="invalid-feedback">نام خانوادگی الزامی است</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="fc_fatherName">نام پدر</label>
+                    <input id="fc_fatherName" name="FatherName" class="form-control" placeholder="نام پدر" autocomplete="off" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="fc_gender">جنسیت</label>
+                    <select id="fc_gender" name="Gender" class="form-select">
+                      <option value="">انتخاب کنید</option>
+                      <option value="Male">مذکر</option>
+                      <option value="Female">مونث</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="fc_birth">تاریخ تولد (شمسی)</label>
+                    <div class="input-group input-group-solid">
+                      <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                      <input id="fc_birth" name="BirthDateShamsi" class="form-control persian-date" placeholder="1403/01/01" autocomplete="off" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label">نام پدر</label>
-                <input id="fc_fatherName" name="FatherName" class="form-control" placeholder="نام پدر بیمار" />
+            </div>
+
+            <div class="fc-section mb-3">
+              <div class="fc-section-head">
+                <span class="fc-section-icon text-success bg-success-subtle">
+                  <i class="fas fa-phone"></i>
+                </span>
+                <div>
+                  <h6 class="mb-0">اطلاعات تماس</h6>
+                  <small class="text-muted">راه‌های ارتباطی برای تماس با بیمار</small>
+                </div>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label required">موبایل</label>
-                <input id="fc_mobile" name="Mobile" class="form-control" maxlength="11" placeholder="09123456789" autocomplete="off" />
-                <div class="invalid-feedback">شماره موبایل الزامی است</div>
+              <div class="fc-section-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label required" for="fc_mobile">موبایل</label>
+                    <div class="input-group input-group-solid">
+                      <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                      <input id="fc_mobile" name="Mobile" class="form-control" maxlength="11" placeholder="09123456789" autocomplete="off" inputmode="numeric" />
+                    </div>
+                    <div class="invalid-feedback">شماره موبایل الزامی است</div>
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label" for="fc_address">آدرس کامل</label>
+                    <textarea id="fc_address" name="Address" class="form-control" rows="2" placeholder="آدرس دقیق بیمار"></textarea>
+                  </div>
+                </div>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label">جنسیت</label>
-                <select id="fc_gender" name="Gender" class="form-select">
-                  <option value="">انتخاب کنید</option>
-                  <option value="Male">مذکر</option>
-                  <option value="Female">مونث</option>
-                </select>
+            </div>
+
+            <div class="fc-section">
+              <div class="fc-section-head">
+                <span class="fc-section-icon text-info bg-info-subtle">
+                  <i class="fas fa-shield-alt"></i>
+                </span>
+                <div>
+                  <h6 class="mb-0">بیمه درمانی (اختیاری)</h6>
+                  <small class="text-muted">در صورت در دسترس بودن دفترچه، پلن‌ها را انتخاب کنید</small>
+                </div>
+                <button class="btn btn-sm btn-outline-primary ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#fc_insurancePanel" aria-expanded="false" aria-controls="fc_insurancePanel">
+                  <span class="fc-toggle-show"><i class="fas fa-plus me-1"></i>نمایش</span>
+                  <span class="fc-toggle-hide"><i class="fas fa-minus me-1"></i>پنهان‌سازی</span>
+                </button>
               </div>
-              
-              <div class="col-md-3">
-                <label class="form-label">تاریخ تولد (شمسی)</label>
-                <input id="fc_birth" name="BirthDateShamsi" class="form-control persian-date" placeholder="1403/01/01" autocomplete="off" />
-              </div>
-              
-              <div class="col-md-6">
-                <label class="form-label">آدرس</label>
-                <input id="fc_address" name="Address" class="form-control" placeholder="آدرس کامل بیمار" />
-              </div>
-              
-              <div class="col-md-6">
-                <label class="form-label">بیمه پایه</label>
-                <select id="fc_basePlanId" name="BaseInsurancePlanId" class="form-select">
-                  <option value="">انتخاب کنید</option>
-                </select>
-              </div>
-              
-              <div class="col-md-6">
-                <label class="form-label">بیمه تکمیلی</label>
-                <select id="fc_suppPlanId" name="SupplementaryInsurancePlanId" class="form-select">
-                  <option value="">انتخاب کنید</option>
-                </select>
+              <div class="collapse" id="fc_insurancePanel">
+                <div class="fc-section-body pt-3">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label" for="fc_basePlanId">بیمه پایه</label>
+                      <select id="fc_basePlanId" name="BaseInsurancePlanId" class="form-select">
+                        <option value="">انتخاب کنید</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="fc_suppPlanId">بیمه تکمیلی</label>
+                      <select id="fc_suppPlanId" name="SupplementaryInsurancePlanId" class="form-select">
+                        <option value="">انتخاب کنید</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer fc-modal-footer">
+            <div class="text-muted small me-auto d-flex align-items-center gap-2">
+              <i class="fas fa-shield-alt"></i>
+              <span>ثبت اطلاعات مطابق با استانداردهای محرمانگی پرونده درمانی انجام می‌شود.</span>
+            </div>
+            <button type="button" class="btn btn-light me-2" id="btnFastCreateReset">
+              <i class="fas fa-undo me-1"></i>پاک‌سازی فرم
+            </button>
             <button id="btnFastCreateSave" type="button" class="btn btn-primary" data-action="submit-fast-create">
               <i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش
             </button>
@@ -94,6 +159,87 @@
   .required::after {
     content: " *";
     color: red;
+  }
+
+  .fc-status-alert {
+    border-radius: 0.75rem;
+    border: 1px solid #d8e4ff;
+    background: #f1f6ff;
+    margin-bottom: 1.25rem;
+  }
+
+  .fc-section {
+    border: 1px solid #edf1fd;
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: 0 8px 26px rgba(25, 66, 137, 0.06);
+    padding: 1rem 1.25rem;
+  }
+
+  .fc-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .fc-section-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .fc-section-body {
+    display: block;
+  }
+
+  .input-group-solid .input-group-text {
+    background: #f4f6fc;
+    border-color: #e3e7f7;
+    color: #5c6c8c;
+  }
+
+  .input-group-solid .form-control {
+    border-color: #e3e7f7;
+  }
+
+  .input-group-solid .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: none;
+  }
+
+  .fc-section button[data-bs-toggle="collapse"] {
+    margin-right: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .fc-toggle-hide {
+    display: none;
+  }
+
+  .fc-section button[aria-expanded="true"] .fc-toggle-show {
+    display: none;
+  }
+
+  .fc-section button[aria-expanded="true"] .fc-toggle-hide {
+    display: inline-flex;
+  }
+
+  .fc-modal-footer {
+    background: #f7f9ff;
+    border-top: 1px solid #e3e7f7;
+  }
+
+  @@media (max-width: 575.98px) {
+    .fc-section {
+      padding: 0.9rem 1rem;
+    }
   }
 </style>
 
