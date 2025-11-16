@@ -2556,6 +2556,54 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<FinalizeResponse>.Failed($"مبلغ پرداخت ({request.AmountIRR:N0} ریال) با مجموع محاسبه شده ({totals.Data.Totals.Patient:N0} ریال) مطابقت ندارد. لطفاً صفحه را نوسازی کنید.", "AMOUNT_MISMATCH");
                 }
 
+                // 🏥 MEDICAL: دریافت جلسه نقدی باز برای CashSessionId
+                var sessionResult = await _posManagementService.GetOpenCashSessionAsync(_currentUserService.UserId);
+                if (!sessionResult.Success)
+                {
+                    _logger.Warning("⚠️ FACADE: جلسه نقدی باز یافت نشد (POS) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<FinalizeResponse>.Failed("جلسه نقدی باز یافت نشد. لطفاً ابتدا جلسه صندوق را باز کنید.", "NO_CASH_SESSION");
+                }
+
+                // 🏥 MEDICAL: پیدا کردن PosTerminal از TerminalId
+                int? posTerminalId = null;
+                if (!string.IsNullOrEmpty(request.Pos?.TerminalId))
+                {
+                    // جستجو بر اساس TerminalId (string)
+                    var posTerminal = await _context.PosTerminals
+                        .FirstOrDefaultAsync(pt => pt.TerminalId == request.Pos.TerminalId && !pt.IsDeleted && pt.IsActive);
+                    
+                    if (posTerminal != null)
+                    {
+                        posTerminalId = posTerminal.PosTerminalId;
+                        _logger.Information("✅ FACADE: PosTerminal یافت شد - TerminalId: {TerminalId}, PosTerminalId: {PosTerminalId}", 
+                            request.Pos.TerminalId, posTerminalId);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: PosTerminal با TerminalId {TerminalId} یافت نشد - استفاده از ترمینال پیش‌فرض", 
+                            request.Pos.TerminalId);
+                    }
+                }
+                
+                // 🏥 MEDICAL: اگر PosTerminal یافت نشد، از ترمینال پیش‌فرض استفاده کن
+                if (!posTerminalId.HasValue)
+                {
+                    var defaultTerminalResult = await _posManagementService.GetDefaultPosTerminalAsync();
+                    if (defaultTerminalResult.Success && defaultTerminalResult.Data != null)
+                    {
+                        posTerminalId = defaultTerminalResult.Data.PosTerminalId;
+                        _logger.Information("✅ FACADE: استفاده از ترمینال پیش‌فرض - PosTerminalId: {PosTerminalId}", posTerminalId);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: هیچ ترمینال POS فعالی یافت نشد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        // در این حالت، PosTerminalId را null می‌گذاریم (اختیاری است)
+                    }
+                }
+
+                // 🏥 MEDICAL: Reload draft entity برای اطمینان از به‌روزرسانی BasePay, SuppPay, PatientPay
+                await _context.Entry(draft).ReloadAsync();
+
                 // ثبت پرداخت
                 var payment = new Models.Entities.Payment.PaymentTransaction
                 {
@@ -2566,8 +2614,10 @@ namespace ClinicApp.Services.Reception
                     Method = PaymentMethod.POS,
                     ReferenceCode = request.Pos?.RRN,
                     TransactionId = request.Pos?.TraceNo,
-                    TerminalId = request.Pos?.TerminalId,
-                    CardLast4 = request.Pos?.CardLast4
+                    TerminalId = request.Pos?.TerminalId, // 🏥 MEDICAL: TerminalId (string) برای سازگاری
+                    CardLast4 = request.Pos?.CardLast4,
+                    PosTerminalId = posTerminalId, // 🏥 MEDICAL: PosTerminalId (int) از PosTerminals
+                    CashSessionId = sessionResult.Data.CashSessionId // 🏥 MEDICAL: تنظیم CashSessionId
                 };
 
                 _context.PaymentTransactions.Add(payment);
@@ -2699,6 +2749,17 @@ namespace ClinicApp.Services.Reception
                     return ServiceResult<FinalizeResponse>.Failed($"مبلغ پرداخت ({request.AmountIRR:N0} ریال) با مجموع محاسبه شده ({totals.Data.Totals.Patient:N0} ریال) مطابقت ندارد. لطفاً صفحه را نوسازی کنید.", "AMOUNT_MISMATCH");
                 }
 
+                // 🏥 MEDICAL: دریافت جلسه نقدی باز برای CashSessionId
+                var sessionResult = await _posManagementService.GetOpenCashSessionAsync(_currentUserService.UserId);
+                if (!sessionResult.Success)
+                {
+                    _logger.Warning("⚠️ FACADE: جلسه نقدی باز یافت نشد (Cash) - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<FinalizeResponse>.Failed("جلسه نقدی باز یافت نشد. لطفاً ابتدا جلسه صندوق را باز کنید.", "NO_CASH_SESSION");
+                }
+
+                // 🏥 MEDICAL: Reload draft entity برای اطمینان از به‌روزرسانی BasePay, SuppPay, PatientPay
+                await _context.Entry(draft).ReloadAsync();
+
                 // ثبت پرداخت
                 var payment = new Models.Entities.Payment.PaymentTransaction
                 {
@@ -2706,7 +2767,8 @@ namespace ClinicApp.Services.Reception
                     Amount = request.AmountIRR,
                     Status = PaymentStatus.Success,
                     IdempotencyKey = request.IdempotencyKey,
-                    Method = PaymentMethod.Cash
+                    Method = PaymentMethod.Cash,
+                    CashSessionId = sessionResult.Data.CashSessionId // 🏥 MEDICAL: تنظیم CashSessionId
                 };
 
                 _context.PaymentTransactions.Add(payment);
@@ -2788,6 +2850,10 @@ namespace ClinicApp.Services.Reception
                     draft.TotalAmount = (decimal)totalsDto.GrossIRR;
                     draft.PatientCoPay = (decimal)totalsDto.PatientPayableIRR;
                     draft.InsurerShareAmount = (decimal)(totalsDto.BaseCoveredIRR + totalsDto.SuppCoveredIRR);
+                    // 🏥 MEDICAL: به‌روزرسانی سهم‌های بیمه برای نمایش دقیق در لیست پذیرش‌ها
+                    draft.BasePay = (decimal)totalsDto.BaseCoveredIRR;
+                    draft.SuppPay = (decimal)totalsDto.SuppCoveredIRR;
+                    draft.PatientPay = (decimal)totalsDto.PatientPayableIRR;
                 }
                 else
                 {
@@ -2797,8 +2863,65 @@ namespace ClinicApp.Services.Reception
                     draft.TotalAmount = draftItems.Sum(i => i.UnitPrice * i.Quantity);
                     draft.PatientCoPay = draftItems.Sum(i => i.PatientShareAmount);
                     draft.InsurerShareAmount = draftItems.Sum(i => i.InsurerShareAmount);
-                    _logger.Information("🏥 FACADE: استفاده از مقادیر محاسبه شده از ReceptionItems - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}", 
-                        draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount);
+                    
+                    // 🏥 MEDICAL: محاسبه سهم‌های بیمه از ReceptionItems و SnapshotJson
+                    decimal basePay = 0m;
+                    decimal suppPay = 0m;
+                    decimal patientPay = draftItems.Sum(i => i.PatientShareAmount);
+                    
+                    foreach (var item in draftItems)
+                    {
+                        long itemBaseCovered = 0;
+                        long itemSuppCovered = 0;
+                        
+                        if (!string.IsNullOrEmpty(item.SnapshotJson))
+                        {
+                            try
+                            {
+                                var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                                if (snapshot != null)
+                                {
+                                    if (snapshot.PrimaryPays != null)
+                                        itemBaseCovered = (long)snapshot.PrimaryPays;
+                                    if (snapshot.SupplementaryPays != null)
+                                        itemSuppCovered = (long)snapshot.SupplementaryPays;
+                                }
+                            }
+                            catch (Exception snapshotEx)
+                            {
+                                _logger.Warning(snapshotEx, "⚠️ FACADE: خطا در parse کردن SnapshotJson برای ReceptionItem {ReceptionItemId}", item.ReceptionItemId);
+                            }
+                        }
+                        
+                        // Fallback: اگر SnapshotJson موجود نبود، از InsurerShareAmount استفاده کن
+                        if (itemBaseCovered == 0 && itemSuppCovered == 0)
+                        {
+                            var insurerShare = (long)item.InsurerShareAmount;
+                            if (draft.BasePlanId.HasValue && draft.SupplementaryPlanId.HasValue)
+                            {
+                                itemBaseCovered = insurerShare / 2;
+                                itemSuppCovered = insurerShare - itemBaseCovered;
+                            }
+                            else if (draft.BasePlanId.HasValue)
+                            {
+                                itemBaseCovered = insurerShare;
+                            }
+                            else if (draft.SupplementaryPlanId.HasValue)
+                            {
+                                itemSuppCovered = insurerShare;
+                            }
+                        }
+                        
+                        basePay += itemBaseCovered;
+                        suppPay += itemSuppCovered;
+                    }
+                    
+                    draft.BasePay = basePay;
+                    draft.SuppPay = suppPay;
+                    draft.PatientPay = patientPay;
+                    
+                    _logger.Information("🏥 FACADE: استفاده از مقادیر محاسبه شده از ReceptionItems - TotalAmount: {TotalAmount}, PatientCoPay: {PatientCoPay}, InsurerShareAmount: {InsurerShareAmount}, BasePay: {BasePay}, SuppPay: {SuppPay}, PatientPay: {PatientPay}", 
+                        draft.TotalAmount, draft.PatientCoPay, draft.InsurerShareAmount, draft.BasePay, draft.SuppPay, draft.PatientPay);
                 }
                 draft.UpdatedAt = DateTime.Now;
                 

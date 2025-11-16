@@ -341,6 +341,9 @@
                                 <th>تاریخ پذیرش</th>
                                 <th>وضعیت</th>
                                 <th>مبلغ کل</th>
+                                <th>سهم بیمه پایه</th>
+                                <th>سهم بیمه تکمیلی</th>
+                                <th>سهم بیمار</th>
                                 <th>پرداخت شده</th>
                                 <th>باقی‌مانده</th>
                                 <th>عملیات</th>
@@ -374,7 +377,10 @@
                         <td>
                             <span class="badge ${statusBadge}">${item.StatusText || getStatusText(item.Status)}</span>
                         </td>
-                        <td>${formatIRR(item.TotalAmount)}</td>
+                        <td><strong>${formatIRR(item.TotalAmount)}</strong></td>
+                        <td class="text-primary">${formatIRR(item.BaseInsuranceShare || item.baseInsuranceShare || 0)}</td>
+                        <td class="text-success">${formatIRR(item.SupplementaryInsuranceShare || item.supplementaryInsuranceShare || 0)}</td>
+                        <td class="text-warning">${formatIRR(item.PatientShareAmount || item.patientShareAmount || 0)}</td>
                         <td>${formatIRR(item.PaidAmount)}</td>
                         <td>
                             ${hasDebt ? `<strong class="text-danger">${formatIRR(item.RemainingAmount)}</strong>` : formatIRR(item.RemainingAmount)}

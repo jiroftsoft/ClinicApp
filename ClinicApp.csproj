@@ -4269,7 +4269,6 @@
     <Content Include="Contracts\01-PreFlight-Protocol.md" />
     <Content Include="Contracts\02-Architecture-Guidelines.md" />
     <Content Include="Contracts\03-Code-Quality-Standards.md" />
-    <Content Include="Contracts\04-Security-Requirements.md" />
     <Content Include="Contracts\DEBUGGING_SPECIALIST_CONTRACT.md" />
     <Content Include="Contracts\MODULE_ANALYSIS_CONTRACT.md" />
     <Content Include="Docs\ground-rules.md" />

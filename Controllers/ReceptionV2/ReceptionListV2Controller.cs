@@ -15,6 +15,7 @@ using ClinicApp.ViewModels.Reception;
 using ClinicApp.Extensions;
 using ClinicApp.Filters;
 using Serilog;
+using Newtonsoft.Json;
 
 namespace ClinicApp.Controllers.ReceptionV2
 {
@@ -424,19 +425,75 @@ namespace ClinicApp.Controllers.ReceptionV2
                             paidAmount = successfulTransactions.Sum(t => (decimal?)t.Amount) ?? 0m;
                         }
                         
-                        // 🏥 MEDICAL: محاسبه سهم بیمار (PatientCoPay) از ReceptionItems یا از Reception.PatientCoPay
-                        // RemainingAmount باید بر اساس سهم بیمار باشد، نه TotalAmount
-                        var patientShareAmount = r.PatientCoPay;
+                        // 🏥 MEDICAL: محاسبه سهم‌های بیمه از ReceptionItems و SnapshotJson
+                        // این روش دقیق‌تر است چون از داده‌های واقعی محاسبه شده استفاده می‌کند
+                        decimal baseInsuranceShare = 0m;
+                        decimal supplementaryInsuranceShare = 0m;
+                        decimal patientShareAmount = 0m;
                         
-                        // Fallback: اگر PatientCoPay صفر است اما ReceptionItems وجود دارد، از مجموع PatientShareAmount استفاده کن
-                        if (patientShareAmount == 0 && r.ReceptionItems != null && r.ReceptionItems.Any(i => !i.IsDeleted))
+                        if (r.ReceptionItems != null && r.ReceptionItems.Any(i => !i.IsDeleted))
                         {
-                            patientShareAmount = r.ReceptionItems
-                                .Where(i => !i.IsDeleted)
-                                .Sum(i => (decimal?)i.PatientShareAmount) ?? 0m;
+                            var activeItems = r.ReceptionItems.Where(i => !i.IsDeleted).ToList();
+                            
+                            foreach (var receptionItem in activeItems)
+                            {
+                                // استخراج سهم‌ها از SnapshotJson (دقیق‌ترین روش)
+                                long itemBaseCovered = 0;
+                                long itemSuppCovered = 0;
+                                
+                                if (!string.IsNullOrEmpty(receptionItem.SnapshotJson))
+                                {
+                                    try
+                                    {
+                                        var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(receptionItem.SnapshotJson);
+                                        if (snapshot != null)
+                                        {
+                                            if (snapshot.PrimaryPays != null)
+                                                itemBaseCovered = (long)snapshot.PrimaryPays;
+                                            if (snapshot.SupplementaryPays != null)
+                                                itemSuppCovered = (long)snapshot.SupplementaryPays;
+                                        }
+                                    }
+                                    catch (Exception snapshotEx)
+                                    {
+                                        _logger.Warning(snapshotEx, "⚠️ V2: خطا در parse کردن SnapshotJson برای ReceptionItem {ReceptionItemId}", receptionItem.ReceptionItemId);
+                                    }
+                                }
+                                
+                                // Fallback: اگر SnapshotJson موجود نبود، از InsurerShareAmount استفاده کن
+                                if (itemBaseCovered == 0 && itemSuppCovered == 0)
+                                {
+                                    var insurerShare = (long)receptionItem.InsurerShareAmount;
+                                    if (r.BasePlanId.HasValue && r.SupplementaryPlanId.HasValue)
+                                    {
+                                        // اگر هر دو بیمه وجود دارد، تقسیم مساوی (یا می‌توان منطق بهتری اعمال کرد)
+                                        itemBaseCovered = insurerShare / 2;
+                                        itemSuppCovered = insurerShare - itemBaseCovered;
+                                    }
+                                    else if (r.BasePlanId.HasValue)
+                                    {
+                                        itemBaseCovered = insurerShare;
+                                    }
+                                    else if (r.SupplementaryPlanId.HasValue)
+                                    {
+                                        itemSuppCovered = insurerShare;
+                                    }
+                                }
+                                
+                                baseInsuranceShare += itemBaseCovered;
+                                supplementaryInsuranceShare += itemSuppCovered;
+                                patientShareAmount += receptionItem.PatientShareAmount;
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: اگر ReceptionItems موجود نبود، از فیلدهای Reception استفاده کن
+                            baseInsuranceShare = r.BasePay;
+                            supplementaryInsuranceShare = r.SuppPay;
+                            patientShareAmount = r.PatientPay;
                         }
                         
-                        // 🏥 MEDICAL: محاسبه RemainingAmount بر اساس سهم بیمار، نه TotalAmount
+                        // 🏥 MEDICAL: محاسبه RemainingAmount بر اساس سهم بیمار
                         // RemainingAmount = سهم بیمار - مبلغ پرداخت شده
                         var remainingAmount = patientShareAmount - paidAmount;
                         if (remainingAmount < 0)
@@ -475,7 +532,11 @@ namespace ClinicApp.Controllers.ReceptionV2
                             ReceptionNo = r.ReceptionNo ?? "—", // 🏥 MEDICAL: شماره پذیرش رسمی
                             ElectronicReceptionNumber = r.ElectronicReceptionNumber ?? "—", // 🏥 MEDICAL: شماره الکترونیکی
                             Notes = r.Notes,
-                            SupplementaryPlanId = r.SupplementaryPlanId // 🏥 MEDICAL: شناسه بیمه تکمیلی برای چاپ
+                            SupplementaryPlanId = r.SupplementaryPlanId, // 🏥 MEDICAL: شناسه بیمه تکمیلی برای چاپ
+                            // 🏥 MEDICAL: محاسبات دقیق سهم بیمه‌ها از ReceptionItems و SnapshotJson
+                            BaseInsuranceShare = baseInsuranceShare,
+                            SupplementaryInsuranceShare = supplementaryInsuranceShare,
+                            PatientShareAmount = patientShareAmount
                         };
                         
                         items.Add(item);

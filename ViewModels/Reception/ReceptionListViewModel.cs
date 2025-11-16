@@ -149,6 +149,24 @@ namespace ClinicApp.ViewModels.Reception
         /// </summary>
         [Display(Name = "شناسه بیمه تکمیلی")]
         public int? SupplementaryPlanId { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: سهم بیمه پایه (برای نمایش دقیق محاسبات بیمه)
+        /// </summary>
+        [Display(Name = "سهم بیمه پایه")]
+        public decimal BaseInsuranceShare { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: سهم بیمه تکمیلی (برای نمایش دقیق محاسبات بیمه)
+        /// </summary>
+        [Display(Name = "سهم بیمه تکمیلی")]
+        public decimal SupplementaryInsuranceShare { get; set; }
+
+        /// <summary>
+        /// 🏥 MEDICAL: سهم بیمار (برای نمایش دقیق محاسبات بیمه)
+        /// </summary>
+        [Display(Name = "سهم بیمار")]
+        public decimal PatientShareAmount { get; set; }
     }
 
     /// <summary>
