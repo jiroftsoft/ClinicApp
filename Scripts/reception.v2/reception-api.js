@@ -60,6 +60,8 @@
     if (/^\/?health/i.test(path)) return 'Health';
     if (/^\/?insurance\/check-status/i.test(path)) return 'CheckInsuranceStatus';
     if (/^\/?insurance\/check-expiry/i.test(path)) return 'CheckInsuranceExpiry';
+    if (/^\/?draft\/delete-incomplete/i.test(path)) return 'DeleteIncompleteDraft';
+    if (/^\/?draft\/cleanup-pending/i.test(path)) return 'CleanupPendingDrafts';
     // Remove leading slash if present
     return path.replace(/^\//, '');
   }

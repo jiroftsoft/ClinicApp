@@ -627,6 +627,19 @@
             if (patientData && patientData.PatientId) {
                 console.log('🏥 InsuranceStatusChecker: بیمار جدید انتخاب شد. بررسی خودکار...');
                 autoCheckOnPatientSelect(patientData.PatientId);
+            } else if (patientData === null || patientData === undefined) {
+                // ✅ Reset Insurance Status Checker - حذف تمام نمایش‌های وضعیت بیمه
+                console.log('🏥 InsuranceStatusChecker: بیمار reset شد. پاک کردن نمایش وضعیت بیمه...');
+                removeInsuranceStatusAlerts();
+                
+                // حذف Badge و Container
+                $('#insuranceStatusBadge, .insurance-status-badge, #insuranceStatusContainer, .insurance-status-container').remove();
+                
+                // حذف تمام نمایش‌های وضعیت بیمه از DOM
+                $('.insurance-status-display, .insurance-status-info, [data-insurance-status]').remove();
+                
+                // پاک کردن toastr notifications
+                toastr.clear();
             }
         });
     });

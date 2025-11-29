@@ -641,10 +641,8 @@
 
       // ✅ Draft باید حذف شود اگر هنوز نهایی نشده باشد (حتی اگر خدمت داشته باشد)
       // این منطق جدید است: Draft فقط زمانی نهایی می‌شود که کاربر روی "ذخیره و پذیرش" کلیک کند
-      if (!this.isDraftNotFinalized()) {
-        console.log('🏥 V2: Draft is finalized or finalizing, skipping deletion:', receptionId);
-        return Promise.resolve();
-      }
+      // ⚠️ تغییر: حذف بررسی isDraftNotFinalized چون همیشه true برمی‌گرداند
+      // در عوض، مستقیماً Draft را حذف می‌کنیم (Backend بررسی می‌کند که Status = Pending است)
 
       try {
         console.log('🏥 V2: Deleting incomplete draft:', receptionId);
@@ -659,6 +657,13 @@
           $("#ReceptionId").val('');
         } else {
           console.warn('⚠️ V2: Failed to delete incomplete draft:', okResult);
+          // اگر Backend گفت که Draft نهایی شده است، state را reset کن
+          if (okResult && (okResult.Code === 'FINALIZED' || okResult.code === 'FINALIZED')) {
+            console.log('ℹ️ V2: Draft already finalized, resetting local state');
+            currentDraftId = null;
+            isDraftCreated = false;
+            $("#ReceptionId").val('');
+          }
         }
       } catch (err) {
         console.error('❌ V2: Error deleting incomplete draft:', err);
@@ -718,6 +723,11 @@
     }
   };
   
+  // ✅ اضافه کردن متد برای بررسی isDraftFinalizing از خارج
+  autoDraftManagerPublicAPI.isDraftFinalizing = function() {
+    return isDraftFinalizing;
+  };
+
   // ✅ Bugfix: Export به window.AutoDraftManager
   window.AutoDraftManager = autoDraftManagerPublicAPI;
   

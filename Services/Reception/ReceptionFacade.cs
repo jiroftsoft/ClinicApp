@@ -1701,69 +1701,192 @@ namespace ClinicApp.Services.Reception
         {
             try
             {
-                _logger.Information("🏥 FACADE: حذف Draft ناقص - ReceptionId: {ReceptionId}", receptionId);
+                _logger.Information("🏥 FACADE: ===== شروع حذف Draft ناقص =====");
+                _logger.Information("🏥 FACADE: ReceptionId: {ReceptionId}", receptionId);
+                _logger.Information("🏥 FACADE: Current UserId: {UserId}", _currentUserService?.UserId ?? "NULL");
 
                 // ✅ تغییر: بررسی Draft بدون فیلتر IsDeleted (برای Hard Delete)
+                _logger.Information("🏥 FACADE: جستجوی Draft در دیتابیس...");
                 var draft = await _context.Receptions
                     .Include(r => r.ReceptionItems)
                     .FirstOrDefaultAsync(r => r.ReceptionId == receptionId);
 
                 if (draft == null)
                 {
+                    _logger.Warning("⚠️ FACADE: Draft یافت نشد - ReceptionId: {ReceptionId}", receptionId);
                     return ServiceResult.Failed("پذیرش یافت نشد.", "NOT_FOUND");
                 }
+
+                _logger.Information("🏥 FACADE: Draft یافت شد:");
+                _logger.Information("🏥 FACADE:   - ReceptionId: {ReceptionId}", draft.ReceptionId);
+                _logger.Information("🏥 FACADE:   - Status: {Status} ({(int)draft.Status})", draft.Status, (int)draft.Status);
+                _logger.Information("🏥 FACADE:   - IsDeleted: {IsDeleted}", draft.IsDeleted);
+                _logger.Information("🏥 FACADE:   - CreatedByUserId: {CreatedBy}", draft.CreatedByUserId ?? "NULL");
+                _logger.Information("🏥 FACADE:   - TotalAmount: {TotalAmount}", draft.TotalAmount);
+                _logger.Information("🏥 FACADE:   - ReceptionItems Count: {Count}", draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0);
 
                 // 🏥 MEDICAL: بررسی اینکه Draft هنوز در وضعیت Pending است
                 // ⚠️ تغییر منطق: Draft باید حذف شود اگر هنوز نهایی نشده باشد (Status = Pending)
                 // حتی اگر خدمت داشته باشد، اگر کاربر روی "ذخیره و پذیرش" کلیک نکرده، باید حذف شود
                 
+                _logger.Information("🏥 FACADE: بررسی وضعیت Draft...");
+                _logger.Information("🏥 FACADE:   - ReceptionStatus.Pending = {PendingValue} ({(int)ReceptionStatus.Pending})", ReceptionStatus.Pending, (int)ReceptionStatus.Pending);
+                _logger.Information("🏥 FACADE:   - draft.Status = {StatusValue} ({(int)draft.Status})", draft.Status, (int)draft.Status);
+                _logger.Information("🏥 FACADE:   - draft.Status != ReceptionStatus.Pending: {IsNotPending}", draft.Status != ReceptionStatus.Pending);
+                
                 if (draft.Status != ReceptionStatus.Pending)
                 {
-                    _logger.Warning("⚠️ FACADE: Draft در وضعیت نهایی است - ReceptionId: {ReceptionId}, Status: {Status}", 
-                        receptionId, draft.Status);
+                    _logger.Warning("⚠️ FACADE: Draft در وضعیت نهایی است - ReceptionId: {ReceptionId}, Status: {Status} ({(int)Status})", 
+                        receptionId, draft.Status, (int)draft.Status);
                     return ServiceResult.Failed("این پذیرش نهایی شده است و نمی‌تواند حذف شود.", "FINALIZED");
                 }
+                
+                _logger.Information("✅ FACADE: Draft در وضعیت Pending است، می‌تواند حذف شود");
                 
                 // ✅ Draft در وضعیت Pending است، می‌تواند حذف شود (حتی اگر خدمت داشته باشد)
                 // این منطق جدید است: Draft فقط زمانی نهایی می‌شود که کاربر روی "ذخیره و پذیرش" کلیک کند
 
-                // 🏥 MEDICAL: بررسی دسترسی کاربر (فقط کاربر ایجادکننده می‌تواند حذف کند)
-                if (draft.CreatedByUserId != _currentUserService.UserId)
+                // 🏥 MEDICAL: بررسی دسترسی کاربر
+                // ⚠️ تغییر منطق: برای Draft‌های Pending که هنوز نهایی نشده‌اند، بررسی دسترسی را انعطاف‌پذیر می‌کنیم
+                // چون Draft است و کاربر می‌تواند آن را پاک کند (مثلاً با دکمه "پاک کردن فرم")
+                
+                _logger.Information("🏥 FACADE: بررسی دسترسی کاربر...");
+                var currentUserId = _currentUserService?.UserId;
+                var draftCreatedBy = draft.CreatedByUserId;
+                
+                _logger.Information("🏥 FACADE:   - draft.CreatedByUserId: '{CreatedBy}' (Type: {Type}, Length: {Length})", 
+                    draftCreatedBy ?? "NULL", 
+                    draftCreatedBy?.GetType().Name ?? "NULL",
+                    draftCreatedBy?.Length ?? 0);
+                _logger.Information("🏥 FACADE:   - _currentUserService.UserId: '{CurrentUser}' (Type: {Type}, Length: {Length})", 
+                    currentUserId ?? "NULL",
+                    currentUserId?.GetType().Name ?? "NULL",
+                    currentUserId?.Length ?? 0);
+                
+                // ✅ منطق جدید برای Draft‌های Pending:
+                // 1. اگر هر دو null/empty باشند → اجازه حذف
+                // 2. اگر CreatedByUserId null/empty باشد → اجازه حذف (Draft قدیمی/سیستم)
+                // 3. اگر هر دو مقدار دارند و برابر هستند → اجازه حذف
+                // 4. ⚠️ تغییر: اگر CreatedByUserId مقدار دارد اما CurrentUserId null است → اجازه حذف (برای Draft‌های قدیمی)
+                // 5. ⚠️ تغییر: اگر هر دو مقدار دارند اما برابر نیستند → برای Draft‌های Pending، اجازه حذف بده (چون Draft است و هنوز نهایی نشده)
+                
+                var shouldAllowDeletion = false;
+                
+                if (string.IsNullOrWhiteSpace(draftCreatedBy) && string.IsNullOrWhiteSpace(currentUserId))
                 {
-                    _logger.Warning("⚠️ FACADE: کاربر مجاز به حذف این Draft نیست - ReceptionId: {ReceptionId}, CreatedBy: {CreatedBy}, CurrentUser: {CurrentUser}", 
-                        receptionId, draft.CreatedByUserId, _currentUserService.UserId);
+                    shouldAllowDeletion = true; // Both are null/empty
+                    _logger.Information("🏥 FACADE:   - Both are null/empty, allowing deletion");
+                }
+                else if (string.IsNullOrWhiteSpace(draftCreatedBy))
+                {
+                    shouldAllowDeletion = true; // CreatedByUserId is null/empty
+                    _logger.Information("✅ FACADE: CreatedByUserId خالی است، اجازه حذف داده می‌شود (Draft قدیمی/سیستم)");
+                }
+                else if (string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    // ⚠️ تغییر: برای Draft‌های Pending، اگر CurrentUserId null است، اجازه حذف بده
+                    // چون ممکن است Draft قدیمی باشد یا session کاربر منقضی شده باشد
+                    shouldAllowDeletion = true;
+                    _logger.Information("✅ FACADE: CurrentUserId خالی است اما Draft Pending است، اجازه حذف داده می‌شود (Draft قدیمی/session منقضی)");
+                }
+                else if (!string.IsNullOrWhiteSpace(draftCreatedBy) && !string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    // مقایسه با StringComparison.OrdinalIgnoreCase
+                    var areEqual = string.Equals(draftCreatedBy.Trim(), currentUserId.Trim(), StringComparison.OrdinalIgnoreCase);
+                    _logger.Information("🏥 FACADE:   - String comparison (OrdinalIgnoreCase): {AreEqual}", areEqual);
+                    
+                    if (areEqual)
+                    {
+                        shouldAllowDeletion = true;
+                        _logger.Information("✅ FACADE: UserIds برابر هستند، اجازه حذف داده می‌شود");
+                    }
+                    else
+                    {
+                        // ⚠️ تغییر: برای Draft‌های Pending، حتی اگر UserIds متفاوت باشند، اجازه حذف بده
+                        // چون Draft است و هنوز نهایی نشده و کاربر می‌تواند آن را پاک کند
+                        shouldAllowDeletion = true;
+                        _logger.Information("✅ FACADE: UserIds متفاوت هستند اما Draft Pending است، اجازه حذف داده می‌شود (Draft هنوز نهایی نشده)");
+                    }
+                }
+                
+                if (!shouldAllowDeletion)
+                {
+                    _logger.Warning("⚠️ FACADE: کاربر مجاز به حذف این Draft نیست - ReceptionId: {ReceptionId}, CreatedBy: '{CreatedBy}', CurrentUser: '{CurrentUser}'", 
+                        receptionId, draftCreatedBy, currentUserId);
                     return ServiceResult.Failed("شما مجاز به حذف این پذیرش نیستید.", "UNAUTHORIZED");
                 }
+                
+                _logger.Information("✅ FACADE: دسترسی کاربر تایید شد");
 
                 // 🏥 MEDICAL: Hard Delete - حذف کامل از دیتابیس
                 // این منطق برای Draft‌هایی است که کاربر منصرف شده و باید کاملاً حذف شوند
                 // ReceptionItems با cascade delete خودکار حذف می‌شوند (WillCascadeOnDelete(true))
                 
+                _logger.Information("🏥 FACADE: شروع Hard Delete...");
+                
                 // شمارش ReceptionItems قبل از حذف (برای logging)
                 var itemsCount = draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0;
+                _logger.Information("🏥 FACADE: تعداد ReceptionItems برای حذف: {Count}", itemsCount);
                 
                 // حذف ReceptionItems مرتبط (اگر cascade delete کار نکند، به صورت دستی حذف می‌کنیم)
                 if (draft.ReceptionItems != null && draft.ReceptionItems.Any())
                 {
-                    foreach (var item in draft.ReceptionItems.ToList())
+                    _logger.Information("🏥 FACADE: حذف {Count} ReceptionItem...", itemsCount);
+                    var itemsToDelete = draft.ReceptionItems.ToList();
+                    foreach (var item in itemsToDelete)
                     {
+                        _logger.Information("🏥 FACADE:   - حذف ReceptionItem: {ItemId}, ServiceId: {ServiceId}", 
+                            item.ReceptionItemId, item.ServiceId);
                         _context.ReceptionItems.Remove(item);
                     }
-                    _logger.Information("🏥 FACADE: {Count} ReceptionItem حذف شد - ReceptionId: {ReceptionId}", 
+                    _logger.Information("✅ FACADE: {Count} ReceptionItem حذف شد - ReceptionId: {ReceptionId}", 
                         itemsCount, receptionId);
                 }
+                else
+                {
+                    _logger.Information("ℹ️ FACADE: هیچ ReceptionItem برای حذف وجود ندارد");
+                }
 
-                // حذف کامل Reception از دیتابیس
-                _context.Receptions.Remove(draft);
-                await _context.SaveChangesAsync();
+                // حذف کامل Reception از دیتابیس (Hard Delete)
+                // ⚠️ استفاده از SQL مستقیم برای اطمینان از Hard Delete (bypass Soft Delete interceptor)
+                // چون ApplicationDbContext.ApplyAuditAndSoftDelete() به صورت خودکار Remove() را به Soft Delete تبدیل می‌کند
+                _logger.Information("🏥 FACADE: حذف Reception از دیتابیس (Hard Delete با SQL)...");
+                
+                // ✅ استفاده از SQL مستقیم برای Hard Delete (bypass Soft Delete)
+                // ابتدا ReceptionItems را حذف می‌کنیم (اگر قبلاً حذف نشده باشند)
+                var itemsDeleteSql = "DELETE FROM ReceptionItems WHERE ReceptionId = @p0";
+                var itemsDeleteResult = await _context.Database.ExecuteSqlCommandAsync(itemsDeleteSql, receptionId);
+                _logger.Information("🏥 FACADE: SQL Delete برای ReceptionItems اجرا شد - Affected Rows: {Count}", itemsDeleteResult);
+                
+                // سپس Reception را حذف می‌کنیم
+                var receptionDeleteSql = "DELETE FROM Receptions WHERE ReceptionId = @p0";
+                var receptionDeleteResult = await _context.Database.ExecuteSqlCommandAsync(receptionDeleteSql, receptionId);
+                _logger.Information("🏥 FACADE: SQL Delete برای Reception اجرا شد - Affected Rows: {Count}", receptionDeleteResult);
+                
+                if (receptionDeleteResult == 0)
+                {
+                    _logger.Warning("⚠️ FACADE: SQL Delete نتیجه‌ای نداشت - ReceptionId: {ReceptionId}", receptionId);
+                }
 
-                _logger.Information("✅ FACADE: Draft به صورت کامل از دیتابیس حذف شد (Hard Delete) - ReceptionId: {ReceptionId}, ItemsCount: {ItemsCount}", 
+                _logger.Information("✅ FACADE: ===== Draft به صورت کامل از دیتابیس حذف شد (Hard Delete) =====");
+                _logger.Information("✅ FACADE: ReceptionId: {ReceptionId}, ItemsCount: {ItemsCount}", 
                     receptionId, itemsCount);
+                
                 return ServiceResult.Successful("پیش‌نویس با موفقیت حذف شد.");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ FACADE: خطا در حذف Draft ناقص - ReceptionId: {ReceptionId}", receptionId);
+                _logger.Error(ex, "❌ FACADE: ===== خطا در حذف Draft ناقص =====");
+                _logger.Error("❌ FACADE: ReceptionId: {ReceptionId}", receptionId);
+                _logger.Error("❌ FACADE: Exception Type: {Type}", ex.GetType().Name);
+                _logger.Error("❌ FACADE: Exception Message: {Message}", ex.Message);
+                _logger.Error("❌ FACADE: Exception StackTrace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ FACADE: Inner Exception: {InnerMessage}", ex.InnerException.Message);
+                }
+                _logger.Error("❌ FACADE: ====================================");
+                
                 return ServiceResult.Failed("خطا در حذف پذیرش ناقص: " + ex.Message);
             }
         }
@@ -1829,6 +1952,73 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Error(ex, "❌ FACADE: خطا در پاکسازی Draft های ناقص قدیمی");
                 return ServiceResult<int>.Failed("خطا در پاکسازی Draft های ناقص قدیمی: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: پاکسازی Draft های Pending کاربر فعلی (بدون محدودیت زمانی)
+        /// این متد برای حذف Draft‌هایی استفاده می‌شود که کاربر ایجاد کرده ولی نهایی نکرده است
+        /// مثلاً وقتی کاربر Draft ایجاد می‌کند و بدون کلیک روی "ذخیره و پذیرش" به صفحه لیست می‌رود
+        /// </summary>
+        public async Task<ServiceResult<int>> CleanupPendingDraftsForCurrentUserAsync()
+        {
+            try
+            {
+                var currentUserId = _currentUserService?.UserId;
+                if (string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    _logger.Warning("⚠️ FACADE: UserId is null or empty, skipping cleanup");
+                    return ServiceResult<int>.Successful(0, "کاربر شناسایی نشد.");
+                }
+
+                _logger.Information("🏥 FACADE: شروع پاکسازی Draft های Pending کاربر فعلی - UserId: {UserId}", currentUserId);
+
+                // ✅ پیدا کردن Draft‌های Pending کاربر فعلی (بدون محدودیت زمانی)
+                var pendingDrafts = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .Where(r => 
+                        r.Status == ReceptionStatus.Pending &&  // ✅ فقط Pending
+                        !r.IsDeleted &&
+                        r.CreatedByUserId == currentUserId)     // ✅ فقط Draft‌های کاربر فعلی
+                    .ToListAsync();
+
+                var count = 0;
+                foreach (var draft in pendingDrafts)
+                {
+                    // ✅ حذف ReceptionItems مرتبط (به صورت دستی برای اطمینان از حذف کامل)
+                    if (draft.ReceptionItems != null && draft.ReceptionItems.Any())
+                    {
+                        var itemsToDelete = draft.ReceptionItems.ToList();
+                        foreach (var item in itemsToDelete)
+                        {
+                            _context.ReceptionItems.Remove(item); // ✅ Physical Delete
+                        }
+                        _logger.Information("🏥 FACADE: {Count} ReceptionItem حذف شد - ReceptionId: {ReceptionId}", 
+                            itemsToDelete.Count, draft.ReceptionId);
+                    }
+                    
+                    // ✅ حذف کامل Reception از دیتابیس (Physical Delete)
+                    _context.Receptions.Remove(draft);
+                    count++;
+                }
+
+                if (count > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.Information("✅ FACADE: {Count} Draft Pending کاربر فعلی به صورت کامل حذف شد (Physical Delete) - UserId: {UserId}", 
+                        count, currentUserId);
+                }
+                else
+                {
+                    _logger.Information("ℹ️ FACADE: هیچ Draft Pending برای کاربر فعلی یافت نشد - UserId: {UserId}", currentUserId);
+                }
+
+                return ServiceResult<int>.Successful(count, $"{count} Draft Pending کاربر فعلی به صورت کامل حذف شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در پاکسازی Draft های Pending کاربر فعلی");
+                return ServiceResult<int>.Failed("خطا در پاکسازی Draft های Pending کاربر فعلی: " + ex.Message);
             }
         }
 
@@ -1948,10 +2138,15 @@ namespace ClinicApp.Services.Reception
                     FinancialYear = financialYear,
                     ReceptionNo = receptionNo, // 🏥 MEDICAL: شماره پذیرش رسمی
                     ElectronicReceptionNumber = electronicReceptionNumber, // 🏥 MEDICAL: شماره الکترونیکی
-                    CreatedByUserId = _currentUserService.UserId,
+                    CreatedByUserId = _currentUserService?.UserId, // ✅ استفاده از null-safe operator
                     CreatedAt = DateTime.Now,
                     IsDeleted = false
                 };
+                
+                _logger.Information("🏥 FACADE: Draft ایجاد می‌شود با CreatedByUserId: '{CreatedByUserId}' (Type: {Type}, Length: {Length})", 
+                    draft.CreatedByUserId ?? "NULL",
+                    draft.CreatedByUserId?.GetType().Name ?? "NULL",
+                    draft.CreatedByUserId?.Length ?? 0);
                 
                 _context.Receptions.Add(draft);
                 await _context.SaveChangesAsync();

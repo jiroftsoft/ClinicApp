@@ -340,30 +340,79 @@
     // طبق الگوی موجود در پروژه - پشتیبانی از PascalCase و camelCase
     var c = null;
     
+    console.log('🏥 V2: Extracting coverage - pricing:', pricing, 'insurance:', insurance, 'item:', item);
+    
     // ✅ اولویت 1: از pricing (اگر CoverageDetailsDto در pricing موجود باشد)
     if (pricing) {
       c = pricing.Coverage || pricing.coverage;
+      console.log('🏥 V2: Coverage from pricing:', c);
+      
+      // ✅ اگر Coverage در pricing نیست، اما pricing خودش یک CoverageDetailsDto است (Segments دارد)
+      if (!c && pricing.Segments) {
+        console.log('🏥 V2: Pricing itself is a CoverageDetailsDto, using it');
+        c = pricing;
+      }
     }
     
     // ✅ اولویت 2: از insurance (InsuranceCalculation) - ساخت CoverageDetailsDto
     if (!c && insurance) {
+      console.log('🏥 V2: Building coverage from insurance:', insurance);
       c = buildCoverageFromInsurance(insurance, item, pricing);
+      console.log('🏥 V2: Built coverage from insurance:', c);
     }
     
     // ✅ اولویت 3: از item - استخراج یا ساخت CoverageDetailsDto
     if (!c && item) {
+      console.log('🏥 V2: Building coverage from item:', item);
       c = buildCoverageFromItem(item, pricing);
+      console.log('🏥 V2: Built coverage from item:', c);
     }
     
     // ✅ بررسی نهایی - اگر Coverage پیدا نشد، خطا نمایش بده
     if (!c) {
       console.warn('🏥 V2: Coverage information not found in pricing, insurance, or item');
-      console.warn('🏥 V2: Item:', item);
-      console.warn('🏥 V2: Pricing:', pricing);
-      console.warn('🏥 V2: Insurance:', insurance);
-      toastr.warning('اطلاعات پوشش برای این آیتم موجود نیست. لطفاً دوباره محاسبه کنید.');
-      return;
+      console.warn('🏥 V2: Item:', JSON.stringify(item, null, 2));
+      console.warn('🏥 V2: Pricing:', JSON.stringify(pricing, null, 2));
+      console.warn('🏥 V2: Insurance:', JSON.stringify(insurance, null, 2));
+      
+      // ✅ تلاش نهایی: بررسی عمیق‌تر در pricing و item
+      if (pricing) {
+        // بررسی Coverage در pricing
+        if (pricing.Coverage && (pricing.Coverage.Segments || pricing.Coverage.State !== undefined)) {
+          console.log('🏥 V2: Found Coverage in pricing.Coverage, using it');
+          c = pricing.Coverage;
+        } else if (pricing.coverage && (pricing.coverage.Segments || pricing.coverage.State !== undefined)) {
+          console.log('🏥 V2: Found coverage in pricing.coverage, using it');
+          c = pricing.coverage;
+        } else if (pricing.Segments || pricing.State !== undefined) {
+          // pricing خودش CoverageDetailsDto است
+          console.log('🏥 V2: Pricing itself is CoverageDetailsDto, using it');
+          c = pricing;
+        }
+      }
+      
+      if (!c && item) {
+        // بررسی Coverage در item
+        if (item.Coverage && (item.Coverage.Segments || item.Coverage.State !== undefined)) {
+          console.log('🏥 V2: Found Coverage in item.Coverage, using it');
+          c = item.Coverage;
+        } else if (item.coverage && (item.coverage.Segments || item.coverage.State !== undefined)) {
+          console.log('🏥 V2: Found coverage in item.coverage, using it');
+          c = item.coverage;
+        } else if (item.InsuranceCalculation) {
+          // ساخت Coverage از InsuranceCalculation در item
+          console.log('🏥 V2: Found InsuranceCalculation in item, building coverage from it');
+          c = buildCoverageFromInsurance(item.InsuranceCalculation, item, pricing);
+        }
+      }
+      
+      if (!c) {
+        toastr.warning('اطلاعات پوشش برای این آیتم موجود نیست. لطفاً دوباره محاسبه کنید.');
+        return;
+      }
     }
+    
+    console.log('🏥 V2: Final coverage extracted:', c);
 
     $modal = $modal || new bootstrap.Modal(document.getElementById('rv2-coverage-modal'), {});
     
@@ -416,6 +465,86 @@
       '</div>'
     );
 
+    // ✅ ساخت اطلاعات بیمه پایه و تکمیلی از Coverage Segments
+    var baseData = null;
+    var suppData = null;
+    
+    // ✅ استخراج اطلاعات از Segments
+    var baseSegment = (c.Segments || []).find(function(s) { return s.Payer === 'BASE'; });
+    var suppSegment = (c.Segments || []).find(function(s) { return s.Payer === 'SUPP'; });
+    
+    // ✅ استخراج نام بیمه‌ها از state (اگر موجود باشد)
+    var s = ns.ReceptionV2.state || {};
+    var basePlanName = s?.insurances?.BasePlanName || s?.insurances?.basePlanName || 'بیمه پایه';
+    var suppPlanName = s?.insurances?.SupplementaryPlanName || s?.insurances?.supplementaryPlanName || 'بیمه تکمیلی';
+    
+    // ✅ اگر insurance موجود است، از آن استفاده کن
+    if (insurance) {
+      var primaryCoverage = insurance.PrimaryCoverage || insurance.primaryCoverage || 0;
+      var supplementaryCoverage = insurance.SupplementaryCoverage || insurance.supplementaryCoverage || 0;
+      var primaryPercent = insurance.PrimaryCoveragePercent || insurance.primaryCoveragePercent || 0;
+      var supplementaryPercent = insurance.SupplementaryCoveragePercent || insurance.supplementaryCoveragePercent || 0;
+      
+      // ✅ ساخت Base data
+      if (primaryCoverage > 0 || baseSegment) {
+        baseData = {
+          PlanName: basePlanName,
+          CoveragePercent: primaryPercent,
+          CoverageAmountIRR: primaryCoverage,
+          CoverageAmountIRRStr: formatIrr(primaryCoverage),
+          HasTariff: true,
+          Note: baseSegment ? baseSegment.Note : 'پوشش توسط بیمه پایه'
+        };
+      }
+      
+      // ✅ ساخت Supplementary data
+      if (supplementaryCoverage > 0 || suppSegment) {
+        suppData = {
+          PlanName: suppPlanName,
+          CoveragePercent: supplementaryPercent,
+          CoverageAmountIRR: supplementaryCoverage,
+          CoverageAmountIRRStr: formatIrr(supplementaryCoverage),
+          HasTariff: true,
+          Note: suppSegment ? suppSegment.Note : 'پوشش توسط بیمه تکمیلی'
+        };
+      }
+    }
+    
+    // ✅ Fallback: اگر insurance موجود نیست، از pricing استفاده کن
+    if (!baseData && pricing) {
+      var baseCovered = pricing.BaseCoveredIRR || pricing.baseCoveredIRR || 0;
+      var gross = pricing.GrossIRR || pricing.grossIRR || 0;
+      if (baseCovered > 0 || baseSegment) {
+        baseData = {
+          PlanName: basePlanName,
+          CoveragePercent: baseCovered > 0 && gross > 0 ? Math.round((baseCovered / gross) * 100) : 0,
+          CoverageAmountIRR: baseCovered,
+          CoverageAmountIRRStr: pricing.BaseCoveredIRRStr || pricing.baseCoveredIRRStr || formatIrr(baseCovered),
+          HasTariff: true,
+          Note: baseSegment ? baseSegment.Note : 'پوشش توسط بیمه پایه'
+        };
+      }
+    }
+    
+    if (!suppData && pricing) {
+      var suppCovered = pricing.SuppCoveredIRR || pricing.suppCoveredIRR || 0;
+      var gross = pricing.GrossIRR || pricing.grossIRR || 0;
+      if (suppCovered > 0 || suppSegment) {
+        suppData = {
+          PlanName: suppPlanName,
+          CoveragePercent: suppCovered > 0 && gross > 0 ? Math.round((suppCovered / gross) * 100) : 0,
+          CoverageAmountIRR: suppCovered,
+          CoverageAmountIRRStr: pricing.SuppCoveredIRRStr || pricing.suppCoveredIRRStr || formatIrr(suppCovered),
+          HasTariff: true,
+          Note: suppSegment ? suppSegment.Note : 'پوشش توسط بیمه تکمیلی'
+        };
+      }
+    }
+    
+    // ✅ رندر تب‌های بیمه پایه و تکمیلی
+    renderKeyValues($('#cov-base'), baseData, true);  // true = isBase
+    renderKeyValues($('#cov-supp'), suppData, false);  // false = not base
+    
     // نمایش در تب مؤثر (یا تب جدید)
     $('#cov-eff').html(html);
     
@@ -594,20 +723,136 @@
   // ✅ Click handler روی badge
   $(document).on('click', '.coverage-badge', function() {
     var $row = $(this).closest('tr');
-    var item = $row.data('item');
-    var pricing = $row.data('pricing');
-    var insurance = $row.data('insurance'); // ✅ اضافه شده: InsuranceCalculation
+    var $badge = $(this);
     
+    // ✅ خواندن از data-* attributes (اولویت اول)
+    var itemJson = $row.attr('data-item-json') || $badge.attr('data-item-json');
+    var pricingJson = $row.attr('data-pricing-json') || $badge.attr('data-pricing-json');
+    var insuranceJson = $row.attr('data-insurance-json') || $badge.attr('data-insurance-json');
+    
+    var item = null;
+    var pricing = null;
+    var insurance = null;
+    
+    // ✅ Parse JSON از data-* attributes
+    if (itemJson) {
+      try {
+        item = JSON.parse(itemJson);
+        console.log('🏥 V2: Item parsed from data-item-json:', item);
+      } catch (e) {
+        console.warn('🏥 V2: Failed to parse item JSON:', e);
+      }
+    }
+    
+    if (pricingJson) {
+      try {
+        pricing = JSON.parse(pricingJson);
+        console.log('🏥 V2: Pricing parsed from data-pricing-json:', pricing);
+      } catch (e) {
+        console.warn('🏥 V2: Failed to parse pricing JSON:', e);
+      }
+    }
+    
+    if (insuranceJson) {
+      try {
+        insurance = JSON.parse(insuranceJson);
+        console.log('🏥 V2: Insurance parsed from data-insurance-json:', insurance);
+      } catch (e) {
+        console.warn('🏥 V2: Failed to parse insurance JSON:', e);
+      }
+    }
+    
+    // ✅ Fallback: خواندن از jQuery data() (اگر data-* attributes موجود نباشند)
     if (!item) {
-      console.warn('🏥 V2: Item data not found on row');
-      toastr.warning('اطلاعات آیتم یافت نشد');
-      return;
+      item = $row.data('item');
+      console.log('🏥 V2: Item from row.data():', item);
+    }
+    
+    if (!pricing) {
+      pricing = $row.data('pricing');
+      console.log('🏥 V2: Pricing from row.data():', pricing);
+    }
+    
+    if (!insurance) {
+      insurance = $row.data('insurance');
+      console.log('🏥 V2: Insurance from row.data():', insurance);
+    }
+    
+    console.log('🏥 V2: Coverage badge clicked - item:', item, 'pricing:', pricing, 'insurance:', insurance);
+    
+    // ✅ اگر item، pricing یا insurance وجود ندارد، از اطلاعات row سعی کن آنها را بخوان یا بساز
+    if (!item || !pricing || !insurance) {
+      console.warn('🏥 V2: Missing data on row, trying to read from row data...');
+      console.warn('🏥 V2: item:', item, 'pricing:', pricing, 'insurance:', insurance);
+      
+      // ✅ اگر item وجود ندارد، از اطلاعات row سعی کن item را بسازی
+      if (!item) {
+        console.warn('🏥 V2: Item data not found on row, trying to build from row data...');
+        
+        // ✅ ساخت item از اطلاعات موجود در row
+        var serviceId = $row.attr('data-service-id') || $row.data('service-id');
+        var receptionItemId = $row.attr('data-reception-item-id') || $row.data('reception-item-id');
+        
+        if (serviceId) {
+          // ✅ استخراج اطلاعات از سلول‌های جدول
+          var code = $row.find('.cell-code').text().trim();
+          var name = $row.find('.cell-name').text().trim();
+          var qty = parseInt($row.find('.cell-qty').text().trim().replace(/[^\d]/g, '')) || 1;
+          var unitPriceText = $row.find('.cell-unit').text().trim().replace(/[^\d]/g, '');
+          var unitPrice = parseInt(unitPriceText) || 0;
+          var totalText = $row.find('.cell-gross').text().trim().replace(/[^\d]/g, '');
+          var total = parseInt(totalText) || 0;
+          
+          // ساخت item از اطلاعات موجود در DOM
+          item = {
+            ServiceId: parseInt(serviceId),
+            serviceId: parseInt(serviceId),
+            Code: code,
+            code: code,
+            Name: name,
+            name: name,
+            Quantity: qty,
+            quantity: qty,
+            Qty: qty,
+            qty: qty,
+            UnitPriceIRR: unitPrice,
+            unitPriceIRR: unitPrice,
+            TotalIRR: total,
+            totalIRR: total,
+            ReceptionItemId: receptionItemId ? parseInt(receptionItemId) : null,
+            receptionItemId: receptionItemId ? parseInt(receptionItemId) : null
+          };
+          
+          // ✅ اگر insurance موجود است، آن را به item اضافه کن
+          if (insurance) {
+            item.InsuranceCalculation = insurance;
+            item.insuranceCalculation = insurance;
+          }
+          
+          // ✅ اگر pricing موجود است، آن را به item اضافه کن
+          if (pricing) {
+            item.Coverage = pricing.Coverage || pricing.coverage;
+            item.coverage = pricing.Coverage || pricing.coverage;
+          }
+          
+          console.log('🏥 V2: Built item from row data:', item);
+        } else {
+          console.error('🏥 V2: Cannot build item - ServiceId not found on row');
+          console.error('🏥 V2: Row attributes:', $row[0] ? Array.from($row[0].attributes).map(function(attr) {
+            return attr.name + '=' + attr.value;
+          }).join(', ') : 'Row not found');
+          toastr.warning('اطلاعات آیتم یافت نشد');
+          return;
+        }
+      }
     }
     
     // ✅ اگر pricing وجود ندارد، از insurance یا item استفاده کن
     if (!pricing) {
       pricing = {};
     }
+    
+    console.log('🏥 V2: Final data before opening modal - item:', item, 'pricing:', pricing, 'insurance:', insurance);
     
     // ✅ پاس دادن insurance به openItemCoverageModal
     openItemCoverageModal(item, pricing, insurance);

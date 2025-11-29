@@ -779,4 +779,363 @@
     
     finalizeReception(payload, true);
   }
+
+  /**
+   * 🏥 MEDICAL: پاک کردن فرم و آماده‌سازی برای پذیرش بیمار بعدی
+   * این تابع Draft را حذف می‌کند و تمام فیلدهای فرم را پاک می‌کند
+   */
+  async function resetForm() {
+    try {
+      console.log('🏥 V2: شروع پاک کردن فرم...');
+      
+      // ✅ 1. حذف Draft (اگر وجود دارد) - بدون بررسی isDraftNotFinalized
+      // چون کاربر صراحتاً روی دکمه "پاک کردن فرم" کلیک کرده است
+      const receptionId = $("#ReceptionId").val();
+      if (receptionId && receptionId > 0) {
+        console.log('🏥 V2: حذف Draft قبل از Reset فرم - ReceptionId:', receptionId);
+        
+        // بررسی اینکه آیا Draft در حال نهایی شدن است (اگر در حال نهایی شدن است، حذف نکن)
+        // بررسی flag isDraftFinalizing از AutoDraftManager
+        let isFinalizing = false;
+        if (window.AutoDraftManager) {
+          // بررسی flag داخلی (اگر در دسترس باشد)
+          // یا بررسی از طریق بررسی وضعیت فعلی
+          try {
+            // اگر متد isDraftFinalizing وجود دارد، استفاده کن
+            if (typeof window.AutoDraftManager.isDraftFinalizing === 'function') {
+              isFinalizing = window.AutoDraftManager.isDraftFinalizing();
+            }
+          } catch (err) {
+            console.warn('⚠️ V2: خطا در بررسی isDraftFinalizing:', err);
+          }
+        }
+        
+        if (isFinalizing) {
+          console.log('⚠️ V2: Draft در حال نهایی شدن است، حذف نمی‌شود');
+          toastr.warning('در حال نهایی‌سازی پذیرش است. لطفاً صبر کنید...', 'هشدار', {
+            timeOut: 3000
+          });
+          return; // خروج از تابع
+        }
+        
+        try {
+          // حذف Draft با AJAX - بدون بررسی isDraftNotFinalized
+          // چون کاربر صراحتاً روی دکمه "پاک کردن فرم" کلیک کرده است
+          // Backend بررسی می‌کند که آیا Draft واقعاً Pending است یا نه
+          console.log('🏥 V2: ===== شروع حذف Draft =====');
+          console.log('🏥 V2: ReceptionId:', receptionId);
+          console.log('🏥 V2: API object:', typeof API, API);
+          console.log('🏥 V2: API.post:', typeof API?.post);
+          
+          // استفاده از API.post با error handling بهتر
+          console.log('🏥 V2: فراخوانی API.post("/draft/delete-incomplete", { receptionId: ' + receptionId + ' })');
+          
+          const result = await API.post('/draft/delete-incomplete', { receptionId: receptionId })
+            .catch(function(err) {
+              console.error('❌ V2: ===== خطا در فراخوانی API =====');
+              console.error('❌ V2: Error type:', typeof err);
+              console.error('❌ V2: Error object:', err);
+              console.error('❌ V2: Error message:', err?.message);
+              console.error('❌ V2: Error stack:', err?.stack);
+              console.error('❌ V2: Error responseJSON:', err?.responseJSON);
+              console.error('❌ V2: Error status:', err?.status);
+              console.error('❌ V2: Error statusText:', err?.statusText);
+              console.error('❌ V2: Error responseText:', err?.responseText);
+              console.error('❌ V2: ====================================');
+              
+              // Return یک object با Success = false برای ادامه پردازش
+              return {
+                Success: false,
+                Message: err?.message || err?.responseJSON?.Message || err?.responseJSON?.message || 'خطا در ارتباط با سرور',
+                Code: err?.responseJSON?.Code || err?.responseJSON?.code || 'API_ERROR',
+                Error: err
+              };
+            });
+          
+          console.log('🏥 V2: ===== پاسخ API دریافت شد =====');
+          console.log('🏥 V2: Result type:', typeof result);
+          console.log('🏥 V2: Result:', result);
+          console.log('🏥 V2: Result keys:', result ? Object.keys(result) : 'null/undefined');
+          console.log('🏥 V2: Result.Success:', result?.Success);
+          console.log('🏥 V2: Result.success:', result?.success);
+          console.log('🏥 V2: Result.Message:', result?.Message);
+          console.log('🏥 V2: Result.message:', result?.message);
+          console.log('🏥 V2: Result.Code:', result?.Code);
+          console.log('🏥 V2: Result.code:', result?.code);
+          console.log('🏥 V2: Result.Data:', result?.Data);
+          console.log('🏥 V2: Result.data:', result?.data);
+          
+          // بررسی Success از response اصلی (قبل از API.ok)
+          const successValue = result?.Success ?? result?.success;
+          const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+          
+          console.log('🏥 V2: Success value:', successValue);
+          console.log('🏥 V2: Is success:', isSuccess);
+          
+          if (isSuccess) {
+            console.log('✅ V2: ===== Draft با موفقیت حذف شد =====');
+            // Reset local state
+            if (window.AutoDraftManager && window.AutoDraftManager.reset) {
+              window.AutoDraftManager.reset();
+              console.log('✅ V2: AutoDraftManager reset شد');
+            }
+          } else {
+            console.warn('⚠️ V2: ===== حذف Draft ناموفق بود =====');
+            
+            // استفاده از API.ok برای extract کردن error message
+            let okResult = null;
+            if (API && typeof API.ok === 'function') {
+              try {
+                okResult = API.ok(result);
+                console.log('🏥 V2: API.ok result:', okResult);
+              } catch (err) {
+                console.warn('⚠️ V2: خطا در API.ok:', err);
+                okResult = result;
+              }
+            } else {
+              okResult = result;
+            }
+            
+            const errorMsg = okResult?.Message || okResult?.message || result?.Message || result?.message || 'خطای نامشخص';
+            const errorCode = okResult?.Code || okResult?.code || result?.Code || result?.code || 'UNKNOWN';
+            
+            console.warn('⚠️ V2: Error Message:', errorMsg);
+            console.warn('⚠️ V2: Error Code:', errorCode);
+            console.warn('⚠️ V2: Full Response:', JSON.stringify(result, null, 2));
+            console.warn('⚠️ V2: Ok Result:', JSON.stringify(okResult, null, 2));
+            console.warn('⚠️ V2: ====================================');
+            
+            // نمایش پیام خطا به کاربر
+            if (errorCode !== 'FINALIZED') {
+              toastr.warning('خطا در حذف Draft: ' + errorMsg, 'هشدار', {
+                timeOut: 5000,
+                positionClass: 'toast-top-center'
+              });
+            }
+            
+            // اگر Draft نهایی شده است، فقط state را reset کن
+            if (errorCode === 'FINALIZED') {
+              console.log('ℹ️ V2: Draft نهایی شده است، فقط state را reset می‌کنیم');
+              if (window.AutoDraftManager && window.AutoDraftManager.reset) {
+                window.AutoDraftManager.reset();
+              }
+            }
+            // ادامه می‌دهیم حتی اگر حذف Draft ناموفق باشد
+          }
+        } catch (err) {
+          console.error('❌ V2: ===== Exception در حذف Draft =====');
+          console.error('❌ V2: Error type:', typeof err);
+          console.error('❌ V2: Error name:', err?.name);
+          console.error('❌ V2: Error message:', err?.message);
+          console.error('❌ V2: Error stack:', err?.stack);
+          console.error('❌ V2: Full error object:', err);
+          console.error('❌ V2: ====================================');
+          
+          toastr.error('خطا در حذف Draft: ' + (err?.message || 'خطای غیرمنتظره'), 'خطا', {
+            timeOut: 5000,
+            positionClass: 'toast-top-center'
+          });
+          // ادامه می‌دهیم حتی اگر حذف Draft ناموفق باشد
+        }
+      }
+
+      // ✅ 2. Reset AutoDraftManager
+      if (window.AutoDraftManager && window.AutoDraftManager.reset) {
+        window.AutoDraftManager.reset();
+        console.log('✅ V2: AutoDraftManager reset شد');
+      }
+
+      // ✅ 3. پاک کردن فیلدهای اطلاعات بیمار
+      // پاک کردن فیلدهای readonly/disabled نیز
+      $("#NationalCode").val('').prop('readonly', false);
+      $("#Patient_NationalCode").val('').prop('readonly', false);
+      $("#Patient_PatientId").val('');
+      $("#firstName").val('').prop('readonly', false);
+      $("#lastName").val('').prop('readonly', false);
+      $("#fatherName").val('').prop('readonly', false);
+      $("#mobile").val('').prop('readonly', false);
+      $("#phone").val('').prop('readonly', false);
+      $("#address").val('').prop('readonly', false);
+      $("#gender").val('').prop('disabled', false);
+      $("#birthSh").val('').prop('readonly', false);
+      $("#ReceptionId").val('');
+      
+      // ✅ Reset Summary Header State (پاک کردن state داخلی)
+      if (window.ClinicApp && window.ClinicApp.ReceptionV2 && window.ClinicApp.ReceptionV2.state) {
+        window.ClinicApp.ReceptionV2.state = {
+          patient: null,
+          department: null,
+          doctor: null,
+          insurances: null,
+          financialYear: null
+        };
+      }
+      
+      // ✅ Trigger event برای reset Summary Header
+      $(document).trigger('rv2:stateChanged', { 
+        patient: null,
+        insurances: null,
+        clinic: null,
+        department: null,
+        doctor: null
+      });
+      
+      // ✅ Reset Insurance Status Checker (اگر وجود دارد)
+      $(document).trigger('patient:selected', [null]);
+      
+      // ✅ پاک کردن Insurance Status Badge و تمام نمایش‌های وضعیت بیمه (اگر وجود دارد)
+      // حذف container اصلی که توسط Insurance Status Checker ایجاد می‌شود
+      $('#insurance-status-badge-container').remove();
+      $('#insuranceStatusBadge, .insurance-status-badge, #insuranceStatusContainer, .insurance-status-container').remove();
+      $('.insurance-status-display, .insurance-status-info, [data-insurance-status]').remove();
+      
+      // حذف تمام alert‌های مربوط به وضعیت بیمه
+      $('.alert-success, .alert-danger, .alert-warning, .alert-info').filter(function() {
+        return $(this).text().indexOf('وضعیت بیمه') !== -1 || 
+               $(this).text().indexOf('بیمه') !== -1 ||
+               $(this).find('strong').text().indexOf('وضعیت بیمه') !== -1;
+      }).remove();
+      
+      // ✅ فراخوانی removeAlerts از Insurance Status Checker (اگر وجود دارد)
+      if (window.ReceptionV2 && window.ReceptionV2.InsuranceStatusChecker && typeof window.ReceptionV2.InsuranceStatusChecker.removeAlerts === 'function') {
+        try {
+          window.ReceptionV2.InsuranceStatusChecker.removeAlerts();
+          console.log('✅ V2: Insurance Status Checker alerts removed');
+        } catch (err) {
+          console.warn('⚠️ V2: خطا در removeAlerts:', err);
+        }
+      }
+      
+      // ✅ پاک کردن toastr notifications
+      if (typeof toastr !== 'undefined' && typeof toastr.clear === 'function') {
+        toastr.clear();
+      }
+      
+      // ✅ Reset Readonly State
+      // استفاده از setReadonly از patient-lookup module
+      if (typeof setReadonly === 'function') {
+        setReadonly(false);
+      }
+      
+      console.log('✅ V2: فیلدهای اطلاعات بیمار پاک شد');
+
+      // ✅ 4. پاک کردن فیلدهای بیمه
+      $("#BasePlanId").val('').trigger('change');
+      $("#SuppPlanId").val('').trigger('change');
+      
+      // ✅ Reset Insurance Panel (اگر وجود دارد)
+      // استفاده از set با null برای پاک کردن بیمه‌ها
+      if (window.insPanel && typeof window.insPanel.set === 'function') {
+        try {
+          window.insPanel.set({ 
+            BasePlanId: null, 
+            SupplementaryPlanId: null,
+            basePlanId: null, 
+            suppPlanId: null,
+            BasePlanName: null,
+            SupplementaryPlanName: null
+          });
+          console.log('✅ V2: Insurance Panel reset شد');
+        } catch (err) {
+          console.warn('⚠️ V2: خطا در reset Insurance Panel:', err);
+        }
+      }
+      
+      // ✅ پاک کردن نمایش بیمه در Summary Header
+      $('[data-field="base-ins-name"]').text('بیمه پایه: —');
+      $('[data-field="supp-ins-name"]').text('تکمیلی: —');
+      
+      console.log('✅ V2: فیلدهای بیمه پاک شد');
+
+      // ✅ 5. پاک کردن فیلدهای دپارتمان و پزشک
+      $("#DepartmentId").val('').trigger('change');
+      $("#DoctorId").val('').trigger('change');
+      console.log('✅ V2: فیلدهای دپارتمان و پزشک پاک شد');
+
+      // ✅ 6. پاک کردن فیلدهای خدمت
+      $("#ServiceId").val('').trigger('change');
+      $("#Quantity").val(1);
+      console.log('✅ V2: فیلدهای خدمت پاک شد');
+
+      // ✅ 7. پاک کردن آیتم‌های جدول
+      const $itemsGrid = $('#items-grid tbody, #ReceptionItemsList tbody');
+      $itemsGrid.empty();
+      console.log('✅ V2: آیتم‌های جدول پاک شد');
+
+      // ✅ 8. Reset Totals
+      $("#Gross").text('0').attr('data-value', '0');
+      $("#InsurancePayable").text('0');
+      $("#SuppPayable").text('0');
+      $("#PatientPayable").text('0').attr('data-value', '0');
+      console.log('✅ V2: Totals reset شد');
+
+      // ✅ 9. Reset Payment Method
+      $("#PayPOS").addClass('active btn-primary').removeClass('btn-outline-secondary');
+      $("#PayCash").removeClass('active btn-primary').addClass('btn-outline-secondary');
+      console.log('✅ V2: Payment method reset شد');
+
+      // ✅ 10. Reset Form Dirty State
+      if (window.FormDirty && window.FormDirty.clean) {
+        window.FormDirty.clean();
+        console.log('✅ V2: Form dirty state reset شد');
+      }
+
+      // ✅ 11. پاک کردن Summary Header (اگر وجود دارد)
+      // پاک کردن تمام فیلدهای Summary Header
+      $('[data-field="patient-fullname"]').text('—');
+      $('[data-field="patient-gender"]').text('—');
+      $('[data-field="patient-nc"]').text('—');
+      $('[data-field="patient-age"]').text('—');
+      $('[data-field="patient-address"]').text('—');
+      $('[data-field="department-name"]').text('—');
+      $('[data-field="doctor-name"]').text('—');
+      $('[data-field="base-ins-name"]').text('بیمه پایه: —');
+      $('[data-field="supp-ins-name"]').text('تکمیلی: —');
+      $('[data-field="fy-name"]').text('—');
+      
+      // ✅ پاک کردن لینک ویرایش بیمار
+      $('#rv2-edit-patient-link').addClass('d-none').attr('href', '#');
+      
+      // ✅ 12. پاک کردن Insurance Status Badge (اگر وجود دارد) - دوباره برای اطمینان
+      $('#insuranceStatusBadge, .insurance-status-badge, #insuranceStatusContainer').remove();
+      
+      // ✅ 13. Reset Form Dirty State (دوباره برای اطمینان)
+      if (window.FormDirty && window.FormDirty.clean) {
+        window.FormDirty.clean();
+      }
+      
+      // ✅ 14. Focus روی فیلد کد ملی برای آماده‌سازی پذیرش بیمار بعدی
+      setTimeout(function() {
+        $("#NationalCode").focus();
+        console.log('✅ V2: Focus روی فیلد کد ملی');
+      }, 100);
+
+      // ✅ 15. نمایش پیام موفقیت
+      toastr.success('فرم پاک شد و آماده پذیرش بیمار بعدی است', 'موفق', {
+        timeOut: 3000,
+        positionClass: 'toast-top-center'
+      });
+
+      console.log('✅ V2: فرم با موفقیت پاک شد و آماده پذیرش بیمار بعدی است');
+    } catch (err) {
+      console.error('❌ V2: خطا در reset فرم:', err);
+      toastr.error('خطا در پاک کردن فرم', 'خطا', {
+        timeOut: 5000,
+        positionClass: 'toast-top-center'
+      });
+    }
+  }
+
+  // ✅ Event Handler برای دکمه Reset Form
+  $(document).on('click', '#BtnResetForm', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🏥 V2: BtnResetForm clicked');
+    
+    // نمایش تایید از کاربر
+    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید؟\n\nتمام اطلاعات وارد شده حذف می‌شود و فرم آماده پذیرش بیمار بعدی می‌شود.')) {
+      resetForm();
+    }
+  });
 })(window.ReceptionAPI, window.RxUtils);

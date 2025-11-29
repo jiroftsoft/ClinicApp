@@ -70,6 +70,12 @@ namespace ClinicApp.Interfaces.Reception
         Task<ServiceResult<int>> CleanupOldIncompleteDraftsAsync(int hoursOld = 24);
 
         /// <summary>
+        /// 🏥 MEDICAL: پاکسازی Draft های Pending کاربر فعلی (بدون محدودیت زمانی)
+        /// این متد برای حذف Draft‌هایی استفاده می‌شود که کاربر ایجاد کرده ولی نهایی نکرده است
+        /// </summary>
+        Task<ServiceResult<int>> CleanupPendingDraftsForCurrentUserAsync();
+
+        /// <summary>
         /// افزودن آیتم به پیش‌نویس
         /// </summary>
         Task<ServiceResult<ItemsAndTotalsDto>> AddItemAsync(AddItemRequest request);

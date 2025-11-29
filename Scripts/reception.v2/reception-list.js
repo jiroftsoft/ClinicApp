@@ -23,6 +23,60 @@
         let currentFilters = {};
         let isLoading = false;
 
+        // 🏥 MEDICAL: پاکسازی Draft‌های Pending کاربر فعلی هنگام بارگذاری صفحه
+        // این مهم است چون ممکن است کاربر Draft ایجاد کرده و بدون کلیک روی "ذخیره و پذیرش" به این صفحه آمده باشد
+        function cleanupPendingDrafts() {
+            try {
+                console.log('🏥 Reception List: شروع پاکسازی Draft‌های Pending...');
+                
+                // استفاده از API برای حذف Draft‌های Pending کاربر فعلی
+                const cleanupUrl = '/api/v1/reception/draft/cleanup-pending';
+                
+                // استفاده از AJAX برای حذف Draft‌های Pending
+                if (API && API.post) {
+                    API.post(cleanupUrl, {})
+                        .then(function(response) {
+                            if (response && response.Success) {
+                                const count = response.Data || 0;
+                                if (count > 0) {
+                                    console.log('✅ Reception List: ' + count + ' Draft Pending حذف شد');
+                                } else {
+                                    console.log('ℹ️ Reception List: هیچ Draft Pending یافت نشد');
+                                }
+                            }
+                        })
+                        .catch(function(err) {
+                            console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                        });
+                } else {
+                    // Fallback: استفاده از jQuery AJAX
+                    $.ajax({
+                        url: cleanupUrl,
+                        type: 'POST',
+                        headers: {
+                            'RequestVerificationToken': getAntiForgeryToken()
+                        },
+                        success: function(response) {
+                            if (response && response.Success) {
+                                const count = response.Data || 0;
+                                if (count > 0) {
+                                    console.log('✅ Reception List: ' + count + ' Draft Pending حذف شد');
+                                }
+                            }
+                        },
+                        error: function(err) {
+                            console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('⚠️ Reception List: خطا در cleanupPendingDrafts:', err);
+            }
+        }
+
+        // اجرای cleanup هنگام بارگذاری صفحه
+        cleanupPendingDrafts();
+
         /**
          * دریافت توکن Anti-Forgery
          */

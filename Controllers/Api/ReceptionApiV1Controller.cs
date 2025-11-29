@@ -222,39 +222,84 @@ namespace ClinicApp.Controllers.Api
         /// </summary>
         [HttpPost, Route("draft/delete-incomplete")]
         [ValidateAntiForgeryTokenOnPosts]
-        public async Task<ActionResult> DeleteIncompleteDraft()
+        public async Task<ActionResult> DeleteIncompleteDraft(DeleteIncompleteDraftRequest request = null)
         {
             try
             {
-                // ✅ اولویت 1: خواندن از Query String (برای sendBeacon)
+                // ✅ اولویت 1: خواندن از Model Binding (برای AJAX)
                 int receptionId = 0;
-                var receptionIdFromQuery = Request.QueryString["receptionId"];
-                if (!string.IsNullOrWhiteSpace(receptionIdFromQuery))
+                string receptionIdFromQuery = null;
+                
+                if (request != null && request.ReceptionId > 0)
                 {
-                    if (int.TryParse(receptionIdFromQuery, out int parsedId))
+                    receptionId = request.ReceptionId;
+                    _logger?.Information("🏥 V1 API: ReceptionId از Model Binding: {ReceptionId}", receptionId);
+                }
+
+                // ✅ اولویت 2: خواندن از Query String (برای sendBeacon)
+                if (receptionId <= 0)
+                {
+                    receptionIdFromQuery = Request.QueryString["receptionId"];
+                    if (!string.IsNullOrWhiteSpace(receptionIdFromQuery))
                     {
-                        receptionId = parsedId;
+                        if (int.TryParse(receptionIdFromQuery, out int parsedId))
+                        {
+                            receptionId = parsedId;
+                            _logger?.Information("🏥 V1 API: ReceptionId از Query String: {ReceptionId}", receptionId);
+                        }
                     }
                 }
 
-                // ✅ اولویت 2: خواندن از Request Body (برای AJAX)
+                // ✅ اولویت 3: خواندن از Request Body به صورت دستی (fallback)
                 if (receptionId <= 0)
                 {
                     try
                     {
-                        var requestBody = new System.IO.StreamReader(Request.InputStream).ReadToEnd();
+                        _logger?.Information("🏥 V1 API: تلاش برای خواندن receptionId از Request Body (fallback)...");
+                        _logger?.Information("🏥 V1 API: Request.ContentType: {ContentType}", Request.ContentType ?? "NULL");
+                        _logger?.Information("🏥 V1 API: Request.HttpMethod: {Method}", Request.HttpMethod);
+                        
+                        // Reset InputStream position (ممکن است قبلاً خوانده شده باشد)
+                        if (Request.InputStream.CanSeek)
+                        {
+                            Request.InputStream.Position = 0;
+                        }
+                        
+                        string requestBody = null;
+                        using (var reader = new System.IO.StreamReader(Request.InputStream, System.Text.Encoding.UTF8, true, 1024, true))
+                        {
+                            requestBody = reader.ReadToEnd();
+                        }
+                        
+                        _logger?.Information("🏥 V1 API: Request Body length: {Length}", requestBody?.Length ?? 0);
+                        _logger?.Information("🏥 V1 API: Request Body (first 200 chars): {Body}", 
+                            requestBody?.Length > 200 ? requestBody.Substring(0, 200) : requestBody ?? "NULL");
+                        
                         if (!string.IsNullOrWhiteSpace(requestBody))
                         {
                             var json = System.Web.Helpers.Json.Decode(requestBody);
                             if (json != null)
                             {
+                                _logger?.Information("🏥 V1 API: JSON decoded successfully");
+                                _logger?.Information("🏥 V1 API: json.receptionId: {ReceptionId}", json.receptionId ?? "NULL");
+                                _logger?.Information("🏥 V1 API: json.ReceptionId: {ReceptionId}", json.ReceptionId ?? "NULL");
+                                
                                 receptionId = json.receptionId ?? json.ReceptionId ?? 0;
+                                _logger?.Information("🏥 V1 API: receptionId extracted from body: {ReceptionId}", receptionId);
                             }
+                            else
+                            {
+                                _logger?.Warning("⚠️ V1 API: JSON decode returned null");
+                            }
+                        }
+                        else
+                        {
+                            _logger?.Warning("⚠️ V1 API: Request Body is null or empty");
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger?.Warning(ex, "⚠️ V1 API: خطا در خواندن Request Body");
+                        _logger?.Warning(ex, "⚠️ V1 API: خطا در خواندن Request Body - {Message}", ex.Message);
                     }
                 }
 
@@ -321,6 +366,50 @@ namespace ClinicApp.Controllers.Api
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"));
 #else
                 return Json(ServiceResult.Failed("خطای غیرمنتظره رخ داد.", "UNHANDLED"));
+#endif
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/draft/cleanup-pending
+        /// پاکسازی Draft های Pending کاربر فعلی
+        /// 
+        /// این endpoint برای حذف Draft‌هایی استفاده می‌شود که کاربر ایجاد کرده ولی نهایی نکرده است
+        /// مثلاً وقتی کاربر Draft ایجاد می‌کند و بدون کلیک روی "ذخیره و پذیرش" به صفحه لیست می‌رود
+        /// </summary>
+        [HttpPost, Route("draft/cleanup-pending")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<ActionResult> CleanupPendingDrafts()
+        {
+            try
+            {
+                _logger?.Information("🏥 V1 API: Cleanup Pending Drafts for current user");
+
+                if (_facade != null)
+                {
+                    var result = await _facade.CleanupPendingDraftsForCurrentUserAsync();
+                    if (result.Success)
+                    {
+                        _logger?.Information("✅ V1 API: {Count} Draft Pending حذف شد", result.Data);
+                        return Json(ServiceResult<int>.Successful(result.Data, result.Message ?? "Draft های Pending با موفقیت حذف شدند."), JsonRequestBehavior.AllowGet);
+                    }
+                    else
+                    {
+                        _logger?.Warning("⚠️ V1 API: پاکسازی Draft های Pending ناموفق - {Error}", result.Message);
+                        return Json(ServiceResult<int>.Failed(result.Message ?? "خطا در پاکسازی Draft های Pending", result.Code ?? "CLEANUP_FAILED"), JsonRequestBehavior.AllowGet);
+                    }
+                }
+
+                _logger?.Warning("⚠️ V1 API: Facade not available");
+                return Json(ServiceResult<int>.Failed("سرویس پذیرش در دسترس نیست.", "SERVICE_UNAVAILABLE"), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در پاکسازی Draft های Pending");
+#if DEBUG
+                return Json(ServiceResult<int>.Failed("UNHANDLED: " + ex.Message, "UNHANDLED"), JsonRequestBehavior.AllowGet);
+#else
+                return Json(ServiceResult<int>.Failed("خطای غیرمنتظره رخ داد.", "UNHANDLED"), JsonRequestBehavior.AllowGet);
 #endif
             }
         }
@@ -1866,6 +1955,14 @@ namespace ClinicApp.Controllers.Api
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// DTO برای حذف Draft ناقص
+    /// </summary>
+    public class DeleteIncompleteDraftRequest
+    {
+        public int ReceptionId { get; set; }
     }
 
     /// <summary>

@@ -90,6 +90,53 @@
       }
     }
   });
+
+  // 🏥 MEDICAL: حذف Draft ناقص هنگام کلیک روی لینک‌ها (navigation در همان domain)
+  // این مهم است چون beforeunload ممکن است trigger نشود در navigation در همان domain
+  $(document).on('click', 'a[href]', function(e) {
+    // بررسی اینکه آیا Draft ناقص وجود دارد
+    if (window.AutoDraftManager && window.AutoDraftManager.isDraftCreated()) {
+      const receptionId = window.AutoDraftManager.getCurrentDraftId();
+      const receptionIdFromDOM = $("#ReceptionId").val();
+      const draftId = receptionId || receptionIdFromDOM;
+      
+      if (draftId && draftId > 0) {
+        // بررسی اینکه آیا Draft نهایی نشده است
+        if (window.AutoDraftManager.isDraftNotFinalized && window.AutoDraftManager.isDraftNotFinalized()) {
+          const $link = $(this);
+          const href = $link.attr('href');
+          
+          // فقط برای لینک‌های داخلی (نه external links)
+          if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+            console.log('🏥 V2: Deleting non-finalized draft on link click:', draftId, 'href:', href);
+            
+            // حذف Draft با AJAX (synchronous برای اطمینان از حذف قبل از navigation)
+            // استفاده از sendBeacon برای اطمینان از ارسال درخواست
+            if (window.AutoDraftManager.deleteIncompleteDraftWithBeacon) {
+              window.AutoDraftManager.deleteIncompleteDraftWithBeacon(draftId);
+            } else {
+              // Fallback: استفاده از AJAX synchronous (اگر sendBeacon موجود نباشد)
+              const url = '/api/v1/reception/draft/delete-incomplete?receptionId=' + draftId;
+              if (navigator.sendBeacon) {
+                navigator.sendBeacon(url);
+              } else {
+                // آخرین fallback: AJAX synchronous (blocking)
+                $.ajax({
+                  url: url,
+                  type: 'POST',
+                  async: false, // Synchronous برای اطمینان از حذف قبل از navigation
+                  timeout: 2000, // 2 ثانیه timeout
+                  error: function() {
+                    console.warn('⚠️ V2: Failed to delete draft on link click (non-blocking)');
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  });
   
   window.FormDirty = { clean:()=>dirty=false };
 })(jQuery);

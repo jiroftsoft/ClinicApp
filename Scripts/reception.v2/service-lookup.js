@@ -369,11 +369,31 @@
           
           // ذخیره اطلاعات بیمه
           const $row = $('#' + rowId);
+          
+          // ✅ ذخیره در jQuery data() (برای دسترسی سریع)
           $row.data('insurance', itemInsuranceCalc);
           if (pricingData) {
             $row.data('pricing', pricingData);
           }
           $row.data('item', newItem);
+          
+          // ✅ ذخیره در data-* attributes (برای پایداری و دسترسی از coverage-modal)
+          // این روش پایدارتر است و حتی بعد از تغییر DOM هم کار می‌کند
+          try {
+            if (itemInsuranceCalc) {
+              $row.attr('data-insurance-json', JSON.stringify(itemInsuranceCalc));
+            }
+            if (pricingData) {
+              $row.attr('data-pricing-json', JSON.stringify(pricingData));
+            }
+            if (newItem) {
+              $row.attr('data-item-json', JSON.stringify(newItem));
+            }
+            console.log('🏥 V2: Data saved to data-* attributes for row:', rowId);
+          } catch (e) {
+            console.warn('🏥 V2: Failed to save data to data-* attributes:', e);
+          }
+          
           if (receptionItemId) {
             $row.attr('data-reception-item-id', receptionItemId);
           }
@@ -439,9 +459,27 @@
           
           // ✅ ذخیره item، pricing و insuranceCalculation در data
           var $newRow = $('#' + rowId);
+          
+          // ✅ ذخیره در jQuery data() (برای دسترسی سریع)
           $newRow.data('item', itemData);
           $newRow.data('pricing', pricingData);
           $newRow.data('insurance', insuranceCalc);
+          
+          // ✅ ذخیره در data-* attributes (برای پایداری و دسترسی از coverage-modal)
+          try {
+            if (itemData) {
+              $newRow.attr('data-item-json', JSON.stringify(itemData));
+            }
+            if (pricingData) {
+              $newRow.attr('data-pricing-json', JSON.stringify(pricingData));
+            }
+            if (insuranceCalc) {
+              $newRow.attr('data-insurance-json', JSON.stringify(insuranceCalc));
+            }
+            console.log('🏥 V2: Data saved to data-* attributes for row (fallback):', rowId);
+          } catch (e) {
+            console.warn('🏥 V2: Failed to save data to data-* attributes (fallback):', e);
+          }
           
           console.log('🏥 V2: ✅ Row added (pricing fallback) - ServiceId:', serviceId, 'CoverageStatus:', insuranceInfo.coverageStatus, 
             'PrimaryCoverage:', baseCovered, 'SupplementaryCoverage:', suppCovered, 'PatientShare:', patientPayable);
