@@ -215,7 +215,54 @@
       .then(function(fullResponse) {
         console.log('🏥 V2: Add item raw response:', fullResponse);
         
-        // Extract data using API.ok (handles ServiceResult structure)
+        // ✅ بررسی Success قبل از استخراج Data
+        const success = fullResponse?.Success ?? fullResponse?.success ?? false;
+        const message = fullResponse?.Message ?? fullResponse?.message ?? '';
+        const code = fullResponse?.Code ?? fullResponse?.code ?? '';
+        
+        // ✅ اگر Success === false است، خطا را نمایش بده و ادامه نده
+        if (success === false) {
+          console.warn('🏥 V2: Add item failed - Success: false, Code:', code, 'Message:', message);
+          
+          // ✅ استفاده از handleErrorJson برای خطاهای خاص (ANTIFORGERY_MISSING, UNHANDLED, etc.)
+          if (API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+            const errorHandled = API.handleErrorJson(fullResponse);
+            if (errorHandled) {
+              // خطا توسط handleErrorJson handle شد (مثلاً ANTIFORGERY_MISSING)
+              $btn.prop('disabled', false).text(originalText);
+              return;
+            }
+          }
+          
+          // ✅ نمایش پیغام خطا به کاربر (برای خطاهای معمولی)
+          if (message) {
+            // استفاده از SweetAlert2 اگر موجود است، وگرنه toastr
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+              window.Swal.fire({
+                icon: 'error',
+                title: 'خطا در افزودن خدمت',
+                html: message.replace(/\n/g, '<br>'),
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#d33'
+              });
+            } else {
+              toastr.error(message, 'خطا در افزودن خدمت', {
+                timeOut: 8000,
+                extendedTimeOut: 5000
+              });
+            }
+          } else {
+            toastr.error('خطا در افزودن خدمت. لطفاً مجدداً تلاش کنید.', 'خطا', {
+              timeOut: 5000
+            });
+          }
+          
+          // ✅ بازگرداندن دکمه به حالت عادی و خروج از تابع
+          $btn.prop('disabled', false).text(originalText);
+          return; // خروج از تابع - خدمت افزوده نشده است
+        }
+        
+        // ✅ Extract data using API.ok (handles ServiceResult structure)
         const response = API.ok(fullResponse);
         console.log('🏥 V2: Item added response:', response);
         
@@ -253,6 +300,7 @@
                   (response.Data.ReceptionTotals || response.Data.receptionTotals) || null;
         }
         
+        // ✅ نمایش پیغام موفقیت فقط اگر Success === true باشد
         toastr.success('خدمت افزوده شد');
         
         // ✅ Update items grid - استفاده از pricing و insuranceCalculation
