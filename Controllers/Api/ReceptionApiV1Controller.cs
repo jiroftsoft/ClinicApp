@@ -10,7 +10,9 @@ using ClinicApp.Helpers;
 using ClinicApp.Filters;
 using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models;
+using ClinicApp.Models.DTOs.Insurance;
 using ClinicApp.Extensions;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
@@ -34,6 +36,7 @@ namespace ClinicApp.Controllers.Api
         private readonly IFinancialYearService _fy;
         private readonly IReceptionFacade _facade;
         private readonly IReceptionPricingService _pricing;
+        private readonly IInsuranceStatusCheckerService _insuranceStatusChecker; // ✅ کامپوننت قابل استفاده مجدد
         private readonly ILogger _logger;
         private readonly ApplicationDbContext _context;
 
@@ -48,12 +51,14 @@ namespace ClinicApp.Controllers.Api
             IFinancialYearService fy,
             IReceptionFacade facade,
             IReceptionPricingService pricing,
+            IInsuranceStatusCheckerService insuranceStatusChecker,
             ILogger logger,
             ApplicationDbContext context)
         {
             _fy = fy ?? throw new ArgumentNullException(nameof(fy));
             _facade = facade ?? throw new ArgumentNullException(nameof(facade));
             _pricing = pricing ?? throw new ArgumentNullException(nameof(pricing));
+            _insuranceStatusChecker = insuranceStatusChecker ?? throw new ArgumentNullException(nameof(insuranceStatusChecker));
             _logger = logger?.ForContext<ReceptionApiV1Controller>() ?? throw new ArgumentNullException(nameof(logger));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
@@ -66,6 +71,7 @@ namespace ClinicApp.Controllers.Api
                   DependencyResolver.Current.GetService<IFinancialYearService>(),
                   DependencyResolver.Current.GetService<IReceptionFacade>(),
                   DependencyResolver.Current.GetService<IReceptionPricingService>(),
+                  DependencyResolver.Current.GetService<IInsuranceStatusCheckerService>(),
                   DependencyResolver.Current.GetService<ILogger>(),
                   DependencyResolver.Current.GetService<ApplicationDbContext>())
         {
@@ -211,6 +217,8 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// POST /api/v1/reception/draft/delete-incomplete
         /// حذف Draft ناقص (بدون خدمت)
+        /// 
+        /// این endpoint از query string (برای sendBeacon) و request body (برای AJAX) پشتیبانی می‌کند
         /// </summary>
         [HttpPost, Route("draft/delete-incomplete")]
         [ValidateAntiForgeryTokenOnPosts]
@@ -218,30 +226,74 @@ namespace ClinicApp.Controllers.Api
         {
             try
             {
-                // خواندن receptionId از Request Body
+                // ✅ اولویت 1: خواندن از Query String (برای sendBeacon)
                 int receptionId = 0;
-                try
+                var receptionIdFromQuery = Request.QueryString["receptionId"];
+                if (!string.IsNullOrWhiteSpace(receptionIdFromQuery))
                 {
-                    var requestBody = new System.IO.StreamReader(Request.InputStream).ReadToEnd();
-                    if (!string.IsNullOrWhiteSpace(requestBody))
+                    if (int.TryParse(receptionIdFromQuery, out int parsedId))
                     {
-                        var json = System.Web.Helpers.Json.Decode(requestBody);
-                        if (json != null)
-                        {
-                            receptionId = json.receptionId ?? json.ReceptionId ?? 0;
-                        }
+                        receptionId = parsedId;
                     }
                 }
-                catch (Exception ex)
+
+                // ✅ اولویت 2: خواندن از Request Body (برای AJAX)
+                if (receptionId <= 0)
                 {
-                    _logger?.Warning(ex, "⚠️ V1 API: خطا در خواندن Request Body");
+                    try
+                    {
+                        var requestBody = new System.IO.StreamReader(Request.InputStream).ReadToEnd();
+                        if (!string.IsNullOrWhiteSpace(requestBody))
+                        {
+                            var json = System.Web.Helpers.Json.Decode(requestBody);
+                            if (json != null)
+                            {
+                                receptionId = json.receptionId ?? json.ReceptionId ?? 0;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Warning(ex, "⚠️ V1 API: خطا در خواندن Request Body");
+                    }
                 }
 
-                _logger?.Information("🏥 V1 API: Delete Incomplete Draft - ReceptionId: {ReceptionId}", receptionId);
+                _logger?.Information("🏥 V1 API: Delete Incomplete Draft - ReceptionId: {ReceptionId}, Method: {Method}, HasQueryString: {HasQueryString}", 
+                    receptionId, Request.HttpMethod, !string.IsNullOrWhiteSpace(receptionIdFromQuery));
 
                 if (receptionId <= 0)
                 {
-                    return Json(ServiceResult.Failed("شناسه پذیرش نامعتبر است.", "VALIDATION"));
+                    return Json(ServiceResult.Failed("شناسه پذیرش نامعتبر است.", "VALIDATION"), JsonRequestBehavior.AllowGet);
+                }
+
+                // ✅ بررسی Anti-Forgery Token (فقط برای AJAX، نه برای sendBeacon)
+                // sendBeacon نمی‌تواند header بفرستد و از query string استفاده می‌کند
+                // اگر receptionId از query string آمده، token را skip می‌کنیم
+                var isSendBeaconRequest = !string.IsNullOrWhiteSpace(receptionIdFromQuery);
+                
+                if (!isSendBeaconRequest)
+                {
+                    // برای AJAX، token را بررسی کن
+                    try
+                    {
+                        var token = Request.Headers["RequestVerificationToken"] ?? Request.Headers["X-RequestVerificationToken"];
+                        if (string.IsNullOrWhiteSpace(token))
+                        {
+                            _logger?.Warning("⚠️ V1 API: Anti-Forgery Token missing for AJAX request");
+                            // برای sendBeacon که از query string استفاده می‌کند، token را skip می‌کنیم
+                            // اما برای AJAX که از body استفاده می‌کند، token اجباری است
+                            // در اینجا چون receptionId از query string نیست، پس AJAX است و باید token داشته باشد
+                            return Json(ServiceResult.Failed("توکن امنیتی یافت نشد.", "ANTIFORGERY_MISSING"), JsonRequestBehavior.AllowGet);
+                        }
+                    }
+                    catch
+                    {
+                        // اگر خطا در بررسی token رخ داد، ادامه بده (برای sendBeacon)
+                    }
+                }
+                else
+                {
+                    _logger?.Information("ℹ️ V1 API: sendBeacon request detected, skipping anti-forgery token validation");
                 }
 
                 if (_facade != null)
@@ -250,12 +302,12 @@ namespace ClinicApp.Controllers.Api
                     if (result.Success)
                     {
                         _logger?.Information("✅ V1 API: Draft ناقص حذف شد - ReceptionId: {ReceptionId}", receptionId);
-                        return Json(ServiceResult.Successful(result.Message ?? "پذیرش ناقص با موفقیت حذف شد."));
+                        return Json(ServiceResult.Successful(result.Message ?? "پذیرش ناقص با موفقیت حذف شد."), JsonRequestBehavior.AllowGet);
                     }
                     else
                     {
                         _logger?.Warning("⚠️ V1 API: حذف Draft ناقص ناموفق - {Error}", result.Message);
-                        return Json(ServiceResult.Failed(result.Message ?? "خطا در حذف پذیرش ناقص", result.Code ?? "DELETE_FAILED"));
+                        return Json(ServiceResult.Failed(result.Message ?? "خطا در حذف پذیرش ناقص", result.Code ?? "DELETE_FAILED"), JsonRequestBehavior.AllowGet);
                     }
                 }
 
@@ -1727,6 +1779,92 @@ namespace ClinicApp.Controllers.Api
             }
         }
 
+        /// <summary>
+        /// POST /api/v1/reception/insurance/check-status
+        /// بررسی جامع وضعیت بیمه بیمار - برای استفاده در فرم پذیرش
+        /// 
+        /// این endpoint برای بررسی وضعیت بیمه و نمایش هشدارهای واضح به منشی‌ها استفاده می‌شود
+        /// </summary>
+        [HttpPost, Route("insurance/check-status")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<JsonResult> CheckInsuranceStatus(InsuranceStatusCheckRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است", "INVALID_REQUEST"), JsonRequestBehavior.AllowGet);
+                }
+
+                var patientId = request.PatientId;
+                var checkDate = request.CheckDate;
+
+                _logger?.Information("🏥 V1 API: بررسی وضعیت بیمه. PatientId: {PatientId}, CheckDate: {CheckDate}",
+                    patientId, checkDate);
+
+                if (patientId <= 0)
+                {
+                    return Json(ServiceResult.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID"), JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _insuranceStatusChecker.CheckInsuranceForReceptionAsync(patientId, checkDate ?? DateTime.Now);
+
+                if (!result.Success)
+                {
+                    _logger?.Warning("⚠️ V1 API: خطا در بررسی وضعیت بیمه. PatientId: {PatientId}, Error: {Error}",
+                        patientId, result.Message);
+                    return Json(result, JsonRequestBehavior.AllowGet);
+                }
+
+                _logger?.Information("✅ V1 API: بررسی وضعیت بیمه تکمیل شد. PatientId: {PatientId}, IsValid: {IsValid}, CanProceed: {CanProceed}",
+                    patientId, result.Data?.IsValid, result.Data?.CanProceedWithReception);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در بررسی وضعیت بیمه. PatientId: {PatientId}", request?.PatientId ?? 0);
+                return Json(ServiceResult.Failed("خطا در بررسی وضعیت بیمه: " + ex.Message, "INSURANCE_CHECK_ERROR"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// POST /api/v1/reception/insurance/check-expiry
+        /// بررسی انقضای بیمه - برای هشدار به منشی
+        /// </summary>
+        [HttpPost, Route("insurance/check-expiry")]
+        [ValidateAntiForgeryTokenOnPosts]
+        public async Task<JsonResult> CheckInsuranceExpiry(InsuranceExpiryCheckRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return Json(ServiceResult.Failed("درخواست نامعتبر است", "INVALID_REQUEST"), JsonRequestBehavior.AllowGet);
+                }
+
+                var patientId = request.PatientId;
+                var warningDays = request.WarningDays ?? 30;
+
+                _logger?.Information("🏥 V1 API: بررسی انقضای بیمه. PatientId: {PatientId}, WarningDays: {WarningDays}",
+                    patientId, warningDays);
+
+                if (patientId <= 0)
+                {
+                    return Json(ServiceResult.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID"), JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _insuranceStatusChecker.CheckInsuranceExpiryAsync(patientId, DateTime.Now, warningDays);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "❌ V1 API: خطا در بررسی انقضای بیمه. PatientId: {PatientId}", request?.PatientId ?? 0);
+                return Json(ServiceResult.Failed("خطا در بررسی انقضای بیمه: " + ex.Message, "INSURANCE_EXPIRY_CHECK_ERROR"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
     }
 
@@ -1747,6 +1885,24 @@ namespace ClinicApp.Controllers.Api
     {
         public string NationalCode { get; set; }
         public string Mobile { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای درخواست بررسی وضعیت بیمه
+    /// </summary>
+    public class InsuranceStatusCheckRequest
+    {
+        public int PatientId { get; set; }
+        public DateTime? CheckDate { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای درخواست بررسی انقضای بیمه
+    /// </summary>
+    public class InsuranceExpiryCheckRequest
+    {
+        public int PatientId { get; set; }
+        public int? WarningDays { get; set; }
     }
 }
 

@@ -58,6 +58,8 @@
     if (/^\/?finalize\/pos/i.test(path)) return 'FinalizeWithPos';
     if (/^\/?finalize\/cash/i.test(path)) return 'FinalizeWithCash';
     if (/^\/?health/i.test(path)) return 'Health';
+    if (/^\/?insurance\/check-status/i.test(path)) return 'CheckInsuranceStatus';
+    if (/^\/?insurance\/check-expiry/i.test(path)) return 'CheckInsuranceExpiry';
     // Remove leading slash if present
     return path.replace(/^\//, '');
   }

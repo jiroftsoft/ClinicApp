@@ -86,5 +86,23 @@
     }
     
     console.log('🏥 V2: Initialization complete');
+    
+    // 🏥 MEDICAL: حذف Draft ناقص هنگام refresh صفحه (اگر Draft ناقص است)
+    // این فقط برای حالتی است که کاربر صفحه را refresh می‌کند
+    $(window).on('beforeunload', function() {
+      if (window.AutoDraftManager && window.AutoDraftManager.isDraftCreated()) {
+        const receptionId = window.AutoDraftManager.getCurrentDraftId();
+        if (receptionId && receptionId > 0) {
+          // بررسی اینکه آیا Draft ناقص است
+          if (window.AutoDraftManager.isDraftIncomplete && window.AutoDraftManager.isDraftIncomplete()) {
+            console.log('🏥 V2: Draft ناقص شناسایی شد، حذف می‌شود:', receptionId);
+            // حذف با sendBeacon (قبل از refresh)
+            if (window.AutoDraftManager.deleteIncompleteDraftWithBeacon) {
+              window.AutoDraftManager.deleteIncompleteDraftWithBeacon(receptionId);
+            }
+          }
+        }
+      }
+    });
   });
 })();

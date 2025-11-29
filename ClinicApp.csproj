@@ -633,6 +633,7 @@
     <Compile Include="Interfaces\Insurance\IInsurancePlanService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceProviderRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceProviderService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceStatusCheckerService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceTariffRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceTariffService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceValidationService.cs" />
@@ -714,6 +715,7 @@
     <Compile Include="Migrations\202511161332062_ClinicBankAccount.Designer.cs">
       <DependentUpon>202511161332062_ClinicBankAccount.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
@@ -1037,6 +1039,8 @@
     <Compile Include="Repositories\Reception\ShiftManagementRepository.cs" />
     <Compile Include="Services\ClinicAdmin\ClinicBankAccountService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
+    <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
+    <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
     <Compile Include="Services\Payment\POS\PosDeviceService.cs" />
@@ -4356,6 +4360,11 @@
     <Content Include="Docs\department-ajax-response-fix.md" />
     <Content Include="Docs\bootstrap-readiness.md" />
     <Content Include="Documentation\TARIFF_MISSING_ISSUE_ANALYSIS.md" />
+    <Content Include="Documentation\TARIFF_VALIDATION_IMPLEMENTATION_REVIEW.md" />
+    <Content Include="Documentation\TARIFF_WARNING_IMPLEMENTATION_ROADMAP.md" />
+    <Content Include="Documentation\TARIFF_WARNING_IMPLEMENTATION_SUMMARY.md" />
+    <Content Include="Documentation\ERROR_MESSAGE_DISPLAY_FIX.md" />
+    <Content Include="Documentation\DRAFT_CLEANUP_ANALYSIS.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4559,6 +4568,7 @@
     <Content Include="Scripts\reception.v2\coverage-modal.js" />
     <Content Include="Scripts\reception.v2\form-change-detector.js" />
     <Content Include="Scripts\reception.v2\insurance-panel.js" />
+    <Content Include="Scripts\reception.v2\insurance-status-checker.js" />
     <Content Include="Scripts\reception.v2\patient-lookup.js" />
     <Content Include="Scripts\reception.v2\payment-panel.js" />
     <Content Include="Scripts\reception.v2\pricing-ui.js" />

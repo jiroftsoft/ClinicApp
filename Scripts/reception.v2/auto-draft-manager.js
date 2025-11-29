@@ -7,6 +7,7 @@
   let isCreatingDraft = false; // 🏥 MEDICAL: Request Lock برای جلوگیری از Race Condition
   let draftCreationPromise = null; // 🏥 MEDICAL: Promise برای wait کردن request در حال اجرا
   let draftCreationTimeout = null; // 🏥 MEDICAL: Debounce timeout
+  let isDraftFinalizing = false; // 🏥 MEDICAL: Flag برای نشان دادن Draft در حال نهایی شدن
   
   /**
    * 🏥 MEDICAL: ایجاد پیش‌نویس با Request Lock و Race Condition Prevention
@@ -527,6 +528,7 @@
       isDraftCreated = false;
       isCreatingDraft = false; // ✅ Reset Lock
       draftCreationPromise = null; // ✅ Reset Promise
+      isDraftFinalizing = false; // ✅ Reset Finalizing Flag
       if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
         autoSaveTimeout = null;
@@ -538,11 +540,109 @@
       $("#ReceptionId").val('');
     },
     /**
-     * 🏥 MEDICAL: حذف Draft ناقص (بدون خدمت) هنگام خروج از فرم
+     * 🏥 MEDICAL: بررسی اینکه آیا Draft ناقص است (بدون خدمت)
+     * این تابع بررسی می‌کند که آیا Draft دارای خدمت است یا نه
+     * 
+     * ⚠️ توجه: این تابع فقط برای بررسی ناقص بودن از نظر خدمت است
+     * برای بررسی نهایی نشدن Draft، از isDraftNotFinalized استفاده کنید
+     */
+    isDraftIncomplete: function() {
+      // بررسی چندگانه برای اطمینان از دقت
+      const hasItemsInTable = $('#ReceptionItemsList tbody tr[data-reception-item-id]').length > 0 ||
+                              $('#items-grid tbody tr[data-reception-item-id]').length > 0 ||
+                              $('[data-reception-item-id]').length > 0;
+      
+      const hasItemsInDOM = $('.reception-item-row').length > 0 ||
+                           $('.service-item').length > 0 ||
+                           $('tr[data-service-id]').length > 0;
+      
+      // بررسی TotalAmount از UI (اگر موجود باشد)
+      const totalAmount = parseFloat($('#TotalAmount').text().replace(/[^\d.]/g, '') || '0');
+      const hasAmount = totalAmount > 0;
+      
+      // Draft ناقص است اگر هیچ خدمتی نداشته باشد
+      const isIncomplete = !hasItemsInTable && !hasItemsInDOM && !hasAmount;
+      
+      console.log('🏥 V2: Draft completeness check:', {
+        hasItemsInTable: hasItemsInTable,
+        hasItemsInDOM: hasItemsInDOM,
+        hasAmount: hasAmount,
+        totalAmount: totalAmount,
+        isIncomplete: isIncomplete
+      });
+      
+      return isIncomplete;
+    },
+
+    /**
+     * 🏥 MEDICAL: بررسی اینکه آیا Draft نهایی نشده است
+     * Draft باید حذف شود اگر:
+     * 1. هنوز نهایی نشده باشد (Status = Pending)
+     * 2. کاربر روی "ذخیره و پذیرش" کلیک نکرده باشد
+     * 
+     * ⚠️ مهم: Draft فقط زمانی نهایی می‌شود که کاربر روی "ذخیره و پذیرش" کلیک کند
+     */
+    isDraftNotFinalized: function() {
+      // اگر Draft در حال نهایی شدن است، حذف نکن
+      if (isDraftFinalizing) {
+        console.log('🏥 V2: Draft is finalizing, skipping deletion');
+        return false;
+      }
+
+      // Draft نهایی نشده است اگر هنوز در وضعیت Pending باشد
+      // (یعنی کاربر روی "ذخیره و پذیرش" کلیک نکرده)
+      // در این حالت، Draft باید حذف شود (حتی اگر خدمت داشته باشد)
+      const isNotFinalized = true; // Draft هنوز نهایی نشده است
+      
+      console.log('🏥 V2: Draft finalization check:', {
+        isDraftFinalizing: isDraftFinalizing,
+        isNotFinalized: isNotFinalized,
+        shouldDelete: isNotFinalized && !isDraftFinalizing
+      });
+      
+      return isNotFinalized && !isDraftFinalizing;
+    },
+
+    /**
+     * 🏥 MEDICAL: علامت‌گذاری Draft به عنوان در حال نهایی شدن
+     * این متد باید هنگام کلیک روی "ذخیره و پذیرش" فراخوانی شود
+     */
+    markDraftAsFinalizing: function() {
+      isDraftFinalizing = true;
+      console.log('🏥 V2: Draft marked as finalizing:', currentDraftId);
+    },
+
+    /**
+     * 🏥 MEDICAL: حذف علامت نهایی شدن Draft
+     * این متد باید در صورت خطا در نهایی‌سازی فراخوانی شود
+     */
+    unmarkDraftAsFinalizing: function() {
+      isDraftFinalizing = false;
+      console.log('🏥 V2: Draft unmarked as finalizing:', currentDraftId);
+    },
+
+    /**
+     * 🏥 MEDICAL: حذف Draft نهایی نشده (Pending) هنگام خروج از فرم
+     * Draft باید حذف شود اگر:
+     * 1. هنوز نهایی نشده باشد (Status = Pending)
+     * 2. کاربر روی "ذخیره و پذیرش" کلیک نکرده باشد
      */
     deleteIncompleteDraft: async function(receptionId) {
       if (!receptionId || receptionId <= 0) {
         console.log('🏥 V2: No draft to delete');
+        return Promise.resolve();
+      }
+
+      // ✅ بررسی اینکه آیا Draft در حال نهایی شدن است
+      if (isDraftFinalizing) {
+        console.log('🏥 V2: Draft is finalizing, skipping deletion:', receptionId);
+        return Promise.resolve();
+      }
+
+      // ✅ Draft باید حذف شود اگر هنوز نهایی نشده باشد (حتی اگر خدمت داشته باشد)
+      // این منطق جدید است: Draft فقط زمانی نهایی می‌شود که کاربر روی "ذخیره و پذیرش" کلیک کند
+      if (!this.isDraftNotFinalized()) {
+        console.log('🏥 V2: Draft is finalized or finalizing, skipping deletion:', receptionId);
         return Promise.resolve();
       }
 
@@ -563,6 +663,57 @@
       } catch (err) {
         console.error('❌ V2: Error deleting incomplete draft:', err);
         // Don't show error to user - it's cleanup
+      }
+    },
+
+    /**
+     * 🏥 MEDICAL: حذف Draft نهایی نشده با sendBeacon (برای beforeunload)
+     * این متد برای استفاده در beforeunload event استفاده می‌شود
+     */
+    deleteIncompleteDraftWithBeacon: function(receptionId) {
+      if (!receptionId || receptionId <= 0) {
+        return false;
+      }
+
+      // ✅ بررسی اینکه آیا Draft در حال نهایی شدن است
+      if (isDraftFinalizing) {
+        console.log('🏥 V2: Draft is finalizing, skipping beacon deletion:', receptionId);
+        return false;
+      }
+
+      // ✅ Draft باید حذف شود اگر هنوز نهایی نشده باشد (حتی اگر خدمت داشته باشد)
+      if (!this.isDraftNotFinalized()) {
+        console.log('🏥 V2: Draft is finalized or finalizing, skipping beacon deletion:', receptionId);
+        return false;
+      }
+
+      try {
+        console.log('🏥 V2: Deleting incomplete draft via beacon:', receptionId);
+        
+        // ساخت URL با query string (sendBeacon نمی‌تواند body بفرستد)
+        const url = '/api/v1/reception/draft/delete-incomplete?receptionId=' + receptionId;
+        
+        // استفاده از sendBeacon (بدون body، فقط query string)
+        if (navigator.sendBeacon) {
+          const success = navigator.sendBeacon(url);
+          if (success) {
+            console.log('✅ V2: Incomplete draft deletion sent via sendBeacon');
+            // Reset local state
+            currentDraftId = null;
+            isDraftCreated = false;
+            $("#ReceptionId").val('');
+            return true;
+          } else {
+            console.warn('⚠️ V2: sendBeacon failed');
+            return false;
+          }
+        } else {
+          console.warn('⚠️ V2: sendBeacon not supported');
+          return false;
+        }
+      } catch (err) {
+        console.error('❌ V2: Error in deleteIncompleteDraftWithBeacon:', err);
+        return false;
       }
     }
   };

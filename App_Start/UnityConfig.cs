@@ -442,6 +442,7 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceProviderService, InsuranceProviderService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsurancePlanService, InsurancePlanService>(new PerRequestLifetimeManager());
                 container.RegisterType<IPatientInsuranceService, PatientInsuranceService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceStatusCheckerService, InsuranceStatusCheckerService>(new PerRequestLifetimeManager()); // ✅ کامپوننت قابل استفاده مجدد
                 container.RegisterType<IInsuranceCalculationService, InsuranceCalculationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ICombinedInsuranceCalculationService, CombinedInsuranceCalculationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());

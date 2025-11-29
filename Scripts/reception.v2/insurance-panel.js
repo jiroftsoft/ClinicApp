@@ -286,8 +286,41 @@
         
         if (!responseObj || !isSuccess) {
           const errorMsg = responseObj?.Message || responseObj?.message || 'خطا در ثبت بیمه';
+          const errorCode = responseObj?.Code || responseObj?.code || '';
           console.warn('🏥 V2: SetInsurances failed:', errorMsg, responseObj);
-          toastr.warning(errorMsg);
+          
+          // ✅ بهبود error handling برای Concurrency و سایر خطاها
+          if (errorCode === 'CONCURRENCY_ERROR' || errorMsg.indexOf('جای دیگری تغییر کرده') > -1) {
+            // خطای Concurrency - پیشنهاد refresh
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+              window.Swal.fire({
+                icon: 'warning',
+                title: 'تغییر همزمان',
+                html: '<div class="text-right">' +
+                      '<p>' + errorMsg + '</p>' +
+                      '<p class="mt-3"><strong>توصیه:</strong> صفحه را نوسازی کنید و مجدداً تلاش کنید.</p>' +
+                      '</div>',
+                confirmButtonText: 'نوسازی صفحه',
+                showCancelButton: true,
+                cancelButtonText: 'بستن',
+                allowOutsideClick: false
+              }).then(function(result) {
+                if (result.isConfirmed) {
+                  window.location.reload();
+                }
+              });
+            } else {
+              if (confirm(errorMsg + '\n\nآیا می‌خواهید صفحه را نوسازی کنید؟')) {
+                window.location.reload();
+              }
+            }
+          } else {
+            // سایر خطاها
+            toastr.warning(errorMsg, 'خطا در ثبت بیمه', {
+              timeOut: 5000,
+              closeButton: true
+            });
+          }
           return;
         }
 

@@ -1,5 +1,5 @@
 @model ClinicApp.ViewModels.Reception.InsuranceSectionVM
-<div class="card mb-3">
+<div class="card mb-3" id="insurance-panel">
   <div class="card-header d-flex justify-content-between align-items-center">
     <strong>بیمه</strong>
     <small id="insurance-status" class="text-muted" style="font-size: 0.85rem;">
@@ -7,6 +7,8 @@
       <span id="current-supp-insurance" class="badge bg-secondary">—</span>
     </small>
   </div>
+  <!-- ✅ Container برای نمایش Badge وضعیت بیمه -->
+  <div id="insurance-status-badge-container" class="card-body border-bottom"></div>
   <div class="card-body row g-2 align-items-end">
     <div class="col-md-6">
       @Html.LabelFor(m => m.BasePlanId, new { @class = "form-label" })

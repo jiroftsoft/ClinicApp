@@ -93,6 +93,11 @@
     
     console.log('🏥 V2: BtnSaveReception clicked (via delegation)');
     
+    // ✅ علامت‌گذاری Draft به عنوان در حال نهایی شدن
+    if (window.AutoDraftManager && window.AutoDraftManager.markDraftAsFinalizing) {
+      window.AutoDraftManager.markDraftAsFinalizing();
+    }
+    
     const receptionId = $("#ReceptionId").val();
     
     if(!receptionId || receptionId <= 0) {
@@ -502,6 +507,11 @@
    * ✅ نهایی‌سازی پذیرش
    */
   function finalizeReception(payload, isPOS) {
+    // ✅ علامت‌گذاری Draft به عنوان در حال نهایی شدن
+    if (window.AutoDraftManager && window.AutoDraftManager.markDraftAsFinalizing) {
+      window.AutoDraftManager.markDraftAsFinalizing();
+    }
+    
     const endpoint = isPOS ? "/finalize/pos" : "/finalize/cash";
     
     console.log('🏥 V2: Finalizing reception:', payload);
@@ -544,6 +554,11 @@
       })
       .catch(function(err) {
         console.error('🏥 V2: Finalize error:', err);
+        
+        // ✅ در صورت خطا، flag را بردار (Draft هنوز نهایی نشده)
+        if (window.AutoDraftManager && window.AutoDraftManager.unmarkDraftAsFinalizing) {
+          window.AutoDraftManager.unmarkDraftAsFinalizing();
+        }
         
         // ✅ نمایش پیام خطای دقیق‌تر
         const errorMsg = err?.responseJSON?.Message || 
