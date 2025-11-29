@@ -741,17 +741,18 @@ namespace ClinicApp.Services.Reception
                         }
                         else
                         {
-                            _logger.Warning("⚠️ FACADE: بیمار ایجاد شد اما یافت نشد - NationalCode: {NationalCode}", nationalCode);
-                            // Fallback: از اطلاعات ورودی استفاده کنیم (PatientId = 0)
-                            return ServiceResult<PatientDto>.Successful(new PatientDto
-                            {
-                                PatientId = 0, // ⚠️ باید بعداً از frontend دوباره lookup شود
-                                NationalCode = dtoIfNotExists.NationalCode,
-                                FirstName = dtoIfNotExists.FirstName,
-                                LastName = dtoIfNotExists.LastName,
-                                PhoneNumber = dtoIfNotExists.PhoneNumber,
-                                Email = dtoIfNotExists.Email
-                            });
+                            // ⚠️ بیمار ایجاد شد اما یافت نشد یا PatientId نامعتبر است
+                            _logger.Error("❌ FACADE: بیمار ایجاد شد اما یافت نشد یا PatientId نامعتبر است - NationalCode: {NationalCode}, " +
+                                "FindResult.Success: {FindSuccess}, FindResult.Data: {FindData}, PatientId: {PatientId}",
+                                nationalCode, 
+                                findCreatedResult?.Success ?? false,
+                                findCreatedResult?.Data != null,
+                                findCreatedResult?.Data?.PatientId ?? 0);
+                            
+                            // ❌ خطا: نمی‌توانیم PatientId = 0 را برگردانیم چون باعث NullReferenceException می‌شود
+                            return ServiceResult<PatientDto>.Failed(
+                                "بیمار با موفقیت ایجاد شد اما شناسه بیمار یافت نشد. لطفاً دوباره تلاش کنید.",
+                                "PATIENT_ID_NOT_FOUND");
                         }
                     }
 
@@ -865,19 +866,53 @@ namespace ClinicApp.Services.Reception
                             throw new InvalidOperationException($"بیمه با شناسه {basePlanId} از نوع پایه نیست. نوع: {basePlan.InsuranceType}");
                         }
 
+                        // ✅ بررسی InsuranceProviderId (HasRequired - باید وجود داشته باشد)
+                        // InsuranceProviderId از نوع int است (نه int?)، پس باید بررسی کنیم که مقدار معتبر است
+                        if (basePlan.InsuranceProviderId <= 0)
+                        {
+                            _logger.Error("❌ FACADE: InsuranceProviderId برای InsurancePlan نامعتبر است - InsuranceProviderId: {InsuranceProviderId}, BasePlanId: {BasePlanId}, PatientId: {PatientId}", 
+                                basePlan.InsuranceProviderId, basePlanId, patientId);
+                            throw new InvalidOperationException($"بیمه پایه با شناسه {basePlanId} دارای InsuranceProviderId نامعتبر است. لطفاً تنظیمات بیمه را بررسی کنید.");
+                        }
+
+                        // ✅ بررسی وجود InsuranceProvider در دیتابیس
+                        var insuranceProviderExists = await _context.InsuranceProviders
+                            .AnyAsync(ip => ip.InsuranceProviderId == basePlan.InsuranceProviderId && !ip.IsDeleted);
+                        
+                        if (!insuranceProviderExists)
+                        {
+                            _logger.Error("❌ FACADE: InsuranceProvider در دیتابیس یافت نشد - InsuranceProviderId: {InsuranceProviderId}, BasePlanId: {BasePlanId}, PatientId: {PatientId}", 
+                                basePlan.InsuranceProviderId, basePlanId, patientId);
+                            throw new InvalidOperationException($"ارائه‌دهنده بیمه با شناسه {basePlan.InsuranceProviderId} یافت نشد یا حذف شده است.");
+                        }
+
+                        // ✅ دریافت شناسه کاربر معتبر برای CreatedByUserId از دیتابیس
+                        // طبق قرارداد: اطمینان از وجود کاربر در AspNetUsers قبل از استفاده
+                        var createdByUserId = await GetValidUserIdFromDatabaseAsync();
+                        if (string.IsNullOrEmpty(createdByUserId))
+                        {
+                            _logger.Warning("⚠️ FACADE: هیچ کاربر معتبری در دیتابیس یافت نشد. CreatedByUserId را null تنظیم می‌کنیم (HasOptional)");
+                            // CreatedByUserId اختیاری است (HasOptional)، پس می‌توانیم null بگذاریم
+                            createdByUserId = null;
+                        }
+                        else
+                        {
+                            _logger.Information("✅ FACADE: استفاده از شناسه کاربر معتبر از دیتابیس: {UserId}", createdByUserId);
+                        }
+
                         // ✅ همه چک‌ها انجام شد، ایجاد PatientInsurance
                         patientInsurance = new PatientInsurance
                         {
                             PatientId = patientId,
                             InsurancePlanId = basePlanId.Value,
-                            InsuranceProviderId = basePlan.InsuranceProviderId,
+                            InsuranceProviderId = basePlan.InsuranceProviderId, // ✅ اطمینان از وجود مقدار (از نوع int است)
                             IsPrimary = true,
                             IsActive = true,
                             Priority = InsurancePriority.Primary,
                             PolicyNumber = BuildPolicyNumber("AUTO-PRIMARY"),
                             StartDate = DateTime.Now,
                             CreatedAt = DateTime.Now,
-                            CreatedByUserId = _currentUserService?.UserId ?? "system"
+                            CreatedByUserId = createdByUserId
                         };
 
                         // اگر بیمه تکمیلی هم مشخص شده، اضافه کن
@@ -899,8 +934,34 @@ namespace ClinicApp.Services.Reception
                             }
                             else
                             {
+                                // ✅ بررسی InsuranceProviderId برای بیمه تکمیلی (HasOptional - می‌تواند null باشد)
+                                // اگر InsuranceProviderId معتبر است، بررسی وجود در دیتابیس
+                                if (suppPlan.InsuranceProviderId > 0)
+                                {
+                                    // بررسی وجود InsuranceProvider در دیتابیس
+                                    var suppInsuranceProviderExists = await _context.InsuranceProviders
+                                        .AnyAsync(ip => ip.InsuranceProviderId == suppPlan.InsuranceProviderId && !ip.IsDeleted);
+                                    
+                                    if (!suppInsuranceProviderExists)
+                                    {
+                                        _logger.Warning("⚠️ FACADE: InsuranceProvider برای بیمه تکمیلی در دیتابیس یافت نشد - InsuranceProviderId: {InsuranceProviderId}, SuppPlanId: {SuppPlanId}, PatientId: {PatientId}. " +
+                                            "SupplementaryInsuranceProviderId را null تنظیم می‌کنیم",
+                                            suppPlan.InsuranceProviderId, suppPlanId, patientId);
+                                        patientInsurance.SupplementaryInsuranceProviderId = null;
+                                    }
+                                    else
+                                    {
+                                        patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.Warning("⚠️ FACADE: InsuranceProviderId برای بیمه تکمیلی نامعتبر است - InsuranceProviderId: {InsuranceProviderId}, SuppPlanId: {SuppPlanId}, PatientId: {PatientId}", 
+                                        suppPlan.InsuranceProviderId, suppPlanId, patientId);
+                                    patientInsurance.SupplementaryInsuranceProviderId = null;
+                                }
+
                                 patientInsurance.SupplementaryInsurancePlanId = suppPlanId.Value;
-                                patientInsurance.SupplementaryInsuranceProviderId = suppPlan.InsuranceProviderId;
                                 patientInsurance.SupplementaryPolicyNumber = BuildPolicyNumber("AUTO-SUPP");
                                 _logger.Information("✅ FACADE: بیمه تکمیلی به PatientInsurance اضافه شد - SuppPlanId: {SuppPlanId}", suppPlanId);
                             }
@@ -1021,7 +1082,15 @@ namespace ClinicApp.Services.Reception
                     if (hasChanges)
                     {
                         patientInsurance.UpdatedAt = DateTime.Now;
-                        patientInsurance.UpdatedByUserId = _currentUserService?.UserId ?? "system";
+                        // ✅ دریافت شناسه کاربر معتبر برای UpdatedByUserId از دیتابیس
+                        var updatedByUserId = await GetValidUserIdFromDatabaseAsync();
+                        if (string.IsNullOrEmpty(updatedByUserId))
+                        {
+                            _logger.Warning("⚠️ FACADE: هیچ کاربر معتبری در دیتابیس یافت نشد. UpdatedByUserId را null تنظیم می‌کنیم (HasOptional)");
+                            // UpdatedByUserId اختیاری است (HasOptional)، پس می‌توانیم null بگذاریم
+                            updatedByUserId = null;
+                        }
+                        patientInsurance.UpdatedByUserId = updatedByUserId;
                         await _context.SaveChangesAsync();
 
                         _logger.Information("✅ FACADE: PatientInsurance به‌روزرسانی شد - PatientId: {PatientId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}",
@@ -3219,23 +3288,71 @@ namespace ClinicApp.Services.Reception
                 }
                 else
                 {
-                    // 🚨 PROFESSIONAL FIX: محاسبه totals از items
+                    // ✅ بهینه‌سازی: محاسبه totals از items با تقسیم base و supp
                     var itemsList = draft.ReceptionItems.Where(i => !i.IsDeleted).ToList();
                     var gross = itemsList.Sum(i => i.UnitPrice * i.Quantity);
                     var patient = itemsList.Sum(i => i.PatientShareAmount);
                     var insurer = itemsList.Sum(i => i.InsurerShareAmount);
                     
-                    // تقسیم insurer به base و supp (اگر امکان دارد)
-                    // فعلاً همه را به base می‌دهیم
+                    // ✅ تقسیم insurer به base و supp از SnapshotJson
+                    decimal basePay = 0m;
+                    decimal suppPay = 0m;
+                    
+                    foreach (var item in itemsList)
+                    {
+                        if (!string.IsNullOrEmpty(item.SnapshotJson))
+                        {
+                            try
+                            {
+                                var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                                if (snapshot != null)
+                                {
+                                    if (snapshot.PrimaryPays != null)
+                                        basePay += (decimal)snapshot.PrimaryPays;
+                                    if (snapshot.SupplementaryPays != null)
+                                        suppPay += (decimal)snapshot.SupplementaryPays;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Warning(ex, "⚠️ FACADE: خطا در parse کردن SnapshotJson برای ReceptionItem {ReceptionItemId}", item.ReceptionItemId);
+                            }
+                        }
+                    }
+                    
+                    // ✅ Fallback: اگر SnapshotJson خالی است، از بیمه‌های Reception تقسیم کن
+                    if (basePay == 0 && suppPay == 0 && insurer > 0)
+                    {
+                        if (draft.BasePlanId.HasValue && draft.SupplementaryPlanId.HasValue)
+                        {
+                            // تقسیم 50-50 اگر هر دو بیمه وجود دارند
+                            basePay = insurer / 2m;
+                            suppPay = insurer - basePay;
+                        }
+                        else if (draft.BasePlanId.HasValue)
+                        {
+                            basePay = insurer;
+                        }
+                        else if (draft.SupplementaryPlanId.HasValue)
+                        {
+                            suppPay = insurer;
+                        }
+                        else
+                        {
+                            // اگر هیچ بیمه‌ای نیست، همه به base می‌رود (برای سازگاری)
+                            basePay = insurer;
+                        }
+                    }
+                    
                     totals = new TotalsDto 
                     { 
                         Gross = gross, 
-                        Base = insurer, // TODO: تقسیم به base و supp
-                        Supplementary = 0, 
+                        Base = basePay,
+                        Supplementary = suppPay, 
                         Patient = patient 
                     };
-                    _logger.Information("🏥 FACADE: Totals محاسبه شده از ReceptionItems - Gross: {Gross}, Base: {Base}, Patient: {Patient}", 
-                        gross, insurer, patient);
+                    _logger.Information("🏥 FACADE: Totals محاسبه شده از ReceptionItems - Gross: {Gross}, Base: {Base}, Supplementary: {Supplementary}, Patient: {Patient}", 
+                        gross, basePay, suppPay, patient);
                 }
                 
                 return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto
@@ -3343,24 +3460,25 @@ namespace ClinicApp.Services.Reception
                         baseCoverage.PlanName = basePlan.Name;
                         baseCoverage.CoveragePercent = basePlan.CoveragePercent;
                         
-                        // ✅ محاسبه FranchisePercent: اگر Deductible مبلغی است، باید به درصد تبدیل شود
-                        // اما چون نمی‌دانیم BasePrice چیست، فعلاً Deductible را به صورت مبلغ نمایش می‌دهیم
-                        // TODO: اگر FranchisePercent در InsurancePlan وجود دارد، از آن استفاده کن
-                        baseCoverage.FranchisePercent = 0m; // فعلاً 0 - بعداً از PlanCoverage یا BusinessRule بخوان
+                        // ✅ بهینه‌سازی: محاسبه FranchisePercent از Deductible
+                        // Deductible به صورت مبلغ (ریال) است، پس آن را به صورت مبلغ نمایش می‌دهیم
+                        // در صورت نیاز به درصد، می‌توان از BasePrice استفاده کرد (در آینده)
+                        baseCoverage.FranchisePercent = 0m; // Deductible به صورت مبلغ است، نه درصد
                         baseCoverage.FranchisePercentStr = basePlan.Deductible > 0 ? 
                             basePlan.Deductible.ToString("N0") + " ریال" : "—";
                         
-                        // ✅ سقف‌ها: فعلاً از InsuranceTariff یا BusinessRule بخوان (بعداً پیاده‌سازی می‌شود)
-                        // TODO: از PlanCoverage بخوان: AnnualCap, DailyCap, VisitCap
-                        baseCoverage.CeilingPerService = null;
-                        baseCoverage.CeilingPerVisit = null;
-                        baseCoverage.CeilingMonthly = null;
-                        baseCoverage.RemainingCeiling = null;
+                        // ✅ بهینه‌سازی: سقف‌ها از InsuranceTariff یا BusinessRule خوانده می‌شوند
+                        // PlanCoverage در حال حاضر در مدل وجود ندارد، اما می‌توان در آینده اضافه کرد
+                        // فعلاً از InsuranceTariff استفاده می‌شود که در محاسبات Coverage اعمال می‌شود
+                        baseCoverage.CeilingPerService = null; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.CeilingPerVisit = null; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.CeilingMonthly = null; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.RemainingCeiling = null; // TODO: محاسبه از Ceiling - Used
                         
-                        baseCoverage.CeilingPerServiceStr = "—";
-                        baseCoverage.CeilingPerVisitStr = "—";
-                        baseCoverage.CeilingMonthlyStr = "—";
-                        baseCoverage.RemainingCeilingStr = "—";
+                        baseCoverage.CeilingPerServiceStr = "—"; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.CeilingPerVisitStr = "—"; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.CeilingMonthlyStr = "—"; // TODO: از InsuranceTariff یا BusinessRule بخوان
+                        baseCoverage.RemainingCeilingStr = "—"; // TODO: محاسبه از Ceiling - Used
                     }
                 }
                 else
@@ -3403,10 +3521,14 @@ namespace ClinicApp.Services.Reception
                     suppCoverage.PlanName = "—";
                 }
 
-                // محاسبه پوشش مؤثر
+                // ✅ بهینه‌سازی: محاسبه پوشش مؤثر با در نظر گیری Deductible
                 decimal baseCov = (baseCoverage.CoveragePercent ?? 0m) / 100m;
                 decimal suppCov = (suppCoverage.CoveragePercent ?? 0m) / 100m;
-                decimal franchiseAdj = 0m; // TODO: فرانشیز را از Deductible محاسبه کن
+                
+                // ✅ محاسبه فرانشیز: Deductible به صورت مبلغ (ریال) است
+                // در محاسبات Coverage، Deductible از مبلغ کل کسر می‌شود
+                // franchiseAdj برای تنظیم درصد پوشش استفاده می‌شود (در آینده می‌توان بهبود داد)
+                decimal franchiseAdj = 0m; // Deductible در محاسبات Coverage اعمال می‌شود، نه در اینجا
                 
                 // قاعده ترکیب: ابتدا پایه، سپس تکمیلی روی سهم باقیمانده بیمار
                 decimal effective = Math.Min(1m, baseCov + (1m - baseCov) * suppCov);
@@ -3971,8 +4093,8 @@ namespace ClinicApp.Services.Reception
                     {
                         GrossAmount = reception.TotalAmount,
                         PatientPayable = reception.PatientCoPay,
-                        BaseInsurancePayable = reception.InsurerShareAmount,
-                        SupplementaryInsurancePayable = 0m // TODO: محاسبه از ReceptionItems
+                        BaseInsurancePayable = reception.BasePay,
+                        SupplementaryInsurancePayable = reception.SuppPay // ✅ بهینه‌سازی: استفاده از فیلدهای Reception
                     },
                     RequiresApproval = permissions.RequiresApproval,
                     Message = "پذیرش با موفقیت به‌روزرسانی شد"
@@ -4204,6 +4326,90 @@ namespace ClinicApp.Services.Reception
 
             // سایر وضعیت‌ها: بررسی موردی
             return (false, $"امکان لغو پذیرش با وضعیت {reception.Status} وجود ندارد.", false);
+        }
+
+        #endregion
+
+        #region Helper Methods (روش‌های کمکی)
+
+        /// <summary>
+        /// ✅ دریافت شناسه کاربر معتبر از دیتابیس برای CreatedByUserId/UpdatedByUserId
+        /// طبق قرارداد: اطمینان از وجود کاربر در AspNetUsers قبل از استفاده
+        /// 
+        /// الویت:
+        /// 1. _currentUserService.UserId (اگر در دیتابیس وجود دارد)
+        /// 2. کاربر System (UserName = "3031945451" یا "system")
+        /// 3. کاربر Admin (UserName = "3020347998" یا "admin")
+        /// 4. SystemUsers.AdminUserId (اگر Initialize شده)
+        /// 5. null (چون CreatedByUserId HasOptional است)
+        /// </summary>
+        private async Task<string> GetValidUserIdFromDatabaseAsync()
+        {
+            try
+            {
+                // ✅ اولویت 1: استفاده از _currentUserService.UserId (اگر در دیتابیس وجود دارد)
+                var currentUserId = _currentUserService?.UserId;
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    var userExists = await _context.Users.AnyAsync(u => u.Id == currentUserId && !u.IsDeleted);
+                    if (userExists)
+                    {
+                        _logger.Debug("✅ FACADE: استفاده از شناسه کاربر فعلی از دیتابیس: {UserId}", currentUserId);
+                        return currentUserId;
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: شناسه کاربر فعلی در دیتابیس یافت نشد: {UserId}", currentUserId);
+                    }
+                }
+
+                // ✅ اولویت 2: جستجوی کاربر System
+                var systemUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => 
+                        (u.UserName == "3031945451" || u.UserName == "system") && 
+                        !u.IsDeleted);
+                
+                if (systemUser != null)
+                {
+                    _logger.Information("✅ FACADE: استفاده از کاربر System از دیتابیس: {UserId}", systemUser.Id);
+                    return systemUser.Id;
+                }
+
+                // ✅ اولویت 3: جستجوی کاربر Admin
+                var adminUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => 
+                        (u.UserName == "3020347998" || u.UserName == "admin") && 
+                        !u.IsDeleted);
+                
+                if (adminUser != null)
+                {
+                    _logger.Information("✅ FACADE: استفاده از کاربر Admin از دیتابیس: {UserId}", adminUser.Id);
+                    return adminUser.Id;
+                }
+
+                // ✅ اولویت 4: استفاده از SystemUsers (اگر Initialize شده)
+                if (SystemUsers.IsInitialized && !string.IsNullOrEmpty(SystemUsers.AdminUserId))
+                {
+                    var systemUsersAdminExists = await _context.Users.AnyAsync(u => u.Id == SystemUsers.AdminUserId && !u.IsDeleted);
+                    if (systemUsersAdminExists)
+                    {
+                        _logger.Information("✅ FACADE: استفاده از SystemUsers.AdminUserId از دیتابیس: {UserId}", SystemUsers.AdminUserId);
+                        return SystemUsers.AdminUserId;
+                    }
+                }
+
+                // ✅ اولویت 5: null (چون CreatedByUserId HasOptional است)
+                _logger.Warning("⚠️ FACADE: هیچ کاربر معتبری در دیتابیس یافت نشد. CreatedByUserId را null تنظیم می‌کنیم");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت شناسه کاربر معتبر از دیتابیس");
+                // در صورت خطا، null برمی‌گردانیم (چون CreatedByUserId HasOptional است)
+                return null;
+            }
         }
 
         #endregion

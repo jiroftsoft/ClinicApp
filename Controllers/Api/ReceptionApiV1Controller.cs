@@ -438,7 +438,26 @@ namespace ClinicApp.Controllers.Api
                         if (createResult.Success && createResult.Data != null)
                         {
                             var patientDto = createResult.Data;
+                            
+                            // ✅ بررسی معتبر بودن PatientId قبل از استفاده
+                            // طبق قرارداد: جلوگیری از NullReferenceException
+                            if (patientDto == null)
+                            {
+                                _logger?.Error("❌ V1 API: patientDto null است - NationalCode: {NationalCode}", request.NationalCode);
+                                return Json(ServiceResult.Failed("خطا در ایجاد بیمار: داده‌های بیمار null است.", "PATIENT_DTO_NULL"));
+                            }
+                            
                             var patientId = patientDto.PatientId;
+                            
+                            // ✅ بررسی معتبر بودن PatientId
+                            if (patientId <= 0)
+                            {
+                                _logger?.Error("❌ V1 API: PatientId نامعتبر است - PatientId: {PatientId}, NationalCode: {NationalCode}", 
+                                    patientId, request.NationalCode);
+                                return Json(ServiceResult.Failed(
+                                    "بیمار ایجاد شد اما شناسه بیمار نامعتبر است. لطفاً دوباره تلاش کنید.",
+                                    "INVALID_PATIENT_ID"));
+                            }
                             
                             if (patientId > 0)
                             {

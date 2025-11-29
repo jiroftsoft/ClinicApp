@@ -324,15 +324,44 @@
   /**
    * ✅ باز کردن Modal جزئیات پوشش برای یک آیتم خاص (Item Coverage Modal)
    */
-  function openItemCoverageModal(item, pricing) {
+  /**
+   * ✅ باز کردن modal جزئیات پوشش برای یک آیتم
+   * @param {Object} item - اطلاعات آیتم
+   * @param {Object} pricing - اطلاعات pricing (اختیاری)
+   * @param {Object} insurance - اطلاعات InsuranceCalculation (اختیاری)
+   */
+  function openItemCoverageModal(item, pricing, insurance) {
     if (!$('#rv2-coverage-modal').length) {
       console.warn('🏥 V2: Coverage modal not found in DOM');
       return;
     }
 
-    var c = pricing?.Coverage || pricing?.coverage;
+    // ✅ استخراج Coverage از منابع مختلف (اولویت: pricing > insurance > ساخت از item)
+    // طبق الگوی موجود در پروژه - پشتیبانی از PascalCase و camelCase
+    var c = null;
+    
+    // ✅ اولویت 1: از pricing (اگر CoverageDetailsDto در pricing موجود باشد)
+    if (pricing) {
+      c = pricing.Coverage || pricing.coverage;
+    }
+    
+    // ✅ اولویت 2: از insurance (InsuranceCalculation) - ساخت CoverageDetailsDto
+    if (!c && insurance) {
+      c = buildCoverageFromInsurance(insurance, item, pricing);
+    }
+    
+    // ✅ اولویت 3: از item - استخراج یا ساخت CoverageDetailsDto
+    if (!c && item) {
+      c = buildCoverageFromItem(item, pricing);
+    }
+    
+    // ✅ بررسی نهایی - اگر Coverage پیدا نشد، خطا نمایش بده
     if (!c) {
-      toastr.warning('اطلاعات پوشش برای این آیتم موجود نیست');
+      console.warn('🏥 V2: Coverage information not found in pricing, insurance, or item');
+      console.warn('🏥 V2: Item:', item);
+      console.warn('🏥 V2: Pricing:', pricing);
+      console.warn('🏥 V2: Insurance:', insurance);
+      toastr.warning('اطلاعات پوشش برای این آیتم موجود نیست. لطفاً دوباره محاسبه کنید.');
       return;
     }
 
@@ -429,6 +458,121 @@
   }
 
   /**
+   * ✅ ساخت Coverage از InsuranceCalculation
+   * طبق الگوی ReceptionPricingService.BuildCoverageDetails
+   * 
+   * @param {Object} insurance - InsuranceCalculation (PrimaryCoverage, SupplementaryCoverage, etc. به صورت decimal)
+   * @param {Object} item - اطلاعات آیتم (برای استخراج gross و snapshotJson)
+   * @param {Object} pricing - اطلاعات pricing (اختیاری)
+   * @returns {Object|null} CoverageDetailsDto structure
+   */
+  function buildCoverageFromInsurance(insurance, item, pricing) {
+    if (!insurance) return null;
+    
+    try {
+      // ✅ استخراج مقادیر با پشتیبانی از PascalCase و camelCase
+      var primaryCoverage = insurance.PrimaryCoverage || insurance.primaryCoverage || 0;
+      var supplementaryCoverage = insurance.SupplementaryCoverage || insurance.supplementaryCoverage || 0;
+      var totalCoverage = insurance.TotalInsuranceCoverage || insurance.totalInsuranceCoverage || 0;
+      var patientShare = insurance.PatientShare || insurance.patientShare || 0;
+      var coverageStatus = insurance.CoverageStatus || insurance.coverageStatus || 'بدون پوشش';
+      
+      // ✅ تبدیل decimal به long (AmountIRR) - طبق الگوی C#
+      // در JavaScript، decimal به صورت number است و باید به integer تبدیل شود
+      var baseCoveredIRR = Math.round(primaryCoverage);
+      var suppCoveredIRR = Math.round(supplementaryCoverage);
+      var patientPayableIRR = Math.round(patientShare);
+      
+      // ✅ تعیین State - طبق CoverageState enum (None=0, Partial=1, Full=2)
+      var state = 0; // None
+      if (coverageStatus === 'پوشش کامل' || (patientPayableIRR === 0 && (baseCoveredIRR > 0 || suppCoveredIRR > 0))) {
+        state = 2; // Full
+      } else if (coverageStatus === 'پوشش ناقص' || (baseCoveredIRR > 0 || suppCoveredIRR > 0)) {
+        state = 1; // Partial
+      }
+      
+      // ✅ ساخت Segments - طبق الگوی ReceptionPricingService.BuildCoverageDetails
+      var segments = [];
+      
+      // ✅ Segment بیمه پایه - طبق CoverageReasonCode.BaseCovered (1)
+      if (baseCoveredIRR > 0) {
+        segments.push({
+          Payer: 'BASE',
+          AmountIRR: baseCoveredIRR,
+          Reason: 1, // BaseCovered (CoverageReasonCode.BaseCovered)
+          Note: 'پوشش توسط بیمه پایه'
+        });
+      }
+      
+      // ✅ Segment بیمه تکمیلی - طبق CoverageReasonCode.SuppCovered (2)
+      if (suppCoveredIRR > 0) {
+        segments.push({
+          Payer: 'SUPP',
+          AmountIRR: suppCoveredIRR,
+          Reason: 2, // SuppCovered (CoverageReasonCode.SuppCovered)
+          Note: 'پوشش توسط بیمه تکمیلی'
+        });
+      }
+      
+      // ✅ Segment بیمار - طبق CoverageReasonCode.FranchiseApplied (5)
+      if (patientPayableIRR > 0) {
+        segments.push({
+          Payer: 'PATIENT',
+          AmountIRR: patientPayableIRR,
+          Reason: 5, // FranchiseApplied (CoverageReasonCode.FranchiseApplied)
+          Note: 'سهم بیمار'
+        });
+      }
+      
+      // ✅ ساخت CoverageDetailsDto - طبق CoverageDetailsDto structure
+      return {
+        State: state,
+        Segments: segments,
+        BaseCapRemainingIRR: null, // TODO: می‌توان از snapshotJson استخراج کرد
+        SuppCapRemainingIRR: null, // TODO: می‌توان از snapshotJson استخراج کرد
+        FranchiseIRR: null, // TODO: می‌توان از snapshotJson استخراج کرد
+        Warnings: []
+      };
+    } catch (err) {
+      console.error('🏥 V2: Error building coverage from insurance:', err);
+      console.error('🏥 V2: Insurance data:', insurance);
+      return null;
+    }
+  }
+  
+  /**
+   * ✅ ساخت Coverage از item (fallback)
+   * طبق الگوی موجود در پروژه - پشتیبانی از PascalCase و camelCase
+   * 
+   * @param {Object} item - اطلاعات آیتم (ممکن است InsuranceCalculation یا Coverage داشته باشد)
+   * @param {Object} pricing - اطلاعات pricing (اختیاری)
+   * @returns {Object|null} CoverageDetailsDto structure
+   */
+  function buildCoverageFromItem(item, pricing) {
+    if (!item) return null;
+    
+    try {
+      // ✅ اولویت 1: اگر item دارای InsuranceCalculation است، از آن استفاده کن
+      var insurance = item.InsuranceCalculation || item.insuranceCalculation;
+      if (insurance) {
+        return buildCoverageFromInsurance(insurance, item, pricing);
+      }
+      
+      // ✅ اولویت 2: اگر item دارای Coverage است، از آن استفاده کن
+      var coverage = item.Coverage || item.coverage;
+      if (coverage) {
+        return coverage;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error('🏥 V2: Error building coverage from item:', err);
+      console.error('🏥 V2: Item data:', item);
+      return null;
+    }
+  }
+
+  /**
    * ✅ Humanize CoverageReasonCode
    */
   function humanizeReason(reasonCode) {
@@ -452,19 +596,29 @@
     var $row = $(this).closest('tr');
     var item = $row.data('item');
     var pricing = $row.data('pricing');
+    var insurance = $row.data('insurance'); // ✅ اضافه شده: InsuranceCalculation
     
-    if (!item || !pricing) {
-      console.warn('🏥 V2: Item or pricing data not found on row');
+    if (!item) {
+      console.warn('🏥 V2: Item data not found on row');
+      toastr.warning('اطلاعات آیتم یافت نشد');
       return;
     }
     
-    openItemCoverageModal(item, pricing);
+    // ✅ اگر pricing وجود ندارد، از insurance یا item استفاده کن
+    if (!pricing) {
+      pricing = {};
+    }
+    
+    // ✅ پاس دادن insurance به openItemCoverageModal
+    openItemCoverageModal(item, pricing, insurance);
   });
 
   // Export
   ns.ReceptionV2.CoverageModal = {
     open: open,
-    openItemCoverageModal: openItemCoverageModal
+    openItemCoverageModal: openItemCoverageModal,
+    buildCoverageFromInsurance: buildCoverageFromInsurance,
+    buildCoverageFromItem: buildCoverageFromItem
   };
 
   console.log('🏥 V2: Coverage Modal initialized');
