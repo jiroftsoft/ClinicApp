@@ -213,7 +213,7 @@
                                 <i class="fas fa-shield-alt me-2"></i>
                                 بیمه‌های بیمار (@Model.InsuranceCount)
                             </h5>
-                            <a href="@Url.Action("Create", "PatientInsurance", new { patientId = Model.PatientInfo.PatientId })" class="btn btn-light btn-sm">
+                            <a href="/Admin/PatientInsurance/Create?patientId=@Model.PatientInfo.PatientId" class="btn btn-light btn-sm">
                                 <i class="fas fa-plus me-1"></i> افزودن بیمه
                             </a>
                         </div>
@@ -237,7 +237,7 @@
                             <i class="fas fa-info-circle me-2"></i>
                             این بیمار هنوز بیمه‌ای ثبت نشده است.
                         </div>
-                        <a href="@Url.Action("Create", "PatientInsurance", new { patientId = Model.PatientInfo.PatientId })" class="btn btn-success">
+                        <a href="/Admin/PatientInsurance/Create?patientId=@Model.PatientInfo.PatientId" class="btn btn-success">
                             <i class="fas fa-plus me-1"></i> افزودن بیمه جدید
                         </a>
                     </div>

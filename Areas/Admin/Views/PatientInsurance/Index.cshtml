@@ -268,12 +268,25 @@
                             }
                         });
 
-                        // --- متد اصلی بارگذاری ---
+                        // --- متد اصلی بارگذاری با بهینه‌سازی ---
                         function reloadInsurances(page) {
                             var searchTerm = $('input[name="searchTerm"]').val();
                             var providerId = $('select[name="providerId"]').val();
                             var isPrimary = $('select[name="isPrimary"]').val();
                             var isActive = $('select[name="isActive"]').val();
+                            var pageSize = $('select[name="pageSize"]').val() || 25;
+
+                            // ✅ نمایش loading indicator
+                            var $container = $('#patientInsuranceListContainer');
+                            var loadingHtml = `
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">در حال بارگذاری...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">در حال بارگذاری بیمه‌های بیماران...</p>
+                                </div>
+                            `;
+                            $container.html(loadingHtml);
 
                             $.ajax({
                                 url: '@Url.Action("LoadPatientInsurances", "PatientInsurance")',
@@ -284,14 +297,46 @@
                                     isPrimary: isPrimary || null,
                                     isActive: isActive || null,
                                     page: page,
+                                    pageSize: pageSize,
                                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                                 },
+                                timeout: 30000, // 30 ثانیه timeout
                                 success: function (response) {
-                                    $('#patientInsuranceListContainer').html(response);
+                                    $container.html(response);
+                                    
+                                    // ✅ Scroll به بالای لیست
+                                    $('html, body').animate({
+                                        scrollTop: $container.offset().top - 100
+                                    }, 300);
                                 },
                                 error: function (xhr, status, error) {
-                                    console.error('خطا در بارگیری بیمه‌های بیماران:', error);
-                                    showErrorMessage('خطا در بارگیری بیمه‌های بیماران');
+                                    console.error('خطا در بارگیری بیمه‌های بیماران:', {
+                                        status: xhr.status,
+                                        statusText: xhr.statusText,
+                                        error: error,
+                                        responseText: xhr.responseText
+                                    });
+                                    
+                                    var errorMessage = 'خطا در بارگیری بیمه‌های بیماران';
+                                    if (xhr.status === 0) {
+                                        errorMessage = 'اتصال به سرور برقرار نیست. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                                    } else if (xhr.status === 500) {
+                                        errorMessage = 'خطای داخلی سرور. لطفاً با پشتیبانی تماس بگیرید.';
+                                    } else if (xhr.status === 404) {
+                                        errorMessage = 'سرویس یافت نشد. لطفاً صفحه را نوسازی کنید.';
+                                    } else if (xhr.status === 403) {
+                                        errorMessage = 'شما مجوز دسترسی به این اطلاعات را ندارید.';
+                                    }
+                                    
+                                    $container.html(`
+                                        <div class="alert alert-danger" role="alert">
+                                            <i class="fas fa-exclamation-circle"></i> ${errorMessage}
+                                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="reloadInsurances(${page})">
+                                                <i class="fas fa-redo"></i> تلاش مجدد
+                                            </button>
+                                        </div>
+                                    `);
+                                    showErrorMessage(errorMessage);
                                 }
                             });
                         }

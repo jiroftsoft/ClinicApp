@@ -108,11 +108,13 @@ namespace ClinicApp.Services
                 NationalCode = patient.NationalCode,
                 FirstName = patient.FirstName,
                 LastName = patient.LastName,
+                Gender = patient.Gender, // ✅ رفع مشکل: Gender باید set شود
                 BirthDate = patient.BirthDate,
                 BirthDateShamsi = patient.BirthDate.HasValue ?
                     patient.BirthDate.Value.ToPersianDate() : null,
                 Address = patient.Address,
                 PhoneNumber = patient.PhoneNumber,
+                Email = patient.Email, // ✅ اضافه کردن Email
                 // InsuranceId حذف شد
                 // InsuranceName حذف شد
                 CreatedAt = patient.CreatedAt,

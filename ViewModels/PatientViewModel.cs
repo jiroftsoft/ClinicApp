@@ -59,7 +59,8 @@ namespace ClinicApp.ViewModels
         public Gender Gender { get; set; }
 
         [Display(Name = "جنسیت")]
-        public string GenderDisplay => Gender == Gender.Male ? "مرد" : "زن";
+        public string GenderDisplay => Gender == Gender.Male ? "مرد" : 
+                                      Gender == Gender.Female ? "زن" : "نامشخص";
 
 
         [Display(Name = "آدرس")]
@@ -301,7 +302,8 @@ namespace ClinicApp.ViewModels
         public Gender Gender { get; set; }
 
         [Display(Name = "جنسیت")]
-        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : "زن";
+        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : 
+                                      this.Gender == Gender.Female ? "زن" : "نامشخص";
 
         [Display(Name = "شماره موبایل")]
         public string PhoneNumber { get; set; }
@@ -411,7 +413,8 @@ namespace ClinicApp.ViewModels
         public Gender Gender { get; set; }
 
         [Display(Name = "جنسیت")]
-        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : "زن";
+        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : 
+                                      this.Gender == Gender.Female ? "زن" : "نامشخص";
 
         [Display(Name = "نام کامل")]
         public string FullName => $"{FirstName} {LastName}".Trim();

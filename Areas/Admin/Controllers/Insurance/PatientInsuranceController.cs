@@ -1418,16 +1418,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<PartialViewResult> LoadPatientInsurances(int? patientId = null, string searchTerm = "", int? providerId = null, bool? isPrimary = null, bool? isActive = null, int page = 1)
+        public async Task<PartialViewResult> LoadPatientInsurances(int? patientId = null, string searchTerm = "", int? providerId = null, bool? isPrimary = null, bool? isActive = null, int page = 1, int pageSize = 0)
         {
+            // ✅ **بهینه‌سازی: استفاده از pageSize از درخواست یا پیش‌فرض**
+            var effectivePageSize = pageSize > 0 ? Math.Min(pageSize, 100) : PageSize; // حداکثر 100 رکورد
+            
             _log.Information(
-                "درخواست لود بیمه‌های بیماران. PatientId: {PatientId}, SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})",
-                patientId, searchTerm, providerId, isPrimary, isActive, page, PageSize, _currentUserService.UserName, _currentUserService.UserId);
+                "درخواست لود بیمه‌های بیماران. PatientId: {PatientId}, SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, Page: {Page}, EffectivePageSize: {EffectivePageSize}. User: {UserName} (Id: {UserId})",
+                patientId, searchTerm, providerId, isPrimary, isActive, page, effectivePageSize, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
-                // استفاده از متد جدید با فیلترهای کامل
-                var result = await _patientInsuranceService.GetPatientInsurancesWithFiltersAsync(patientId, searchTerm, providerId, isPrimary, isActive, page, PageSize);
+                // ✅ **بهینه‌سازی: استفاده از متد جدید با فیلترهای کامل و pageSize بهینه**
+                var result = await _patientInsuranceService.GetPatientInsurancesWithFiltersAsync(patientId, searchTerm, providerId, isPrimary, isActive, page, effectivePageSize);
                 if (!result.Success)
                 {
                     _log.Warning(
@@ -1455,38 +1458,15 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     EndDateShamsi = x.EndDateShamsi
                 }).ToList();
 
-                // ایجاد ViewModel برای Partial View
+                // ✅ **بهینه‌سازی: ایجاد ViewModel برای Partial View بدون فیلتر کلاینت**
+                // فیلترها باید در سمت سرور انجام شوند، نه کلاینت
                 var partialViewModel = new PatientInsuranceListPartialViewModel
                 {
                     Items = convertedItems,
                     CurrentPage = page,
-                    PageSize = PageSize,
-                    TotalItems = result.Data.TotalItems
+                    PageSize = effectivePageSize, // ✅ استفاده از effectivePageSize
+                    TotalItems = result.Data.TotalItems // ✅ استفاده از TotalItems از سرور (فیلتر شده)
                 };
-
-                // اعمال فیلترهای اضافی در سمت کلاینت (موقت)
-                if (providerId.HasValue || isPrimary.HasValue || isActive.HasValue)
-                {
-                    var filteredItems = partialViewModel.Items.AsEnumerable();
-
-                    if (providerId.HasValue)
-                    {
-                        // TODO: فیلتر بر اساس providerId - نیاز به اضافه کردن به ViewModel
-                    }
-
-                    if (isPrimary.HasValue)
-                    {
-                        filteredItems = filteredItems.Where(x => x.IsPrimary == isPrimary.Value);
-                    }
-
-                    if (isActive.HasValue)
-                    {
-                        filteredItems = filteredItems.Where(x => x.IsActive == isActive.Value);
-                    }
-
-                    partialViewModel.Items = filteredItems.ToList();
-                    partialViewModel.TotalItems = partialViewModel.Items.Count;
-                }
 
                 _log.Information(
                     "لود بیمه‌های بیماران با موفقیت انجام شد. Count: {Count}, Page: {Page}. User: {UserName} (Id: {UserId})",

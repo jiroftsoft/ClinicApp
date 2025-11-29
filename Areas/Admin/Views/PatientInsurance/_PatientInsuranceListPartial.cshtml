@@ -7,12 +7,14 @@
 @if (Model != null && Model.Items.Any())
 {
     <div class="patient-insurance-list">
-        @foreach (var patientInsurance in Model.Items)
-        {
-            <div class="col-md-6 col-lg-4 mb-4">
-                @Html.Partial("_PatientInsuranceCard", patientInsurance)
-            </div>
-        }
+        <div class="row">
+            @foreach (var patientInsurance in Model.Items)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    @Html.Partial("_PatientInsuranceCard", patientInsurance)
+                </div>
+            }
+        </div>
     </div>
     
     <!-- Pagination -->
@@ -37,10 +39,38 @@
                         int endPage = System.Math.Min(Model.TotalPages, Model.CurrentPage + 2);
                     }
                     
+                    @* نمایش صفحه اول اگر فاصله وجود دارد *@
+                    @if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="1">1</a>
+                        </li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+                    
                     @for (int i = startPage; i <= endPage; i++)
                     {
                         <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                             <a class="page-link" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                    
+                    @* نمایش صفحه آخر اگر فاصله وجود دارد *@
+                    @if (endPage < Model.TotalPages)
+                    {
+                        if (endPage < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="@Model.TotalPages">@Model.TotalPages</a>
                         </li>
                     }
                     

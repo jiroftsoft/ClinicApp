@@ -461,6 +461,15 @@ namespace ClinicApp
                 namespaces: new[] { "ClinicApp.Controllers.Payment.POS" }
             );
 
+            // 🏥 Patient Controller Route - برای جلوگیری از تداخل با Api.PatientController
+            // این route باید قبل از route پیش‌فرض قرار بگیرد تا اولویت داشته باشد
+            routes.MapRoute(
+                name: "Patient",
+                url: "Patient/{action}/{id}",
+                defaults: new { controller = "Patient", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers" } // فقط کنترلر اصلی Patient
+            );
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
