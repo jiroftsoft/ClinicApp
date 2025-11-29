@@ -53,6 +53,10 @@ namespace ClinicApp.ViewModels.Reception
         /// 🚨 PROFESSIONAL: محاسبه real-time بیمه برای این آیتم
         /// </summary>
         public ItemInsuranceCalculationDto InsuranceCalculation { get; set; }
+        /// <summary>
+        /// ✅ Warning برای تعرفه ناقص (اگر تعیین ست موجود باشد اما تعرفه در DB نباشد)
+        /// </summary>
+        public string TariffWarning { get; set; }
     }
 
     public class TotalsDto

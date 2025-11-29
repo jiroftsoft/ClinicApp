@@ -477,13 +477,39 @@
             const unitPrice = it.unitPriceIRR || it.UnitPriceIRR || 0;
             const total = it.totalIRR || it.TotalIRR || 0;
             const serviceId = it.serviceId || it.ServiceId;
+            const tariffWarning = it.tariffWarning || it.TariffWarning || null;
+            
+            // ✅ گام 3.2: افزودن نماد هشدار برای TariffWarning
+            let warningIcon = '';
+            if (tariffWarning) {
+              warningIcon = ` <i class="fas fa-exclamation-triangle text-warning" 
+                data-bs-toggle="tooltip" 
+                data-bs-placement="top" 
+                title="${tariffWarning}" 
+                style="cursor: pointer;"></i>`;
+            }
             
             $tb.append(`<tr>
-              <td>${code}</td><td>${name}</td><td>${qty}</td>
+              <td>${code}${warningIcon}</td><td>${name}</td><td>${qty}</td>
               <td>${U.toIRR(unitPrice)}</td><td>${U.toIRR(total)}</td>
               <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="${serviceId}">حذف</button></td>
             </tr>`);
           });
+          
+          // ✅ گام 3.3: فعال‌سازی Bootstrap Tooltip
+          if (window.bootstrap && typeof window.bootstrap.Tooltip !== 'undefined') {
+            $('[data-bs-toggle="tooltip"]').each(function() {
+              try {
+                var existingTooltip = bootstrap.Tooltip.getInstance(this);
+                if (existingTooltip) {
+                  existingTooltip.dispose();
+                }
+                new bootstrap.Tooltip(this);
+              } catch (err) {
+                console.warn('🏥 V2: Error creating tooltip:', err);
+              }
+            });
+          }
         }
         
         // ✅ Update totals - استفاده از تابع updateTotalsUI

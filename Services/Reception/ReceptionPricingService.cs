@@ -474,9 +474,10 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // ✅ بررسی InsuranceTariff برای بیمه پایه (در صورت وجود)
+                Models.Entities.Insurance.InsuranceTariff baseTariff = null;
                 if (basePlanId.HasValue)
                 {
-                    var baseTariff = await _context.InsuranceTariffs
+                    baseTariff = await _context.InsuranceTariffs
                         .AsNoTracking()
                         .FirstOrDefaultAsync(t => t.ServiceId == serviceId &&
                                                  t.InsurancePlanId == basePlanId.Value &&
@@ -488,13 +489,15 @@ namespace ClinicApp.Services.Reception
                     {
                         missing.Add("BASE");
                         meta["missingBase"] = true;
+                        meta["basePlanId"] = basePlanId.Value;
                     }
                 }
 
                 // ✅ بررسی InsuranceTariff برای بیمه تکمیلی (در صورت وجود)
+                Models.Entities.Insurance.InsuranceTariff suppTariff = null;
                 if (suppPlanId.HasValue)
                 {
-                    var suppTariff = await _context.InsuranceTariffs
+                    suppTariff = await _context.InsuranceTariffs
                         .AsNoTracking()
                         .FirstOrDefaultAsync(t => t.ServiceId == serviceId &&
                                                  t.InsurancePlanId == suppPlanId.Value &&
@@ -506,7 +509,40 @@ namespace ClinicApp.Services.Reception
                     {
                         missing.Add("SUPP");
                         meta["missingSupp"] = true;
+                        meta["suppPlanId"] = suppPlanId.Value;
                     }
+                }
+
+                // ✅ بهینه‌سازی: بررسی ترکیبی Base + Supplementary
+                // اگر هر دو بیمه وجود دارند، باید بررسی کنیم که آیا این ترکیب معتبر است
+                if (basePlanId.HasValue && suppPlanId.HasValue && baseTariff != null && suppTariff != null)
+                {
+                    // بررسی اینکه آیا این دو تعرفه با هم سازگار هستند
+                    // در حال حاضر، هر InsuranceTariff مستقل است، اما می‌توانیم بررسی کنیم که:
+                    // 1. آیا هر دو تعرفه برای همان ServiceId هستند (قبلاً بررسی شده)
+                    // 2. آیا هر دو تعرفه فعال هستند (قبلاً بررسی شده)
+                    // 3. آیا ترکیب منطقی است (مثلاً اگر بیمه پایه 100% پوشش دارد، بیمه تکمیلی نباید استفاده شود)
+                    
+                    // ✅ بررسی منطقی: اگر بیمه پایه 100% پوشش دارد، بیمه تکمیلی نباید استفاده شود
+                    var baseCoveragePercent = 0m;
+                    if (baseTariff.PatientShare.HasValue && baseTariff.InsurerShare.HasValue)
+                    {
+                        var baseTotal = baseTariff.PatientShare.Value + baseTariff.InsurerShare.Value;
+                        if (baseTotal > 0)
+                        {
+                            baseCoveragePercent = (baseTariff.InsurerShare.Value / baseTotal) * 100m;
+                        }
+                    }
+                    
+                    if (baseCoveragePercent >= 100m)
+                    {
+                        _logger.Warning("⚠️ PRICING SERVICE: بیمه پایه 100% پوشش دارد، بیمه تکمیلی نباید استفاده شود - ServiceId: {ServiceId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}, BaseCoveragePercent: {BaseCoveragePercent}",
+                            serviceId, basePlanId.Value, suppPlanId.Value, baseCoveragePercent);
+                        // این یک هشدار است، نه خطا - چون ممکن است در آینده منطق تغییر کند
+                    }
+                    
+                    _logger.Information("✅ PRICING SERVICE: بررسی ترکیبی Base + Supplementary - ServiceId: {ServiceId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}, BaseTariffId: {BaseTariffId}, SuppTariffId: {SuppTariffId}, BaseCoveragePercent: {BaseCoveragePercent}",
+                        serviceId, basePlanId.Value, suppPlanId.Value, baseTariff.InsuranceTariffId, suppTariff.InsuranceTariffId, baseCoveragePercent);
                 }
 
                 if (missing.Any())
@@ -515,11 +551,36 @@ namespace ClinicApp.Services.Reception
                     meta["missing"] = missingList;
                     meta["createTariffUrl"] = $"/InsuranceTariff/Create?serviceId={serviceId}&planId={(basePlanId ?? suppPlanId)}";
 
+                    // ✅ بهینه‌سازی: پیام خطای واضح و هدایت‌کننده برای کاربران غیرفنی
+                    string userFriendlyMessage;
+                    if (missing.Contains("BASE") && missing.Contains("SUPP"))
+                    {
+                        userFriendlyMessage = $"⚠️ برای این خدمت، تعیین ست بیمه‌ای انجام نشده است.\n\n" +
+                            $"• تعیین ست برای بیمه پایه موجود نیست\n" +
+                            $"• تعیین ست برای بیمه تکمیلی موجود نیست\n\n" +
+                            $"لطفاً با بخش فنی تماس بگیرید تا تعیین ست انجام شود.";
+                    }
+                    else if (missing.Contains("BASE"))
+                    {
+                        userFriendlyMessage = $"⚠️ برای این خدمت، تعیین ست بیمه پایه انجام نشده است.\n\n" +
+                            $"لطفاً با بخش فنی تماس بگیرید تا تعیین ست بیمه پایه انجام شود.";
+                    }
+                    else if (missing.Contains("SUPP"))
+                    {
+                        userFriendlyMessage = $"⚠️ برای این خدمت، تعیین ست بیمه تکمیلی انجام نشده است.\n\n" +
+                            $"لطفاً با بخش فنی تماس بگیرید تا تعیین ست بیمه تکمیلی انجام شود.";
+                    }
+                    else
+                    {
+                        userFriendlyMessage = $"⚠️ برای این خدمت، تعیین ست بیمه‌ای ناقص است.\n\n" +
+                            $"لطفاً با بخش فنی تماس بگیرید.";
+                    }
+
                     _logger.Warning("⚠️ PRICING SERVICE: تعیین‌ست بیمه‌ای ناقص - ServiceId: {ServiceId}, Missing: {Missing}", 
                         serviceId, missingList);
 
                     return (false, "INSURANCE_SET_MISSING", 
-                        $"برای این خدمت تعیین‌ست بیمه‌ای یافت نشد. ({missingList})", 
+                        userFriendlyMessage, 
                         meta);
                 }
 
