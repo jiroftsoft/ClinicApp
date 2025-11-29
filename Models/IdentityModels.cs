@@ -81,6 +81,7 @@ namespace ClinicApp.Models
         #region DbSet Definitions
 
         public DbSet<Clinic> Clinics { get; set; }
+        public DbSet<ClinicBankAccount> ClinicBankAccounts { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<Service> Services { get; set; }

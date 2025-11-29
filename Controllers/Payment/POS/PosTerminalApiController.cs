@@ -6,6 +6,7 @@ using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Models.Enums;
+using ClinicApp.Services.Payment.POS;
 using ClinicApp.ViewModels.Payment.POS;
 using Serilog;
 
@@ -18,11 +19,19 @@ namespace ClinicApp.Controllers.Payment.POS
     public class PosTerminalApiController : Controller
     {
         private readonly IPosManagementService _service;
+        private readonly IPosDeviceService _posDeviceService;
+        private readonly PosPaymentOrchestrator _paymentOrchestrator;
         private readonly ILogger _logger;
 
-        public PosTerminalApiController(IPosManagementService service, ILogger logger)
+        public PosTerminalApiController(
+            IPosManagementService service, 
+            IPosDeviceService posDeviceService,
+            PosPaymentOrchestrator paymentOrchestrator,
+            ILogger logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _posDeviceService = posDeviceService ?? throw new ArgumentNullException(nameof(posDeviceService));
+            _paymentOrchestrator = paymentOrchestrator ?? throw new ArgumentNullException(nameof(paymentOrchestrator));
             _logger = logger.ForContext<PosTerminalApiController>();
         }
 
@@ -306,42 +315,54 @@ namespace ClinicApp.Controllers.Payment.POS
                     return Json(ServiceResult.Failed("درخواست نامعتبر است"));
                 }
 
-                // دریافت ترمینال پیش‌فرض
+                _logger.Information("🏥 POS Controller: Processing payment - ReceptionId: {ReceptionId}, AmountIRR: {AmountIRR}",
+                    request.ReceptionId, request.AmountIRR);
+
+                // دریافت ترمینال
                 var terminalResult = await _service.GetDefaultPosTerminalAsync();
                 if (!terminalResult.Success || terminalResult.Data == null)
                 {
+                    _logger.Warning("⚠️ POS Controller: Default terminal not found");
                     return Json(ServiceResult.Failed("ترمینال POS پیش‌فرض یافت نشد. لطفاً ابتدا ترمینال را تنظیم کنید."));
                 }
 
-                var terminal = terminalResult.Data;
+                // ✅ استفاده از PosPaymentOrchestrator (Production-Ready با Retry و لاگ کامل)
+                var paymentResult = await _paymentOrchestrator.ProcessPaymentAsync(
+                    receptionId: request.ReceptionId,
+                    amountIRR: request.AmountIRR,
+                    terminalId: request.PosTerminalId,
+                    userId: null);
 
-                // TODO: اینجا باید با دستگاه کارتخوان ارتباط برقرار شود
-                // برای حال حاضر، یک شبیه‌سازی ساده انجام می‌دهیم
-                // در آینده باید با SDK دستگاه کارتخوان (مثل سامان کیش، آسان پرداخت و...) ارتباط برقرار شود
-                
-                // شبیه‌سازی پردازش پرداخت
-                // در واقعیت، اینجا باید:
-                // 1. اتصال به دستگاه کارتخوان از طریق IP/MAC
-                // 2. ارسال مبلغ به دستگاه
-                // 3. دریافت پاسخ از دستگاه (RRN، TraceNo، TerminalId، CardLast4)
-                // 4. بررسی موفقیت تراکنش
+                if (!paymentResult.Success)
+                {
+                    _logger.Error("❌ POS Controller: Payment processing failed - OperationId: {OperationId}, Error: {Error}, ErrorCode: {ErrorCode}",
+                        paymentResult.OperationId, paymentResult.Message, paymentResult.ErrorCode);
+                    
+                    return Json(ServiceResult<object>.Failed(paymentResult.Message, paymentResult.ErrorCode ?? "PAYMENT_FAILED"));
+                }
 
-                // برای حال حاضر، یک پاسخ شبیه‌سازی شده برمی‌گردانیم
-                var simulatedResponse = new
+                // ✅ ساخت Response با فرمت سازگار با Frontend
+                var response = new
                 {
                     success = true,
-                    rrn = $"RRN{DateTime.Now:yyyyMMddHHmmss}{new Random().Next(1000, 9999)}",
-                    traceNo = $"{DateTime.Now:HHmmss}{new Random().Next(100, 999)}",
-                    terminalId = terminal.TerminalId,
-                    cardLast4 = $"****{new Random().Next(1000, 9999)}",
-                    message = "پرداخت با موفقیت انجام شد"
+                    operationId = paymentResult.OperationId,
+                    rrn = paymentResult.RRN,
+                    traceNo = paymentResult.TraceNo,
+                    terminalId = paymentResult.TerminalId,
+                    cardLast4 = paymentResult.CardLast4,
+                    message = paymentResult.Message,
+                    durationMs = paymentResult.DurationMs,
+                    retryCount = paymentResult.RetryCount
                 };
 
-                return Json(ServiceResult<object>.Successful(simulatedResponse));
+                _logger.Information("✅ POS Controller: Payment processed successfully - OperationId: {OperationId}, RRN: {RRN}, TraceNo: {TraceNo}, Duration: {Duration}ms",
+                    paymentResult.OperationId, paymentResult.RRN, paymentResult.TraceNo, paymentResult.DurationMs);
+
+                return Json(ServiceResult<object>.Successful(response));
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "POS: process payment error");
+                _logger.Error(ex, "❌ POS Controller: Unexpected error in payment processing");
                 return Json(ServiceResult.Failed("خطا در پردازش پرداخت POS"));
             }
         }

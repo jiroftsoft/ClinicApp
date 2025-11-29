@@ -499,12 +499,14 @@
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ClinicBankAccountController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\LogController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
     <Compile Include="Controllers\Payment\POS\PosTerminalApiController.cs" />
+    <Compile Include="Controllers\Payment\POS\PosTestController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\ReceptionV2\ReceptionControllerV2.cs" />
     <Compile Include="Controllers\ReceptionV2\ReceptionListV2Controller.cs" />
@@ -583,6 +585,8 @@
     <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
@@ -655,6 +659,7 @@
     <Compile Include="Interfaces\Payment\IPaymentService.cs" />
     <Compile Include="Interfaces\Payment\IPaymentTransactionRepository.cs" />
     <Compile Include="Interfaces\Payment\POS\ICashSessionRepository.cs" />
+    <Compile Include="Interfaces\Payment\POS\IPosDeviceService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosManagementService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosTerminalRepository.cs" />
     <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
@@ -705,6 +710,12 @@
     <Compile Include="Migrations\202511081650067_MakeChangeDeegree.Designer.cs">
       <DependentUpon>202511081650067_MakeChangeDeegree.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202511161332062_ClinicBankAccount.cs" />
+    <Compile Include="Migrations\202511161332062_ClinicBankAccount.Designer.cs">
+      <DependentUpon>202511161332062_ClinicBankAccount.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
+    <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -1024,7 +1035,12 @@
     <Compile Include="Repositories\Reception\IDoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IShiftManagementRepository.cs" />
     <Compile Include="Repositories\Reception\ShiftManagementRepository.cs" />
+    <Compile Include="Services\ClinicAdmin\ClinicBankAccountService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
+    <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
+    <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
+    <Compile Include="Services\Payment\POS\PosDeviceService.cs" />
+    <Compile Include="Services\Payment\POS\PosPaymentOrchestrator.cs" />
     <Compile Include="Services\Pricing\Coverage\InsuranceCoverageProvider.cs" />
     <Compile Include="Services\Pricing\Engines\PricingEngine.cs" />
     <Compile Include="Services\Pricing\Interfaces\IInsuranceCoverageProvider.cs" />
@@ -1191,6 +1207,7 @@
     <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="Validators\Reception\EnhancedReceptionValidators.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
+    <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
@@ -1450,6 +1467,7 @@
     <Compile Include="ViewModels\Triage\TriageReportViewModel.cs" />
     <Compile Include="ViewModels\Triage\TriageSummaryDto.cs" />
     <Compile Include="ViewModels\Triage\TriageVitalSignsDto.cs" />
+    <Compile Include="ViewModels\Validators\ClinicBankAccountCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsuranceCalculationViewModelValidator.cs" />
@@ -4672,10 +4690,16 @@
     <Content Include="Views\ReceptionV2\PrintInsurance.cshtml" />
     <Content Include="Views\Shared\_PrintLayout.cshtml" />
     <Content Include="Views\ReceptionV2\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ClinicBankAccount\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ClinicBankAccount\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\ClinicBankAccount\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ClinicBankAccount\Index.cshtml" />
+    <Content Include="Views\PosTest\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
+    <Folder Include="Externals\" />
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
@@ -4870,6 +4894,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202511081650067_MakeChangeDeegree.resx">
       <DependentUpon>202511081650067_MakeChangeDeegree.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202511161332062_ClinicBankAccount.resx">
+      <DependentUpon>202511161332062_ClinicBankAccount.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

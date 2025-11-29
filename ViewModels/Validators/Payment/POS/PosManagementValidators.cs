@@ -29,6 +29,18 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .Matches(@"^[A-Za-z0-9\-_]+$")
                 .WithMessage("شماره سریال باید شامل حروف، اعداد، خط تیره و زیرخط باشد");
 
+            RuleFor(x => x.TerminalId)
+                .NotEmpty()
+                .WithMessage("شماره ترمینال الزامی است")
+                .MaximumLength(50)
+                .WithMessage("شماره ترمینال نمی‌تواند بیشتر از 50 کاراکتر باشد");
+
+            RuleFor(x => x.MerchantId)
+                .NotEmpty()
+                .WithMessage("شماره پذیرنده الزامی است")
+                .MaximumLength(50)
+                .WithMessage("شماره پذیرنده نمی‌تواند بیشتر از 50 کاراکتر باشد");
+
             RuleFor(x => x.ProviderType)
                 .IsInEnum()
                 .WithMessage("نوع ارائه‌دهنده نامعتبر است");
@@ -46,9 +58,8 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .WithMessage("آدرس IP معتبر وارد کنید (مثال: 192.168.1.100)");
 
             RuleFor(x => x.Port)
-                .NotNull()
-                .WithMessage("پورت الزامی است")
                 .InclusiveBetween(1, 65535)
+                .When(x => x.Port.HasValue)
                 .WithMessage("پورت باید بین 1 تا 65535 باشد");
 
             RuleFor(x => x.MacAddress)
@@ -89,6 +100,18 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .Matches(@"^[A-Za-z0-9\-_]+$")
                 .WithMessage("شماره سریال باید شامل حروف، اعداد، خط تیره و زیرخط باشد");
 
+            RuleFor(x => x.TerminalId)
+                .NotEmpty()
+                .WithMessage("شماره ترمینال الزامی است")
+                .MaximumLength(50)
+                .WithMessage("شماره ترمینال نمی‌تواند بیشتر از 50 کاراکتر باشد");
+
+            RuleFor(x => x.MerchantId)
+                .NotEmpty()
+                .WithMessage("شماره پذیرنده الزامی است")
+                .MaximumLength(50)
+                .WithMessage("شماره پذیرنده نمی‌تواند بیشتر از 50 کاراکتر باشد");
+
             RuleFor(x => x.ProviderType)
                 .IsInEnum()
                 .WithMessage("نوع ارائه‌دهنده نامعتبر است");
@@ -106,9 +129,8 @@ namespace ClinicApp.ViewModels.Validators.Payment.POS
                 .WithMessage("آدرس IP معتبر وارد کنید (مثال: 192.168.1.100)");
 
             RuleFor(x => x.Port)
-                .NotNull()
-                .WithMessage("پورت الزامی است")
                 .InclusiveBetween(1, 65535)
+                .When(x => x.Port.HasValue)
                 .WithMessage("پورت باید بین 1 تا 65535 باشد");
 
             RuleFor(x => x.MacAddress)

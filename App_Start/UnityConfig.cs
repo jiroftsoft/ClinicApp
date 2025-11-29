@@ -15,6 +15,7 @@ using ClinicApp.Services.Idempotency;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Validators;
+using ClinicApp.ViewModels.ClinicAdmin;
 using FluentValidation;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -361,6 +362,10 @@ namespace ClinicApp
                 //================================================================================================================
                 container.RegisterType<IClinicManagementService, ClinicManagementService>(new PerRequestLifetimeManager());
                 container.RegisterType<IClinicRepository, ClinicRepository>(new PerRequestLifetimeManager());
+                
+                // Clinic Bank Account Management
+                container.RegisterType<IClinicBankAccountService, ClinicBankAccountService>(new PerRequestLifetimeManager());
+                container.RegisterType<IClinicBankAccountRepository, ClinicBankAccountRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDepartmentRepository, DepartmentRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IServiceCategoryRepository, ServiceCategoryRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IServiceRepository, ServiceRepository>(new PerRequestLifetimeManager());
@@ -407,6 +412,7 @@ namespace ClinicApp
 
                 // ثبت Validator برای FluentValidation
                 container.RegisterType<IValidator<ClinicCreateEditViewModel>, ClinicCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ClinicBankAccountCreateEditViewModel>, ClinicBankAccountCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DepartmentCreateEditViewModel>, DepartmentCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<ServiceCategoryCreateEditViewModel>, ServiceCategoryCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<ServiceCreateEditViewModel>, ServiceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
@@ -545,6 +551,10 @@ namespace ClinicApp
                 container.RegisterType<ICashSessionRepository, CashSessionRepository>(new PerRequestLifetimeManager());
                 // ثبت سرویس مدیریت POS
                 container.RegisterType<IPosManagementService, PosManagementService>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس ارتباط با دستگاه کارت‌خوان POS
+                container.RegisterType<IPosDeviceService, PosDeviceService>(new PerRequestLifetimeManager());
+                container.RegisterType<PosPaymentOrchestrator, PosPaymentOrchestrator>(new PerRequestLifetimeManager());
 
                 // Register Supplementary Tariff Seeder Service
                 container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());

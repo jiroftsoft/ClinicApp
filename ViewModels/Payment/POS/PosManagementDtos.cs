@@ -14,6 +14,8 @@ namespace ClinicApp.ViewModels.Payment.POS
     {
         public string Name { get; set; }
         public string SerialNumber { get; set; }
+        public string TerminalId { get; set; }
+        public string MerchantId { get; set; }
         public PosProviderType ProviderType { get; set; }
         public PosProtocol Protocol { get; set; }
         public string IpAddress { get; set; }

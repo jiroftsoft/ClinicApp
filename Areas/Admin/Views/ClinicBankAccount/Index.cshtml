@@ -1,0 +1,446 @@
+@model IEnumerable<ClinicApp.ViewModels.ClinicAdmin.ClinicBankAccountIndexViewModel>
+
+@{
+    ViewBag.Title = "مدیریت حساب‌های بانکی کلینیک";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa fa-university me-2"></i>
+                            مدیریت حساب‌های بانکی کلینیک
+                        </h4>
+                        <div class="btn-group" role="group">
+                            @Html.ActionLink("افزودن حساب بانکی", "Create", "ClinicBankAccount", new { area = "Admin" }, new { 
+                                @class = "btn btn-success btn-sm",
+                                @title = "افزودن حساب بانکی جدید"
+                            })
+                            <button type="button" class="btn btn-info btn-sm" id="refresh-btn" title="بروزرسانی لیست">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-search me-2"></i>
+                        جستجو و فیلتر
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                                <input type="text" 
+                                       id="search-input" 
+                                       class="form-control" 
+                                       placeholder="جستجو بر اساس نام کلینیک، شماره شبا، نام بانک..." 
+                                       aria-label="جستجو در حساب‌های بانکی"
+                                       autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="clinic-filter" class="form-select">
+                                <option value="">همه کلینیک‌ها</option>
+                                @if (Model != null)
+                                {
+                                    foreach (var clinic in Model.Select(m => new { m.ClinicId, m.ClinicName }).Distinct())
+                                    {
+                                        <option value="@clinic.ClinicId">@clinic.ClinicName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select id="status-filter" class="form-select">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="true">فعال</option>
+                                <option value="false">غیرفعال</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" id="clear-filters" class="btn btn-outline-secondary w-100">
+                                <i class="fa fa-times me-1"></i>
+                                پاک کردن فیلترها
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fa fa-list me-2"></i>
+                            لیست حساب‌های بانکی
+                        </h6>
+                        <span id="results-count" class="badge bg-primary">
+                            @(Model?.Count() ?? 0) حساب بانکی
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Loading Spinner -->
+                    <div id="loading-spinner" class="text-center p-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <p class="mt-3 text-muted">در حال بارگذاری اطلاعات...</p>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="accounts-list-container">
+                        @if (Model != null && Model.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped mb-0">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ردیف</th>
+                                            <th>کلینیک</th>
+                                            <th>شماره شبا</th>
+                                            <th>نام بانک</th>
+                                            <th>صاحب حساب</th>
+                                            <th>وضعیت</th>
+                                            <th>پیش‌فرض</th>
+                                            <th>تاریخ ایجاد</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ int index = 1; }
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr class="account-item" 
+                                                data-clinic-id="@item.ClinicId"
+                                                data-status="@item.IsActive.ToString().ToLower()"
+                                                data-search-text="@($"{item.ClinicName} {item.IbanNumber} {item.BankName} {item.AccountHolderName}")">
+                                                <td>@index</td>
+                                                <td>
+                                                    <strong class="text-primary">@item.ClinicName</strong>
+                                                </td>
+                                                <td>
+                                                    <code class="bg-light px-2 py-1 rounded">@item.IbanNumber</code>
+                                                </td>
+                                                <td>
+                                                    <i class="fa fa-university me-1 text-info"></i>
+                                                    @item.BankName
+                                                </td>
+                                                <td>@item.AccountHolderName</td>
+                                                <td>
+                                                    @if (item.IsActive)
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="fa fa-check-circle me-1"></i>
+                                                            فعال
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">
+                                                            <i class="fa fa-times-circle me-1"></i>
+                                                            غیرفعال
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (item.IsDefault)
+                                                    {
+                                                        <span class="badge bg-primary">
+                                                            <i class="fa fa-star me-1"></i>
+                                                            پیش‌فرض
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@item.CreatedAtShamsi</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <a href="@Url.Action("Details", "ClinicBankAccount", new { area = "Admin", id = item.ClinicBankAccountId })" 
+                                                           class="btn btn-info" 
+                                                           title="مشاهده جزئیات">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                        <a href="@Url.Action("Edit", "ClinicBankAccount", new { area = "Admin", id = item.ClinicBankAccountId })" 
+                                                           class="btn btn-warning" 
+                                                           title="ویرایش">
+                                                            <i class="fa fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" 
+                                                                class="btn btn-danger delete-btn" 
+                                                                data-id="@item.ClinicBankAccountId"
+                                                                data-name="@($"{item.ClinicName} - {item.IbanNumber}")"
+                                                                title="حذف">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            index++;
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Empty State -->
+                            <div id="empty-state" class="text-center p-5">
+                                <i class="fa fa-university fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">هیچ حساب بانکی یافت نشد</h5>
+                                <p class="text-muted">لطفاً حساب بانکی جدیدی اضافه کنید.</p>
+                                @Html.ActionLink("افزودن حساب بانکی", "Create", "ClinicBankAccount", new { area = "Admin" }, new { 
+                                    @class = "btn btn-success",
+                                    @title = "افزودن حساب بانکی جدید"
+                                })
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-confirm-modal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    تایید حذف حساب بانکی
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fa fa-warning me-2"></i>
+                    <strong>هشدار:</strong> این عمل قابل بازگشت نیست!
+                </div>
+                <p>آیا از حذف حساب بانکی <strong id="account-name-to-delete" class="text-danger"></strong> اطمینان دارید؟</p>
+                <div class="bg-light p-3 rounded">
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        تمام اطلاعات مرتبط با این حساب بانکی نیز حذف خواهد شد.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" id="confirm-delete-button" class="btn btn-danger">
+                    <i class="fa fa-trash me-1"></i>
+                    حذف کن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="success-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="fa fa-check-circle me-2"></i>
+            <strong class="me-auto">موفقیت</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="success-message">
+            عملیات با موفقیت انجام شد.
+        </div>
+    </div>
+    
+    <div id="error-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">خطا</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="error-message">
+            خطایی رخ داده است.
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var accountToDeleteId = null;
+            var originalTable = $('#accounts-list-container').html();
+
+            // Search functionality
+            $('#search-input').on('keyup', function() {
+                filterTable();
+            });
+
+            // Clinic filter
+            $('#clinic-filter').on('change', function() {
+                filterTable();
+            });
+
+            // Status filter
+            $('#status-filter').on('change', function() {
+                filterTable();
+            });
+
+            // Clear filters
+            $('#clear-filters').on('click', function() {
+                $('#search-input').val('');
+                $('#clinic-filter').val('');
+                $('#status-filter').val('');
+                filterTable();
+            });
+
+            // Refresh button
+            $('#refresh-btn').on('click', function() {
+                location.reload();
+            });
+
+            // Delete modal
+            $(document).on('click', '.delete-btn', function () {
+                accountToDeleteId = $(this).data('id');
+                var accountName = $(this).data('name');
+                $('#account-name-to-delete').text(accountName);
+                $('#delete-confirm-modal').modal('show');
+            });
+
+            // Confirm delete
+            $('#confirm-delete-button').on('click', function() {
+                if (accountToDeleteId) {
+                    deleteAccount(accountToDeleteId);
+                }
+            });
+
+            // Filter table function
+            function filterTable() {
+                var searchText = $('#search-input').val().toLowerCase();
+                var clinicId = $('#clinic-filter').val();
+                var status = $('#status-filter').val();
+                var visibleCount = 0;
+
+                $('.account-item').each(function() {
+                    var $row = $(this);
+                    var searchData = $row.data('search-text') || '';
+                    var rowClinicId = $row.data('clinic-id').toString();
+                    var rowStatus = $row.data('status');
+
+                    var matchesSearch = searchData.toLowerCase().includes(searchText);
+                    var matchesClinic = !clinicId || rowClinicId === clinicId;
+                    var matchesStatus = !status || rowStatus === status;
+
+                    if (matchesSearch && matchesClinic && matchesStatus) {
+                        $row.show();
+                        visibleCount++;
+                    } else {
+                        $row.hide();
+                    }
+                });
+
+                $('#results-count').text(visibleCount + ' حساب بانکی');
+
+                // Show/hide empty state
+                if (visibleCount === 0) {
+                    if ($('#empty-state').length === 0) {
+                        $('#accounts-list-container').html('<div id="empty-state" class="text-center p-5"><i class="fa fa-university fa-3x text-muted mb-3"></i><h5 class="text-muted">نتیجه‌ای یافت نشد</h5><p class="text-muted">لطفاً معیارهای جستجو را تغییر دهید.</p></div>');
+                    }
+                } else {
+                    $('#empty-state').remove();
+                }
+            }
+
+            // Delete account function
+            function deleteAccount(id) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                var deleteButton = $('#confirm-delete-button');
+
+                $.ajax({
+                    url: '@Url.Action("Delete", "ClinicBankAccount", new { area = "Admin" })',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        id: id
+                    },
+                    beforeSend: function() {
+                        deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>در حال حذف...');
+                    },
+                    success: function (response) {
+                        $('#delete-confirm-modal').modal('hide');
+                        if (response.success) {
+                            showToast('success', response.message || 'حساب بانکی با موفقیت حذف شد.');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showToast('error', response.message || 'خطایی در حذف حساب بانکی رخ داده است.');
+                        }
+                    },
+                    error: function () {
+                        $('#delete-confirm-modal').modal('hide');
+                        showToast('error', 'خطای ارتباطی. لطفاً دوباره تلاش کنید.');
+                    },
+                    complete: function() {
+                        deleteButton.prop('disabled', false).html('<i class="fa fa-trash me-1"></i>حذف کن');
+                    }
+                });
+            }
+
+            // Show toast function
+            function showToast(type, message) {
+                var toastId = type === 'success' ? '#success-toast' : '#error-toast';
+                var messageId = type === 'success' ? '#success-message' : '#error-message';
+                
+                $(messageId).text(message);
+                var toast = new bootstrap.Toast(document.querySelector(toastId));
+                toast.show();
+            }
+
+            // Display temp data messages
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                showToast('success', '@Html.Raw(TempData["SuccessMessage"])');
+                </text>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                showToast('error', '@Html.Raw(TempData["ErrorMessage"])');
+                </text>
+            }
+        });
+    </script>
+}
+

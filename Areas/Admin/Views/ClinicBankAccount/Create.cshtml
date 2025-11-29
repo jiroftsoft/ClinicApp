@@ -1,0 +1,351 @@
+@model ClinicApp.ViewModels.ClinicAdmin.ClinicBankAccountCreateEditViewModel
+
+@{
+    ViewBag.Title = "افزودن حساب بانکی جدید";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fa fa-plus-circle me-2"></i>
+                        افزودن حساب بانکی جدید
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Create", "ClinicBankAccount", new { area = "Admin" }, FormMethod.Post, new { id = "create-account-form", @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                        
+                        <!-- Progress Indicator -->
+                        <div class="mb-4">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="form-progress" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block text-center">
+                                <span id="progress-text">0% تکمیل شده</span>
+                            </small>
+                        </div>
+                        
+                        <!-- Form Fields -->
+                        <div class="row g-3">
+                            <!-- اطلاعات کلینیک -->
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fa fa-hospital me-2"></i>
+                                    اطلاعات کلینیک
+                                </h5>
+                            </div>
+                            
+                            <!-- کلینیک -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.ClinicId, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.DropDownListFor(model => model.ClinicId, 
+                                        (SelectList)ViewBag.Clinics ?? new SelectList(new List<object>(), "Id", "Name"), 
+                                        "انتخاب کلینیک", 
+                                        new { 
+                                            @class = "form-select", 
+                                            required = "required",
+                                            id = "clinic-select"
+                                        })
+                                    @Html.ValidationMessageFor(model => model.ClinicId, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً کلینیک را انتخاب کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- اطلاعات حساب بانکی -->
+                            <div class="col-12">
+                                <h5 class="text-info mb-3">
+                                    <i class="fa fa-university me-2"></i>
+                                    اطلاعات حساب بانکی
+                                </h5>
+                            </div>
+                            
+                            <!-- شماره شبا -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.IbanNumber, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.IbanNumber, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control iban-input", 
+                                            placeholder = "IR123456789012345678901234",
+                                            required = "required",
+                                            maxlength = "26",
+                                            minlength = "26",
+                                            autocomplete = "off"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.IbanNumber, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً شماره شبا را وارد کنید (26 کاراکتر)</div>
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        فرمت: IR + 24 رقم (مثال: IR123456789012345678901234)
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- نام بانک -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.BankName, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.BankName, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "نام بانک را وارد کنید",
+                                            required = "required",
+                                            maxlength = "100"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.BankName, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً نام بانک را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- شماره حساب -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.AccountNumber, new { @class = "form-label" })
+                                    @Html.EditorFor(model => model.AccountNumber, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "شماره حساب (اختیاری)",
+                                            maxlength = "50"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.AccountNumber, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            
+                            <!-- نام صاحب حساب -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.AccountHolderName, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.AccountHolderName, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "نام صاحب حساب را وارد کنید",
+                                            required = "required",
+                                            maxlength = "200"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.AccountHolderName, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً نام صاحب حساب را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- تنظیمات -->
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3">
+                                    <i class="fa fa-cog me-2"></i>
+                                    تنظیمات
+                                </h5>
+                            </div>
+                            
+                            <!-- پیش‌فرض -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check form-switch">
+                                        @Html.CheckBoxFor(model => model.IsDefault, new { @class = "form-check-input", id = "is-default-switch" })
+                                        @Html.LabelFor(model => model.IsDefault, new { @class = "form-check-label fw-bold" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.IsDefault, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        حساب پیش‌فرض برای پرداخت‌ها استفاده می‌شود
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- فعال -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check form-switch">
+                                        @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input", id = "is-active-switch" })
+                                        @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label fw-bold" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.IsActive, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            
+                            <!-- توضیحات -->
+                            <div class="col-12">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.Description, new { @class = "form-label" })
+                                    @Html.TextAreaFor(model => model.Description, 4, 0, new { 
+                                        @class = "form-control", 
+                                        placeholder = "توضیحات اضافی (اختیاری)",
+                                        maxlength = "500"
+                                    })
+                                    @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">
+                                        <span id="description-char-count">0</span> / 500 کاراکتر
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Action Buttons -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                <button type="submit" id="submit-button" class="btn btn-success btn-lg me-2">
+                                    <span id="submit-button-text">
+                                        <i class="fa fa-save me-1"></i> ثبت حساب بانکی
+                                    </span>
+                                    <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                                </button>
+                                <a href="@Url.Action("Index", "ClinicBankAccount", new { area = "Admin" })" class="btn btn-secondary btn-lg">
+                                    <i class="fa fa-arrow-right me-1"></i> بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .iban-input {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    </style>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // IBAN Formatting (uppercase and spacing)
+            $('.iban-input').on('input', function() {
+                var value = $(this).val().toUpperCase().replace(/\s/g, '');
+                $(this).val(value);
+            });
+
+            // Description character counter
+            $('#Description').on('input', function() {
+                var length = $(this).val().length;
+                $('#description-char-count').text(length);
+                
+                if (length > 450) {
+                    $('#description-char-count').addClass('text-warning');
+                } else {
+                    $('#description-char-count').removeClass('text-warning');
+                }
+            });
+
+            // Form Progress Indicator
+            function updateFormProgress() {
+                var totalFields = 5; // Clinic, IBAN, BankName, AccountHolderName, Description
+                var filledFields = 0;
+                
+                if ($('#clinic-select').val() && $('#clinic-select').val() !== '') filledFields++;
+                if ($('#IbanNumber').val() && $('#IbanNumber').val().length === 26) filledFields++;
+                if ($('#BankName').val() && $('#BankName').val().trim() !== '') filledFields++;
+                if ($('#AccountHolderName').val() && $('#AccountHolderName').val().trim() !== '') filledFields++;
+                if ($('#Description').val() && $('#Description').val().trim() !== '') filledFields++;
+                
+                var progress = Math.round((filledFields / totalFields) * 100);
+                $('#form-progress').css('width', progress + '%');
+                $('#progress-text').text(progress + '% تکمیل شده');
+                
+                // Change color based on progress
+                if (progress < 30) {
+                    $('#form-progress').removeClass('bg-success bg-warning').addClass('bg-danger');
+                } else if (progress < 70) {
+                    $('#form-progress').removeClass('bg-danger bg-success').addClass('bg-warning');
+                } else {
+                    $('#form-progress').removeClass('bg-danger bg-warning').addClass('bg-success');
+                }
+            }
+            
+            // Update progress on field changes
+            $('#create-account-form input, #create-account-form select, #create-account-form textarea').on('input change', function() {
+                updateFormProgress();
+            });
+
+            // Form submission
+            $('#create-account-form').on('submit', function (e) {
+                if (this.checkValidity()) {
+                    $('#submit-button').prop('disabled', true);
+                    $('#submit-button-text').hide();
+                    $('#submit-button-spinner').show();
+                } else {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                }
+            });
+
+            // IBAN Validation
+            $.validator.addMethod("ibanFormat", function(value, element) {
+                return /^IR\d{24}$/.test(value);
+            }, "فرمت شماره شبا نامعتبر است. باید با IR شروع شود و 24 رقم داشته باشد.");
+
+            // Apply validation rules
+            $('#create-account-form').validate({
+                rules: {
+                    'IbanNumber': {
+                        required: true,
+                        minlength: 26,
+                        maxlength: 26,
+                        ibanFormat: true
+                    },
+                    'BankName': {
+                        required: true,
+                        maxlength: 100
+                    },
+                    'AccountHolderName': {
+                        required: true,
+                        maxlength: 200
+                    },
+                    'Description': {
+                        maxlength: 500
+                    }
+                },
+                messages: {
+                    'IbanNumber': {
+                        required: "لطفاً شماره شبا را وارد کنید",
+                        minlength: "شماره شبا باید 26 کاراکتر باشد",
+                        maxlength: "شماره شبا باید 26 کاراکتر باشد",
+                        ibanFormat: "فرمت شماره شبا نامعتبر است"
+                    },
+                    'BankName': {
+                        required: "لطفاً نام بانک را وارد کنید",
+                        maxlength: "نام بانک نمی‌تواند بیشتر از 100 کاراکتر باشد"
+                    },
+                    'AccountHolderName': {
+                        required: "لطفاً نام صاحب حساب را وارد کنید",
+                        maxlength: "نام صاحب حساب نمی‌تواند بیشتر از 200 کاراکتر باشد"
+                    }
+                }
+            });
+
+            // Initialize progress
+            updateFormProgress();
+        });
+    </script>
+}
+

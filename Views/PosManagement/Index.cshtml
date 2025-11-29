@@ -68,8 +68,12 @@
           <input class="form-control" id="net-ip" placeholder="192.168.1.10" />
         </div>
         <div class="mb-3">
-          <label class="form-label">پورت</label>
-          <input type="number" class="form-control" id="net-port" placeholder="5000" min="1" max="65535" />
+          <label class="form-label">پورت (اختیاری)</label>
+          <input type="number" class="form-control" id="net-port" placeholder="5000 (پیش‌فرض)" min="1" max="65535" />
+          <small class="form-text text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            اگر تنظیم نشود، از پورت پیش‌فرض 5000 استفاده می‌شود
+          </small>
         </div>
         <div class="mb-3">
           <label class="form-label">MAC Address (اختیاری)</label>
@@ -347,7 +351,7 @@
     
     document.getElementById('net-id').value = id;
     document.getElementById('net-ip').value = ip;
-    document.getElementById('net-port').value = port;
+    document.getElementById('net-port').value = port || '';
     document.getElementById('net-mac').value = mac;
     
     // تنظیم Protocol با fallback
@@ -375,7 +379,8 @@
     
     var id = parseInt(document.getElementById('net-id').value, 10);
     var ip = document.getElementById('net-ip').value.trim();
-    var port = parseInt(document.getElementById('net-port').value, 10) || null;
+    var portInput = document.getElementById('net-port').value.trim();
+    var port = portInput ? parseInt(portInput, 10) : null;
     var mac = document.getElementById('net-mac').value.trim() || null;
     var protocolSelect = document.getElementById('net-protocol');
     var protocol = protocolSelect ? protocolSelect.value : 'Tcp';
@@ -392,8 +397,9 @@
       return;
     }
     
-    if (port && (port < 1 || port > 65535)) {
-      toastr.warning('پورت باید بین 1 تا 65535 باشد');
+    // Port validation: اگر port وارد شده اما نامعتبر است
+    if (portInput && (isNaN(port) || port < 1 || port > 65535)) {
+      toastr.warning('پورت باید بین 1 تا 65535 باشد یا خالی بگذارید');
       return;
     }
     
@@ -452,8 +458,9 @@
           ProviderType: providerEnum,
           Protocol: protocolEnum, // ارسال به صورت عدد enum
           IpAddress: ip,
-          Port: port,
-          MacAddress: mac,
+          Port: port, // می‌تواند null باشد
+          MacAddress: mac || null,
+          ConnectionString: null, // ConnectionString را null می‌کنیم تا از Port استفاده شود
           IsActive: terminal.isActive !== undefined ? terminal.isActive : terminal.IsActive,
           IsDefault: terminal.isDefault !== undefined ? terminal.isDefault : terminal.IsDefault
         };

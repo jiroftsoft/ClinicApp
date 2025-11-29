@@ -252,6 +252,58 @@ namespace ClinicApp.Controllers
                 _logger.Warning("خطا در افزودن هدرهای امنیتی: {Message}", ex.Message);
             }
         }
+
+        /// <summary>
+        /// افزودن خطا به TempData
+        /// </summary>
+        /// <param name="message">پیام خطا</param>
+        protected void AddError(string message)
+        {
+            if (TempData != null && !string.IsNullOrWhiteSpace(message))
+            {
+                TempData["ErrorMessage"] = message;
+            }
+        }
+
+        /// <summary>
+        /// افزودن خطاهای اعتبارسنجی به ModelState
+        /// </summary>
+        /// <param name="validationErrors">خطاهای اعتبارسنجی</param>
+        protected void AddErrors(IEnumerable<ValidationError> validationErrors)
+        {
+            if (validationErrors != null && ModelState != null)
+            {
+                foreach (var error in validationErrors)
+                {
+                    ModelState.AddModelError(error.Field ?? "", error.ErrorMessage);
+                }
+            }
+        }
+
+        /// <summary>
+        /// افزودن پیام موفقیت به TempData
+        /// </summary>
+        /// <param name="message">پیام موفقیت</param>
+        protected void AddSuccess(string message)
+        {
+            if (TempData != null && !string.IsNullOrWhiteSpace(message))
+            {
+                TempData["SuccessMessage"] = message;
+            }
+        }
+
+        /// <summary>
+        /// مدیریت خطا و بازگشت ActionResult مناسب
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <returns>ActionResult مناسب</returns>
+        protected ActionResult HandleError(Exception ex, string operation)
+        {
+            _logger.Error(ex, "خطا در {Operation}", operation);
+            AddError($"خطا در {operation}. لطفاً مجدداً تلاش کنید.");
+            return RedirectToAction("Index");
+        }
     }
 
     /// <summary>

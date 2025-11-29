@@ -1,0 +1,709 @@
+@{
+    ViewBag.Title = "تست دستگاه POS";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <!-- ✅ بخش ۱: هدر صفحه -->
+            <div class="card border-primary mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        تست دستگاه POS
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        این صفحه برای تست و بررسی عملکرد دستگاه POS قبل از استفاده در ماژول پذیرش طراحی شده است.
+                        لطفاً ترمینال مورد نظر را انتخاب کنید و تست‌ها را اجرا کنید.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۲: انتخاب ترمینال -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                انتخاب ترمینال
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="terminalSelect" class="form-label">ترمینال POS:</label>
+                                    <select id="terminalSelect" class="form-select">
+                                        <option value="">-- انتخاب ترمینال --</option>
+                                        @if (ViewBag.Terminals != null)
+                                        {
+                                            foreach (var terminal in (List<ClinicApp.Models.Entities.Payment.PosTerminal>)ViewBag.Terminals)
+                                            {
+                                                <option value="@terminal.PosTerminalId" 
+                                                        data-terminal-id="@terminal.TerminalId"
+                                                        data-merchant-id="@terminal.MerchantId"
+                                                        data-ip="@terminal.IpAddress"
+                                                        data-port="@terminal.Port"
+                                                        data-provider="@terminal.Provider"
+                                                        @(ViewBag.DefaultTerminal != null && ViewBag.DefaultTerminal.PosTerminalId == terminal.PosTerminalId ? "selected" : "")>
+                                                    @terminal.Title - @terminal.TerminalId (@terminal.Provider)
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        @if (ViewBag.TerminalCount != null && (int)ViewBag.TerminalCount == 0)
+                                        {
+                                            <span class="text-danger">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                هیچ ترمینالی یافت نشد. لطفاً ابتدا ترمینال را ایجاد کنید.
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span>
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                تعداد ترمینال‌های فعال: @(ViewBag.TerminalCount ?? 0)
+                                            </span>
+                                        }
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">اطلاعات ترمینال:</label>
+                                    <div id="terminalInfo" class="alert alert-light">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        لطفاً یک ترمینال را انتخاب کنید
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۳: کنترل‌های تست -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-plug me-2"></i>
+                                تست اتصال
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                این تست فقط اتصال به دستگاه POS را بررسی می‌کند.
+                            </p>
+                            <button type="button" class="btn btn-success" id="testConnectionBtn">
+                                <i class="fas fa-plug me-2"></i>
+                                تست اتصال
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                تست پرداخت
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="testAmount" class="form-label">مبلغ تست (ریال):</label>
+                                <input type="number" class="form-control" id="testAmount" value="1000" min="1" step="1">
+                                <small class="form-text text-muted">مبلغ تستی برای ارسال به دستگاه</small>
+                            </div>
+                            <button type="button" class="btn btn-warning" id="testPaymentBtn">
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                تست پرداخت
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۴: نتایج تست -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                نتایج تست
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="testResults">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                    <p>هنوز تستی اجرا نشده است. لطفاً یکی از دکمه‌های بالا را کلیک کنید.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Anti-Forgery Token Form (Hidden) -->
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "antiForgeryForm", style = "display: none;" }))
+{
+    @Html.AntiForgeryToken()
+}
+
+<!-- ✅ بخش ۵: JavaScript -->
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // تنظیمات اولیه - دریافت Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
+            // اگر token وجود نداشت، صفحه را رفرش کن
+            if (!token) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطای امنیتی',
+                    text: 'توکن امنیتی یافت نشد. در حال نوسازی صفحه...',
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: '#dc3545',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(() => {
+                    location.reload();
+                });
+                return;
+            }
+
+            // نمایش اطلاعات ترمینال
+            $('#terminalSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var terminalId = selectedOption.val();
+                
+                if (!terminalId) {
+                    $('#terminalInfo').html('<i class="fas fa-info-circle me-2"></i>لطفاً یک ترمینال را انتخاب کنید');
+                    return;
+                }
+
+                var info = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>شماره ترمینال:</strong> ${selectedOption.data('terminal-id') || 'نامشخص'}<br>
+                            <strong>شماره پذیرنده:</strong> ${selectedOption.data('merchant-id') || 'نامشخص'}<br>
+                            <strong>IP Address:</strong> ${selectedOption.data('ip') || 'نامشخص'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Port:</strong> ${selectedOption.data('port') || 'نامشخص'}<br>
+                            <strong>Provider:</strong> ${selectedOption.data('provider') || 'نامشخص'}<br>
+                            <strong>شناسه:</strong> ${terminalId}
+                        </div>
+                    </div>
+                `;
+                $('#terminalInfo').html(info);
+            });
+
+            // تست اتصال
+            $('#testConnectionBtn').click(function() {
+                var terminalId = $('#terminalSelect').val();
+                if (!terminalId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'هشدار',
+                        text: 'لطفاً ابتدا یک ترمینال را انتخاب کنید',
+                        confirmButtonText: 'تأیید',
+                        confirmButtonColor: '#ffc107'
+                    });
+                    return;
+                }
+
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال تست...');
+                
+                // نمایش Loading با SweetAlert
+                Swal.fire({
+                    title: 'در حال تست اتصال...',
+                    html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال برقراری ارتباط با دستگاه POS</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                $.ajax({
+                    url: '@Url.Action("TestConnection", "PosTest")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        terminalId: terminalId
+                    },
+                    success: function(response) {
+                        Swal.close();
+                        if (response && response.Success !== false && (response.success || response.Success)) {
+                            var data = response.data || response.Data || response;
+                            showConnectionResultWithSweetAlert(data);
+                            showConnectionResult(data);
+                        } else {
+                            var errorMsg = (response && response.Message) || (response && response.message) || 'خطا در تست اتصال';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا در تست اتصال',
+                                html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                confirmButtonText: 'تأیید',
+                                confirmButtonColor: '#dc3545'
+                            });
+                            showError(errorMsg);
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.close();
+                        var errorMsg = 'خطا در ارتباط با سرور';
+                        var errorDetails = [];
+                        var metadata = {};
+                        
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.Message) {
+                                errorMsg = xhr.responseJSON.Message;
+                            } else if (xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            
+                            // Extract metadata for detailed error display
+                            if (xhr.responseJSON.Metadata) {
+                                metadata = xhr.responseJSON.Metadata;
+                                if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
+                                if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
+                                if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
+                                if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
+                                if (metadata.SocketErrorCode) errorDetails.push('<strong>Socket Error:</strong> ' + metadata.SocketErrorCode);
+                                if (metadata.SocketErrorCodeNumber) errorDetails.push('<strong>Error Code:</strong> ' + metadata.SocketErrorCodeNumber);
+                                if (metadata.NativeErrorCode) errorDetails.push('<strong>Native Error:</strong> ' + metadata.NativeErrorCode);
+                                if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
+                            }
+                            
+                            if (xhr.responseJSON.Code === 'ANTIFORGERY_MISSING') {
+                                errorMsg = 'توکن امنیتی منقضی شده است. لطفاً صفحه را نوسازی کنید.';
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطای امنیتی',
+                                    html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                    confirmButtonText: 'نوسازی صفحه',
+                                    confirmButtonColor: '#dc3545'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                                return;
+                            }
+                        }
+                        
+                        // Build detailed error HTML
+                        var errorHtml = '<div style="text-align: right; direction: rtl;">';
+                        errorHtml += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: #dc3545;">' + errorMsg + '</p>';
+                        
+                        if (errorDetails.length > 0) {
+                            errorHtml += '<hr style="margin: 1rem 0;">';
+                            errorHtml += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
+                            errorHtml += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
+                            errorHtml += errorDetails.join('<br>');
+                            errorHtml += '</div>';
+                        }
+                        
+                        errorHtml += '</div>';
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا در تست اتصال',
+                            html: errorHtml,
+                            confirmButtonText: 'تأیید',
+                            confirmButtonColor: '#dc3545',
+                            width: '700px'
+                        });
+                        showError(errorMsg);
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="fas fa-plug me-2"></i>تست اتصال');
+                    }
+                });
+            });
+
+            // تست پرداخت
+            $('#testPaymentBtn').click(function() {
+                var terminalId = $('#terminalSelect').val();
+                var amount = parseFloat($('#testAmount').val());
+                
+                if (!terminalId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'هشدار',
+                        text: 'لطفاً ابتدا یک ترمینال را انتخاب کنید',
+                        confirmButtonText: 'تأیید',
+                        confirmButtonColor: '#ffc107'
+                    });
+                    return;
+                }
+                
+                if (!amount || amount <= 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'هشدار',
+                        text: 'لطفاً مبلغ معتبری وارد کنید',
+                        confirmButtonText: 'تأیید',
+                        confirmButtonColor: '#ffc107'
+                    });
+                    return;
+                }
+
+                // تأیید با SweetAlert
+                Swal.fire({
+                    title: 'تأیید تست پرداخت',
+                    html: '<div style="text-align: right; direction: rtl;">' +
+                          '<p style="font-size: 1.1rem; margin-bottom: 1rem;">آیا مطمئن هستید که می‌خواهید مبلغ زیر را به دستگاه ارسال کنید؟</p>' +
+                          '<div style="background: #f0f7ff; border-right: 4px solid #4a90e2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+                          '<strong style="color: #2e5c8a; font-size: 1.2rem;">' + amount.toLocaleString('fa-IR') + ' ریال</strong>' +
+                          '</div>' +
+                          '<div style="background: #fff3e0; border-right: 4px solid #f0ad4e; padding: 0.75rem; border-radius: 8px;">' +
+                          '<i class="fas fa-exclamation-triangle" style="color: #f0ad4e; margin-left: 0.5rem;"></i>' +
+                          '<strong style="color: #f0ad4e;">توجه:</strong> این یک تست واقعی است و مبلغ به دستگاه ارسال می‌شود!' +
+                          '</div>' +
+                          '</div>',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله، ارسال کن',
+                    cancelButtonText: 'انصراف',
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#dc3545',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var btn = $('#testPaymentBtn');
+                        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال پردازش...');
+                        
+                        // نمایش Loading با SweetAlert
+                        Swal.fire({
+                            title: 'در حال ارسال مبلغ...',
+                            html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-warning"></i><p class="mt-3">در حال ارسال مبلغ ' + amount.toLocaleString('fa-IR') + ' ریال به دستگاه POS</p></div>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                        
+                        $.ajax({
+                            url: '@Url.Action("TestPayment", "PosTest")',
+                            type: 'POST',
+                            data: {
+                                __RequestVerificationToken: token,
+                                terminalId: terminalId,
+                                amount: amount
+                            },
+                            success: function(response) {
+                                Swal.close();
+                                if (response && response.Success !== false && (response.success || response.Success)) {
+                                    var data = response.data || response.Data || response;
+                                    showPaymentResultWithSweetAlert(data, amount);
+                                    showPaymentResult(data);
+                                } else {
+                                    var errorMsg = (response && response.Message) || (response && response.message) || 'خطا در تست پرداخت';
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'خطا در تست پرداخت',
+                                        html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                        confirmButtonText: 'تأیید',
+                                        confirmButtonColor: '#dc3545'
+                                    });
+                                    showError(errorMsg);
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.close();
+                                var errorMsg = 'خطا در ارتباط با سرور';
+                                var errorDetails = [];
+                                var metadata = {};
+                                
+                                if (xhr.responseJSON) {
+                                    if (xhr.responseJSON.Message) {
+                                        errorMsg = xhr.responseJSON.Message;
+                                    } else if (xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
+                                    }
+                                    
+                                    // Extract metadata for detailed error display
+                                    if (xhr.responseJSON.Metadata) {
+                                        metadata = xhr.responseJSON.Metadata;
+                                        if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
+                                        if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
+                                        if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
+                                        if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
+                                        if (metadata.AmountIRR) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.AmountIRR).toLocaleString('fa-IR') + ' ریال');
+                                        if (metadata.SocketErrorCode) errorDetails.push('<strong>Socket Error:</strong> ' + metadata.SocketErrorCode);
+                                        if (metadata.SocketErrorCodeNumber) errorDetails.push('<strong>Error Code:</strong> ' + metadata.SocketErrorCodeNumber);
+                                        if (metadata.NativeErrorCode) errorDetails.push('<strong>Native Error:</strong> ' + metadata.NativeErrorCode);
+                                        if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
+                                    }
+                                    
+                                    if (xhr.responseJSON.Code === 'ANTIFORGERY_MISSING') {
+                                        errorMsg = 'توکن امنیتی منقضی شده است. لطفاً صفحه را نوسازی کنید.';
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'خطای امنیتی',
+                                            html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                            confirmButtonText: 'نوسازی صفحه',
+                                            confirmButtonColor: '#dc3545'
+                                        }).then(() => {
+                                            location.reload();
+                                        });
+                                        return;
+                                    }
+                                }
+                                
+                                // Build detailed error HTML
+                                var errorHtml = '<div style="text-align: right; direction: rtl;">';
+                                errorHtml += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: #dc3545;">' + errorMsg + '</p>';
+                                
+                                if (errorDetails.length > 0) {
+                                    errorHtml += '<hr style="margin: 1rem 0;">';
+                                    errorHtml += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
+                                    errorHtml += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
+                                    errorHtml += errorDetails.join('<br>');
+                                    errorHtml += '</div>';
+                                }
+                                
+                                errorHtml += '</div>';
+                                
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا در تست پرداخت',
+                                    html: errorHtml,
+                                    confirmButtonText: 'تأیید',
+                                    confirmButtonColor: '#dc3545',
+                                    width: '700px'
+                                });
+                                showError(errorMsg);
+                            },
+                            complete: function() {
+                                btn.prop('disabled', false).html('<i class="fas fa-money-bill-wave me-2"></i>تست پرداخت');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // نمایش نتیجه تست اتصال
+            function showConnectionResult(data) {
+                var statusClass = data.connectionStatus === 'موفق' ? 'success' : 'danger';
+                var statusIcon = data.connectionStatus === 'موفق' ? 'check-circle' : 'times-circle';
+                
+                var terminalInfoHtml = '';
+                if (data.terminalInfo) {
+                    terminalInfoHtml = `
+                        <hr>
+                        <h6>اطلاعات ترمینال:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>شماره ترمینال:</strong> ${data.terminalInfo.terminalId || 'نامشخص'}<br>
+                                <strong>شماره پذیرنده:</strong> ${data.terminalInfo.merchantId || 'نامشخص'}<br>
+                                <strong>IP Address:</strong> ${data.terminalInfo.ipAddress || 'نامشخص'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Port:</strong> ${data.terminalInfo.port || 'نامشخص'}<br>
+                                <strong>Provider:</strong> ${data.terminalInfo.provider || 'نامشخص'}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                var paymentInfoHtml = '';
+                if (data.paymentStatus === 'موفق') {
+                    paymentInfoHtml = `
+                        <hr>
+                        <h6>اطلاعات پرداخت:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>RRN:</strong> ${data.rrn || 'نامشخص'}<br>
+                                <strong>Trace No:</strong> ${data.traceNo || 'نامشخص'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Card Last 4:</strong> ${data.cardLast4 || 'نامشخص'}<br>
+                                <strong>پیام:</strong> ${data.message || 'نامشخص'}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                var html = `
+                    <div class="alert alert-${statusClass}">
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>وضعیت اتصال: ${data.connectionStatus || 'نامشخص'}</h6>
+                        ${data.message ? `<p class="mb-0">${data.message}</p>` : ''}
+                        ${terminalInfoHtml}
+                        ${paymentInfoHtml}
+                    </div>
+                `;
+                
+                $('#testResults').html(html);
+            }
+
+            // نمایش نتیجه تست پرداخت
+            function showPaymentResult(data) {
+                var statusClass = data.success ? 'success' : 'danger';
+                var statusIcon = data.success ? 'check-circle' : 'times-circle';
+                
+                var html = `
+                    <div class="alert alert-${statusClass}">
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>نتیجه تست پرداخت: ${data.success ? 'موفق' : 'ناموفق'}</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>RRN:</strong> ${data.rrn || 'نامشخص'}<br>
+                                <strong>Trace No:</strong> ${data.traceNo || 'نامشخص'}<br>
+                                <strong>Card Last 4:</strong> ${data.cardLast4 || 'نامشخص'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>مبلغ:</strong> ${data.amount ? data.amount.toLocaleString('fa-IR') + ' ریال' : 'نامشخص'}<br>
+                                <strong>Terminal ID:</strong> ${data.terminalId || 'نامشخص'}<br>
+                                <strong>پیام:</strong> ${data.message || 'نامشخص'}
+                            </div>
+                        </div>
+                        ${data.terminalInfo ? `
+                            <hr>
+                            <h6>اطلاعات ترمینال:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>شماره ترمینال:</strong> ${data.terminalInfo.terminalId || 'نامشخص'}<br>
+                                    <strong>شماره پذیرنده:</strong> ${data.terminalInfo.merchantId || 'نامشخص'}<br>
+                                    <strong>IP Address:</strong> ${data.terminalInfo.ipAddress || 'نامشخص'}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Port:</strong> ${data.terminalInfo.port || 'نامشخص'}<br>
+                                    <strong>Provider:</strong> ${data.terminalInfo.provider || 'نامشخص'}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                $('#testResults').html(html);
+            }
+
+            // نمایش خطا
+            function showError(message) {
+                var html = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${message}
+                    </div>
+                `;
+                $('#testResults').html(html);
+            }
+
+            // نمایش نتیجه تست اتصال با SweetAlert
+            function showConnectionResultWithSweetAlert(data) {
+                var isSuccess = data.connectionStatus === 'موفق';
+                var htmlContent = '<div style="text-align: right; direction: rtl;">';
+                
+                if (data.message) {
+                    htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem;">' + data.message + '</p>';
+                }
+                
+                if (data.terminalInfo) {
+                    htmlContent += '<hr style="margin: 1rem 0;">';
+                    htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">اطلاعات ترمینال:</h6>';
+                    htmlContent += '<div style="background: #f0f7ff; border-right: 4px solid #4a90e2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">';
+                    htmlContent += '<strong>شماره ترمینال:</strong> ' + (data.terminalInfo.terminalId || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>شماره پذیرنده:</strong> ' + (data.terminalInfo.merchantId || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>IP Address:</strong> ' + (data.terminalInfo.ipAddress || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Port:</strong> ' + (data.terminalInfo.port || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Provider:</strong> ' + (data.terminalInfo.provider || 'نامشخص');
+                    htmlContent += '</div>';
+                }
+                
+                if (data.paymentStatus === 'موفق') {
+                    htmlContent += '<hr style="margin: 1rem 0;">';
+                    htmlContent += '<h6 style="color: #28a745; margin-bottom: 0.75rem;">اطلاعات پرداخت:</h6>';
+                    htmlContent += '<div style="background: #d4edda; border-right: 4px solid #28a745; padding: 1rem; border-radius: 8px;">';
+                    htmlContent += '<strong>RRN:</strong> ' + (data.rrn || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Trace No:</strong> ' + (data.traceNo || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Card Last 4:</strong> ' + (data.cardLast4 || 'نامشخص');
+                    htmlContent += '</div>';
+                }
+                
+                htmlContent += '</div>';
+                
+                Swal.fire({
+                    icon: isSuccess ? 'success' : 'error',
+                    title: isSuccess ? 'اتصال موفق' : 'اتصال ناموفق',
+                    html: htmlContent,
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: isSuccess ? '#28a745' : '#dc3545',
+                    width: '600px'
+                });
+            }
+
+            // نمایش نتیجه تست پرداخت با SweetAlert
+            function showPaymentResultWithSweetAlert(data, amount) {
+                var isSuccess = data.success !== false;
+                var htmlContent = '<div style="text-align: right; direction: rtl;">';
+                
+                if (data.message) {
+                    htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem;">' + data.message + '</p>';
+                }
+                
+                htmlContent += '<hr style="margin: 1rem 0;">';
+                htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">اطلاعات پرداخت:</h6>';
+                htmlContent += '<div style="background: ' + (isSuccess ? '#d4edda' : '#f8d7da') + '; border-right: 4px solid ' + (isSuccess ? '#28a745' : '#dc3545') + '; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">';
+                htmlContent += '<strong>مبلغ:</strong> ' + (amount ? amount.toLocaleString('fa-IR') + ' ریال' : 'نامشخص') + '<br>';
+                htmlContent += '<strong>RRN:</strong> ' + (data.rrn || 'نامشخص') + '<br>';
+                htmlContent += '<strong>Trace No:</strong> ' + (data.traceNo || 'نامشخص') + '<br>';
+                htmlContent += '<strong>Card Last 4:</strong> ' + (data.cardLast4 || 'نامشخص') + '<br>';
+                htmlContent += '<strong>Terminal ID:</strong> ' + (data.terminalId || 'نامشخص');
+                htmlContent += '</div>';
+                
+                if (data.terminalInfo) {
+                    htmlContent += '<hr style="margin: 1rem 0;">';
+                    htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">اطلاعات ترمینال:</h6>';
+                    htmlContent += '<div style="background: #f0f7ff; border-right: 4px solid #4a90e2; padding: 1rem; border-radius: 8px;">';
+                    htmlContent += '<strong>شماره ترمینال:</strong> ' + (data.terminalInfo.terminalId || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>شماره پذیرنده:</strong> ' + (data.terminalInfo.merchantId || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>IP Address:</strong> ' + (data.terminalInfo.ipAddress || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Port:</strong> ' + (data.terminalInfo.port || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Provider:</strong> ' + (data.terminalInfo.provider || 'نامشخص');
+                    htmlContent += '</div>';
+                }
+                
+                htmlContent += '</div>';
+                
+                Swal.fire({
+                    icon: isSuccess ? 'success' : 'error',
+                    title: isSuccess ? 'پرداخت موفق' : 'پرداخت ناموفق',
+                    html: htmlContent,
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: isSuccess ? '#28a745' : '#dc3545',
+                    width: '700px'
+                });
+            }
+
+            // بارگذاری اولیه اطلاعات ترمینال در صورت وجود ترمینال پیش‌فرض
+            @if (ViewBag.DefaultTerminal != null)
+            {
+                <text>
+                $('#terminalSelect').trigger('change');
+                </text>
+            }
+        });
+    </script>
+}
+

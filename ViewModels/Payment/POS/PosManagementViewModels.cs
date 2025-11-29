@@ -23,6 +23,16 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "شماره سریال")]
         public string SerialNumber { get; set; }
 
+        [Required(ErrorMessage = "شماره ترمینال الزامی است")]
+        [StringLength(50, ErrorMessage = "شماره ترمینال نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "شماره ترمینال")]
+        public string TerminalId { get; set; }
+
+        [Required(ErrorMessage = "شماره پذیرنده الزامی است")]
+        [StringLength(50, ErrorMessage = "شماره پذیرنده نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "شماره پذیرنده (Merchant ID)")]
+        public string MerchantId { get; set; }
+
         [Required(ErrorMessage = "نوع ارائه‌دهنده الزامی است")]
         [Display(Name = "نوع ارائه‌دهنده")]
         public PosProviderType ProviderType { get; set; }
@@ -36,9 +46,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "آدرس IP")]
         public string IpAddress { get; set; }
 
-        [Required(ErrorMessage = "پورت الزامی است")]
         [Range(1, 65535, ErrorMessage = "پورت باید بین 1 تا 65535 باشد")]
-        [Display(Name = "پورت")]
+        [Display(Name = "پورت (اختیاری - پیش‌فرض: 5000)")]
         public int? Port { get; set; }
 
         [Display(Name = "MAC Address (اختیاری)")]
@@ -56,6 +65,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         {
             Name = string.Empty;
             SerialNumber = string.Empty;
+            TerminalId = string.Empty;
+            MerchantId = string.Empty;
             IpAddress = string.Empty;
             MacAddress = string.Empty;
             Description = string.Empty;
@@ -81,6 +92,16 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "شماره سریال")]
         public string SerialNumber { get; set; }
 
+        [Required(ErrorMessage = "شماره ترمینال الزامی است")]
+        [StringLength(50, ErrorMessage = "شماره ترمینال نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "شماره ترمینال")]
+        public string TerminalId { get; set; }
+
+        [Required(ErrorMessage = "شماره پذیرنده الزامی است")]
+        [StringLength(50, ErrorMessage = "شماره پذیرنده نمی‌تواند بیشتر از 50 کاراکتر باشد")]
+        [Display(Name = "شماره پذیرنده (Merchant ID)")]
+        public string MerchantId { get; set; }
+
         [Required(ErrorMessage = "نوع ارائه‌دهنده الزامی است")]
         [Display(Name = "نوع ارائه‌دهنده")]
         public PosProviderType ProviderType { get; set; }
@@ -94,9 +115,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         [Display(Name = "آدرس IP")]
         public string IpAddress { get; set; }
 
-        [Required(ErrorMessage = "پورت الزامی است")]
         [Range(1, 65535, ErrorMessage = "پورت باید بین 1 تا 65535 باشد")]
-        [Display(Name = "پورت")]
+        [Display(Name = "پورت (اختیاری - پیش‌فرض: 5000)")]
         public int? Port { get; set; }
 
         [Display(Name = "MAC Address (اختیاری)")]
@@ -117,6 +137,8 @@ namespace ClinicApp.ViewModels.Payment.POS
         {
             Name = string.Empty;
             SerialNumber = string.Empty;
+            TerminalId = string.Empty;
+            MerchantId = string.Empty;
             IpAddress = string.Empty;
             MacAddress = string.Empty;
             Description = string.Empty;

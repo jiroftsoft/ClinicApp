@@ -92,8 +92,8 @@ namespace ClinicApp.Services.Payment.POS
                 var terminal = new PosTerminal
                 {
                     Title = request.Name,
-                    TerminalId = request.SerialNumber, // استفاده از SerialNumber به عنوان TerminalId
-                    MerchantId = "DEFAULT", // مقدار پیش‌فرض برای MerchantId - می‌تواند بعداً ویرایش شود
+                    TerminalId = !string.IsNullOrWhiteSpace(request.TerminalId) ? request.TerminalId : request.SerialNumber, // استفاده از TerminalId یا SerialNumber به عنوان fallback
+                    MerchantId = !string.IsNullOrWhiteSpace(request.MerchantId) ? request.MerchantId : "DEFAULT", // استفاده از MerchantId یا مقدار پیش‌فرض
                     SerialNumber = request.SerialNumber,
                     Provider = request.ProviderType,
                     Protocol = request.Protocol,
@@ -173,15 +173,9 @@ namespace ClinicApp.Services.Payment.POS
                 terminal.Provider = request.Provider != default(PosProviderType) ? request.Provider : request.ProviderType;
                 terminal.Protocol = request.Protocol;
                 
-                // TerminalId و MerchantId را فقط در صورت وجود در request به‌روزرسانی می‌کنیم
-                if (!string.IsNullOrEmpty(request.TerminalId))
-                {
-                    terminal.TerminalId = request.TerminalId;
-                }
-                if (!string.IsNullOrEmpty(request.MerchantId))
-                {
-                    terminal.MerchantId = request.MerchantId;
-                }
+                // به‌روزرسانی TerminalId و MerchantId
+                terminal.TerminalId = !string.IsNullOrWhiteSpace(request.TerminalId) ? request.TerminalId : terminal.TerminalId;
+                terminal.MerchantId = !string.IsNullOrWhiteSpace(request.MerchantId) ? request.MerchantId : terminal.MerchantId;
                 
                 // به‌روزرسانی اطلاعات شبکه
                 if (!string.IsNullOrEmpty(request.IpAddress))
@@ -194,18 +188,21 @@ namespace ClinicApp.Services.Payment.POS
                     terminal.IpAddress = ParseConnectionStringIp(request.ConnectionString);
                 }
                 
+                // به‌روزرسانی Port: 
+                // اگر request.Port.HasValue باشد، مقدار آن را تنظیم می‌کنیم
+                // اگر request.Port null باشد، Port را null می‌کنیم (حتی اگر ConnectionString وجود داشته باشد)
+                // این به کاربر اجازه می‌دهد که پورت را به null تغییر دهد
                 if (request.Port.HasValue)
                 {
                     terminal.Port = request.Port.Value;
+                    _logger.Debug("Port به‌روزرسانی شد به: {Port}", request.Port.Value);
                 }
-                else if (!string.IsNullOrEmpty(request.ConnectionString))
+                else
                 {
-                    // Fallback: اگر Port نبود، از ConnectionString استفاده کن
-                    var parsedPort = ParseConnectionStringPort(request.ConnectionString);
-                    if (parsedPort.HasValue)
-                    {
-                        terminal.Port = parsedPort.Value;
-                    }
+                    // اگر Port null باشد، آن را null می‌کنیم (حتی اگر ConnectionString وجود داشته باشد)
+                    // چون کاربر صراحتاً می‌خواهد پورت را null کند
+                    terminal.Port = null;
+                    _logger.Debug("Port به null تنظیم شد (کاربر می‌خواهد پورت را حذف کند)");
                 }
                 
                 // MacAddress: اگر null یا empty باشد، null ست می‌شود
@@ -350,6 +347,12 @@ namespace ClinicApp.Services.Payment.POS
             if (string.IsNullOrWhiteSpace(request.SerialNumber))
                 errors.Add("شماره سریال الزامی است");
 
+            if (string.IsNullOrWhiteSpace(request.TerminalId))
+                errors.Add("شماره ترمینال الزامی است");
+
+            if (string.IsNullOrWhiteSpace(request.MerchantId))
+                errors.Add("شماره پذیرنده الزامی است");
+
             if (string.IsNullOrWhiteSpace(request.CreatedByUserId))
                 errors.Add("شناسه کاربر ایجادکننده الزامی است");
 
@@ -380,6 +383,12 @@ namespace ClinicApp.Services.Payment.POS
 
             if (string.IsNullOrWhiteSpace(request.SerialNumber))
                 errors.Add("شماره سریال الزامی است");
+
+            if (string.IsNullOrWhiteSpace(request.TerminalId))
+                errors.Add("شماره ترمینال الزامی است");
+
+            if (string.IsNullOrWhiteSpace(request.MerchantId))
+                errors.Add("شماره پذیرنده الزامی است");
 
             if (string.IsNullOrWhiteSpace(request.UpdatedByUserId))
                 errors.Add("شناسه کاربر به‌روزرسانی‌کننده الزامی است");

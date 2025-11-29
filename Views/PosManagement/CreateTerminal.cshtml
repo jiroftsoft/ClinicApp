@@ -56,6 +56,34 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label for="TerminalId" class="form-label">
+                                    @Html.DisplayNameFor(m => m.TerminalId)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.TerminalId, new { @class = "form-control", required = "required", maxlength = "50", placeholder = "شماره ترمینال دستگاه POS" })
+                                @Html.ValidationMessageFor(m => m.TerminalId, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    شماره ترمینال که توسط بانک یا ارائه‌دهنده POS به شما داده شده است
+                                </small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="MerchantId" class="form-label">
+                                    @Html.DisplayNameFor(m => m.MerchantId)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.MerchantId, new { @class = "form-control", required = "required", maxlength = "50", placeholder = "شماره پذیرنده (Merchant ID)" })
+                                @Html.ValidationMessageFor(m => m.MerchantId, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    شماره پذیرنده که توسط بانک یا ارائه‌دهنده POS به شما داده شده است
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="ProviderType" class="form-label">
                                     @Html.DisplayNameFor(m => m.ProviderType)
                                     <span class="text-danger">*</span>
@@ -108,11 +136,13 @@
                             <div class="col-md-6 mb-3">
                                 <label for="Port" class="form-label">
                                     @Html.DisplayNameFor(m => m.Port)
-                                    <span class="text-danger">*</span>
                                 </label>
-                                @Html.TextBoxFor(m => m.Port, new { @class = "form-control", required = "required", type = "number", min = "1", max = "65535", placeholder = "5000" })
+                                @Html.TextBoxFor(m => m.Port, new { @class = "form-control", type = "number", min = "1", max = "65535", placeholder = "5000 (پیش‌فرض)" })
                                 @Html.ValidationMessageFor(m => m.Port, "", new { @class = "text-danger" })
-                                <small class="form-text text-muted">پورت ارتباطی دستگاه POS (1 تا 65535)</small>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    پورت ارتباطی دستگاه POS (اختیاری - اگر تنظیم نشود، از پورت پیش‌فرض 5000 استفاده می‌شود)
+                                </small>
                             </div>
                         </div>
 

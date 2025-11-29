@@ -188,6 +188,8 @@ namespace ClinicApp.Controllers.Payment.POS
                 {
                     Name = model.Name,
                     SerialNumber = model.SerialNumber,
+                    TerminalId = model.TerminalId,
+                    MerchantId = model.MerchantId,
                     ProviderType = model.ProviderType,
                     Protocol = model.Protocol,
                     IpAddress = model.IpAddress,
@@ -244,6 +246,8 @@ namespace ClinicApp.Controllers.Payment.POS
                     Id = result.Data.PosTerminalId,
                     Name = result.Data.Name,
                     SerialNumber = result.Data.SerialNumber,
+                    TerminalId = result.Data.TerminalId,
+                    MerchantId = result.Data.MerchantId,
                     ProviderType = result.Data.ProviderType,
                     Protocol = result.Data.Protocol,
                     IpAddress = result.Data.IpAddress,
@@ -305,13 +309,15 @@ namespace ClinicApp.Controllers.Payment.POS
                     Name = model.Name,
                     Title = model.Name,
                     SerialNumber = model.SerialNumber,
+                    TerminalId = model.TerminalId,
+                    MerchantId = model.MerchantId,
                     ProviderType = model.ProviderType,
                     Provider = model.ProviderType,
                     Protocol = model.Protocol,
                     IpAddress = model.IpAddress,
-                    Port = model.Port,
+                    Port = model.Port, // می‌تواند null باشد
                     MacAddress = model.MacAddress,
-                    ConnectionString = $"{model.IpAddress}:{model.Port}", // ساخت ConnectionString از IP و Port
+                    ConnectionString = model.Port.HasValue ? $"{model.IpAddress}:{model.Port}" : null, // ساخت ConnectionString از IP و Port (فقط اگر Port داشته باشد)
                     Description = model.Description,
                     IsActive = model.IsActive,
                     IsDefault = model.IsDefault,

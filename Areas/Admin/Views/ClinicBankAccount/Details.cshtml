@@ -1,0 +1,394 @@
+@model ClinicApp.ViewModels.ClinicAdmin.ClinicBankAccountDetailsViewModel
+
+@{
+    ViewBag.Title = "جزئیات حساب بانکی";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa fa-university me-2"></i>
+                            جزئیات حساب بانکی
+                        </h4>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("Edit", "ClinicBankAccount", new { area = "Admin", id = Model.ClinicBankAccountId })" class="btn btn-warning btn-sm">
+                                <i class="fa fa-edit me-1"></i> ویرایش
+                            </a>
+                            <a href="@Url.Action("Index", "ClinicBankAccount", new { area = "Admin" })" class="btn btn-secondary btn-sm">
+                                <i class="fa fa-arrow-right me-1"></i> بازگشت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- اطلاعات اصلی -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات اصلی حساب بانکی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- کلینیک -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-hospital me-2 text-primary"></i>
+                                    کلینیک
+                                </label>
+                                <div class="info-value">
+                                    <strong class="text-primary">@Model.ClinicName</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- شماره شبا -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-credit-card me-2 text-info"></i>
+                                    شماره شبا (IBAN)
+                                </label>
+                                <div class="info-value">
+                                    <code class="bg-light px-3 py-2 rounded iban-display">@Model.IbanNumber</code>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('@Model.IbanNumber')" title="کپی">
+                                        <i class="fa fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- نام بانک -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-university me-2 text-success"></i>
+                                    نام بانک
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.BankName</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- شماره حساب -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-hashtag me-2 text-warning"></i>
+                                    شماره حساب
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrWhiteSpace(Model.AccountNumber))
+                                    {
+                                        <span class="text-dark">@Model.AccountNumber</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- نام صاحب حساب -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-user me-2 text-danger"></i>
+                                    نام صاحب حساب
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.AccountHolderName</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- وضعیت -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-toggle-on me-2 text-success"></i>
+                                    وضعیت
+                                </label>
+                                <div class="info-value">
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fa fa-check-circle me-1"></i>
+                                            فعال
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger fs-6">
+                                            <i class="fa fa-times-circle me-1"></i>
+                                            غیرفعال
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- پیش‌فرض -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-star me-2 text-warning"></i>
+                                    حساب پیش‌فرض
+                                </label>
+                                <div class="info-value">
+                                    @if (Model.IsDefault)
+                                    {
+                                        <span class="badge bg-primary fs-6">
+                                            <i class="fa fa-star me-1"></i>
+                                            پیش‌فرض
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- توضیحات -->
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fa fa-file-text me-2 text-secondary"></i>
+                                        توضیحات
+                                    </label>
+                                    <div class="info-value">
+                                        <div class="bg-light p-3 rounded">
+                                            <span class="text-dark">@Model.Description</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- اطلاعات سیستم -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fa fa-database me-2"></i>
+                        اطلاعات سیستم
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- تاریخ ایجاد -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fa fa-calendar-plus me-2 text-success"></i>
+                                    تاریخ ایجاد
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.CreatedAtShamsi</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ایجاد شده توسط -->
+                        @if (!string.IsNullOrWhiteSpace(Model.CreatedByUserName))
+                        {
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fa fa-user-plus me-2 text-primary"></i>
+                                        ایجاد شده توسط
+                                    </label>
+                                    <div class="info-value">
+                                        <span class="text-dark">@Model.CreatedByUserName</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
+                        <!-- تاریخ آخرین ویرایش -->
+                        @if (!string.IsNullOrWhiteSpace(Model.UpdatedAtShamsi))
+                        {
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fa fa-calendar-edit me-2 text-warning"></i>
+                                        تاریخ آخرین ویرایش
+                                    </label>
+                                    <div class="info-value">
+                                        <span class="text-dark">@Model.UpdatedAtShamsi</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ویرایش شده توسط -->
+                            if (!string.IsNullOrWhiteSpace(Model.UpdatedByUserName))
+                            {
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <label class="info-label">
+                                            <i class="fa fa-user-edit me-2 text-info"></i>
+                                            ویرایش شده توسط
+                                        </label>
+                                        <div class="info-value">
+                                            <span class="text-dark">@Model.UpdatedByUserName</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fa fa-calendar-edit me-2 text-muted"></i>
+                                        تاریخ آخرین ویرایش
+                                    </label>
+                                    <div class="info-value">
+                                        <span class="text-muted">هنوز ویرایش نشده است</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .info-item {
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #212529;
+            padding: 0.5rem 0;
+        }
+        
+        .iban-display {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-size: 16px;
+        }
+        
+        .card-header {
+            border-radius: 0.375rem 0.375rem 0 0 !important;
+        }
+        
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        
+        .btn-group .btn {
+            border-radius: 0.25rem;
+        }
+        
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Copy to clipboard function
+            window.copyToClipboard = function(text) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('success', 'شماره شبا با موفقیت کپی شد.');
+                }, function() {
+                    // Fallback for older browsers
+                    var textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('success', 'شماره شبا با موفقیت کپی شد.');
+                    } catch (err) {
+                        showToast('error', 'خطا در کپی کردن شماره شبا.');
+                    }
+                    document.body.removeChild(textArea);
+                });
+            };
+
+            // Show toast function
+            function showToast(type, message) {
+                var toastHtml = `
+                    <div class="toast-container position-fixed top-0 end-0 p-3">
+                        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-${type === 'success' ? 'success' : 'danger'} text-white">
+                                <i class="fa fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>
+                                <strong class="me-auto">${type === 'success' ? 'موفقیت' : 'خطا'}</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                            </div>
+                            <div class="toast-body">${message}</div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(toastHtml);
+                
+                setTimeout(function() {
+                    $('.toast').fadeOut(function() {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
+
+            // Display temp data messages
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                showToast('success', '@Html.Raw(TempData["SuccessMessage"])');
+                </text>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                showToast('error', '@Html.Raw(TempData["ErrorMessage"])');
+                </text>
+            }
+        });
+    </script>
+}
+
