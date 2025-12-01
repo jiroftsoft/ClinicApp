@@ -59,6 +59,8 @@ namespace ClinicApp.Services.Payment.POS.Drivers
 
         // SignalR Configuration
         private const string DefaultSignalRUrl = "http://localhost:8080/signalr";
+        // IMPORTANT: Hub Name must match exactly what server expects (case-sensitive)
+        // From Sample HTML: var console = $.connection.SSP1126HUB;
         private const string HubName = "SSP1126HUB";
         private const int InitializationDelayMs = 1000; // 1 second delay after Initial
         private const int TransactionTimeoutMs = 60000; // 60 seconds for transaction
@@ -110,73 +112,223 @@ namespace ClinicApp.Services.Payment.POS.Drivers
         {
             try
             {
-                if (_hubConnection != null && _hubConnection.State == ConnectionState.Connected)
+                // Check if already connected and valid
+                if (_hubConnection != null && _hubConnection.State == ConnectionState.Connected && _hubProxy != null)
                 {
-                    _logger.Debug("🏥 SamanKish SignalR: Already connected to Hub");
+                    _logger.Debug("🏥 SamanKish SignalR: Already connected to Hub - State: {State}", _hubConnection.State);
                     return ServiceResult.Successful();
                 }
 
+                // Dispose existing connection if exists but not connected
+                if (_hubConnection != null)
+                {
+                    _logger.Warning("⚠️ SamanKish SignalR: Existing connection found but not connected - State: {State}, Disposing...", 
+                        _hubConnection.State);
+                    try
+                    {
+                        if (_hubConnection.State != ConnectionState.Disconnected)
+                        {
+                            _hubConnection.Stop();
+                        }
+                        _hubConnection.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "⚠️ SamanKish SignalR: Error disposing old connection");
+                    }
+                    _hubConnection = null;
+                    _hubProxy = null;
+                }
+
                 var hubUrl = GetSignalRUrl();
-                _logger.Information("🏥 SamanKish SignalR: Connecting to Hub - {Url}", hubUrl);
+                _logger.Information("🏥 SamanKish SignalR: Connecting to Hub - URL: {Url}, HubName: {HubName}", hubUrl, HubName);
 
                 // Create Hub Connection
                 _hubConnection = new HubConnection(hubUrl);
                 _hubProxy = _hubConnection.CreateHubProxy(HubName);
 
-                // Register client callbacks
-                RegisterClientCallbacks();
+                if (_hubProxy == null)
+                {
+                    _logger.Error("❌ SamanKish SignalR: Failed to create Hub Proxy - HubName: {HubName}", HubName);
+                    return ServiceResult.Failed($"خطا در ایجاد Hub Proxy برای {HubName}");
+                }
+
+                _logger.Information("🏥 SamanKish SignalR: Hub Proxy created - HubName: {HubName}", HubName);
+
+                // Register connection error handlers BEFORE starting
+                _hubConnection.Error += (error) =>
+                {
+                    _logger.Error("❌ SamanKish SignalR: Connection Error - {Error}", error?.Message ?? "Unknown error");
+                };
+
+                _hubConnection.Closed += () =>
+                {
+                    _logger.Warning("⚠️ SamanKish SignalR: Connection Closed");
+                };
+
+                _hubConnection.Reconnecting += () =>
+                {
+                    _logger.Information("🔄 SamanKish SignalR: Connection Reconnecting...");
+                };
+
+                _hubConnection.Reconnected += () =>
+                {
+                    _logger.Information("✅ SamanKish SignalR: Connection Reconnected");
+                    // Re-register callbacks after reconnection
+                    RegisterClientCallbacks();
+                };
 
                 // Start connection with LongPolling transport (to avoid "Unknown transport" error)
                 // LongPolling is more compatible than WebSocket in some environments
+                _logger.Information("🏥 SamanKish SignalR: Starting connection with LongPolling transport...");
                 var startTask = _hubConnection.Start(new LongPollingTransport());
                 var timeoutTask = Task.Delay(ConnectionTimeoutMs);
                 var completedTask = await Task.WhenAny(startTask, timeoutTask).ConfigureAwait(false);
                 
                 if (completedTask == timeoutTask)
                 {
-                    _logger.Error("❌ SamanKish SignalR: Connection timeout");
+                    _logger.Error("❌ SamanKish SignalR: Connection timeout after {Timeout}ms", ConnectionTimeoutMs);
+                    try
+                    {
+                        _hubConnection?.Stop();
+                        _hubConnection?.Dispose();
+                    }
+                    catch { }
+                    _hubConnection = null;
+                    _hubProxy = null;
                     return ServiceResult.Failed("زمان اتصال به SignalR Hub به پایان رسید");
                 }
                 
-                await startTask.ConfigureAwait(false);
+                // Wait for start to complete
+                try
+                {
+                    await startTask.ConfigureAwait(false);
+                }
+                catch (Exception startEx)
+                {
+                    _logger.Error(startEx, "❌ SamanKish SignalR: Error during connection start");
+                    try
+                    {
+                        _hubConnection?.Stop();
+                        _hubConnection?.Dispose();
+                    }
+                    catch { }
+                    _hubConnection = null;
+                    _hubProxy = null;
+                    return ServiceResult.Failed($"خطا در شروع اتصال: {startEx.Message}");
+                }
 
+                // Verify connection state
                 if (_hubConnection.State == ConnectionState.Connected)
                 {
-                    _logger.Information("✅ SamanKish SignalR: Connected to Hub successfully");
+                    _logger.Information("✅ SamanKish SignalR: Connected to Hub successfully - State: {State}", _hubConnection.State);
+                    
+                    // Register client callbacks AFTER successful connection
+                    _logger.Information("🏥 SamanKish SignalR: Registering client callbacks...");
+                    _logger.Information("🏥 SamanKish SignalR: HubConnection State: {State}, HubProxy: {HasProxy}, HubName: {HubName}",
+                        _hubConnection.State, _hubProxy != null ? "Valid" : "Null", HubName);
+                    
+                    try
+                    {
+                        RegisterClientCallbacks();
+                        _logger.Information("✅ SamanKish SignalR: Client callbacks registered successfully");
+                    }
+                    catch (Exception callbackEx)
+                    {
+                        _logger.Error(callbackEx, "❌ SamanKish SignalR: Failed to register client callbacks");
+                        return ServiceResult.Failed($"خطا در ثبت Callback ها: {callbackEx.Message}");
+                    }
+                    
+                    // Verify callback registration by checking if we can still access the proxy
+                    if (_hubProxy == null)
+                    {
+                        _logger.Error("❌ SamanKish SignalR: HubProxy became null after callback registration");
+                        return ServiceResult.Failed("HubProxy پس از ثبت Callback ها null شد");
+                    }
+                    
+                    // Test callback registration by checking connection state
+                    _logger.Information("✅ SamanKish SignalR: Connection and callback registration verified - State: {State}, HubProxy: {HasProxy}, HubName: {HubName}", 
+                        _hubConnection.State, _hubProxy != null ? "Valid" : "Null", HubName);
+                    
+                    // Log a test message to verify logging is working
+                    _logger.Information("🔍 SamanKish SignalR: Callback registration test - All callbacks should be active now");
+                    
                     return ServiceResult.Successful();
                 }
                 else
                 {
                     _logger.Error("❌ SamanKish SignalR: Connection failed - State: {State}", _hubConnection.State);
-                    return ServiceResult.Failed($"اتصال به SignalR Hub ناموفق بود. وضعیت: {_hubConnection.State}");
+                    try
+                    {
+                        _hubConnection?.Stop();
+                        _hubConnection?.Dispose();
+                    }
+                    catch { }
+                    _hubConnection = null;
+                    _hubProxy = null;
+                    return ServiceResult.Failed($"اتصال به SignalR Hub ناموفق بود. وضعیت: {_hubConnection?.State ?? ConnectionState.Disconnected}");
                 }
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ SamanKish SignalR: Error connecting to Hub");
+                try
+                {
+                    _hubConnection?.Stop();
+                    _hubConnection?.Dispose();
+                }
+                catch { }
+                _hubConnection = null;
+                _hubProxy = null;
                 return ServiceResult.Failed($"خطا در اتصال به SignalR Hub: {ex.Message}");
             }
         }
 
         /// <summary>
         /// Register client callbacks for SignalR Hub
+        /// IMPORTANT: This must be called AFTER connection is established
         /// </summary>
         private void RegisterClientCallbacks()
         {
+            if (_hubProxy == null)
+            {
+                _logger.Error("❌ SamanKish SignalR: Cannot register callbacks - HubProxy is null");
+                return;
+            }
+
+            if (_hubConnection == null || _hubConnection.State != ConnectionState.Connected)
+            {
+                _logger.Error("❌ SamanKish SignalR: Cannot register callbacks - Connection not established - State: {State}",
+                    _hubConnection?.State ?? ConnectionState.Disconnected);
+                return;
+            }
+
+            _logger.Information("🏥 SamanKish SignalR: Registering GetSystemResponse callback...");
+            
             // GetSystemResponse callback
             _hubProxy.On<string>("GetSystemResponse", (message) =>
             {
+                _logger.Information("🔔🔔🔔 SamanKish SignalR: GetSystemResponse CALLBACK INVOKED - Message: '{Message}'", message);
+                
                 lock (_lockObject)
                 {
                     _serverMessage = message;
-                    _logger.Information("🏥 SamanKish SignalR: GetSystemResponse received - Message: '{Message}'", message);
+                    _logger.Information("🏥 SamanKish SignalR: GetSystemResponse processed - Message: '{Message}', Setting wait handle...", message);
                     _responseWaitHandle.Set();
+                    _logger.Information("✅ SamanKish SignalR: GetSystemResponse wait handle set");
                 }
             });
+            
+            _logger.Information("✅ SamanKish SignalR: GetSystemResponse callback registered");
 
+            _logger.Information("🏥 SamanKish SignalR: Registering GetCardSwiped callback...");
+            
             // GetCardSwiped callback - SignalR Client 2.4.3 sends parameters as IList<object>
             _hubProxy.On<IList<object>>("GetCardSwiped", (parameters) =>
             {
+                _logger.Information("🔔🔔🔔 SamanKish SignalR: GetCardSwiped CALLBACK INVOKED - ParametersCount: {Count}",
+                    parameters != null ? parameters.Count : 0);
+                
                 try
                 {
                     var terminalId = parameters != null && parameters.Count > 0 ? parameters[0]?.ToString() : string.Empty;
@@ -194,26 +346,37 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                     _logger.Warning(ex, "⚠️ SamanKish SignalR: Error parsing GetCardSwiped parameters");
                 }
             });
+            
+            _logger.Information("✅ SamanKish SignalR: GetCardSwiped callback registered");
 
+            _logger.Information("🏥 SamanKish SignalR: Registering GetTransactionResponse callback...");
+            _logger.Information("🏥 SamanKish SignalR: HubProxy State - IsNull: {IsNull}, ConnectionState: {State}, HubName: {HubName}",
+                _hubProxy == null, _hubConnection?.State ?? ConnectionState.Disconnected, HubName);
+            
             // GetTransactionResponse callback - SignalR Client 2.4.3 sends parameters as IList<object>
-            _hubProxy.On<IList<object>>("GetTransactionResponse", (parameters) =>
+            // IMPORTANT: Method name must match exactly what server sends (case-sensitive in some versions)
+            try
             {
-                _logger.Information("🔔🔔🔔 SamanKish SignalR: GetTransactionResponse CALLBACK INVOKED - ParametersCount: {Count}",
-                    parameters != null ? parameters.Count : 0);
-                
-                try
+                _hubProxy.On<IList<object>>("GetTransactionResponse", (parameters) =>
                 {
-                    var terminalId = parameters != null && parameters.Count > 0 ? parameters[0]?.ToString() : string.Empty;
-                    var responseCode = parameters != null && parameters.Count > 1 ? parameters[1]?.ToString() : string.Empty;
-                    var serialId = parameters != null && parameters.Count > 2 ? parameters[2]?.ToString() : string.Empty;
-                    var rrn = parameters != null && parameters.Count > 3 ? parameters[3]?.ToString() : string.Empty;
-                    var responseDescription = parameters != null && parameters.Count > 4 ? parameters[4]?.ToString() : string.Empty;
-                    var txnDate = parameters != null && parameters.Count > 5 ? parameters[5]?.ToString() : string.Empty;
-                    var amount = parameters != null && parameters.Count > 6 ? parameters[6]?.ToString() : string.Empty;
-                    var cardNumberMask = parameters != null && parameters.Count > 7 ? parameters[7]?.ToString() : string.Empty;
+                    _logger.Information("🔔🔔🔔🔔🔔 SamanKish SignalR: GetTransactionResponse CALLBACK INVOKED!!! - ParametersCount: {Count}, ConnectionState: {State}, ThreadId: {ThreadId}",
+                        parameters != null ? parameters.Count : 0, 
+                        _hubConnection?.State ?? ConnectionState.Disconnected,
+                        Thread.CurrentThread.ManagedThreadId);
                     
-                    _logger.Information("🔔 SamanKish SignalR: GetTransactionResponse - Parsed Parameters - ResponseCode: {ResponseCode}, RRN: {RRN}",
-                        responseCode, rrn);
+                    try
+                    {
+                        var terminalId = parameters != null && parameters.Count > 0 ? parameters[0]?.ToString() : string.Empty;
+                        var responseCode = parameters != null && parameters.Count > 1 ? parameters[1]?.ToString() : string.Empty;
+                        var serialId = parameters != null && parameters.Count > 2 ? parameters[2]?.ToString() : string.Empty;
+                        var rrn = parameters != null && parameters.Count > 3 ? parameters[3]?.ToString() : string.Empty;
+                        var responseDescription = parameters != null && parameters.Count > 4 ? parameters[4]?.ToString() : string.Empty;
+                        var txnDate = parameters != null && parameters.Count > 5 ? parameters[5]?.ToString() : string.Empty;
+                        var amount = parameters != null && parameters.Count > 6 ? parameters[6]?.ToString() : string.Empty;
+                        var cardNumberMask = parameters != null && parameters.Count > 7 ? parameters[7]?.ToString() : string.Empty;
+                        
+                        _logger.Information("🔔 SamanKish SignalR: GetTransactionResponse - Parsed Parameters - ResponseCode: {ResponseCode}, RRN: {RRN}, SerialId: {SerialId}",
+                            responseCode, rrn, serialId);
 
                     lock (_lockObject)
                     {
@@ -287,7 +450,16 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                         _transactionWaitHandle.Set(); // Set anyway to avoid deadlock
                     }
                 }
-            });
+                });
+                
+                _logger.Information("✅ SamanKish SignalR: GetTransactionResponse callback registered successfully");
+                _logger.Information("🔍 SamanKish SignalR: All callbacks registered - GetSystemResponse: ✅, GetCardSwiped: ✅, GetTransactionResponse: ✅");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ SamanKish SignalR: Error registering GetTransactionResponse callback");
+                throw; // Re-throw to indicate registration failure
+            }
         }
 
         /// <summary>
@@ -476,14 +648,39 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                 }
 
                 // Ensure connected to Hub
-                if (_hubConnection == null || _hubConnection.State != ConnectionState.Connected)
+                if (_hubConnection == null || _hubProxy == null || _hubConnection.State != ConnectionState.Connected)
                 {
+                    _logger.Warning("⚠️ SamanKish SignalR: Connection not established - State: {State}, Reconnecting...",
+                        _hubConnection?.State ?? ConnectionState.Disconnected);
+                    
                     var connectResult = await ConnectToHubAsync();
                     if (!connectResult.Success)
                     {
+                        _logger.Error("❌ SamanKish SignalR: Failed to connect to Hub - {Error}", connectResult.Message);
                         return ServiceResult<PosPaymentDriverResponse>.Failed(connectResult.Message);
                     }
+                    
+                    // Verify connection again after reconnection
+                    if (_hubConnection == null || _hubProxy == null || _hubConnection.State != ConnectionState.Connected)
+                    {
+                        _logger.Error("❌ SamanKish SignalR: Connection verification failed after reconnection - State: {State}",
+                            _hubConnection?.State ?? ConnectionState.Disconnected);
+                        return ServiceResult<PosPaymentDriverResponse>.Failed("اتصال به SignalR Hub برقرار نشد");
+                    }
+                    
+                    _logger.Information("✅ SamanKish SignalR: Connection re-established successfully - State: {State}", 
+                        _hubConnection.State);
                 }
+                
+                // Verify HubProxy is valid before using
+                if (_hubProxy == null)
+                {
+                    _logger.Error("❌ SamanKish SignalR: HubProxy is null");
+                    return ServiceResult<PosPaymentDriverResponse>.Failed("HubProxy در دسترس نیست");
+                }
+                
+                _logger.Information("✅ SamanKish SignalR: Connection verified - State: {State}, HubProxy: {HasProxy}",
+                    _hubConnection.State, _hubProxy != null ? "Valid" : "Null");
 
                 // Reset state
                 lock (_lockObject)
@@ -502,9 +699,20 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                 _responseWaitHandle.Reset();
                 _serverMessage = string.Empty;
 
+                // Verify connection state before invoking
+                if (_hubConnection.State != ConnectionState.Connected)
+                {
+                    _logger.Error("❌ SamanKish SignalR: Connection not connected before Initial - State: {State}", 
+                        _hubConnection.State);
+                    return ServiceResult<PosPaymentDriverResponse>.Failed($"اتصال به SignalR Hub برقرار نیست. وضعیت: {_hubConnection.State}");
+                }
+                
                 // ConnectionType: 1 = Network, IP = terminal.IpAddress, Port = null (not used for Network)
                 try
                 {
+                    _logger.Information("🏥 SamanKish SignalR: Invoking Initial method - ConnectionState: {State}", 
+                        _hubConnection.State);
+                    
                     await _hubProxy.Invoke("Initial", 
                         ConnectionTypeNetwork, 
                         terminal.IpAddress ?? string.Empty, 
@@ -513,11 +721,12 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                         LanguageFarsi, 
                         "0").ConfigureAwait(false);
                     
-                    _logger.Information("🏥 SamanKish SignalR: Initial method invoked, waiting for GetSystemResponse...");
+                    _logger.Information("✅ SamanKish SignalR: Initial method invoked successfully, waiting for GetSystemResponse...");
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "❌ SamanKish SignalR: Error invoking Initial method");
+                    _logger.Error(ex, "❌ SamanKish SignalR: Error invoking Initial method - ConnectionState: {State}", 
+                        _hubConnection?.State ?? ConnectionState.Disconnected);
                     return ServiceResult<PosPaymentDriverResponse>.Failed($"خطا در فراخوانی متد Initial: {ex.Message}");
                 }
 
@@ -549,6 +758,23 @@ namespace ClinicApp.Services.Payment.POS.Drivers
 
                 _logger.Information("✅ SamanKish SignalR: Initialization successful");
 
+                // Step 2: Verify connection and callbacks before sending payment
+                if (_hubConnection == null || _hubConnection.State != ConnectionState.Connected)
+                {
+                    _logger.Error("❌ SamanKish SignalR: Connection not connected before SendAmount1Step - State: {State}", 
+                        _hubConnection?.State ?? ConnectionState.Disconnected);
+                    return ServiceResult<PosPaymentDriverResponse>.Failed($"اتصال به SignalR Hub برقرار نیست. وضعیت: {_hubConnection?.State ?? ConnectionState.Disconnected}");
+                }
+                
+                if (_hubProxy == null)
+                {
+                    _logger.Error("❌ SamanKish SignalR: HubProxy is null before SendAmount1Step");
+                    return ServiceResult<PosPaymentDriverResponse>.Failed("HubProxy در دسترس نیست");
+                }
+                
+                _logger.Information("🔍 SamanKish SignalR: Connection verified before SendAmount1Step - State: {State}, HubProxy: {HasProxy}",
+                    _hubConnection.State, _hubProxy != null ? "Valid" : "Null");
+                
                 // Step 2: Send payment amount (1 Step Purchase)
                 var amountInRials = (long)amountIRR;
                 _logger.Information("🏥 SamanKish SignalR: Sending payment - Amount: {Amount:N0} Rials, TerminalId: {TerminalId}", 
@@ -557,10 +783,23 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                 // Reset transaction wait handle
                 _transactionWaitHandle.Reset();
                 _transactionResponse = null;
+                
+                _logger.Information("🔍 SamanKish SignalR: Transaction wait handle reset, waiting for GetTransactionResponse callback...");
 
+                // Verify connection state before invoking SendAmount1Step
+                if (_hubConnection.State != ConnectionState.Connected)
+                {
+                    _logger.Error("❌ SamanKish SignalR: Connection not connected before SendAmount1Step - State: {State}", 
+                        _hubConnection.State);
+                    return ServiceResult<PosPaymentDriverResponse>.Failed($"اتصال به SignalR Hub برقرار نیست. وضعیت: {_hubConnection.State}");
+                }
+                
                 // SendAmount1Step: Amount, Amounts (null for Single Account), Additional (null), Reference (null), PurchaseID (null), TerminalID
                 try
                 {
+                    _logger.Information("🏥 SamanKish SignalR: Invoking SendAmount1Step - ConnectionState: {State}, Amount: {Amount}", 
+                        _hubConnection.State, amountInRials);
+                    
                     await _hubProxy.Invoke("SendAmount1Step",
                         amountInRials.ToString(),
                         (object)null, // Amounts (null for Single Account)
@@ -569,25 +808,81 @@ namespace ClinicApp.Services.Payment.POS.Drivers
                         (object)null, // PurchaseID
                         terminal.TerminalId ?? string.Empty).ConfigureAwait(false);
                     
-                    _logger.Information("🏥 SamanKish SignalR: SendAmount1Step invoked successfully, waiting for card swipe and transaction response...");
+                    _logger.Information("✅ SamanKish SignalR: SendAmount1Step invoked successfully, waiting for card swipe and transaction response...");
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "❌ SamanKish SignalR: Error invoking SendAmount1Step");
+                    _logger.Error(ex, "❌ SamanKish SignalR: Error invoking SendAmount1Step - ConnectionState: {State}", 
+                        _hubConnection?.State ?? ConnectionState.Disconnected);
                     return ServiceResult<PosPaymentDriverResponse>.Failed($"خطا در ارسال مبلغ پرداخت: {ex.Message}");
                 }
 
                 // Step 3: Wait for transaction response with timeout
                 _logger.Information("🏥 SamanKish SignalR: Waiting for transaction response (timeout: {Timeout}ms)...", TransactionTimeoutMs);
+                _logger.Information("🏥 SamanKish SignalR: Connection State before wait: {State}, HubProxy: {HasProxy}",
+                    _hubConnection?.State ?? ConnectionState.Disconnected, _hubProxy != null ? "Valid" : "Null");
                 
-                var responseReceived = _transactionWaitHandle.Wait(TransactionTimeoutMs);
-                _logger.Information("🏥 SamanKish SignalR: Wait completed - ResponseReceived: {ResponseReceived}, HasResponse: {HasResponse}",
-                    responseReceived, _transactionResponse != null);
+                // Monitor connection state while waiting
+                var waitStartTime = DateTime.UtcNow;
+                var checkInterval = TimeSpan.FromSeconds(2); // Check every 2 seconds
+                var lastCheckTime = waitStartTime;
+                var responseReceived = false;
+                
+                while (!responseReceived && (DateTime.UtcNow - waitStartTime).TotalMilliseconds < TransactionTimeoutMs)
+                {
+                    // Check connection state periodically
+                    if ((DateTime.UtcNow - lastCheckTime) >= checkInterval)
+                    {
+                        lastCheckTime = DateTime.UtcNow;
+                        var elapsed = (DateTime.UtcNow - waitStartTime).TotalMilliseconds;
+                        
+                        if (_hubConnection == null || _hubConnection.State != ConnectionState.Connected)
+                        {
+                            _logger.Warning("⚠️ SamanKish SignalR: Connection lost while waiting for response - State: {State}, Elapsed: {Elapsed}ms",
+                                _hubConnection?.State ?? ConnectionState.Disconnected, elapsed);
+                            
+                            // Try to reconnect
+                            var reconnectResult = await ConnectToHubAsync();
+                            if (!reconnectResult.Success)
+                            {
+                                _logger.Error("❌ SamanKish SignalR: Failed to reconnect - {Error}", reconnectResult.Message);
+                                return ServiceResult<PosPaymentDriverResponse>.Failed($"اتصال قطع شد و امکان اتصال مجدد وجود ندارد: {reconnectResult.Message}");
+                            }
+                            _logger.Information("✅ SamanKish SignalR: Reconnected successfully");
+                        }
+                        else
+                        {
+                            _logger.Debug("🏥 SamanKish SignalR: Still waiting for response - Elapsed: {Elapsed}ms, State: {State}",
+                                elapsed, _hubConnection.State);
+                        }
+                    }
+                    
+                    // Wait with timeout (check every 500ms)
+                    responseReceived = _transactionWaitHandle.Wait(500);
+                    
+                    if (responseReceived)
+                    {
+                        _logger.Information("✅ SamanKish SignalR: Response received - Elapsed: {Elapsed}ms",
+                            (DateTime.UtcNow - waitStartTime).TotalMilliseconds);
+                        break;
+                    }
+                }
+                
+                _logger.Information("🏥 SamanKish SignalR: Wait completed - ResponseReceived: {ResponseReceived}, HasResponse: {HasResponse}, Elapsed: {Elapsed}ms",
+                    responseReceived, _transactionResponse != null, (DateTime.UtcNow - waitStartTime).TotalMilliseconds);
                 
                 if (!responseReceived)
                 {
-                    _logger.Error("❌ SamanKish SignalR: Transaction timeout after {Timeout}ms - No response received from device", TransactionTimeoutMs);
-                    return ServiceResult<PosPaymentDriverResponse>.Failed("زمان انتظار برای پاسخ تراکنش به پایان رسید. لطفاً کارت را روی دستگاه بکشید یا دوباره تلاش کنید.");
+                    _logger.Error("❌ SamanKish SignalR: Transaction timeout after {Timeout}ms - No response received from device. ConnectionState: {State}",
+                        TransactionTimeoutMs, _hubConnection?.State ?? ConnectionState.Disconnected);
+                    
+                    // Check if connection is still valid
+                    if (_hubConnection == null || _hubConnection.State != ConnectionState.Connected)
+                    {
+                        return ServiceResult<PosPaymentDriverResponse>.Failed("اتصال به SignalR Hub قطع شد. لطفاً دوباره تلاش کنید.");
+                    }
+                    
+                    return ServiceResult<PosPaymentDriverResponse>.Failed("زمان انتظار برای پاسخ تراکنش به پایان رسید. لطفاً:\n• کارت را روی دستگاه بکشید\n• یا دکمه لغو را روی دستگاه بزنید\n• یا دوباره تلاش کنید");
                 }
 
                 // Step 4: Return transaction response

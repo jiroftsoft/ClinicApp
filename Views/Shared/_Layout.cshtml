@@ -13,8 +13,15 @@
     <meta name="pragma" content="no-cache">
     <title>@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title + " - کلینیک شفا جیرفت")</title>
     
-    <!-- Meta Tags Section -->
+    <!-- Meta Tags Section (CSP can be overridden here) -->
     @RenderSection("MetaTags", required: false)
+    
+    <!-- Content Security Policy for Production (Optimized for Local Fonts) -->
+    <!-- Only apply default CSP if not already set in MetaTags section -->
+    @if (!IsSectionDefined("MetaTags"))
+    {
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; style-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' fonts.gstatic.com fonts.googleapis.com; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    }
     
     <meta name="description" content="کلینیک شفا جیرفت با ارائه خدمات درمانی تخصصی، پزشکان باتجربه و تجهیزات پیشرفته. رزرو آنلاین نوبت، مشاوره پزشکی و خدمات درمانی با کیفیت در شهر جیرفت." />
     <meta name="keywords" content="کلینیک شفا جیرفت, کلینیک درمانی جیرفت, رزرو نوبت جیرفت, پزشکان جیرفت, خدمات درمانی جیرفت, کلینیک شفا, پزشک متخصص جیرفت, درمان در جیرفت" />
@@ -103,8 +110,7 @@
     </script>
     <meta name="theme-color" content="#2c6e7d" />
     
-    <!-- Content Security Policy for Production (Optimized for Local Fonts) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; style-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' fonts.gstatic.com fonts.googleapis.com; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <!-- Content Security Policy is now managed per-page via MetaTags section or Web.config customHeaders -->
     <link rel="icon" href="@Url.Content("~/Content/favicon.ico")" type="image/x-icon">
     <link rel="apple-touch-icon" href="@Url.Content("~/Content/apple-touch-icon.png")">
     <link rel="manifest" href="@Url.Content("~/site.webmanifest")" type="application/manifest+json">

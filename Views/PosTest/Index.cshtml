@@ -3,6 +3,11 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+@section MetaTags {
+    <!-- Override CSP for SignalR (این صفحه نیاز به اتصال به localhost:8080 دارد) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8080; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8080; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:8080 ws://localhost:8080; frame-ancestors 'none';">
+}
+
 <div class="container-fluid" dir="rtl">
     <div class="row">
         <div class="col-12">
@@ -166,8 +171,201 @@
     <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     
+    <!-- SignalR Scripts (Client-Side) - طبق مستندات SSP1126 -->
+    <script src="~/Scripts/jquery.signalR-2.4.2.min.js"></script>
+    
     <script>
         $(document).ready(function() {
+            // ============================================
+            // CLIENT-SIDE SIGNALR IMPLEMENTATION
+            // طبق مستندات SSP1126-WebBased (PDF)
+            // ============================================
+            
+            var posHub = null;
+            var isConnected = false;
+            var serverMessage = '';
+            var currentTerminalInfo = null;
+            
+            // تنظیم آدرس SignalR Hub
+            @{
+                var signalRUrlFromConfig = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:8080/signalr";
+                var signalRHubsUrl = signalRUrlFromConfig + "/hubs";
+            }
+            var signalRUrl = '@(signalRUrlFromConfig)';
+            var signalRHubsUrl = '@(signalRHubsUrl)';
+            
+            // بارگذاری dynamic hubs script (برای رفع مشکل CSP)
+            var hubsScript = document.createElement('script');
+            hubsScript.src = signalRHubsUrl;
+            hubsScript.onerror = function() {
+                console.error('❌ Failed to load SignalR hubs from:', signalRHubsUrl);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا در بارگذاری SignalR',
+                    text: 'عدم امکان بارگذاری SignalR Hubs. آیا سرویس SSP1126 در حال اجراست؟',
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: '#dc3545'
+                });
+            };
+            hubsScript.onload = function() {
+                console.log('✅ SignalR hubs loaded successfully');
+                // تنظیم URL برای SignalR Connection
+                $.connection.hub.url = signalRUrl;
+                
+                // ایجاد اتصال به Hub (SSP1126HUB)
+                posHub = $.connection.SSP1126HUB;
+                
+                // ادامه initialization بعد از بارگذاری hubs
+                initializeSignalRConnection();
+            };
+            document.head.appendChild(hubsScript);
+            
+            // تابع initialization که بعد از بارگذاری hubs فراخوانی می‌شود
+            function initializeSignalRConnection() {
+                // ============================================
+                // EVENT HANDLERS (Client Callbacks)
+                // ============================================
+                
+                // GetSystemResponse: پاسخ اولیه از Initial
+                posHub.client.GetSystemResponse = function(message) {
+                console.log('🔔 GetSystemResponse received:', message);
+                serverMessage = message;
+            };
+            
+            // GetCardSwiped: کارت کشیده شد
+            posHub.client.GetCardSwiped = function(terminalId, cardNumberHash, cardNumberMask, purchaseTypes, encryptedNationalCode) {
+                console.log('🔔 GetCardSwiped received:', {
+                    terminalId: terminalId,
+                    cardMask: cardNumberMask
+                });
+                
+                // به‌روزرسانی پیام Loading
+                Swal.update({
+                    title: 'کارت کشیده شد',
+                    html: '<div class="text-center"><i class="fas fa-credit-card fa-3x text-success"></i><p class="mt-3">لطفاً رمز کارت را وارد کنید...</p></div>'
+                });
+            };
+            
+            // GetTransactionResponse: پاسخ نهایی تراکنش (موفق، کنسل، خطا)
+            posHub.client.GetTransactionResponse = function(terminalId, responseCode, serialId, rrn, responseDescription, txnDate, amount, cardNumberMask) {
+                console.log('🔔🔔🔔 GetTransactionResponse CALLBACK INVOKED!!!', {
+                    terminalId: terminalId,
+                    responseCode: responseCode,
+                    serialId: serialId,
+                    rrn: rrn,
+                    responseDescription: responseDescription,
+                    txnDate: txnDate,
+                    amount: amount,
+                    cardNumberMask: cardNumberMask
+                });
+                
+                // بستن Loading
+                Swal.close();
+                
+                // بررسی کد پاسخ طبق مستندات SSP1126
+                var isSuccess = responseCode === '0' || responseCode === '00';
+                var message = '';
+                var icon = 'info';
+                
+                if (isSuccess) {
+                    message = responseDescription || 'تراکنش با موفقیت انجام شد';
+                    icon = 'success';
+                } else if (responseCode === '98') {
+                    message = 'عملیات توسط کاربر لغو شد';
+                    icon = 'warning';
+                } else if (responseCode === '55') {
+                    message = 'رمز کارت نامعتبر است';
+                    icon = 'error';
+                } else if (responseCode === '51') {
+                    message = 'موجودی حساب کافی نیست';
+                    icon = 'error';
+                } else {
+                    message = responseDescription || ('خطا: ' + responseCode);
+                    icon = 'error';
+                }
+                
+                // نمایش نتیجه با جزئیات
+                var htmlContent = '<div style="text-align: right; direction: rtl;">';
+                htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: ' + (isSuccess ? '#28a745' : '#dc3545') + ';">' + message + '</p>';
+                
+                if (isSuccess) {
+                    htmlContent += '<hr style="margin: 1rem 0;">';
+                    htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">اطلاعات تراکنش:</h6>';
+                    htmlContent += '<div style="background: #d4edda; border-right: 4px solid #28a745; padding: 1rem; border-radius: 8px;">';
+                    htmlContent += '<strong>RRN:</strong> ' + (rrn || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Trace No:</strong> ' + (serialId || 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Card Last 4:</strong> ' + (cardNumberMask ? cardNumberMask.slice(-4) : 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Amount:</strong> ' + (amount ? parseFloat(amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص') + '<br>';
+                    htmlContent += '<strong>Date:</strong> ' + (txnDate || 'نامشخص');
+                    htmlContent += '</div>';
+                } else {
+                    htmlContent += '<hr style="margin: 1rem 0;">';
+                    htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
+                    htmlContent += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
+                    htmlContent += '<strong>Response Code:</strong> ' + responseCode + '<br>';
+                    htmlContent += '<strong>Description:</strong> ' + (responseDescription || 'نامشخص');
+                    htmlContent += '</div>';
+                }
+                
+                htmlContent += '</div>';
+                
+                Swal.fire({
+                    icon: icon,
+                    title: isSuccess ? 'پرداخت موفق' : (responseCode === '98' ? 'لغو شد' : 'خطا'),
+                    html: htmlContent,
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: isSuccess ? '#28a745' : (responseCode === '98' ? '#ffc107' : '#dc3545'),
+                    width: '700px'
+                });
+                
+                // به‌روزرسانی UI
+                $('#testPaymentBtn').prop('disabled', false).html('<i class="fas fa-money-bill-wave me-2"></i>تست پرداخت');
+            };
+            
+            // ============================================
+            // CONNECTION MANAGEMENT
+            // ============================================
+            
+            // شروع اتصال به Hub
+            $.connection.hub.start().done(function() {
+                console.log('✅ Connected to POS SignalR Hub');
+                isConnected = true;
+            }).fail(function(error) {
+                console.error('❌ Failed to connect to POS SignalR Hub:', error);
+                isConnected = false;
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا در اتصال',
+                    text: 'عدم ارتباط با سرویس پوز. آیا سرویس SSP1126 در حال اجراست؟',
+                    confirmButtonText: 'تأیید',
+                    confirmButtonColor: '#dc3545'
+                });
+            });
+            
+            // مدیریت تغییرات اتصال
+            $.connection.hub.connectionSlow(function() {
+                console.warn('⚠️ Connection slow');
+            });
+            
+            $.connection.hub.reconnecting(function() {
+                console.warn('⚠️ Reconnecting...');
+            });
+            
+            $.connection.hub.reconnected(function() {
+                console.log('✅ Reconnected');
+                isConnected = true;
+            });
+            
+            $.connection.hub.disconnected(function() {
+                console.error('❌ Disconnected');
+                isConnected = false;
+            });
+            } // پایان تابع initializeSignalRConnection
+            
+            // ============================================
+            // EXISTING CODE
+            // ============================================
             // تنظیمات اولیه - دریافت Anti-Forgery Token
             var token = $('input[name="__RequestVerificationToken"]').val();
             
@@ -424,10 +622,11 @@
                 });
             });
 
-            // تست پرداخت
+            // تست پرداخت (CLIENT-SIDE - طبق مستندات SSP1126)
             $('#testPaymentBtn').click(function() {
                 var terminalId = $('#terminalSelect').val();
                 var amount = parseFloat($('#testAmount').val());
+                var selectedOption = $('#terminalSelect').find('option:selected');
                 
                 if (!terminalId) {
                     Swal.fire({
@@ -447,6 +646,18 @@
                         text: 'لطفاً مبلغ معتبری وارد کنید',
                         confirmButtonText: 'تأیید',
                         confirmButtonColor: '#ffc107'
+                    });
+                    return;
+                }
+                
+                // بررسی اتصال به SignalR
+                if (!isConnected || !posHub) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'اتصال به سرویس پوز برقرار نیست. لطفاً صفحه را نوسازی کنید.',
+                        confirmButtonText: 'تأیید',
+                        confirmButtonColor: '#dc3545'
                     });
                     return;
                 }
@@ -476,10 +687,17 @@
                         var btn = $('#testPaymentBtn');
                         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال پردازش...');
                         
-                        // نمایش Loading با SweetAlert
+                        // ذخیره اطلاعات ترمینال
+                        currentTerminalInfo = {
+                            terminalId: selectedOption.data('terminal-id'),
+                            ipAddress: selectedOption.data('ip'),
+                            amount: amount
+                        };
+                        
+                        // نمایش Loading
                         Swal.fire({
-                            title: 'در حال ارسال مبلغ...',
-                            html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-warning"></i><p class="mt-3">در حال ارسال مبلغ ' + amount.toLocaleString('fa-IR') + ' ریال به دستگاه POS</p></div>',
+                            title: 'در حال اتصال...',
+                            html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال اتصال به دستگاه POS</p></div>',
                             allowOutsideClick: false,
                             allowEscapeKey: false,
                             showConfirmButton: false,
@@ -488,229 +706,69 @@
                             }
                         });
                         
-                        console.log('🔍 Frontend Payment Test: ارسال AJAX Request - URL: /PosTest/TestPayment');
-                        console.log('🔍 Frontend Payment Test: Data: {terminalId: ' + terminalId + ', amount: ' + amount + '}');
+                        console.log('🔍 Client-Side Payment: شروع فرایند پرداخت');
+                        console.log('🔍 Client-Side Payment: TerminalId:', currentTerminalInfo.terminalId);
+                        console.log('🔍 Client-Side Payment: IP:', currentTerminalInfo.ipAddress);
+                        console.log('🔍 Client-Side Payment: Amount:', amount);
                         
-                        $.ajax({
-                            url: '@Url.Action("TestPayment", "PosTest")',
-                            type: 'POST',
-                            timeout: 120000, // 2 minutes timeout (برای SignalR و کشیدن کارت)
-                            dataType: 'json', // Ensure jQuery parses the response as JSON
-                            contentType: 'application/x-www-form-urlencoded; charset=UTF-8', // Specify content type for form data
-                            data: {
-                                __RequestVerificationToken: token,
-                                terminalId: terminalId,
-                                amount: amount
-                            },
-                            beforeSend: function(xhr) {
-                                console.log('🔍 Frontend Payment Test: قبل از ارسال Request');
-                            },
-                            success: function(response) {
-                                console.log('🔍 Frontend Payment Test: Response دریافت شد:', response);
-                                console.log('🔍 Frontend Payment Test: typeof response:', typeof response);
-                                console.log('🔍 Frontend Payment Test: response.Success:', response?.Success);
-                                console.log('🔍 Frontend Payment Test: response.success:', response?.success);
-                                console.log('🔍 Frontend Payment Test: response.Data:', response?.Data);
-                                console.log('🔍 Frontend Payment Test: response.data:', response?.data);
+                        // Step 1: Initial (طبق مستندات SSP1126)
+                        // پارامترها: MediaType (1=Network), IP, COM (null), AccountType (0=Single), Language (0=Farsi), Additional ("0")
+                        serverMessage = '';
+                        posHub.server.Initial(
+                            1, // MediaType: Network
+                            currentTerminalInfo.ipAddress, // IP
+                            null, // COM Port (null for Network)
+                            0, // AccountType: Single
+                            0, // Language: Farsi
+                            '0' // Additional
+                        );
+                        
+                        console.log('🔍 Client-Side Payment: Initial invoked, waiting for GetSystemResponse...');
+                        
+                        // منتظر GetSystemResponse (1 ثانیه)
+                        setTimeout(function() {
+                            if (serverMessage === '0') {
+                                console.log('✅ Client-Side Payment: Initial successful, sending amount...');
                                 
-                                Swal.close();
+                                // به‌روزرسانی Loading
+                                Swal.update({
+                                    title: 'در حال ارسال مبلغ...',
+                                    html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-warning"></i><p class="mt-3">در حال ارسال مبلغ ' + amount.toLocaleString('fa-IR') + ' ریال به دستگاه POS</p><p class="mt-2 text-muted">لطفاً کارت را روی دستگاه بکشید...</p></div>'
+                                });
                                 
-                                // Ensure response is an object, parse if it's a string
-                                if (typeof response === 'string') {
-                                    try {
-                                        response = JSON.parse(response);
-                                        console.log('🔍 Frontend Payment Test: Response به صورت دستی parse شد:', response);
-                                    } catch (e) {
-                                        console.error('❌ Frontend Payment Test: خطا در parse کردن JSON Response:', e);
-                                        showError('خطا در پردازش پاسخ سرور.');
-                                        return;
-                                    }
-                                }
-                                
-                                // بررسی Success با دقت بیشتر
-                                var isSuccess = response && (
-                                    (response.Success === true) || 
-                                    (response.success === true) || 
-                                    (response.Success !== false && response.Success !== undefined)
+                                // Step 2: SendAmount1Step (طبق مستندات SSP1126)
+                                // پارامترها: Amount, Amounts (null), Additional (null), Reference (null), PurchaseID (null), TerminalID
+                                posHub.server.SendAmount1Step(
+                                    amount.toString(), // Main Amount
+                                    null, // Amounts (null for Single Account)
+                                    null, // Additional Data
+                                    null, // Reference Data
+                                    null, // PurchaseID
+                                    currentTerminalInfo.terminalId // TerminalID
                                 );
                                 
-                                console.log('🔍 Frontend Payment Test: isSuccess:', isSuccess);
-                                
-                                if (isSuccess) {
-                                    // استخراج data از response
-                                    var data = response.Data || response.data || response;
-                                    console.log('🔍 Frontend Payment Test: data استخراج شد:', data);
-                                    
-                                    // اگر data یک object با paymentStatus است، مستقیماً استفاده کن
-                                    if (!data.paymentStatus && response.Data && response.Data.paymentStatus) {
-                                        data = response.Data;
-                                        console.log('🔍 Frontend Payment Test: استفاده از response.Data:', data);
-                                    }
-                                    
-                                    console.log('🔍 Frontend Payment Test: نمایش نتیجه موفق - paymentStatus:', data?.paymentStatus);
-                                    showPaymentResultWithSweetAlert(data, amount);
-                                    showPaymentResult(data);
-                                } else {
-                                    var errorMsg = (response && response.Message) || (response && response.message) || 'خطا در تست پرداخت';
-                                    console.error('❌ Frontend Payment Test: خطا در Response - ErrorMsg:', errorMsg);
-                                    
-                                    // Extract metadata for detailed error display
-                                    var metadata = response?.Metadata || {};
-                                    var errorDetails = [];
-                                    
-                                    if (metadata.DurationMs) errorDetails.push('<strong>زمان پردازش:</strong> ' + (metadata.DurationMs / 1000).toFixed(2) + ' ثانیه');
-                                    if (metadata.RetryCount !== undefined) errorDetails.push('<strong>تعداد تلاش:</strong> ' + (metadata.RetryCount + 1));
-                                    if (metadata.OperationId) errorDetails.push('<strong>Operation ID:</strong> ' + metadata.OperationId);
-                                    if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
-                                    if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
-                                    if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
-                                    if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
-                                    if (metadata.Amount) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.Amount).toLocaleString('fa-IR') + ' ریال');
-                                    if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
-                                    if (metadata.ExceptionMessage) errorDetails.push('<strong>Exception Message:</strong> ' + metadata.ExceptionMessage);
-                                    if (metadata.Steps && Array.isArray(metadata.Steps) && metadata.Steps.length > 0) {
-                                        errorDetails.push('<strong>مراحل اجرا:</strong>');
-                                        metadata.Steps.forEach(function(step) {
-                                            var stepStatus = step.Success ? '✅' : '❌';
-                                            errorDetails.push(stepStatus + ' ' + step.StepName + ' (' + (step.DurationMs / 1000).toFixed(2) + 's)');
-                                        });
-                                    }
-                                    
-                                    var errorHtml = '<div style="text-align: right; direction: rtl;">';
-                                    errorHtml += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: #dc3545;">' + errorMsg + '</p>';
-                                    
-                                    if (errorDetails.length > 0) {
-                                        errorHtml += '<hr style="margin: 1rem 0;">';
-                                        errorHtml += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
-                                        errorHtml += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
-                                        errorHtml += errorDetails.join('<br>');
-                                        errorHtml += '</div>';
-                                    }
-                                    
-                                    errorHtml += '</div>';
-                                    
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'خطا در تست پرداخت',
-                                        html: errorHtml,
-                                        confirmButtonText: 'تأیید',
-                                        confirmButtonColor: '#dc3545',
-                                        width: '700px'
-                                    });
-                                    showError(errorMsg);
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('❌ Frontend Payment Test: AJAX Error - Status:', status, 'Error:', error, 'XHR:', xhr);
+                                console.log('✅ Client-Side Payment: SendAmount1Step invoked, waiting for GetTransactionResponse...');
+                            } else {
+                                console.error('❌ Client-Side Payment: Initial failed - Response:', serverMessage);
                                 Swal.close();
-                                
-                                var errorMsg = 'خطا در ارتباط با سرور';
-                                var errorDetails = [];
-                                var metadata = {};
-                                
-                                // Try to parse JSON error response from server
-                                if (xhr.responseText) {
-                                    try {
-                                        var errorResponse = JSON.parse(xhr.responseText);
-                                        if (errorResponse.Message) {
-                                            errorMsg = errorResponse.Message;
-                                        } else if (errorResponse.message) {
-                                            errorMsg = errorResponse.message;
-                                        }
-                                        
-                                        if (errorResponse.Code === 'ANTIFORGERY_MISSING') {
-                                            Swal.fire({
-                                                icon: 'error',
-                                                title: 'خطای امنیتی',
-                                                html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
-                                                confirmButtonText: 'نوسازی صفحه',
-                                                confirmButtonColor: '#dc3545'
-                                            }).then(() => {
-                                                location.reload();
-                                            });
-                                            return;
-                                        }
-                                        
-                                        if (errorResponse.Metadata) {
-                                            metadata = errorResponse.Metadata;
-                                        }
-                                    } catch (e) {
-                                        console.warn('⚠️ Frontend Payment Test: Failed to parse error response JSON:', e);
-                                    }
-                                }
-                                
-                                // بررسی Timeout
-                                if (status === 'timeout') {
-                                    errorMsg = 'زمان اتصال به پایان رسید. لطفاً بررسی کنید:\n' +
-                                        '• Windows Service SSP1126SignalRWindowsService در حال اجرا است\n' +
-                                        '• Port 8080 باز است\n' +
-                                        '• آدرس SignalR در Web.config صحیح است\n' +
-                                        '• دستگاه POS در شبکه قابل دسترس است\n' +
-                                        '• کارت را روی دستگاه کشیده‌اید';
-                                    errorDetails.push('<strong>نوع خطا:</strong> Timeout');
-                                    errorDetails.push('<strong>زمان انتظار:</strong> 120 ثانیه');
-                                } else if (status === 'error') {
-                                    errorMsg = 'خطا در ارتباط با سرور: ' + (error || 'خطای نامشخص');
-                                    if (xhr.status === 400) {
-                                        errorDetails.push('<strong>وضعیت HTTP:</strong> 400 Bad Request');
-                                    } else if (xhr.status === 500) {
-                                        errorDetails.push('<strong>وضعیت HTTP:</strong> 500 Internal Server Error');
-                                    }
-                                }
-                                
-                                // Add metadata details if available
-                                if (metadata.DurationMs) errorDetails.push('<strong>زمان پردازش:</strong> ' + (metadata.DurationMs / 1000).toFixed(2) + ' ثانیه');
-                                if (metadata.RetryCount !== undefined) errorDetails.push('<strong>تعداد تلاش:</strong> ' + (metadata.RetryCount + 1));
-                                if (metadata.OperationId) errorDetails.push('<strong>Operation ID:</strong> ' + metadata.OperationId);
-                                if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
-                                if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
-                                if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
-                                if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
-                                if (metadata.Amount) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.Amount).toLocaleString('fa-IR') + ' ریال');
-                                if (metadata.SocketErrorCode) errorDetails.push('<strong>Socket Error:</strong> ' + metadata.SocketErrorCode);
-                                if (metadata.NativeErrorCode) errorDetails.push('<strong>Native Error:</strong> ' + metadata.NativeErrorCode);
-                                if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
-                                if (metadata.ExceptionMessage) errorDetails.push('<strong>Exception Message:</strong> ' + metadata.ExceptionMessage);
-                                if (metadata.Steps && Array.isArray(metadata.Steps) && metadata.Steps.length > 0) {
-                                    errorDetails.push('<strong>مراحل اجرا:</strong>');
-                                    metadata.Steps.forEach(function(step) {
-                                        var stepStatus = step.Success ? '✅' : '❌';
-                                        errorDetails.push(stepStatus + ' ' + step.StepName + ' (' + (step.DurationMs / 1000).toFixed(2) + 's)');
-                                    });
-                                }
-                                
-                                // Build detailed error HTML
-                                var errorHtml = '<div style="text-align: right; direction: rtl;">';
-                                errorHtml += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: #dc3545;">' + errorMsg + '</p>';
-                                
-                                if (errorDetails.length > 0) {
-                                    errorHtml += '<hr style="margin: 1rem 0;">';
-                                    errorHtml += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
-                                    errorHtml += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
-                                    errorHtml += errorDetails.join('<br>');
-                                    errorHtml += '</div>';
-                                }
-                                
-                                errorHtml += '</div>';
+                                btn.prop('disabled', false).html('<i class="fas fa-money-bill-wave me-2"></i>تست پرداخت');
                                 
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'خطا در تست پرداخت',
-                                    html: errorHtml,
+                                    title: 'خطا در اتصال',
+                                    text: 'خطا در اتصال به دستگاه POS. کد خطا: ' + serverMessage,
                                     confirmButtonText: 'تأیید',
-                                    confirmButtonColor: '#dc3545',
-                                    width: '700px'
+                                    confirmButtonColor: '#dc3545'
                                 });
-                                showError(errorMsg);
-                            },
-                            complete: function() {
-                                btn.prop('disabled', false).html('<i class="fas fa-money-bill-wave me-2"></i>تست پرداخت');
-                                console.log('🔍 Frontend Payment Test: Request تکمیل شد.');
                             }
-                        });
+                        }, 1000); // 1 second delay after Initial (طبق مستندات)
                     }
                 });
             });
+            
+            // ============================================
+            // TEST CONNECTION (Server-Side - نگه داشته شده)
+            // ============================================
 
             // نمایش نتیجه تست اتصال
             function showConnectionResult(data) {
