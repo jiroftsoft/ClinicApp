@@ -116,6 +116,9 @@
     <Reference Include="Microsoft.AspNet.Identity.Owin, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.AspNet.Identity.Owin.2.2.3\lib\net45\Microsoft.AspNet.Identity.Owin.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.AspNet.SignalR.Client, Version=2.4.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.SignalR.Client.2.4.3\lib\net45\Microsoft.AspNet.SignalR.Client.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.8, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.9.0.8\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
@@ -207,6 +210,10 @@
     </Reference>
     <Reference Include="MimeKit, Version=4.11.0.0, Culture=neutral, PublicKeyToken=bede1c8a46c66814, processorArchitecture=MSIL">
       <HintPath>packages\MimeKit.4.11.0\lib\net48\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="QuestPDF, Version=2025.7.0.0, Culture=neutral, PublicKeyToken=0f3c2b2315ff52c8, processorArchitecture=MSIL">
@@ -401,9 +408,6 @@
     </Reference>
     <Reference Include="System.Web.Optimization">
       <HintPath>packages\Microsoft.AspNet.Web.Optimization.1.1.3\lib\net40\System.Web.Optimization.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Abstractions, Version=5.11.7.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>packages\Unity.5.11.10\lib\net48\Unity.Abstractions.dll</HintPath>
@@ -1043,6 +1047,7 @@
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
+    <Compile Include="Services\Payment\POS\Drivers\SamanKishSignalRDriver.cs" />
     <Compile Include="Services\Payment\POS\PosDeviceService.cs" />
     <Compile Include="Services\Payment\POS\PosPaymentOrchestrator.cs" />
     <Compile Include="Services\Pricing\Coverage\InsuranceCoverageProvider.cs" />
@@ -3864,6 +3869,71 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\log4net.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\log4net.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.AspNet.SignalR.Core.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.AspNet.SignalR.Core.pdb" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.AspNet.SignalR.Core.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Cors.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Cors.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Diagnostics.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Diagnostics.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Host.HttpListener.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Host.HttpListener.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Hosting.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Hosting.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Security.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.Security.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Microsoft.Owin.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Newtonsoft.Json.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Newtonsoft.Json.xml" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Owin.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Sep.Logger.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Sep.Logger.pdb" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126.PcPos.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126.PcPos.pdb" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.pdb" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\System.Web.Cors.dll" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\SSP1126_ServiceInstaller.exe" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\SSP1126_ServiceInstaller.pdb" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\SSP1126_ServiceInstaller.vshost.exe" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Sample%28SSP1126%29Page.html" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap-theme.css" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap-theme.min.css" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap.css" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap.min.css" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\js\bootstrap.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\js\bootstrap.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\js\npm.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.10.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.11.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.12.4.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Setup-LogFolder.ps1" />
+    <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.7.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.8.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.9.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.2.1.min.js" />
+    <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1-vsdoc.js" />
+    <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.intellisense.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.slim.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.slim.min.js" />
+    <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.intellisense.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.slim.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.slim.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.2.2.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.2.2.min.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.js" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.min.js" />
     <Content Include="Scripts\anti-forgery-ajax.js" />
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\app\assignment-form.js" />
@@ -4365,6 +4435,27 @@
     <Content Include="Documentation\TARIFF_WARNING_IMPLEMENTATION_SUMMARY.md" />
     <Content Include="Documentation\ERROR_MESSAGE_DISPLAY_FIX.md" />
     <Content Include="Documentation\DRAFT_CLEANUP_ANALYSIS.md" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\InstallUtil.InstallLog" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\install.bat" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\InstallUtil.InstallLog" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe.config" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.InstallLog" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.InstallState" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\uinstall.bat" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\SSP1126_ServiceInstaller.vshost.exe.manifest" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\SSP1126-WebBased%28SignalR%29_1_2_1.pdf" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap-theme.css.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap-theme.min.css.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap.css.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\css\bootstrap.min.css.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\bootstrap-3.3.7\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.min.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.5.1.slim.min.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.min.map" />
+    <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-3.6.0.slim.min.map" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

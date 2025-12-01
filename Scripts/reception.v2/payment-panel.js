@@ -786,11 +786,68 @@
    */
   async function resetForm() {
     try {
-      console.log('🏥 V2: شروع پاک کردن فرم...');
+      console.log('🏥 V2: ===== شروع پاک کردن فرم =====');
       
       // ✅ 1. حذف Draft (اگر وجود دارد) - بدون بررسی isDraftNotFinalized
       // چون کاربر صراحتاً روی دکمه "پاک کردن فرم" کلیک کرده است
-      const receptionId = $("#ReceptionId").val();
+      
+      // ⚠️ مهم: باید ReceptionId را قبل از هر چیز دیگری بخوانیم
+      // چون ممکن است در حین reset شدن، ReceptionId از DOM یا AutoDraftManager پاک شود
+      
+      let receptionId = 0;
+      
+      // ✅ اولویت 1: خواندن از AutoDraftManager (قبل از DOM)
+      // چون AutoDraftManager منبع اصلی truth است
+      if (window.AutoDraftManager) {
+        try {
+          console.log('🏥 V2: تلاش برای خواندن ReceptionId از AutoDraftManager...');
+          console.log('🏥 V2: AutoDraftManager type:', typeof window.AutoDraftManager);
+          console.log('🏥 V2: AutoDraftManager exists:', !!window.AutoDraftManager);
+          
+          // بررسی متدهای مختلف برای دریافت draft ID
+          if (typeof window.AutoDraftManager.getCurrentDraftId === 'function') {
+            const draftIdFromManager = window.AutoDraftManager.getCurrentDraftId();
+            console.log('🏥 V2: getCurrentDraftId() result:', draftIdFromManager, 'Type:', typeof draftIdFromManager);
+            if (draftIdFromManager != null && draftIdFromManager !== undefined && draftIdFromManager > 0) {
+              receptionId = parseInt(draftIdFromManager, 10);
+              console.log('✅ V2: ReceptionId از AutoDraftManager.getCurrentDraftId():', receptionId);
+            } else {
+              console.warn('⚠️ V2: getCurrentDraftId() مقدار نامعتبر برگرداند:', draftIdFromManager);
+            }
+          } else {
+            console.warn('⚠️ V2: getCurrentDraftId function موجود نیست');
+          }
+          
+          // ✅ اگر هنوز receptionId نداریم و isDraftCreated true است، از DOM بخوان
+          if ((!receptionId || receptionId <= 0) && typeof window.AutoDraftManager.isDraftCreated === 'function') {
+            const isCreated = window.AutoDraftManager.isDraftCreated();
+            console.log('🏥 V2: isDraftCreated():', isCreated);
+            if (isCreated) {
+              // اگر Draft created است اما getCurrentDraftId null برگرداند، از DOM بخوان
+              const receptionIdFromDOM = $("#ReceptionId").val();
+              if (receptionIdFromDOM) {
+                receptionId = parseInt(receptionIdFromDOM, 10);
+                console.log('🏥 V2: Draft created است، ReceptionId از DOM:', receptionId);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('❌ V2: خطا در خواندن ReceptionId از AutoDraftManager:', err);
+          console.error('❌ V2: Error stack:', err?.stack);
+        }
+      } else {
+        console.warn('⚠️ V2: window.AutoDraftManager موجود نیست');
+      }
+      
+      // ✅ اولویت 2: اگر از AutoDraftManager خوانده نشد، از DOM بخوان
+      if (!receptionId || receptionId <= 0) {
+        const receptionIdRaw = $("#ReceptionId").val();
+        receptionId = receptionIdRaw ? parseInt(receptionIdRaw, 10) : 0;
+        console.log('🏥 V2: ReceptionId از DOM - Raw:', receptionIdRaw, 'Parsed:', receptionId, 'Type:', typeof receptionId);
+      }
+      
+      console.log('🏥 V2: ReceptionId نهایی برای حذف:', receptionId, 'Type:', typeof receptionId);
+      
       if (receptionId && receptionId > 0) {
         console.log('🏥 V2: حذف Draft قبل از Reset فرم - ReceptionId:', receptionId);
         
@@ -829,8 +886,16 @@
           
           // استفاده از API.post با error handling بهتر
           console.log('🏥 V2: فراخوانی API.post("/draft/delete-incomplete", { receptionId: ' + receptionId + ' })');
+          console.log('🏥 V2: ReceptionId type:', typeof receptionId, 'Value:', receptionId);
           
-          const result = await API.post('/draft/delete-incomplete', { receptionId: receptionId })
+          // ✅ اطمینان از اینکه receptionId یک عدد است
+          const payload = { 
+            receptionId: parseInt(receptionId, 10) || 0 
+          };
+          
+          console.log('🏥 V2: Payload:', JSON.stringify(payload));
+          
+          const result = await API.post('/draft/delete-incomplete', payload)
             .catch(function(err) {
               console.error('❌ V2: ===== خطا در فراخوانی API =====');
               console.error('❌ V2: Error type:', typeof err);

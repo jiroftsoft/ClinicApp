@@ -1,3 +1,4 @@
+@using ClinicApp.Models.Enums
 @model List<ClinicApp.ViewModels.DoctorManagementVM.EmergencyBooking>
 @{
     ViewBag.Title = "مدیریت رزروهای اورژانس";
@@ -132,7 +133,7 @@
                                                class="btn btn-info btn-sm" title="جزئیات">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if (booking.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+                                            @if (booking.Status == EmergencyBookingStatus.Pending)
                                             {
                                                 <button type="button" class="btn btn-warning btn-sm" 
                                                         onclick="setPriority(@booking.EmergencyId)" title="تنظیم اولویت">

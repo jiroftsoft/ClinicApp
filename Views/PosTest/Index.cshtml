@@ -216,8 +216,12 @@
 
             // تست اتصال
             $('#testConnectionBtn').click(function() {
+                console.log('🔍 Frontend: دکمه تست اتصال کلیک شد');
                 var terminalId = $('#terminalSelect').val();
+                console.log('🔍 Frontend: terminalId از select خوانده شد:', terminalId);
+                
                 if (!terminalId) {
+                    console.warn('⚠️ Frontend: terminalId خالی است');
                     Swal.fire({
                         icon: 'warning',
                         title: 'هشدار',
@@ -227,6 +231,8 @@
                     });
                     return;
                 }
+                
+                console.log('🔍 Frontend: terminalId معتبر است:', terminalId);
 
                 var btn = $(this);
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال تست...');
@@ -243,21 +249,79 @@
                     }
                 });
                 
+                console.log('🔍 Frontend: ارسال AJAX Request - URL: @Url.Action("TestConnection", "PosTest")');
+                console.log('🔍 Frontend: Data:', { __RequestVerificationToken: token ? 'present' : 'missing', terminalId: terminalId });
+                
                 $.ajax({
                     url: '@Url.Action("TestConnection", "PosTest")',
                     type: 'POST',
+                    dataType: 'json', // مهم: برای parse کردن JSON response
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    timeout: 120000, // 2 minutes timeout (برای SignalR و تست پورت‌ها)
                     data: {
                         __RequestVerificationToken: token,
                         terminalId: terminalId
                     },
+                    beforeSend: function(xhr) {
+                        console.log('🔍 Frontend: قبل از ارسال Request');
+                        console.log('🔍 Frontend: Headers:', xhr.getAllResponseHeaders ? 'present' : 'not available');
+                    },
                     success: function(response) {
+                        console.log('🔍 Frontend: Response دریافت شد:', response);
+                        console.log('🔍 Frontend: typeof response:', typeof response);
+                        console.log('🔍 Frontend: response.Success:', response?.Success);
+                        console.log('🔍 Frontend: response.success:', response?.success);
+                        console.log('🔍 Frontend: response.Data:', response?.Data);
+                        console.log('🔍 Frontend: response.data:', response?.data);
+                        
+                        // اگر response یک string است، آن را parse کن
+                        if (typeof response === 'string') {
+                            console.log('⚠️ Frontend: Response یک string است، در حال parse کردن...');
+                            try {
+                                response = JSON.parse(response);
+                                console.log('✅ Frontend: Response parse شد:', response);
+                            } catch (e) {
+                                console.error('❌ Frontend: خطا در parse کردن Response:', e);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا در تست اتصال',
+                                    text: 'خطا در پردازش پاسخ سرور',
+                                    confirmButtonText: 'تأیید',
+                                    confirmButtonColor: '#dc3545'
+                                });
+                                return;
+                            }
+                        }
+                        
                         Swal.close();
-                        if (response && response.Success !== false && (response.success || response.Success)) {
-                            var data = response.data || response.Data || response;
+                        
+                        // بررسی Success با دقت بیشتر
+                        var isSuccess = response && (
+                            (response.Success === true) || 
+                            (response.success === true) || 
+                            (response.Success !== false && response.Success !== undefined)
+                        );
+                        
+                        console.log('🔍 Frontend: isSuccess:', isSuccess);
+                        
+                        if (isSuccess) {
+                            // استخراج data از response
+                            var data = response.Data || response.data || response;
+                            console.log('🔍 Frontend: data استخراج شد:', data);
+                            
+                            // اگر data یک object با connectionStatus است، مستقیماً استفاده کن
+                            // در غیر این صورت، از response استفاده کن
+                            if (!data.connectionStatus && response.Data && response.Data.connectionStatus) {
+                                data = response.Data;
+                                console.log('🔍 Frontend: استفاده از response.Data:', data);
+                            }
+                            
+                            console.log('🔍 Frontend: نمایش نتیجه موفق - connectionStatus:', data?.connectionStatus);
                             showConnectionResultWithSweetAlert(data);
                             showConnectionResult(data);
                         } else {
                             var errorMsg = (response && response.Message) || (response && response.message) || 'خطا در تست اتصال';
+                            console.error('❌ Frontend: خطا در Response - ErrorMsg:', errorMsg);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا در تست اتصال',
@@ -268,11 +332,32 @@
                             showError(errorMsg);
                         }
                     },
-                    error: function(xhr) {
+                    error: function(xhr, status, error) {
+                        console.error('❌ Frontend: خطا در AJAX Request');
+                        console.error('❌ Frontend: Status:', status);
+                        console.error('❌ Frontend: Error:', error);
+                        console.error('❌ Frontend: Status Code:', xhr.status);
+                        console.error('❌ Frontend: Response Text:', xhr.responseText);
+                        console.error('❌ Frontend: Response JSON:', xhr.responseJSON);
+                        
                         Swal.close();
                         var errorMsg = 'خطا در ارتباط با سرور';
                         var errorDetails = [];
                         var metadata = {};
+                        
+                        // بررسی Timeout
+                        if (status === 'timeout') {
+                            console.error('❌ Frontend: Timeout - زمان اتصال به پایان رسید');
+                            errorMsg = 'زمان اتصال به پایان رسید. لطفاً بررسی کنید:\n' +
+                                '• Windows Service SSP1126SignalRWindowsService در حال اجرا است\n' +
+                                '• Port 8080 باز است\n' +
+                                '• آدرس SignalR در Web.config صحیح است\n' +
+                                '• دستگاه POS در شبکه قابل دسترس است';
+                            errorDetails.push('<strong>نوع خطا:</strong> Timeout');
+                            errorDetails.push('<strong>زمان انتظار:</strong> 120 ثانیه');
+                        } else if (status === 'error') {
+                            errorMsg = 'خطا در ارتباط با سرور: ' + (error || 'خطای نامشخص');
+                        }
                         
                         if (xhr.responseJSON) {
                             if (xhr.responseJSON.Message) {
@@ -403,72 +488,195 @@
                             }
                         });
                         
+                        console.log('🔍 Frontend Payment Test: ارسال AJAX Request - URL: /PosTest/TestPayment');
+                        console.log('🔍 Frontend Payment Test: Data: {terminalId: ' + terminalId + ', amount: ' + amount + '}');
+                        
                         $.ajax({
                             url: '@Url.Action("TestPayment", "PosTest")',
                             type: 'POST',
+                            timeout: 120000, // 2 minutes timeout (برای SignalR و کشیدن کارت)
+                            dataType: 'json', // Ensure jQuery parses the response as JSON
+                            contentType: 'application/x-www-form-urlencoded; charset=UTF-8', // Specify content type for form data
                             data: {
                                 __RequestVerificationToken: token,
                                 terminalId: terminalId,
                                 amount: amount
                             },
+                            beforeSend: function(xhr) {
+                                console.log('🔍 Frontend Payment Test: قبل از ارسال Request');
+                            },
                             success: function(response) {
+                                console.log('🔍 Frontend Payment Test: Response دریافت شد:', response);
+                                console.log('🔍 Frontend Payment Test: typeof response:', typeof response);
+                                console.log('🔍 Frontend Payment Test: response.Success:', response?.Success);
+                                console.log('🔍 Frontend Payment Test: response.success:', response?.success);
+                                console.log('🔍 Frontend Payment Test: response.Data:', response?.Data);
+                                console.log('🔍 Frontend Payment Test: response.data:', response?.data);
+                                
                                 Swal.close();
-                                if (response && response.Success !== false && (response.success || response.Success)) {
-                                    var data = response.data || response.Data || response;
+                                
+                                // Ensure response is an object, parse if it's a string
+                                if (typeof response === 'string') {
+                                    try {
+                                        response = JSON.parse(response);
+                                        console.log('🔍 Frontend Payment Test: Response به صورت دستی parse شد:', response);
+                                    } catch (e) {
+                                        console.error('❌ Frontend Payment Test: خطا در parse کردن JSON Response:', e);
+                                        showError('خطا در پردازش پاسخ سرور.');
+                                        return;
+                                    }
+                                }
+                                
+                                // بررسی Success با دقت بیشتر
+                                var isSuccess = response && (
+                                    (response.Success === true) || 
+                                    (response.success === true) || 
+                                    (response.Success !== false && response.Success !== undefined)
+                                );
+                                
+                                console.log('🔍 Frontend Payment Test: isSuccess:', isSuccess);
+                                
+                                if (isSuccess) {
+                                    // استخراج data از response
+                                    var data = response.Data || response.data || response;
+                                    console.log('🔍 Frontend Payment Test: data استخراج شد:', data);
+                                    
+                                    // اگر data یک object با paymentStatus است، مستقیماً استفاده کن
+                                    if (!data.paymentStatus && response.Data && response.Data.paymentStatus) {
+                                        data = response.Data;
+                                        console.log('🔍 Frontend Payment Test: استفاده از response.Data:', data);
+                                    }
+                                    
+                                    console.log('🔍 Frontend Payment Test: نمایش نتیجه موفق - paymentStatus:', data?.paymentStatus);
                                     showPaymentResultWithSweetAlert(data, amount);
                                     showPaymentResult(data);
                                 } else {
                                     var errorMsg = (response && response.Message) || (response && response.message) || 'خطا در تست پرداخت';
+                                    console.error('❌ Frontend Payment Test: خطا در Response - ErrorMsg:', errorMsg);
+                                    
+                                    // Extract metadata for detailed error display
+                                    var metadata = response?.Metadata || {};
+                                    var errorDetails = [];
+                                    
+                                    if (metadata.DurationMs) errorDetails.push('<strong>زمان پردازش:</strong> ' + (metadata.DurationMs / 1000).toFixed(2) + ' ثانیه');
+                                    if (metadata.RetryCount !== undefined) errorDetails.push('<strong>تعداد تلاش:</strong> ' + (metadata.RetryCount + 1));
+                                    if (metadata.OperationId) errorDetails.push('<strong>Operation ID:</strong> ' + metadata.OperationId);
+                                    if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
+                                    if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
+                                    if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
+                                    if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
+                                    if (metadata.Amount) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.Amount).toLocaleString('fa-IR') + ' ریال');
+                                    if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
+                                    if (metadata.ExceptionMessage) errorDetails.push('<strong>Exception Message:</strong> ' + metadata.ExceptionMessage);
+                                    if (metadata.Steps && Array.isArray(metadata.Steps) && metadata.Steps.length > 0) {
+                                        errorDetails.push('<strong>مراحل اجرا:</strong>');
+                                        metadata.Steps.forEach(function(step) {
+                                            var stepStatus = step.Success ? '✅' : '❌';
+                                            errorDetails.push(stepStatus + ' ' + step.StepName + ' (' + (step.DurationMs / 1000).toFixed(2) + 's)');
+                                        });
+                                    }
+                                    
+                                    var errorHtml = '<div style="text-align: right; direction: rtl;">';
+                                    errorHtml += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: #dc3545;">' + errorMsg + '</p>';
+                                    
+                                    if (errorDetails.length > 0) {
+                                        errorHtml += '<hr style="margin: 1rem 0;">';
+                                        errorHtml += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">جزئیات خطا:</h6>';
+                                        errorHtml += '<div style="background: #f8d7da; border-right: 4px solid #dc3545; padding: 1rem; border-radius: 8px;">';
+                                        errorHtml += errorDetails.join('<br>');
+                                        errorHtml += '</div>';
+                                    }
+                                    
+                                    errorHtml += '</div>';
+                                    
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'خطا در تست پرداخت',
-                                        html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                        html: errorHtml,
                                         confirmButtonText: 'تأیید',
-                                        confirmButtonColor: '#dc3545'
+                                        confirmButtonColor: '#dc3545',
+                                        width: '700px'
                                     });
                                     showError(errorMsg);
                                 }
                             },
-                            error: function(xhr) {
+                            error: function(xhr, status, error) {
+                                console.error('❌ Frontend Payment Test: AJAX Error - Status:', status, 'Error:', error, 'XHR:', xhr);
                                 Swal.close();
+                                
                                 var errorMsg = 'خطا در ارتباط با سرور';
                                 var errorDetails = [];
                                 var metadata = {};
                                 
-                                if (xhr.responseJSON) {
-                                    if (xhr.responseJSON.Message) {
-                                        errorMsg = xhr.responseJSON.Message;
-                                    } else if (xhr.responseJSON.message) {
-                                        errorMsg = xhr.responseJSON.message;
+                                // Try to parse JSON error response from server
+                                if (xhr.responseText) {
+                                    try {
+                                        var errorResponse = JSON.parse(xhr.responseText);
+                                        if (errorResponse.Message) {
+                                            errorMsg = errorResponse.Message;
+                                        } else if (errorResponse.message) {
+                                            errorMsg = errorResponse.message;
+                                        }
+                                        
+                                        if (errorResponse.Code === 'ANTIFORGERY_MISSING') {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'خطای امنیتی',
+                                                html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
+                                                confirmButtonText: 'نوسازی صفحه',
+                                                confirmButtonColor: '#dc3545'
+                                            }).then(() => {
+                                                location.reload();
+                                            });
+                                            return;
+                                        }
+                                        
+                                        if (errorResponse.Metadata) {
+                                            metadata = errorResponse.Metadata;
+                                        }
+                                    } catch (e) {
+                                        console.warn('⚠️ Frontend Payment Test: Failed to parse error response JSON:', e);
                                     }
-                                    
-                                    // Extract metadata for detailed error display
-                                    if (xhr.responseJSON.Metadata) {
-                                        metadata = xhr.responseJSON.Metadata;
-                                        if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
-                                        if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
-                                        if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
-                                        if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
-                                        if (metadata.AmountIRR) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.AmountIRR).toLocaleString('fa-IR') + ' ریال');
-                                        if (metadata.SocketErrorCode) errorDetails.push('<strong>Socket Error:</strong> ' + metadata.SocketErrorCode);
-                                        if (metadata.SocketErrorCodeNumber) errorDetails.push('<strong>Error Code:</strong> ' + metadata.SocketErrorCodeNumber);
-                                        if (metadata.NativeErrorCode) errorDetails.push('<strong>Native Error:</strong> ' + metadata.NativeErrorCode);
-                                        if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
+                                }
+                                
+                                // بررسی Timeout
+                                if (status === 'timeout') {
+                                    errorMsg = 'زمان اتصال به پایان رسید. لطفاً بررسی کنید:\n' +
+                                        '• Windows Service SSP1126SignalRWindowsService در حال اجرا است\n' +
+                                        '• Port 8080 باز است\n' +
+                                        '• آدرس SignalR در Web.config صحیح است\n' +
+                                        '• دستگاه POS در شبکه قابل دسترس است\n' +
+                                        '• کارت را روی دستگاه کشیده‌اید';
+                                    errorDetails.push('<strong>نوع خطا:</strong> Timeout');
+                                    errorDetails.push('<strong>زمان انتظار:</strong> 120 ثانیه');
+                                } else if (status === 'error') {
+                                    errorMsg = 'خطا در ارتباط با سرور: ' + (error || 'خطای نامشخص');
+                                    if (xhr.status === 400) {
+                                        errorDetails.push('<strong>وضعیت HTTP:</strong> 400 Bad Request');
+                                    } else if (xhr.status === 500) {
+                                        errorDetails.push('<strong>وضعیت HTTP:</strong> 500 Internal Server Error');
                                     }
-                                    
-                                    if (xhr.responseJSON.Code === 'ANTIFORGERY_MISSING') {
-                                        errorMsg = 'توکن امنیتی منقضی شده است. لطفاً صفحه را نوسازی کنید.';
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'خطای امنیتی',
-                                            html: '<div style="text-align: right; direction: rtl;">' + errorMsg + '</div>',
-                                            confirmButtonText: 'نوسازی صفحه',
-                                            confirmButtonColor: '#dc3545'
-                                        }).then(() => {
-                                            location.reload();
-                                        });
-                                        return;
-                                    }
+                                }
+                                
+                                // Add metadata details if available
+                                if (metadata.DurationMs) errorDetails.push('<strong>زمان پردازش:</strong> ' + (metadata.DurationMs / 1000).toFixed(2) + ' ثانیه');
+                                if (metadata.RetryCount !== undefined) errorDetails.push('<strong>تعداد تلاش:</strong> ' + (metadata.RetryCount + 1));
+                                if (metadata.OperationId) errorDetails.push('<strong>Operation ID:</strong> ' + metadata.OperationId);
+                                if (metadata.IpAddress) errorDetails.push('<strong>IP:</strong> ' + metadata.IpAddress);
+                                if (metadata.Port) errorDetails.push('<strong>Port:</strong> ' + metadata.Port);
+                                if (metadata.TerminalId) errorDetails.push('<strong>Terminal ID:</strong> ' + metadata.TerminalId);
+                                if (metadata.Provider) errorDetails.push('<strong>Provider:</strong> ' + metadata.Provider);
+                                if (metadata.Amount) errorDetails.push('<strong>مبلغ:</strong> ' + parseFloat(metadata.Amount).toLocaleString('fa-IR') + ' ریال');
+                                if (metadata.SocketErrorCode) errorDetails.push('<strong>Socket Error:</strong> ' + metadata.SocketErrorCode);
+                                if (metadata.NativeErrorCode) errorDetails.push('<strong>Native Error:</strong> ' + metadata.NativeErrorCode);
+                                if (metadata.ExceptionType) errorDetails.push('<strong>Exception Type:</strong> ' + metadata.ExceptionType);
+                                if (metadata.ExceptionMessage) errorDetails.push('<strong>Exception Message:</strong> ' + metadata.ExceptionMessage);
+                                if (metadata.Steps && Array.isArray(metadata.Steps) && metadata.Steps.length > 0) {
+                                    errorDetails.push('<strong>مراحل اجرا:</strong>');
+                                    metadata.Steps.forEach(function(step) {
+                                        var stepStatus = step.Success ? '✅' : '❌';
+                                        errorDetails.push(stepStatus + ' ' + step.StepName + ' (' + (step.DurationMs / 1000).toFixed(2) + 's)');
+                                    });
                                 }
                                 
                                 // Build detailed error HTML
@@ -497,6 +705,7 @@
                             },
                             complete: function() {
                                 btn.prop('disabled', false).html('<i class="fas fa-money-bill-wave me-2"></i>تست پرداخت');
+                                console.log('🔍 Frontend Payment Test: Request تکمیل شد.');
                             }
                         });
                     }
@@ -505,11 +714,17 @@
 
             // نمایش نتیجه تست اتصال
             function showConnectionResult(data) {
-                var statusClass = data.connectionStatus === 'موفق' ? 'success' : 'danger';
-                var statusIcon = data.connectionStatus === 'موفق' ? 'check-circle' : 'times-circle';
+                console.log('🔍 Frontend: showConnectionResult فراخوانی شد - data:', data);
+                console.log('🔍 Frontend: data.connectionStatus:', data?.connectionStatus);
+                console.log('🔍 Frontend: data.message:', data?.message);
+                console.log('🔍 Frontend: data.terminalInfo:', data?.terminalInfo);
+                
+                var statusClass = data && data.connectionStatus === 'موفق' ? 'success' : 'danger';
+                var statusIcon = data && data.connectionStatus === 'موفق' ? 'check-circle' : 'times-circle';
+                console.log('🔍 Frontend: statusClass:', statusClass, 'statusIcon:', statusIcon);
                 
                 var terminalInfoHtml = '';
-                if (data.terminalInfo) {
+                if (data && data.terminalInfo) {
                     terminalInfoHtml = `
                         <hr>
                         <h6>اطلاعات ترمینال:</h6>
@@ -547,35 +762,58 @@
 
                 var html = `
                     <div class="alert alert-${statusClass}">
-                        <h6><i class="fas fa-${statusIcon} me-2"></i>وضعیت اتصال: ${data.connectionStatus || 'نامشخص'}</h6>
-                        ${data.message ? `<p class="mb-0">${data.message}</p>` : ''}
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>وضعیت اتصال: ${data && data.connectionStatus ? data.connectionStatus : 'نامشخص'}</h6>
+                        ${data && data.message ? `<p class="mb-0">${data.message}</p>` : ''}
                         ${terminalInfoHtml}
                         ${paymentInfoHtml}
                     </div>
                 `;
                 
+                console.log('🔍 Frontend: نمایش نتیجه در #testResults - html length:', html.length);
                 $('#testResults').html(html);
+                console.log('🔍 Frontend: نتیجه در #testResults نمایش داده شد');
             }
 
             // نمایش نتیجه تست پرداخت
             function showPaymentResult(data) {
-                var statusClass = data.success ? 'success' : 'danger';
-                var statusIcon = data.success ? 'check-circle' : 'times-circle';
+                console.log('🔍 Frontend: showPaymentResult فراخوانی شد - data:', data);
+                
+                var isSuccess = data.success !== false && (data.paymentStatus === 'موفق' || data.success === true);
+                var statusClass = isSuccess ? 'success' : 'danger';
+                var statusIcon = isSuccess ? 'check-circle' : 'times-circle';
+                
+                var durationHtml = '';
+                if (data.durationMs) {
+                    durationHtml = `<strong>زمان پردازش:</strong> ${(data.durationMs / 1000).toFixed(2)} ثانیه<br>`;
+                }
+                
+                var retryHtml = '';
+                if (data.retryCount !== undefined && data.retryCount > 0) {
+                    retryHtml = `<strong>تعداد تلاش:</strong> ${data.retryCount + 1}<br>`;
+                }
+                
+                var operationIdHtml = '';
+                if (data.operationId) {
+                    operationIdHtml = `<strong>Operation ID:</strong> ${data.operationId}<br>`;
+                }
                 
                 var html = `
                     <div class="alert alert-${statusClass}">
-                        <h6><i class="fas fa-${statusIcon} me-2"></i>نتیجه تست پرداخت: ${data.success ? 'موفق' : 'ناموفق'}</h6>
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>نتیجه تست پرداخت: ${isSuccess ? 'موفق' : 'ناموفق'}</h6>
+                        ${data.message ? `<p class="mb-2"><strong>پیام:</strong> ${data.message}</p>` : ''}
                         <hr>
                         <div class="row">
                             <div class="col-md-6">
                                 <strong>RRN:</strong> ${data.rrn || 'نامشخص'}<br>
                                 <strong>Trace No:</strong> ${data.traceNo || 'نامشخص'}<br>
-                                <strong>Card Last 4:</strong> ${data.cardLast4 || 'نامشخص'}
+                                <strong>Card Last 4:</strong> ${data.cardLast4 || 'نامشخص'}<br>
+                                <strong>Terminal ID:</strong> ${data.terminalId || 'نامشخص'}
                             </div>
                             <div class="col-md-6">
-                                <strong>مبلغ:</strong> ${data.amount ? data.amount.toLocaleString('fa-IR') + ' ریال' : 'نامشخص'}<br>
-                                <strong>Terminal ID:</strong> ${data.terminalId || 'نامشخص'}<br>
-                                <strong>پیام:</strong> ${data.message || 'نامشخص'}
+                                <strong>مبلغ:</strong> ${data.amount ? parseFloat(data.amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص'}<br>
+                                ${durationHtml}
+                                ${retryHtml}
+                                ${operationIdHtml}
                             </div>
                         </div>
                         ${data.terminalInfo ? `
@@ -596,6 +834,7 @@
                     </div>
                 `;
                 
+                console.log('🔍 Frontend: نمایش نتیجه در #testResults');
                 $('#testResults').html(html);
             }
 
@@ -612,10 +851,13 @@
 
             // نمایش نتیجه تست اتصال با SweetAlert
             function showConnectionResultWithSweetAlert(data) {
-                var isSuccess = data.connectionStatus === 'موفق';
+                console.log('🔍 Frontend: showConnectionResultWithSweetAlert فراخوانی شد - data:', data);
+                var isSuccess = data && data.connectionStatus === 'موفق';
+                console.log('🔍 Frontend: isSuccess در showConnectionResultWithSweetAlert:', isSuccess);
+                
                 var htmlContent = '<div style="text-align: right; direction: rtl;">';
                 
-                if (data.message) {
+                if (data && data.message) {
                     htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem;">' + data.message + '</p>';
                 }
                 
@@ -643,6 +885,8 @@
                 
                 htmlContent += '</div>';
                 
+                console.log('🔍 Frontend: نمایش SweetAlert - isSuccess:', isSuccess, 'htmlContent length:', htmlContent.length);
+                
                 Swal.fire({
                     icon: isSuccess ? 'success' : 'error',
                     title: isSuccess ? 'اتصال موفق' : 'اتصال ناموفق',
@@ -650,26 +894,45 @@
                     confirmButtonText: 'تأیید',
                     confirmButtonColor: isSuccess ? '#28a745' : '#dc3545',
                     width: '600px'
+                }).then((result) => {
+                    console.log('🔍 Frontend: SweetAlert بسته شد - result:', result);
                 });
             }
 
             // نمایش نتیجه تست پرداخت با SweetAlert
             function showPaymentResultWithSweetAlert(data, amount) {
-                var isSuccess = data.success !== false;
+                console.log('🔍 Frontend: showPaymentResultWithSweetAlert فراخوانی شد - data:', data, 'amount:', amount);
+                
+                var isSuccess = data.success !== false && (data.paymentStatus === 'موفق' || data.success === true);
+                console.log('🔍 Frontend: isSuccess در showPaymentResultWithSweetAlert:', isSuccess);
+                
                 var htmlContent = '<div style="text-align: right; direction: rtl;">';
                 
                 if (data.message) {
-                    htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem;">' + data.message + '</p>';
+                    htmlContent += '<p style="font-size: 1.1rem; margin-bottom: 1rem; color: ' + (isSuccess ? '#28a745' : '#dc3545') + ';">' + data.message + '</p>';
                 }
                 
                 htmlContent += '<hr style="margin: 1rem 0;">';
                 htmlContent += '<h6 style="color: #2e5c8a; margin-bottom: 0.75rem;">اطلاعات پرداخت:</h6>';
                 htmlContent += '<div style="background: ' + (isSuccess ? '#d4edda' : '#f8d7da') + '; border-right: 4px solid ' + (isSuccess ? '#28a745' : '#dc3545') + '; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">';
-                htmlContent += '<strong>مبلغ:</strong> ' + (amount ? amount.toLocaleString('fa-IR') + ' ریال' : 'نامشخص') + '<br>';
+                htmlContent += '<strong>مبلغ:</strong> ' + (amount ? parseFloat(amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص') + '<br>';
                 htmlContent += '<strong>RRN:</strong> ' + (data.rrn || 'نامشخص') + '<br>';
                 htmlContent += '<strong>Trace No:</strong> ' + (data.traceNo || 'نامشخص') + '<br>';
                 htmlContent += '<strong>Card Last 4:</strong> ' + (data.cardLast4 || 'نامشخص') + '<br>';
                 htmlContent += '<strong>Terminal ID:</strong> ' + (data.terminalId || 'نامشخص');
+                
+                if (data.durationMs) {
+                    htmlContent += '<br><strong>زمان پردازش:</strong> ' + (data.durationMs / 1000).toFixed(2) + ' ثانیه';
+                }
+                
+                if (data.retryCount !== undefined && data.retryCount > 0) {
+                    htmlContent += '<br><strong>تعداد تلاش:</strong> ' + (data.retryCount + 1);
+                }
+                
+                if (data.operationId) {
+                    htmlContent += '<br><strong>Operation ID:</strong> ' + data.operationId;
+                }
+                
                 htmlContent += '</div>';
                 
                 if (data.terminalInfo) {
@@ -686,6 +949,8 @@
                 
                 htmlContent += '</div>';
                 
+                console.log('🔍 Frontend: نمایش SweetAlert - isSuccess:', isSuccess, 'htmlContent length:', htmlContent.length);
+                
                 Swal.fire({
                     icon: isSuccess ? 'success' : 'error',
                     title: isSuccess ? 'پرداخت موفق' : 'پرداخت ناموفق',
@@ -693,6 +958,8 @@
                     confirmButtonText: 'تأیید',
                     confirmButtonColor: isSuccess ? '#28a745' : '#dc3545',
                     width: '700px'
+                }).then((result) => {
+                    console.log('🔍 Frontend: SweetAlert بسته شد - result:', result);
                 });
             }
 

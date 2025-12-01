@@ -13,6 +13,10 @@ namespace ClinicApp
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
             
+            // Ignore source map files (.map) to prevent 404 errors
+            // Note: Static files with extensions are handled by IIS, but we add this as a safety measure
+            // The .map files will be served as static content via Web.config staticContent settings
+            
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
 

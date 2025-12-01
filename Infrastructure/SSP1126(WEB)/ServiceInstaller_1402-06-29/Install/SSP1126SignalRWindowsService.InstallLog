@@ -1,0 +1,56 @@
+﻿Uninstalling assembly 'E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe
+Removing EventLog source SSP1126Service1.
+Service SSP1126Service1 is being removed from the system...
+Service SSP1126Service1 was successfully removed from the system.
+Uninstalling assembly 'E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe
+Removing EventLog source SSP1126Service1.
+Warning: The source SSP1126Service1 is not registered on the local machine.
+Service SSP1126Service1 is being removed from the system...
+An exception occurred during the uninstallation of the System.ServiceProcess.ServiceInstaller installer.
+System.ComponentModel.Win32Exception: The specified service does not exist as an installed service
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
+Installing assembly 'E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe
+Installing service SSP1126Service1...
+Service SSP1126Service1 has been successfully installed.
+Creating EventLog source SSP1126Service1 in log Application...
+Committing assembly 'E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = E:\TFS-PC-TO-POS\SSP1126SignalRWindowsService\bin\Release\SSP1126SignalRWindowsService.exe
+Uninstalling assembly 'C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe
+Removing EventLog source SSP1126Service1.
+Warning: The source SSP1126Service1 is not registered on the local machine.
+Service SSP1126Service1 is being removed from the system...
+An exception occurred during the uninstallation of the System.ServiceProcess.ServiceInstaller installer.
+System.ComponentModel.Win32Exception: The specified service does not exist as an installed service
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
+Installing assembly 'C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe
+Installing service SSP1126Service1...
+Service SSP1126Service1 has been successfully installed.
+Creating EventLog source SSP1126Service1 in log Application...
+Committing assembly 'C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe'.
+Affected parameters are:
+   logtoconsole = 
+   logfile = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.InstallLog
+   assemblypath = C:\Users\Developer\Desktop\tools\SSP1126(WEB) 1402-06-29\ServiceInstaller_1402-06-29\Install\SSP1126SignalRWindowsService.exe

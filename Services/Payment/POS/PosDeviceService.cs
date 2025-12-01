@@ -68,7 +68,7 @@ namespace ClinicApp.Services.Payment.POS
                 }
 
                 // Get appropriate driver based on provider
-                var driver = GetDriver(terminal.Provider);
+                var driver = GetDriver(terminal.Provider, terminal);
                 if (driver == null)
                 {
                     _logger.Warning("⚠️ POS Device: Driver not found for provider - Provider: {Provider}", terminal.Provider);
@@ -163,14 +163,21 @@ namespace ClinicApp.Services.Payment.POS
         }
 
         /// <summary>
-        /// Get appropriate driver based on POS provider type
+        /// Get appropriate driver based on POS provider type and protocol
         /// </summary>
-        private IPosDeviceDriver GetDriver(PosProviderType provider)
+        private IPosDeviceDriver GetDriver(PosProviderType provider, PosTerminal terminal = null)
         {
             switch (provider)
             {
                 case PosProviderType.SamanKish:
-                    _logger.Information("✅ POS Device: Using SamanKish driver");
+                    // اگر Protocol = SignalR باشد، از SignalR Driver استفاده کن
+                    if (terminal != null && terminal.Protocol == PosProtocol.SignalR)
+                    {
+                        _logger.Information("✅ POS Device: Using SamanKish SignalR driver");
+                        return new SamanKishSignalRDriver(_logger);
+                    }
+                    // در غیر این صورت از TCP/IP Driver استفاده کن
+                    _logger.Information("✅ POS Device: Using SamanKish TCP/IP driver");
                     return new SamanKishDriver(_logger);
 
                 case PosProviderType.BehPardakht:

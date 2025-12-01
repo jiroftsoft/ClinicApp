@@ -12,5 +12,7 @@ public enum PosProtocol
     [Display(Name = "سریال")]
     Serial = 2,
     [Display(Name = "API وب سرویس")]
-    Api = 3
+    Api = 3,
+    [Display(Name = "SignalR")]
+    SignalR = 4
 }

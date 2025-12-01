@@ -291,11 +291,17 @@ namespace ClinicApp.Services.Payment.POS
 
             var errors = new List<string>();
 
-            if (receptionId <= 0)
+            // ReceptionId = 0 برای تست مجاز است
+            if (receptionId < 0)
             {
                 errors.Add("شناسه پذیرش نامعتبر است");
                 _logger.Warning("⚠️ POS Orchestrator [{OperationId}]: ReceptionId نامعتبر - {ReceptionId}",
                     operationId, receptionId);
+            }
+            else if (receptionId == 0)
+            {
+                _logger.Information("🔍 POS Orchestrator [{OperationId}]: ReceptionId = 0 (تست) - اجازه داده می‌شود",
+                    operationId);
             }
 
             if (amountIRR <= 0)

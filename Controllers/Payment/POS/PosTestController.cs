@@ -48,6 +48,40 @@ namespace ClinicApp.Controllers.Payment.POS
             _logger = logger.ForContext<PosTestController>();
         }
 
+        protected override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            // Log before base.OnActionExecuting to catch early issues
+            if (filterContext.ActionDescriptor.ActionName == "TestConnection")
+            {
+                _logger.Information("🔍🔍🔍 POS Test: ========== OnActionExecuting شروع شد ==========");
+                _logger.Information("🔍🔍🔍 POS Test: Action: {Action}, Controller: {Controller}, Method: {Method}",
+                    filterContext.ActionDescriptor.ActionName, 
+                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
+                    filterContext.HttpContext.Request.HttpMethod);
+                
+                // Log action parameters
+                _logger.Information("🔍🔍🔍 POS Test: تعداد پارامترها: {Count}", filterContext.ActionParameters.Count);
+                foreach (var param in filterContext.ActionParameters)
+                {
+                    _logger.Information("🔍🔍🔍 POS Test: Parameter - {Key}: {Value} (Type: {Type})", 
+                        param.Key, param.Value, param.Value?.GetType().Name ?? "null");
+                }
+                
+                // Log request details
+                var request = filterContext.HttpContext.Request;
+                _logger.Information("🔍🔍🔍 POS Test: Request Details - ContentType: {ContentType}, IsAjax: {IsAjax}, FormKeys: {FormKeys}",
+                    request.ContentType, request.IsAjaxRequest(),
+                    request.Form?.AllKeys != null ? string.Join(",", request.Form.AllKeys) : "null");
+            }
+            
+            base.OnActionExecuting(filterContext);
+            
+            if (filterContext.ActionDescriptor.ActionName == "TestConnection")
+            {
+                _logger.Information("🔍🔍🔍 POS Test: ========== OnActionExecuting پایان یافت ==========");
+            }
+        }
+
         /// <summary>
         /// صفحه اصلی تست POS
         /// </summary>
@@ -99,23 +133,78 @@ namespace ClinicApp.Controllers.Payment.POS
         /// </summary>
         [HttpPost]
         [Route("TestConnection")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> TestConnection(int terminalId, decimal? testAmount = null)
+        // [ValidateAntiForgeryToken] - Removed because we have global ValidateAntiForgeryTokenOnPostsAttribute
+        // Note: Global filter ValidateAntiForgeryTokenOnPostsAttribute handles validation
+        public async Task<JsonResult> TestConnection(int? terminalId = null, decimal? testAmount = null)
         {
+            // ========== گام 1: شروع متد ==========
+            _logger.Information("🔍🔍🔍 POS Test: ========== متد TestConnection فراخوانی شد ==========");
+            _logger.Information("🔍🔍🔍 POS Test: TerminalId: {TerminalId}, TestAmount: {TestAmount}, User: {UserName}",
+                terminalId, testAmount, _currentUserService?.UserName ?? "Unknown");
+            _logger.Warning("🔍🔍🔍 POS Test: WARNING LEVEL - متد TestConnection فراخوانی شد");
+            _logger.Error("🔍🔍🔍 POS Test: ERROR LEVEL - متد TestConnection فراخوانی شد");
+            
+            // ========== گام 2: بررسی Request Details ==========
+            // استفاده از Request property که از نوع HttpRequestBase است و IsAjaxRequest() دارد
+            var requestBase = Request;
+            var request = System.Web.HttpContext.Current?.Request;
+            _logger.Information("🔍🔍🔍 POS Test: ========== Request Details ==========");
+            _logger.Information("🔍🔍🔍 POS Test: Method: {Method}, ContentType: {ContentType}, Path: {Path}, RawUrl: {RawUrl}",
+                request?.HttpMethod, request?.ContentType, request?.Path, request?.RawUrl);
+            _logger.Information("🔍🔍🔍 POS Test: FormKeys: {FormKeys}, QueryString: {QueryString}",
+                request?.Form?.AllKeys != null ? string.Join(",", request.Form.AllKeys) : "null",
+                request?.QueryString?.ToString());
+            _logger.Information("🔍🔍🔍 POS Test: IsAjax: {IsAjax}, Headers: {Headers}",
+                requestBase?.IsAjaxRequest() ?? false,
+                request?.Headers?.AllKeys != null ? string.Join(",", request.Headers.AllKeys) : "null");
+            
+            // Validate terminalId
+            if (!terminalId.HasValue || terminalId.Value <= 0)
+            {
+                _logger.Warning("⚠️ POS Test: terminalId نامعتبر است - TerminalId: {TerminalId}", terminalId);
+                return Json(ServiceResult.Failed("لطفاً یک ترمینال را انتخاب کنید"));
+            }
+            
+            // Convert nullable int to int after validation
+            var validatedTerminalId = terminalId.Value;
+            int terminalIdForLogging = validatedTerminalId; // For use in catch block
+            
             try
             {
                 _logger.Information("🔍 POS Test: شروع تست اتصال - TerminalId: {TerminalId}, User: {UserName}",
-                    terminalId, _currentUserService?.UserName ?? "Unknown");
+                    validatedTerminalId, _currentUserService?.UserName ?? "Unknown");
 
                 // دریافت ترمینال
-                var terminalResult = await _posManagementService.GetPosTerminalAsync(terminalId);
+                _logger.Information("🔍 POS Test: در حال دریافت ترمینال از دیتابیس - TerminalId: {TerminalId}", validatedTerminalId);
+                var terminalResult = await _posManagementService.GetPosTerminalAsync(validatedTerminalId);
+                _logger.Information("🔍 POS Test: نتیجه دریافت ترمینال - Success: {Success}, HasData: {HasData}",
+                    terminalResult?.Success ?? false, terminalResult?.Data != null);
+                
                 if (!terminalResult.Success || terminalResult.Data == null)
                 {
-                    _logger.Warning("⚠️ POS Test: ترمینال یافت نشد - TerminalId: {TerminalId}", terminalId);
-                    return Json(ServiceResult.Failed("ترمینال POS یافت نشد"));
+                    _logger.Warning("⚠️ POS Test: ترمینال یافت نشد - TerminalId: {TerminalId}", validatedTerminalId);
+                    var failedResult = ServiceResult.Failed("ترمینال POS یافت نشد");
+                    _logger.Information("🔍 POS Test: بازگشت خطا - Message: {Message}", failedResult.Message);
+                    return Json(failedResult);
                 }
 
                 var terminal = terminalResult.Data;
+                _logger.Information("🔍 POS Test: ترمینال دریافت شد - TerminalId: {TerminalId}, IP: {IpAddress}, Protocol: {Protocol}, Provider: {Provider}",
+                    terminal.TerminalId, terminal.IpAddress, terminal.Protocol, terminal.Provider);
+
+                // بررسی Protocol - اگر SignalR نیست، هشدار بده
+                if (terminal.Protocol != PosProtocol.SignalR)
+                {
+                    _logger.Warning("⚠️ POS Test: ترمینال با Protocol = {Protocol} تنظیم شده است. برای استفاده از SignalR، Protocol باید = SignalR (4) باشد. TerminalId: {TerminalId}",
+                        terminal.Protocol, terminal.TerminalId);
+                    
+                    return Json(ServiceResult.Failed(
+                        $"ترمینال با Protocol = {terminal.Protocol} تنظیم شده است.\n\n" +
+                        "برای استفاده از SignalR:\n" +
+                        "• Protocol باید = SignalR (4) باشد\n" +
+                        $"• در دیتابیس: UPDATE PosTerminal SET Protocol = 4 WHERE PosTerminalId = {terminal.PosTerminalId}\n" +
+                        "• یا از منوی مدیریت ترمینال‌ها، Protocol را به SignalR تغییر دهید"));
+                }
 
                 // بررسی تنظیمات ترمینال
                 var validationErrors = new List<string>();
@@ -129,7 +218,7 @@ namespace ClinicApp.Controllers.Payment.POS
                 if (string.IsNullOrWhiteSpace(terminal.IpAddress))
                     validationErrors.Add("آدرس IP تنظیم نشده است");
 
-                // Port is optional - if not set, driver will use default port (5000
+                // Port is optional for SignalR - not used
                 // if (!terminal.Port.HasValue || terminal.Port.Value <= 0)
                 //     validationErrors.Add("پورت تنظیم نشده است");
 
@@ -144,11 +233,14 @@ namespace ClinicApp.Controllers.Payment.POS
                 }
 
                 // تست اتصال
-                _logger.Information("🔍 POS Test: تلاش برای اتصال - TerminalId: {TerminalId}, IP: {IpAddress}, Port: {Port}",
-                    terminal.TerminalId, terminal.IpAddress, terminal.Port);
+                _logger.Information("🔍 POS Test: تلاش برای اتصال - TerminalId: {TerminalId}, IP: {IpAddress}, Protocol: {Protocol}",
+                    terminal.TerminalId, terminal.IpAddress, terminal.Protocol);
 
-                // استفاده از Driver برای تست اتصال
-                var driver = GetDriver(terminal.Provider);
+                // استفاده از Driver برای تست اتصال (با توجه به Protocol)
+                var driver = GetDriver(terminal.Provider, terminal.Protocol);
+                
+                _logger.Information("🏥 POS Test: استفاده از Driver - Provider: {Provider}, Protocol: {Protocol}", 
+                    terminal.Provider, terminal.Protocol);
                 if (driver == null)
                 {
                     _logger.Warning("⚠️ POS Test: درایور یافت نشد - Provider: {Provider}", terminal.Provider);
@@ -157,7 +249,11 @@ namespace ClinicApp.Controllers.Payment.POS
 
                 try
                 {
+                    _logger.Information("🔍 POS Test: فراخوانی driver.ConnectAsync - TerminalId: {TerminalId}", terminal.TerminalId);
                     var connectResult = await driver.ConnectAsync(terminal);
+                    _logger.Information("🔍 POS Test: نتیجه ConnectAsync - Success: {Success}, Message: {Message}",
+                        connectResult?.Success ?? false, connectResult?.Message ?? "(empty)");
+                    
                     if (!connectResult.Success)
                     {
                         _logger.Warning("⚠️ POS Test: اتصال با پورت فعلی ناموفق - TerminalId: {TerminalId}, Port: {Port}, Error: {Error}",
@@ -199,8 +295,8 @@ namespace ClinicApp.Controllers.Payment.POS
                                         IsActive = true
                                     };
 
-                                    var testDriver = GetDriver(testTerminal.Provider);
-                                    if (testDriver == null)
+                        var testDriver = GetDriver(testTerminal.Provider, testTerminal.Protocol);
+                        if (testDriver == null)
                                         continue;
 
                                     using (testDriver)
@@ -299,7 +395,7 @@ namespace ClinicApp.Controllers.Payment.POS
                     // فقط تست اتصال
                     await driver.DisconnectAsync(terminal);
 
-                    return Json(ServiceResult<object>.Successful(new
+                    var connectionSuccessResult = ServiceResult<object>.Successful(new
                     {
                         connectionStatus = "موفق",
                         message = "اتصال به دستگاه با موفقیت برقرار شد",
@@ -311,7 +407,10 @@ namespace ClinicApp.Controllers.Payment.POS
                             port = terminal.Port,
                             provider = terminal.Provider.ToString()
                         }
-                    }));
+                    });
+                    _logger.Information("🔍 POS Test: بازگشت نتیجه موفق اتصال - Success: {Success}, Message: {Message}",
+                        connectionSuccessResult.Success, connectionSuccessResult.Message);
+                    return Json(connectionSuccessResult);
                 }
                 finally
                 {
@@ -320,7 +419,7 @@ namespace ClinicApp.Controllers.Payment.POS
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ POS Test: خطای غیرمنتظره در تست اتصال - TerminalId: {TerminalId}", terminalId);
+                _logger.Error(ex, "❌ POS Test: خطای غیرمنتظره در تست اتصال - TerminalId: {TerminalId}", terminalIdForLogging);
                 return Json(ServiceResult.Failed($"خطا در تست اتصال: {ex.Message}"));
             }
         }
@@ -343,52 +442,161 @@ namespace ClinicApp.Controllers.Payment.POS
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> TestPayment(int terminalId, decimal amount)
         {
+            // ========== گام 1: شروع متد ==========
+            _logger.Information("🔍🔍🔍 POS Test Payment: ========== متد TestPayment فراخوانی شد ==========");
+            _logger.Information("🔍🔍🔍 POS Test Payment: TerminalId: {TerminalId}, Amount: {Amount}, User: {UserName}",
+                terminalId, amount, _currentUserService?.UserName ?? "Unknown");
+
+            var startTime = DateTime.UtcNow;
+            int validatedTerminalId = terminalId; // For use in catch block
+
             try
             {
-                _logger.Information("🔍 POS Test: شروع تست پرداخت - TerminalId: {TerminalId}, Amount: {Amount}, User: {UserName}",
-                    terminalId, amount, _currentUserService?.UserName ?? "Unknown");
+                // ========== گام 2: Validation ==========
+                _logger.Information("🔍 POS Test Payment: شروع Validation - TerminalId: {TerminalId}, Amount: {Amount}", terminalId, amount);
 
                 if (amount <= 0)
                 {
-                    return Json(ServiceResult.Failed("مبلغ باید بیشتر از صفر باشد"));
+                    _logger.Warning("⚠️ POS Test Payment: مبلغ نامعتبر - Amount: {Amount}", amount);
+                    var validationError = ServiceResult.Failed("مبلغ باید بیشتر از صفر باشد");
+                    validationError.Metadata["Amount"] = amount;
+                    validationError.Metadata["TerminalId"] = terminalId;
+                    return Json(validationError);
                 }
 
-                // دریافت ترمینال
+                if (amount > 999999999999) // Max 12 digits
+                {
+                    _logger.Warning("⚠️ POS Test Payment: مبلغ بیش از حد مجاز - Amount: {Amount}", amount);
+                    var validationError = ServiceResult.Failed("مبلغ پرداخت بیش از حد مجاز است (حداکثر 999,999,999,999 ریال)");
+                    validationError.Metadata["Amount"] = amount;
+                    validationError.Metadata["MaxAmount"] = 999999999999;
+                    return Json(validationError);
+                }
+
+                _logger.Information("✅ POS Test Payment: Validation موفق - Amount: {Amount}", amount);
+
+                // ========== گام 3: دریافت ترمینال ==========
+                _logger.Information("🔍 POS Test Payment: در حال دریافت ترمینال از دیتابیس - TerminalId: {TerminalId}", terminalId);
                 var terminalResult = await _posManagementService.GetPosTerminalAsync(terminalId);
+                _logger.Information("🔍 POS Test Payment: نتیجه دریافت ترمینال - Success: {Success}, HasData: {HasData}",
+                    terminalResult?.Success ?? false, terminalResult?.Data != null);
+
                 if (!terminalResult.Success || terminalResult.Data == null)
                 {
-                    _logger.Warning("⚠️ POS Test: ترمینال یافت نشد - TerminalId: {TerminalId}", terminalId);
-                    return Json(ServiceResult.Failed("ترمینال POS یافت نشد"));
+                    _logger.Warning("⚠️ POS Test Payment: ترمینال یافت نشد - TerminalId: {TerminalId}", terminalId);
+                    var notFoundError = ServiceResult.Failed("ترمینال POS یافت نشد");
+                    notFoundError.Metadata["TerminalId"] = terminalId;
+                    return Json(notFoundError);
                 }
 
                 var terminal = terminalResult.Data;
+                _logger.Information("🔍 POS Test Payment: ترمینال دریافت شد - TerminalId: {TerminalId}, IP: {IpAddress}, Protocol: {Protocol}, Provider: {Provider}, IsActive: {IsActive}",
+                    terminal.TerminalId, terminal.IpAddress, terminal.Protocol, terminal.Provider, terminal.IsActive);
 
-                // استفاده از PosPaymentOrchestrator برای تست پرداخت (Production-Ready)
+                // ========== گام 4: بررسی تنظیمات ترمینال ==========
+                var validationErrors = new List<string>();
+
+                if (string.IsNullOrWhiteSpace(terminal.TerminalId))
+                    validationErrors.Add("شماره ترمینال تنظیم نشده است");
+
+                if (string.IsNullOrWhiteSpace(terminal.MerchantId))
+                    validationErrors.Add("شماره پذیرنده تنظیم نشده است");
+
+                if (string.IsNullOrWhiteSpace(terminal.IpAddress))
+                    validationErrors.Add("آدرس IP تنظیم نشده است");
+
+                if (!terminal.IsActive)
+                    validationErrors.Add("ترمینال غیرفعال است");
+
+                if (validationErrors.Any())
+                {
+                    _logger.Warning("⚠️ POS Test Payment: تنظیمات ترمینال ناقص است - TerminalId: {TerminalId}, Errors: {Errors}",
+                        terminal.TerminalId, string.Join(", ", validationErrors));
+                    var configError = ServiceResult.Failed($"تنظیمات ترمینال ناقص است: {string.Join("; ", validationErrors)}");
+                    configError.Metadata["TerminalId"] = terminal.TerminalId;
+                    configError.Metadata["ValidationErrors"] = validationErrors;
+                    return Json(configError);
+                }
+
+                // ========== گام 5: بررسی Protocol ==========
+                if (terminal.Protocol != PosProtocol.SignalR)
+                {
+                    _logger.Warning("⚠️ POS Test Payment: ترمینال با Protocol = {Protocol} تنظیم شده است. برای استفاده از SignalR، Protocol باید = SignalR (4) باشد. TerminalId: {TerminalId}",
+                        terminal.Protocol, terminal.TerminalId);
+                    
+                    var protocolError = ServiceResult.Failed(
+                        $"ترمینال با Protocol = {terminal.Protocol} تنظیم شده است.\n\n" +
+                        "برای استفاده از SignalR:\n" +
+                        "• Protocol باید = SignalR (4) باشد\n" +
+                        $"• در دیتابیس: UPDATE PosTerminal SET Protocol = 4 WHERE PosTerminalId = {terminal.PosTerminalId}\n" +
+                        "• یا از منوی مدیریت ترمینال‌ها، Protocol را به SignalR تغییر دهید");
+                    protocolError.Metadata["TerminalId"] = terminal.TerminalId;
+                    protocolError.Metadata["CurrentProtocol"] = terminal.Protocol.ToString();
+                    protocolError.Metadata["RequiredProtocol"] = "SignalR (4)";
+                    return Json(protocolError);
+                }
+
+                _logger.Information("✅ POS Test Payment: Protocol بررسی شد - Protocol: SignalR (4)");
+
+                // ========== گام 6: پردازش پرداخت با PosPaymentOrchestrator ==========
+                _logger.Information("🔍 POS Test Payment: شروع پردازش پرداخت با PosPaymentOrchestrator - TerminalId: {TerminalId}, Amount: {Amount}, ReceptionId: 0 (Test)",
+                    terminal.TerminalId, amount);
+
                 var paymentResult = await _paymentOrchestrator.ProcessPaymentAsync(
                     receptionId: 0, // ReceptionId = 0 برای تست
                     amountIRR: amount,
                     terminalId: terminalId,
                     userId: _currentUserService?.UserId);
 
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Information("🔍 POS Test Payment: نتیجه PosPaymentOrchestrator - Success: {Success}, Duration: {Duration}ms",
+                    paymentResult?.Success ?? false, duration);
+
                 if (!paymentResult.Success)
                 {
-                    _logger.Error("❌ POS Test: تست پرداخت ناموفق - TerminalId: {TerminalId}, Error: {Error}",
-                        terminal.TerminalId, paymentResult.Message);
-                    return Json(ServiceResult.Failed(paymentResult.Message));
+                    _logger.Error("❌ POS Test Payment: تست پرداخت ناموفق - TerminalId: {TerminalId}, Error: {Error}, Duration: {Duration}ms, RetryCount: {RetryCount}",
+                        terminal.TerminalId, paymentResult.Message, duration, paymentResult.RetryCount);
+
+                    var errorResult = ServiceResult.Failed(paymentResult.Message);
+                    errorResult.Metadata["TerminalId"] = terminal.TerminalId;
+                    errorResult.Metadata["Amount"] = amount;
+                    errorResult.Metadata["DurationMs"] = duration;
+                    errorResult.Metadata["RetryCount"] = paymentResult.RetryCount;
+                    errorResult.Metadata["OperationId"] = paymentResult.OperationId;
+                    errorResult.Metadata["IpAddress"] = terminal.IpAddress;
+                    errorResult.Metadata["Port"] = terminal.Port;
+                    errorResult.Metadata["Provider"] = terminal.Provider.ToString();
+                    if (paymentResult.Steps != null && paymentResult.Steps.Any())
+                    {
+                        errorResult.Metadata["Steps"] = paymentResult.Steps.Select(s => new
+                        {
+                            s.StepNumber,
+                            s.StepName,
+                            s.Success,
+                            s.Message,
+                            s.DurationMs
+                        }).ToList();
+                    }
+                    return Json(errorResult);
                 }
 
-                _logger.Information("✅ POS Test: تست پرداخت موفق - TerminalId: {TerminalId}, RRN: {RRN}, TraceNo: {TraceNo}",
-                    terminal.TerminalId, paymentResult.RRN, paymentResult.TraceNo);
+                // ========== گام 7: موفقیت ==========
+                _logger.Information("✅ POS Test Payment: تست پرداخت موفق - TerminalId: {TerminalId}, RRN: {RRN}, TraceNo: {TraceNo}, CardLast4: {CardLast4}, Duration: {Duration}ms, RetryCount: {RetryCount}",
+                    terminal.TerminalId, paymentResult.RRN, paymentResult.TraceNo, paymentResult.CardLast4, duration, paymentResult.RetryCount);
 
-                return Json(ServiceResult<object>.Successful(new
+                var successResult = ServiceResult<object>.Successful(new
                 {
                     success = true,
+                    paymentStatus = "موفق",
                     rrn = paymentResult.RRN,
                     traceNo = paymentResult.TraceNo,
                     terminalId = paymentResult.TerminalId,
                     cardLast4 = paymentResult.CardLast4,
-                    message = paymentResult.Message,
+                    message = paymentResult.Message ?? "پرداخت با موفقیت انجام شد",
                     amount = amount,
+                    durationMs = duration,
+                    retryCount = paymentResult.RetryCount,
+                    operationId = paymentResult.OperationId,
                     terminalInfo = new
                     {
                         terminalId = terminal.TerminalId,
@@ -397,12 +605,45 @@ namespace ClinicApp.Controllers.Payment.POS
                         port = terminal.Port,
                         provider = terminal.Provider.ToString()
                     }
-                }));
+                });
+
+                successResult.Metadata["DurationMs"] = duration;
+                successResult.Metadata["RetryCount"] = paymentResult.RetryCount;
+                successResult.Metadata["OperationId"] = paymentResult.OperationId;
+                if (paymentResult.Steps != null && paymentResult.Steps.Any())
+                {
+                    successResult.Metadata["Steps"] = paymentResult.Steps.Select(s => new
+                    {
+                        s.StepNumber,
+                        s.StepName,
+                        s.Success,
+                        s.Message,
+                        s.DurationMs
+                    }).ToList();
+                }
+
+                _logger.Information("🔍 POS Test Payment: بازگشت نتیجه موفق - Success: {Success}, RRN: {RRN}",
+                    successResult.Success, paymentResult.RRN);
+                return Json(successResult);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ POS Test: خطای غیرمنتظره در تست پرداخت - TerminalId: {TerminalId}", terminalId);
-                return Json(ServiceResult.Failed($"خطا در تست پرداخت: {ex.Message}"));
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ POS Test Payment: خطای غیرمنتظره در تست پرداخت - TerminalId: {TerminalId}, Amount: {Amount}, Duration: {Duration}ms",
+                    validatedTerminalId, amount, duration);
+
+                var exceptionError = ServiceResult.Failed($"خطا در تست پرداخت: {ex.Message}");
+                exceptionError.Metadata["TerminalId"] = validatedTerminalId;
+                exceptionError.Metadata["Amount"] = amount;
+                exceptionError.Metadata["DurationMs"] = duration;
+                exceptionError.Metadata["ExceptionType"] = ex.GetType().Name;
+                exceptionError.Metadata["ExceptionMessage"] = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    exceptionError.Metadata["InnerExceptionType"] = ex.InnerException.GetType().Name;
+                    exceptionError.Metadata["InnerExceptionMessage"] = ex.InnerException.Message;
+                }
+                return Json(exceptionError);
             }
         }
 
@@ -448,8 +689,8 @@ namespace ClinicApp.Controllers.Payment.POS
                             IsActive = true
                         };
 
-                        // استفاده از Driver برای تست اتصال
-                        var driver = GetDriver(testTerminal.Provider);
+                        // استفاده از Driver برای تست اتصال (با توجه به Protocol)
+                        var driver = GetDriver(testTerminal.Provider, testTerminal.Protocol);
                         if (driver == null)
                         {
                             results.Add(new { port, status = "خطا", message = "درایور یافت نشد" });
@@ -551,13 +792,20 @@ namespace ClinicApp.Controllers.Payment.POS
         }
 
         /// <summary>
-        /// دریافت Driver مناسب بر اساس Provider
+        /// دریافت Driver مناسب بر اساس Provider و Protocol
         /// </summary>
-        private IPosDeviceDriver GetDriver(PosProviderType provider)
+        private IPosDeviceDriver GetDriver(PosProviderType provider, PosProtocol? protocol = null)
         {
             switch (provider)
             {
                 case PosProviderType.SamanKish:
+                    // اگر Protocol = SignalR باشد، از SignalR Driver استفاده کن
+                    if (protocol.HasValue && protocol.Value == PosProtocol.SignalR)
+                    {
+                        _logger.Information("🏥 POS Test: استفاده از SignalR Driver برای SamanKish");
+                        return new Services.Payment.POS.Drivers.SamanKishSignalRDriver(_logger);
+                    }
+                    // در غیر این صورت از TCP/IP Driver استفاده کن
                     return new Services.Payment.POS.Drivers.SamanKishDriver(_logger);
 
                 case PosProviderType.BehPardakht:

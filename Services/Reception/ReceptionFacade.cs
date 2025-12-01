@@ -1707,6 +1707,10 @@ namespace ClinicApp.Services.Reception
 
                 // ✅ تغییر: بررسی Draft بدون فیلتر IsDeleted (برای Hard Delete)
                 _logger.Information("🏥 FACADE: جستجوی Draft در دیتابیس...");
+                _logger.Information("🏥 FACADE: ReceptionId برای جستجو: {ReceptionId} (Type: {Type})", receptionId, receptionId.GetType().Name);
+                
+                // ⚠️ مهم: از AsNoTracking استفاده نمی‌کنیم چون می‌خواهیم از SQL مستقیم استفاده کنیم
+                // اما برای بررسی وجود Draft و وضعیت آن، از query معمولی استفاده می‌کنیم
                 var draft = await _context.Receptions
                     .Include(r => r.ReceptionItems)
                     .FirstOrDefaultAsync(r => r.ReceptionId == receptionId);
@@ -1828,24 +1832,9 @@ namespace ClinicApp.Services.Reception
                 var itemsCount = draft.ReceptionItems?.Count(ri => !ri.IsDeleted) ?? 0;
                 _logger.Information("🏥 FACADE: تعداد ReceptionItems برای حذف: {Count}", itemsCount);
                 
-                // حذف ReceptionItems مرتبط (اگر cascade delete کار نکند، به صورت دستی حذف می‌کنیم)
-                if (draft.ReceptionItems != null && draft.ReceptionItems.Any())
-                {
-                    _logger.Information("🏥 FACADE: حذف {Count} ReceptionItem...", itemsCount);
-                    var itemsToDelete = draft.ReceptionItems.ToList();
-                    foreach (var item in itemsToDelete)
-                    {
-                        _logger.Information("🏥 FACADE:   - حذف ReceptionItem: {ItemId}, ServiceId: {ServiceId}", 
-                            item.ReceptionItemId, item.ServiceId);
-                        _context.ReceptionItems.Remove(item);
-                    }
-                    _logger.Information("✅ FACADE: {Count} ReceptionItem حذف شد - ReceptionId: {ReceptionId}", 
-                        itemsCount, receptionId);
-                }
-                else
-                {
-                    _logger.Information("ℹ️ FACADE: هیچ ReceptionItem برای حذف وجود ندارد");
-                }
+                // ⚠️ تغییر: از SQL مستقیم استفاده می‌کنیم (نه از EF Remove)
+                // چون می‌خواهیم Hard Delete انجام دهیم و bypass Soft Delete interceptor
+                // ReceptionItems با SQL مستقیم حذف می‌شوند (در ادامه)
 
                 // حذف کامل Reception از دیتابیس (Hard Delete)
                 // ⚠️ استفاده از SQL مستقیم برای اطمینان از Hard Delete (bypass Soft Delete interceptor)
@@ -1853,20 +1842,70 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("🏥 FACADE: حذف Reception از دیتابیس (Hard Delete با SQL)...");
                 
                 // ✅ استفاده از SQL مستقیم برای Hard Delete (bypass Soft Delete)
-                // ابتدا ReceptionItems را حذف می‌کنیم (اگر قبلاً حذف نشده باشند)
+                // ⚠️ در Entity Framework 6، ExecuteSqlCommandAsync می‌تواند parameter را به صورت مستقیم بپذیرد
+                // اما برای اطمینان، از SqlParameter استفاده می‌کنیم
+                
+                _logger.Information("🏥 FACADE: حذف ReceptionItems با SQL...");
                 var itemsDeleteSql = "DELETE FROM ReceptionItems WHERE ReceptionId = @p0";
-                var itemsDeleteResult = await _context.Database.ExecuteSqlCommandAsync(itemsDeleteSql, receptionId);
+                
+                // ✅ در Entity Framework 6، می‌توانیم receptionId را مستقیماً پاس بدهیم
+                // اما برای اطمینان از type safety، از SqlParameter استفاده می‌کنیم
+                var itemsDeleteResult = await _context.Database.ExecuteSqlCommandAsync(
+                    itemsDeleteSql, 
+                    new System.Data.SqlClient.SqlParameter("@p0", receptionId)
+                );
                 _logger.Information("🏥 FACADE: SQL Delete برای ReceptionItems اجرا شد - Affected Rows: {Count}", itemsDeleteResult);
                 
                 // سپس Reception را حذف می‌کنیم
+                _logger.Information("🏥 FACADE: حذف Reception با SQL...");
                 var receptionDeleteSql = "DELETE FROM Receptions WHERE ReceptionId = @p0";
-                var receptionDeleteResult = await _context.Database.ExecuteSqlCommandAsync(receptionDeleteSql, receptionId);
+                var receptionDeleteResult = await _context.Database.ExecuteSqlCommandAsync(
+                    receptionDeleteSql, 
+                    new System.Data.SqlClient.SqlParameter("@p0", receptionId)
+                );
                 _logger.Information("🏥 FACADE: SQL Delete برای Reception اجرا شد - Affected Rows: {Count}", receptionDeleteResult);
                 
                 if (receptionDeleteResult == 0)
                 {
                     _logger.Warning("⚠️ FACADE: SQL Delete نتیجه‌ای نداشت - ReceptionId: {ReceptionId}", receptionId);
+                    _logger.Warning("⚠️ FACADE: ممکن است Reception قبلاً حذف شده باشد یا ReceptionId نامعتبر باشد");
+                    
+                    // ✅ بررسی اینکه آیا Reception هنوز وجود دارد
+                    try
+                    {
+                        var checkSql = "SELECT COUNT(*) FROM Receptions WHERE ReceptionId = @p0";
+                        var stillExists = await _context.Database.SqlQuery<int>(
+                            checkSql, 
+                            new System.Data.SqlClient.SqlParameter("@p0", receptionId)
+                        ).FirstOrDefaultAsync();
+                        
+                        _logger.Information("🏥 FACADE: بررسی وجود Reception در دیتابیس - Count: {Count}", stillExists);
+                        
+                        if (stillExists > 0)
+                        {
+                            _logger.Error("❌ FACADE: Reception هنوز در دیتابیس وجود دارد اما DELETE نتیجه‌ای نداشت!");
+                            _logger.Error("❌ FACADE: این ممکن است به دلیل Foreign Key constraint یا مشکل در SQL باشد");
+                            _logger.Error("❌ FACADE: ReceptionId: {ReceptionId}, Status: {Status}, IsDeleted: {IsDeleted}", 
+                                draft.ReceptionId, draft.Status, draft.IsDeleted);
+                            return ServiceResult.Failed("خطا در حذف پذیرش از دیتابیس. لطفاً با پشتیبانی تماس بگیرید.", "DELETE_FAILED");
+                        }
+                        else
+                        {
+                            _logger.Information("✅ FACADE: Reception قبلاً حذف شده است (احتمالاً توسط عملیات دیگری)");
+                            return ServiceResult.Successful("پیش‌نویس قبلاً حذف شده است.");
+                        }
+                    }
+                    catch (Exception checkEx)
+                    {
+                        _logger.Error(checkEx, "❌ FACADE: خطا در بررسی وجود Reception در دیتابیس");
+                        // ادامه می‌دهیم - اگر Reception حذف نشده، خطا برمی‌گردانیم
+                        return ServiceResult.Failed("خطا در حذف پذیرش از دیتابیس. لطفاً با پشتیبانی تماس بگیرید.", "DELETE_FAILED");
+                    }
                 }
+                
+                // ✅ اطمینان از commit تغییرات
+                _logger.Information("✅ FACADE: Hard Delete با موفقیت انجام شد - ReceptionId: {ReceptionId}, ItemsDeleted: {ItemsCount}", 
+                    receptionId, itemsDeleteResult);
 
                 _logger.Information("✅ FACADE: ===== Draft به صورت کامل از دیتابیس حذف شد (Hard Delete) =====");
                 _logger.Information("✅ FACADE: ReceptionId: {ReceptionId}, ItemsCount: {ItemsCount}", 

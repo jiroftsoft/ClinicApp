@@ -25,14 +25,24 @@ namespace ClinicApp.Filters
         public override void OnAuthorization(AuthorizationContext filterContext)
         {
             var req = filterContext.HttpContext.Request;
+            var path = req?.RawUrl ?? req?.Path ?? "unknown";
+            
+            // Log entry point
+            Serilog.Log.Information("🔒 AntiForgery: OnAuthorization شروع شد - Path: {Path}, Method: {Method}, Controller: {Controller}, Action: {Action}",
+                path, req?.HttpMethod, 
+                filterContext.ActionDescriptor?.ControllerDescriptor?.ControllerName,
+                filterContext.ActionDescriptor?.ActionName);
 
             // فقط روی POST/PUT/DELETE اعمال شود
             if (!(string.Equals(req.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase) ||
                   string.Equals(req.HttpMethod, "PUT", StringComparison.OrdinalIgnoreCase) ||
                   string.Equals(req.HttpMethod, "DELETE", StringComparison.OrdinalIgnoreCase)))
             {
+                Serilog.Log.Debug("🔒 AntiForgery: Method {Method} نیاز به validation ندارد", req?.HttpMethod);
                 return;
             }
+            
+            Serilog.Log.Information("🔒 AntiForgery: در حال بررسی Token برای {Method} - Path: {Path}", req?.HttpMethod, path);
 
             try
             {
@@ -111,7 +121,10 @@ namespace ClinicApp.Filters
             catch (HttpAntiForgeryException ex)
             {
                 // ✅ گام 8: استفاده از Serilog برای لاگ
-                Serilog.Log.Error(ex, "AntiForgery token validation failed. Path: {Path}", req?.RawUrl);
+                Serilog.Log.Error(ex, "❌ AntiForgery: Token validation failed - Path: {Path}, Method: {Method}, Controller: {Controller}, Action: {Action}",
+                    req?.RawUrl, req?.HttpMethod,
+                    filterContext.ActionDescriptor?.ControllerDescriptor?.ControllerName,
+                    filterContext.ActionDescriptor?.ActionName);
 
                 bool isAjax = req.IsAjaxRequest() || (req.ContentType != null && req.ContentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0);
 
