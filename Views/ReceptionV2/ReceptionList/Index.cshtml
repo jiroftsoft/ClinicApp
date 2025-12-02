@@ -97,15 +97,25 @@
     </div>
 </div>
 
-@* Modal پرداخت POS *@
-@Html.Partial("~/Views/ReceptionV2/Partials/_PosPaymentModal.cshtml")
+@* Modal پرداخت POS - استفاده از ماژول جدید قابل استفاده مجدد *@
+@Html.Partial("~/Views/Shared/Components/PosPaymentModal.cshtml")
 
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/jquery")
 @Scripts.Render("~/bundles/bootstrap")
+@* SignalR و ماژول‌های POS Payment *@
+<script src="~/Scripts/jquery.signalR-2.4.2.min.js"></script>
+<script src="~/Scripts/pos-payment/pos-payment-client.js"></script>
+<script src="~/Scripts/pos-payment/pos-payment-ui.js"></script>
 <script src="~/Scripts/reception.v2/reception-api.js"></script>
 <script src="~/Scripts/reception.v2/reception-list.js"></script>
 <script>
+    // ✅ تنظیم SignalR URL از Web.config برای استفاده در JavaScript
+    @{
+        var signalRUrl = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:5000/signalr";
+    }
+    window.SamanKishSignalRUrl = '@Html.Raw(signalRUrl)';
+    
     window.ReceptionListConfig = {
         apiUrl: '@Url.Action("GetReceptionList", "ReceptionListV2")',
         paymentUrl: '/api/v1/pos/process-payment',
