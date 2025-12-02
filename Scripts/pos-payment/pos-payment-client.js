@@ -220,13 +220,17 @@
         this._log('info', '🔍 $.signalR type: ' + signalRType);
         
         // ✅ DEBUG: Log SignalR structure to understand how it's organized
+        // Note: In SignalR 2.4.2, $.hubConnection is usually defined directly by the library
+        // It's not necessarily a property of $.signalR.hubConnection
+        // $.signalR.hubConnection being undefined is NORMAL and expected behavior
         if (typeof $.signalR === 'function') {
-            this._log('info', '🔍 $.signalR is a function, checking for hubConnection property...');
+            this._log('info', '🔍 $.signalR is a function');
+            // Check if $.signalR.hubConnection exists (it might not in SignalR 2.4.2 - this is normal)
             if (typeof $.signalR.hubConnection !== 'undefined') {
                 this._log('info', '🔍 $.signalR.hubConnection type: ' + typeof $.signalR.hubConnection);
-            } else {
-                this._log('warn', '⚠️ $.signalR.hubConnection is undefined');
             }
+            // Note: $.signalR.hubConnection being undefined is NORMAL in SignalR 2.4.2
+            // $.hubConnection is usually defined directly by the library, not as a property
         }
         
         // ✅ DEBUG: Check $.connection structure
@@ -234,8 +238,10 @@
             this._log('info', '🔍 $.connection type: ' + typeof $.connection);
             if (typeof $.connection.hub !== 'undefined') {
                 this._log('info', '🔍 $.connection.hub type: ' + typeof $.connection.hub);
-            } else {
-                this._log('warn', '⚠️ $.connection.hub is undefined');
+            }
+            // Check if $.hubConnection is already defined (it might be set by SignalR library)
+            if (typeof $.hubConnection !== 'undefined') {
+                this._log('info', '🔍 $.hubConnection already exists (type: ' + typeof $.hubConnection + ')');
             }
         }
         
@@ -390,48 +396,40 @@
         // From hubs script analysis: signalR.hub = $.hubConnection("/signalr", { useDefaultPath: false });
         // So $.hubConnection must be a constructor function
         
-        // ✅ DEBUG: Log current state
-        this._log('info', '🔍 Checking $.hubConnection before loading hubs script...');
-        this._log('info', '🔍 $.hubConnection type: ' + typeof $.hubConnection);
+        // ✅ CRITICAL: Ensure $.hubConnection is available before loading hubs script
+        // hubs script uses: $.hubConnection.prototype.createHubProxies
+        // In SignalR 2.4.2, $.hubConnection is usually defined directly by the library
+        // It might be on $.connection or $.signalR, or it might be set globally
         
+        // ✅ DEBUG: Log current state (only if needed)
         if (typeof $.hubConnection === 'undefined') {
             this._log('warn', '⚠️ $.hubConnection is undefined, attempting to find it...');
             
-            // Strategy 1: Try to get it from $.signalR.hubConnection
-            if (typeof $.signalR !== 'undefined') {
-                if (typeof $.signalR.hubConnection !== 'undefined') {
-                    $.hubConnection = $.signalR.hubConnection;
-                    this._log('info', '✅ $.hubConnection set from $.signalR.hubConnection (type: ' + typeof $.signalR.hubConnection + ')');
-                } else {
-                    this._log('warn', '⚠️ $.signalR.hubConnection is undefined');
-                    // Check if $.signalR itself might be the hubConnection (unlikely but possible)
-                    if (typeof $.signalR === 'function' && $.signalR.prototype && typeof $.signalR.prototype.createHubProxies !== 'undefined') {
-                        $.hubConnection = $.signalR;
-                        this._log('info', '✅ $.hubConnection set from $.signalR (has createHubProxies)');
-                    }
-                }
+            // Strategy 1: Try to get it from $.signalR.hubConnection (might not exist in SignalR 2.4.2)
+            if (typeof $.signalR !== 'undefined' && typeof $.signalR.hubConnection !== 'undefined') {
+                $.hubConnection = $.signalR.hubConnection;
+                this._log('info', '✅ $.hubConnection set from $.signalR.hubConnection (type: ' + typeof $.signalR.hubConnection + ')');
             }
             
-            // Strategy 2: Try to get it from $.connection.hub
-            if (typeof $.hubConnection === 'undefined' && typeof $.connection !== 'undefined') {
-                if (typeof $.connection.hub !== 'undefined') {
-                    if (typeof $.connection.hub === 'function') {
-                        $.hubConnection = $.connection.hub;
-                        this._log('info', '✅ $.hubConnection set from $.connection.hub (type: function)');
-                    } else {
-                        this._log('warn', '⚠️ $.connection.hub exists but is not a function (type: ' + typeof $.connection.hub + ')');
-                    }
-                } else {
-                    this._log('warn', '⚠️ $.connection.hub is undefined');
+            // Strategy 2: Try to get it from $.connection.hub (in SignalR 2.4.2, this is usually an object, not a function)
+            // But we can check if it has the createHubProxies method
+            if (typeof $.hubConnection === 'undefined' && typeof $.connection !== 'undefined' && typeof $.connection.hub !== 'undefined') {
+                // In SignalR 2.4.2, $.connection.hub is usually an object (hub connection instance)
+                // But $.hubConnection should be the constructor function
+                // Let's check if $.connection.hub.constructor might be it
+                if (typeof $.connection.hub.constructor !== 'undefined' && typeof $.connection.hub.constructor.prototype !== 'undefined' && typeof $.connection.hub.constructor.prototype.createHubProxies !== 'undefined') {
+                    $.hubConnection = $.connection.hub.constructor;
+                    this._log('info', '✅ $.hubConnection set from $.connection.hub.constructor');
+                } else if (typeof $.connection.hub === 'function') {
+                    $.hubConnection = $.connection.hub;
+                    this._log('info', '✅ $.hubConnection set from $.connection.hub (type: function)');
                 }
             }
             
             // Strategy 3: Try window.jQuery.hubConnection
-            if (typeof $.hubConnection === 'undefined' && typeof window.jQuery !== 'undefined') {
-                if (typeof window.jQuery.hubConnection !== 'undefined') {
-                    $.hubConnection = window.jQuery.hubConnection;
-                    this._log('info', '✅ $.hubConnection set from window.jQuery.hubConnection');
-                }
+            if (typeof $.hubConnection === 'undefined' && typeof window.jQuery !== 'undefined' && typeof window.jQuery.hubConnection !== 'undefined') {
+                $.hubConnection = window.jQuery.hubConnection;
+                this._log('info', '✅ $.hubConnection set from window.jQuery.hubConnection');
             }
             
             // Strategy 4: Last resort - check if $.connection itself might be hubConnection
@@ -450,7 +448,8 @@
                 this._log('info', '✅ $.hubConnection found and set (type: ' + typeof $.hubConnection + ')');
             }
         } else {
-            this._log('info', '✅ $.hubConnection already exists (type: ' + typeof $.hubConnection + ')');
+            // ✅ $.hubConnection already exists - this is the normal case in SignalR 2.4.2
+            // No need to log this as it's expected behavior
         }
         
         // ✅ CRITICAL: Also set on window.jQuery for cross-scope access
