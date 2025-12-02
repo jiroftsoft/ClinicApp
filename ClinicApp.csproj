@@ -509,6 +509,7 @@
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
+    <Compile Include="Controllers\Payment\POS\PosPaymentApiController.cs" />
     <Compile Include="Controllers\Payment\POS\PosTerminalApiController.cs" />
     <Compile Include="Controllers\Payment\POS\PosTestController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
@@ -666,6 +667,7 @@
     <Compile Include="Interfaces\Payment\POS\ICashSessionRepository.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosDeviceService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosManagementService.cs" />
+    <Compile Include="Interfaces\Payment\POS\IPosPaymentService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosTerminalRepository.cs" />
     <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
@@ -1049,7 +1051,10 @@
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishSignalRDriver.cs" />
     <Compile Include="Services\Payment\POS\PosDeviceService.cs" />
+    <Compile Include="Services\Payment\POS\PosPaymentConfigurationService.cs" />
+    <Compile Include="Services\Payment\POS\PosPaymentLogger.cs" />
     <Compile Include="Services\Payment\POS\PosPaymentOrchestrator.cs" />
+    <Compile Include="Services\Payment\POS\PosPaymentService.cs" />
     <Compile Include="Services\Pricing\Coverage\InsuranceCoverageProvider.cs" />
     <Compile Include="Services\Pricing\Engines\PricingEngine.cs" />
     <Compile Include="Services\Pricing\Interfaces\IInsuranceCoverageProvider.cs" />
@@ -4655,6 +4660,8 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
     <Content Include="Scripts\popper.min.js" />
+    <Content Include="Scripts\pos-payment\pos-payment-client.js" />
+    <Content Include="Scripts\pos-payment\pos-payment-ui.js" />
     <Content Include="Scripts\reception.v2\auto-draft-manager.js" />
     <Content Include="Scripts\reception.v2\clinic-dept-doctor.js" />
     <Content Include="Scripts\reception.v2\coverage-modal.js" />
@@ -4829,6 +4836,8 @@
     <Content Include="Areas\Admin\Views\ClinicBankAccount\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\ClinicBankAccount\Index.cshtml" />
     <Content Include="Views\PosTest\Index.cshtml" />
+    <Content Include="Views\Shared\Components\PosPaymentButton.cshtml" />
+    <Content Include="Views\Shared\Components\PosPaymentModal.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

@@ -3211,10 +3211,28 @@ namespace ClinicApp.Services.Reception
                     TerminalId = request.Pos?.TerminalId, // 🏥 MEDICAL: TerminalId (string) برای سازگاری
                     CardLast4 = request.Pos?.CardLast4,
                     PosTerminalId = posTerminalId, // 🏥 MEDICAL: PosTerminalId (int) از PosTerminals
-                    CashSessionId = sessionResult.Data.CashSessionId // 🏥 MEDICAL: تنظیم CashSessionId
+                    CashSessionId = sessionResult.Data.CashSessionId, // 🏥 MEDICAL: تنظیم CashSessionId
+                    CreatedByUserId = _currentUserService?.UserId, // ✅ ردیابی کاربر ایجادکننده
+                    CreatedAt = DateTime.Now // ✅ تاریخ ایجاد
                 };
 
                 _context.PaymentTransactions.Add(payment);
+
+                // 🏥 MEDICAL: به‌روزرسانی مانده POS در CashSession
+                var cashSession = await _context.CashSessions.FindAsync(sessionResult.Data.CashSessionId);
+                if (cashSession != null)
+                {
+                    cashSession.PosBalance += request.AmountIRR;
+                    cashSession.UpdatedAt = DateTime.Now;
+                    cashSession.UpdatedByUserId = _currentUserService?.UserId;
+                    _logger.Information("✅ FACADE: CashSession.PosBalance به‌روزرسانی شد - SessionId: {SessionId}, New PosBalance: {PosBalance}, Amount: {Amount}",
+                        cashSession.CashSessionId, cashSession.PosBalance, request.AmountIRR);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: CashSession یافت نشد برای به‌روزرسانی PosBalance - SessionId: {SessionId}",
+                        sessionResult.Data.CashSessionId);
+                }
 
                 // نهایی‌سازی پیش‌نویس
                 draft.Status = ReceptionStatus.Completed;
@@ -3362,10 +3380,28 @@ namespace ClinicApp.Services.Reception
                     Status = PaymentStatus.Success,
                     IdempotencyKey = request.IdempotencyKey,
                     Method = PaymentMethod.Cash,
-                    CashSessionId = sessionResult.Data.CashSessionId // 🏥 MEDICAL: تنظیم CashSessionId
+                    CashSessionId = sessionResult.Data.CashSessionId, // 🏥 MEDICAL: تنظیم CashSessionId
+                    CreatedByUserId = _currentUserService?.UserId, // ✅ ردیابی کاربر ایجادکننده
+                    CreatedAt = DateTime.Now // ✅ تاریخ ایجاد
                 };
 
                 _context.PaymentTransactions.Add(payment);
+
+                // 🏥 MEDICAL: به‌روزرسانی مانده نقدی در CashSession
+                var cashSession = await _context.CashSessions.FindAsync(sessionResult.Data.CashSessionId);
+                if (cashSession != null)
+                {
+                    cashSession.CashBalance += request.AmountIRR;
+                    cashSession.UpdatedAt = DateTime.Now;
+                    cashSession.UpdatedByUserId = _currentUserService?.UserId;
+                    _logger.Information("✅ FACADE: CashSession.CashBalance به‌روزرسانی شد - SessionId: {SessionId}, New CashBalance: {CashBalance}, Amount: {Amount}",
+                        cashSession.CashSessionId, cashSession.CashBalance, request.AmountIRR);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ FACADE: CashSession یافت نشد برای به‌روزرسانی CashBalance - SessionId: {SessionId}",
+                        sessionResult.Data.CashSessionId);
+                }
 
                 // نهایی‌سازی پیش‌نویس
                 draft.Status = ReceptionStatus.Completed;

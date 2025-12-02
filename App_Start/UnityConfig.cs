@@ -556,6 +556,10 @@ namespace ClinicApp
                 // ثبت سرویس ارتباط با دستگاه کارت‌خوان POS
                 container.RegisterType<IPosDeviceService, PosDeviceService>(new PerRequestLifetimeManager());
                 container.RegisterType<PosPaymentOrchestrator, PosPaymentOrchestrator>(new PerRequestLifetimeManager());
+                
+                // ثبت ماژول پرداخت POS (Production-Ready)
+                container.RegisterType<IPosPaymentService, PosPaymentService>(new PerRequestLifetimeManager());
+                container.RegisterType<PosPaymentConfigurationService, PosPaymentConfigurationService>(new PerRequestLifetimeManager());
 
                 // Register Supplementary Tariff Seeder Service
                 container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());

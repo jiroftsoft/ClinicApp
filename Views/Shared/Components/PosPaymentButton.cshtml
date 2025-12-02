@@ -1,0 +1,43 @@
+@*
+    ============================================
+    POS Payment Button Component (Production-Ready)
+    ============================================
+    
+    دکمه قابل استفاده مجدد برای پرداخت POS
+    
+    استفاده:
+    @Html.Partial("~/Views/Shared/Components/PosPaymentButton.cshtml", new { 
+        ButtonId = "btnPayPOS",
+        ButtonText = "پرداخت با POS",
+        ButtonClass = "btn-primary",
+        IconClass = "fas fa-credit-card"
+    })
+    
+    یا:
+    @{ Html.RenderPartial("~/Views/Shared/Components/PosPaymentButton.cshtml", new { 
+        ButtonId = "btnPayPOS",
+        ButtonText = "پرداخت با POS"
+    }); }
+    
+    @author ClinicApp Development Team
+    @version 1.0.0
+    @date 1404/09/11
+*@
+
+@{
+    var buttonId = ViewData["ButtonId"] as string ?? "btnPayPOS";
+    var buttonText = ViewData["ButtonText"] as string ?? "پرداخت با POS";
+    var buttonClass = ViewData["ButtonClass"] as string ?? "btn-primary";
+    var iconClass = ViewData["IconClass"] as string ?? "fas fa-credit-card";
+    var disabled = ViewData["Disabled"] as bool? ?? false;
+    var size = ViewData["Size"] as string ?? ""; // btn-sm, btn-lg, etc.
+    var fullWidth = ViewData["FullWidth"] as bool? ?? false;
+}
+
+<button type="button" 
+        id="@buttonId" 
+        class="btn @buttonClass @size @(fullWidth ? "w-100" : "")" 
+        @(disabled ? "disabled" : "")>
+    <i class="@iconClass me-2"></i>@buttonText
+</button>
+

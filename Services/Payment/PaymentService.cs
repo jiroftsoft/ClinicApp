@@ -123,7 +123,7 @@ namespace ClinicApp.Services.Payment
         /// <summary>
         /// پردازش پرداخت POS
         /// </summary>
-        public async Task<ServiceResult<PaymentTransaction>> ProcessPosPaymentAsync(PosPaymentRequest request)
+        public async Task<ServiceResult<PaymentTransaction>> ProcessPosPaymentAsync(ClinicApp.Interfaces.Payment.PosPaymentRequest request)
         {
             try
             {
@@ -224,7 +224,7 @@ namespace ClinicApp.Services.Payment
         /// <summary>
         /// اعتبارسنجی درخواست پرداخت POS
         /// </summary>
-        private async Task<ServiceResult> ValidatePosPaymentRequestAsync(PosPaymentRequest request)
+        private async Task<ServiceResult> ValidatePosPaymentRequestAsync(ClinicApp.Interfaces.Payment.PosPaymentRequest request)
         {
             var errors = new List<string>();
 

@@ -2,6 +2,9 @@
 @{
     ViewBag.Title = "پذیرش (نسخه جدید)";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // ✅ تنظیم SignalR URL برای استفاده در JavaScript
+    var signalRUrl = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:5000/signalr";
 }
 
 @* Anti-Forgery Token for AJAX (MUST be before scripts to ensure token exists in DOM) *@
@@ -14,53 +17,55 @@
 @Html.Partial("Partials/_ReceptionSummaryHeader")
 
 <div class="reception-pro container-fluid" dir="rtl">
-  <header class="reception-pro__header d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#receptionSidebar" aria-controls="receptionSidebar">☰</button>
-      <h5 class="m-0">پذیرش</h5>
-    </div>
-    <div class="d-flex gap-2">
-      <input id="NationalCode" class="form-control" placeholder="کدملی" autocomplete="off" />
-      <button id="BtnPatientLookup" class="btn btn-primary">جستجو/ساخت بیمار</button>
-      <span id="PosStatus" class="badge bg-success">POS آماده</span>
-    </div>
-  </header>
-
-  <div class="row mt-3">
-    <div class="col-xl-8 col-lg-7">
-      <section class="reception-pro__section">
-        <button class="btn btn-link p-0 mb-2" data-bs-toggle="collapse" data-bs-target="#identity">مشخصات هویتی</button>
-        <div id="identity" class="collapse show">
-          @Html.Partial("Partials/_Patient", Model.Patient)
+    <header class="reception-pro__header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#receptionSidebar" aria-controls="receptionSidebar">☰</button>
+            <h5 class="m-0">پذیرش</h5>
         </div>
-      </section>
+        <div class="d-flex gap-2">
+            <input id="NationalCode" class="form-control" placeholder="کدملی" autocomplete="off" />
+            <button id="BtnPatientLookup" class="btn btn-primary">جستجو/ساخت بیمار</button>
+            <span id="PosStatus" class="badge bg-success">POS آماده</span>
+        </div>
+    </header>
 
-      @Html.Partial("Partials/_Insurance", Model.Insurance)
-      @Html.Partial("Partials/_ClinicDept", Model.ClinicDept)
-      @Html.Partial("Partials/_ServicePicker", Model.ServicePicker)
-      @Html.Partial("Partials/_ItemsGrid", Model.ServicePicker.SelectedItems)
-    </div>
+    <div class="row mt-3">
+        <div class="col-xl-8 col-lg-7">
+            <section class="reception-pro__section">
+                <button class="btn btn-link p-0 mb-2" data-bs-toggle="collapse" data-bs-target="#identity">مشخصات هویتی</button>
+                <div id="identity" class="collapse show">
+                    @Html.Partial("Partials/_Patient", Model.Patient)
+                </div>
+            </section>
 
-    <div class="col-xl-4 col-lg-5">
-      <div class="reception-pro__sticky">
-        @Html.Partial("Partials/_Totals", Model.Totals)
-        @Html.Partial("Partials/_Payment", Model.Payment)
-      </div>
+            @Html.Partial("Partials/_Insurance", Model.Insurance)
+            @Html.Partial("Partials/_ClinicDept", Model.ClinicDept)
+            @Html.Partial("Partials/_ServicePicker", Model.ServicePicker)
+            @Html.Partial("Partials/_ItemsGrid", Model.ServicePicker.SelectedItems)
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="reception-pro__sticky">
+                @Html.Partial("Partials/_Totals", Model.Totals)
+                @Html.Partial("Partials/_Payment", Model.Payment)
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-
 @* Patient Fast Create Modal *@
 @Html.Partial("Partials/_PatientFastCreateModal")
 
 @* Coverage Modal *@
 @Html.Partial("Partials/_CoverageModal")
 
-@* POS Payment Modal *@
-@Html.Partial("Partials/_PosPaymentModal")
+@* POS Payment Modal - استفاده از ماژول جدید قابل استفاده مجدد *@
+@Html.Partial("~/Views/Shared/Components/PosPaymentModal.cshtml")
 
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/reception.v2")
 <script>
   window.ReceptionBootstrap = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Bootstrap));
+
+  // ✅ تنظیم SignalR URL از Web.config برای استفاده در JavaScript
+  window.SamanKishSignalRUrl = '@Html.Raw(signalRUrl)';
 </script>

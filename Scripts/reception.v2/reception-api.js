@@ -47,6 +47,10 @@
       const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
       return 'GetInsurancePlans' + q;
     }
+    if (/^\/?pos\/terminals\/default/i.test(path)) {
+      // ✅ POS Terminal API - no legacy fallback needed (new endpoint)
+      return null; // Return null to skip legacy fallback
+    }
     if (/^\/?doctors\/by-service/i.test(path)) {
       const q = path.indexOf('?') > -1 ? path.substring(path.indexOf('?')) : '';
       return 'GetDoctorsByService' + q;
@@ -112,13 +116,21 @@
     const d = $.Deferred();
     const cleanPath = path.replace(/^\//, ''); // Remove leading slash
 
+    // ✅ تعیین base URL بر اساس نوع API
+    let baseUrl;
+    if (/^\/?pos\//i.test(path)) {
+      baseUrl = '/api/v1'; // برای POS API از /api/v1 استفاده می‌کنیم
+    } else {
+      baseUrl = baseV1; // برای Reception API از baseV1 استفاده می‌کنیم
+    }
+
     // ✅ گام ۲: برای endpoint های /patient/*، fallback را غیرفعال کن
     const isPatientV1 = /^\/?patient\//i.test(path);
     
     if (isPatientV1) {
       // فقط v1 را بزن؛ به legacy نرو
       $.ajax({
-        url: stamp(baseV1 + '/' + cleanPath),
+        url: stamp(baseUrl + '/' + cleanPath),
         type: method,
         data: method === 'GET' ? undefined : JSON.stringify(data || {}),
         contentType: method === 'GET' ? undefined : 'application/json; charset=utf-8',
@@ -150,7 +162,7 @@
     }
 
     $.ajax({
-      url: stamp(baseV1 + '/' + cleanPath),
+      url: stamp(baseUrl + '/' + cleanPath),
       type: method,
       data: method === 'GET' ? undefined : JSON.stringify(data || {}),
       contentType: method === 'GET' ? undefined : 'application/json; charset=utf-8',

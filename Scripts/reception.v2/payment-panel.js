@@ -32,9 +32,139 @@
     return $rows;
   }
 
+  // ============================================
+  // POS Payment Client & UI Instances (Global)
+  // ============================================
+  var posPaymentClient = null;
+  var posPaymentUI = null;
+  var currentReceptionId = null;
+  var currentAmountIRR = null;
+
   // ✅ اطمینان از لود شدن DOM قبل از attach کردن event handlers
   $(document).ready(function() {
     console.log('🏥 V2: Payment Panel - DOM Ready, attaching event handlers...');
+    
+    // ============================================
+    // Initialize POS Payment Modules
+    // ============================================
+    try {
+      // تنظیمات SignalR URL - از global variable استفاده می‌کنیم که در view تنظیم می‌شود
+      var signalRUrl = window.SamanKishSignalRUrl || 'http://localhost:5000/signalr';
+      
+      // Initialize PosPaymentClient
+      if (typeof PosPaymentClient !== 'undefined') {
+        posPaymentClient = new PosPaymentClient({
+          signalRUrl: signalRUrl,
+          
+          onConnecting: function() {
+            console.log('🏥 V2: POS Payment - Connecting...');
+            if (posPaymentUI) {
+              posPaymentUI.showLoading('در حال اتصال...', 'در حال اتصال به دستگاه کارتخوان', 'لطفاً صبر کنید');
+            }
+          },
+          
+          onConnected: function() {
+            console.log('✅ V2: POS Payment - Connected to SignalR Hub');
+          },
+          
+          onCardSwiped: function(data) {
+            console.log('🔔 V2: POS Payment - Card swiped:', data);
+            if (posPaymentUI) {
+              posPaymentUI.showLoading('کارت کشیده شد', 'لطفاً رمز کارت را وارد کنید', '');
+            }
+          },
+          
+          onSuccess: function(response) {
+            console.log('✅ V2: POS Payment - Success:', response);
+            
+            // نمایش موفقیت در Modal
+            if (posPaymentUI) {
+              posPaymentUI.showSuccess({
+                rrn: response.rrn,
+                traceNo: response.traceNo,
+                terminalId: response.terminalId,
+                cardLast4: response.cardLast4,
+                amount: currentAmountIRR,
+                txnDate: new Date().toLocaleDateString('fa-IR')
+              });
+            }
+            
+            // ذخیره اطلاعات برای Finalize
+            window.posPaymentData = {
+              rrn: response.rrn,
+              traceNo: response.traceNo,
+              terminalId: response.terminalId,
+              cardLast4: response.cardLast4
+            };
+          },
+          
+          onCancel: function(response) {
+            console.log('⚠️ V2: POS Payment - Canceled:', response);
+            if (posPaymentUI) {
+              posPaymentUI.showCanceled();
+            }
+          },
+          
+          onError: function(error) {
+            console.error('❌ V2: POS Payment - Error:', error);
+            if (posPaymentUI) {
+              posPaymentUI.showError(error.message || 'خطا در پرداخت', error.code);
+            }
+          }
+        });
+        
+        console.log('✅ V2: PosPaymentClient initialized');
+      } else {
+        console.warn('⚠️ V2: PosPaymentClient not found - make sure pos-payment-client.js is loaded');
+      }
+      
+      // Initialize PosPaymentUI
+      if (typeof PosPaymentUI !== 'undefined') {
+        posPaymentUI = new PosPaymentUI({
+          modalId: 'posPaymentModal',
+          
+          onStart: function() {
+            // این callback در payment-panel.js مدیریت می‌شود
+            console.log('🏥 V2: POS Payment - Start button clicked');
+          },
+          
+          onConfirm: function() {
+            console.log('✅ V2: POS Payment - Confirm clicked');
+            if (currentReceptionId && currentAmountIRR && window.posPaymentData) {
+              finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+            }
+          },
+          
+          onPrint: function() {
+            console.log('🖨️ V2: POS Payment - Print clicked');
+            if (currentReceptionId) {
+              window.open(`/ReceptionV2/Print/${currentReceptionId}`, '_blank');
+            }
+          },
+          
+          onRetry: function() {
+            console.log('🔄 V2: POS Payment - Retry clicked');
+            if (currentReceptionId && currentAmountIRR) {
+              // Retry payment
+              openPosPaymentModal(currentReceptionId, currentAmountIRR);
+            }
+          },
+          
+          onCancel: function() {
+            console.log('❌ V2: POS Payment - Cancel clicked');
+            posPaymentUI.close();
+            // Reset payment data
+            window.posPaymentData = null;
+          }
+        });
+        
+        console.log('✅ V2: PosPaymentUI initialized');
+      } else {
+        console.warn('⚠️ V2: PosPaymentUI not found - make sure pos-payment-ui.js is loaded');
+      }
+    } catch (ex) {
+      console.error('❌ V2: Error initializing POS Payment modules:', ex);
+    }
     
     // Payment method toggle
     $("#PayPOS, #PayCash").on('click', function() {
@@ -199,7 +329,7 @@
           const isPOS = $("#PayPOS").hasClass('active');
           
           if (isPOS && amountIRR > 0) {
-            // ✅ باز کردن مودال پرداخت POS
+            // ✅ باز کردن مودال پرداخت POS (استفاده از ماژول جدید)
             openPosPaymentModal(receptionId, amountIRR);
             
             // ✅ مخفی کردن دکمه "ذخیره پذیرش" و نمایش دکمه "پرداخت و نهایی‌سازی"
@@ -453,21 +583,12 @@
           }
         }
         
-        // ✅ باز کردن Modal پرداخت POS
+        // ✅ باز کردن Modal پرداخت POS (استفاده از ماژول جدید)
+        // اطلاعات تراکنش از طریق PosPaymentClient callbacks دریافت می‌شود
+        // Finalize در onConfirm callback از PosPaymentUI انجام می‌شود
         console.log('🏥 V2: Opening POS Payment Modal with amount:', amountIRR);
-        openPosPaymentModal(receptionId, amountIRR, function(posData) {
-          // ✅ پس از دریافت اطلاعات تراکنش از دستگاه، Finalize را انجام بده
-          payload.pos = {
-            rrn: posData.rrn,
-            traceNo: posData.traceNo,
-            terminalId: posData.terminalId,
-            cardLast4: posData.cardLast4 || null
-          };
-          
-          // ✅ ادامه با Finalize
-          finalizeReception(payload, isPOS);
-        });
-        return; // منتظر بمان تا Modal اطلاعات را برگرداند
+        openPosPaymentModal(receptionId, amountIRR);
+        return; // منتظر بمان تا پرداخت انجام شود و کاربر Confirm کند
       } else {
         payload.cash = {
           cashSessionId: $("#CashSessionId").val() || null
@@ -497,8 +618,21 @@
       }
     };
     
-    // ✅ بستن Modal قبل از Finalize
-    $('#posPaymentModal').modal('hide');
+    // ✅ بستن Modal قبل از Finalize (پشتیبانی از Bootstrap 5 و 4)
+    var modalElement = document.getElementById('posPaymentModal');
+    if (modalElement) {
+        // ✅ Bootstrap 5 API
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+        // ✅ Fallback: Bootstrap 4 API (jQuery)
+        else if ($ && $.fn.modal) {
+            $(modalElement).modal('hide');
+        }
+    }
     
     finalizeReception(payload, true);
   }
@@ -576,210 +710,106 @@
   
   /**
    * ✅ باز کردن Modal پرداخت POS و ارتباط با دستگاه کارتخوان
+   * استفاده از ماژول جدید PosPaymentClient و PosPaymentUI
    */
   function openPosPaymentModal(receptionId, amountIRR) {
-    const $modal = $('#posPaymentModal');
-    
-    // ✅ Reset Modal state
-    $('#posPaymentReady').removeClass('d-none');
-    $('#posPaymentLoading').addClass('d-none');
-    $('#posPaymentSuccess').addClass('d-none');
-    $('#posPaymentError').addClass('d-none');
-    $('#posPaymentStartBtn').removeClass('d-none');
-    $('#posPaymentConfirmBtn').addClass('d-none');
-    $('#posPaymentPrintBtn').addClass('d-none');
-    $('#posPaymentCancelBtn').removeClass('d-none');
-    
-    // ✅ ذخیره ReceptionId و AmountIRR برای استفاده در callback
-    $modal.data('receptionId', receptionId);
-    $modal.data('amountIRR', amountIRR);
-    
-    // ✅ نمایش اطلاعات تراکنش
     console.log('🏥 V2: Opening POS Payment Modal - ReceptionId:', receptionId, 'AmountIRR:', amountIRR);
-    if (amountIRR && amountIRR > 0) {
-      $('#posAmount').text(U.toIRR(amountIRR) + ' ریال');
-    } else {
-      $('#posAmount').text('۰ ریال');
-      console.warn('🏥 V2: AmountIRR is zero or invalid:', amountIRR);
+    
+    // ذخیره برای استفاده در callbacks
+    currentReceptionId = receptionId;
+    currentAmountIRR = amountIRR;
+    
+    // ✅ بررسی اینکه ماژول‌ها initialize شده‌اند
+    if (!posPaymentClient || !posPaymentUI) {
+      console.error('❌ V2: POS Payment modules not initialized');
+      toastr.error('ماژول پرداخت POS آماده نیست. لطفاً صفحه را نوسازی کنید.', 'خطا', {
+        timeOut: 5000
+      });
+      return;
     }
     
-    // ✅ دریافت اطلاعات ترمینال پیش‌فرض
-    $.ajax({
-      url: '/api/v1/pos/terminals/default',
-      method: 'GET',
-      dataType: 'json',
-      success: function(response) {
+    // ✅ دریافت اطلاعات ترمینال پیش‌فرض (GET request)
+    API.get('/pos/terminals/default')
+      .then(function(response) {
         console.log('🏥 V2: GetDefault Terminal Response:', response);
+        
         if (response && response.Success && response.Data) {
-          const terminal = response.Data;
-          $('#posTerminalName').text(terminal.title || terminal.Title || 'دستگاه کارتخوان');
-          $modal.data('terminal', terminal);
+          const terminal = API.ok(response);
+          const terminalName = terminal.title || terminal.Title || 'دستگاه کارتخوان';
+          const terminalId = terminal.terminalId || terminal.TerminalId;
+          const ipAddress = terminal.ipAddress || terminal.IpAddress;
+          
+          // ✅ نمایش Modal با اطلاعات ترمینال
+          posPaymentUI.setPaymentInfo(amountIRR, terminalName);
+          posPaymentUI.open();
+          
+          // ✅ تنظیم callback برای دکمه "پرداخت با POS"
+          // این callback در PosPaymentUI.onStart مدیریت می‌شود
+          // اما ما باید processPayment را فراخوانی کنیم
+          $('#posPaymentStartBtn').off('click').on('click', function() {
+            console.log('🏥 V2: POS Payment Start button clicked');
+            
+            // نمایش Loading
+            posPaymentUI.showLoading('در حال ارسال مبلغ...', 'در حال ارسال مبلغ به دستگاه POS', 'لطفاً کارت را وارد کنید');
+            
+            // شروع پرداخت با PosPaymentClient
+            if (posPaymentClient && terminalId && ipAddress) {
+              posPaymentClient.processPayment(terminalId, amountIRR, ipAddress);
+            } else {
+              console.error('❌ V2: Missing terminal info:', { terminalId, ipAddress });
+              posPaymentUI.showError('اطلاعات ترمینال ناقص است', 'INVALID_TERMINAL');
+            }
+          });
         } else {
           const errorMsg = response?.Message || response?.message || 'ترمینال POS پیش‌فرض یافت نشد. لطفاً ابتدا ترمینال را تنظیم کنید.';
           console.error('🏥 V2: Terminal not found:', errorMsg);
-          showPosPaymentError(errorMsg);
+          toastr.error(errorMsg, 'خطا', {
+            timeOut: 5000
+          });
         }
-      },
-      error: function(xhr, status, error) {
-        console.error('🏥 V2: Error fetching terminal:', { xhr, status, error });
-        const errorMsg = xhr?.responseJSON?.Message || 
-                        xhr?.responseJSON?.message || 
+      })
+      .catch(function(err) {
+        console.error('🏥 V2: Error fetching terminal:', err);
+        const errorMsg = err?.responseJSON?.Message || 
+                        err?.responseJSON?.message || 
                         'خطا در دریافت اطلاعات ترمینال';
-        showPosPaymentError(errorMsg);
-      }
-    });
-    
-    // ✅ مدیریت دکمه "پرداخت با POS"
-    $('#posPaymentStartBtn').off('click').on('click', function() {
-      const terminal = $modal.data('terminal');
-      if (!terminal) {
-        toastr.error('اطلاعات ترمینال یافت نشد');
-        return;
-      }
-      
-      // ✅ شروع پردازش پرداخت
-      $('#posPaymentReady').addClass('d-none');
-      $('#posPaymentLoading').removeClass('d-none');
-      $('#posPaymentStartBtn').addClass('d-none');
-      
-      processPosPayment(receptionId, amountIRR, terminal);
-    });
-    
-    // ✅ نمایش Modal
-    $modal.modal('show');
-    
-    // ✅ مدیریت بستن Modal
-    $modal.off('hidden.bs.modal').on('hidden.bs.modal', function() {
-      $('#posPaymentReady').removeClass('d-none');
-      $('#posPaymentLoading').addClass('d-none');
-      $('#posPaymentSuccess').addClass('d-none');
-      $('#posPaymentError').addClass('d-none');
-      $('#posPaymentStartBtn').removeClass('d-none');
-      $('#posPaymentConfirmBtn').addClass('d-none');
-      $('#posPaymentPrintBtn').addClass('d-none');
-    });
+        toastr.error(errorMsg, 'خطا', {
+          timeOut: 5000
+        });
+      });
   }
   
   /**
    * ✅ پردازش پرداخت POS از طریق دستگاه کارتخوان
+   * این تابع دیگر استفاده نمی‌شود - منطق به PosPaymentClient منتقل شده است
+   * اما برای backward compatibility نگه داشته شده است
+   * @deprecated استفاده از PosPaymentClient.processPayment() به جای این تابع
    */
   function processPosPayment(receptionId, amountIRR, terminal) {
-    $.ajax({
-      url: '/api/v1/pos/process-payment',
-      method: 'POST',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify({
-        ReceptionId: receptionId,
-        AmountIRR: amountIRR,
-        PosTerminalId: terminal.posTerminalId || terminal.PosTerminalId
-      }),
-      headers: {
-        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-      },
-      dataType: 'json',
-      success: function(response) {
-        if (response && response.Success && response.Data) {
-          const posData = response.Data;
-          
-          // ✅ نمایش موفقیت
-          $('#posPaymentLoading').addClass('d-none');
-          $('#posPaymentSuccess').removeClass('d-none');
-          $('#posPaymentConfirmBtn').removeClass('d-none');
-          $('#posPaymentPrintBtn').removeClass('d-none');
-          $('#posPaymentCancelBtn').addClass('d-none');
-          
-          // ✅ نمایش جزئیات تراکنش
-          $('#posRRN').text(posData.rrn || '');
-          $('#posTraceNo').text(posData.traceNo || '');
-          $('#posTerminalId').text(posData.terminalId || terminal.terminalId || terminal.TerminalId || '');
-          $('#posCardLast4').text(posData.cardLast4 || '');
-          
-          // ✅ ذخیره اطلاعات برای استفاده در Finalize
-          window.posPaymentData = {
-            rrn: posData.rrn,
-            traceNo: posData.traceNo,
-            terminalId: posData.terminalId || terminal.terminalId || terminal.TerminalId,
-            cardLast4: posData.cardLast4
-          };
-          
-          // ✅ مدیریت دکمه تأیید و نهایی‌سازی
-          $('#posPaymentConfirmBtn').off('click').on('click', function() {
-            finalizeAfterPayment(receptionId, amountIRR, window.posPaymentData);
-          });
-          
-          // ✅ مدیریت دکمه چاپ
-          $('#posPaymentPrintBtn').off('click').on('click', function() {
-            // چاپ قبض پرداخت
-            window.open(`/ReceptionV2/Print/${receptionId}`, '_blank');
-          });
-        } else {
-          showPosPaymentError(response?.Message || response?.message || 'خطا در پردازش پرداخت');
-        }
-      },
-      error: function(xhr) {
-        const errorMsg = xhr?.responseJSON?.Message || 
-                        xhr?.responseJSON?.message || 
-                        'خطا در ارتباط با دستگاه کارتخوان';
-        showPosPaymentError(errorMsg);
-        
-        // ✅ اگر پرداخت ناموفق بود، پذیرش به لیست پذیرش‌ها می‌رود (Status = Pending)
-        // این کار در backend انجام می‌شود - فقط پیام نمایش می‌دهیم
-        toastr.warning('پرداخت ناموفق بود. پذیرش در لیست پذیرش‌ها ذخیره شد و می‌توانید بعداً پرداخت کنید.', 'هشدار', {
-          timeOut: 8000,
-          positionClass: 'toast-top-center',
-          closeButton: true
-        });
-        
-        // ✅ هدایت به لیست پذیرش‌ها (اختیاری)
-        setTimeout(function() {
-          if (confirm('آیا می‌خواهید به لیست پذیرش‌ها بروید؟')) {
-            window.location.href = '/Reception/Index';
-          }
-        }, 2000);
+    console.warn('⚠️ V2: processPosPayment is deprecated - use PosPaymentClient.processPayment() instead');
+    
+    // Fallback: اگر PosPaymentClient موجود نبود، از AJAX استفاده کن
+    if (!posPaymentClient) {
+      console.warn('⚠️ V2: PosPaymentClient not available, falling back to AJAX');
+      // TODO: می‌توانیم AJAX قدیمی را اینجا نگه داریم یا خطا بدهیم
+      toastr.error('ماژول پرداخت POS آماده نیست. لطفاً صفحه را نوسازی کنید.', 'خطا');
+      return;
+    }
+    
+    // استفاده از PosPaymentClient
+    const terminalId = terminal.terminalId || terminal.TerminalId;
+    const ipAddress = terminal.ipAddress || terminal.IpAddress;
+    
+    if (terminalId && ipAddress) {
+      posPaymentClient.processPayment(terminalId, amountIRR, ipAddress);
+    } else {
+      console.error('❌ V2: Missing terminal info:', terminal);
+      if (posPaymentUI) {
+        posPaymentUI.showError('اطلاعات ترمینال ناقص است', 'INVALID_TERMINAL');
       }
-    });
+    }
   }
   
-  /**
-   * ✅ نمایش خطا در Modal پرداخت POS
-   */
-  function showPosPaymentError(message) {
-    const $modal = $('#posPaymentModal');
-    $('#posPaymentReady').addClass('d-none');
-    $('#posPaymentLoading').addClass('d-none');
-    $('#posPaymentSuccess').addClass('d-none');
-    $('#posPaymentError').removeClass('d-none');
-    $('#posErrorMessage').text(message);
-    $('#posPaymentStartBtn').addClass('d-none');
-    $('#posPaymentConfirmBtn').addClass('d-none');
-    $('#posPaymentPrintBtn').addClass('d-none');
-    $('#posPaymentCancelBtn').removeClass('d-none');
-  }
-  
-  /**
-   * ✅ نهایی‌سازی پس از پرداخت موفق
-   */
-  function finalizeAfterPayment(receptionId, amountIRR, posData) {
-    console.log('🏥 V2: Finalizing after successful payment:', { receptionId, amountIRR, posData });
-    
-    const payload = {
-      receptionId: receptionId,
-      amountIRR: amountIRR,
-      idempotencyKey: U.guid(),
-      pos: {
-        rrn: posData.rrn,
-        traceNo: posData.traceNo,
-        terminalId: posData.terminalId,
-        cardLast4: posData.cardLast4 || null
-      }
-    };
-    
-    // ✅ بستن Modal قبل از Finalize
-    $('#posPaymentModal').modal('hide');
-    
-    finalizeReception(payload, true);
-  }
-
   /**
    * 🏥 MEDICAL: پاک کردن فرم و آماده‌سازی برای پذیرش بیمار بعدی
    * این تابع Draft را حذف می‌کند و تمام فیلدهای فرم را پاک می‌کند

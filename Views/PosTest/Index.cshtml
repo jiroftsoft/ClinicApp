@@ -4,8 +4,8 @@
 }
 
 @section MetaTags {
-    <!-- Override CSP for SignalR (این صفحه نیاز به اتصال به localhost:8080 دارد) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8080; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8080; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:8080 ws://localhost:8080; frame-ancestors 'none';">
+    <!-- Override CSP for SignalR (این صفحه نیاز به اتصال به localhost:5000 دارد) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:5000 ws://localhost:5000; frame-ancestors 'none';">
 }
 
 <div class="container-fluid" dir="rtl">
@@ -188,7 +188,7 @@
             
             // تنظیم آدرس SignalR Hub
             @{
-                var signalRUrlFromConfig = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:8080/signalr";
+                var signalRUrlFromConfig = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:5000/signalr";
                 var signalRHubsUrl = signalRUrlFromConfig + "/hubs";
             }
             var signalRUrl = '@(signalRUrlFromConfig)';
@@ -197,14 +197,35 @@
             // بارگذاری dynamic hubs script (برای رفع مشکل CSP)
             var hubsScript = document.createElement('script');
             hubsScript.src = signalRHubsUrl;
-            hubsScript.onerror = function() {
+            hubsScript.onerror = function(error) {
                 console.error('❌ Failed to load SignalR hubs from:', signalRHubsUrl);
+                
+                // ✅ تشخیص نوع خطا و ارائه راه‌حل دقیق‌تر
+                var errorMessage = 'عدم امکان بارگذاری SignalR Hubs.\n\n';
+                errorMessage += '🔍 وضعیت:\n';
+                errorMessage += '• Service در حال اجرا است (Status: Running)\n';
+                errorMessage += '• اما Port 5000 باز نیست (netstat خروجی ندارد)\n\n';
+                errorMessage += '🔧 راه‌حل:\n';
+                errorMessage += '1. Service را با دسترسی Admin Restart کنید:\n';
+                errorMessage += '   PowerShell (Admin): Restart-Service -Name "SSP1126Service1" -Force\n\n';
+                errorMessage += '2. بررسی کنید که Service روی Port 5000 listen می‌کند:\n';
+                errorMessage += '   PowerShell: netstat -ano | findstr :5000 | findstr LISTENING\n\n';
+                errorMessage += '3. بررسی Log های Service:\n';
+                errorMessage += '   PowerShell: Get-Content "C:\\Log\\*.log" -Tail 50\n\n';
+                errorMessage += '4. اگر مشکل ادامه داشت، Service را Stop و Start کنید:\n';
+                errorMessage += '   PowerShell (Admin):\n';
+                errorMessage += '   Stop-Service -Name "SSP1126Service1" -Force\n';
+                errorMessage += '   Start-Service -Name "SSP1126Service1"';
+                
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا در بارگذاری SignalR',
-                    text: 'عدم امکان بارگذاری SignalR Hubs. آیا سرویس SSP1126 در حال اجراست؟',
+                    html: '<div dir="rtl" style="text-align: right; font-family: Tahoma; font-size: 12px;">' + 
+                          errorMessage.replace(/\n/g, '<br>') + 
+                          '</div>',
                     confirmButtonText: 'تأیید',
-                    confirmButtonColor: '#dc3545'
+                    confirmButtonColor: '#dc3545',
+                    width: '700px'
                 });
             };
             hubsScript.onload = function() {

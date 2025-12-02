@@ -166,6 +166,7 @@ namespace ClinicApp
                 "~/Scripts/toastr.min.js",
                 "~/Scripts/lodash.debounce.min.js",
                 "~/Scripts/jquery.inputmask.bundle.min.js",
+                "~/Scripts/jquery.signalR-2.4.2.min.js", // ✅ SignalR Client برای POS Payment
                 "~/Scripts/reception.v2/reception-api.js",
                 "~/Scripts/reception.v2/reception-utils.js",
                 "~/Scripts/reception.v2/pricing-ui.js",
@@ -179,6 +180,8 @@ namespace ClinicApp
                 "~/Scripts/reception.v2/service-lookup.js",
                 "~/Scripts/reception.v2/coverage-modal.js",
                 "~/Scripts/reception.v2/totals-panel.js",
+                "~/Scripts/pos-payment/pos-payment-client.js", // ✅ ماژول جدید POS Payment Client
+                "~/Scripts/pos-payment/pos-payment-ui.js", // ✅ ماژول جدید POS Payment UI
                 "~/Scripts/reception.v2/payment-panel.js",
                 "~/Scripts/reception.v2/reception-main.js"
             );

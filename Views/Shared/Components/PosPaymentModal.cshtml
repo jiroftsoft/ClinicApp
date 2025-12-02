@@ -1,0 +1,295 @@
+@*
+    ============================================
+    POS Payment Modal Component (Production-Ready)
+    ============================================
+    
+    ماژول قابل استفاده مجدد برای Modal پرداخت POS
+    
+    استفاده:
+    @Html.Partial("~/Views/Shared/Components/PosPaymentModal.cshtml")
+    
+    یا در Layout:
+    @{ Html.RenderPartial("~/Views/Shared/Components/PosPaymentModal.cshtml"); }
+    
+    ویژگی‌ها:
+    ✅ قابل استفاده مجدد در ماژول‌های مختلف
+    ✅ UI حرفه‌ای و User-Friendly
+    ✅ مدیریت کامل State ها (Ready, Loading, Success, Error, Cancel)
+    ✅ نمایش جزئیات تراکنش
+    ✅ دکمه‌های کنترل کامل
+    
+    @author ClinicApp Development Team
+    @version 1.0.0
+    @date 1404/09/11
+*@
+
+<div class="modal fade" id="posPaymentModal" tabindex="-1" aria-labelledby="posPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="posPaymentModalLabel">
+                    <i class="fas fa-credit-card me-2"></i>پرداخت از طریق کارتخوان
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن" id="posPaymentModalCloseBtn"></button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- Status: Ready -->
+                <div id="posPaymentReady" class="pos-payment-state">
+                    <div class="text-center py-4">
+                        <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                        <h5 class="mb-3">آماده برای پرداخت</h5>
+                        <p class="text-muted mb-0">لطفاً روی دکمه "پرداخت با POS" کلیک کنید تا پرداخت شروع شود</p>
+                    </div>
+                </div>
+                
+                <!-- Status: Loading/Processing -->
+                <div id="posPaymentLoading" class="pos-payment-state d-none">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">در حال پردازش...</span>
+                        </div>
+                        <h5 class="mb-2" id="posPaymentLoadingTitle">در حال اتصال به دستگاه کارتخوان...</h5>
+                        <p class="text-muted mb-1" id="posPaymentLoadingMessage">لطفاً صبر کنید</p>
+                        <p class="text-muted small" id="posPaymentLoadingHint"></p>
+                    </div>
+                </div>
+                
+                <!-- Status: Success -->
+                <div id="posPaymentSuccess" class="pos-payment-state d-none">
+                    <div class="alert alert-success border-0">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h4 class="mb-3">پرداخت با موفقیت انجام شد</h4>
+                        </div>
+                        <div id="posPaymentDetails" class="mt-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-muted mb-2">اطلاعات تراکنش</h6>
+                                            <p class="mb-2"><strong>RRN:</strong> <span id="posRRN" class="text-primary"></span></p>
+                                            <p class="mb-2"><strong>Trace No:</strong> <span id="posTraceNo" class="text-primary"></span></p>
+                                            <p class="mb-0"><strong>Terminal ID:</strong> <span id="posTerminalId" class="text-primary"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-muted mb-2">اطلاعات کارت</h6>
+                                            <p class="mb-2"><strong>شماره کارت:</strong> <span id="posCardLast4" class="text-primary"></span></p>
+                                            <p class="mb-2"><strong>مبلغ:</strong> <span id="posSuccessAmount" class="text-success fw-bold"></span></p>
+                                            <p class="mb-0"><strong>تاریخ:</strong> <span id="posTxnDate" class="text-muted"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status: Error -->
+                <div id="posPaymentError" class="pos-payment-state d-none">
+                    <div class="alert alert-danger border-0">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                            <h4 class="mb-3">خطا در پرداخت</h4>
+                        </div>
+                        <div id="posErrorDetails" class="mt-3">
+                            <p id="posErrorMessage" class="mb-2"></p>
+                            <div id="posErrorCode" class="text-muted small"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status: Canceled -->
+                <div id="posPaymentCanceled" class="pos-payment-state d-none">
+                    <div class="alert alert-warning border-0">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                            <h4 class="mb-3">پرداخت لغو شد</h4>
+                            <p class="mb-0">عملیات توسط کاربر لغو شد</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Info (Always Visible) -->
+                <div id="posPaymentInfo" class="mt-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-info-circle me-2"></i>اطلاعات تراکنش
+                            </h6>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>مبلغ:</strong> <span id="posAmount" class="text-primary fw-bold fs-5"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-0"><strong>دستگاه:</strong> <span id="posTerminalName" class="text-muted"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="posPaymentCancelBtn">
+                    <i class="fas fa-times me-2"></i>انصراف
+                </button>
+                <button type="button" class="btn btn-primary" id="posPaymentStartBtn">
+                    <i class="fas fa-credit-card me-2"></i>پرداخت با POS
+                </button>
+                <button type="button" class="btn btn-success d-none" id="posPaymentConfirmBtn">
+                    <i class="fas fa-check me-2"></i>تأیید و نهایی‌سازی
+                </button>
+                <button type="button" class="btn btn-info d-none" id="posPaymentPrintBtn">
+                    <i class="fas fa-print me-2"></i>چاپ قبض
+                </button>
+                <button type="button" class="btn btn-warning d-none" id="posPaymentRetryBtn">
+                    <i class="fas fa-redo me-2"></i>تلاش مجدد
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* JavaScript Helper Functions برای مدیریت Modal *@
+<script>
+    /**
+     * POS Payment Modal Helper Functions
+     * 
+     * این توابع برای مدیریت State های مختلف Modal استفاده می‌شوند
+     */
+    window.PosPaymentModal = {
+        /**
+         * نمایش State Ready
+         */
+        showReady: function() {
+            this._hideAllStates();
+            $('#posPaymentReady').removeClass('d-none');
+            $('#posPaymentStartBtn').removeClass('d-none');
+            $('#posPaymentCancelBtn').removeClass('d-none');
+            $('#posPaymentConfirmBtn').addClass('d-none');
+            $('#posPaymentPrintBtn').addClass('d-none');
+            $('#posPaymentRetryBtn').addClass('d-none');
+        },
+        
+        /**
+         * نمایش State Loading
+         */
+        showLoading: function(title, message, hint) {
+            this._hideAllStates();
+            $('#posPaymentLoading').removeClass('d-none');
+            $('#posPaymentLoadingTitle').text(title || 'در حال اتصال به دستگاه کارتخوان...');
+            $('#posPaymentLoadingMessage').text(message || 'لطفاً صبر کنید');
+            $('#posPaymentLoadingHint').text(hint || '');
+            $('#posPaymentStartBtn').addClass('d-none');
+            $('#posPaymentCancelBtn').addClass('d-none');
+        },
+        
+        /**
+         * نمایش State Success
+         */
+        showSuccess: function(data) {
+            this._hideAllStates();
+            $('#posPaymentSuccess').removeClass('d-none');
+            
+            // پر کردن جزئیات
+            $('#posRRN').text(data.rrn || 'نامشخص');
+            $('#posTraceNo').text(data.traceNo || 'نامشخص');
+            $('#posTerminalId').text(data.terminalId || 'نامشخص');
+            $('#posCardLast4').text(data.cardLast4 ? '****' + data.cardLast4 : 'نامشخص');
+            $('#posSuccessAmount').text(data.amount ? parseFloat(data.amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص');
+            $('#posTxnDate').text(data.txnDate || 'نامشخص');
+            
+            $('#posPaymentConfirmBtn').removeClass('d-none');
+            $('#posPaymentPrintBtn').removeClass('d-none');
+            $('#posPaymentCancelBtn').removeClass('d-none');
+        },
+        
+        /**
+         * نمایش State Error
+         */
+        showError: function(message, errorCode) {
+            this._hideAllStates();
+            $('#posPaymentError').removeClass('d-none');
+            $('#posErrorMessage').text(message || 'خطا در پرداخت');
+            if (errorCode) {
+                $('#posErrorCode').text('کد خطا: ' + errorCode);
+            }
+            $('#posPaymentRetryBtn').removeClass('d-none');
+            $('#posPaymentCancelBtn').removeClass('d-none');
+        },
+        
+        /**
+         * نمایش State Canceled
+         */
+        showCanceled: function() {
+            this._hideAllStates();
+            $('#posPaymentCanceled').removeClass('d-none');
+            $('#posPaymentRetryBtn').removeClass('d-none');
+            $('#posPaymentCancelBtn').removeClass('d-none');
+        },
+        
+        /**
+         * تنظیم اطلاعات تراکنش
+         */
+        setPaymentInfo: function(amount, terminalName) {
+            $('#posAmount').text(amount ? parseFloat(amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص');
+            $('#posTerminalName').text(terminalName || 'نامشخص');
+        },
+        
+        /**
+         * مخفی کردن تمام State ها
+         */
+        _hideAllStates: function() {
+            $('.pos-payment-state').addClass('d-none');
+        },
+        
+        /**
+         * باز کردن Modal
+         */
+        open: function() {
+            $('#posPaymentModal').modal('show');
+            this.showReady();
+        },
+        
+        /**
+         * بستن Modal
+         */
+        close: function() {
+            $('#posPaymentModal').modal('hide');
+            this.showReady(); // Reset to ready state
+        }
+    };
+</script>
+
+<style>
+    /* استایل‌های اختصاصی Modal */
+    .pos-payment-state {
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #posPaymentModal .modal-content {
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    #posPaymentModal .modal-header {
+        border-radius: 10px 10px 0 0;
+    }
+    
+    #posPaymentModal .card {
+        border: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+</style>
+
