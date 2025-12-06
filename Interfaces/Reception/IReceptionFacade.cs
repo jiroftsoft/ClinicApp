@@ -157,6 +157,11 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         Task<ServiceResult<CancelReceptionResponse>> CancelReceptionAsync(CancelReceptionRequest request);
 
+        /// <summary>
+        /// دریافت جزئیات کامل پذیرش برای نمایش در Modal
+        /// </summary>
+        Task<ServiceResult<ReceptionDetailsFullDto>> GetReceptionDetailsFullAsync(int receptionId);
+
         #endregion
     }
 }

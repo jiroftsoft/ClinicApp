@@ -4783,9 +4783,10 @@ namespace ClinicApp.Services.Reception
                 _logger.Information("🚫 FACADE: لغو پذیرش - ReceptionId: {ReceptionId}, Reason: {Reason}", 
                     request.ReceptionId, request.Reason);
 
-                // 1. دریافت پذیرش
+                // 1. دریافت پذیرش (با Include ReceptionItems برای صفر کردن مبالغ مالی)
                 var reception = await _context.Receptions
                     .Include(r => r.Transactions)
+                    .Include(r => r.ReceptionItems) // ✅ اضافه شد: برای صفر کردن مبالغ مالی ReceptionItems
                     .FirstOrDefaultAsync(r => r.ReceptionId == request.ReceptionId);
 
                 if (reception == null)
@@ -4817,13 +4818,26 @@ namespace ClinicApp.Services.Reception
 
                 if (hasPayment && request.ProcessRefund)
                 {
-                    // ثبت تراکنش Refund
+                    // ✅ دریافت CashSessionId از اولین تراکنش موفق
+                    var firstPayment = successfulPayments.FirstOrDefault();
+                    if (firstPayment == null || firstPayment.CashSessionId == 0)
+                    {
+                        _logger.Warning("⚠️ FACADE: CashSessionId یافت نشد در تراکنش‌های پرداخت - ReceptionId: {ReceptionId}", 
+                            request.ReceptionId);
+                        return ServiceResult<CancelReceptionResponse>.Failed(
+                            "خطا در دریافت اطلاعات صندوق. لطفاً با پشتیبانی تماس بگیرید.",
+                            "CASH_SESSION_NOT_FOUND");
+                    }
+
+                    // ✅ ثبت تراکنش Refund
+                    var refundMethod = firstPayment.Method;
                     var refundTransaction = new Models.Entities.Payment.PaymentTransaction
                     {
                         ReceptionId = reception.ReceptionId,
                         Amount = -totalPaid, // منفی برای Refund
                         Status = PaymentStatus.Canceled, // استفاده از Canceled برای Refund
-                        Method = successfulPayments.FirstOrDefault()?.Method ?? PaymentMethod.Cash,
+                        Method = refundMethod,
+                        CashSessionId = firstPayment.CashSessionId, // ✅ تنظیم CashSessionId
                         Description = $"برگشت وجه (Refund) - دلیل: {request.RefundReason ?? request.Reason}",
                         IdempotencyKey = Guid.NewGuid().ToString(),
                         CreatedAt = DateTime.Now,
@@ -4832,13 +4846,50 @@ namespace ClinicApp.Services.Reception
 
                     _context.PaymentTransactions.Add(refundTransaction);
 
-                    // Note: PaidAmount is calculated dynamically from Transactions, no need to update it here
+                    // ✅ به‌روزرسانی CashSession Balance
+                    var cashSession = await _context.CashSessions
+                        .FirstOrDefaultAsync(cs => cs.CashSessionId == firstPayment.CashSessionId);
+                    
+                    if (cashSession != null)
+                    {
+                        // ✅ کاهش Balance بر اساس روش پرداخت
+                        if (refundMethod == PaymentMethod.Cash)
+                        {
+                            cashSession.CashBalance -= totalPaid;
+                            cashSession.UpdatedAt = DateTime.Now;
+                            cashSession.UpdatedByUserId = _currentUserService.UserId;
+                            
+                            _logger.Information("💰 FACADE: CashSession.CashBalance کاهش یافت - SessionId: {SessionId}, Amount: {Amount}, New Balance: {NewBalance}",
+                                cashSession.CashSessionId, totalPaid, cashSession.CashBalance);
+                        }
+                        else if (refundMethod == PaymentMethod.POS)
+                        {
+                            cashSession.PosBalance -= totalPaid;
+                            cashSession.UpdatedAt = DateTime.Now;
+                            cashSession.UpdatedByUserId = _currentUserService.UserId;
+                            
+                            _logger.Information("💰 FACADE: CashSession.PosBalance کاهش یافت - SessionId: {SessionId}, Amount: {Amount}, New Balance: {NewBalance}",
+                                cashSession.CashSessionId, totalPaid, cashSession.PosBalance);
+                        }
+                        else
+                        {
+                            // برای سایر روش‌های پرداخت (مثلاً OnlinePayment)، فقط Log می‌کنیم
+                            _logger.Information("💰 FACADE: Refund برای روش پرداخت {Method} - SessionId: {SessionId}, Amount: {Amount}",
+                                refundMethod, cashSession.CashSessionId, totalPaid);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ FACADE: CashSession یافت نشد - SessionId: {SessionId}",
+                            firstPayment.CashSessionId);
+                        // ادامه می‌دهیم حتی اگر CashSession یافت نشد (برای سازگاری)
+                    }
 
                     refundAmount = totalPaid;
                     refundProcessed = true;
 
-                    _logger.Information("💰 FACADE: Refund ثبت شد - ReceptionId: {ReceptionId}, Amount: {Amount}", 
-                        request.ReceptionId, totalPaid);
+                    _logger.Information("💰 FACADE: Refund ثبت شد و CashSession به‌روزرسانی شد - ReceptionId: {ReceptionId}, Amount: {Amount}, Method: {Method}", 
+                        request.ReceptionId, totalPaid, refundMethod);
                 }
                 else if (hasPayment && !request.ProcessRefund)
                 {
@@ -4853,6 +4904,65 @@ namespace ClinicApp.Services.Reception
                 // 5. تغییر وضعیت به Cancelled
                 var previousStatus = reception.Status;
                 reception.Status = ReceptionStatus.Cancelled;
+
+                // ✅ 5.1. صفر کردن مبالغ مالی برای جلوگیری از مغایرت در محاسبات مالی
+                // این کار ضروری است تا پذیرش لغو شده در گزارش‌های مالی تاثیر نگذارد
+                var previousTotalAmount = reception.TotalAmount;
+                var previousPatientCoPay = reception.PatientCoPay;
+                var previousBasePay = reception.BasePay;
+                var previousSuppPay = reception.SuppPay;
+                var previousInsurerShare = reception.InsurerShareAmount;
+                var previousPatientPay = reception.PatientPay;
+                var previousGross = reception.Gross;
+
+                reception.TotalAmount = 0;
+                reception.PatientCoPay = 0;
+                reception.BasePay = 0;
+                reception.SuppPay = 0;
+                reception.InsurerShareAmount = 0;
+                reception.PatientPay = 0;
+                reception.Gross = 0;
+
+                _logger.Information("💰 FACADE: مبالغ مالی Reception صفر شدند - ReceptionId: {ReceptionId}, Previous: Total={Total}, Patient={Patient}, Base={Base}, Supp={Supp}, Insurer={Insurer}, PatientPay={PatientPay}, Gross={Gross}",
+                    reception.ReceptionId, previousTotalAmount, previousPatientCoPay, previousBasePay, previousSuppPay, previousInsurerShare, previousPatientPay, previousGross);
+
+                // ✅ 5.2. صفر کردن مبالغ مالی ReceptionItems برای جلوگیری از مغایرت در محاسبات مالی
+                // این کار ضروری است تا آیتم‌های پذیرش لغو شده در گزارش‌های مالی تاثیر نگذارند
+                var activeItems = reception.ReceptionItems?.Where(ri => !ri.IsDeleted).ToList() ?? new List<Models.Entities.Reception.ReceptionItem>();
+                var itemsZeroedCount = 0;
+                var totalItemsAmount = 0m;
+                var totalItemsPatientShare = 0m;
+                var totalItemsInsurerShare = 0m;
+
+                foreach (var item in activeItems)
+                {
+                    // ذخیره مقادیر قبلی برای Logging
+                    totalItemsAmount += item.UnitPrice * item.Quantity;
+                    totalItemsPatientShare += item.PatientShareAmount;
+                    totalItemsInsurerShare += item.InsurerShareAmount;
+
+                    // ✅ صفر کردن مبالغ مالی (Quantity و SnapshotJson را نگه می‌داریم برای Audit Trail)
+                    item.UnitPrice = 0;
+                    item.PatientShareAmount = 0;
+                    item.InsurerShareAmount = 0;
+                    
+                    // به‌روزرسانی UpdatedAt و UpdatedByUserId
+                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedByUserId = _currentUserService.UserId;
+                    
+                    itemsZeroedCount++;
+                }
+
+                if (itemsZeroedCount > 0)
+                {
+                    _logger.Information("💰 FACADE: مبالغ مالی {Count} ReceptionItem صفر شدند - ReceptionId: {ReceptionId}, Previous: TotalAmount={TotalAmount}, PatientShare={PatientShare}, InsurerShare={InsurerShare}",
+                        itemsZeroedCount, reception.ReceptionId, totalItemsAmount, totalItemsPatientShare, totalItemsInsurerShare);
+                }
+                else
+                {
+                    _logger.Information("ℹ️ FACADE: هیچ ReceptionItem فعالی برای صفر کردن یافت نشد - ReceptionId: {ReceptionId}",
+                        reception.ReceptionId);
+                }
 
                 // 6. ثبت دلیل لغو در Notes (اگر Notes خالی است یا اضافه کردن به انتهای آن)
                 var cancellationNote = $"\n\n[لغو شده در {DateTime.Now.ToPersianDateTime()} توسط {_currentUserService.UserName}]\nدلیل: {request.Reason}";
@@ -5016,6 +5126,267 @@ namespace ClinicApp.Services.Reception
                 _logger.Error(ex, "❌ FACADE: خطا در دریافت شناسه کاربر معتبر از دیتابیس");
                 // در صورت خطا، null برمی‌گردانیم (چون CreatedByUserId HasOptional است)
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات کامل پذیرش برای نمایش در Modal
+        /// </summary>
+        public async Task<ServiceResult<ReceptionDetailsFullDto>> GetReceptionDetailsFullAsync(int receptionId)
+        {
+            try
+            {
+                _logger.Information("🏥 FACADE: دریافت جزئیات کامل پذیرش - ReceptionId: {ReceptionId}", receptionId);
+
+                // 1. دریافت پذیرش با تمام جزئیات
+                var reception = await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Department)
+                    .Include(r => r.Clinic)
+                    .Include(r => r.ActivePatientInsurance)
+                    .Include(r => r.ActivePatientInsurance.InsurancePlan)
+                    .Include(r => r.ActivePatientInsurance.SupplementaryInsurancePlan)
+                    .Include(r => r.ReceptionItems.Select(ri => ri.Service))
+                    .Include(r => r.Transactions.Select(t => t.CreatedByUser))
+                    .Include(r => r.Transactions.Select(t => t.CashSession))
+                    .Include(r => r.CreatedByUser)
+                    .Include(r => r.UpdatedByUser)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+
+                if (reception == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پذیرش یافت نشد - ReceptionId: {ReceptionId}", receptionId);
+                    return ServiceResult<ReceptionDetailsFullDto>.Failed($"پذیرش با شناسه {receptionId} یافت نشد", "NOT_FOUND");
+                }
+
+                // 2. دریافت نام پزشک و تخصص
+                string doctorFullName = string.Empty;
+                string doctorSpecialization = string.Empty;
+                string doctorDegree = string.Empty;
+                if (reception.DoctorId > 0)
+                {
+                    // ✅ دریافت اطلاعات پزشک با Select مستقیم (بدون Include برای جلوگیری از materialize شدن کامل entity)
+                    var doctorInfo = await _context.Doctors
+                        .AsNoTracking()
+                        .Where(d => d.DoctorId == reception.DoctorId)
+                        .Select(d => new 
+                        { 
+                            d.FirstName, 
+                            d.LastName, 
+                            d.Degree,
+                            SpecializationName = d.DoctorSpecializations
+                                .Where(ds => ds.Specialization != null)
+                                .Select(ds => ds.Specialization.Name)
+                                .FirstOrDefault() ?? string.Empty
+                        })
+                        .FirstOrDefaultAsync();
+                    
+                    if (doctorInfo != null)
+                    {
+                        doctorFullName = $"{doctorInfo.FirstName} {doctorInfo.LastName}".Trim();
+                        doctorSpecialization = doctorInfo.SpecializationName ?? string.Empty;
+                        doctorDegree = doctorInfo.Degree?.ToString() ?? string.Empty;
+                    }
+                }
+
+                // 3. محاسبه مبلغ پرداخت شده
+                var paidAmount = reception.Transactions?
+                    .Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted)
+                    .Sum(t => (decimal?)t.Amount) ?? 0m;
+
+                // 4. ساخت DTO
+                var result = new ReceptionDetailsFullDto
+                {
+                    // اطلاعات اصلی پذیرش
+                    ReceptionId = reception.ReceptionId,
+                    ReceptionNo = reception.ReceptionNo ?? string.Empty,
+                    ElectronicReceptionNumber = reception.ElectronicReceptionNumber ?? string.Empty,
+                    Status = reception.Status,
+                    StatusText = GetReceptionStatusText(reception.Status),
+                    Type = reception.Type,
+                    TypeText = GetReceptionTypeDisplayName(reception.Type),
+                    Priority = reception.Priority,
+                    PriorityText = GetPriorityDisplayName(reception.Priority),
+                    IsEmergency = reception.IsEmergency,
+                    IsOnlineReception = reception.IsOnlineReception,
+                    ReceptionDate = reception.ReceptionDate,
+                    ReceptionDateShamsi = reception.ReceptionDate.ToPersianDateTime(),
+                    Notes = reception.Notes ?? string.Empty,
+
+                    // اطلاعات بیمار
+                    PatientId = reception.PatientId,
+                    PatientFullName = reception.Patient != null 
+                        ? $"{reception.Patient.FirstName} {reception.Patient.LastName}".Trim()
+                        : string.Empty,
+                    PatientNationalCode = reception.Patient?.NationalCode ?? string.Empty,
+                    PatientPhoneNumber = reception.Patient?.PhoneNumber ?? string.Empty,
+                    PatientGender = reception.Patient?.Gender.ToString() ?? string.Empty,
+                    PatientBirthDateShamsi = reception.Patient?.BirthDate != null 
+                        ? reception.Patient.BirthDate.Value.ToPersianDate()
+                        : string.Empty,
+                    PatientAddress = reception.Patient?.Address ?? string.Empty,
+
+                    // اطلاعات پزشک
+                    DoctorId = reception.DoctorId,
+                    DoctorFullName = doctorFullName,
+                    DoctorSpecialization = doctorSpecialization,
+                    DoctorDegree = doctorDegree,
+
+                    // اطلاعات دپارتمان و کلینیک
+                    DepartmentId = reception.DepartmentId,
+                    DepartmentName = reception.Department?.Name ?? string.Empty,
+                    ClinicId = reception.ClinicId,
+                    ClinicName = reception.Clinic?.Name ?? string.Empty,
+
+                    // اطلاعات بیمه
+                    BasePlanId = reception.BasePlanId,
+                    BasePlanName = reception.ActivePatientInsurance?.InsurancePlan?.Name ?? string.Empty,
+                    SupplementaryPlanId = reception.SupplementaryPlanId,
+                    SupplementaryPlanName = reception.ActivePatientInsurance?.SupplementaryInsurancePlan?.Name ?? string.Empty,
+
+                    // اطلاعات مالی
+                    TotalAmount = reception.TotalAmount,
+                    Gross = reception.Gross,
+                    PatientCoPay = reception.PatientCoPay,
+                    PatientPay = reception.PatientPay,
+                    BasePay = reception.BasePay,
+                    SuppPay = reception.SuppPay,
+                    InsurerShareAmount = reception.InsurerShareAmount,
+                    PaidAmount = paidAmount,
+                    RemainingAmount = reception.PatientCoPay - paidAmount,
+
+                    // آیتم‌های پذیرش
+                    Items = reception.ReceptionItems?
+                        .Where(ri => !ri.IsDeleted)
+                        .Select(ri => new ReceptionItemDetailsDto
+                        {
+                            ReceptionItemId = ri.ReceptionItemId,
+                            ServiceId = ri.ServiceId,
+                            ServiceCode = ri.Service?.ServiceCode ?? string.Empty,
+                            ServiceName = ri.Service?.Title ?? string.Empty,
+                            Quantity = ri.Quantity,
+                            UnitPrice = ri.UnitPrice,
+                            PatientShareAmount = ri.PatientShareAmount,
+                            InsurerShareAmount = ri.InsurerShareAmount,
+                            SnapshotJson = ri.SnapshotJson
+                        })
+                        .ToList() ?? new List<ReceptionItemDetailsDto>(),
+
+                    // تراکنش‌های پرداخت
+                    Transactions = reception.Transactions?
+                        .Where(t => !t.IsDeleted)
+                        .OrderByDescending(t => t.CreatedAt)
+                        .Select(t => new PaymentTransactionDetailsDto
+                        {
+                            PaymentTransactionId = t.PaymentTransactionId,
+                            Amount = t.Amount,
+                            Status = t.Status,
+                            StatusText = GetPaymentStatusText(t.Status),
+                            Method = t.Method,
+                            MethodText = GetPaymentMethodText(t.Method),
+                            TransactionId = t.TransactionId ?? string.Empty,
+                            ReferenceCode = t.ReferenceCode ?? string.Empty,
+                            Description = t.Description ?? string.Empty,
+                            CreatedAt = t.CreatedAt,
+                            CreatedAtShamsi = t.CreatedAt.ToPersianDateTime(),
+                            CreatedBy = t.CreatedByUser?.UserName ?? "سیستم",
+                            CashSessionId = t.CashSessionId,
+                            CashSessionNumber = t.CashSession?.SessionNumber ?? string.Empty
+                        })
+                        .ToList() ?? new List<PaymentTransactionDetailsDto>(),
+
+                    // اطلاعات ردیابی
+                    CreatedAt = reception.CreatedAt,
+                    CreatedAtShamsi = reception.CreatedAt.ToPersianDateTime(),
+                    CreatedBy = reception.CreatedByUser?.UserName ?? "سیستم",
+                    UpdatedAt = reception.UpdatedAt,
+                    UpdatedAtShamsi = reception.UpdatedAt?.ToPersianDateTime() ?? string.Empty,
+                    UpdatedBy = reception.UpdatedByUser?.UserName ?? string.Empty
+                };
+
+                _logger.Information("✅ FACADE: جزئیات کامل پذیرش دریافت شد - ReceptionId: {ReceptionId}, Items: {ItemsCount}, Transactions: {TransactionsCount}",
+                    receptionId, result.Items.Count, result.Transactions.Count);
+
+                return ServiceResult<ReceptionDetailsFullDto>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در دریافت جزئیات کامل پذیرش - ReceptionId: {ReceptionId}", receptionId);
+                return ServiceResult<ReceptionDetailsFullDto>.Failed($"خطا در دریافت جزئیات پذیرش: {ex.Message}", "UNHANDLED");
+            }
+        }
+
+        /// <summary>
+        /// Helper: تبدیل وضعیت پذیرش به متن
+        /// </summary>
+        private string GetReceptionStatusText(ReceptionStatus status)
+        {
+            switch (status)
+            {
+                case ReceptionStatus.Pending: return "در انتظار";
+                case ReceptionStatus.Completed: return "تکمیل شده";
+                case ReceptionStatus.Cancelled: return "لغو شده";
+                default: return status.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Helper: تبدیل نوع پذیرش به متن
+        /// </summary>
+        private string GetReceptionTypeDisplayName(ReceptionType type)
+        {
+            switch (type)
+            {
+                case ReceptionType.Normal: return "عادی";
+                case ReceptionType.Emergency: return "اورژانس";
+                case ReceptionType.Online: return "آنلاین";
+                default: return type.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Helper: تبدیل اولویت به متن
+        /// </summary>
+        private string GetPriorityDisplayName(AppointmentPriority priority)
+        {
+            switch (priority)
+            {
+                case AppointmentPriority.Low: return "پایین";
+                case AppointmentPriority.Normal: return "عادی";
+                case AppointmentPriority.High: return "بالا";
+                case AppointmentPriority.Urgent: return "فوری";
+                default: return priority.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Helper: تبدیل وضعیت پرداخت به متن
+        /// </summary>
+        private string GetPaymentStatusText(PaymentStatus status)
+        {
+            switch (status)
+            {
+                case PaymentStatus.Pending: return "در انتظار";
+                case PaymentStatus.Success: return "موفق";
+                case PaymentStatus.Failed: return "ناموفق";
+                case PaymentStatus.Canceled: return "لغو شده";
+                default: return status.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Helper: تبدیل روش پرداخت به متن
+        /// </summary>
+        private string GetPaymentMethodText(PaymentMethod method)
+        {
+            switch (method)
+            {
+                case PaymentMethod.Cash: return "نقدی";
+                case PaymentMethod.POS: return "کارتخوان";
+                case PaymentMethod.Online: return "آنلاین";
+                case PaymentMethod.Debt: return "بدهی";
+                default: return method.ToString();
             }
         }
 

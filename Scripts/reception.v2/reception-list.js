@@ -1058,11 +1058,279 @@
         }
 
         /**
-         * مشاهده جزئیات
+         * مشاهده جزئیات پذیرش - پیاده‌سازی حرفه‌ای و کاربردی
          */
         function handleViewDetails(receptionId) {
-            // TODO: Implement view details
-            toastr.info('مشاهده جزئیات - در حال توسعه');
+            console.log('🔍 Reception List: نمایش جزئیات پذیرش - ReceptionId:', receptionId);
+
+            if (!receptionId || receptionId <= 0) {
+                toastr.error('شناسه پذیرش نامعتبر است', 'خطا');
+                return;
+            }
+
+            // نمایش Modal و Reset کردن محتوا
+            const $modal = $('#receptionDetailsModal');
+            const $loading = $('#receptionDetailsLoading');
+            const $content = $('#receptionDetailsContent');
+
+            $loading.show();
+            $content.hide();
+            $modal.modal('show');
+
+            // بارگذاری اطلاعات
+            loadReceptionDetails(receptionId);
+        }
+
+        /**
+         * بارگذاری جزئیات پذیرش از API
+         */
+        function loadReceptionDetails(receptionId) {
+            const API = window.ReceptionAPI || window.API || {};
+            const $loading = $('#receptionDetailsLoading');
+            const $content = $('#receptionDetailsContent');
+
+            API.get(`/details/${receptionId}`)
+                .then(function(response) {
+                    console.log('✅ Reception List: جزئیات دریافت شد', response);
+
+                    // بررسی موفقیت
+                    const successValue = response?.Success ?? response?.success;
+                    const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+                    if (!response || !isSuccess) {
+                        const errorMsg = response?.Message || response?.message || 'خطا در دریافت جزئیات پذیرش';
+                        toastr.error(errorMsg, 'خطا');
+                        $loading.hide();
+                        return;
+                    }
+
+                    // Extract data
+                    let data = response.Data || response.data;
+                    if (API && API.ok && typeof API.ok === 'function') {
+                        data = API.ok(response);
+                    }
+
+                    // نمایش اطلاعات
+                    displayReceptionDetails(data);
+                    $loading.hide();
+                    $content.show();
+                })
+                .fail(function(err) {
+                    console.error('❌ Reception List: خطا در دریافت جزئیات', err);
+                    toastr.error('خطا در دریافت جزئیات پذیرش', 'خطا');
+                    $loading.hide();
+                });
+        }
+
+        /**
+         * نمایش جزئیات پذیرش در Modal
+         */
+        function displayReceptionDetails(data) {
+            if (!data) {
+                toastr.error('اطلاعات پذیرش یافت نشد', 'خطا');
+                return;
+            }
+
+            console.log('📋 Reception List: نمایش جزئیات', data);
+
+            // Helper: فرمت مبلغ
+            const formatIRR = (amount) => {
+                if (amount == null || amount === undefined) return '0';
+                return new Intl.NumberFormat('fa-IR').format(Math.round(amount)) + ' ریال';
+            };
+
+            // Helper: فرمت تاریخ
+            const formatDate = (date) => {
+                if (!date) return '-';
+                return date;
+            };
+
+            // Helper: Badge وضعیت
+            const getStatusBadge = (status, statusText) => {
+                const badges = {
+                    'Pending': 'badge bg-warning',
+                    'Completed': 'badge bg-success',
+                    'Cancelled': 'badge bg-danger'
+                };
+                const badgeClass = badges[status] || 'badge bg-secondary';
+                return `<span class="${badgeClass}">${statusText || status}</span>`;
+            };
+
+            // Helper: Badge روش پرداخت
+            const getMethodBadge = (method, methodText) => {
+                const badges = {
+                    'Cash': 'badge bg-success',
+                    'POS': 'badge bg-primary',
+                    'Online': 'badge bg-info',
+                    'Debt': 'badge bg-warning'
+                };
+                const badgeClass = badges[method] || 'badge bg-secondary';
+                return `<span class="${badgeClass}">${methodText || method}</span>`;
+            };
+
+            // Helper: Badge وضعیت پرداخت
+            const getPaymentStatusBadge = (status, statusText) => {
+                const badges = {
+                    'Pending': 'badge bg-warning',
+                    'Success': 'badge bg-success',
+                    'Failed': 'badge bg-danger',
+                    'Canceled': 'badge bg-secondary'
+                };
+                const badgeClass = badges[status] || 'badge bg-secondary';
+                return `<span class="${badgeClass}">${statusText || status}</span>`;
+            };
+
+            // 1. اطلاعات اصلی پذیرش
+            $('#detailsReceptionNo').text(data.ReceptionNo || '-');
+            $('#detailsElectronicNumber').text(data.ElectronicReceptionNumber || '-');
+            $('#detailsReceptionDate').text(formatDate(data.ReceptionDateShamsi));
+            $('#detailsStatus').html(getStatusBadge(data.Status, data.StatusText));
+            $('#detailsType').text(data.TypeText || data.Type || '-');
+            $('#detailsPriority').text(data.PriorityText || data.Priority || '-');
+
+            // 2. اطلاعات بیمار
+            $('#detailsPatientName').text(data.PatientFullName || '-');
+            $('#detailsPatientNationalCode').text(data.PatientNationalCode || '-');
+            $('#detailsPatientPhone').text(data.PatientPhoneNumber || '-');
+            $('#detailsPatientGender').text(data.PatientGender || '-');
+            $('#detailsPatientBirthDate').text(formatDate(data.PatientBirthDateShamsi));
+
+            // 3. اطلاعات پزشک و دپارتمان
+            // (می‌توانیم بعداً اضافه کنیم)
+
+            // 4. تب خدمات
+            const $servicesList = $('#detailsServicesList');
+            if (data.Items && data.Items.length > 0) {
+                $('#servicesCount').text(data.Items.length);
+                let servicesHtml = '';
+                data.Items.forEach(item => {
+                    servicesHtml += `
+                        <tr>
+                            <td>${item.ServiceCode || '-'}</td>
+                            <td>${item.ServiceName || '-'}</td>
+                            <td>${item.Quantity || 0}</td>
+                            <td>${formatIRR(item.UnitPrice)}</td>
+                            <td>${formatIRR(item.TotalPrice || (item.UnitPrice * item.Quantity))}</td>
+                            <td>${formatIRR(item.PatientShareAmount)}</td>
+                            <td>${formatIRR(item.InsurerShareAmount)}</td>
+                        </tr>
+                    `;
+                });
+                $servicesList.html(servicesHtml);
+            } else {
+                $('#servicesCount').text('0');
+                $servicesList.html('<tr><td colspan="7" class="text-center text-muted">هیچ خدمتی ثبت نشده است</td></tr>');
+            }
+
+            // 5. تب اطلاعات مالی
+            $('#detailsTotalAmount').text(formatIRR(data.TotalAmount));
+            $('#detailsGross').text(formatIRR(data.Gross));
+            $('#detailsPatientShare').text(formatIRR(data.PatientCoPay));
+            $('#detailsBasePay').text(formatIRR(data.BasePay));
+            $('#detailsSuppPay').text(formatIRR(data.SuppPay));
+            $('#detailsInsurerShare').text(formatIRR(data.InsurerShareAmount));
+            $('#detailsPaidAmount').text(formatIRR(data.PaidAmount));
+            $('#detailsRemainingAmount').text(formatIRR(data.RemainingAmount));
+
+            // Progress Bar
+            const totalAmount = data.PatientCoPay || 1;
+            const paidAmount = data.PaidAmount || 0;
+            const progressPercent = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+            const $progressBar = $('#detailsPaymentProgress');
+            $progressBar.css('width', `${progressPercent}%`).text(`${progressPercent}%`);
+
+            if (progressPercent >= 100) {
+                $progressBar.removeClass('bg-warning bg-danger').addClass('bg-success');
+            } else if (progressPercent >= 50) {
+                $progressBar.removeClass('bg-success bg-danger').addClass('bg-warning');
+            } else {
+                $progressBar.removeClass('bg-success bg-warning').addClass('bg-danger');
+            }
+
+            // وضعیت بدهی
+            const $debtStatus = $('#detailsDebtStatus');
+            if (data.HasDebt && data.RemainingAmount > 0) {
+                $debtStatus.html(`
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>بدهی:</strong> مبلغ <strong>${formatIRR(data.RemainingAmount)}</strong> باقی‌مانده است.
+                    </div>
+                `);
+            } else {
+                $debtStatus.html(`
+                    <div class="alert alert-success mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>پرداخت کامل:</strong> تمام مبلغ پرداخت شده است.
+                    </div>
+                `);
+            }
+
+            // 6. تب تراکنش‌های پرداخت
+            const $paymentsList = $('#detailsPaymentsList');
+            if (data.Transactions && data.Transactions.length > 0) {
+                $('#paymentsCount').text(data.Transactions.length);
+                let paymentsHtml = '';
+                data.Transactions.forEach(transaction => {
+                    const amountClass = transaction.Amount < 0 ? 'text-danger' : 'text-success';
+                    const amountSign = transaction.Amount < 0 ? '-' : '+';
+                    paymentsHtml += `
+                        <tr>
+                            <td>${formatDate(transaction.CreatedAtShamsi)}</td>
+                            <td class="${amountClass}">${amountSign}${formatIRR(Math.abs(transaction.Amount))}</td>
+                            <td>${getMethodBadge(transaction.Method, transaction.MethodText)}</td>
+                            <td>${getPaymentStatusBadge(transaction.Status, transaction.StatusText)}</td>
+                            <td>${transaction.TransactionId || '-'}</td>
+                            <td>${transaction.ReferenceCode || '-'}</td>
+                            <td>${transaction.Description || '-'}</td>
+                        </tr>
+                    `;
+                });
+                $paymentsList.html(paymentsHtml);
+            } else {
+                $('#paymentsCount').text('0');
+                $paymentsList.html('<tr><td colspan="7" class="text-center text-muted">هیچ تراکنش پرداختی ثبت نشده است</td></tr>');
+            }
+
+            // 7. تب بیمه
+            const $baseInsurance = $('#detailsBaseInsurance');
+            if (data.BasePlanId && data.BasePlanName) {
+                $baseInsurance.html(`
+                    <div class="row g-2">
+                        <div class="col-6"><strong>نام بیمه:</strong></div>
+                        <div class="col-6">${data.BasePlanName}</div>
+                        <div class="col-6"><strong>سهم بیمه:</strong></div>
+                        <div class="col-6">${formatIRR(data.BasePay)}</div>
+                    </div>
+                `);
+            } else {
+                $baseInsurance.html('<p class="text-muted mb-0">بیمه پایه ثبت نشده است</p>');
+            }
+
+            const $suppInsurance = $('#detailsSupplementaryInsurance');
+            if (data.SupplementaryPlanId && data.SupplementaryPlanName) {
+                $suppInsurance.html(`
+                    <div class="row g-2">
+                        <div class="col-6"><strong>نام بیمه:</strong></div>
+                        <div class="col-6">${data.SupplementaryPlanName}</div>
+                        <div class="col-6"><strong>سهم بیمه:</strong></div>
+                        <div class="col-6">${formatIRR(data.SuppPay)}</div>
+                    </div>
+                `);
+            } else {
+                $suppInsurance.html('<p class="text-muted mb-0">بیمه تکمیلی ثبت نشده است</p>');
+            }
+
+            // 8. تب تاریخچه
+            $('#detailsCreatedAt').text(formatDate(data.CreatedAtShamsi));
+            $('#detailsCreatedBy').text(data.CreatedBy || '-');
+            $('#detailsUpdatedAt').text(formatDate(data.UpdatedAtShamsi) || '-');
+            $('#detailsUpdatedBy').text(data.UpdatedBy || '-');
+            $('#detailsNotes').text(data.Notes || 'یادداشتی ثبت نشده است');
+
+            // 9. Event Handler برای دکمه چاپ
+            $('#btnPrintReceptionDetails').off('click').on('click', function() {
+                window.open(`/ReceptionV2/Print/${data.ReceptionId}`, '_blank');
+            });
         }
 
         /**

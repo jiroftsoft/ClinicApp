@@ -466,5 +466,118 @@ namespace ClinicApp.ViewModels.Reception
         public string CancelledBy { get; set; }
     }
 
+    /// <summary>
+    /// DTO برای جزئیات کامل پذیرش (برای نمایش در Modal)
+    /// </summary>
+    public class ReceptionDetailsFullDto
+    {
+        // اطلاعات اصلی پذیرش
+        public int ReceptionId { get; set; }
+        public string ReceptionNo { get; set; }
+        public string ElectronicReceptionNumber { get; set; }
+        public ReceptionStatus Status { get; set; }
+        public string StatusText { get; set; }
+        public ReceptionType Type { get; set; }
+        public string TypeText { get; set; }
+        public AppointmentPriority Priority { get; set; }
+        public string PriorityText { get; set; }
+        public bool IsEmergency { get; set; }
+        public bool IsOnlineReception { get; set; }
+        public DateTime ReceptionDate { get; set; }
+        public string ReceptionDateShamsi { get; set; }
+        public string Notes { get; set; }
+
+        // اطلاعات بیمار
+        public int PatientId { get; set; }
+        public string PatientFullName { get; set; }
+        public string PatientNationalCode { get; set; }
+        public string PatientPhoneNumber { get; set; }
+        public string PatientGender { get; set; }
+        public string PatientBirthDateShamsi { get; set; }
+        public string PatientAddress { get; set; }
+
+        // اطلاعات پزشک
+        public int DoctorId { get; set; }
+        public string DoctorFullName { get; set; }
+        public string DoctorSpecialization { get; set; }
+        public string DoctorDegree { get; set; }
+
+        // اطلاعات دپارتمان و کلینیک
+        public int DepartmentId { get; set; }
+        public string DepartmentName { get; set; }
+        public int ClinicId { get; set; }
+        public string ClinicName { get; set; }
+
+        // اطلاعات بیمه
+        public int? BasePlanId { get; set; }
+        public string BasePlanName { get; set; }
+        public int? SupplementaryPlanId { get; set; }
+        public string SupplementaryPlanName { get; set; }
+
+        // اطلاعات مالی
+        public decimal TotalAmount { get; set; }
+        public decimal Gross { get; set; }
+        public decimal PatientCoPay { get; set; }
+        public decimal PatientPay { get; set; }
+        public decimal BasePay { get; set; }
+        public decimal SuppPay { get; set; }
+        public decimal InsurerShareAmount { get; set; }
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public bool HasDebt => RemainingAmount > 0;
+
+        // آیتم‌های پذیرش
+        public List<ReceptionItemDetailsDto> Items { get; set; } = new List<ReceptionItemDetailsDto>();
+
+        // تراکنش‌های پرداخت
+        public List<PaymentTransactionDetailsDto> Transactions { get; set; } = new List<PaymentTransactionDetailsDto>();
+
+        // اطلاعات ردیابی
+        public DateTime CreatedAt { get; set; }
+        public string CreatedAtShamsi { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string UpdatedAtShamsi { get; set; }
+        public string UpdatedBy { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای جزئیات آیتم پذیرش
+    /// </summary>
+    public class ReceptionItemDetailsDto
+    {
+        public int ReceptionItemId { get; set; }
+        public int ServiceId { get; set; }
+        public string ServiceCode { get; set; }
+        public string ServiceName { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice => UnitPrice * Quantity;
+        public decimal PatientShareAmount { get; set; }
+        public decimal InsurerShareAmount { get; set; }
+        public string SnapshotJson { get; set; }
+    }
+
+    /// <summary>
+    /// DTO برای جزئیات تراکنش پرداخت
+    /// </summary>
+    public class PaymentTransactionDetailsDto
+    {
+        public int PaymentTransactionId { get; set; }
+        public decimal Amount { get; set; }
+        public PaymentStatus Status { get; set; }
+        public string StatusText { get; set; }
+        public PaymentMethod Method { get; set; }
+        public string MethodText { get; set; }
+        public string TransactionId { get; set; }
+        public string ReferenceCode { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedAtShamsi { get; set; }
+        public string CreatedBy { get; set; }
+        public int? CashSessionId { get; set; }
+        public string CashSessionNumber { get; set; }
+    }
+
     #endregion
 }

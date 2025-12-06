@@ -1869,6 +1869,40 @@ namespace ClinicApp.Controllers.Api
         }
 
         /// <summary>
+        /// GET /api/v1/reception/details/{id}
+        /// دریافت جزئیات کامل پذیرش برای نمایش در Modal
+        /// </summary>
+        [HttpGet, Route("details/{id:int}")]
+        public async Task<ActionResult> GetReceptionDetails(int id)
+        {
+            try
+            {
+                _logger.Information("🏥 V1 API: دریافت جزئیات کامل پذیرش - ReceptionId: {Id}", id);
+
+                if (id <= 0)
+                {
+                    return Json(ServiceResult<ReceptionDetailsFullDto>.Failed("شناسه پذیرش نامعتبر است", "INVALID_ID"), JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _facade.GetReceptionDetailsFullAsync(id);
+
+                if (result.Success)
+                {
+                    return Json(ServiceResult<ReceptionDetailsFullDto>.Successful(result.Data), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    return Json(ServiceResult<ReceptionDetailsFullDto>.Failed(result.Message, result.Code ?? "ERROR"), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ V1 API: خطا در دریافت جزئیات کامل پذیرش - ReceptionId: {Id}", id);
+                return Json(ServiceResult<ReceptionDetailsFullDto>.Failed($"خطا در دریافت جزئیات پذیرش: {ex.Message}", "UNHANDLED"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
         /// POST /api/v1/reception/insurance/check-status
         /// بررسی جامع وضعیت بیمه بیمار - برای استفاده در فرم پذیرش
         /// 
