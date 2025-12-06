@@ -30,11 +30,13 @@
                 console.log('🏥 Reception List: شروع پاکسازی Draft‌های Pending...');
                 
                 // استفاده از API برای حذف Draft‌های Pending کاربر فعلی
-                const cleanupUrl = '/api/v1/reception/draft/cleanup-pending';
+                // ✅ API.post خودش baseUrl (/api/v1/reception) را اضافه می‌کند، پس فقط path نسبی می‌دهیم
+                const cleanupPath = '/draft/cleanup-pending';
+                const cleanupUrlFull = '/api/v1/reception/draft/cleanup-pending'; // برای fallback
                 
                 // استفاده از AJAX برای حذف Draft‌های Pending
                 if (API && API.post) {
-                    API.post(cleanupUrl, {})
+                    API.post(cleanupPath, {})
                         .then(function(response) {
                             if (response && response.Success) {
                                 const count = response.Data || 0;
@@ -46,12 +48,15 @@
                             }
                         })
                         .catch(function(err) {
-                            console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                            // خطا را فقط در حالت development نمایش بده (نه در production)
+                            if (err && err.status !== 404) {
+                                console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                            }
                         });
                 } else {
-                    // Fallback: استفاده از jQuery AJAX
+                    // Fallback: استفاده از jQuery AJAX مستقیم
                     $.ajax({
-                        url: cleanupUrl,
+                        url: cleanupUrlFull,
                         type: 'POST',
                         headers: {
                             'RequestVerificationToken': getAntiForgeryToken()
@@ -65,7 +70,10 @@
                             }
                         },
                         error: function(err) {
-                            console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                            // خطا را فقط در حالت development نمایش بده (نه در production)
+                            if (err && err.status !== 404) {
+                                console.warn('⚠️ Reception List: خطا در پاکسازی Draft‌های Pending:', err);
+                            }
                         }
                     });
                 }
@@ -1165,7 +1173,6 @@
          */
         function cancelReceptionRequest(receptionId, reason, processRefund, modal) {
             const API = window.ReceptionAPI || window.API || {};
-            const baseUrl = '/api/v1/reception';
 
             const request = {
                 ReceptionId: receptionId,
@@ -1176,43 +1183,69 @@
 
             console.log('🚫 Reception List: Sending cancel request:', request);
 
-            $.ajax({
-                url: `${baseUrl}/cancel`,
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'RequestVerificationToken': getAntiForgeryToken()
-                },
-                contentType: 'application/json',
-                data: JSON.stringify(request),
-                success: function(response) {
-                    console.log('🚫 Reception List: Cancel response:', response);
+            API.post('/cancel', request)
+                .then(function(fullResponse) {
+                    console.log('🚫 Reception List: Cancel response:', fullResponse);
 
-                    if (!response || !response.Success) {
-                        const errorMsg = response?.Message || 'خطا در لغو پذیرش';
+                    // 🔍 چک Success - منطق دقیق‌تر برای انواع مختلف Success
+                    const successValue = fullResponse?.Success ?? fullResponse?.success;
+                    const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+
+                    if (!fullResponse || !isSuccess) {
+                        const errorMsg = fullResponse?.Message || fullResponse?.message || 'خطا در لغو پذیرش';
                         toastr.error(errorMsg, 'خطا');
                         $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                        
+                        // استفاده از handleErrorJson اگر موجود باشد
+                        if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                            API.handleErrorJson(fullResponse);
+                        }
                         return;
                     }
 
                     // بستن مودال
                     modal.hide();
 
+                    // Extract data using API.ok
+                    let responseData = fullResponse.Data || fullResponse.data;
+                    if (API && API.ok && typeof API.ok === 'function') {
+                        responseData = API.ok(fullResponse);
+                    }
+
                     // نمایش پیام موفقیت
-                    const message = response.Data?.Message || 'پذیرش با موفقیت لغو شد';
+                    const message = responseData?.Message || 'پذیرش با موفقیت لغو شد';
                     toastr.success(message, 'موفق');
 
                     // رفرش لیست
                     setTimeout(function() {
                         loadReceptionList(currentPage);
                     }, 1000);
-                },
-                error: function(xhr, status, error) {
-                    console.error('❌ Reception List: Error canceling reception:', error);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('❌ Reception List: Error canceling reception:', {
+                        status: jqXHR?.status,
+                        statusText: jqXHR?.statusText,
+                        error: errorThrown,
+                        responseText: jqXHR?.responseText
+                    });
+                    
+                    // بررسی response JSON برای خطاهای خاص
+                    try {
+                        if (jqXHR.responseJSON) {
+                            if (API && API.handleErrorJson && typeof API.handleErrorJson === 'function') {
+                                if (API.handleErrorJson(jqXHR.responseJSON)) {
+                                    $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
+                                    return; // خطا handle شد
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore
+                    }
+                    
                     toastr.error('خطا در لغو پذیرش', 'خطا');
                     $('#btnConfirmCancel').prop('disabled', false).html('<i class="fas fa-ban me-1"></i>لغو پذیرش');
-                }
-            });
+                });
         }
 
         // Event handlers - بهینه‌سازی شده برای محیط درمانی
