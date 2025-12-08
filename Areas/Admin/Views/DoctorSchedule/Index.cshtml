@@ -631,10 +631,11 @@
                             <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
                             <h4 class="text-muted mb-3">هیچ برنامه کاری ثبت نشده است</h4>
                             <p class="text-muted mb-4">برای شروع، اولین برنامه کاری را ایجاد کنید</p>
-                            <a href="@Url.Action("AssignSchedule", "DoctorSchedule")" class="btn btn-primary btn-lg">
+                            <!-- ✅ دکمه ایجاد برنامه جدید - باز کردن Modal انتخاب پزشک -->
+                            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#selectDoctorModal">
                                 <i class="fas fa-plus-circle me-2"></i>
                                 ایجاد برنامه جدید
-                            </a>
+                            </button>
                         </div>
                     }
                     else
@@ -908,6 +909,12 @@
                 // هدایت به صفحه AssignSchedule با doctorId
                 var url = '@Url.Action("AssignSchedule", "DoctorSchedule")?doctorId=' + selectedDoctorId;
                 window.location.href = url;
+            });
+
+            // ✅ Event Handler برای باز شدن Modal - بارگذاری پزشکان هنگام باز شدن Modal
+            $('#selectDoctorModal').on('show.bs.modal', function() {
+                // بارگذاری پزشکان هنگام باز شدن Modal
+                loadDoctorsForSelectModal();
             });
 
             // ✅ Reset validation هنگام تغییر انتخاب

@@ -1,4 +1,4 @@
-@* صفحه برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی *@
+@* صفحه برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی Production *@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
 @{
     ViewBag.Title = "برنامه کاری پزشک";
@@ -9,85 +9,217 @@
     <link href="~/Content/plugins/DataTables/js/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی برای رفع خطای CSP -->
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
+        /* ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی */
+        * {
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', 'Arial', sans-serif !important;
+        }
+
+        body {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--medical-text);
+            font-weight: 400;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            color: var(--medical-primary);
+            line-height: 1.4;
+        }
+
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.75rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.25rem; }
+        h5 { font-size: 1.1rem; }
+        h6 { font-size: 1rem; }
+
+        /* ✅ رنگ‌های رسمی درمانی - یکسان‌سازی با استانداردهای پروژه */
+        :root {
+            --medical-primary: #2c5aa0;        /* آبی - اطلاعات (رسمی) */
+            --medical-primary-light: #3d6bb3;  /* آبی روشن */
+            --medical-secondary: #6c757d;      /* خاکستری - ثانویه */
+            --medical-success: #28a745;        /* سبز - موفقیت/فعال */
+            --medical-warning: #ffc107;        /* زرد - هشدار */
+            --medical-danger: #dc3545;         /* قرمز - هشدار/خطا */
+            --medical-info: #17a2b8;           /* آبی روشن - اطلاعات */
+            --medical-light: #f8f9fa;         /* پس‌زمینه روشن */
+            --medical-dark: #343a40;           /* متن تیره */
+            --medical-bg: #f8f9fa;             /* پس‌زمینه */
+            --medical-text: #495057;           /* متن اصلی */
+            --medical-text-muted: #6c757d;     /* متن کم‌رنگ */
+            --medical-border: #dee2e6;         /* حاشیه */
+        }
+
+        /* ✅ Doctor Header - طراحی رسمی و اداری */
         .doctor-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
             padding: 2rem;
             color: white;
             margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doctor-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .doctor-header h2 {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
         .doctor-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-top: 1.5rem;
         }
 
         .info-item {
             text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
         }
 
         .info-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
+            font-size: 0.85rem;
+            opacity: 0.9;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .info-value {
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
+            color: white;
         }
 
+        /* ✅ Statistics Cards - طراحی رسمی */
+        .stats-card {
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.1);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--medical-border);
+            overflow: hidden;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+        }
+
+        .stats-card.bg-primary {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%) !important;
+        }
+
+        .stats-card.bg-success {
+            background: linear-gradient(135deg, var(--medical-success) 0%, #34ce57 100%) !important;
+        }
+
+        .stats-card.bg-warning {
+            background: linear-gradient(135deg, var(--medical-warning) 0%, #ffca2c 100%) !important;
+        }
+
+        .stats-card.bg-info {
+            background: linear-gradient(135deg, var(--medical-info) 0%, #1fc8db 100%) !important;
+        }
+
+        .stats-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .stats-card h4 {
+            color: white;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-card small {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* ✅ Schedule Card - طراحی رسمی */
         .schedule-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            border-left: 4px solid #28a745;
-            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.08);
+            border-left: 5px solid var(--medical-success);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--medical-border);
         }
 
-            .schedule-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-            }
+        .schedule-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+            border-left-color: var(--medical-primary);
+        }
 
-            .schedule-card.inactive {
-                border-left-color: #dc3545;
-                opacity: 0.7;
-            }
+        .schedule-card.inactive {
+            border-left-color: var(--medical-danger);
+            opacity: 0.8;
+        }
 
         .schedule-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--medical-light);
         }
 
         .schedule-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--medical-primary);
         }
 
         .schedule-status {
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .status-active {
             background: #d4edda;
             color: #155724;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
         }
 
         .status-inactive {
             background: #f8d7da;
             color: #721c24;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
         }
 
         .schedule-details {
@@ -102,126 +234,43 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+            padding: 0.75rem;
+            background: var(--medical-light);
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
 
-        /* FullCalendar Customization for Persian Clinic Environment */
-        .fc {
-            font-family: 'Vazir', 'Tahoma', sans-serif;
-            direction: rtl;
+        .detail-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
         }
-
-        .fc-header-toolbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .fc-button {
-            background: rgba(255, 255, 255, 0.2) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            color: white !important;
-            border-radius: 20px !important;
-            padding: 0.5rem 1rem !important;
-            font-weight: 500 !important;
-            transition: all 0.3s ease !important;
-        }
-
-            .fc-button:hover {
-                background: rgba(255, 255, 255, 0.3) !important;
-                transform: translateY(-1px) !important;
-            }
-
-        .fc-button-active {
-            background: rgba(255, 255, 255, 0.4) !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        .fc-day-header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white !important;
-            font-weight: 600 !important;
-            padding: 1rem 0.5rem !important;
-            border: none !important;
-        }
-
-        .fc-event-working-hours {
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-            transition: all 0.3s ease !important;
-        }
-
-            .fc-event-working-hours:hover {
-                transform: scale(1.02) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-            }
-
-        .fc-timegrid-slot {
-            border-color: #e9ecef !important;
-        }
-
-        .fc-timegrid-slot-label {
-            color: #6c757d !important;
-            font-weight: 500 !important;
-        }
-
-        .fc-toolbar-title {
-            color: white !important;
-            font-weight: 600 !important;
-            font-size: 1.2rem !important;
-        }
-
-        .fc-col-header-cell {
-            border-color: #dee2e6 !important;
-        }
-
-        .fc-daygrid-day {
-            border-color: #dee2e6 !important;
-        }
-
-            .fc-daygrid-day:hover {
-                background-color: rgba(102, 126, 234, 0.05) !important;
-            }
-
-        .fc-daygrid-day-number {
-            color: #495057 !important;
-            font-weight: 500 !important;
-        }
-
-        .fc-daygrid-day.fc-day-today {
-            background-color: rgba(40, 167, 69, 0.1) !important;
-        }
-
-            .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-                background-color: #28a745 !important;
-                color: white !important;
-                border-radius: 50% !important;
-                width: 30px !important;
-                height: 30px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-
-        text-align: center;
-
 
         .detail-label {
             font-size: 0.8rem;
-            color: #6c757d;
-            margin-bottom: 0.25rem;
+            color: var(--medical-text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .detail-value {
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: var(--medical-primary);
+            font-size: 1rem;
         }
 
+        /* ✅ Time Slots - طراحی رسمی */
         .time-slots {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
+            background: var(--medical-light);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .time-slots strong {
+            color: var(--medical-primary);
+            font-weight: 700;
+            display: block;
             margin-bottom: 1rem;
         }
 
@@ -229,27 +278,36 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
             background: white;
-            border-radius: 6px;
-            border-left: 3px solid #4facfe;
+            border-radius: 8px;
+            border-left: 4px solid var(--medical-primary);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-            .time-slot:last-child {
-                margin-bottom: 0;
-            }
+        .time-slot:hover {
+            transform: translateX(-4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-slot:last-child {
+            margin-bottom: 0;
+        }
 
         .time-range {
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: var(--medical-primary);
+            font-size: 1rem;
         }
 
         .slot-type {
-            padding: 0.25rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            padding: 0.4rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .type-consultation {
@@ -267,96 +325,299 @@
             color: #f57c00;
         }
 
+        /* ✅ Action Buttons - طراحی رسمی */
         .action-buttons {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
             justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--medical-light);
         }
 
         .btn-action {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
             transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-            .btn-action:hover {
-                transform: scale(1.05);
-            }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
 
+        /* ✅ Calendar Container - طراحی رسمی */
+        .calendar-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+            border: 1px solid var(--medical-border);
+        }
+
+        .calendar-container h5 {
+            color: var(--medical-primary);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ✅ FullCalendar Customization for Persian Clinic Environment */
+        .fc {
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+            direction: rtl;
+        }
+
+        .fc-header-toolbar {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%) !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding: 1.25rem !important;
+            margin-bottom: 1.5rem !important;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2) !important;
+        }
+
+        .fc-button {
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            border-radius: 24px !important;
+            padding: 0.6rem 1.25rem !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-button:hover {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .fc-button-active {
+            background: rgba(255, 255, 255, 0.4) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .fc-day-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            padding: 1rem 0.5rem !important;
+            border: none !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-event-working-hours {
+            border-radius: 8px !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+            transition: all 0.3s ease !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-event-working-hours:hover {
+            transform: scale(1.02) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .fc-timegrid-slot {
+            border-color: var(--medical-border) !important;
+        }
+
+        .fc-timegrid-slot-label {
+            color: var(--medical-text-muted) !important;
+            font-weight: 600 !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-toolbar-title {
+            color: white !important;
+            font-weight: 700 !important;
+            font-size: 1.3rem !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-col-header-cell {
+            border-color: var(--medical-border) !important;
+        }
+
+        .fc-daygrid-day {
+            border-color: var(--medical-border) !important;
+        }
+
+        .fc-daygrid-day:hover {
+            background-color: rgba(44, 90, 160, 0.05) !important;
+        }
+
+        .fc-daygrid-day-number {
+            color: var(--medical-text) !important;
+            font-weight: 600 !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-daygrid-day.fc-day-today {
+            background-color: rgba(40, 167, 69, 0.1) !important;
+        }
+
+        .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+            background-color: var(--medical-success) !important;
+            color: white !important;
+            border-radius: 50% !important;
+            width: 32px !important;
+            height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: 700 !important;
+        }
+
+        .fc-event {
+            border-radius: 8px !important;
+            border: none !important;
+            padding: 4px 8px !important;
+            font-size: 0.9rem !important;
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+        }
+
+        .fc-event-consultation {
+            background: var(--medical-primary) !important;
+            color: white !important;
+        }
+
+        .fc-event-surgery {
+            background: var(--medical-danger) !important;
+            color: white !important;
+        }
+
+        .fc-event-emergency {
+            background: var(--medical-warning) !important;
+            color: var(--medical-dark) !important;
+        }
+
+        /* ✅ Loading Overlay - طراحی رسمی */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.95);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            backdrop-filter: blur(5px);
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #4facfe;
+            width: 60px;
+            height: 60px;
+            border: 6px solid var(--medical-light);
+            border-top: 6px solid var(--medical-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @@keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
+        /* ✅ Empty State - طراحی رسمی */
         .empty-state {
             text-align: center;
-            padding: 3rem;
-            color: #6c757d;
+            padding: 4rem 2rem;
+            color: var(--medical-text-muted);
         }
 
-            .empty-state i {
-                font-size: 4rem;
-                margin-bottom: 1rem;
-                opacity: 0.5;
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.4;
+            color: var(--medical-primary);
+        }
+
+        .empty-state h5 {
+            color: var(--medical-primary);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: var(--medical-text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* ✅ Card Header - طراحی رسمی */
+        .card-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%) !important;
+            color: white !important;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 1.25rem 1.5rem !important;
+            border: none !important;
+        }
+
+        .card-header .card-title {
+            color: white !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+        }
+
+        /* ✅ Responsive Design */
+        @@media (max-width: 768px) {
+            .doctor-header {
+                padding: 1.5rem;
             }
 
-        .calendar-container {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            .doctor-info {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .schedule-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+            }
+
+            .calendar-container {
+                padding: 1rem;
+            }
         }
 
-        .fc-event {
-            border-radius: 6px;
-            border: none;
-            padding: 2px 4px;
-            font-size: 0.85rem;
+        /* ✅ Error Handling Styles */
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--medical-danger);
+            font-weight: 500;
         }
 
-        .fc-event-consultation {
-            background: #4facfe;
-            color: white;
-        }
-
-        .fc-event-surgery {
-            background: #f093fb;
-            color: white;
-        }
-
-        .fc-event-emergency {
-            background: #f5576c;
-            color: white;
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--medical-success);
+            font-weight: 500;
         }
     </style>
 }
@@ -368,7 +629,24 @@
 @Html.AntiForgeryToken()
 
 <div class="container-fluid">
-    <!-- Doctor Header -->
+    <!-- ✅ Error/Success Messages -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="success-message">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    <!-- ✅ Doctor Header -->
     <div class="doctor-header">
         <div class="row align-items-center">
             <div class="col-md-8">
@@ -379,14 +657,14 @@
                 <p class="mb-0 opacity-75">مدیریت برنامه کاری و زمان‌بندی</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-light">
+                <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-light btn-action">
                     <i class="fas fa-plus me-2"></i>
                     برنامه جدید
                 </a>
-                <button type="button" class="btn btn-warning ms-2" onclick="debugSchedule()">
-                    <i class="fas fa-bug me-2"></i>
-                    دیباگ
-                </button>
+                <a href="@Url.Action("Index")" class="btn btn-light btn-action ms-2">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    بازگشت
+                </a>
             </div>
         </div>
 
@@ -412,47 +690,43 @@
         </div>
     </div>
 
-    <!-- Statistics -->
+    <!-- ✅ Statistics -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalSchedules ?? 0)</h4>
-                            <small>کل برنامه‌ها</small>
-                        </div>
-                    </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">@(Model?.TotalSchedules ?? 0)</h4>
+                    <small>کل برنامه‌ها</small>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.ActiveSchedules ?? 0)</h4>
-                            <small>برنامه‌های فعال</small>
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">@(Model?.ActiveSchedules ?? 0)</h4>
+                    <small>برنامه‌های فعال</small>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white">
-                        <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalTimeSlots ?? 0)</h4>
-                            <small>کل زمان‌ها</small>
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">@(Model?.TotalTimeSlots ?? 0)</h4>
+                    <small>کل زمان‌ها</small>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.WeeklyHours ?? 0)</h4>
-                            <small>ساعت‌های هفتگی</small>
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">@(Model?.WeeklyHours ?? 0)</h4>
+                    <small>ساعت‌های هفتگی</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Calendar View -->
+    <!-- ✅ Calendar View -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="calendar-container">
@@ -465,103 +739,84 @@
         </div>
     </div>
 
-    <!-- Schedule List -->
+    <!-- ✅ Schedule List -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-clock me-2"></i>
                         برنامه‌های کاری
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if (Model?.Schedules != null && Model.Schedules.Any())
+                    @if (Model?.WorkDays != null && Model.WorkDays.Any(wd => wd.IsActive && wd.TimeRanges != null && wd.TimeRanges.Any(tr => tr.IsActive)))
                     {
-                        foreach (var schedule in Model.Schedules)
+                        foreach (var workDay in Model.WorkDays.Where(wd => wd.IsActive && wd.TimeRanges != null && wd.TimeRanges.Any(tr => tr.IsActive)))
                         {
-                            <div class="schedule-card @(!schedule.IsActive ? "inactive" : "")">
+                            <div class="schedule-card">
                                 <div class="schedule-header">
-                                    <div class="schedule-title">@schedule.Title</div>
-                                    <div class="schedule-status @(schedule.IsActive ? "status-active" : "status-inactive")">
-                                        @(schedule.IsActive ? "فعال" : "غیرفعال")
+                                    <div class="schedule-title">
+                                        <i class="fas fa-calendar-day me-2"></i>
+                                        @workDay.DayName
+                                    </div>
+                                    <div class="schedule-status status-active">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        فعال
                                     </div>
                                 </div>
 
                                 <div class="schedule-details">
                                     <div class="detail-item">
                                         <div class="detail-label">روز هفته</div>
-                                        <div class="detail-value">@schedule.DayOfWeek</div>
+                                        <div class="detail-value">@workDay.DayName</div>
                                     </div>
                                     <div class="detail-item">
-                                        <div class="detail-label">تاریخ شروع</div>
-                                        <div class="detail-value">@(schedule.StartDate?.ToString("yyyy/MM/dd") ?? "-")</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">تاریخ پایان</div>
-                                        <div class="detail-value">@(schedule.EndDate?.ToString("yyyy/MM/dd") ?? "نامحدود")</div>
+                                        <div class="detail-label">تعداد بازه‌ها</div>
+                                        <div class="detail-value">@(workDay.TimeRanges?.Count(tr => tr.IsActive) ?? 0)</div>
                                     </div>
                                     <div class="detail-item">
                                         <div class="detail-label">وضعیت</div>
                                         <div class="detail-value">
-                                            <span class="badge bg-@(schedule.IsActive ? "success" : "danger")">
-                                                @(schedule.IsActive ? "فعال" : "غیرفعال")
-                                            </span>
+                                            <span class="badge bg-success">فعال</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                @if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
+                                @if (workDay.TimeRanges != null && workDay.TimeRanges.Any(tr => tr.IsActive))
                                 {
                                     <div class="time-slots">
-                                        <strong>زمان‌های کاری:</strong>
-                                        @foreach (var slot in schedule.TimeSlots)
+                                        <strong>
+                                            <i class="fas fa-clock me-2"></i>
+                                            زمان‌های کاری:
+                                        </strong>
+                                        @foreach (var timeRange in workDay.TimeRanges.Where(tr => tr.IsActive))
                                         {
+                                            var startTimeStr = $"{timeRange.StartTime.Hours:D2}:{timeRange.StartTime.Minutes:D2}";
+                                            var endTimeStr = $"{timeRange.EndTime.Hours:D2}:{timeRange.EndTime.Minutes:D2}";
                                             <div class="time-slot">
                                                 <div class="time-range">
-                                                    @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
+                                                    <i class="fas fa-clock me-2"></i>
+                                                    @startTimeStr - @endTimeStr
                                                 </div>
-                                                <div class="slot-type type-@(slot.Type?.ToLower() ?? "consultation")">
-                                                    @(slot.Type ?? "مشاوره")
+                                                <div class="slot-type type-consultation">
+                                                    <i class="fas fa-user-md me-1"></i>
+                                                    مشاوره
                                                 </div>
                                             </div>
                                         }
                                     </div>
                                 }
 
-                                @if (!string.IsNullOrEmpty(schedule.Notes))
-                                {
-                                    <div class="mb-3">
-                                        <strong>یادداشت:</strong>
-                                        <p class="mb-0 text-muted">@schedule.Notes</p>
-                                    </div>
-                                }
-
                                 <div class="action-buttons">
-                                    @if (schedule.IsActive)
-                                    {
-                                        <button class="btn btn-warning btn-action" onclick="deactivateSchedule(@schedule.Id)">
-                                            <i class="fas fa-pause me-1"></i>
-                                            غیرفعال کردن
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-success btn-action" onclick="activateSchedule(@schedule.Id)">
-                                            <i class="fas fa-play me-1"></i>
-                                            فعال کردن
-                                        </button>
-                                    }
-
-                                    <button class="btn btn-info btn-action" onclick="editSchedule(@schedule.Id)">
+                                    <a href="@Url.Action("Edit", new { id = Model?.Id ?? 0 })" class="btn btn-info btn-action">
                                         <i class="fas fa-edit me-1"></i>
                                         ویرایش
-                                    </button>
-
-                                    <button class="btn btn-danger btn-action" onclick="removeSchedule(@schedule.Id)">
-                                        <i class="fas fa-trash me-1"></i>
-                                        حذف
-                                    </button>
+                                    </a>
+                                    <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-primary btn-action">
+                                        <i class="fas fa-cog me-1"></i>
+                                        تنظیمات
+                                    </a>
                                 </div>
                             </div>
                         }
@@ -569,10 +824,10 @@
                     else
                     {
                         <div class="empty-state">
-                            <i class="fas fa-clock"></i>
+                            <i class="fas fa-calendar-times"></i>
                             <h5>هیچ برنامه کاری یافت نشد</h5>
                             <p>این پزشک هنوز هیچ برنامه کاری تعریف نکرده است</p>
-                            <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-primary">
+                            <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-primary btn-action">
                                 <i class="fas fa-plus me-2"></i>
                                 تعریف اولین برنامه
                             </a>
@@ -592,22 +847,70 @@
     <script src="~/Content/plugins/FullCalendar/index.global.min.js"></script>
 
     <script>
+        // ✅ Error Handling - ضد گلوله
         $(document).ready(function() {
-            // Initialize FullCalendar
-            initializeCalendar();
+            try {
+                // Initialize FullCalendar
+                initializeCalendar();
+            } catch (error) {
+                console.error('خطا در مقداردهی اولیه:', error);
+                showError('خطا در بارگذاری صفحه. لطفاً صفحه را رفرش کنید.');
+            }
         });
 
         function showLoading() {
-            $('.loading-overlay').show();
+            try {
+                $('.loading-overlay').css('display', 'flex');
+            } catch (error) {
+                console.error('خطا در نمایش Loading:', error);
+            }
         }
 
         function hideLoading() {
-            $('.loading-overlay').hide();
+            try {
+                $('.loading-overlay').hide();
+            } catch (error) {
+                console.error('خطا در پنهان کردن Loading:', error);
+            }
         }
 
-        // تابع کمکی برای تبدیل تاریخ به فارسی
+        function showError(message) {
+            try {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: message || 'خطایی رخ داده است',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#dc3545'
+                });
+            } catch (error) {
+                console.error('خطا در نمایش پیام خطا:', error);
+                alert(message || 'خطایی رخ داده است');
+            }
+        }
+
+        function showSuccess(message) {
+            try {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'موفق',
+                    text: message || 'عملیات با موفقیت انجام شد',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#28a745',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error('خطا در نمایش پیام موفقیت:', error);
+            }
+        }
+
+        // ✅ تابع کمکی برای تبدیل تاریخ به فارسی
         function toPersianDate(date) {
             try {
+                if (!date || !(date instanceof Date)) {
+                    return '-';
+                }
                 return date.toLocaleDateString('fa-IR', {
                     year: 'numeric',
                     month: 'long',
@@ -615,152 +918,175 @@
                     weekday: 'long'
                 });
             } catch (e) {
-                // fallback در صورت خطا
-                return date.toLocaleDateString('fa-IR');
+                console.error('خطا در تبدیل تاریخ به فارسی:', e);
+                return date ? date.toLocaleDateString('fa-IR') : '-';
             }
         }
 
-        // تابع کمکی برای نمایش بهتر هفته
+        // ✅ تابع کمکی برای نمایش بهتر هفته
         function getWeekDisplayText(startDate, endDate) {
-            var startPersian = toPersianDate(startDate);
-            var endPersian = toPersianDate(endDate);
-            
-            // اگر در یک ماه باشد
-            if (startDate.getMonth() === endDate.getMonth()) {
-                return `هفته ${startDate.getDate()} تا ${endDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
-            }
-            
-            // اگر در دو ماه مختلف باشد
-            return `هفته ${startDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long' })} تا ${endDate.getDate()} ${endDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
-        }
-
-        function initializeCalendar() {
-            var calendarEl = document.getElementById('scheduleCalendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                locale: 'fa',
-                direction: 'rtl',
-                firstDay: 6, // شنبه
-                slotMinTime: '08:00:00',
-                slotMaxTime: '22:00:00',
-                slotDuration: '00:30:00',
-                slotLabelFormat: {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                },
-                dayHeaderFormat: { weekday: 'long' },
-                titleFormat: {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                },
-                editable: false,
-                dayMaxEventRows: 3, // جایگزین eventLimit
-                height: 'auto',
-                events: generateScheduleEvents(),
-                eventClick: function(info) {
-                    handleEventClick(info);
-                },
-                eventDidMount: function(info) {
-                    // اضافه کردن tooltip فارسی
-                    $(info.el).tooltip({
-                        title: info.event.title,
-                        placement: 'top',
-                        trigger: 'hover'
-                    });
-                },
-                loading: function(isLoading) {
-                    if (isLoading) {
-                        showLoading();
-                    } else {
-                        hideLoading();
-                    }
-                },
-                // تنظیمات بهینه‌سازی برای محیط درمانی
-                eventDisplay: 'block',
-                eventTimeFormat: {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                },
-                // تنظیمات RTL و فارسی
-                buttonText: {
-                    today: 'امروز',
-                    month: 'ماه',
-                    week: 'هفته',
-                    day: 'روز'
-                },
-                // بهبود نمایش عنوان برای محیط درمانی
-                viewDidMount: function(arg) {
-                    // اضافه کردن اطلاعات اضافی به عنوان
-                    var titleEl = arg.el.querySelector('.fc-toolbar-title');
-                    if (titleEl && arg.view.type === 'timeGridWeek') {
-                        var startDate = arg.view.currentStart;
-                        var endDate = arg.view.currentEnd;
-                        
-                        // تنظیم عنوان بهتر برای هفته
-                        var weekText = getWeekDisplayText(startDate, endDate);
-                        titleEl.innerHTML = weekText;
-                        
-                        // اضافه کردن اطلاعات اضافی
-                        var currentDate = new Date();
-                        var persianDate = toPersianDate(currentDate);
-                        titleEl.innerHTML += '<br><small class="text-muted">امروز: ' + persianDate + '</small>';
-                    }
+            try {
+                if (!startDate || !endDate) {
+                    return 'هفته جاری';
                 }
-            });
-            calendar.render();
+                var startPersian = toPersianDate(startDate);
+                var endPersian = toPersianDate(endDate);
+                
+                if (startDate.getMonth() === endDate.getMonth()) {
+                    return `هفته ${startDate.getDate()} تا ${endDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
+                }
+                
+                return `هفته ${startDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long' })} تا ${endDate.getDate()} ${endDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
+            } catch (e) {
+                console.error('خطا در نمایش هفته:', e);
+                return 'هفته جاری';
+            }
         }
 
+        // ✅ Initialize Calendar - با Error Handling
+        function initializeCalendar() {
+            try {
+                var calendarEl = document.getElementById('scheduleCalendar');
+                if (!calendarEl) {
+                    console.error('عنصر تقویم یافت نشد');
+                    return;
+                }
+
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'timeGridWeek',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    locale: 'fa',
+                    direction: 'rtl',
+                    firstDay: 6, // شنبه
+                    slotMinTime: '08:00:00',
+                    slotMaxTime: '22:00:00',
+                    slotDuration: '00:30:00',
+                    slotLabelFormat: {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    },
+                    dayHeaderFormat: { weekday: 'long' },
+                    titleFormat: {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    },
+                    editable: false,
+                    dayMaxEventRows: 3,
+                    height: 'auto',
+                    events: generateScheduleEvents(),
+                    eventClick: function(info) {
+                        try {
+                            handleEventClick(info);
+                        } catch (error) {
+                            console.error('خطا در کلیک روی رویداد:', error);
+                            showError('خطا در نمایش جزئیات رویداد');
+                        }
+                    },
+                    eventDidMount: function(info) {
+                        try {
+                            $(info.el).tooltip({
+                                title: info.event.title,
+                                placement: 'top',
+                                trigger: 'hover'
+                            });
+                        } catch (error) {
+                            console.error('خطا در افزودن Tooltip:', error);
+                        }
+                    },
+                    loading: function(isLoading) {
+                        try {
+                            if (isLoading) {
+                                showLoading();
+                            } else {
+                                hideLoading();
+                            }
+                        } catch (error) {
+                            console.error('خطا در مدیریت Loading:', error);
+                        }
+                    },
+                    eventDisplay: 'block',
+                    eventTimeFormat: {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    },
+                    buttonText: {
+                        today: 'امروز',
+                        month: 'ماه',
+                        week: 'هفته',
+                        day: 'روز'
+                    },
+                    viewDidMount: function(arg) {
+                        try {
+                            var titleEl = arg.el.querySelector('.fc-toolbar-title');
+                            if (titleEl && arg.view.type === 'timeGridWeek') {
+                                var startDate = arg.view.currentStart;
+                                var endDate = arg.view.currentEnd;
+                                
+                                var weekText = getWeekDisplayText(startDate, endDate);
+                                titleEl.innerHTML = weekText;
+                                
+                                var currentDate = new Date();
+                                var persianDate = toPersianDate(currentDate);
+                                titleEl.innerHTML += '<br><small style="opacity: 0.8;">امروز: ' + persianDate + '</small>';
+                            }
+                        } catch (error) {
+                            console.error('خطا در تنظیم عنوان:', error);
+                        }
+                    }
+                });
+                
+                calendar.render();
+            } catch (error) {
+                console.error('خطا در مقداردهی اولیه تقویم:', error);
+                showError('خطا در بارگذاری تقویم. لطفاً صفحه را رفرش کنید.');
+            }
+        }
+
+        // ✅ Generate Schedule Events - با Error Handling
         function generateScheduleEvents() {
-            var events = [];
-            var workDays = @Html.Raw(Json.Encode(Model?.WorkDays ?? new List<ClinicApp.ViewModels.DoctorManagementVM.WorkDayViewModel>()));
+            try {
+                var events = [];
+                var workDays = @Html.Raw(Json.Encode(Model?.WorkDays ?? new List<ClinicApp.ViewModels.DoctorManagementVM.WorkDayViewModel>()));
 
-            // Debug logging
-            console.log('WorkDays from server:', workDays);
-            console.log('Model data:', @Html.Raw(Json.Encode(Model)));
+                if (!workDays || workDays.length === 0) {
+                    console.log('هیچ روز کاری یافت نشد');
+                    return events;
+                }
 
-            if (workDays && workDays.length > 0) {
                 workDays.forEach(function(workDay) {
-                    console.log('Processing workDay:', workDay);
-                    
-                    if (workDay.IsActive && workDay.TimeRanges) {
-                        console.log('WorkDay is active, TimeRanges:', workDay.TimeRanges);
+                    try {
+                        if (!workDay || !workDay.IsActive || !workDay.TimeRanges) {
+                            return;
+                        }
                         
                         workDay.TimeRanges.forEach(function(timeRange) {
-                            console.log('Processing timeRange:', timeRange);
-                            
-                            if (timeRange.IsActive) {
-                                console.log('TimeRange is active, creating event...');
+                            try {
+                                if (!timeRange || !timeRange.IsActive) {
+                                    return;
+                                }
                                 
-                                // محاسبه تاریخ برای این هفته
                                 var today = new Date();
-                                var targetDay = workDay.DayOfWeekForCalendar; // استفاده از property جدید
+                                var targetDay = workDay.DayOfWeek || 0;
                                 
-                                console.log('Target day:', targetDay, 'Today day:', today.getDay());
-                                
-                                // محاسبه روز هفته برای تقویم (یکشنبه = 0، شنبه = 6)
-                                var calendarDay = targetDay; // حالا مستقیماً از سرور می‌آید
-
                                 var eventDate = new Date(today);
-                                var daysToAdd = (calendarDay - today.getDay() + 7) % 7;
+                                var daysToAdd = (targetDay - today.getDay() + 7) % 7;
                                 eventDate.setDate(today.getDate() + daysToAdd);
 
-                                console.log('Event date calculated:', eventDate);
-
-                                // تنظیم زمان
-                                var startTimeStr = timeRange.StartTimeString; // استفاده از property جدید
-                                var endTimeStr = timeRange.EndTimeString; // استفاده از property جدید
+                                // ✅ استفاده از StartTimeString و EndTimeString از ViewModel
+                                var startTimeStr = timeRange.StartTimeString || (timeRange.StartTime ? 
+                                    (timeRange.StartTime.Hours < 10 ? '0' : '') + timeRange.StartTime.Hours + ':' + 
+                                    (timeRange.StartTime.Minutes < 10 ? '0' : '') + timeRange.StartTime.Minutes : '00:00');
+                                var endTimeStr = timeRange.EndTimeString || (timeRange.EndTime ? 
+                                    (timeRange.EndTime.Hours < 10 ? '0' : '') + timeRange.EndTime.Hours + ':' + 
+                                    (timeRange.EndTime.Minutes < 10 ? '0' : '') + timeRange.EndTime.Minutes : '00:00');
                                 
-                                console.log('Time strings:', startTimeStr, endTimeStr);
-                                
-                                // تبدیل string به ساعت و دقیقه
                                 var startTime = startTimeStr.split(':');
                                 var endTime = endTimeStr.split(':');
 
@@ -770,9 +1096,6 @@
                                 var endDateTime = new Date(eventDate);
                                 endDateTime.setHours(parseInt(endTime[0]), parseInt(endTime[1]), 0);
 
-                                console.log('Start/End dateTime:', startDateTime, endDateTime);
-
-                                // محاسبه مدت زمان برای نمایش بهتر
                                 var durationMinutes = Math.round((endDateTime - startDateTime) / (1000 * 60));
 
                                 var event = {
@@ -785,307 +1108,92 @@
                                     textColor: '#ffffff',
                                     allDay: false,
                                     extendedProps: {
-                                        workDayId: workDay.Id,
-                                        timeRangeId: timeRange.Id,
-                                        dayName: workDay.DayName,
+                                        workDayId: workDay.Id || 0,
+                                        timeRangeId: timeRange.Id || 0,
+                                        dayName: workDay.DayName || '',
                                         duration: durationMinutes,
                                         startTime: startTimeStr,
                                         endTime: endTimeStr
                                     }
                                 };
                                 
-                                console.log('Created event:', event);
                                 events.push(event);
+                            } catch (error) {
+                                console.error('خطا در پردازش TimeRange:', error, timeRange);
                             }
                         });
+                    } catch (error) {
+                        console.error('خطا در پردازش WorkDay:', error, workDay);
                     }
                 });
+
+                return events;
+            } catch (error) {
+                console.error('خطا در تولید رویدادها:', error);
+                return [];
             }
-
-            console.log('Final events array:', events);
-            return events;
         }
 
+        // ✅ Handle Event Click - با Error Handling
         function handleEventClick(info) {
-            var startTime = new Date(info.event.start).toLocaleTimeString('fa-IR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            var endTime = new Date(info.event.end).toLocaleTimeString('fa-IR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-
-            var dayName = info.event.extendedProps.dayName;
-            var duration = info.event.extendedProps.duration;
-            var startTimeStr = info.event.extendedProps.startTime;
-            var endTimeStr = info.event.extendedProps.endTime;
-
-            Swal.fire({
-                title: 'جزئیات زمان کاری',
-                html: `
-                    <div class="text-right">
-                        <div class="alert alert-info">
-                            <strong>روز:</strong> ${dayName}
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <strong>زمان شروع:</strong><br>
-                                <span class="badge bg-primary">${startTimeStr}</span>
-                            </div>
-                            <div class="col-6">
-                                <strong>زمان پایان:</strong><br>
-                                <span class="badge bg-success">${endTimeStr}</span>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <strong>مدت زمان کاری:</strong><br>
-                            <span class="badge bg-warning">${duration} دقیقه</span>
-                        </div>
-                        <div class="mt-3 text-muted">
-                            <small>این زمان برای پذیرش بیماران و مشاوره پزشکی در نظر گرفته شده است.</small>
-                        </div>
-                    </div>
-                `,
-                icon: 'info',
-                confirmButtonText: 'باشه',
-                confirmButtonColor: '#28a745',
-                width: '500px'
-            });
-        }
-
-        function activateSchedule(scheduleId) {
-            Swal.fire({
-                title: 'فعال کردن برنامه',
-                text: 'آیا از فعال کردن این برنامه اطمینان دارید؟',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'بله، فعال کن',
-                cancelButtonText: 'انصراف',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showLoading();
-
-                    $.ajax({
-                        url: '@Url.Action("ActivateSchedule")',
-                        type: 'POST',
-                        data: { scheduleId: scheduleId },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'موفق',
-                                    text: 'برنامه با موفقیت فعال شد',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطا',
-                                    text: response.message || 'خطا در فعال کردن برنامه'
-                                });
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطا',
-                                text: 'خطا در ارتباط با سرور'
-                            });
-                        },
-                        complete: function() {
-                            hideLoading();
-                        }
-                    });
+            try {
+                if (!info || !info.event) {
+                    showError('اطلاعات رویداد نامعتبر است');
+                    return;
                 }
-            });
-        }
 
-        function deactivateSchedule(scheduleId) {
-            Swal.fire({
-                title: 'غیرفعال کردن برنامه',
-                text: 'آیا از غیرفعال کردن این برنامه اطمینان دارید؟',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'بله، غیرفعال کن',
-                cancelButtonText: 'انصراف',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showLoading();
+                var startTime = new Date(info.event.start).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                var endTime = new Date(info.event.end).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
 
-                    $.ajax({
-                        url: '@Url.Action("DeactivateSchedule")',
-                        type: 'POST',
-                        data: { scheduleId: scheduleId },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'موفق',
-                                    text: 'برنامه با موفقیت غیرفعال شد',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطا',
-                                    text: response.message || 'خطا در غیرفعال کردن برنامه'
-                                });
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطا',
-                                text: 'خطا در ارتباط با سرور'
-                            });
-                        },
-                        complete: function() {
-                            hideLoading();
-                        }
-                    });
-                }
-            });
-        }
+                var dayName = info.event.extendedProps?.dayName || 'نامشخص';
+                var duration = info.event.extendedProps?.duration || 0;
+                var startTimeStr = info.event.extendedProps?.startTime || startTime;
+                var endTimeStr = info.event.extendedProps?.endTime || endTime;
 
-        function editSchedule(scheduleId) {
-            window.location.href = '@Url.Action("Edit")?id=' + scheduleId;
-        }
-
-        function removeSchedule(scheduleId) {
-            Swal.fire({
-                title: 'حذف برنامه',
-                text: 'آیا از حذف این برنامه اطمینان دارید؟ این عملیات غیرقابل بازگشت است.',
-                icon: 'error',
-                showCancelButton: true,
-                confirmButtonText: 'بله، حذف کن',
-                cancelButtonText: 'انصراف',
-                reverseButtons: true,
-                confirmButtonColor: '#dc3545'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showLoading();
-
-                    $.ajax({
-                        url: '@Url.Action("RemoveSchedule")',
-                        type: 'POST',
-                        data: { scheduleId: scheduleId },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'موفق',
-                                    text: 'برنامه با موفقیت حذف شد',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطا',
-                                    text: response.message || 'خطا در حذف برنامه'
-                                });
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطا',
-                                text: 'خطا در ارتباط با سرور'
-                            });
-                        },
-                        complete: function() {
-                            hideLoading();
-                        }
-                    });
-                }
-            });
-        }
-
-        function debugSchedule() {
-            showLoading();
-            
-            $.ajax({
-                url: '@Url.Action("DebugSchedule", new { doctorId = Model?.DoctorId ?? 0 })',
-                type: 'GET',
-                success: function(response) {
-                    hideLoading();
-                    
-                    var debugHtml = `
+                Swal.fire({
+                    title: 'جزئیات زمان کاری',
+                    html: `
                         <div class="text-right">
-                            <h6>اطلاعات کلی:</h6>
-                            <p><strong>موفقیت:</strong> ${response.Success}</p>
-                            <p><strong>پیام:</strong> ${response.Message || 'بدون پیام'}</p>
-                            <p><strong>داده موجود:</strong> ${response.HasData}</p>
-                            <p><strong>شناسه پزشک:</strong> ${response.DoctorId || 'نامشخص'}</p>
-                            <p><strong>نام پزشک:</strong> ${response.DoctorName || 'نامشخص'}</p>
-                            
-                            <h6 class="mt-3">آمار:</h6>
-                            <p><strong>تعداد روزهای کاری:</strong> ${response.WorkDaysCount}</p>
-                            <p><strong>روزهای کاری فعال:</strong> ${response.ActiveWorkDaysCount}</p>
-                            <p><strong>کل بازه‌های زمانی:</strong> ${response.TotalTimeRanges}</p>
-                            <p><strong>بازه‌های زمانی فعال:</strong> ${response.ActiveTimeRanges}</p>
-                            <p><strong>کل برنامه‌ها:</strong> ${response.TotalSchedules}</p>
-                            <p><strong>برنامه‌های فعال:</strong> ${response.ActiveSchedules}</p>
-                            <p><strong>کل زمان‌ها:</strong> ${response.TotalTimeSlots}</p>
-                            <p><strong>ساعت‌های هفتگی:</strong> ${response.WeeklyHours}</p>
-                        </div>
-                    `;
-                    
-                    if (response.WorkDaysDetails && response.WorkDaysDetails.length > 0) {
-                        debugHtml += '<h6 class="mt-3">جزئیات روزهای کاری:</h6>';
-                        response.WorkDaysDetails.forEach(function(workDay, index) {
-                            debugHtml += `
-                                <div class="border p-2 mb-2">
-                                    <strong>روز ${index + 1}:</strong> ${workDay.DayName} (ID: ${workDay.Id})
-                                    <br>DayOfWeek: ${workDay.DayOfWeek}, DayOfWeekForCalendar: ${workDay.DayOfWeekForCalendar}
-                                    <br>فعال: ${workDay.IsActive}, تعداد بازه‌ها: ${workDay.TimeRangesCount}
+                            <div class="alert alert-info">
+                                <strong>روز:</strong> ${dayName}
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>زمان شروع:</strong><br>
+                                    <span class="badge bg-primary">${startTimeStr}</span>
                                 </div>
-                            `;
-                            
-                            if (workDay.TimeRanges && workDay.TimeRanges.length > 0) {
-                                workDay.TimeRanges.forEach(function(timeRange, tIndex) {
-                                    debugHtml += `
-                                        <div class="ms-3 text-muted">
-                                            بازه ${tIndex + 1}: ${timeRange.StartTime} - ${timeRange.EndTime}
-                                            <br>StartTimeString: ${timeRange.StartTimeString}, EndTimeString: ${timeRange.EndTimeString}
-                                            <br>فعال: ${timeRange.IsActive}
-                                        </div>
-                                    `;
-                                });
-                            }
-                        });
-                    }
-                    
-                    Swal.fire({
-                        title: 'اطلاعات دیباگ برنامه کاری',
-                        html: debugHtml,
-                        width: '800px',
-                        confirmButtonText: 'باشه',
-                        confirmButtonColor: '#28a745'
-                    });
-                },
-                error: function() {
-                    hideLoading();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'خطا',
-                        text: 'خطا در دریافت اطلاعات دیباگ'
-                    });
-                }
-            });
+                                <div class="col-6">
+                                    <strong>زمان پایان:</strong><br>
+                                    <span class="badge bg-success">${endTimeStr}</span>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <strong>مدت زمان کاری:</strong><br>
+                                <span class="badge bg-warning">${duration} دقیقه</span>
+                            </div>
+                            <div class="mt-3 text-muted">
+                                <small>این زمان برای پذیرش بیماران و مشاوره پزشکی در نظر گرفته شده است.</small>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#28a745',
+                    width: '500px'
+                });
+            } catch (error) {
+                console.error('خطا در نمایش جزئیات رویداد:', error);
+                showError('خطا در نمایش جزئیات رویداد');
+            }
         }
     </script>
 }
+
