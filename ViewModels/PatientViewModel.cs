@@ -119,7 +119,7 @@ namespace ClinicApp.ViewModels
         /// </summary>
         /// <param name="entity">Entity بیمار</param>
         /// <returns>PatientViewModel</returns>
-        public static PatientViewModel FromEntity(Patient entity)
+        public static PatientViewModel FromEntity(Models.Entities.Patient.Patient entity)
         {
             if (entity == null) return null;
 
@@ -339,7 +339,7 @@ namespace ClinicApp.ViewModels
         /// </summary>
         /// <param name="entity">Entity بیمار</param>
         /// <returns>PatientCreateEditViewModel</returns>
-        public static PatientCreateEditViewModel FromEntity(Patient entity)
+        public static PatientCreateEditViewModel FromEntity(Models.Entities.Patient.Patient entity)
         {
             if (entity == null) return null;
 
@@ -365,9 +365,9 @@ namespace ClinicApp.ViewModels
         /// تبدیل PatientCreateEditViewModel به Entity
         /// </summary>
         /// <returns>Patient Entity</returns>
-        public Patient ToEntity()
+        public Models.Entities.Patient.Patient ToEntity()
         {
-            return new Patient
+            return new Models.Entities.Patient.Patient
             {
                 PatientId = this.PatientId,
                 NationalCode = this.NationalCode,
@@ -501,7 +501,7 @@ namespace ClinicApp.ViewModels
         /// </summary>
         /// <param name="entity">Entity بیمار</param>
         /// <returns>PatientDetailsViewModel</returns>
-        public static PatientDetailsViewModel FromEntity(Patient entity)
+        public static PatientDetailsViewModel FromEntity(Models.Entities.Patient.Patient entity)
         {
             if (entity == null) return null;
 

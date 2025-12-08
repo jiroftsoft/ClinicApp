@@ -1,0 +1,96 @@
+@using ClinicApp.Extensions
+@model ClinicApp.Models.DTOs.Appointment.PatientAppointmentDto
+
+@* Partial View برای نمایش کارت نوبت - رعایت SRP: فقط نمایش یک نوبت *@
+<div class="appointment-card card mb-3" data-appointment-id="@Model.AppointmentId">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-user-md text-primary me-2 fs-4"></i>
+                    <h5 class="card-title mb-0">@Model.DoctorName</h5>
+                </div>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-stethoscope me-1"></i>
+                    @Model.DoctorSpecialization
+                </p>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    @Model.AppointmentDate.ToPersianDate()
+                </p>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-clock me-1"></i>
+                    @Model.AppointmentTime
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-hospital me-1"></i>
+                    @Model.ClinicName - @Model.DepartmentName
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge status-badge status-@Model.Status.ToString().ToLower() mb-2">
+                    @Model.StatusDisplay
+                </span>
+                <p class="mb-2">
+                    <strong class="text-primary">@Model.Price.ToString("N0")</strong> <small>تومان</small>
+                </p>
+                <div class="btn-group-vertical w-100" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-info view-details-btn" data-appointment-id="@Model.AppointmentId">
+                        <i class="fas fa-eye me-1"></i>
+                        جزئیات
+                    </button>
+                    @if (Model.Status == ClinicApp.Models.Enums.AppointmentStatus.Scheduled)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-danger cancel-appointment-btn mt-2" data-appointment-id="@Model.AppointmentId">
+                            <i class="fas fa-times me-1"></i>
+                            لغو نوبت
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .appointment-card {
+        border: 1px solid var(--medical-border);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .appointment-card:hover {
+        box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
+        transform: translateY(-2px);
+        border-color: var(--medical-primary);
+    }
+
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .status-scheduled {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-completed {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+</style>
+

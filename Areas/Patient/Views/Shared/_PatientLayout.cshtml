@@ -1,0 +1,305 @@
+@{
+    var appName = "کلینیک درمانی شفا";
+    var title = ViewBag.Title ?? "پنل بیمار";
+    var metaDescription = ViewBag.MetaDescription ?? "کلینیک درمانی شفا - رزرو نوبت آنلاین";
+    var currentUser = User.Identity.Name;
+}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+    <meta name="description" content="@metaDescription">
+    <meta name="author" content="@appName">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+
+    <title>@title - @appName</title>
+
+    <!-- Local Fonts -->
+    <link rel="stylesheet" href="~/Content/css/local-fonts.css">
+    <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="~/Content/bootstrap.rtl.min.css" rel="stylesheet" />
+
+    <!-- SweetAlert2 -->
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --medical-blue: #0066cc;
+            --medical-green: #00a86b;
+        }
+
+        body {
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', 'Arial', sans-serif !important;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .patient-navbar {
+            background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-green) 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+
+        .patient-navbar .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .patient-navbar .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .patient-navbar .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+
+        .patient-container {
+            min-height: calc(100vh - 200px);
+            padding: 2rem 0;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .patient-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .patient-footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+
+        .btn-primary {
+            background-color: var(--medical-blue);
+            border-color: var(--medical-blue);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0052a3;
+            border-color: #0052a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .btn-success {
+            background-color: var(--medical-green);
+            border-color: var(--medical-green);
+        }
+
+        .btn-success:hover {
+            background-color: #008a5a;
+            border-color: #008a5a;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--medical-blue);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .patient-card {
+                padding: 1.5rem;
+            }
+
+            .patient-container {
+                padding: 1rem 0;
+            }
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg patient-navbar">
+        <div class="container">
+            <a class="navbar-brand" href="@Url.Action("Index", "Home", new { area = "" })">
+                <i class="fas fa-hospital me-2"></i>
+                @appName
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            نوبت‌های من
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Book", "AppointmentBooking", new { area = "Patient" })">
+                            <i class="fas fa-calendar-plus me-1"></i>
+                            رزرو نوبت
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>
+                                @currentUser
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="@Url.Action("LogOff", "Account")">
+                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                    خروج
+                                </a></li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Login", "Account")">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                ورود
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="patient-container">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="patient-footer">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-hospital me-2"></i>
+                @appName - تمامی حقوق محفوظ است
+            </p>
+            <p class="mb-0 mt-2" style="opacity: 0.8; font-size: 0.9rem;">
+                © @DateTime.Now.Year
+            </p>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/Content/plugins/jquery/jquery.min.js"></script>
+    <script src="~/Content/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+
+    @RenderSection("Scripts", required: false)
+
+    <script>
+        // Global loading overlay functions
+        function showLoading() {
+            $('#loadingOverlay').addClass('active');
+        }
+
+        function hideLoading() {
+            $('#loadingOverlay').removeClass('active');
+        }
+
+        // Global error handler
+        $(document).ajaxError(function(event, xhr, settings, thrownError) {
+            hideLoading();
+            if (xhr.status === 401) {
+                Swal.fire({
+                    title: 'خطای احراز هویت',
+                    text: 'لطفاً دوباره وارد شوید.',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                }).then(() => {
+                    window.location.href = '@Url.Action("Login", "Account")';
+                });
+            } else if (xhr.status === 403) {
+                Swal.fire({
+                    title: 'دسترسی غیرمجاز',
+                    text: 'شما اجازه دسترسی به این بخش را ندارید.',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            } else {
+                Swal.fire({
+                    title: 'خطا',
+                    text: 'یک خطا رخ داد. لطفاً دوباره تلاش کنید.',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

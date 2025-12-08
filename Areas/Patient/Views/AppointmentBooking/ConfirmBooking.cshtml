@@ -1,0 +1,248 @@
+@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.Patient.AppointmentBookingViewModel
+@{
+    ViewBag.Title = "تایید نهایی رزرو";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-primary-light: #3d6bb3;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--medical-border);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-item-label {
+            color: var(--medical-text);
+            font-weight: 500;
+        }
+
+        .summary-item-value {
+            color: var(--medical-primary);
+            font-weight: 600;
+        }
+
+        .price-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .price-total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+        }
+
+        .payment-form {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .payment-method-card {
+            border: 2px solid var(--medical-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method-card:hover {
+            border-color: var(--medical-primary);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
+        }
+
+        .payment-method-card.selected {
+            border-color: var(--medical-primary);
+            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .summary-card,
+            .payment-form {
+                padding: 1.5rem;
+            }
+
+            .price-total {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-card,
+        .payment-form {
+            animation: slideUp 0.4s ease-in-out;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-check-circle me-2"></i>
+                تایید نهایی رزرو
+            </h2>
+            <p class="mb-0 opacity-75">لطفاً اطلاعات را بررسی و تایید کنید</p>
+        </div>
+        <a href="@Url.Action("SelectTime", new { doctorId = Model.DoctorId, date = Model.AppointmentDate })" class="btn btn-light">
+            <i class="fas fa-arrow-right me-1"></i>
+            بازگشت
+        </a>
+    </div>
+</div>
+
+<!-- خلاصه اطلاعات -->
+<div class="summary-card">
+    <h5 class="mb-4">
+        <i class="fas fa-info-circle me-2 text-primary"></i>
+        خلاصه اطلاعات نوبت
+    </h5>
+    
+    <div class="summary-item">
+        <span class="summary-item-label">
+            <i class="fas fa-user-md me-1"></i>
+            پزشک:
+        </span>
+        <span class="summary-item-value">@Model.DoctorName</span>
+    </div>
+    
+    <div class="summary-item">
+        <span class="summary-item-label">
+            <i class="fas fa-stethoscope me-1"></i>
+            تخصص:
+        </span>
+        <span class="summary-item-value">@Model.DoctorSpecialization</span>
+    </div>
+    
+    <div class="summary-item">
+        <span class="summary-item-label">
+            <i class="fas fa-calendar-alt me-1"></i>
+            تاریخ:
+        </span>
+        <span class="summary-item-value">@Model.AppointmentDate.ToPersianDate()</span>
+    </div>
+    
+    <div class="summary-item">
+        <span class="summary-item-label">
+            <i class="fas fa-clock me-1"></i>
+            زمان:
+        </span>
+        <span class="summary-item-value">
+            @ClinicApp.Helpers.TimeFormatHelper.FormatTimeToPersian(Model.StartTime) - @ClinicApp.Helpers.TimeFormatHelper.FormatTimeToPersian(Model.EndTime)
+        </span>
+    </div>
+
+    <div class="price-section">
+        <div class="summary-item">
+            <span class="summary-item-label">مبلغ نوبت:</span>
+            <span class="price-total">@Model.Price.ToString("N0") تومان</span>
+        </div>
+    </div>
+</div>
+
+<!-- فرم پرداخت -->
+<div class="payment-form">
+    <h5 class="mb-4">
+        <i class="fas fa-credit-card me-2 text-primary"></i>
+        روش پرداخت
+    </h5>
+
+    <form id="bookingForm" method="post" action="@Url.Action("Reserve", "AppointmentBooking")">
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.DoctorId)
+        @Html.HiddenFor(m => m.AppointmentDate)
+        @Html.HiddenFor(m => m.StartTime)
+        @Html.HiddenFor(m => m.EndTime)
+        @Html.HiddenFor(m => m.Price)
+        @Html.HiddenFor(m => m.ServiceCategoryId)
+        @Html.HiddenFor(m => m.Description)
+
+        <div class="payment-method-card selected" data-method="online">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-credit-card me-3 fs-4"></i>
+                <div>
+                    <h6 class="mb-1">پرداخت آنلاین</h6>
+                    <small>پرداخت از طریق درگاه بانکی</small>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="mb-3">
+                <label class="form-label">توضیحات (اختیاری)</label>
+                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 3, placeholder = "توضیحات اضافی..." })
+            </div>
+        }
+
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg" id="confirmBookingBtn">
+                <i class="fas fa-check-circle me-1"></i>
+                تایید و پرداخت
+            </button>
+            <a href="@Url.Action("SelectTime", new { doctorId = Model.DoctorId, date = Model.AppointmentDate })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/patient/confirm-booking.js"></script>
+}
+

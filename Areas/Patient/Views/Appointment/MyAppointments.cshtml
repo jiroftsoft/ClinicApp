@@ -1,0 +1,150 @@
+@model ClinicApp.ViewModels.Patient.PatientAppointmentListViewModel
+@{
+    ViewBag.Title = "نوبت‌های من";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-primary-light: #3d6bb3;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+        }
+
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .appointments-container {
+            min-height: 400px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medical-text);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--medical-border);
+            margin-bottom: 1rem;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-calendar-check me-2"></i>
+                نوبت‌های من
+            </h2>
+            <p class="mb-0 opacity-75">مشاهده و مدیریت نوبت‌های پزشکی شما</p>
+        </div>
+        <a href="@Url.Action("Book", "AppointmentBooking")" class="btn btn-light">
+            <i class="fas fa-calendar-plus me-1"></i>
+            رزرو نوبت جدید
+        </a>
+    </div>
+</div>
+
+<!-- فیلترها -->
+<div class="filter-card">
+    <form id="filterForm" method="get" action="@Url.Action("MyAppointments")">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">از تاریخ</label>
+                <input type="date" name="startDate" class="form-control" value="@(Model.StartDateFilter?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">تا تاریخ</label>
+                <input type="date" name="endDate" class="form-control" value="@(Model.EndDateFilter?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">وضعیت</label>
+                <select name="status" class="form-select">
+                    <option value="">همه</option>
+                    <option value="Scheduled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Scheduled ? "selected" : "")>رزرو شده</option>
+                    <option value="Completed" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Completed ? "selected" : "")>تکمیل شده</option>
+                    <option value="Cancelled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Cancelled ? "selected" : "")>لغو شده</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">جستجو</label>
+                <input type="text" name="searchTerm" class="form-control" placeholder="نام پزشک..." value="@Model.SearchTerm" />
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>
+                    جستجو
+                </button>
+                <a href="@Url.Action("MyAppointments")" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo me-1"></i>
+                    پاک کردن فیلترها
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- لیست نوبت‌ها -->
+<div class="appointments-container">
+    @if (Model.Appointments != null && Model.Appointments.Any())
+    {
+        foreach (var appointment in Model.Appointments)
+        {
+            @Html.Partial("_AppointmentCard", appointment)
+        }
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="صفحه‌بندی">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("MyAppointments", new { page = i, startDate = Model.StartDateFilter, endDate = Model.EndDateFilter, status = Model.StatusFilter, searchTerm = Model.SearchTerm })">
+                                @i
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>نوبتی یافت نشد</h4>
+            <p class="text-muted">شما هنوز نوبتی رزرو نکرده‌اید</p>
+            <a href="@Url.Action("Book", "AppointmentBooking")" class="btn btn-primary mt-3">
+                <i class="fas fa-calendar-plus me-1"></i>
+                رزرو نوبت جدید
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/patient/appointments.js"></script>
+}
+

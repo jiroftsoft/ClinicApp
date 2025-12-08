@@ -1,0 +1,202 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.Patient.TimeSlotSelectionViewModel
+@{
+    ViewBag.Title = "انتخاب زمان";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-primary-light: #3d6bb3;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medical-text);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--medical-border);
+            margin-bottom: 1rem;
+        }
+
+        .selected-slot-info {
+            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .selected-slot-info.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .time-slots-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .info-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .time-slot-card {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-clock me-2"></i>
+                انتخاب زمان نوبت
+            </h2>
+            <p class="mb-0 opacity-75">لطفاً زمان مورد نظر خود را انتخاب کنید</p>
+        </div>
+        <a href="@Url.Action("SelectDate", new { doctorId = Model.DoctorId })" class="btn btn-light">
+            <i class="fas fa-arrow-right me-1"></i>
+            بازگشت
+        </a>
+    </div>
+</div>
+
+<!-- اطلاعات -->
+<div class="info-card">
+    <div class="row">
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <i class="fas fa-user-md me-2 text-primary"></i>
+                @Model.DoctorName
+            </h5>
+            <p class="text-muted mb-1">
+                <i class="fas fa-calendar-alt me-1"></i>
+                تاریخ: <strong>@Model.SelectedDate.ToPersianDate()</strong>
+            </p>
+            <p class="text-muted mb-0">
+                <i class="fas fa-hourglass-half me-1"></i>
+                مدت زمان هر نوبت: <strong>@Model.AppointmentDuration دقیقه</strong>
+            </p>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-1"></i>
+                <small>اسلات‌های سبز رنگ در دسترس هستند</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- اسلات‌های زمانی -->
+<div class="info-card">
+    <h5 class="mb-3">
+        <i class="fas fa-list me-2"></i>
+        اسلات‌های زمانی در دسترس
+    </h5>
+    
+    <div class="time-slots-grid" id="timeSlotsGrid">
+        @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
+        {
+            foreach (var slot in Model.AvailableSlots)
+            {
+                @Html.Partial("_TimeSlotCard", slot)
+            }
+        }
+        else
+        {
+            <div class="empty-state col-12">
+                <i class="fas fa-clock"></i>
+                <h4>اسلات زمانی در دسترس نیست</h4>
+                <p class="text-muted">برای این تاریخ اسلات زمانی در دسترس وجود ندارد</p>
+                <a href="@Url.Action("SelectDate", new { doctorId = Model.DoctorId })" class="btn btn-primary mt-3">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    انتخاب تاریخ دیگر
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- اطلاعات اسلات انتخاب شده -->
+<div class="selected-slot-info" id="selectedSlotInfo">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="mb-1">زمان انتخاب شده:</h6>
+            <p class="mb-0" id="selectedTimeDisplay"></p>
+        </div>
+        <button type="button" class="btn btn-light btn-sm" id="clearSelectionBtn">
+            <i class="fas fa-times me-1"></i>
+            پاک کردن
+        </button>
+    </div>
+</div>
+
+<!-- دکمه ادامه -->
+<div class="text-center mt-4">
+    <button type="button" class="btn btn-primary btn-lg" id="continueToConfirmBtn" disabled>
+        <i class="fas fa-arrow-left me-1"></i>
+        ادامه به تایید نهایی
+    </button>
+</div>
+
+<input type="hidden" id="doctorId" value="@Model.DoctorId" />
+<input type="hidden" id="selectedDate" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+<input type="hidden" id="selectedStartTime" />
+<input type="hidden" id="selectedEndTime" />
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Scripts/patient/time-selection.js"></script>
+}
+

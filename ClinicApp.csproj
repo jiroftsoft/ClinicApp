@@ -489,6 +489,12 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\AppointmentBookingApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\DoctorSearchApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\PatientAppointmentApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\AppointmentBookingController.cs" />
+    <Compile Include="Areas\Patient\Controllers\AppointmentController.cs" />
+    <Compile Include="Areas\Patient\PatientAreaRegistration.cs" />
     <Compile Include="Constants\ReceptionConstants.cs" />
     <Compile Include="Constants\ReceptionFormConstants.cs" />
     <Compile Include="Controllers\Api\ClinicController.cs" />
@@ -549,6 +555,7 @@
     <Compile Include="Extensions\GenderParsing.cs" />
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
+    <Compile Include="Filters\AppointmentRateLimitAttribute.cs" />
     <Compile Include="Filters\CorrelationIdFilter.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\GlobalExceptionFilter.cs" />
@@ -583,11 +590,14 @@
     <Compile Include="Helpers\ServiceResultExtensions.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
+    <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\Validation\IdentityValidators.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\ITimeProvider.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
     <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
+    <Compile Include="Interfaces\Appointment\IAppointmentBookingService.cs" />
+    <Compile Include="Interfaces\Appointment\IAppointmentRepository.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountRepository.cs" />
@@ -729,8 +739,13 @@
     <Compile Include="Migrations\202512071939599_FixDoctorScheduleForeignKey.Designer.cs">
       <DependentUpon>202512071939599_FixDoctorScheduleForeignKey.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
+    <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
@@ -1052,6 +1067,10 @@
     <Compile Include="Repositories\Reception\IDoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IShiftManagementRepository.cs" />
     <Compile Include="Repositories\Reception\ShiftManagementRepository.cs" />
+    <Compile Include="Services\Appointment\AppointmentBookingService.cs" />
+    <Compile Include="Services\Appointment\AppointmentNotificationService.cs" />
+    <Compile Include="Services\Appointment\AppointmentPricingService.cs" />
+    <Compile Include="Services\Appointment\AppointmentValidationService.cs" />
     <Compile Include="Services\ClinicAdmin\ClinicBankAccountService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
@@ -1325,6 +1344,12 @@
     <Compile Include="ViewModels\ClinicAdmin\DepartmentDtos.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
+    <Compile Include="ViewModels\Patient\AppointmentBookingViewModel.cs" />
+    <Compile Include="ViewModels\Patient\DateSelectionViewModel.cs" />
+    <Compile Include="ViewModels\Patient\DepartmentInfo.cs" />
+    <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
+    <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
+    <Compile Include="ViewModels\Patient\TimeSlotSelectionViewModel.cs" />
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementDtos.cs" />
@@ -3926,6 +3951,17 @@
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.11.0.min.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.12.4.min.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\ServiceInstaller_1402-06-29\Install\Setup-LogFolder.ps1" />
+    <Content Include="Areas\Patient\Views\Shared\_PatientLayout.cshtml" />
+    <Content Include="Areas\Patient\Views\Web.config" />
+    <Content Include="Areas\Patient\Views\_ViewStart.cshtml" />
+    <Content Include="Areas\Patient\Views\Shared\_AppointmentCard.cshtml" />
+    <Content Include="Areas\Patient\Views\Shared\_DoctorCard.cshtml" />
+    <Content Include="Areas\Patient\Views\Appointment\MyAppointments.cshtml" />
+    <Content Include="Areas\Patient\Views\Shared\_TimeSlotCard.cshtml" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\SelectDate.cshtml" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\SelectDoctor.cshtml" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\SelectTime.cshtml" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\ConfirmBooking.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -4659,6 +4695,11 @@
     <Content Include="Scripts\medical-environment.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Scripts\patient-insurance-management.js" />
+    <Content Include="Scripts\patient\appointments.js" />
+    <Content Include="Scripts\patient\confirm-booking.js" />
+    <Content Include="Scripts\patient\date-selection.js" />
+    <Content Include="Scripts\patient\doctor-selection.js" />
+    <Content Include="Scripts\patient\time-selection.js" />
     <Content Include="Scripts\persian-date.min.js" />
     <Content Include="Scripts\persian-datepicker.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\jalaali.js" />
