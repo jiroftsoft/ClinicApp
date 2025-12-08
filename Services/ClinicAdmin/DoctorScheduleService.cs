@@ -67,27 +67,37 @@ namespace ClinicApp.Services.ClinicAdmin
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 100) pageSize = 100;
 
-                // دریافت تمام برنامه‌های کاری
+                // ✅ دریافت تمام برنامه‌های کاری
                 var schedules = await _doctorScheduleRepository.GetAllDoctorSchedulesAsync();
 
-                // فیلتر بر اساس عبارت جستجو
+                // ✅ فیلتر بر اساس عبارت جستجو (با Null Safety)
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     schedules = schedules.Where(s => 
-                        s.Doctor?.FirstName.Contains(searchTerm) == true ||
-                        s.Doctor?.LastName.Contains(searchTerm) == true ||
-                        s.Doctor?.FullName.Contains(searchTerm) == true
+                        (s.Doctor != null && (
+                            (!string.IsNullOrEmpty(s.Doctor.FirstName) && s.Doctor.FirstName.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(s.Doctor.LastName) && s.Doctor.LastName.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(s.Doctor.FullName) && s.Doctor.FullName.Contains(searchTerm))
+                        ))
                     ).ToList();
                 }
 
-                // تبدیل به ViewModel
+                // ✅ تبدیل به ViewModel با Null Safety
                 var viewModels = new List<DoctorScheduleViewModel>();
                 foreach (var schedule in schedules)
                 {
-                    var viewModel = DoctorScheduleViewModel.FromEntity(schedule);
-                    if (viewModel != null)
+                    try
                     {
-                        viewModels.Add(viewModel);
+                        var viewModel = DoctorScheduleViewModel.FromEntity(schedule);
+                        if (viewModel != null)
+                        {
+                            viewModels.Add(viewModel);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // ✅ Log کردن خطا در تبدیل ViewModel اما ادامه دادن
+                        _logger.Warning(ex, "خطا در تبدیل برنامه کاری {ScheduleId} به ViewModel. این مورد نادیده گرفته می‌شود.", schedule?.ScheduleId ?? 0);
                     }
                 }
 
@@ -104,10 +114,15 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 return ServiceResult<PagedResult<DoctorScheduleViewModel>>.Successful(pagedResult);
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning(ex, "خطای عملیاتی در دریافت لیست برنامه‌های کاری پزشکان: {Message}", ex.Message);
+                return ServiceResult<PagedResult<DoctorScheduleViewModel>>.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت لیست برنامه‌های کاری پزشکان");
-                return ServiceResult<PagedResult<DoctorScheduleViewModel>>.Failed("خطا در دریافت لیست برنامه‌های کاری پزشکان");
+                _logger.Error(ex, "خطای غیرمنتظره در دریافت لیست برنامه‌های کاری پزشکان");
+                return ServiceResult<PagedResult<DoctorScheduleViewModel>>.Failed("خطا در دریافت لیست برنامه‌های کاری پزشکان. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -162,17 +177,20 @@ namespace ClinicApp.Services.ClinicAdmin
                     // به‌روزرسانی برنامه موجود
                     _logger.Information("به‌روزرسانی برنامه کاری موجود برای پزشک {DoctorId}", doctorId);
                     
-                    // به‌روزرسانی فیلدها
-                    existingSchedule.AppointmentDuration = schedule.AppointmentDuration;
-                    existingSchedule.DefaultStartTime = schedule.DefaultStartTime;
-                    existingSchedule.DefaultEndTime = schedule.DefaultEndTime;
-                    existingSchedule.UpdatedAt = DateTime.Now;
-                    existingSchedule.UpdatedByUserId = _currentUserService.UserId;
+                    // ✅ تبدیل ViewModel به Entity برای به‌روزرسانی کامل (شامل WorkDays و TimeRanges)
+                    var scheduleEntity = schedule.ToEntity();
+                    scheduleEntity.ScheduleId = existingSchedule.ScheduleId; // حفظ ScheduleId موجود
+                    scheduleEntity.DoctorId = doctorId; // اطمینان از صحت DoctorId
+                    scheduleEntity.UpdatedAt = DateTime.Now;
+                    scheduleEntity.UpdatedByUserId = _currentUserService.UserId;
 
-                    // به‌روزرسانی روزهای کاری
-                    await _doctorScheduleRepository.UpdateDoctorScheduleAsync(existingSchedule);
+                    // ✅ به‌روزرسانی کامل (شامل WorkDays و TimeRanges)
+                    await _doctorScheduleRepository.UpdateDoctorScheduleAsync(scheduleEntity);
                     
-                                         // به‌روزرسانی روزهای کاری (این عملیات در repository انجام می‌شود)
+                    _logger.Information("برنامه کاری پزشک {DoctorId} با موفقیت به‌روزرسانی شد. WorkDays: {WorkDaysCount}, TimeRanges: {TimeRangesCount}", 
+                        doctorId, 
+                        schedule.WorkDays?.Count ?? 0,
+                        schedule.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
                 }
                 else
                 {
@@ -199,10 +217,23 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 return ServiceResult.Successful("برنامه کاری پزشک با موفقیت تنظیم شد.");
             }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ مدیریت خطاهای عملیاتی (مثل تداخل بازه‌های زمانی)
+                _logger.Warning(ex, "خطای عملیاتی در تنظیم برنامه کاری پزشک {DoctorId}: {Message}", doctorId, ex.Message);
+                return ServiceResult.Failed(ex.Message); // بازگرداندن پیام خطای اصلی
+            }
+            catch (ArgumentException ex)
+            {
+                // ✅ مدیریت خطاهای اعتبارسنجی پارامترها
+                _logger.Warning(ex, "خطای اعتبارسنجی در تنظیم برنامه کاری پزشک {DoctorId}: {Message}", doctorId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در تنظیم برنامه کاری پزشک {DoctorId}", doctorId);
-                return ServiceResult.Failed("خطا در تنظیم برنامه کاری پزشک");
+                // ✅ مدیریت خطاهای غیرمنتظره
+                _logger.Error(ex, "خطای غیرمنتظره در تنظیم برنامه کاری پزشک {DoctorId}", doctorId);
+                return ServiceResult.Failed("خطا در تنظیم برنامه کاری پزشک. لطفاً با پشتیبانی تماس بگیرید.");
             }
         }
 
@@ -229,31 +260,126 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult<DoctorScheduleViewModel>.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
-                // دریافت برنامه کاری همراه با جزئیات کامل
+                // ✅ دریافت برنامه کاری با جزئیات کامل
+                _logger.Information("🔍 [GetDoctorScheduleAsync] در حال فراخوانی GetDoctorScheduleWithAllDetailsAsync برای پزشک {DoctorId}", doctorId);
+                System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] در حال فراخوانی GetDoctorScheduleWithAllDetailsAsync برای پزشک {doctorId}");
+                
                 var doctorSchedule = await _doctorScheduleRepository.GetDoctorScheduleWithAllDetailsAsync(doctorId);
+                
                 if (doctorSchedule == null)
                 {
-                    _logger.Information("برنامه کاری برای پزشک {DoctorId} یافت نشد", doctorId);
+                    _logger.Information("ℹ️ [GetDoctorScheduleAsync] برنامه کاری برای پزشک {DoctorId} یافت نشد (null)", doctorId);
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] برنامه کاری برای پزشک {doctorId} یافت نشد (null)");
+                    return ServiceResult<DoctorScheduleViewModel>.Successful(null);
+                }
+                
+                // ✅ لود کردن Navigation Property Doctor به صورت جداگانه برای جلوگیری از خطای SQL
+                // ✅ این کار به دلیل حذف .Include(ds => ds.Doctor) از Repository انجام می‌شود
+                if (doctorSchedule.Doctor == null && doctorSchedule.DoctorId > 0)
+                {
+                    _logger.Information("🔄 [GetDoctorScheduleAsync] در حال لود کردن Navigation Property Doctor برای پزشک {DoctorId}", doctorId);
+                    doctorSchedule.Doctor = await _doctorRepository.GetByIdAsync(doctorSchedule.DoctorId);
+                }
+
+                // ✅ لاگ اطلاعات برای دیباگ
+                _logger.Information("✅ [GetDoctorScheduleAsync] برنامه کاری از Repository دریافت شد. ScheduleId: {ScheduleId}, WorkDaysCount: {WorkDaysCount}, TimeRangesCount: {TimeRangesCount}", 
+                    doctorSchedule.ScheduleId,
+                    doctorSchedule.WorkDays?.Count ?? 0,
+                    doctorSchedule.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
+                System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] برنامه کاری از Repository دریافت شد. ScheduleId: {doctorSchedule.ScheduleId}, WorkDaysCount: {doctorSchedule.WorkDays?.Count ?? 0}");
+
+                // ✅ لاگ جزئیات WorkDays و TimeRanges
+                if (doctorSchedule.WorkDays != null)
+                {
+                    foreach (var workDay in doctorSchedule.WorkDays)
+                    {
+                        _logger.Information("📅 [GetDoctorScheduleAsync] WorkDay: DayOfWeek={DayOfWeek}, IsActive={IsActive}, TimeRangesCount={TimeRangesCount}", 
+                            workDay.DayOfWeek, workDay.IsActive, workDay.TimeRanges?.Count ?? 0);
+                        System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] WorkDay: DayOfWeek={workDay.DayOfWeek}, IsActive={workDay.IsActive}, TimeRangesCount={workDay.TimeRanges?.Count ?? 0}");
+                        
+                        if (workDay.TimeRanges != null)
+                        {
+                            foreach (var timeRange in workDay.TimeRanges)
+                            {
+                                _logger.Information("⏰ [GetDoctorScheduleAsync] TimeRange: StartTime={StartTime}, EndTime={EndTime}, IsDeleted={IsDeleted}", 
+                                    timeRange.StartTime, timeRange.EndTime, timeRange.IsDeleted);
+                                System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] TimeRange: StartTime={timeRange.StartTime}, EndTime={timeRange.EndTime}, IsDeleted={timeRange.IsDeleted}");
+                            }
+                        }
+                    }
+                }
+
+                // ✅ تبدیل به ViewModel با Null Check و Error Handling کامل
+                DoctorScheduleViewModel scheduleViewModel;
+                try
+                {
+                    _logger.Information("🔄 [GetDoctorScheduleAsync] در حال تبدیل Entity به ViewModel برای پزشک {DoctorId}", doctorId);
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] در حال تبدیل Entity به ViewModel برای پزشک {doctorId}");
+                    
+                    scheduleViewModel = DoctorScheduleViewModel.FromEntity(doctorSchedule);
+                    
+                    _logger.Information("🔄 [GetDoctorScheduleAsync] تبدیل Entity به ViewModel انجام شد. ViewModel is null: {IsNull}", scheduleViewModel == null);
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] تبدیل Entity به ViewModel انجام شد. ViewModel is null: {scheduleViewModel == null}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "❌ [GetDoctorScheduleAsync] خطا در تبدیل برنامه کاری پزشک {DoctorId} به ViewModel. ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                        doctorId, ex.GetType().Name, ex.Message, ex.StackTrace);
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] ❌ خطا در تبدیل: {ex.GetType().Name} - {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] StackTrace: {ex.StackTrace}");
+                    
+                    if (ex.InnerException != null)
+                    {
+                        _logger.Error(ex.InnerException, "❌ [GetDoctorScheduleAsync] InnerException: {Message}, Type: {Type}", 
+                            ex.InnerException.Message, ex.InnerException.GetType().Name);
+                        System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] InnerException: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                    }
+                    
+                    return ServiceResult<DoctorScheduleViewModel>.Failed("خطا در تبدیل داده‌های برنامه کاری. لطفاً دوباره تلاش کنید.");
+                }
+                
+                if (scheduleViewModel == null)
+                {
+                    _logger.Information("ℹ️ [GetDoctorScheduleAsync] برنامه کاری پزشک {DoctorId} به ViewModel تبدیل نشد (null). احتمالاً داده‌های نامعتبر یا برنامه جدید. بازگرداندن null برای ایجاد مدل جدید", doctorId);
+                    System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] برنامه کاری پزشک {doctorId} به ViewModel تبدیل نشد (null)");
+                    // ✅ به جای خطا، null برمی‌گردانیم تا Controller بتواند مدل جدید ایجاد کند
+                    // این یک خطا نیست، بلکه نشان می‌دهد که برنامه کاری وجود ندارد یا داده‌های نامعتبر است
                     return ServiceResult<DoctorScheduleViewModel>.Successful(null);
                 }
 
-                // لاگ اطلاعات برای دیباگ
-                _logger.Information("برنامه کاری پزشک {DoctorId} یافت شد. WorkDays: {WorkDaysCount}, TimeRanges: {TimeRangesCount}", 
+                _logger.Information("✅ [GetDoctorScheduleAsync] برنامه کاری پزشک {DoctorId} با موفقیت دریافت شد. WorkDays: {WorkDaysCount}, TimeRanges: {TimeRangesCount}", 
                     doctorId, 
-                    doctorSchedule.WorkDays?.Count ?? 0,
-                    doctorSchedule.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
-
-                // تبدیل به ViewModel
-                var scheduleViewModel = DoctorScheduleViewModel.FromEntity(doctorSchedule);
-
-                _logger.Information("برنامه کاری پزشک {DoctorId} با موفقیت دریافت شد", doctorId);
+                    scheduleViewModel.WorkDays?.Count ?? 0,
+                    scheduleViewModel.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
+                System.Diagnostics.Debug.WriteLine($"[GetDoctorScheduleAsync] ✅ برنامه کاری پزشک {doctorId} با موفقیت دریافت شد. WorkDays: {scheduleViewModel.WorkDays?.Count ?? 0}, TimeRanges: {scheduleViewModel.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0}");
 
                 return ServiceResult<DoctorScheduleViewModel>.Successful(scheduleViewModel);
             }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ مدیریت خطاهای عملیاتی - با جزئیات بیشتر برای لاگ
+                _logger.Warning(ex, "خطای عملیاتی در دریافت برنامه کاری پزشک {DoctorId}: {Message}. StackTrace: {StackTrace}", 
+                    doctorId, ex.Message, ex.StackTrace);
+                
+                // ✅ اگر خطا از Repository است، پیام بهتری نمایش می‌دهیم
+                var errorMessage = ex.Message.Contains("خطا در دریافت") 
+                    ? $"خطا در دریافت برنامه کاری پزشک {doctorId}. لطفاً دوباره تلاش کنید."
+                    : ex.Message;
+                
+                return ServiceResult<DoctorScheduleViewModel>.Failed(errorMessage);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت برنامه کاری پزشک {DoctorId}", doctorId);
-                return ServiceResult<DoctorScheduleViewModel>.Failed("خطا در دریافت برنامه کاری پزشک");
+                // ✅ مدیریت خطاهای غیرمنتظره - با جزئیات کامل برای لاگ
+                _logger.Error(ex, "خطای غیرمنتظره در دریافت برنامه کاری پزشک {DoctorId}. ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    doctorId, ex.GetType().Name, ex.Message, ex.StackTrace);
+                
+                if (ex.InnerException != null)
+                {
+                    _logger.Error(ex.InnerException, "InnerException برای DoctorId {DoctorId}: {Message}", doctorId, ex.InnerException.Message);
+                }
+                
+                return ServiceResult<DoctorScheduleViewModel>.Failed($"خطا در دریافت برنامه کاری پزشک {doctorId}. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -302,10 +428,23 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 return ServiceResult.Successful("بازه زمانی با موفقیت مسدود شد.");
             }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ مدیریت خطاهای عملیاتی (مثل وجود نوبت‌های رزرو شده)
+                _logger.Warning(ex, "خطای عملیاتی در مسدود کردن بازه زمانی برای پزشک {DoctorId}: {Message}", doctorId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                // ✅ مدیریت خطاهای اعتبارسنجی پارامترها
+                _logger.Warning(ex, "خطای اعتبارسنجی در مسدود کردن بازه زمانی برای پزشک {DoctorId}: {Message}", doctorId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در مسدود کردن بازه زمانی برای پزشک {DoctorId}", doctorId);
-                return ServiceResult.Failed("خطا در مسدود کردن بازه زمانی");
+                // ✅ مدیریت خطاهای غیرمنتظره
+                _logger.Error(ex, "خطای غیرمنتظره در مسدود کردن بازه زمانی برای پزشک {DoctorId}", doctorId);
+                return ServiceResult.Failed("خطا در مسدود کردن بازه زمانی. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -365,10 +504,19 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 return ServiceResult<List<TimeSlotViewModel>>.Successful(timeSlotViewModels);
             }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ مدیریت خطاهای عملیاتی
+                _logger.Warning(ex, "خطای عملیاتی در دریافت اسلات‌های در دسترس برای پزشک {DoctorId} در تاریخ {Date}: {Message}", 
+                    doctorId, date.ToString("yyyy/MM/dd"), ex.Message);
+                return ServiceResult<List<TimeSlotViewModel>>.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اسلات‌های در دسترس برای پزشک {DoctorId} در تاریخ {Date}", doctorId, date.ToString("yyyy/MM/dd"));
-                return ServiceResult<List<TimeSlotViewModel>>.Failed("خطا در دریافت اسلات‌های در دسترس");
+                // ✅ مدیریت خطاهای غیرمنتظره
+                _logger.Error(ex, "خطای غیرمنتظره در دریافت اسلات‌های در دسترس برای پزشک {DoctorId} در تاریخ {Date}", 
+                    doctorId, date.ToString("yyyy/MM/dd"));
+                return ServiceResult<List<TimeSlotViewModel>>.Failed("خطا در دریافت اسلات‌های در دسترس. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -398,6 +546,12 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult<DoctorScheduleViewModel>.Failed("برنامه کاری مورد نظر یافت نشد.");
                 }
 
+                // ✅ لود کردن Navigation Property Doctor به صورت جداگانه برای جلوگیری از خطای SQL
+                if (schedule.Doctor == null && schedule.DoctorId > 0)
+                {
+                    schedule.Doctor = await _doctorRepository.GetByIdAsync(schedule.DoctorId);
+                }
+
                 // تبدیل به ViewModel
                 var viewModel = DoctorScheduleViewModel.FromEntity(schedule);
                 if (viewModel == null)
@@ -409,10 +563,15 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Information("برنامه کاری {ScheduleId} با موفقیت دریافت شد", scheduleId);
                 return ServiceResult<DoctorScheduleViewModel>.Successful(viewModel);
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning(ex, "خطای عملیاتی در دریافت برنامه کاری {ScheduleId}: {Message}", scheduleId, ex.Message);
+                return ServiceResult<DoctorScheduleViewModel>.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت برنامه کاری {ScheduleId}", scheduleId);
-                return ServiceResult<DoctorScheduleViewModel>.Failed("خطا در دریافت برنامه کاری");
+                _logger.Error(ex, "خطای غیرمنتظره در دریافت برنامه کاری {ScheduleId}", scheduleId);
+                return ServiceResult<DoctorScheduleViewModel>.Failed("خطا در دریافت برنامه کاری. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -444,10 +603,16 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Information("برنامه کاری {ScheduleId} با موفقیت حذف شد", scheduleId);
                 return ServiceResult.Successful("برنامه کاری با موفقیت حذف شد.");
             }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ مدیریت خطاهای عملیاتی (مثل وجود نوبت‌های فعال)
+                _logger.Warning(ex, "خطای عملیاتی در حذف برنامه کاری {ScheduleId}: {Message}", scheduleId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در حذف برنامه کاری {ScheduleId}", scheduleId);
-                return ServiceResult.Failed("خطا در حذف برنامه کاری");
+                _logger.Error(ex, "خطای غیرمنتظره در حذف برنامه کاری {ScheduleId}", scheduleId);
+                return ServiceResult.Failed("خطا در حذف برنامه کاری. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -479,10 +644,15 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Information("برنامه کاری {ScheduleId} با موفقیت غیرفعال شد", scheduleId);
                 return ServiceResult.Successful("برنامه کاری با موفقیت غیرفعال شد.");
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning(ex, "خطای عملیاتی در غیرفعال کردن برنامه کاری {ScheduleId}: {Message}", scheduleId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در غیرفعال کردن برنامه کاری {ScheduleId}", scheduleId);
-                return ServiceResult.Failed("خطا در غیرفعال کردن برنامه کاری");
+                _logger.Error(ex, "خطای غیرمنتظره در غیرفعال کردن برنامه کاری {ScheduleId}", scheduleId);
+                return ServiceResult.Failed("خطا در غیرفعال کردن برنامه کاری. لطفاً دوباره تلاش کنید.");
             }
         }
 
@@ -514,10 +684,15 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Information("برنامه کاری {ScheduleId} با موفقیت فعال شد", scheduleId);
                 return ServiceResult.Successful("برنامه کاری با موفقیت فعال شد.");
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning(ex, "خطای عملیاتی در فعال کردن مجدد برنامه کاری {ScheduleId}: {Message}", scheduleId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در فعال کردن مجدد برنامه کاری {ScheduleId}", scheduleId);
-                return ServiceResult.Failed("خطا در فعال کردن مجدد برنامه کاری");
+                _logger.Error(ex, "خطای غیرمنتظره در فعال کردن مجدد برنامه کاری {ScheduleId}", scheduleId);
+                return ServiceResult.Failed("خطا در فعال کردن مجدد برنامه کاری. لطفاً دوباره تلاش کنید.");
             }
         }
 

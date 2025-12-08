@@ -124,6 +124,11 @@
                         {
                             var workDay = Model.WorkDays[i];
                             <div class="work-day-section">
+                                @* ✅ Hidden fields برای WorkDay - برای شناسایی WorkDay های در حال ویرایش *@
+                                @Html.HiddenFor(m => m.WorkDays[i].Id)
+                                @Html.HiddenFor(m => m.WorkDays[i].DayOfWeek)
+                                @Html.HiddenFor(m => m.WorkDays[i].DayName)
+                                
                                 <div class="row">
                                     <div class="col-md-3">
                                         <h6 class="mb-2">@workDay.DayName</h6>
@@ -140,15 +145,31 @@
                                             for (int j = 0; j < workDay.TimeRanges.Count; j++)
                                             {
                                                 var timeRange = workDay.TimeRanges[j];
+                                                var startTimeValue = $"{workDay.TimeRanges[j].StartTime.Hours:D2}:{workDay.TimeRanges[j].StartTime.Minutes:D2}";
+                                                var endTimeValue = $"{workDay.TimeRanges[j].EndTime.Hours:D2}:{workDay.TimeRanges[j].EndTime.Minutes:D2}";
+                                                
                                                 <div class="time-range-section">
+                                                    @* ✅ Hidden field برای TimeRangeId - برای شناسایی TimeRange های در حال ویرایش *@
+                                                    @Html.HiddenFor(m => m.WorkDays[i].TimeRanges[j].Id)
+                                                    
                                                     <div class="row">
                                                         <div class="col-md-4">
                                                             <label class="form-label">زمان شروع</label>
-                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, new { @class = "form-control", type = "time" })
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, 
+                                                                new { 
+                                                                    @class = "form-control", 
+                                                                    type = "time",
+                                                                    @Value = startTimeValue
+                                                                })
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label class="form-label">زمان پایان</label>
-                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, new { @class = "form-control", type = "time" })
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, 
+                                                                new { 
+                                                                    @class = "form-control", 
+                                                                    type = "time",
+                                                                    @Value = endTimeValue
+                                                                })
                                                         </div>
                                                         <div class="col-md-3">
                                                             <label class="form-label">وضعیت</label>
@@ -214,6 +235,7 @@
             const newTimeRange = document.createElement('div');
             newTimeRange.className = 'time-range-section';
             newTimeRange.innerHTML = `
+                <input type="hidden" name="WorkDays[${workDayIndex}].TimeRanges[${timeRangeCount}].Id" value="0" />
                 <div class="row">
                     <div class="col-md-4">
                         <label class="form-label">زمان شروع</label>

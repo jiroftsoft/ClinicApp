@@ -282,6 +282,7 @@ public class AppointmentConfig : EntityTypeConfiguration<Appointment>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Appointment_PaymentTransactionId")));
 
+
         // روابط
         HasRequired(a => a.Doctor)
             .WithMany(d => d.Appointments)
@@ -319,5 +320,11 @@ public class AppointmentConfig : EntityTypeConfiguration<Appointment>
 
         HasIndex(a => new { a.PatientId, a.Status, a.AppointmentDate })
             .HasName("IX_Appointment_PatientId_Status_Date");
+
+        // ✅ ایندکس ترکیبی برای Query رایج در GetAvailableAppointmentSlotsAsync و HasActiveAppointmentsAsync
+        // Query: DoctorId + AppointmentDate + Status + IsDeleted
+        // این Index برای هر دو Query استفاده می‌شود
+        HasIndex(a => new { a.DoctorId, a.AppointmentDate, a.Status, a.IsDeleted })
+            .HasName("IX_Appointment_DoctorId_Date_Status_Deleted");
     }
 }

@@ -311,12 +311,6 @@ public class Doctor : ISoftDelete, ITrackable
     public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
 
     /// <summary>
-    /// لیست برنامه‌های کاری پزشک
-    /// این رابطه برای مدیریت برنامه‌های کاری هفتگی پزشک استفاده می‌شود
-    /// </summary>
-    public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; } = new HashSet<DoctorSchedule>();
-
-    /// <summary>
     /// تخصص اصلی پزشک (برای دسترسی مستقیم)
     /// </summary>
     [NotMapped]

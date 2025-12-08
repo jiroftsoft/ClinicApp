@@ -175,7 +175,7 @@ namespace ClinicApp.Controllers.Api
 
                     var doctors = await _context.Doctors
                         .Where(d => d.IsActive)
-                        .Where(d => d.DoctorSchedules.Any(ds => 
+                        .Where(d => d.Schedules.Any(ds => 
                             ds.ShiftType == shiftType && 
                             ds.IsActive))
                         .OrderBy(d => d.LastName)
@@ -185,7 +185,7 @@ namespace ClinicApp.Controllers.Api
                             d.DoctorId,
                             FullName = d.FirstName + " " + d.LastName,
                             d.DoctorCode,
-                            ShiftCount = d.DoctorSchedules.Count(ds => 
+                            ShiftCount = d.Schedules.Count(ds => 
                                 ds.ShiftType == shiftType && 
                                 ds.IsActive)
                         })

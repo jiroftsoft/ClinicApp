@@ -555,6 +555,11 @@ namespace ClinicApp.ViewModels.Reception
         public decimal TotalPrice => UnitPrice * Quantity;
         public decimal PatientShareAmount { get; set; }
         public decimal InsurerShareAmount { get; set; }
+        
+        // ✅ محاسبات بیمه پایه و تکمیلی (از SnapshotJson)
+        public decimal PrimaryPays { get; set; }
+        public decimal SupplementaryPays { get; set; }
+        
         public string SnapshotJson { get; set; }
     }
 

@@ -1196,14 +1196,23 @@
             $('#detailsPatientBirthDate').text(formatDate(data.PatientBirthDateShamsi));
 
             // 3. اطلاعات پزشک و دپارتمان
-            // (می‌توانیم بعداً اضافه کنیم)
+            $('#detailsDoctorName').text(data.DoctorFullName || '-');
+            $('#detailsDoctorSpecialization').text(data.DoctorSpecialization || '-');
+            $('#detailsDoctorDegree').text(data.DoctorDegree || '-');
+            $('#detailsDepartmentName').text(data.DepartmentName || '-');
+            $('#detailsClinicName').text(data.ClinicName || '-');
 
-            // 4. تب خدمات
+            // 4. تب خدمات (با نمایش محاسبات بیمه پایه و تکمیلی)
             const $servicesList = $('#detailsServicesList');
             if (data.Items && data.Items.length > 0) {
                 $('#servicesCount').text(data.Items.length);
                 let servicesHtml = '';
                 data.Items.forEach(item => {
+                    // ✅ استخراج سهم بیمه پایه و تکمیلی از DTO
+                    const primaryPays = item.PrimaryPays || 0;
+                    const supplementaryPays = item.SupplementaryPays || 0;
+                    const totalInsurerShare = item.InsurerShareAmount || 0;
+                    
                     servicesHtml += `
                         <tr>
                             <td>${item.ServiceCode || '-'}</td>
@@ -1211,15 +1220,17 @@
                             <td>${item.Quantity || 0}</td>
                             <td>${formatIRR(item.UnitPrice)}</td>
                             <td>${formatIRR(item.TotalPrice || (item.UnitPrice * item.Quantity))}</td>
-                            <td>${formatIRR(item.PatientShareAmount)}</td>
-                            <td>${formatIRR(item.InsurerShareAmount)}</td>
+                            <td class="text-primary"><strong>${formatIRR(item.PatientShareAmount)}</strong></td>
+                            <td class="text-info">${formatIRR(primaryPays)}</td>
+                            <td class="text-info">${formatIRR(supplementaryPays)}</td>
+                            <td class="text-info"><strong>${formatIRR(totalInsurerShare)}</strong></td>
                         </tr>
                     `;
                 });
                 $servicesList.html(servicesHtml);
             } else {
                 $('#servicesCount').text('0');
-                $servicesList.html('<tr><td colspan="7" class="text-center text-muted">هیچ خدمتی ثبت نشده است</td></tr>');
+                $servicesList.html('<tr><td colspan="9" class="text-center text-muted">هیچ خدمتی ثبت نشده است</td></tr>');
             }
 
             // 5. تب اطلاعات مالی
@@ -1291,15 +1302,36 @@
                 $paymentsList.html('<tr><td colspan="7" class="text-center text-muted">هیچ تراکنش پرداختی ثبت نشده است</td></tr>');
             }
 
-            // 7. تب بیمه
+            // 7. تب بیمه (با محاسبات دقیق از آیتم‌ها)
+            // ✅ محاسبه مجموع سهم بیمه پایه و تکمیلی از آیتم‌ها
+            let totalPrimaryPays = 0;
+            let totalSupplementaryPays = 0;
+            if (data.Items && data.Items.length > 0) {
+                data.Items.forEach(item => {
+                    totalPrimaryPays += (item.PrimaryPays || 0);
+                    totalSupplementaryPays += (item.SupplementaryPays || 0);
+                });
+            }
+
             const $baseInsurance = $('#detailsBaseInsurance');
             if (data.BasePlanId && data.BasePlanName) {
                 $baseInsurance.html(`
                     <div class="row g-2">
                         <div class="col-6"><strong>نام بیمه:</strong></div>
-                        <div class="col-6">${data.BasePlanName}</div>
-                        <div class="col-6"><strong>سهم بیمه:</strong></div>
-                        <div class="col-6">${formatIRR(data.BasePay)}</div>
+                        <div class="col-6"><strong>${data.BasePlanName}</strong></div>
+                        <div class="col-6"><strong>شناسه:</strong></div>
+                        <div class="col-6">${data.BasePlanId}</div>
+                        <div class="col-12"><hr class="my-2"></div>
+                        <div class="col-6"><strong>سهم بیمه (از Reception):</strong></div>
+                        <div class="col-6 text-info">${formatIRR(data.BasePay)}</div>
+                        <div class="col-6"><strong>سهم بیمه (از آیتم‌ها):</strong></div>
+                        <div class="col-6 text-info">${formatIRR(totalPrimaryPays)}</div>
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0 mt-2">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small>محاسبه شده از ${data.Items?.length || 0} خدمت</small>
+                            </div>
+                        </div>
                     </div>
                 `);
             } else {
@@ -1311,9 +1343,20 @@
                 $suppInsurance.html(`
                     <div class="row g-2">
                         <div class="col-6"><strong>نام بیمه:</strong></div>
-                        <div class="col-6">${data.SupplementaryPlanName}</div>
-                        <div class="col-6"><strong>سهم بیمه:</strong></div>
-                        <div class="col-6">${formatIRR(data.SuppPay)}</div>
+                        <div class="col-6"><strong>${data.SupplementaryPlanName}</strong></div>
+                        <div class="col-6"><strong>شناسه:</strong></div>
+                        <div class="col-6">${data.SupplementaryPlanId}</div>
+                        <div class="col-12"><hr class="my-2"></div>
+                        <div class="col-6"><strong>سهم بیمه (از Reception):</strong></div>
+                        <div class="col-6 text-info">${formatIRR(data.SuppPay)}</div>
+                        <div class="col-6"><strong>سهم بیمه (از آیتم‌ها):</strong></div>
+                        <div class="col-6 text-info">${formatIRR(totalSupplementaryPays)}</div>
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0 mt-2">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small>محاسبه شده از ${data.Items?.length || 0} خدمت</small>
+                            </div>
+                        </div>
                     </div>
                 `);
             } else {

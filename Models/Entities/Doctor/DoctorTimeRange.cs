@@ -208,5 +208,10 @@ public class DoctorTimeRangeConfiguration : EntityTypeConfiguration<DoctorTimeRa
         // ایندکس برای جستجوی بازه‌های زمانی همپوشان
         HasIndex(tr => new { tr.WorkDayId, tr.StartTime, tr.EndTime })
             .HasName("IX_DoctorTimeRange_WorkDayId_StartTime_EndTime");
+
+        // ✅ ایندکس ترکیبی برای Query رایج: WorkDayId + IsActive + IsDeleted
+        // این Query در GetAvailableAppointmentSlotsAsync استفاده می‌شود
+        HasIndex(tr => new { tr.WorkDayId, tr.IsActive, tr.IsDeleted })
+            .HasName("IX_DoctorTimeRange_WorkDayId_IsActive_IsDeleted");
     }
 }

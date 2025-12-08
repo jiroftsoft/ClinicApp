@@ -123,7 +123,7 @@
                 <div id="receptionDetailsContent" style="display: none;">
                     @* Header Info *@
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="card border-primary">
                                 <div class="card-body">
                                     <h6 class="card-title text-primary"><i class="fas fa-id-card me-2"></i>اطلاعات پذیرش</h6>
@@ -144,7 +144,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h6 class="card-title text-info"><i class="fas fa-user me-2"></i>اطلاعات بیمار</h6>
@@ -159,6 +159,25 @@
                                         <div class="col-6" id="detailsPatientGender">-</div>
                                         <div class="col-6"><strong>تاریخ تولد:</strong></div>
                                         <div class="col-6" id="detailsPatientBirthDate">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success"><i class="fas fa-user-md me-2"></i>اطلاعات پزشک و دپارتمان</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6"><strong>پزشک:</strong></div>
+                                        <div class="col-6" id="detailsDoctorName">-</div>
+                                        <div class="col-6"><strong>تخصص:</strong></div>
+                                        <div class="col-6" id="detailsDoctorSpecialization">-</div>
+                                        <div class="col-6"><strong>درجه:</strong></div>
+                                        <div class="col-6" id="detailsDoctorDegree">-</div>
+                                        <div class="col-6"><strong>دپارتمان:</strong></div>
+                                        <div class="col-6" id="detailsDepartmentName">-</div>
+                                        <div class="col-6"><strong>کلینیک:</strong></div>
+                                        <div class="col-6" id="detailsClinicName">-</div>
                                     </div>
                                 </div>
                             </div>
@@ -208,11 +227,13 @@
                                             <th>قیمت واحد</th>
                                             <th>قیمت کل</th>
                                             <th>سهم بیمار</th>
-                                            <th>سهم بیمه</th>
+                                            <th>سهم بیمه پایه</th>
+                                            <th>سهم بیمه تکمیلی</th>
+                                            <th>سهم کل بیمه</th>
                                         </tr>
                                     </thead>
                                     <tbody id="detailsServicesList">
-                                        <tr><td colspan="7" class="text-center text-muted">در حال بارگذاری...</td></tr>
+                                        <tr><td colspan="9" class="text-center text-muted">در حال بارگذاری...</td></tr>
                                     </tbody>
                                 </table>
                             </div>

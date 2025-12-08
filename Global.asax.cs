@@ -48,6 +48,10 @@ namespace ClinicApp
             ModelBinders.Binders.Add(typeof(decimal), new DecimalModelBinder());
             ModelBinders.Binders.Add(typeof(decimal?), new DecimalModelBinder());
             
+            // ✅ ثبت Model Binder برای TimeSpan - حل مشکل Model Binding برای input type="time"
+            ModelBinders.Binders.Add(typeof(TimeSpan), new TimeSpanModelBinder());
+            ModelBinders.Binders.Add(typeof(TimeSpan?), new TimeSpanModelBinder());
+            
             // اگر UnityConfig دارید اینجا هم اضافه کنید:
             DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container));
 
@@ -88,6 +92,22 @@ namespace ClinicApp
             var exception = Server.GetLastError();
             if (exception != null)
             {
+                // Don't log 404 errors for static files that are expected to not exist
+                // These files (.map, .well-known) are requested by browsers but may not exist
+                var httpException = exception as System.Web.HttpException;
+                if (httpException != null && httpException.GetHttpCode() == 404)
+                {
+                    string path = Request.Path.ToLowerInvariant();
+                    if (path.EndsWith(".map", StringComparison.OrdinalIgnoreCase) || 
+                        path.StartsWith("/.well-known/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // These are expected 404s for static files, don't log as fatal errors
+                        // The IgnoreRoute in RouteConfig should handle these, but if they still
+                        // reach here, we suppress the error logging
+                        return;
+                    }
+                }
+                
                 Log.Fatal(exception, "خطای مدیریت نشده در سطح اپلیکیشن رخ داد.");
             }
         }

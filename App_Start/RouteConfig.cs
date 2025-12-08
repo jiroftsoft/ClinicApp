@@ -7,6 +7,21 @@ using System.Web.Routing;
 
 namespace ClinicApp
 {
+    /// <summary>
+    /// Custom route constraint to match URLs ending with .map extension
+    /// </summary>
+    public class MapFileConstraint : IRouteConstraint
+    {
+        public bool Match(HttpContextBase httpContext, Route route, string parameterName, RouteValueDictionary values, RouteDirection routeDirection)
+        {
+            if (values[parameterName] == null)
+                return false;
+
+            string path = values[parameterName].ToString();
+            return path.EndsWith(".map", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     public class RouteConfig
     {
         public static void RegisterRoutes(RouteCollection routes)
@@ -14,8 +29,15 @@ namespace ClinicApp
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
             
             // Ignore source map files (.map) to prevent 404 errors
-            // Note: Static files with extensions are handled by IIS, but we add this as a safety measure
-            // The .map files will be served as static content via Web.config staticContent settings
+            // These files should be served as static content, not routed through MVC
+            routes.IgnoreRoute("{*mapfile}", new { mapfile = new MapFileConstraint() });
+            
+            // Ignore .well-known paths (used by browsers and tools like Chrome DevTools)
+            routes.IgnoreRoute(".well-known/{*pathInfo}");
+            
+            // Ignore other static file extensions that might be requested
+            routes.IgnoreRoute("favicon.ico");
+            routes.IgnoreRoute("robots.txt");
             
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();

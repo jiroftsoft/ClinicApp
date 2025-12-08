@@ -721,6 +721,14 @@
     <Compile Include="Migrations\202511161332062_ClinicBankAccount.Designer.cs">
       <DependentUpon>202511161332062_ClinicBankAccount.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512071504117_Change14040916.cs" />
+    <Compile Include="Migrations\202512071504117_Change14040916.Designer.cs">
+      <DependentUpon>202512071504117_Change14040916.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202512071939599_FixDoctorScheduleForeignKey.cs" />
+    <Compile Include="Migrations\202512071939599_FixDoctorScheduleForeignKey.Designer.cs">
+      <DependentUpon>202512071939599_FixDoctorScheduleForeignKey.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
@@ -920,6 +928,7 @@
     </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
+    <Compile Include="Models\Binders\TimeSpanModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\BusinessRuleConfig.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
@@ -5040,6 +5049,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202511161332062_ClinicBankAccount.resx">
       <DependentUpon>202511161332062_ClinicBankAccount.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512071504117_Change14040916.resx">
+      <DependentUpon>202512071504117_Change14040916.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512071939599_FixDoctorScheduleForeignKey.resx">
+      <DependentUpon>202512071939599_FixDoctorScheduleForeignKey.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

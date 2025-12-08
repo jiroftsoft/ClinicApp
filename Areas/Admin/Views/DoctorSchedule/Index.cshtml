@@ -11,115 +11,466 @@
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی برای رفع خطای CSP -->
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
+        /* ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی */
+        * {
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', 'Arial', sans-serif !important;
+        }
+
+        body {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--medical-text);
+            font-weight: 400;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            color: var(--medical-primary);
+            line-height: 1.4;
+        }
+
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.75rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.25rem; }
+        h5 { font-size: 1.1rem; }
+        h6 { font-size: 1rem; }
+
+        /* ✅ رنگ‌های رسمی درمانی - یکسان‌سازی با استانداردهای پروژه */
+        :root {
+            --medical-primary: #2c5aa0;        /* آبی - اطلاعات (رسمی) */
+            --medical-primary-light: #3d6bb3;  /* آبی روشن */
+            --medical-secondary: #6c757d;      /* خاکستری - ثانویه */
+            --medical-success: #28a745;        /* سبز - موفقیت/فعال */
+            --medical-warning: #ffc107;        /* زرد - هشدار */
+            --medical-danger: #dc3545;         /* قرمز - هشدار/خطا */
+            --medical-info: #17a2b8;           /* آبی روشن - اطلاعات */
+            --medical-light: #f8f9fa;         /* پس‌زمینه روشن */
+            --medical-dark: #343a40;           /* متن تیره */
+            --medical-bg: #f8f9fa;             /* پس‌زمینه */
+            --medical-text: #495057;           /* متن اصلی */
+            --medical-text-muted: #6c757d;     /* متن کم‌رنگ */
+            --medical-border: #dee2e6;         /* حاشیه */
+        }
+
         .schedule-card {
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.08);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--medical-border);
+            background: #FFFFFF;
+            overflow: hidden;
         }
 
             .schedule-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+                transform: translateY(-4px);
+                box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+                border-color: var(--medical-primary);
             }
 
         .status-badge {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             padding: 0.5rem 1rem;
-            border-radius: 20px;
+            border-radius: 24px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .filter-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
             padding: 2rem;
             margin-bottom: 2rem;
             color: white;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+            position: relative;
+            overflow: hidden;
         }
 
+            .filter-section::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                pointer-events: none;
+            }
+
         .stats-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 16px;
             color: white;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .stats-card::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+                pointer-events: none;
+                transition: all 0.5s ease;
+            }
+
+            .stats-card:hover {
+                transform: translateY(-4px) scale(1.02);
+                box-shadow: 0 8px 24px rgba(44, 90, 160, 0.35);
+            }
+
+            .stats-card:hover::before {
+                top: -30%;
+                right: -30%;
+            }
+
+        .stats-card.success {
+            background: linear-gradient(135deg, var(--medical-success) 0%, #4CAF50 100%);
+        }
+
+        .stats-card.warning {
+            background: linear-gradient(135deg, var(--medical-warning) 0%, #FF9800 100%);
+        }
+
+        .stats-card.info {
+            background: linear-gradient(135deg, var(--medical-info) 0%, #2196F3 100%);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .action-buttons .btn {
-            border-radius: 25px;
-            margin: 0 0.25rem;
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            margin: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            min-width: 48px;
+            min-height: 48px;
+            padding: 0.6rem 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
             .action-buttons .btn:hover {
-                transform: scale(1.1);
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
             }
 
-        .modal-content {
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 20px 20px 0 0;
-            border: none;
-        }
-
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
-        }
-
-            .form-control:focus, .form-select:focus {
-                border-color: #667eea;
-                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            .action-buttons .btn:active {
+                transform: translateY(-1px) scale(1.02);
             }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
             border: none;
-            border-radius: 25px;
-            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            padding: 0.875rem 2.25rem;
             font-weight: 600;
+            color: white;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
         }
 
             .btn-primary:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+                background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+            }
+
+            .btn-primary:active {
+                transform: translateY(-1px);
+            }
+
+        .btn-success {
+            background: var(--medical-success);
+            border: none;
+        }
+
+            .btn-success:hover {
+                background: #218838;
+            }
+
+        .btn-danger {
+            background: var(--medical-danger);
+            border: none;
+        }
+
+            .btn-danger:hover {
+                background: #C82333;
+            }
+
+        .btn-warning {
+            background: var(--medical-warning);
+            border: none;
+            color: #212529;
+        }
+
+            .btn-warning:hover {
+                background: #E0A800;
+            }
+
+        .btn-info {
+            background: var(--medical-info);
+            border: none;
+        }
+
+            .btn-info:hover {
+                background: #138496;
+            }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            padding: 1.5rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid var(--medical-border);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            padding: 0.75rem 1rem;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: var(--medical-primary);
+                box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
             }
 
         .table {
-            border-radius: 15px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+            border: 1px solid var(--medical-border);
         }
 
             .table thead th {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
                 color: white;
                 border: none;
                 font-weight: 600;
                 text-align: center;
+                padding: 1rem;
+                font-size: 14px;
+            }
+
+            .table tbody tr {
+                transition: all 0.2s ease;
+            }
+
+            .table tbody tr {
+                border-bottom: 1px solid rgba(222, 226, 230, 0.5);
             }
 
             .table tbody tr:hover {
-                background-color: rgba(102, 126, 234, 0.05);
+                background-color: rgba(44, 90, 160, 0.06);
+                transform: scale(1.01);
+                box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1);
+            }
+
+            .table tbody tr:last-child {
+                border-bottom: none;
+            }
+
+            .table tbody td {
+                padding: 1rem;
+                font-size: 14px;
+                vertical-align: middle;
             }
 
         .pagination .page-link {
-            border-radius: 10px;
-            margin: 0 0.25rem;
-            border: none;
-            color: #667eea;
+            border-radius: 8px;
+            margin: 0 0.2rem;
+            border: 1px solid var(--medical-border);
+            color: var(--medical-primary);
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
         }
 
+            .pagination .page-link:hover {
+                background: rgba(44, 90, 160, 0.1);
+                border-color: var(--medical-primary);
+                transform: translateY(-2px);
+                box-shadow: 0 2px 6px rgba(44, 90, 160, 0.2);
+            }
+
         .pagination .page-item.active .page-link {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-color: var(--medical-primary);
+            color: white;
+            box-shadow: 0 2px 6px rgba(44, 90, 160, 0.3);
+            font-weight: 600;
+        }
+
+        /* ✅ Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+            .loading-overlay.active {
+                display: flex;
+            }
+
+        .loading-spinner {
+            border: 4px solid var(--medical-border);
+            border-top: 4px solid var(--medical-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ✅ Responsive Design - بهبود برای موبایل و تبلت */
+        @@media (max-width: 1024px) {
+            .stats-card {
+                padding: 1.5rem;
+            }
+
+            .filter-section {
+                padding: 1.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+                margin: 0.25rem 0;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            h1 { font-size: 1.75rem; }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.25rem; }
+
+            .stats-card {
+                margin-bottom: 1rem;
+                padding: 1.25rem;
+            }
+
+            .filter-section {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+
+            .schedule-card {
+                border-radius: 12px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+                margin: 0;
+                min-height: 44px;
+            }
+
+            .table {
+                font-size: 12px;
+            }
+
+                .table thead th,
+                .table tbody td {
+                    padding: 0.75rem 0.5rem;
+                    font-size: 12px;
+                }
+
+            .status-badge {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .btn-primary {
+                padding: 0.75rem 1.5rem;
+                font-size: 14px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .container-fluid {
+                padding: 0.5rem;
+            }
+
+            .stats-card {
+                padding: 1rem;
+            }
+
+            .filter-section {
+                padding: 0.75rem;
+            }
+
+            .table thead th,
+            .table tbody td {
+                padding: 0.5rem 0.25rem;
+                font-size: 11px;
+            }
+
+            .action-buttons .btn {
+                padding: 0.5rem 1rem;
+                font-size: 12px;
+            }
+        }
+
+        /* ✅ Accessibility */
+        .btn:focus,
+        .form-control:focus,
+        .form-select:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
         }
     </style>
 }
@@ -134,6 +485,13 @@
                         مدیریت برنامه‌های کاری پزشکان
                     </h1>
                     <p class="text-muted mb-0">مدیریت کامل برنامه‌های کاری و زمان‌بندی پزشکان کلینیک</p>
+                </div>
+                <div>
+                    <!-- ✅ دکمه ایجاد برنامه جدید - باز کردن Modal انتخاب پزشک -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectDoctorModal">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        ایجاد برنامه جدید
+                    </button>
                 </div>
             </div>
         </div>
@@ -266,24 +624,37 @@
                         </div>
                     }
 
-                    <!-- DataTable -->
-                    <div class="table-responsive">
-                        <table id="schedulesTable" class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>پزشک</th>
-                                    <th>روز هفته</th>
-                                    <th>زمان کاری</th>
-                                    <th>مدت نوبت</th>
-                                    <th>وضعیت</th>
-                                    <th>آمار</th>
-                                    <th>عملیات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model?.Items != null && Model.Items.Any())
-                                {
-                                    foreach (var item in Model.Items)
+                    <!-- ✅ پیام خالی بودن جدول (قبل از DataTable) -->
+                    @if (Model == null || Model.Items == null || !Model.Items.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted mb-3">هیچ برنامه کاری ثبت نشده است</h4>
+                            <p class="text-muted mb-4">برای شروع، اولین برنامه کاری را ایجاد کنید</p>
+                            <a href="@Url.Action("AssignSchedule", "DoctorSchedule")" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                ایجاد برنامه جدید
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- DataTable -->
+                        <div class="table-responsive">
+                            <table id="schedulesTable" class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>پزشک</th>
+                                        <th>روز هفته</th>
+                                        <th>زمان کاری</th>
+                                        <th>مدت نوبت</th>
+                                        <th>وضعیت</th>
+                                        <th>آمار</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Items)
                                     {
                                         <tr data-id="@item.Id"
                                             data-doctor-id="@item.DoctorId"
@@ -308,8 +679,20 @@
                                                     @if (item.WorkDays?.Any() == true && item.WorkDays.First().TimeRanges?.Any() == true)
                                                     {
                                                         var firstTimeRange = item.WorkDays.First().TimeRanges.First();
+                                                        var startHour = firstTimeRange.StartTime.Hours;
+                                                        var startMinute = firstTimeRange.StartTime.Minutes;
+                                                        var endHour = firstTimeRange.EndTime.Hours;
+                                                        var endMinute = firstTimeRange.EndTime.Minutes;
+                                                        
+                                                        var startPeriod = startHour < 12 ? "قبل از ظهر" : "بعد از ظهر";
+                                                        var endPeriod = endHour < 12 ? "قبل از ظهر" : "بعد از ظهر";
+                                                        var startDisplayHour = startHour == 0 ? 12 : (startHour > 12 ? startHour - 12 : startHour);
+                                                        var endDisplayHour = endHour == 0 ? 12 : (endHour > 12 ? endHour - 12 : endHour);
+                                                        var startDisplayMinute = startMinute.ToString("00");
+                                                        var endDisplayMinute = endMinute.ToString("00");
+                                                        
                                                         <div class="font-weight-bold">
-                                                            @firstTimeRange.StartTime.ToString(@"hh\:mm") - @firstTimeRange.EndTime.ToString(@"hh\:mm")
+                                                            @(startDisplayHour):@(startDisplayMinute) @(startPeriod) - @(endDisplayHour):@(endDisplayMinute) @(endPeriod)
                                                         </div>
                                                         <small class="text-muted">@item.WeeklyHours ساعت هفتگی</small>
                                                     }
@@ -364,10 +747,10 @@
                                             </td>
                                         </tr>
                                     }
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    }
 
                     <!-- Pagination -->
                     @if (Model != null && Model.TotalPages > 1)
@@ -409,6 +792,45 @@
     </div>
 </div>
 
+<!-- ✅ Modal انتخاب پزشک برای ایجاد برنامه جدید -->
+<div class="modal fade" id="selectDoctorModal" tabindex="-1" aria-labelledby="selectDoctorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%); color: white;">
+                <h5 class="modal-title" id="selectDoctorModalLabel">
+                    <i class="fas fa-user-md me-2"></i>
+                    انتخاب پزشک برای ایجاد برنامه کاری
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="selectDoctorId" class="form-label">
+                        <i class="fas fa-stethoscope me-2 text-primary"></i>
+                        پزشک را انتخاب کنید:
+                    </label>
+                    <select id="selectDoctorId" class="form-select" required>
+                        <option value="">در حال بارگذاری...</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        لطفاً یک پزشک انتخاب کنید
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" id="btnProceedToSchedule">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    ادامه به تنظیم برنامه
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
     <script src="~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js"></script>
@@ -419,18 +841,39 @@
 
     <script>
         $(document).ready(function () {
-            // Initialize DataTable
-            var table = $('#schedulesTable').DataTable({
-                responsive: true,
-                language: {
-                    url: '/Content/plugins/datatables/js/fa.json'
-                },
-                pageLength: 25,
-                order: [[0, 'asc']],
-                columnDefs: [
-                    { orderable: false, targets: [6] }
-                ]
-            });
+            // ✅ Initialize DataTable فقط اگر جدول وجود داشته باشد و داده داشته باشد
+            var $table = $('#schedulesTable');
+            if ($table.length > 0) {
+                var $tbody = $table.find('tbody');
+                var $rows = $tbody.find('tr');
+                
+                // ✅ فقط اگر ردیف‌های معتبر (بدون colspan) وجود داشته باشد
+                var hasValidRows = $rows.length > 0 && $rows.first().find('td').length === 7;
+                
+                if (hasValidRows) {
+                    var table = $table.DataTable({
+                        responsive: true,
+                        language: {
+                            url: '/Content/plugins/datatables/js/fa.json',
+                            emptyTable: 'هیچ برنامه کاری یافت نشد',
+                            loadingRecords: 'در حال بارگذاری...',
+                            processing: 'در حال پردازش...',
+                            zeroRecords: 'هیچ رکوردی یافت نشد'
+                        },
+                        pageLength: 25,
+                        order: [[0, 'asc']],
+                        columnDefs: [
+                            { orderable: false, targets: [6] }
+                        ],
+                        // ✅ بهبود Performance
+                        deferRender: true,
+                        processing: true,
+                        stateSave: false // ❌ غیرفعال برای محیط درمانی (اطلاعات باید همیشه به‌روز باشند)
+                    });
+                } else {
+                    console.log('DataTable not initialized: No valid data rows found');
+                }
+            }
 
             // Initialize Persian DatePicker
             $('.persian-datepicker').persianDatepicker({
@@ -443,22 +886,56 @@
             loadDoctors().then(function() {
                 // Initialize Select2 only after doctors are loaded
                 initializeSelect2();
+                // ✅ بارگذاری پزشکان در Modal انتخاب پزشک
+                loadDoctorsForSelectModal();
             });
 
-            // Add change event handlers for filters
+            // ✅ Event Handler برای دکمه "ادامه به تنظیم برنامه"
+            $('#btnProceedToSchedule').on('click', function() {
+                var selectedDoctorId = $('#selectDoctorId').val();
+                if (!selectedDoctorId || selectedDoctorId === '') {
+                    // نمایش پیام خطا
+                    $('#selectDoctorId').addClass('is-invalid');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'توجه!',
+                        text: 'لطفاً یک پزشک انتخاب کنید',
+                        confirmButtonText: 'باشه'
+                    });
+                    return;
+                }
+                
+                // هدایت به صفحه AssignSchedule با doctorId
+                var url = '@Url.Action("AssignSchedule", "DoctorSchedule")?doctorId=' + selectedDoctorId;
+                window.location.href = url;
+            });
+
+            // ✅ Reset validation هنگام تغییر انتخاب
+            $('#selectDoctorId').on('change', function() {
+                $(this).removeClass('is-invalid');
+            });
+
+            // ✅ Debouncing برای فیلترها - بهبود Performance
+            var filterTimeout;
+            function debounceFilter(func, wait) {
+                return function() {
+                    clearTimeout(filterTimeout);
+                    filterTimeout = setTimeout(func, wait);
+                };
+            }
+
+            var debouncedApplyFilters = debounceFilter(function() {
+                applyFilters();
+            }, 300);
+
+            // Add change event handlers for filters با Debouncing
             $('#dayOfWeekFilter, #statusFilter').on('change', function() {
-                // Auto-apply filters when selection changes
-                setTimeout(function() {
-                    applyFilters();
-                }, 100);
+                debouncedApplyFilters();
             });
 
-            // Add change event handler for doctor filter
+            // Add change event handler for doctor filter با Debouncing
             $(document).on('change', '#doctorFilter', function() {
-                // Auto-apply filters when doctor selection changes
-                setTimeout(function() {
-                    applyFilters();
-                }, 100);
+                debouncedApplyFilters();
             });
 
             // Search functionality
@@ -512,12 +989,20 @@
                         }
                     },
                     error: function (xhr, status, error) {
+                        hideLoading(); // ✅ مخفی کردن Loading State
                         console.error('Error loading doctors:', error);
                         console.error('XHR status:', xhr.status);
                         console.error('XHR response:', xhr.responseText);
                         var errorOption = '<option value="">خطا در بارگذاری پزشکان</option>';
                         $('#doctorFilter').html(errorOption);
                         $('#doctorId').html(errorOption);
+                        // ✅ نمایش پیام خطا به کاربر
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا',
+                            text: 'خطا در بارگذاری لیست پزشکان. لطفاً صفحه را رفرش کنید.',
+                            confirmButtonText: 'باشه'
+                        });
                         reject(error); // Reject the promise with error
                     }
                 });
@@ -558,13 +1043,59 @@
             console.log('Select2 refreshed successfully');
         }
 
+        // ✅ تابع برای بارگذاری پزشکان در Modal انتخاب پزشک
+        function loadDoctorsForSelectModal() {
+            var $selectDoctorModal = $('#selectDoctorId');
+            if ($selectDoctorModal.length === 0) {
+                console.log('Select doctor modal select not found');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetDoctors", "Doctor")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success && data.data) {
+                        var options = '<option value="">انتخاب پزشک</option>';
+                        data.data.forEach(function (doctor) {
+                            options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
+                        });
+                        $selectDoctorModal.html(options);
+                        
+                        // Initialize Select2 for modal
+                        $selectDoctorModal.select2({
+                            placeholder: 'انتخاب پزشک',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#selectDoctorModal')
+                        });
+                        
+                        console.log('Doctors loaded in select modal:', data.data.length);
+                    } else {
+                        $selectDoctorModal.html('<option value="">خطا در بارگذاری پزشکان</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading doctors for modal:', error);
+                    $selectDoctorModal.html('<option value="">خطا در بارگذاری پزشکان</option>');
+                }
+            });
+        }
+
         function applyFilters() {
             var doctorFilter = $('#doctorFilter').val();
             var dayOfWeekFilter = $('#dayOfWeekFilter').val();
             var statusFilter = $('#statusFilter').val();
 
-            // Get DataTable instance
-            var table = $('#schedulesTable').DataTable();
+            // ✅ Get DataTable instance (فقط اگر initialize شده باشد)
+            var $table = $('#schedulesTable');
+            if (!$table.length || !$.fn.DataTable.isDataTable('#schedulesTable')) {
+                console.log('DataTable not initialized, skipping filter');
+                return;
+            }
+
+            var table = $table.DataTable();
 
             // Clear all filters first
             table.search('').columns().search('').draw();
@@ -726,6 +1257,7 @@
                             }
                         },
                         error: function() {
+                            hideLoading(); // ✅ مخفی کردن Loading State
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
@@ -746,9 +1278,10 @@
                 showCancelButton: true,
                 confirmButtonText: 'بله، حذف کن',
                 cancelButtonText: 'انصراف',
-                confirmButtonColor: '#d33'
+                confirmButtonColor: '#DC3545'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    showLoading(); // ✅ نمایش Loading State
                     $.ajax({
                         url: '@Url.Action("RemoveSchedule")',
                         type: 'POST',
@@ -757,6 +1290,7 @@
                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                         },
                         success: function (data) {
+                            hideLoading(); // ✅ مخفی کردن Loading State
                             if (data.success) {
                                 Swal.fire({
                                     icon: 'success',
@@ -776,6 +1310,7 @@
                             }
                         },
                         error: function() {
+                            hideLoading(); // ✅ مخفی کردن Loading State
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
@@ -789,6 +1324,7 @@
         }
 
         function loadPage(page) {
+            showLoading(); // ✅ نمایش Loading State
             var url = '@Url.Action("Index")?page=' + page;
             var filters = {
                 doctorId: $('#doctorFilter').val(),

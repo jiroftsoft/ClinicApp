@@ -7,76 +7,390 @@
 @section Styles {
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی -->
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
+        /* ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی */
+        * {
+            font-family: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', 'Arial', sans-serif !important;
+        }
+
+        body {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--medical-text);
+            font-weight: 400;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            color: var(--medical-primary);
+            line-height: 1.4;
+        }
+
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.75rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.25rem; }
+        h5 { font-size: 1.1rem; }
+        h6 { font-size: 1rem; }
+
+        /* ✅ رنگ‌های رسمی درمانی - یکسان‌سازی با استانداردهای پروژه */
+        :root {
+            --medical-primary: #2c5aa0;        /* آبی - اطلاعات (رسمی) */
+            --medical-primary-light: #3d6bb3;  /* آبی روشن */
+            --medical-secondary: #6c757d;      /* خاکستری - ثانویه */
+            --medical-success: #28a745;        /* سبز - موفقیت/فعال */
+            --medical-warning: #ffc107;        /* زرد - هشدار */
+            --medical-danger: #dc3545;         /* قرمز - هشدار/خطا */
+            --medical-info: #17a2b8;           /* آبی روشن - اطلاعات */
+            --medical-light: #f8f9fa;         /* پس‌زمینه روشن */
+            --medical-dark: #343a40;           /* متن تیره */
+            --medical-bg: #f8f9fa;             /* پس‌زمینه */
+            --medical-text: #495057;           /* متن اصلی */
+            --medical-text-muted: #6c757d;     /* متن کم‌رنگ */
+            --medical-border: #dee2e6;         /* حاشیه */
+        }
+
+        /* ✅ Schedule Form */
         .schedule-form {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+            padding: 2rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--medical-border);
         }
+
+        .schedule-form:hover {
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+        }
+
+        /* ✅ Form Section */
         .form-section {
-            border-left: 4px solid #667eea;
-            padding-left: 20px;
-            margin-bottom: 30px;
+            border-left: 5px solid var(--medical-primary);
+            padding: 1.5rem 1.5rem 1.5rem 2rem;
+            margin-bottom: 2.5rem;
+            background: var(--medical-light);
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
+
+        .form-section:hover {
+            border-left-color: var(--medical-primary-light);
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1);
+        }
+
         .form-section h5 {
-            color: #667eea;
-            font-weight: 600;
+            color: var(--medical-primary);
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
+
+        .form-section h5 i {
+            font-size: 1.1rem;
+        }
+
+        /* ✅ Doctor Info Card */
         .doctor-info-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
             color: white;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        .doctor-info-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
+        .doctor-info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.35);
+        }
+
+        .doctor-info-card:hover::before {
+            top: -30%;
+            right: -30%;
+        }
+
+        .doctor-info-card h4 {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        /* ✅ Work Day Card */
         .work-day-card {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
+            border: 2px solid var(--medical-border);
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+            padding: 1.5rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
-        .work-day-card.active {
-            border-color: #667eea;
-            background-color: #f8f9ff;
-        }
-        .time-range-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .btn-submit {
-            border-radius: 25px;
-            font-weight: 600;
-            padding: 12px 30px;
-            transition: all 0.3s ease;
-        }
-        .btn-submit:hover {
+
+        .work-day-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.1);
         }
-        .validation-summary {
+
+        .work-day-card.active {
+            border-color: var(--medical-primary);
+            background: linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(61, 107, 179, 0.05) 100%);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
+        }
+
+        .work-day-card.active:hover {
+            border-color: var(--medical-primary-light);
+            box-shadow: 0 6px 16px rgba(44, 90, 160, 0.2);
+        }
+
+        /* ✅ Time Range Item */
+        .time-range-item {
+            background: var(--medical-light);
             border-radius: 10px;
-            border: none;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--medical-border);
+            transition: all 0.3s ease;
         }
+
+        .time-range-item:hover {
+            background: white;
+            box-shadow: 0 2px 6px rgba(44, 90, 160, 0.1);
+            border-color: var(--medical-primary);
+        }
+
+        /* ✅ Buttons */
+        .btn-submit {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0.875rem 2.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+            min-width: 150px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border: none;
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--medical-secondary);
+            color: var(--medical-secondary);
+            font-weight: 600;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--medical-secondary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--medical-primary);
+            color: var(--medical-primary);
+            font-weight: 600;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--medical-primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        }
+
+        .btn-outline-danger {
+            border: 2px solid var(--medical-danger);
+            color: var(--medical-danger);
+            font-weight: 600;
+        }
+
+        .btn-outline-danger:hover {
+            background: var(--medical-danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        /* ✅ Form Controls */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid var(--medical-border);
+            transition: all 0.3s ease;
+            font-size: 15px;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+            outline: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 0.5rem;
+        }
+
+        /* ✅ Validation Summary */
+        .validation-summary {
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+            border-left: 5px solid var(--medical-danger);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        /* ✅ Loading Overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.95);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            border: 4px solid var(--medical-border);
+            border-top: 4px solid var(--medical-primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ✅ Responsive Design */
+        @@media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            .schedule-form {
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+
+            .form-section {
+                padding: 1.25rem 1.25rem 1.25rem 1.75rem;
+                margin-bottom: 2rem;
+            }
+
+            .doctor-info-card {
+                padding: 1.5rem;
+            }
+
+            .work-day-card {
+                padding: 1.25rem;
+            }
+
+            .btn-submit {
+                padding: 0.75rem 1.5rem;
+                min-width: 120px;
+                font-size: 14px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .schedule-form {
+                padding: 1rem;
+            }
+
+            .form-section {
+                padding: 1rem 1rem 1rem 1.5rem;
+            }
+
+            .doctor-info-card {
+                padding: 1.25rem;
+            }
+
+            .work-day-card {
+                padding: 1rem;
+            }
+
+            .btn-submit {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* ✅ Time Display Persian */
+        .time-display-persian {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--medical-primary);
+            display: inline-block;
+            margin-top: 0.25rem;
+            margin-right: 0.5rem;
+        }
+
+        .time-input-wrapper {
+            position: relative;
+        }
+
+        /* ✅ Accessibility */
+        .btn:focus,
+        .form-control:focus,
+        .form-select:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
         }
     </style>
 }
 
-<div class="loading-overlay">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">در حال پردازش...</span>
-    </div>
+<!-- ✅ Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
 </div>
 
 <div class="container-fluid">
@@ -85,16 +399,16 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-0 text-primary">
+                    <h2 class="mb-0">
                         <i class="fas fa-calendar-alt me-2"></i>
                         تنظیم برنامه کاری پزشک
                     </h2>
-                    <p class="text-muted mb-0">تنظیم برنامه کاری هفتگی و زمان‌های کاری پزشک</p>
+                    <p class="text-muted mb-0 mt-2">تنظیم برنامه کاری هفتگی و زمان‌های کاری پزشک</p>
                 </div>
                 <div>
-                    <a href="@Url.Action("Index", "DoctorSchedule")" class="btn btn-outline-secondary">
+                    <a href="@Url.Action("Index", "DoctorSchedule")" class="btn btn-outline-secondary btn-submit">
                         <i class="fas fa-arrow-right me-2"></i>
-                        بازگشت به لیست برنامه‌های کاری
+                        بازگشت به لیست
                     </a>
                 </div>
             </div>
@@ -150,7 +464,7 @@
                                 <div class="mb-3">
                                     @Html.LabelFor(m => m.AppointmentDuration, "مدت زمان هر نوبت (دقیقه)", new { @class = "form-label fw-bold" })
                                     @Html.DropDownListFor(m => m.AppointmentDuration, 
-                                        new SelectList(new[] { 15, 20, 30, 45, 60, 90, 120 }, Model.AppointmentDuration), 
+                                        new SelectList(new[] { 10, 15, 20, 30, 45, 60, 90, 120 }, Model.AppointmentDuration), 
                                         new { @class = "form-select" })
                                     @Html.ValidationMessageFor(m => m.AppointmentDuration, "", new { @class = "text-danger" })
                                 </div>
@@ -161,11 +475,35 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <label class="form-label">شروع</label>
-                                            <input type="time" class="form-control" id="defaultStartTime" value="09:00" />
+                                            @{
+                                                var defaultStartTimeValue = Model.DefaultStartTime.HasValue 
+                                                    ? $"{Model.DefaultStartTime.Value.Hours:D2}:{Model.DefaultStartTime.Value.Minutes:D2}" 
+                                                    : "07:00";
+                                            }
+                                            @Html.TextBoxFor(m => m.DefaultStartTime, 
+                                                new { 
+                                                    @class = "form-control time-input", 
+                                                    type = "time",
+                                                    id = "defaultStartTime",
+                                                    @Value = defaultStartTimeValue
+                                                })
+                                            @Html.ValidationMessageFor(m => m.DefaultStartTime, "", new { @class = "text-danger" })
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label">پایان</label>
-                                            <input type="time" class="form-control" id="defaultEndTime" value="17:00" />
+                                            @{
+                                                var defaultEndTimeValue = Model.DefaultEndTime.HasValue 
+                                                    ? $"{Model.DefaultEndTime.Value.Hours:D2}:{Model.DefaultEndTime.Value.Minutes:D2}" 
+                                                    : "17:00";
+                                            }
+                                            @Html.TextBoxFor(m => m.DefaultEndTime, 
+                                                new { 
+                                                    @class = "form-control time-input", 
+                                                    type = "time",
+                                                    id = "defaultEndTime",
+                                                    @Value = defaultEndTimeValue
+                                                })
+                                            @Html.ValidationMessageFor(m => m.DefaultEndTime, "", new { @class = "text-danger" })
                                         </div>
                                     </div>
                                 </div>
@@ -175,10 +513,16 @@
 
                     <!-- Work Days -->
                     <div class="form-section">
-                        <h5>
-                            <i class="fas fa-calendar-week me-2"></i>
-                            روزهای کاری هفتگی
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-week me-2"></i>
+                                روزهای کاری هفتگی
+                            </h5>
+                            <div class="alert alert-info mb-0 py-2 px-3" style="font-size: 0.9rem;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>راهنما:</strong> برای هر روز کاری که فعال می‌کنید، به صورت خودکار یک بازه زمانی با زمان‌های پیش‌فرض ایجاد می‌شود. می‌توانید با دکمه ➕ بازه‌های بیشتری اضافه کنید.
+                            </div>
+                        </div>
                         <div class="row">
                             @for (int i = 0; i < Model.WorkDays.Count; i++)
                             {
@@ -203,15 +547,31 @@
                                         <div class="time-ranges" id="timeRanges-@i">
                                             @for (int j = 0; j < workDay.TimeRanges.Count; j++)
                                             {
+                                                var startTimeValue = $"{workDay.TimeRanges[j].StartTime.Hours:D2}:{workDay.TimeRanges[j].StartTime.Minutes:D2}";
+                                                var endTimeValue = $"{workDay.TimeRanges[j].EndTime.Hours:D2}:{workDay.TimeRanges[j].EndTime.Minutes:D2}";
+                                                
                                                 <div class="time-range-item">
+                                                    @* ✅ Hidden field برای TimeRangeId - برای شناسایی TimeRange های در حال ویرایش *@
+                                                    @Html.HiddenFor(m => m.WorkDays[i].TimeRanges[j].Id)
+                                                    
                                                     <div class="row">
                                                         <div class="col-5">
                                                             <label class="form-label">شروع</label>
-                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, 
+                                                                new { 
+                                                                    @class = "form-control time-input", 
+                                                                    type = "time",
+                                                                    @Value = startTimeValue
+                                                                })
                                                         </div>
                                                         <div class="col-5">
                                                             <label class="form-label">پایان</label>
-                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, 
+                                                                new { 
+                                                                    @class = "form-control time-input", 
+                                                                    type = "time",
+                                                                    @Value = endTimeValue
+                                                                })
                                                         </div>
                                                         <div class="col-2">
                                                             <label class="form-label">&nbsp;</label>
@@ -255,39 +615,158 @@
 @section Scripts {
     <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script>
+        // ✅ Helper Functions برای تبدیل ساعت به فارسی
+        function formatTimeToPersian(timeString) {
+            if (!timeString) return '';
+            
+            var parts = timeString.split(':');
+            if (parts.length < 2) return timeString;
+            
+            var hour = parseInt(parts[0]);
+            var minute = parseInt(parts[1]);
+            
+            if (isNaN(hour) || isNaN(minute)) return timeString;
+            
+            var period = '';
+            var displayHour = hour;
+            
+            if (hour === 0) {
+                displayHour = 12;
+                period = 'قبل از ظهر';
+            } else if (hour < 12) {
+                displayHour = hour;
+                period = 'قبل از ظهر';
+            } else if (hour === 12) {
+                displayHour = 12;
+                period = 'بعد از ظهر';
+            } else {
+                displayHour = hour - 12;
+                period = 'بعد از ظهر';
+            }
+            
+            return displayHour + ':' + (minute < 10 ? '0' + minute : minute) + ' ' + period;
+        }
+
+        function updateTimeDisplay(input) {
+            var $input = $(input);
+            var timeValue = $input.val();
+            var $display = $input.siblings('.time-display-persian');
+            
+            if (timeValue) {
+                var persianTime = formatTimeToPersian(timeValue);
+                if ($display.length === 0) {
+                    $display = $('<span class="time-display-persian text-primary fw-bold ms-2"></span>');
+                    $input.after($display);
+                }
+                $display.text(persianTime);
+            } else {
+                $display.remove();
+            }
+        }
+
         $(document).ready(function () {
-            // Toggle work day active state
+            // ✅ Initialize time displays for existing inputs
+            $('.time-input').each(function() {
+                updateTimeDisplay(this);
+            });
+
+            // ✅ Update time display on change
+            $(document).on('change', '.time-input', function() {
+                updateTimeDisplay(this);
+            });
+
+            // ✅ Toggle work day active state - با ایجاد خودکار TimeRange پیش‌فرض
             $('.work-day-toggle').on('change', function() {
                 var dayIndex = $(this).data('day');
                 var workDayCard = $('#workDay-' + dayIndex);
+                var timeRangesContainer = $('#timeRanges-' + dayIndex);
                 
                 if ($(this).is(':checked')) {
                     workDayCard.addClass('active');
+                    
+                    // ✅ اگر TimeRange وجود ندارد، به صورت خودکار یک TimeRange با مقادیر پیش‌فرض ایجاد می‌کنیم
+                    if (timeRangesContainer.find('.time-range-item').length === 0) {
+                        var defaultStartTime = $('#defaultStartTime').val() || '07:00';
+                        var defaultEndTime = $('#defaultEndTime').val() || '17:00';
+                        
+                        var newTimeRange = `
+                            <div class="time-range-item" style="opacity: 0; transform: translateY(-10px);">
+                                <input type="hidden" name="WorkDays[${dayIndex}].TimeRanges[0].Id" value="0" />
+                                <div class="row">
+                                    <div class="col-5">
+                                        <label class="form-label">شروع</label>
+                                        <input type="time" class="form-control time-input" name="WorkDays[${dayIndex}].TimeRanges[0].StartTime" value="${defaultStartTime}" />
+                                    </div>
+                                    <div class="col-5">
+                                        <label class="form-label">پایان</label>
+                                        <input type="time" class="form-control time-input" name="WorkDays[${dayIndex}].TimeRanges[0].EndTime" value="${defaultEndTime}" />
+                                    </div>
+                                    <div class="col-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-time-range">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        var $newItem = $(newTimeRange);
+                        timeRangesContainer.append($newItem);
+                        
+                        // ✅ Animation برای نمایش
+                        setTimeout(function() {
+                            $newItem.css({
+                                'opacity': '1',
+                                'transform': 'translateY(0)',
+                                'transition': 'all 0.3s ease'
+                            });
+                            
+                            // ✅ Initialize time displays for new inputs
+                            $newItem.find('.time-input').each(function() {
+                                updateTimeDisplay(this);
+                            });
+                        }, 10);
+                    }
                 } else {
                     workDayCard.removeClass('active');
                 }
             });
 
-            // Add time range
+            // ✅ Add time range با Animation - با استفاده از مقادیر پیش‌فرض
             $('.add-time-range').on('click', function() {
                 var dayIndex = $(this).data('day');
                 var timeRangesContainer = $('#timeRanges-' + dayIndex);
                 var timeRangeCount = timeRangesContainer.find('.time-range-item').length;
                 
+                // ✅ استفاده از مقادیر پیش‌فرض یا آخرین TimeRange
+                var defaultStartTime = $('#defaultStartTime').val() || '07:00';
+                var defaultEndTime = $('#defaultEndTime').val() || '17:00';
+                
+                // ✅ اگر TimeRange قبلی وجود دارد، از EndTime آن به عنوان StartTime جدید استفاده می‌کنیم
+                var lastTimeRange = timeRangesContainer.find('.time-range-item').last();
+                if (lastTimeRange.length > 0) {
+                    var lastEndTime = lastTimeRange.find('input[name*="EndTime"]').val();
+                    if (lastEndTime) {
+                        defaultStartTime = lastEndTime;
+                    }
+                }
+                
                 var newTimeRange = `
-                    <div class="time-range-item">
+                    <div class="time-range-item" style="opacity: 0; transform: translateY(-10px);">
+                        <input type="hidden" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].Id" value="0" />
                         <div class="row">
                             <div class="col-5">
                                 <label class="form-label">شروع</label>
-                                <input type="time" class="form-control" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].StartTime" />
+                                <input type="time" class="form-control time-input" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].StartTime" value="${defaultStartTime}" />
                             </div>
                             <div class="col-5">
                                 <label class="form-label">پایان</label>
-                                <input type="time" class="form-control" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].EndTime" />
+                                <input type="time" class="form-control time-input" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].EndTime" value="${defaultEndTime}" />
                             </div>
                             <div class="col-2">
                                 <label class="form-label">&nbsp;</label>
-                                <button type="button" class="btn btn-sm btn-outline-danger remove-time-range">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-time-range" title="حذف بازه زمانی">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -295,12 +774,36 @@
                     </div>
                 `;
                 
-                timeRangesContainer.append(newTimeRange);
+                var $newItem = $(newTimeRange);
+                timeRangesContainer.append($newItem);
+                
+                // ✅ Animation برای نمایش
+                setTimeout(function() {
+                    $newItem.css({
+                        'opacity': '1',
+                        'transform': 'translateY(0)',
+                        'transition': 'all 0.3s ease'
+                    });
+                    
+                    // ✅ Initialize time displays for new inputs
+                    $newItem.find('.time-input').each(function() {
+                        updateTimeDisplay(this);
+                    });
+                }, 10);
             });
 
-            // Remove time range
+            // ✅ Remove time range با Animation
             $(document).on('click', '.remove-time-range', function() {
-                $(this).closest('.time-range-item').remove();
+                var $item = $(this).closest('.time-range-item');
+                $item.css({
+                    'opacity': '0',
+                    'transform': 'translateX(-20px)',
+                    'transition': 'all 0.3s ease'
+                });
+                
+                setTimeout(function() {
+                    $item.remove();
+                }, 300);
             });
 
             // Form submission
@@ -313,8 +816,8 @@
                     return false;
                 }
 
-                // Show loading overlay
-                $('.loading-overlay').show();
+                // ✅ Show loading overlay
+                $('#loadingOverlay').addClass('active');
 
                 // Submit form
                 this.submit();

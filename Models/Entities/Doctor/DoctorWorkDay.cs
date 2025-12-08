@@ -202,6 +202,11 @@ public class DoctorWorkDayConfiguration : EntityTypeConfiguration<DoctorWorkDay>
         HasIndex(wd => new { wd.CreatedAt, wd.IsDeleted })
             .HasName("IX_DoctorWorkDay_CreatedAt_IsDeleted");
 
+        // ✅ ایندکس ترکیبی برای Query رایج: ScheduleId + DayOfWeek + IsActive
+        // این Query در GetAvailableAppointmentSlotsAsync استفاده می‌شود
+        HasIndex(wd => new { wd.ScheduleId, wd.DayOfWeek, wd.IsActive, wd.IsDeleted })
+            .HasName("IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsActive_IsDeleted");
+
         // ایندکس منحصر به فرد برای هر برنامه کاری فقط یک روز کاری برای هر روز هفته
         HasIndex(wd => new { wd.ScheduleId, wd.DayOfWeek, wd.IsDeleted })
             .HasName("IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsDeleted_Unique")

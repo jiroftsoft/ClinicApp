@@ -157,7 +157,7 @@ namespace ClinicApp.Repositories.Reception
                     .Where(d => d.ClinicId == clinicId && d.IsActive && !d.IsDeleted)
                     .Where(d => d.DoctorDepartments.Any(dd => 
                         dd.Doctor.IsActive && !dd.Doctor.IsDeleted &&
-                        dd.Doctor.DoctorSchedules.Any(ds => 
+                        dd.Doctor.Schedules.Any(ds => 
                             ds.IsShiftActive && !ds.IsDeleted && 
                             ds.ShiftType.ToString() == shiftType)))
                     .Select(d => new DepartmentLookupViewModel

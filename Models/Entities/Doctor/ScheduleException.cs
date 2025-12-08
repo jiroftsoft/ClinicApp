@@ -201,5 +201,15 @@ public class ScheduleExceptionConfiguration : EntityTypeConfiguration<ScheduleEx
 
         HasIndex(se => se.IsDeleted)
             .HasName("IX_ScheduleException_IsDeleted");
+
+        // ✅ ایندکس ترکیبی برای Query رایج در HasScheduleExceptionAsync
+        // Query: ScheduleId + StartDate + EndDate + Type + IsActive + IsDeleted
+        HasIndex(se => new { se.ScheduleId, se.StartDate, se.EndDate, se.Type, se.IsActive, se.IsDeleted })
+            .HasName("IX_ScheduleException_ScheduleId_DateRange_Type_Active_Deleted");
+
+        // ✅ ایندکس ترکیبی برای Query رایج در HasPartialScheduleExceptionAsync
+        // Query: ScheduleId + StartDate + EndDate + StartTime + EndTime + IsActive + IsDeleted
+        HasIndex(se => new { se.ScheduleId, se.StartDate, se.EndDate, se.StartTime, se.EndTime, se.IsActive, se.IsDeleted })
+            .HasName("IX_ScheduleException_ScheduleId_DateTimeRange_Active_Deleted");
     }
 }

@@ -4375,7 +4375,9 @@ namespace ClinicApp.Services.Reception
                     PatientFirstName = reception.Patient?.FirstName ?? string.Empty,
                     PatientLastName = reception.Patient?.LastName ?? string.Empty,
                     PatientFatherName = reception.Patient?.FatherName ?? string.Empty,
-                    PatientGender = reception.Patient?.Gender.ToString() ?? string.Empty,
+                    PatientGender = reception.Patient?.Gender != null 
+                        ? GenderParsing.ToPersianString(reception.Patient.Gender)
+                        : string.Empty,
                     PatientBirthDateShamsi = reception.Patient?.BirthDate != null 
                         ? PersianDateHelper.ToPersianDate(reception.Patient.BirthDate.Value)
                         : string.Empty,
@@ -5186,7 +5188,8 @@ namespace ClinicApp.Services.Reception
                     {
                         doctorFullName = $"{doctorInfo.FirstName} {doctorInfo.LastName}".Trim();
                         doctorSpecialization = doctorInfo.SpecializationName ?? string.Empty;
-                        doctorDegree = doctorInfo.Degree?.ToString() ?? string.Empty;
+                        // ✅ تبدیل Degree به فارسی با استفاده از Display attribute
+                        doctorDegree = doctorInfo.Degree?.GetDisplayName() ?? string.Empty;
                     }
                 }
 
@@ -5221,7 +5224,9 @@ namespace ClinicApp.Services.Reception
                         : string.Empty,
                     PatientNationalCode = reception.Patient?.NationalCode ?? string.Empty,
                     PatientPhoneNumber = reception.Patient?.PhoneNumber ?? string.Empty,
-                    PatientGender = reception.Patient?.Gender.ToString() ?? string.Empty,
+                    PatientGender = reception.Patient?.Gender != null 
+                        ? GenderParsing.ToPersianString(reception.Patient.Gender)
+                        : string.Empty,
                     PatientBirthDateShamsi = reception.Patient?.BirthDate != null 
                         ? reception.Patient.BirthDate.Value.ToPersianDate()
                         : string.Empty,
@@ -5256,10 +5261,10 @@ namespace ClinicApp.Services.Reception
                     PaidAmount = paidAmount,
                     RemainingAmount = reception.PatientCoPay - paidAmount,
 
-                    // آیتم‌های پذیرش
+                    // آیتم‌های پذیرش (با استخراج محاسبات بیمه از SnapshotJson)
                     Items = reception.ReceptionItems?
                         .Where(ri => !ri.IsDeleted)
-                        .Select(ri => new ReceptionItemDetailsDto
+                        .Select(ri => new
                         {
                             ReceptionItemId = ri.ReceptionItemId,
                             ServiceId = ri.ServiceId,
@@ -5270,6 +5275,66 @@ namespace ClinicApp.Services.Reception
                             PatientShareAmount = ri.PatientShareAmount,
                             InsurerShareAmount = ri.InsurerShareAmount,
                             SnapshotJson = ri.SnapshotJson
+                        })
+                        .ToList()
+                        .Select(ri => 
+                        {
+                            // ✅ استخراج PrimaryPays و SupplementaryPays از SnapshotJson
+                            decimal primaryPays = 0m;
+                            decimal supplementaryPays = 0m;
+                            
+                            if (!string.IsNullOrEmpty(ri.SnapshotJson))
+                            {
+                                try
+                                {
+                                    var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(ri.SnapshotJson);
+                                    if (snapshot != null)
+                                    {
+                                        if (snapshot.PrimaryPays != null)
+                                            primaryPays = (decimal)snapshot.PrimaryPays;
+                                        if (snapshot.SupplementaryPays != null)
+                                            supplementaryPays = (decimal)snapshot.SupplementaryPays;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.Warning(ex, "⚠️ FACADE: خطا در parse کردن SnapshotJson برای ReceptionItem {ReceptionItemId}", ri.ReceptionItemId);
+                                }
+                            }
+                            
+                            // ✅ Fallback: اگر SnapshotJson موجود نبود، از InsurerShareAmount تقسیم کن
+                            if (primaryPays == 0 && supplementaryPays == 0 && ri.InsurerShareAmount > 0)
+                            {
+                                if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                                {
+                                    // تقسیم 50-50 اگر هر دو بیمه وجود دارند
+                                    primaryPays = ri.InsurerShareAmount / 2m;
+                                    supplementaryPays = ri.InsurerShareAmount - primaryPays;
+                                }
+                                else if (reception.BasePlanId.HasValue)
+                                {
+                                    primaryPays = ri.InsurerShareAmount;
+                                }
+                                else if (reception.SupplementaryPlanId.HasValue)
+                                {
+                                    supplementaryPays = ri.InsurerShareAmount;
+                                }
+                            }
+                            
+                            return new ReceptionItemDetailsDto
+                            {
+                                ReceptionItemId = ri.ReceptionItemId,
+                                ServiceId = ri.ServiceId,
+                                ServiceCode = ri.ServiceCode,
+                                ServiceName = ri.ServiceName,
+                                Quantity = ri.Quantity,
+                                UnitPrice = ri.UnitPrice,
+                                PatientShareAmount = ri.PatientShareAmount,
+                                InsurerShareAmount = ri.InsurerShareAmount,
+                                PrimaryPays = primaryPays,
+                                SupplementaryPays = supplementaryPays,
+                                SnapshotJson = ri.SnapshotJson
+                            };
                         })
                         .ToList() ?? new List<ReceptionItemDetailsDto>(),
 
