@@ -474,13 +474,30 @@ namespace ClinicApp.Areas.Admin.Controllers
                     model.WorkDays = new List<WorkDayViewModel>();
                 }
 
-                // تنظیم روزهای هفته
-                if (!model.WorkDays.Any())
+                // ✅ همیشه تمام 7 روز هفته را اضافه می‌کنیم (نه فقط وقتی خالی است)
+                // ✅ این کار باعث می‌شود که کاربر بتواند روزهای جدید را اضافه کند
+                // ✅ DayOfWeek: 0 = یکشنبه، 1 = دوشنبه، ...، 6 = شنبه (مطابق با Entity)
+                var daysOfWeek = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
+                
+                // ✅ ایجاد Dictionary از WorkDays موجود بر اساس DayOfWeek برای جستجوی سریع
+                var existingWorkDaysDict = model.WorkDays
+                    .Where(wd => wd.DayOfWeek >= 0 && wd.DayOfWeek < 7)
+                    .ToDictionary(wd => wd.DayOfWeek, wd => wd);
+                
+                // ✅ ایجاد لیست جدید با تمام 7 روز هفته
+                var allWorkDays = new List<WorkDayViewModel>();
+                
+                for (int i = 0; i < 7; i++)
                 {
-                    var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه" };
-                    for (int i = 0; i < 7; i++)
+                    if (existingWorkDaysDict.TryGetValue(i, out var existingWorkDay))
                     {
-                        model.WorkDays.Add(new WorkDayViewModel
+                        // ✅ اگر WorkDay موجود است، از آن استفاده می‌کنیم
+                        allWorkDays.Add(existingWorkDay);
+                    }
+                    else
+                    {
+                        // ✅ اگر WorkDay موجود نیست، یک WorkDay جدید با IsActive = false ایجاد می‌کنیم
+                        allWorkDays.Add(new WorkDayViewModel
                         {
                             DayOfWeek = i,
                             DayName = daysOfWeek[i],
@@ -489,6 +506,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                         });
                     }
                 }
+                
+                // ✅ جایگزین کردن WorkDays با لیست کامل
+                model.WorkDays = allWorkDays;
+                
+                _logger.Information("✅ [AssignSchedule GET] تمام 7 روز هفته اضافه شد. WorkDaysCount: {WorkDaysCount}", model.WorkDays.Count);
+                System.Diagnostics.Debug.WriteLine($"[AssignSchedule GET] ✅ تمام 7 روز هفته اضافه شد. WorkDaysCount: {model.WorkDays.Count}");
 
                 ViewBag.Doctor = doctor;
 
@@ -534,6 +557,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 
                 // ✅ محاسبه DayName از DayOfWeek برای تمام WorkDays (قبل از validation)
                 // این کار برای اطمینان از اینکه DayName همیشه از DayOfWeek محاسبه می‌شود
+                // ✅ DayOfWeek: 0 = یکشنبه، 1 = دوشنبه، ...، 6 = شنبه (مطابق با Entity)
                 var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
                 if (model.WorkDays != null)
                 {

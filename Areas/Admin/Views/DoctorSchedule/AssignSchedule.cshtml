@@ -826,10 +826,11 @@
             // Success message
             @if (TempData["Success"] != null)
             {
+                var successMessage = TempData["Success"].ToString();
                 <text>
                 Swal.fire({
                     title: 'موفقیت',
-                    text: '@TempData["Success"]',
+                    text: @Html.Raw(Json.Encode(successMessage)),
                     icon: 'success',
                     confirmButtonText: 'باشه'
                 });
@@ -839,10 +840,11 @@
             // Error message
             @if (TempData["Error"] != null)
             {
+                var errorMessage = TempData["Error"].ToString();
                 <text>
                 Swal.fire({
                     title: 'خطا',
-                    text: '@TempData["Error"]',
+                    text: @Html.Raw(Json.Encode(errorMessage)),
                     icon: 'error',
                     confirmButtonText: 'باشه'
                 });

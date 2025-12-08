@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -432,6 +433,47 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     // پرتاب مجدد همان Exception با پیام واضح‌تر
                     throw;
                 }
+                catch (DbUpdateException dbEx)
+                {
+                    // ✅ Rollback Transaction در صورت خطا
+                    transaction.Rollback();
+                    System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطای DbUpdateException - Rollback انجام شد. ExceptionType: {dbEx.GetType().Name}, Message: {dbEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ StackTrace: {dbEx.StackTrace}");
+                    
+                    // ✅ بررسی InnerException برای جزئیات بیشتر
+                    var innerEx = dbEx.InnerException;
+                    var errorDetails = new System.Text.StringBuilder();
+                    errorDetails.AppendLine($"خطا در به‌روزرسانی برنامه کاری پزشک.");
+                    
+                    while (innerEx != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ InnerException: {innerEx.GetType().Name}, Message: {innerEx.Message}");
+                        if (innerEx is System.Data.SqlClient.SqlException sqlEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ SqlException - Number: {sqlEx.Number}, LineNumber: {sqlEx.LineNumber}, Procedure: {sqlEx.Procedure}");
+                            System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ SqlException - Server: {sqlEx.Server}, Source: {sqlEx.Source}");
+                            
+                            // ✅ بررسی خطاهای خاص SQL
+                            if (sqlEx.Number == 2601 || sqlEx.Number == 2627) // Unique Constraint Violation
+                            {
+                                errorDetails.AppendLine($"خطای محدودیت یکتایی: یک رکورد تکراری در دیتابیس وجود دارد.");
+                                errorDetails.AppendLine($"لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.");
+                            }
+                            else if (sqlEx.Number == 547) // Foreign Key Constraint Violation
+                            {
+                                errorDetails.AppendLine($"خطای محدودیت کلید خارجی: رکورد مرتبط یافت نشد.");
+                            }
+                            else
+                            {
+                                errorDetails.AppendLine($"خطای SQL: {sqlEx.Message}");
+                            }
+                        }
+                        innerEx = innerEx.InnerException;
+                    }
+                    
+                    // لاگ خطا برای سیستم‌های پزشکی
+                    throw new InvalidOperationException(errorDetails.ToString(), dbEx);
+                }
                 catch (Exception ex)
                 {
                     // ✅ Rollback Transaction در صورت خطا
@@ -455,21 +497,47 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔍 شروع به‌روزرسانی WorkDays - ScheduleId: {existingSchedule.ScheduleId}, تعداد WorkDays جدید: {newWorkDays.Count}");
             
-            // ✅ دریافت WorkDays موجود
-            var existingWorkDays = existingSchedule.WorkDays?.Where(wd => !wd.IsDeleted).ToList() ?? new List<DoctorWorkDay>();
-            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 📋 تعداد WorkDays موجود: {existingWorkDays.Count}");
+            // ✅ دریافت تمام WorkDays موجود (شامل IsDeleted = true) برای جلوگیری از تداخل با Unique Constraint
+            // ✅ Unique Constraint: ScheduleId + DayOfWeek + IsDeleted
+            // ✅ اگر WorkDay با IsDeleted = true وجود داشته باشد، باید آن را فعال کنیم نه اینکه یک WorkDay جدید اضافه کنیم
+            var allExistingWorkDays = existingSchedule.WorkDays?.ToList() ?? new List<DoctorWorkDay>();
+            var existingWorkDays = allExistingWorkDays.Where(wd => !wd.IsDeleted).ToList();
+            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 📋 تعداد WorkDays موجود (غیرحذف شده): {existingWorkDays.Count}, تعداد کل: {allExistingWorkDays.Count}");
 
-            // ✅ ایجاد Dictionary برای جستجوی سریع‌تر
-            var existingWorkDaysDict = existingWorkDays.ToDictionary(wd => wd.DayOfWeek);
+            // ✅ ایجاد Dictionary برای جستجوی سریع‌تر (شامل WorkDays با IsDeleted = true)
+            // ✅ این کار برای جلوگیری از تداخل با Unique Constraint است
+            // ✅ اگر چند WorkDay با همان DayOfWeek وجود دارد (یکی IsDeleted = false و یکی IsDeleted = true)،
+            // ✅ اولویت با WorkDay با IsDeleted = false است
+            var existingWorkDaysDict = new Dictionary<int, DoctorWorkDay>();
+            foreach (var wd in allExistingWorkDays)
+            {
+                // ✅ اگر WorkDay با این DayOfWeek وجود ندارد یا WorkDay موجود IsDeleted = true است و WorkDay جدید IsDeleted = false است
+                if (!existingWorkDaysDict.ContainsKey(wd.DayOfWeek) || 
+                    (existingWorkDaysDict[wd.DayOfWeek].IsDeleted && !wd.IsDeleted))
+                {
+                    existingWorkDaysDict[wd.DayOfWeek] = wd;
+                }
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔑 Dictionary ایجاد شد - تعداد WorkDays: {existingWorkDaysDict.Count}");
 
             foreach (var newWorkDay in newWorkDays)
             {
                 System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔄 پردازش WorkDay - DayOfWeek: {newWorkDay.DayOfWeek}, IsActive: {newWorkDay.IsActive}, TimeRangesCount: {newWorkDay.TimeRanges?.Count ?? 0}");
                 
-                // ✅ بررسی وجود WorkDay با همان DayOfWeek
+                // ✅ بررسی وجود WorkDay با همان DayOfWeek (شامل WorkDays با IsDeleted = true)
                 if (existingWorkDaysDict.TryGetValue(newWorkDay.DayOfWeek, out var existingWorkDay))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] ✅ WorkDay موجود یافت شد - WorkDayId: {existingWorkDay.WorkDayId}, DayOfWeek: {existingWorkDay.DayOfWeek}");
+                    System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] ✅ WorkDay موجود یافت شد - WorkDayId: {existingWorkDay.WorkDayId}, DayOfWeek: {existingWorkDay.DayOfWeek}, IsDeleted: {existingWorkDay.IsDeleted}");
+                    
+                    // ✅ اگر WorkDay با IsDeleted = true است، آن را فعال می‌کنیم
+                    if (existingWorkDay.IsDeleted)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔄 فعال کردن مجدد WorkDay حذف شده - WorkDayId: {existingWorkDay.WorkDayId}");
+                        existingWorkDay.IsDeleted = false;
+                        existingWorkDay.DeletedAt = null;
+                        existingWorkDay.DeletedByUserId = null;
+                    }
                     
                     // ✅ به‌روزرسانی WorkDay موجود
                     existingWorkDay.IsActive = newWorkDay.IsActive;
@@ -503,36 +571,76 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 else
                 {
                     // ✅ افزودن WorkDay جدید
-                    newWorkDay.ScheduleId = existingSchedule.ScheduleId;
-                    newWorkDay.CreatedAt = DateTime.Now;
-                    newWorkDay.UpdatedAt = DateTime.Now;
-                    newWorkDay.CreatedByUserId = updatedByUserId;
-                    newWorkDay.UpdatedByUserId = updatedByUserId;
-                    newWorkDay.IsDeleted = false;
-
-                    // ✅ افزودن TimeRanges
-                    if (newWorkDay.TimeRanges != null)
+                    // ✅ بررسی اینکه آیا WorkDay با IsDeleted = true وجود دارد یا نه
+                    // ✅ اگر وجود دارد، آن را فعال می‌کنیم به جای افزودن WorkDay جدید
+                    var deletedWorkDay = allExistingWorkDays.FirstOrDefault(wd => wd.DayOfWeek == newWorkDay.DayOfWeek && wd.IsDeleted);
+                    
+                    if (deletedWorkDay != null)
                     {
-                        foreach (var timeRange in newWorkDay.TimeRanges)
+                        System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔄 فعال کردن مجدد WorkDay حذف شده - WorkDayId: {deletedWorkDay.WorkDayId}, DayOfWeek: {deletedWorkDay.DayOfWeek}");
+                        
+                        // ✅ فعال کردن مجدد WorkDay حذف شده
+                        deletedWorkDay.IsDeleted = false;
+                        deletedWorkDay.DeletedAt = null;
+                        deletedWorkDay.DeletedByUserId = null;
+                        deletedWorkDay.IsActive = newWorkDay.IsActive;
+                        deletedWorkDay.UpdatedAt = DateTime.Now;
+                        deletedWorkDay.UpdatedByUserId = updatedByUserId;
+
+                        // ✅ به‌روزرسانی TimeRanges
+                        if (newWorkDay.TimeRanges != null && newWorkDay.TimeRanges.Any())
                         {
-                            timeRange.CreatedAt = DateTime.Now;
-                            timeRange.UpdatedAt = DateTime.Now;
-                            timeRange.CreatedByUserId = updatedByUserId;
-                            timeRange.UpdatedByUserId = updatedByUserId;
-                            timeRange.IsDeleted = false;
+                            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔄 شروع به‌روزرسانی TimeRanges برای WorkDay {deletedWorkDay.WorkDayId} - تعداد TimeRanges جدید: {newWorkDay.TimeRanges.Count}");
+                            await UpdateTimeRangesAsync(deletedWorkDay, newWorkDay.TimeRanges, updatedByUserId);
+                            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] ✅ به‌روزرسانی TimeRanges برای WorkDay {deletedWorkDay.WorkDayId} با موفقیت انجام شد");
                         }
                     }
+                    else
+                    {
+                        // ✅ افزودن WorkDay جدید (فقط اگر WorkDay با IsDeleted = true وجود ندارد)
+                        System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] ➕ افزودن WorkDay جدید - DayOfWeek: {newWorkDay.DayOfWeek}");
+                        
+                        newWorkDay.ScheduleId = existingSchedule.ScheduleId;
+                        newWorkDay.CreatedAt = DateTime.Now;
+                        newWorkDay.UpdatedAt = DateTime.Now;
+                        newWorkDay.CreatedByUserId = updatedByUserId;
+                        newWorkDay.UpdatedByUserId = updatedByUserId;
+                        newWorkDay.IsDeleted = false;
 
-                    _context.DoctorWorkDays.Add(newWorkDay);
+                        // ✅ افزودن TimeRanges
+                        if (newWorkDay.TimeRanges != null)
+                        {
+                            foreach (var timeRange in newWorkDay.TimeRanges)
+                            {
+                                timeRange.CreatedAt = DateTime.Now;
+                                timeRange.UpdatedAt = DateTime.Now;
+                                timeRange.CreatedByUserId = updatedByUserId;
+                                timeRange.UpdatedByUserId = updatedByUserId;
+                                timeRange.IsDeleted = false;
+                            }
+                        }
+
+                        _context.DoctorWorkDays.Add(newWorkDay);
+                    }
                 }
             }
 
-            // ✅ حذف نرم WorkDays که دیگر در لیست جدید نیستند
-            var newWorkDaysDayOfWeeks = newWorkDays.Select(wd => wd.DayOfWeek).ToHashSet();
+            // ✅ حذف نرم WorkDays که دیگر در لیست جدید نیستند (فقط WorkDays فعال)
+            // ✅ فقط WorkDays فعال را در نظر می‌گیریم، چون ToEntity() فقط WorkDays فعال را ارسال می‌کند
+            var newWorkDaysDayOfWeeks = newWorkDays
+                .Where(wd => wd.IsActive) // ✅ فقط WorkDays فعال
+                .Select(wd => wd.DayOfWeek)
+                .ToHashSet();
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🔍 WorkDays فعال در لیست جدید: {string.Join(", ", newWorkDaysDayOfWeeks)}");
+            
             foreach (var existingWorkDay in existingWorkDays)
             {
-                if (!newWorkDaysDayOfWeeks.Contains(existingWorkDay.DayOfWeek))
+                // ✅ اگر WorkDay موجود فعال است و در لیست جدید نیست، آن را غیرفعال می‌کنیم
+                if (existingWorkDay.IsActive && !newWorkDaysDayOfWeeks.Contains(existingWorkDay.DayOfWeek))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[UpdateWorkDaysAsync] 🗑️ حذف نرم WorkDay - WorkDayId: {existingWorkDay.WorkDayId}, DayOfWeek: {existingWorkDay.DayOfWeek}");
+                    
                     existingWorkDay.IsActive = false;
                     existingWorkDay.IsDeleted = true;
                     existingWorkDay.DeletedAt = DateTime.Now;

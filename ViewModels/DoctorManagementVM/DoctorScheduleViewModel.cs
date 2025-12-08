@@ -326,15 +326,19 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// ✅ تبدیل ViewModel به Entity برای ذخیره در دیتابیس
         /// ✅ فیلتر کردن WorkDays و TimeRanges خالی یا نامعتبر
+        /// ✅ فقط WorkDays فعال را ارسال می‌کنیم (برای جلوگیری از تداخل با Unique Constraint)
         /// </summary>
         public DoctorSchedule ToEntity()
         {
-            // ✅ فیلتر کردن WorkDays معتبر (با TimeRanges معتبر)
+            // ✅ فیلتر کردن WorkDays معتبر و فعال (با TimeRanges معتبر)
+            // ✅ فقط WorkDays فعال را ارسال می‌کنیم تا از تداخل با Unique Constraint جلوگیری کنیم
             var validWorkDays = this.WorkDays?
-                .Where(wd => wd != null)
+                .Where(wd => wd != null && wd.IsActive) // ✅ فقط WorkDays فعال
                 .Select(wd => wd.ToEntity())
                 .Where(wd => wd != null)
                 .ToList() ?? new List<DoctorWorkDay>();
+            
+            System.Diagnostics.Debug.WriteLine($"[DoctorScheduleViewModel.ToEntity] ✅ تبدیل به Entity - WorkDaysCount: {validWorkDays.Count} (فقط فعال)");
             
             return new DoctorSchedule
             {
