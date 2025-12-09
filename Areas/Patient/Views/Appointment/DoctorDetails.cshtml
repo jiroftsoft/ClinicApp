@@ -1,0 +1,489 @@
+@using Org.BouncyCastle.Asn1.Ocsp
+@model ClinicApp.ViewModels.Patient.DoctorDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات پزشک";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-primary-light: #3d6bb3;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-bg: #f8f9fa;
+        }
+
+        * {
+            font-family: 'Vazir', 'Tahoma', Arial, sans-serif;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.3);
+        }
+
+        .doctor-profile-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .doctor-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0 auto 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.2);
+            border-color: var(--medical-primary);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--medical-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--medical-secondary);
+        }
+
+        .schedule-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .schedule-day {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            background: var(--medical-bg);
+            transition: all 0.2s ease;
+        }
+
+        .schedule-day:hover {
+            background: #e9ecef;
+        }
+
+        .time-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .time-slot {
+            padding: 1rem;
+            border: 2px solid var(--medical-border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            font-weight: 500;
+        }
+
+        .time-slot:hover {
+            border-color: var(--medical-primary);
+            background: #f0f7ff;
+            transform: scale(1.05);
+        }
+
+        .time-slot.selected {
+            border-color: var(--medical-success);
+            background: #d4edda;
+            color: var(--medical-success);
+            font-weight: bold;
+        }
+
+        .time-slot.unavailable {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f8f9fa;
+        }
+
+        .bio-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        }
+
+        @@media (max-width: 768px) {
+            .time-slot-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .doctor-profile-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-2" style="font-weight: 700;">
+                <i class="fas fa-user-md me-2"></i>
+                جزئیات پزشک
+            </h2>
+            <p class="mb-0 opacity-90">مشاهده اطلاعات، رزومه و رزرو نوبت</p>
+        </div>
+        <a href="@Url.Action("Available")" class="btn btn-light mt-2 mt-md-0">
+            <i class="fas fa-arrow-right me-1"></i>
+            بازگشت
+        </a>
+    </div>
+</div>
+
+@if (Model.Doctor != null)
+{
+    <div class="doctor-profile-card">
+        <div class="doctor-avatar">
+            @Model.Doctor.FullName.Substring(0, 1)
+        </div>
+        <div class="text-center">
+            <h3 class="mb-2" style="font-weight: 700; color: var(--medical-primary);">
+                @Model.Doctor.FullName
+            </h3>
+            <p class="text-muted mb-3">
+                <i class="fas fa-stethoscope me-2"></i>
+                @(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() 
+                    ? string.Join("، ", Model.Doctor.SpecializationNames) 
+                    : "نامشخص")
+            </p>
+            @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
+            {
+                <p class="text-muted">
+                    <i class="fas fa-id-card me-2"></i>
+                    کد نظام پزشکی: @Model.Doctor.MedicalCouncilCode
+                </p>
+            }
+        </div>
+    </div>
+
+    <!-- آمار پزشک -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-value">@Model.TotalAppointments</div>
+                <div class="stat-label">کل نوبت‌ها</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-value">@Model.TodayAppointments</div>
+                <div class="stat-label">نوبت‌های امروز</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
+                <div class="stat-label">امتیاز</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-value">@Model.ExperienceYears</div>
+                <div class="stat-label">سال تجربه</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بیوگرافی -->
+    if (!string.IsNullOrEmpty(Model.Doctor.Bio))
+    {
+        <div class="bio-section">
+            <h5 class="mb-3" style="font-weight: 600; color: var(--medical-primary);">
+                <i class="fas fa-user-circle me-2"></i>
+                درباره پزشک
+            </h5>
+            <p style="line-height: 1.8; color: var(--medical-text);">
+                @Model.Doctor.Bio
+            </p>
+        </div>
+    }
+
+    <!-- برنامه کاری -->
+    if (Model.ScheduleDetails != null)
+    {
+        @Html.Partial("_DoctorSchedule", Model.ScheduleDetails)
+    }
+    else
+    {
+        <div class="no-schedule-message" style="text-align: center; padding: 3rem 2rem; color: #6c757d; animation: fadeIn 0.6s ease-out; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 16px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+            <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; color: #adb5bd;"></i>
+            <p style="font-size: 1.1rem; margin: 0; font-weight: 500;">برنامه کاری برای این پزشک تعریف نشده است.</p>
+        </div>
+    }
+
+    <!-- انتخاب تاریخ و زمان -->
+    <div class="schedule-card">
+        <h5 class="mb-3" style="font-weight: 600; color: var(--medical-primary);">
+            <i class="fas fa-calendar-check me-2"></i>
+            انتخاب تاریخ و زمان نوبت
+        </h5>
+        
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label">تاریخ نوبت</label>
+                <input type="text" id="appointmentDate" class="form-control" 
+                       placeholder="تاریخ را انتخاب کنید" />
+            </div>
+        </div>
+
+        <div id="timeSlotsContainer">
+            <h6 class="mb-3">زمان‌های در دسترس:</h6>
+            <div class="time-slot-grid" id="timeSlotsGrid">
+                @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
+                {
+                    foreach (var slot in Model.AvailableSlots)
+                    {
+                        <div class="time-slot @(slot.IsAvailable ? "available" : "unavailable")" 
+                             data-start="@slot.StartTime.ToString(@"hh\:mm")"
+                             data-end="@slot.EndTime.ToString(@"hh\:mm")"
+                             @(!slot.IsAvailable ? "data-disabled=true" : "")>
+                            @slot.DisplayTime
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">لطفاً ابتدا تاریخ را انتخاب کنید</p>
+                }
+            </div>
+        </div>
+
+        @if (!User.Identity.IsAuthenticated)
+        {
+            <div class="alert alert-warning mt-4" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                برای رزرو نوبت، لطفاً ابتدا <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" class="alert-link">ثبت‌نام</a> کنید یا <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" class="alert-link">وارد</a> شوید.
+            </div>
+        }
+        else
+        {
+            <div class="text-center mt-4">
+                <button type="button" id="bookAppointmentBtn" class="btn btn-primary btn-lg" disabled>
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    رزرو نوبت
+                </button>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script src="~/Content/plugins/persian-datepicker/persian-date.min.js"></script>
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // تنظیمات Toastr
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-left",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut",
+                "rtl": true
+            };
+
+            var selectedDate = '@Model.SelectedDate.ToString("yyyy/MM/dd")';
+            var selectedTime = null;
+            var doctorId = @Model.DoctorId;
+
+            // راه‌اندازی Persian DatePicker
+            $("#appointmentDate").pDatepicker({
+                observer: true,
+                format: 'YYYY/MM/DD',
+                altField: '#appointmentDateAlt',
+                altFormat: 'YYYY/MM/DD',
+                initialValue: false,
+                initialValueType: 'persian',
+                calendarType: 'persian',
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                onSelect: function (selectedDateValue) {
+                    // تاریخ انتخاب شده به فرمت YYYY/MM/DD است
+                    selectedDate = selectedDateValue;
+                    if (selectedDate) {
+                        loadTimeSlots(doctorId, selectedDate);
+                    }
+                }
+            });
+
+            // انتخاب زمان
+            $(document).on('click', '.time-slot.available', function () {
+                if ($(this).data('disabled')) return;
+
+                $('.time-slot').removeClass('selected');
+                $(this).addClass('selected');
+                selectedTime = $(this).data('start');
+                $('#bookAppointmentBtn').prop('disabled', false);
+
+                toastr.success('زمان انتخاب شد: ' + $(this).text(), 'موفق');
+            });
+
+            // بارگذاری اسلات‌های زمانی
+            function loadTimeSlots(doctorId, date) {
+                if (!date) {
+                    toastr.warning('لطفاً تاریخ را انتخاب کنید', 'هشدار');
+                    return;
+                }
+
+                // نمایش loading
+                $('#timeSlotsGrid').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</div>');
+
+                $.ajax({
+                    url: '@Url.Action("GetTimeSlots", "Appointment")',
+                    type: 'GET',
+                    data: { doctorId: doctorId, date: date },
+                    success: function (response) {
+                        if (response.success && response.slots) {
+                            var html = '';
+                            response.slots.forEach(function (slot) {
+                                var cssClass = slot.isAvailable ? 'available' : 'unavailable';
+                                var disabled = slot.isAvailable ? '' : 'data-disabled=true';
+                                html += '<div class="time-slot ' + cssClass + '" ' +
+                                    'data-start="' + slot.startTime + '" ' +
+                                    'data-end="' + slot.endTime + '" ' +
+                                    disabled + '>' +
+                                    slot.displayTime +
+                                    '</div>';
+                            });
+                            $('#timeSlotsGrid').html(html);
+                            selectedTime = null;
+                            $('#bookAppointmentBtn').prop('disabled', true);
+                        } else {
+                            toastr.error(response.message || 'خطا در دریافت زمان‌های در دسترس', 'خطا');
+                        }
+                    },
+                    error: function () {
+                        toastr.error('خطا در ارتباط با سرور', 'خطا');
+                    }
+                });
+            }
+
+            // رزرو نوبت
+            $('#bookAppointmentBtn').on('click', function () {
+                @if (!User.Identity.IsAuthenticated)
+                {
+                    <text>
+                    toastr.warning('برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید', 'نیاز به ثبت‌نام');
+                    window.location.href = '@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })';
+                    </text>
+                }
+                else
+                {
+                    <text>
+                    if (!selectedDate || !selectedTime) {
+                        toastr.warning('لطفاً تاریخ و زمان را انتخاب کنید', 'هشدار');
+                        return;
+                    }
+
+                    window.location.href = '@Url.Action("SelectDate", "AppointmentBooking")?doctorId=' + doctorId + '&date=' + selectedDate + '&time=' + selectedTime;
+                    </text>
+                }
+            });
+
+            // نمایش پیغام‌های TempData
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                toastr.success('@TempData["Success"]', 'موفق');
+                </text>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                toastr.error('@TempData["Error"]', 'خطا');
+                </text>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <text>
+                toastr.info('@TempData["Info"]', 'اطلاعات');
+                </text>
+            }
+        });
+    </script>
+}
+

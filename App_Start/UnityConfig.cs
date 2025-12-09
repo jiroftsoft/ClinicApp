@@ -60,6 +60,9 @@ using Unity.Injection;
 using Unity.Lifetime;
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Services.Payment.POS;
+using ClinicApp.Interfaces.Appointment;
+using ClinicApp.Services.Appointment;
+using ClinicApp.Repositories.Appointment;
 
 namespace ClinicApp
 {
@@ -395,6 +398,12 @@ namespace ClinicApp
 
                 // ثبت سرویس‌های مدیریت نوبت‌دهی
                 container.RegisterType<IAppointmentAvailabilityService, AppointmentAvailabilityService>(new PerRequestLifetimeManager());
+                
+                // Register Appointment Repository
+                container.RegisterType<IAppointmentRepository, AppointmentRepository>(new PerRequestLifetimeManager());
+                
+                // Register Appointment Booking Service
+                container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
 
                 // Register Schedule Optimization Service
                 container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());

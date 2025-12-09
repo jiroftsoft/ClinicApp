@@ -14,6 +14,21 @@ namespace ClinicApp.Models.DTOs.Appointment
         public bool HasActiveSchedule { get; set; }
         public string ScheduleInfo { get; set; } // "شنبه تا چهارشنبه - 07:30 تا 12:00"
         public decimal? BasePrice { get; set; }
+        
+        /// <summary>
+        /// آدرس عکس پروفایل پزشک
+        /// </summary>
+        public string ProfileImageUrl { get; set; }
+        
+        /// <summary>
+        /// بیوگرافی پزشک
+        /// </summary>
+        public string Bio { get; set; }
+        
+        /// <summary>
+        /// سال‌های تجربه
+        /// </summary>
+        public int? ExperienceYears { get; set; }
     }
 }
 

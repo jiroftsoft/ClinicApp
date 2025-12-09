@@ -154,13 +154,13 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
+        @@keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
+        @@media (max-width: 768px) {
             .patient-card {
                 padding: 1.5rem;
             }
@@ -255,9 +255,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="~/Content/plugins/jquery/jquery.min.js"></script>
-    <script src="~/Content/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
 
     @RenderSection("Scripts", required: false)
 

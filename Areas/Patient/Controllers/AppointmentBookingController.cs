@@ -25,7 +25,7 @@ namespace ClinicApp.Areas.Patient.Controllers
     /// <summary>
     /// Controller برای رزرو نوبت آنلاین
     /// </summary>
-    [Authorize]
+    //[Authorize]
     public class AppointmentBookingController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;
@@ -66,12 +66,22 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// GET: /Patient/Appointment/Book/SelectDoctor
         /// </summary>
         [HttpGet]
+        [AllowAnonymous] // اجازه دسترسی عمومی
         public async Task<ActionResult> SelectDoctor(int? departmentId, string searchTerm)
         {
             try
             {
                 _logger.Information("درخواست صفحه انتخاب پزشک - DepartmentId: {DepartmentId}, SearchTerm: {SearchTerm}",
                     departmentId, searchTerm);
+
+                // چک کردن اینکه آیا کاربر لاگین کرده است یا نه
+                if (!User.Identity.IsAuthenticated)
+                {
+                    // ذخیره URL فعلی برای redirect بعد از ثبت‌نام
+                    Session["ReturnUrl"] = Request.Url?.ToString();
+                    TempData["Info"] = "برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید یا وارد شوید.";
+                    return RedirectToAction("Register", "Account", new { area = "" });
+                }
 
                 var result = await _bookingService.GetAvailableDoctorsAsync(departmentId, searchTerm);
 

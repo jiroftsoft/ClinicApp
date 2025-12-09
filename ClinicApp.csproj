@@ -741,6 +741,7 @@
     </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
@@ -1345,8 +1346,10 @@
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Patient\AppointmentBookingViewModel.cs" />
+    <Compile Include="ViewModels\Patient\AvailableAppointmentsViewModel.cs" />
     <Compile Include="ViewModels\Patient\DateSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\DepartmentInfo.cs" />
+    <Compile Include="ViewModels\Patient\DoctorDetailsViewModel.cs" />
     <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
     <Compile Include="ViewModels\Patient\TimeSlotSelectionViewModel.cs" />
@@ -1574,6 +1577,8 @@
     <Content Include="Content\css\reception\patient-accordion.css" />
     <Content Include="Content\css\reception\realtime-insurance-binding.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />
+    <Content Include="Content\css\select2.css" />
+    <Content Include="Content\css\select2.min.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />
     <Content Include="Content\favicon.ico" />
@@ -3962,6 +3967,9 @@
     <Content Include="Areas\Patient\Views\AppointmentBooking\SelectDoctor.cshtml" />
     <Content Include="Areas\Patient\Views\AppointmentBooking\SelectTime.cshtml" />
     <Content Include="Areas\Patient\Views\AppointmentBooking\ConfirmBooking.cshtml" />
+    <Content Include="Areas\Patient\Views\Appointment\Available.cshtml" />
+    <Content Include="Areas\Patient\Views\Appointment\DoctorDetails.cshtml" />
+    <Content Include="Areas\Patient\Views\Appointment\_DoctorSchedule.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

@@ -923,20 +923,30 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 🔍 شروع - DoctorId: {doctorId}, Date: {date:yyyy/MM/dd}");
+                
                 // ✅ بررسی تعطیلات رسمی ایران
                 if (IsPersianHoliday(date))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 📅 تاریخ {date:yyyy/MM/dd} تعطیل رسمی است");
                     return new List<DoctorTimeSlot>(); // در تعطیلات رسمی هیچ اسلاتی در دسترس نیست
                 }
 
-                // دریافت برنامه کاری پزشک همراه با Exceptions
+                // دریافت برنامه کاری پزشک همراه با Exceptions و WorkDays
                 var doctorSchedule = await _context.DoctorSchedules
                     .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted && ds.IsActive)
                     .Include(ds => ds.Exceptions) // ✅ Include برای ScheduleExceptions
+                    .Include(ds => ds.WorkDays) // ✅ Include برای WorkDays
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges)) // ✅ Include برای TimeRanges
                     .FirstOrDefaultAsync();
 
                 if (doctorSchedule == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ❌ برنامه کاری برای پزشک {doctorId} یافت نشد");
                     return new List<DoctorTimeSlot>();
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ برنامه کاری یافت شد - ScheduleId: {doctorSchedule.ScheduleId}, WorkDaysCount: {doctorSchedule.WorkDays?.Count ?? 0}");
 
                 // ✅ بررسی ScheduleExceptions (تعطیلات، مرخصی، و غیره)
                 var hasScheduleException = await HasScheduleExceptionAsync(doctorSchedule.ScheduleId, date);
@@ -946,19 +956,41 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 }
 
                 // دریافت روزهای کاری پزشک
-                var workDays = await _context.DoctorWorkDays
-                    .Where(wd => wd.ScheduleId == doctorSchedule.ScheduleId && wd.DayOfWeek == (int)date.DayOfWeek && wd.IsActive)
-                    .Include(wd => wd.TimeRanges)
-                    .ToListAsync();
+                // استفاده از WorkDays که قبلاً Include شده‌اند
+                var dayOfWeek = (int)date.DayOfWeek;
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 📅 تاریخ: {date:yyyy/MM/dd}, DayOfWeek: {dayOfWeek} ({(DayOfWeek)dayOfWeek})");
+                
+                // ✅ لاگ تمام WorkDays موجود
+                if (doctorSchedule.WorkDays != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 📋 تمام WorkDays موجود:");
+                    foreach (var wd in doctorSchedule.WorkDays)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  - WorkDayId: {wd.WorkDayId}, DayOfWeek: {wd.DayOfWeek}, IsActive: {wd.IsActive}, IsDeleted: {wd.IsDeleted}");
+                    }
+                }
+                
+                var workDays = doctorSchedule.WorkDays?
+                    .Where(wd => wd.DayOfWeek == dayOfWeek && wd.IsActive && !wd.IsDeleted)
+                    .ToList() ?? new List<DoctorWorkDay>();
 
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 📅 WorkDays برای DayOfWeek {dayOfWeek}: {workDays.Count}");
+                
                 if (!workDays.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ هیچ WorkDay برای DayOfWeek {dayOfWeek} یافت نشد");
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 💡 پیشنهاد: بررسی کنید که آیا تاریخ انتخاب شده با روزهای کاری پزشک مطابقت دارد");
                     return new List<DoctorTimeSlot>();
+                }
 
                 var availableSlots = new List<DoctorTimeSlot>();
 
                 foreach (var workDay in workDays)
                 {
-                    foreach (var timeRange in workDay.TimeRanges.Where(tr => tr.IsActive && !tr.IsDeleted))
+                    var activeTimeRanges = workDay.TimeRanges?.Where(tr => tr.IsActive && !tr.IsDeleted).ToList() ?? new List<DoctorTimeRange>();
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⏰ WorkDay {workDay.DayOfWeek}: {activeTimeRanges.Count} TimeRange فعال");
+                    
+                    foreach (var timeRange in activeTimeRanges)
                     {
                         var currentTime = timeRange.StartTime;
                         var endTime = timeRange.EndTime;
@@ -1020,11 +1052,18 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     }
                 }
 
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {availableSlots.Count} اسلات زمانی تولید شد");
                 return availableSlots;
             }
             catch (Exception ex)
             {
                 // لاگ خطا برای سیستم‌های پزشکی
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ❌ خطا: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ❌ StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ❌ InnerException: {ex.InnerException.Message}");
+                }
                 throw new InvalidOperationException($"خطا در دریافت اسلات‌های زمانی خالی برای پزشک {doctorId} در تاریخ {date:yyyy/MM/dd}", ex);
             }
         }

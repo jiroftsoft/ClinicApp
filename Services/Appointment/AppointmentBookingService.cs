@@ -235,10 +235,29 @@ namespace ClinicApp.Services.Appointment
 
                 foreach (var doctor in doctors)
                 {
-                    var schedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctor.DoctorId);
-                    var hasActiveSchedule = schedule != null && schedule.WorkDays?.Any(w => w.IsActive) == true;
+                    var schedule = await _doctorScheduleRepository.GetDoctorScheduleWithDetailsAsync(doctor.DoctorId);
+                    var hasActiveSchedule = schedule != null 
+                        && schedule.IsActive 
+                        && !schedule.IsDeleted
+                        && schedule.WorkDays != null 
+                        && schedule.WorkDays.Any(w => w.IsActive && !w.IsDeleted);
 
                     var specialization = doctor.SpecializationNames?.FirstOrDefault() ?? "نامشخص";
+                    
+                    // دریافت اطلاعات کامل پزشک برای Bio
+                    string bio = null;
+                    try
+                    {
+                        var doctorDetailsResult = await _doctorCrudService.GetDoctorDetailsAsync(doctor.DoctorId);
+                        if (doctorDetailsResult.Success && doctorDetailsResult.Data != null)
+                        {
+                            bio = doctorDetailsResult.Data.Bio;
+                        }
+                    }
+                    catch
+                    {
+                        // در صورت خطا، Bio را null می‌گذاریم
+                    }
                     
                     var dto = new DoctorSearchResultDto
                     {
@@ -250,7 +269,10 @@ namespace ClinicApp.Services.Appointment
                         DepartmentName = "", // DoctorIndexViewModel اطلاعات دپارتمان به صورت مستقیم ندارد
                         HasActiveSchedule = hasActiveSchedule,
                         ScheduleInfo = hasActiveSchedule ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
-                        BasePrice = 0 // در آینده از تنظیمات پزشک دریافت می‌شود
+                        BasePrice = 0, // در آینده از تنظیمات پزشک دریافت می‌شود
+                        ProfileImageUrl = doctor.ProfileImageUrl,
+                        Bio = bio,
+                        ExperienceYears = doctor.ExperienceYears
                     };
 
                     doctorDtos.Add(dto);
@@ -291,8 +313,12 @@ namespace ClinicApp.Services.Appointment
                 }
 
                 var doctor = doctorResult.Data;
-                var schedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
-                var hasActiveSchedule = schedule != null && schedule.WorkDays?.Any(w => w.IsActive) == true;
+                var schedule = await _doctorScheduleRepository.GetDoctorScheduleWithDetailsAsync(doctorId);
+                var hasActiveSchedule = schedule != null 
+                    && schedule.IsActive 
+                    && !schedule.IsDeleted
+                    && schedule.WorkDays != null 
+                    && schedule.WorkDays.Any(w => w.IsActive && !w.IsDeleted);
 
                 var specialization = doctor.SpecializationNames?.FirstOrDefault() ?? "نامشخص";
                 var department = doctor.DoctorDepartments?.FirstOrDefault();
@@ -307,7 +333,10 @@ namespace ClinicApp.Services.Appointment
                     DepartmentName = department?.DepartmentName ?? "",
                     HasActiveSchedule = hasActiveSchedule,
                     ScheduleInfo = hasActiveSchedule ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
-                    BasePrice = 0
+                    BasePrice = 0,
+                    ProfileImageUrl = doctor.ProfileImageUrl,
+                    Bio = doctor.Bio,
+                    ExperienceYears = doctor.ExperienceYears
                 };
 
                 return ServiceResult<DoctorSearchResultDto>.Successful(dto);
