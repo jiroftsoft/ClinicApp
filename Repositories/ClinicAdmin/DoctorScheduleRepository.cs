@@ -36,6 +36,65 @@ namespace ClinicApp.Repositories.ClinicAdmin
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        /// <summary>
+        /// متد کمکی برای Rollback امن Transaction
+        /// این متد از خطای "Value cannot be null. Parameter name: connection" جلوگیری می‌کند
+        /// </summary>
+        private void SafeRollback(System.Data.Entity.DbContextTransaction transaction, string methodName)
+        {
+            try
+            {
+                if (transaction != null)
+                {
+                    // ✅ بررسی اینکه Transaction هنوز معتبر است
+                    // ✅ استفاده از try-catch برای بررسی امن Connection
+                    bool canRollback = false;
+                    try
+                    {
+                        var underlyingTransaction = transaction.UnderlyingTransaction;
+                        if (underlyingTransaction != null)
+                        {
+                            var connection = underlyingTransaction.Connection;
+                            if (connection != null && connection.State != System.Data.ConnectionState.Closed)
+                            {
+                                canRollback = true;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // ✅ اگر خطا در بررسی Connection رخ داد، نمی‌توانیم Rollback کنیم
+                        canRollback = false;
+                    }
+
+                    if (canRollback)
+                    {
+                        transaction.Rollback();
+                        System.Diagnostics.Debug.WriteLine($"[{methodName}] ✅ Transaction با موفقیت Rollback شد");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[{methodName}] ⚠️ Transaction قبلاً Rollback شده یا Connection قطع شده");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{methodName}] ⚠️ Transaction null است");
+                }
+            }
+            catch (Exception rollbackEx)
+            {
+                // ✅ لاگ خطای Rollback اما جلوگیری از پرتاب Exception جدید
+                System.Diagnostics.Debug.WriteLine($"[{methodName}] ❌ خطا در Rollback Transaction: {rollbackEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"[{methodName}] ❌ StackTrace: {rollbackEx.StackTrace}");
+                if (rollbackEx.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{methodName}] ❌ InnerException: {rollbackEx.InnerException.Message}");
+                }
+                // ✅ نادیده گرفتن خطای Rollback - Transaction احتمالاً قبلاً Rollback شده است
+            }
+        }
+
         #region Schedule Management (مدیریت برنامه کاری)
 
         /// <summary>
@@ -263,6 +322,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     schedule.CreatedAt = DateTime.Now;
                     schedule.UpdatedAt = DateTime.Now;
                     schedule.IsDeleted = false;
+                    schedule.IsActive = schedule.IsActive; // حفظ مقدار موجود یا استفاده از پیش‌فرض (true)
 
                     // ✅ تنظیم تاریخ‌ها برای WorkDays و TimeRanges
                     if (schedule.WorkDays != null)
@@ -319,9 +379,19 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     
                     await _context.SaveChangesAsync();
 
+                    // ✅ بررسی اینکه ScheduleId بعد از SaveChangesAsync مقداردهی شده است
+                    if (schedule.ScheduleId <= 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ ScheduleId بعد از SaveChangesAsync مقداردهی نشد. ScheduleId: {schedule.ScheduleId}");
+                        SafeRollback(transaction, "AddDoctorScheduleAsync");
+                        throw new InvalidOperationException("خطا در ذخیره برنامه کاری: شناسه برنامه کاری تولید نشد. لطفاً دوباره تلاش کنید.");
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ✅ Schedule با موفقیت ذخیره شد. ScheduleId: {schedule.ScheduleId}, DoctorId: {schedule.DoctorId}");
+
                     // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس (قبل از Commit)
                     // ✅ این کار در همان Transaction انجام می‌شود تا در صورت خطا، همه چیز Rollback شود
-                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی");
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی - ScheduleId: {schedule.ScheduleId}, DoctorId: {schedule.DoctorId}");
                     try
                     {
                         await GenerateAndSaveTimeSlotsAsync(schedule.DoctorId, schedule.ScheduleId);
@@ -331,8 +401,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     {
                         // ✅ اگر تولید اسلات‌ها با خطا مواجه شد، Transaction را Rollback می‌کنیم
                         System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ خطا در تولید اسلات‌های زمانی: {slotEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ ExceptionType: {slotEx.GetType().Name}");
                         System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ StackTrace: {slotEx.StackTrace}");
-                        transaction.Rollback();
+                        if (slotEx.InnerException != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ InnerException: {slotEx.InnerException.GetType().Name} - {slotEx.InnerException.Message}");
+                        }
+                        SafeRollback(transaction, "AddDoctorScheduleAsync");
                         throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای برنامه کاری: {slotEx.Message}", slotEx);
                     }
 
@@ -342,12 +417,61 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                     return schedule;
                 }
+                catch (DbUpdateException dbEx)
+                {
+                    // ✅ Rollback Transaction در صورت خطای دیتابیس
+                    SafeRollback(transaction, "AddDoctorScheduleAsync");
+                    
+                    // ✅ بررسی InnerException برای جزئیات بیشتر
+                    var innerEx = dbEx.InnerException;
+                    var errorDetails = new System.Text.StringBuilder();
+                    errorDetails.AppendLine($"خطا در افزودن برنامه کاری پزشک.");
+                    
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ خطای DbUpdateException - ExceptionType: {dbEx.GetType().Name}, Message: {dbEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ StackTrace: {dbEx.StackTrace}");
+                    
+                    while (innerEx != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ InnerException: {innerEx.GetType().Name}, Message: {innerEx.Message}");
+                        if (innerEx is System.Data.SqlClient.SqlException sqlEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ SqlException - Number: {sqlEx.Number}, LineNumber: {sqlEx.LineNumber}, Procedure: {sqlEx.Procedure}");
+                            
+                            // ✅ بررسی خطاهای خاص SQL
+                            if (sqlEx.Number == 2601 || sqlEx.Number == 2627) // Unique Constraint Violation
+                            {
+                                errorDetails.AppendLine($"خطای محدودیت یکتایی: یک رکورد تکراری در دیتابیس وجود دارد.");
+                                errorDetails.AppendLine($"لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.");
+                            }
+                            else if (sqlEx.Number == 547) // Foreign Key Constraint Violation
+                            {
+                                errorDetails.AppendLine($"خطای محدودیت کلید خارجی: رکورد مرتبط یافت نشد.");
+                            }
+                            else
+                            {
+                                errorDetails.AppendLine($"خطای SQL: {sqlEx.Message}");
+                            }
+                        }
+                        innerEx = innerEx.InnerException;
+                    }
+                    
+                    // لاگ خطا برای سیستم‌های پزشکی
+                    throw new InvalidOperationException(errorDetails.ToString(), dbEx);
+                }
                 catch (Exception ex)
                 {
-                    // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    // ✅ Rollback Transaction در صورت خطا - با بررسی وضعیت Transaction
+                    SafeRollback(transaction, "AddDoctorScheduleAsync");
+                    
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ خطای غیرمنتظره - ExceptionType: {ex.GetType().Name}, Message: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ StackTrace: {ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ InnerException: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                    }
+                    
                     // لاگ خطا برای سیستم‌های پزشکی
-                    throw new InvalidOperationException($"خطا در افزودن برنامه کاری پزشک", ex);
+                    throw new InvalidOperationException($"خطا در افزودن برنامه کاری پزشک. لطفاً دوباره تلاش کنید. اگر مشکل ادامه داشت، با بخش فنی تماس بگیرید. جزئیات خطا: {ex.Message}", ex);
                 }
             }
         }
@@ -434,7 +558,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         // ✅ اگر تولید اسلات‌ها با خطا مواجه شد، Transaction را Rollback می‌کنیم
                         System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطا در تولید اسلات‌های زمانی: {slotEx.Message}");
                         System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ StackTrace: {slotEx.StackTrace}");
-                        transaction.Rollback();
+                        SafeRollback(transaction, "UpdateDoctorScheduleAsync");
                         throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای برنامه کاری: {slotEx.Message}", slotEx);
                     }
 
@@ -447,7 +571,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 catch (DbUpdateConcurrencyException ex)
                 {
                     // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    SafeRollback(transaction, "UpdateDoctorScheduleAsync");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطای همزمانی - Rollback انجام شد. ExceptionType: {ex.GetType().Name}, Message: {ex.Message}");
                     if (ex.InnerException != null)
                     {
@@ -459,7 +583,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 catch (InvalidOperationException ex)
                 {
                     // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    SafeRollback(transaction, "UpdateDoctorScheduleAsync");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطای عملیاتی - Rollback انجام شد. ExceptionType: {ex.GetType().Name}, Message: {ex.Message}");
                     if (ex.InnerException != null)
                     {
@@ -471,7 +595,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 catch (DbUpdateException dbEx)
                 {
                     // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    SafeRollback(transaction, "UpdateDoctorScheduleAsync");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطای DbUpdateException - Rollback انجام شد. ExceptionType: {dbEx.GetType().Name}, Message: {dbEx.Message}");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ StackTrace: {dbEx.StackTrace}");
                     
@@ -512,7 +636,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 catch (Exception ex)
                 {
                     // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    SafeRollback(transaction, "UpdateDoctorScheduleAsync");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطای غیرمنتظره - Rollback انجام شد. ExceptionType: {ex.GetType().Name}, Message: {ex.Message}");
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ StackTrace: {ex.StackTrace}");
                     if (ex.InnerException != null)
@@ -1047,11 +1171,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                 }
 
                                 // بررسی وجود نوبت‌های رزرو شده در این بازه زمانی
+                                // ✅ استفاده از DateTime کامل برای مقایسه (بدون استفاده از TimeOfDay در LINQ)
+                                var slotStartDateTime = date.Date.Add(currentTime);
+                                var slotEndDateTime = date.Date.Add(slotEndTime);
                                 var hasExistingAppointment = await _context.Appointments
                                     .AnyAsync(a => a.DoctorId == doctorId && 
-                                                 a.AppointmentDate.Date == date.Date &&
-                                                 a.AppointmentDate.TimeOfDay >= currentTime &&
-                                                 a.AppointmentDate.TimeOfDay < slotEndTime &&
+                                                 DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
+                                                 a.AppointmentDate >= slotStartDateTime &&
+                                                 a.AppointmentDate < slotEndDateTime &&
                                                  a.Status != AppointmentStatus.Cancelled &&
                                                  !a.IsDeleted);
 
@@ -1060,7 +1187,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                     // بررسی وجود اسلات‌های مسدود شده
                                     var hasBlockedSlot = await _context.DoctorTimeSlots
                                         .AnyAsync(ts => ts.DoctorId == doctorId &&
-                                                      ts.AppointmentDate.Date == date.Date &&
+                                                      DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(date) &&
                                                       ts.StartTime >= currentTime &&
                                                       ts.EndTime <= slotEndTime &&
                                                       ts.Status == AppointmentStatus.Cancelled &&
@@ -1114,8 +1241,10 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🔍 شروع - DoctorId: {doctorId}, ScheduleId: {scheduleId}, DaysAhead: {daysAhead}");
 
                 // دریافت برنامه کاری با جزئیات
+                // ✅ حذف شرط ds.IsActive از query برای اجازه تولید اسلات حتی اگر IsActive = false باشد
+                // ✅ این کار برای اجازه تولید اسلات در زمان ایجاد برنامه کاری است
                 var doctorSchedule = await _context.DoctorSchedules
-                    .Where(ds => ds.ScheduleId == scheduleId && ds.DoctorId == doctorId && !ds.IsDeleted && ds.IsActive)
+                    .Where(ds => ds.ScheduleId == scheduleId && ds.DoctorId == doctorId && !ds.IsDeleted)
                     .Include(ds => ds.WorkDays)
                     .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
                     .FirstOrDefaultAsync();
@@ -1123,7 +1252,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 if (doctorSchedule == null)
                 {
                     System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ برنامه کاری یافت نشد - ScheduleId: {scheduleId}, DoctorId: {doctorId}");
-                    throw new InvalidOperationException($"برنامه کاری با شناسه {scheduleId} برای پزشک {doctorId} یافت نشد یا غیرفعال است.");
+                    throw new InvalidOperationException($"برنامه کاری با شناسه {scheduleId} برای پزشک {doctorId} یافت نشد.");
+                }
+
+                // ✅ اگر برنامه کاری غیرفعال است، فقط هشدار می‌دهیم اما ادامه می‌دهیم
+                if (!doctorSchedule.IsActive)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ برنامه کاری غیرفعال است - ScheduleId: {scheduleId}, اما اسلات‌ها تولید می‌شوند");
                 }
 
                 // ✅ بررسی وجود WorkDays
@@ -1185,7 +1320,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                         // بررسی وجود اسلات در دیتابیس
                                         var existingSlot = await _context.DoctorTimeSlots
                                             .FirstOrDefaultAsync(ts => ts.DoctorId == doctorId &&
-                                                                      ts.AppointmentDate.Date == date.Date &&
+                                                                      DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(date) &&
                                                                       ts.StartTime == currentTime &&
                                                                       ts.EndTime == slotEndTime &&
                                                                       !ts.IsDeleted);
@@ -1193,11 +1328,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                         if (existingSlot == null)
                                         {
                                             // بررسی وجود نوبت رزرو شده
+                                            // ✅ استفاده از DateTime کامل برای مقایسه (بدون استفاده از TimeOfDay در LINQ)
+                                            var slotStartDateTime = date.Date.Add(currentTime);
+                                            var slotEndDateTime = date.Date.Add(slotEndTime);
                                             var hasExistingAppointment = await _context.Appointments
                                                 .AnyAsync(a => a.DoctorId == doctorId &&
-                                                             a.AppointmentDate.Date == date.Date &&
-                                                             a.AppointmentDate.TimeOfDay >= currentTime &&
-                                                             a.AppointmentDate.TimeOfDay < slotEndTime &&
+                                                             DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
+                                                             a.AppointmentDate >= slotStartDateTime &&
+                                                             a.AppointmentDate < slotEndDateTime &&
                                                              a.Status != AppointmentStatus.Cancelled &&
                                                              !a.IsDeleted);
 
@@ -1357,10 +1495,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 return await _context.ScheduleExceptions
                     .AnyAsync(se => se.ScheduleId == scheduleId &&
-                                   se.StartDate.Date <= date.Date &&
-                                   (se.EndDate == null || se.EndDate.Value.Date >= date.Date) &&
+                                   DbFunctions.TruncateTime(se.StartDate) <= DbFunctions.TruncateTime(date) &&
+                                   (se.EndDate == null || DbFunctions.TruncateTime(se.EndDate.Value) >= DbFunctions.TruncateTime(date)) &&
                                    (se.Type == ExceptionType.PublicHoliday || 
                                     se.Type == ExceptionType.Holiday ||
                                     se.Type == ExceptionType.Vacation ||
@@ -1382,10 +1521,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 return await _context.ScheduleExceptions
                     .AnyAsync(se => se.ScheduleId == scheduleId &&
-                                   se.StartDate.Date == date.Date &&
-                                   (se.EndDate == null || se.EndDate.Value.Date == date.Date) &&
+                                   DbFunctions.TruncateTime(se.StartDate) == DbFunctions.TruncateTime(date) &&
+                                   (se.EndDate == null || DbFunctions.TruncateTime(se.EndDate.Value) == DbFunctions.TruncateTime(date)) &&
                                    se.StartTime.HasValue &&
                                    se.EndTime.HasValue &&
                                    // بررسی تداخل بازه زمانی
@@ -1659,13 +1799,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 catch (InvalidOperationException)
                 {
                     // ✅ Rollback Transaction و پرتاب مجدد Exception
-                    transaction.Rollback();
+                    SafeRollback(transaction, "DeleteDoctorScheduleAsync");
                     throw; // پرتاب مجدد همان Exception
                 }
                 catch (Exception ex)
                 {
                     // ✅ Rollback Transaction در صورت خطا
-                    transaction.Rollback();
+                    SafeRollback(transaction, "DeleteDoctorScheduleAsync");
                     throw new InvalidOperationException($"خطا در حذف برنامه کاری {scheduleId}", ex);
                 }
             }

@@ -796,11 +796,50 @@
                 $.ajax({
                     url: '@Url.Action("GetTimeSlots", "Appointment")',
                     type: 'GET',
+                    dataType: 'json', // ✅ مشخص کردن dataType به صورت صریح
                     data: { doctorId: doctorId, date: date },
                     success: function (response) {
                         console.log('Response from GetTimeSlots:', response);
+                        console.log('Response type:', typeof response);
+                        console.log('Response.success:', response.success);
+                        console.log('Response.slots:', response.slots);
+                        console.log('Response.slots type:', typeof response.slots);
+                        console.log('Response.slots isArray:', Array.isArray(response.slots));
+                        console.log('Response.slots length:', response.slots ? response.slots.length : 'null/undefined');
                         
-                        if (response.success && response.slots && response.slots.length > 0) {
+                        // ✅ بررسی اینکه آیا response.slots یک آرایه است و دارای عنصر است
+                        var slotsArray = response.slots;
+                        
+                        // ✅ اگر response.slots یک string است (JSON stringified)، آن را parse کن
+                        if (typeof slotsArray === 'string') {
+                            try {
+                                slotsArray = JSON.parse(slotsArray);
+                                console.log('Parsed slotsArray from string:', slotsArray);
+                            } catch (e) {
+                                console.error('Error parsing slotsArray:', e);
+                            }
+                        }
+                        
+                        // ✅ اگر response.slots یک object است اما آرایه نیست، آن را به آرایه تبدیل کن
+                        if (slotsArray && !Array.isArray(slotsArray) && typeof slotsArray === 'object') {
+                            console.warn('response.slots is not an array, trying to convert...');
+                            slotsArray = Object.values(slotsArray);
+                            console.log('Converted slotsArray:', slotsArray);
+                        }
+                        
+                        // ✅ بررسی نهایی
+                        var hasValidSlots = response && 
+                                           response.success === true && 
+                                           slotsArray && 
+                                           Array.isArray(slotsArray) && 
+                                           slotsArray.length > 0;
+                        
+                        console.log('hasValidSlots:', hasValidSlots);
+                        console.log('Final slotsArray:', slotsArray);
+                        
+                        if (hasValidSlots) {
+                            // استفاده از slotsArray به جای response.slots
+                            response.slots = slotsArray;
                             var html = '';
                             var availableCount = 0;
                             var unavailableCount = 0;

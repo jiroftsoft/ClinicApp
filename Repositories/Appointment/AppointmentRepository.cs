@@ -158,12 +158,13 @@ namespace ClinicApp.Repositories.Appointment
                 var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
 
                 // بررسی نوبت‌های موجود که با این بازه زمانی تداخل دارند
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 var conflictingAppointment = await _context.Appointments
                     .AnyAsync(a =>
                         a.DoctorId == doctorId &&
                         !a.IsDeleted &&
                         a.Status != AppointmentStatus.Cancelled &&
-                        a.AppointmentDate.Date == appointmentDate.Date &&
+                        DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(appointmentDate) &&
                         ((a.AppointmentDate >= appointmentDateTime && a.AppointmentDate < appointmentEndDateTime) ||
                          (a.AppointmentDate.AddMinutes(a.Duration) > appointmentDateTime && 
                           a.AppointmentDate.AddMinutes(a.Duration) <= appointmentEndDateTime) ||
@@ -191,11 +192,12 @@ namespace ClinicApp.Repositories.Appointment
         {
             try
             {
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 var appointments = await _context.Appointments
                     .Where(a =>
                         a.DoctorId == doctorId &&
                         !a.IsDeleted &&
-                        a.AppointmentDate.Date == date.Date &&
+                        DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
                         a.Status != AppointmentStatus.Cancelled)
                     .OrderBy(a => a.AppointmentDate)
                     .ToListAsync();
