@@ -138,9 +138,75 @@
         }
 
         .time-slot.unavailable {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ffc107;
+            position: relative;
+        }
+
+        .time-slot.unavailable::after {
+            content: 'پر شده';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 193, 7, 0.9);
+            color: #856404;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .time-slot.unavailable:hover {
+            transform: none;
+            border-color: #ffc107;
+        }
+
+        .selected-date-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border-right: 4px solid var(--medical-primary);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
+            animation: slideInDown 0.4s ease-out;
+        }
+
+        .selected-date-content {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--medical-primary);
+        }
+
+        .selected-date-content i {
+            font-size: 1.3rem;
+            color: var(--medical-primary);
+        }
+
+        .slots-count-badge {
+            background: var(--medical-primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        @@keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .bio-section {
@@ -294,8 +360,20 @@
             </div>
         </div>
 
+        <!-- نمایش تاریخ انتخاب شده -->
+        <div id="selectedDateDisplay" class="selected-date-display" style="display: none;">
+            <div class="selected-date-content">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span id="selectedDateText"></span>
+            </div>
+        </div>
+
         <div id="timeSlotsContainer">
-            <h6 class="mb-3">زمان‌های در دسترس:</h6>
+            <h6 class="mb-3">
+                <i class="fas fa-clock me-2"></i>
+                زمان‌های در دسترس:
+                <span id="slotsCount" class="slots-count-badge"></span>
+            </h6>
             <div class="time-slot-grid" id="timeSlotsGrid">
                 @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
                 {
@@ -336,6 +414,7 @@
 }
 
 @section Scripts {
+    <script src="~/Content/plugins/persian-datepicker/jalaali.min.js"></script>
     <script src="~/Content/plugins/persian-datepicker/persian-date.min.js"></script>
     <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
     <script src="~/Content/plugins/toastr/toastr.min.js"></script>
@@ -365,8 +444,28 @@
             var selectedTime = null;
             var doctorId = @Model.DoctorId;
 
+            // محاسبه و نمایش خودکار تاریخ برای هر روز
+            function initializeDayDates() {
+                $('.schedule-day-card.clickable').each(function () {
+                    var $card = $(this);
+                    var dayOfWeek = parseInt($card.data('day')); // 0 = یکشنبه, 6 = شنبه
+                    var targetDate = getNextDateForDayOfWeek(dayOfWeek);
+                    
+                    if (targetDate) {
+                        var persianDate = convertToPersianDate(targetDate);
+                        if (persianDate) {
+                            $card.find('.day-date-text').html('<strong style="color: var(--medical-primary); font-weight: 600;">' + persianDate + '</strong>');
+                        } else {
+                            $card.find('.day-date-text').html('<span style="color: #6c757d;">برای انتخاب کلیک کنید</span>');
+                        }
+                    } else {
+                        $card.find('.day-date-text').html('<span style="color: #6c757d;">برای انتخاب کلیک کنید</span>');
+                    }
+                });
+            }
+
             // راه‌اندازی Persian DatePicker
-            $("#appointmentDate").pDatepicker({
+            var datePicker = $("#appointmentDate").pDatepicker({
                 observer: true,
                 format: 'YYYY/MM/DD',
                 altField: '#appointmentDateAlt',
@@ -385,10 +484,206 @@
                     // تاریخ انتخاب شده به فرمت YYYY/MM/DD است
                     selectedDate = selectedDateValue;
                     if (selectedDate) {
+                        // نمایش تاریخ انتخاب شده
+                        displaySelectedDate(selectedDateValue);
                         loadTimeSlots(doctorId, selectedDate);
                     }
                 }
             });
+
+            // محاسبه و نمایش خودکار تاریخ برای هر روز بعد از initialize شدن datepicker
+            // چند بار تلاش می‌کنیم تا مطمئن شویم datepicker و jalaali آماده هستند
+            var initAttempts = 0;
+            var maxAttempts = 10;
+            
+            function tryInitializeDayDates() {
+                initAttempts++;
+                
+                // بررسی آماده بودن datepicker و jalaali
+                var datePickerReady = $("#appointmentDate").data('pDatepicker') !== undefined;
+                var jalaaliReady = typeof jalaali !== 'undefined' && typeof jalaali.toJalaali === 'function';
+                
+                if (datePickerReady || jalaaliReady || initAttempts >= maxAttempts) {
+                    initializeDayDates();
+                } else {
+                    setTimeout(tryInitializeDayDates, 200);
+                }
+            }
+            
+            // شروع تلاش برای initialize
+            setTimeout(tryInitializeDayDates, 300);
+
+            // کلیک روی روزهای برنامه کاری برای انتخاب تاریخ
+            $(document).on('click', '.schedule-day-card.clickable', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                var dayOfWeek = parseInt($(this).data('day')); // 0 = یکشنبه, 6 = شنبه
+                var dayName = $(this).data('day-name');
+                
+                // پیدا کردن تاریخ آینده برای این روز هفته
+                var targetDate = getNextDateForDayOfWeek(dayOfWeek);
+                
+                if (targetDate) {
+                    // تبدیل به تاریخ شمسی
+                    var persianDate = convertToPersianDate(targetDate);
+                    
+                    if (persianDate) {
+                        // تنظیم تاریخ در datepicker
+                        var datePickerInstance = $("#appointmentDate").data('pDatepicker');
+                        if (datePickerInstance) {
+                            try {
+                                // تبدیل تاریخ میلادی به شمسی برای datepicker
+                                var persianParts = persianDate.split('/');
+                                if (persianParts.length === 3) {
+                                    var year = parseInt(persianParts[0]);
+                                    var month = parseInt(persianParts[1]);
+                                    var day = parseInt(persianParts[2]);
+                                    
+                                    // تنظیم تاریخ در datepicker
+                                    datePickerInstance.setDate([year, month, day]);
+                                    
+                                    // نمایش تاریخ انتخاب شده
+                                    displaySelectedDate(persianDate);
+                                    
+                                    // بارگذاری اسلات‌های زمانی
+                                    loadTimeSlots(doctorId, persianDate);
+                                    
+                                    // نمایش پیام موفقیت
+                                    toastr.success(dayName + ' - تاریخ: ' + persianDate, 'تاریخ انتخاب شد', {
+                                        timeOut: 3000
+                                    });
+                                    
+                                    // به‌روزرسانی نمایش تاریخ در کارت روز
+                                    $(this).find('.day-date-text').html('<strong style="color: var(--medical-primary);">' + persianDate + '</strong>');
+                                    
+                                    // اضافه کردن کلاس برای نمایش تاریخ انتخاب شده
+                                    $('.schedule-day-card').removeClass('selected-day');
+                                    $(this).addClass('selected-day');
+                                }
+                            } catch (err) {
+                                console.error('خطا در تنظیم تاریخ:', err);
+                                toastr.error('خطا در انتخاب تاریخ', 'خطا');
+                            }
+                        } else {
+                            // اگر datepicker هنوز initialize نشده، فقط تاریخ را نمایش می‌دهیم
+                            displaySelectedDate(persianDate);
+                            loadTimeSlots(doctorId, persianDate);
+                            toastr.success(dayName + ' - تاریخ: ' + persianDate, 'تاریخ انتخاب شد');
+                        }
+                    } else {
+                        toastr.warning('خطا در تبدیل تاریخ', 'هشدار');
+                    }
+                } else {
+                    toastr.warning('خطا در محاسبه تاریخ', 'هشدار');
+                }
+            });
+
+            // پیدا کردن تاریخ آینده برای یک روز هفته مشخص
+            function getNextDateForDayOfWeek(targetDayOfWeek) {
+                var today = new Date();
+                var currentDayOfWeek = today.getDay(); // 0 = یکشنبه, 6 = شنبه
+                
+                // محاسبه تعداد روزهای باقی‌مانده تا روز هدف
+                var daysUntilTarget = (targetDayOfWeek - currentDayOfWeek + 7) % 7;
+                
+                // اگر امروز همان روز است، 7 روز بعد را انتخاب می‌کنیم
+                if (daysUntilTarget === 0) {
+                    daysUntilTarget = 7;
+                }
+                
+                var targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + daysUntilTarget);
+                
+                return targetDate;
+            }
+
+            // تبدیل تاریخ میلادی به شمسی
+            function convertToPersianDate(gregorianDate) {
+                try {
+                    // استفاده از jalaali.js که در persian-datepicker موجود است
+                    if (typeof jalaali !== 'undefined' && typeof jalaali.toJalaali === 'function') {
+                        var jDate = jalaali.toJalaali(
+                            gregorianDate.getFullYear(),
+                            gregorianDate.getMonth() + 1,
+                            gregorianDate.getDate()
+                        );
+                        
+                        if (jDate && jDate.jy && jDate.jm && jDate.jd) {
+                            var year = jDate.jy.toString().padStart(4, '0');
+                            var month = jDate.jm.toString().padStart(2, '0');
+                            var day = jDate.jd.toString().padStart(2, '0');
+                            return year + '/' + month + '/' + day;
+                        }
+                    }
+                    
+                    // استفاده از persian-datepicker API
+                    var datePickerInstance = $("#appointmentDate").data('pDatepicker');
+                    if (datePickerInstance && datePickerInstance.calendar) {
+                        var calendar = datePickerInstance.calendar;
+                        
+                        if (calendar.persian && typeof calendar.persian.toPersian === 'function') {
+                            try {
+                                var persianDateObj = calendar.persian.toPersian(
+                                    gregorianDate.getFullYear(),
+                                    gregorianDate.getMonth() + 1,
+                                    gregorianDate.getDate()
+                                );
+                                
+                                if (persianDateObj && Array.isArray(persianDateObj) && persianDateObj.length >= 3) {
+                                    var year = persianDateObj[0].toString().padStart(4, '0');
+                                    var month = persianDateObj[1].toString().padStart(2, '0');
+                                    var day = persianDateObj[2].toString().padStart(2, '0');
+                                    return year + '/' + month + '/' + day;
+                                }
+                            } catch (e) {
+                                console.log('خطا در تبدیل با persian-datepicker:', e);
+                            }
+                        }
+                    }
+                    
+                    // Fallback: استفاده از API datepicker برای تبدیل
+                    try {
+                        var tempInput = $('<input>').css('display', 'none');
+                        $('body').append(tempInput);
+                        
+                        var tempPicker = tempInput.pDatepicker({
+                            calendarType: 'persian',
+                            format: 'YYYY/MM/DD'
+                        });
+                        
+                        // تنظیم تاریخ میلادی
+                        tempPicker.setDate(gregorianDate);
+                        
+                        // دریافت تاریخ شمسی
+                        var persianDateStr = tempInput.val();
+                        tempInput.remove();
+                        
+                        if (persianDateStr) {
+                            return persianDateStr;
+                        }
+                    } catch (e) {
+                        console.error('خطا در تبدیل با datepicker:', e);
+                    }
+                } catch (e) {
+                    console.error('خطا در تبدیل تاریخ:', e);
+                }
+                
+                // آخرین Fallback: استفاده از محاسبه تقریبی
+                var year = gregorianDate.getFullYear();
+                var month = gregorianDate.getMonth() + 1;
+                var day = gregorianDate.getDate();
+                
+                // تبدیل تقریبی
+                var persianYear = year - 621;
+                if (month <= 3) {
+                    persianYear = year - 622;
+                }
+                
+                return persianYear.toString().padStart(4, '0') + '/' + 
+                       month.toString().padStart(2, '0') + '/' + 
+                       day.toString().padStart(2, '0');
+            }
 
             // انتخاب زمان
             $(document).on('click', '.time-slot.available', function () {
@@ -402,6 +697,40 @@
                 toastr.success('زمان انتخاب شد: ' + $(this).text(), 'موفق');
             });
 
+            // نمایش تاریخ انتخاب شده
+            function displaySelectedDate(persianDate) {
+                if (!persianDate) return;
+                
+                // تبدیل تاریخ شمسی به میلادی برای محاسبه DayOfWeek
+                var parts = persianDate.split('/');
+                if (parts.length !== 3) return;
+                
+                var year = parseInt(parts[0]);
+                var month = parseInt(parts[1]);
+                var day = parseInt(parts[2]);
+                
+                // استفاده از persian-datepicker برای تبدیل
+                var datePicker = $("#appointmentDate").data('pDatepicker');
+                if (datePicker && datePicker.selected) {
+                    // دریافت تاریخ میلادی از datepicker
+                    var gregorianDate = datePicker.selected.gD || new Date();
+                    var dayOfWeek = gregorianDate.getDay();
+                    
+                    // دریافت نام روز هفته
+                    var dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+                    var dayName = dayNames[dayOfWeek] || '';
+                    
+                    // نمایش تاریخ
+                    var dateText = dayName + ' تاریخ: ' + persianDate;
+                    $('#selectedDateText').text(dateText);
+                    $('#selectedDateDisplay').fadeIn(300);
+                } else {
+                    // Fallback: نمایش فقط تاریخ
+                    $('#selectedDateText').text('تاریخ: ' + persianDate);
+                    $('#selectedDateDisplay').fadeIn(300);
+                }
+            }
+
             // بارگذاری اسلات‌های زمانی
             function loadTimeSlots(doctorId, date) {
                 if (!date) {
@@ -411,6 +740,7 @@
 
                 // نمایش loading
                 $('#timeSlotsGrid').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</div>');
+                $('#slotsCount').text('');
 
                 $.ajax({
                     url: '@Url.Action("GetTimeSlots", "Appointment")',
@@ -419,9 +749,19 @@
                     success: function (response) {
                         if (response.success && response.slots) {
                             var html = '';
+                            var availableCount = 0;
+                            var unavailableCount = 0;
+                            
                             response.slots.forEach(function (slot) {
                                 var cssClass = slot.isAvailable ? 'available' : 'unavailable';
                                 var disabled = slot.isAvailable ? '' : 'data-disabled=true';
+                                
+                                if (slot.isAvailable) {
+                                    availableCount++;
+                                } else {
+                                    unavailableCount++;
+                                }
+                                
                                 html += '<div class="time-slot ' + cssClass + '" ' +
                                     'data-start="' + slot.startTime + '" ' +
                                     'data-end="' + slot.endTime + '" ' +
@@ -429,14 +769,31 @@
                                     slot.displayTime +
                                     '</div>';
                             });
+                            
                             $('#timeSlotsGrid').html(html);
+                            
+                            // نمایش تعداد اسلات‌ها
+                            var countText = '';
+                            if (availableCount > 0) {
+                                countText = availableCount + ' نوبت خالی';
+                            }
+                            if (unavailableCount > 0) {
+                                if (countText) countText += ' • ';
+                                countText += unavailableCount + ' نوبت پر شده';
+                            }
+                            $('#slotsCount').text(countText);
+                            
                             selectedTime = null;
                             $('#bookAppointmentBtn').prop('disabled', true);
                         } else {
-                            toastr.error(response.message || 'خطا در دریافت زمان‌های در دسترس', 'خطا');
+                            $('#timeSlotsGrid').html('<div class="text-center p-4 text-muted"><i class="fas fa-info-circle me-2"></i>' + (response.message || 'زمانی در دسترس نیست') + '</div>');
+                            $('#slotsCount').text('');
+                            toastr.warning(response.message || 'زمانی در دسترس نیست', 'اطلاعات');
                         }
                     },
                     error: function () {
+                        $('#timeSlotsGrid').html('<div class="text-center p-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>خطا در ارتباط با سرور</div>');
+                        $('#slotsCount').text('');
                         toastr.error('خطا در ارتباط با سرور', 'خطا');
                     }
                 });

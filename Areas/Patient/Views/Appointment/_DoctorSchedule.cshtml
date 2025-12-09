@@ -22,10 +22,14 @@
         <div class="schedule-grid">
             @foreach (var workDay in Model.WorkDays)
             {
-                <div class="schedule-day-card" data-day="@workDay.DayOfWeek">
+                <div class="schedule-day-card clickable" data-day="@workDay.DayOfWeek" data-day-name="@workDay.DayName" title="برای انتخاب تاریخ این روز کلیک کنید">
                     <div class="day-header">
                         <div class="day-name">@workDay.DayName</div>
                         <div class="day-name-short">@workDay.DayNameShort</div>
+                    </div>
+                    <div class="day-date-preview" style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem; text-align: center; font-style: italic;">
+                        <i class="fas fa-calendar-alt" style="margin-left: 0.25rem;"></i>
+                        <span class="day-date-text" data-day-of-week="@workDay.DayOfWeek">در حال محاسبه...</span>
                     </div>
                     
                     @if (workDay.TimeRanges != null && workDay.TimeRanges.Any())
@@ -155,6 +159,15 @@ else
         animation-fill-mode: both;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
+    }
+    
+    .schedule-day-card.clickable {
+        cursor: pointer;
+    }
+    
+    .schedule-day-card.clickable:hover {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     }
 
     .schedule-day-card::before {
@@ -176,6 +189,35 @@ else
 
     .schedule-day-card:hover::before {
         transform: scaleY(1);
+    }
+    
+    .schedule-day-card.clickable:active {
+        transform: translateY(-2px) scale(0.98);
+    }
+    
+    .day-date-preview {
+        transition: all 0.3s ease;
+        min-height: 1.5rem;
+    }
+    
+    .schedule-day-card.clickable:hover .day-date-preview {
+        color: var(--medical-primary);
+        font-weight: 500;
+    }
+    
+    .schedule-day-card.clickable:hover .day-date-preview i {
+        color: var(--medical-primary);
+    }
+    
+    .schedule-day-card.selected-day {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px solid var(--medical-primary);
+        box-shadow: 0 4px 20px rgba(44, 90, 160, 0.25);
+    }
+    
+    .schedule-day-card.selected-day::before {
+        transform: scaleY(1);
+        width: 6px;
     }
 
     .schedule-day-card:nth-child(1) { animation-delay: 0.1s; }

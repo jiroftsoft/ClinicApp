@@ -322,6 +322,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     // ✅ Commit Transaction در صورت موفقیت
                     transaction.Commit();
 
+                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس (بعد از Commit)
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی");
+                    await GenerateAndSaveTimeSlotsAsync(schedule.DoctorId, schedule.ScheduleId);
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
+
                     return schedule;
                 }
                 catch (Exception ex)
@@ -402,6 +407,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] 💾 شروع ذخیره تغییرات در دیتابیس");
                     await _context.SaveChangesAsync();
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ تغییرات با موفقیت ذخیره شد");
+
+                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس
+                    System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی");
+                    await GenerateAndSaveTimeSlotsAsync(existingSchedule.DoctorId, existingSchedule.ScheduleId);
+                    System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
 
                     // ✅ Commit Transaction در صورت موفقیت
                     transaction.Commit();
@@ -1065,6 +1075,183 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ❌ InnerException: {ex.InnerException.Message}");
                 }
                 throw new InvalidOperationException($"خطا در دریافت اسلات‌های زمانی خالی برای پزشک {doctorId} در تاریخ {date:yyyy/MM/dd}", ex);
+            }
+        }
+
+        /// <summary>
+        /// تولید و ذخیره اسلات‌های زمانی در دیتابیس برای یک بازه زمانی مشخص
+        /// این متد هنگام ایجاد یا به‌روزرسانی برنامه کاری فراخوانی می‌شود
+        /// </summary>
+        public async Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🔍 شروع - DoctorId: {doctorId}, ScheduleId: {scheduleId}, DaysAhead: {daysAhead}");
+
+                // دریافت برنامه کاری با جزئیات
+                var doctorSchedule = await _context.DoctorSchedules
+                    .Where(ds => ds.ScheduleId == scheduleId && ds.DoctorId == doctorId && !ds.IsDeleted && ds.IsActive)
+                    .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
+                    .FirstOrDefaultAsync();
+
+                if (doctorSchedule == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ برنامه کاری یافت نشد");
+                    return;
+                }
+
+                var startDate = DateTime.Today;
+                var endDate = startDate.AddDays(daysAhead);
+                var generatedSlots = new List<DoctorTimeSlot>();
+
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 📅 تولید اسلات‌ها از {startDate:yyyy/MM/dd} تا {endDate:yyyy/MM/dd}");
+
+                // تولید اسلات‌ها برای هر روز در بازه زمانی
+                for (var date = startDate; date < endDate; date = date.AddDays(1))
+                {
+                    // بررسی تعطیلات رسمی
+                    if (IsPersianHoliday(date))
+                        continue;
+
+                    // بررسی ScheduleExceptions
+                    var hasScheduleException = await HasScheduleExceptionAsync(scheduleId, date);
+                    if (hasScheduleException)
+                        continue;
+
+                    var dayOfWeek = (int)date.DayOfWeek;
+                    var workDays = doctorSchedule.WorkDays?
+                        .Where(wd => wd.DayOfWeek == dayOfWeek && wd.IsActive && !wd.IsDeleted)
+                        .ToList() ?? new List<DoctorWorkDay>();
+
+                    foreach (var workDay in workDays)
+                    {
+                        var activeTimeRanges = workDay.TimeRanges?
+                            .Where(tr => tr.IsActive && !tr.IsDeleted)
+                            .ToList() ?? new List<DoctorTimeRange>();
+
+                        foreach (var timeRange in activeTimeRanges)
+                        {
+                            var currentTime = timeRange.StartTime;
+                            var endTime = timeRange.EndTime;
+
+                            while (currentTime < endTime)
+                            {
+                                var slotEndTime = currentTime.Add(TimeSpan.FromMinutes(doctorSchedule.AppointmentDuration));
+
+                                if (slotEndTime <= endTime)
+                                {
+                                    // بررسی ScheduleExceptions جزئی
+                                    var hasPartialException = await HasPartialScheduleExceptionAsync(
+                                        scheduleId, date, currentTime, slotEndTime);
+
+                                    if (!hasPartialException)
+                                    {
+                                        // بررسی وجود اسلات در دیتابیس
+                                        var existingSlot = await _context.DoctorTimeSlots
+                                            .FirstOrDefaultAsync(ts => ts.DoctorId == doctorId &&
+                                                                      ts.AppointmentDate.Date == date.Date &&
+                                                                      ts.StartTime == currentTime &&
+                                                                      ts.EndTime == slotEndTime &&
+                                                                      !ts.IsDeleted);
+
+                                        if (existingSlot == null)
+                                        {
+                                            // بررسی وجود نوبت رزرو شده
+                                            var hasExistingAppointment = await _context.Appointments
+                                                .AnyAsync(a => a.DoctorId == doctorId &&
+                                                             a.AppointmentDate.Date == date.Date &&
+                                                             a.AppointmentDate.TimeOfDay >= currentTime &&
+                                                             a.AppointmentDate.TimeOfDay < slotEndTime &&
+                                                             a.Status != AppointmentStatus.Cancelled &&
+                                                             !a.IsDeleted);
+
+                                            if (!hasExistingAppointment)
+                                            {
+                                                generatedSlots.Add(new DoctorTimeSlot
+                                                {
+                                                    DoctorId = doctorId,
+                                                    AppointmentDate = date,
+                                                    StartTime = currentTime,
+                                                    EndTime = slotEndTime,
+                                                    Duration = doctorSchedule.AppointmentDuration,
+                                                    Status = AppointmentStatus.Available,
+                                                    CreatedAt = DateTime.Now,
+                                                    CreatedByUserId = doctorSchedule.UpdatedByUserId ?? doctorSchedule.CreatedByUserId
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+
+                                currentTime = slotEndTime;
+                            }
+                        }
+                    }
+                }
+
+                // حذف اسلات‌های قدیمی که دیگر در برنامه کاری نیستند
+                var oldSlots = await _context.DoctorTimeSlots
+                    .Where(ts => ts.DoctorId == doctorId &&
+                               ts.AppointmentDate >= startDate &&
+                               ts.AppointmentDate < endDate &&
+                               ts.Status == AppointmentStatus.Available &&
+                               !ts.IsDeleted)
+                    .ToListAsync();
+
+                var slotsToDelete = oldSlots.Where(oldSlot =>
+                {
+                    var dayOfWeek = (int)oldSlot.AppointmentDate.DayOfWeek;
+                    var workDays = doctorSchedule.WorkDays?
+                        .Where(wd => wd.DayOfWeek == dayOfWeek && wd.IsActive && !wd.IsDeleted)
+                        .ToList() ?? new List<DoctorWorkDay>();
+
+                    foreach (var workDay in workDays)
+                    {
+                        var activeTimeRanges = workDay.TimeRanges?
+                            .Where(tr => tr.IsActive && !tr.IsDeleted)
+                            .ToList() ?? new List<DoctorTimeRange>();
+
+                        foreach (var timeRange in activeTimeRanges)
+                        {
+                            if (oldSlot.StartTime >= timeRange.StartTime &&
+                                oldSlot.EndTime <= timeRange.EndTime &&
+                                oldSlot.Duration == doctorSchedule.AppointmentDuration)
+                            {
+                                return false; // این اسلات هنوز معتبر است
+                            }
+                        }
+                    }
+
+                    return true; // این اسلات دیگر معتبر نیست
+                }).ToList();
+
+                if (slotsToDelete.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🗑️ حذف {slotsToDelete.Count} اسلات قدیمی");
+                    foreach (var slot in slotsToDelete)
+                    {
+                        slot.IsDeleted = true;
+                        slot.DeletedAt = DateTime.Now;
+                        slot.DeletedByUserId = doctorSchedule.UpdatedByUserId ?? doctorSchedule.CreatedByUserId;
+                    }
+                }
+
+                // اضافه کردن اسلات‌های جدید
+                if (generatedSlots.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ➕ اضافه کردن {generatedSlots.Count} اسلات جدید");
+                    _context.DoctorTimeSlots.AddRange(generatedSlots);
+                }
+
+                await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ اسلات‌های زمانی با موفقیت ذخیره شدند");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ خطا: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ StackTrace: {ex.StackTrace}");
+                throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای پزشک {doctorId}", ex);
             }
         }
 
