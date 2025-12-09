@@ -291,7 +291,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                             
                             var persianCalendar = new System.Globalization.PersianCalendar();
                             appointmentDate = persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
-                            _logger.Information("تاریخ شمسی تبدیل شد: {PersianDate} -> {Date}", date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"));
+                            appointmentDate = appointmentDate.Date; // فقط تاریخ، بدون زمان
+                            _logger.Information("تاریخ شمسی تبدیل شد: {PersianDate} -> {Date}, DayOfWeek: {DayOfWeek}", 
+                                date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
                         }
                         // سوم: استفاده از PersianDateHelper
                         else
@@ -329,7 +331,7 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 var result = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, appointmentDate);
                 
-                if (result.Success && result.Data != null)
+                if (result.Success && result.Data != null && result.Data.Any())
                 {
                     _logger.Information("اسلات‌های زمانی با موفقیت دریافت شد - DoctorId: {DoctorId}, Count: {Count}",
                         doctorId, result.Data.Count);
@@ -348,6 +350,18 @@ namespace ClinicApp.Areas.Patient.Controllers
                         })
                     }, JsonRequestBehavior.AllowGet);
                 }
+                else if (result.Success && result.Data != null && !result.Data.Any())
+                {
+                    // اگر اسلات‌ها خالی است، پیام مناسب برگردان
+                    _logger.Information("هیچ اسلاتی برای این تاریخ یافت نشد - DoctorId: {DoctorId}, Date: {Date}, DayOfWeek: {DayOfWeek}",
+                        doctorId, appointmentDate.ToString("yyyy/MM/dd"), appointmentDate.DayOfWeek);
+                    return Json(new
+                    {
+                        success = true,
+                        slots = new object[0],
+                        message = "برای این تاریخ زمانی در دسترس نیست. لطفاً یکی از روزهای کاری پزشک را انتخاب کنید."
+                    }, JsonRequestBehavior.AllowGet);
+                }
                 else
                 {
                     _logger.Warning("خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, Message: {Message}",
@@ -361,8 +375,16 @@ namespace ClinicApp.Areas.Patient.Controllers
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, Exception: {ExceptionMessage}, StackTrace: {StackTrace}",
-                    doctorId, date ?? "null", ex.Message, ex.StackTrace);
+                _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                    doctorId, date ?? "null", ex.GetType().Name, ex.Message, ex.StackTrace);
+                
+                // بررسی InnerException
+                if (ex.InnerException != null)
+                {
+                    _logger.Error(ex.InnerException, "InnerException در دریافت اسلات‌های زمانی - Message: {Message}",
+                        ex.InnerException.Message);
+                }
+                
                 return Json(new
                 {
                     success = false,

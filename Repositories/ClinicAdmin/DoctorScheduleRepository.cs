@@ -319,13 +319,26 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     
                     await _context.SaveChangesAsync();
 
-                    // ✅ Commit Transaction در صورت موفقیت
-                    transaction.Commit();
-
-                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس (بعد از Commit)
+                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس (قبل از Commit)
+                    // ✅ این کار در همان Transaction انجام می‌شود تا در صورت خطا، همه چیز Rollback شود
                     System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی");
-                    await GenerateAndSaveTimeSlotsAsync(schedule.DoctorId, schedule.ScheduleId);
-                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
+                    try
+                    {
+                        await GenerateAndSaveTimeSlotsAsync(schedule.DoctorId, schedule.ScheduleId);
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
+                    }
+                    catch (Exception slotEx)
+                    {
+                        // ✅ اگر تولید اسلات‌ها با خطا مواجه شد، Transaction را Rollback می‌کنیم
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ خطا در تولید اسلات‌های زمانی: {slotEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ❌ StackTrace: {slotEx.StackTrace}");
+                        transaction.Rollback();
+                        throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای برنامه کاری: {slotEx.Message}", slotEx);
+                    }
+
+                    // ✅ Commit Transaction در صورت موفقیت کامل (شامل تولید اسلات‌ها)
+                    transaction.Commit();
+                    System.Diagnostics.Debug.WriteLine($"[AddDoctorScheduleAsync] ✅ Transaction با موفقیت Commit شد");
 
                     return schedule;
                 }
@@ -408,12 +421,24 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     await _context.SaveChangesAsync();
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ تغییرات با موفقیت ذخیره شد");
 
-                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس
+                    // ✅ تولید و ذخیره اسلات‌های زمانی در دیتابیس (قبل از Commit)
+                    // ✅ این کار در همان Transaction انجام می‌شود تا در صورت خطا، همه چیز Rollback شود
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] 🔄 شروع تولید اسلات‌های زمانی");
-                    await GenerateAndSaveTimeSlotsAsync(existingSchedule.DoctorId, existingSchedule.ScheduleId);
-                    System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
+                    try
+                    {
+                        await GenerateAndSaveTimeSlotsAsync(existingSchedule.DoctorId, existingSchedule.ScheduleId);
+                        System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ تولید اسلات‌های زمانی با موفقیت انجام شد");
+                    }
+                    catch (Exception slotEx)
+                    {
+                        // ✅ اگر تولید اسلات‌ها با خطا مواجه شد، Transaction را Rollback می‌کنیم
+                        System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ خطا در تولید اسلات‌های زمانی: {slotEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ❌ StackTrace: {slotEx.StackTrace}");
+                        transaction.Rollback();
+                        throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای برنامه کاری: {slotEx.Message}", slotEx);
+                    }
 
-                    // ✅ Commit Transaction در صورت موفقیت
+                    // ✅ Commit Transaction در صورت موفقیت کامل (شامل تولید اسلات‌ها)
                     transaction.Commit();
                     System.Diagnostics.Debug.WriteLine($"[UpdateDoctorScheduleAsync] ✅ Transaction با موفقیت Commit شد");
 
@@ -1097,9 +1122,19 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 if (doctorSchedule == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ برنامه کاری یافت نشد");
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ برنامه کاری یافت نشد - ScheduleId: {scheduleId}, DoctorId: {doctorId}");
+                    throw new InvalidOperationException($"برنامه کاری با شناسه {scheduleId} برای پزشک {doctorId} یافت نشد یا غیرفعال است.");
+                }
+
+                // ✅ بررسی وجود WorkDays
+                if (doctorSchedule.WorkDays == null || !doctorSchedule.WorkDays.Any(wd => wd.IsActive && !wd.IsDeleted))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ WorkDay فعالی برای این برنامه کاری وجود ندارد");
+                    // این یک هشدار است، نه خطا - ممکن است پزشک هنوز روزهای کاری را تنظیم نکرده باشد
                     return;
                 }
+
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ برنامه کاری یافت شد - WorkDaysCount: {doctorSchedule.WorkDays?.Count(wd => wd.IsActive && !wd.IsDeleted) ?? 0}");
 
                 var startDate = DateTime.Today;
                 var endDate = startDate.AddDays(daysAhead);
@@ -1242,16 +1277,39 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 {
                     System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ➕ اضافه کردن {generatedSlots.Count} اسلات جدید");
                     _context.DoctorTimeSlots.AddRange(generatedSlots);
+                    
+                    // ✅ ذخیره اسلات‌های جدید
+                    await _context.SaveChangesAsync();
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {generatedSlots.Count} اسلات جدید با موفقیت ذخیره شدند");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ اسلات جدیدی برای تولید وجود ندارد");
+                    // اگر اسلات‌های قدیمی حذف شده‌اند، باید SaveChanges را فراخوانی کنیم
+                    if (slotsToDelete.Any())
+                    {
+                        await _context.SaveChangesAsync();
+                        System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ حذف {slotsToDelete.Count} اسلات قدیمی با موفقیت انجام شد");
+                    }
                 }
 
-                await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ اسلات‌های زمانی با موفقیت ذخیره شدند");
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ فرآیند تولید اسلات‌های زمانی با موفقیت تکمیل شد");
+            }
+            catch (InvalidOperationException)
+            {
+                // ✅ پرتاب مجدد InvalidOperationException بدون تغییر
+                throw;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ خطا: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ ExceptionType: {ex.GetType().Name}");
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ StackTrace: {ex.StackTrace}");
-                throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای پزشک {doctorId}", ex);
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ❌ InnerException: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                }
+                throw new InvalidOperationException($"خطا در تولید اسلات‌های زمانی برای پزشک {doctorId} و برنامه کاری {scheduleId}: {ex.Message}", ex);
             }
         }
 

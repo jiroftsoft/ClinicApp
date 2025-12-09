@@ -372,10 +372,16 @@ namespace ClinicApp.Services.Appointment
                 }
 
                 // دریافت اسلات‌های در دسترس از DoctorScheduleRepository
+                _logger.Information("در حال دریافت اسلات‌های در دسترس از DoctorScheduleRepository - DoctorId: {DoctorId}, Date: {Date}",
+                    doctorId, date.ToString("yyyy/MM/dd"));
                 var availableSlots = await _doctorScheduleRepository.GetAvailableAppointmentSlotsAsync(doctorId, date);
+                _logger.Information("اسلات‌های در دسترس دریافت شد - Count: {Count}", availableSlots?.Count ?? 0);
 
                 // دریافت نوبت‌های رزرو شده
+                _logger.Information("در حال دریافت نوبت‌های رزرو شده - DoctorId: {DoctorId}, Date: {Date}",
+                    doctorId, date.ToString("yyyy/MM/dd"));
                 var bookedAppointments = await _appointmentRepository.GetDoctorAppointmentsByDateAsync(doctorId, date);
+                _logger.Information("نوبت‌های رزرو شده دریافت شد - Count: {Count}", bookedAppointments?.Count() ?? 0);
 
                 // تبدیل به DTO و بررسی دسترسی‌پذیری
                 var slotDtos = availableSlots.Select(slot =>
@@ -412,9 +418,17 @@ namespace ClinicApp.Services.Appointment
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اسلات‌های در دسترس - پزشک: {DoctorId}, تاریخ: {Date}",
-                    doctorId, date.ToString("yyyy/MM/dd"));
-                return ServiceResult<List<AvailableTimeSlotDto>>.Failed("خطا در دریافت اسلات‌های در دسترس");
+                _logger.Error(ex, "خطا در دریافت اسلات‌های در دسترس - پزشک: {DoctorId}, تاریخ: {Date}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                    doctorId, date.ToString("yyyy/MM/dd"), ex.GetType().Name, ex.Message, ex.StackTrace);
+                
+                // بررسی InnerException
+                if (ex.InnerException != null)
+                {
+                    _logger.Error(ex.InnerException, "InnerException در دریافت اسلات‌های در دسترس - Message: {Message}",
+                        ex.InnerException.Message);
+                }
+                
+                return ServiceResult<List<AvailableTimeSlotDto>>.Failed($"خطا در دریافت اسلات‌های در دسترس: {ex.Message}");
             }
         }
 

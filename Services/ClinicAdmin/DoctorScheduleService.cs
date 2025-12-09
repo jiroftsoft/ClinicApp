@@ -696,6 +696,50 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// تولید و ذخیره اسلات‌های زمانی برای یک پزشک در دیتابیس
+        /// </summary>
+        public async Task<ServiceResult> GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90)
+        {
+            try
+            {
+                _logger.Information("درخواست تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, DaysAhead: {DaysAhead}",
+                    doctorId, scheduleId, daysAhead);
+
+                if (doctorId <= 0 || scheduleId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه پزشک یا برنامه کاری نامعتبر است.");
+                }
+
+                // بررسی وجود برنامه کاری
+                var schedule = await _doctorScheduleRepository.GetDoctorScheduleByIdAsync(scheduleId);
+                if (schedule == null || schedule.DoctorId != doctorId)
+                {
+                    _logger.Warning("برنامه کاری با شناسه {ScheduleId} برای پزشک {DoctorId} یافت نشد", scheduleId, doctorId);
+                    return ServiceResult.Failed("برنامه کاری مورد نظر یافت نشد.");
+                }
+
+                // تولید و ذخیره اسلات‌های زمانی
+                await _doctorScheduleRepository.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, daysAhead);
+
+                _logger.Information("اسلات‌های زمانی با موفقیت تولید شدند - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}",
+                    doctorId, scheduleId);
+                return ServiceResult.Successful("اسلات‌های زمانی با موفقیت تولید شدند.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning(ex, "خطای عملیاتی در تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}: {Message}",
+                    doctorId, scheduleId, ex.Message);
+                return ServiceResult.Failed(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطای غیرمنتظره در تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}",
+                    doctorId, scheduleId);
+                return ServiceResult.Failed($"خطا در تولید اسلات‌های زمانی: {ex.Message}");
+            }
+        }
+
         #endregion
 
 

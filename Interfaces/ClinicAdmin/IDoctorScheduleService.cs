@@ -100,5 +100,14 @@ public interface IDoctorScheduleService
     /// <returns>نتیجه عملیات فعال‌سازی</returns>
     Task<ServiceResult> ActivateDoctorScheduleAsync(int scheduleId);
 
+    /// <summary>
+    /// تولید و ذخیره اسلات‌های زمانی برای یک پزشک در دیتابیس
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <param name="daysAhead">تعداد روزهای آینده برای تولید اسلات (پیش‌فرض: 90 روز)</param>
+    /// <returns>نتیجه عملیات تولید اسلات</returns>
+    Task<ServiceResult> GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90);
+
     #endregion
 }

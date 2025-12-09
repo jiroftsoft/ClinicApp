@@ -65,6 +65,14 @@ public interface IDoctorScheduleRepository
     Task<List<DoctorTimeSlot>> GetAvailableAppointmentSlotsAsync(int doctorId, DateTime date);
 
     /// <summary>
+    /// تولید و ذخیره اسلات‌های زمانی برای یک پزشک در دیتابیس
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <param name="daysAhead">تعداد روزهای آینده برای تولید اسلات (پیش‌فرض: 90 روز)</param>
+    Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90);
+
+    /// <summary>
     /// مسدود کردن یک بازه زمانی برای پزشک (مثلا برای مرخصی یا جلسه)
     /// </summary>
     /// <param name="doctorId">شناسه پزشک</param>

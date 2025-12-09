@@ -239,6 +239,45 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
+        /// <summary>
+        /// تولید دستی اسلات‌های زمانی برای یک پزشک
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> GenerateTimeSlots(int doctorId, int scheduleId, int daysAhead = 90)
+        {
+            try
+            {
+                _logger.Information("درخواست تولید دستی اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, DaysAhead: {DaysAhead}",
+                    doctorId, scheduleId, daysAhead);
+
+                if (doctorId <= 0 || scheduleId <= 0)
+                {
+                    return Json(new { success = false, message = "شناسه پزشک یا برنامه کاری نامعتبر است." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // تولید و ذخیره اسلات‌های زمانی از طریق Service
+                var result = await _doctorScheduleService.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, daysAhead);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("خطا در تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, Message: {Message}",
+                        doctorId, scheduleId, result.Message);
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                _logger.Information("اسلات‌های زمانی با موفقیت تولید شدند - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}",
+                    doctorId, scheduleId);
+
+                return Json(new { success = true, message = "اسلات‌های زمانی با موفقیت تولید شدند." }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}",
+                    doctorId, scheduleId);
+                return Json(new { success = false, message = $"خطا در تولید اسلات‌های زمانی: {ex.Message}" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
 
         #region Schedule Overview
