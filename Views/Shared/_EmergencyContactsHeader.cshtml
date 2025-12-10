@@ -1,0 +1,46 @@
+@model List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>
+@{
+    if (Model == null || !Model.Any())
+    {
+        return;
+    }
+}
+
+<div class="emergency-contacts-header bg-danger text-white py-2">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-12">
+                <div class="d-flex flex-wrap justify-content-center align-items-center">
+                    <span class="mr-3 mb-1">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>تماس‌های اضطراری:</strong>
+                    </span>
+                    @foreach (var contact in Model)
+                    {
+                        <a href="tel:@contact.PhoneNumber" class="btn btn-sm btn-light mr-2 mb-1">
+                            <i class="fas fa-phone"></i> @contact.Title: @contact.PhoneNumber
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .emergency-contacts-header {
+        position: sticky;
+        top: 0;
+        z-index: 1050;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .emergency-contacts-header a {
+        transition: all 0.3s ease;
+    }
+    
+    .emergency-contacts-header a:hover {
+        transform: scale(1.05);
+    }
+</style>
+

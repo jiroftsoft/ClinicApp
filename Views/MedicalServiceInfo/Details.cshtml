@@ -1,0 +1,200 @@
+@model ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel
+@{
+    ViewBag.Title = Model.ServiceTitle;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="medical-service-detail-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="card shadow-lg border-0">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" class="card-img-top" alt="@Model.ServiceTitle" style="max-height: 400px; object-fit: cover;">
+                    }
+                    
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <span class="badge badge-primary badge-lg">
+                                <i class="fas fa-tag"></i>
+                                @Model.ServiceCategoryName
+                            </span>
+                            <span class="badge badge-secondary">
+                                <i class="fas fa-barcode"></i>
+                                کد: @Model.ServiceCode
+                            </span>
+                        </div>
+
+                        <h1 class="card-title mb-4">@Model.ServiceTitle</h1>
+
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <div class="alert alert-info mb-4">
+                                <strong>خلاصه:</strong> @Model.Description
+                            </div>
+                        }
+
+                        @if (Model.Price.HasValue)
+                        {
+                            <div class="mb-4 text-center">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h3 class="mb-0">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                            قیمت: @(Model.Price.Value.ToString("N0")) ریال
+                                        </h3>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.Features != null && Model.Features.Any())
+                        {
+                            <div class="mb-4">
+                                <h4>
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    ویژگی‌های خدمت
+                                </h4>
+                                <ul class="list-group">
+                                    @foreach (var feature in Model.Features)
+                                    {
+                                        <li class="list-group-item">
+                                            <i class="fas fa-check text-success mr-2"></i>
+                                            @feature
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.FullDescription))
+                        {
+                            <div class="mb-4">
+                                <h4>توضیحات کامل</h4>
+                                <div class="service-content">
+                                    @Html.Raw(Model.FullDescription)
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.InsuranceCoverage != null && Model.InsuranceCoverage.Any())
+                        {
+                            <div class="mb-4">
+                                <h4>
+                                    <i class="fas fa-shield-alt text-primary"></i>
+                                    پوشش بیمه
+                                </h4>
+                                <ul class="list-group">
+                                    @foreach (var coverage in Model.InsuranceCoverage)
+                                    {
+                                        <li class="list-group-item">
+                                            <i class="fas fa-check-circle text-primary mr-2"></i>
+                                            @coverage
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (Model.RequiredDocuments != null && Model.RequiredDocuments.Any())
+                        {
+                            <div class="mb-4">
+                                <h4>
+                                    <i class="fas fa-file-alt text-info"></i>
+                                    مدارک مورد نیاز
+                                </h4>
+                                <ul class="list-group">
+                                    @foreach (var doc in Model.RequiredDocuments)
+                                    {
+                                        <li class="list-group-item">
+                                            <i class="fas fa-file text-info mr-2"></i>
+                                            @doc
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.EstimatedDuration))
+                        {
+                            <div class="mb-4">
+                                <div class="card border-left-warning">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-clock text-warning"></i>
+                                            مدت زمان تقریبی
+                                        </h5>
+                                        <p class="card-text">@Model.EstimatedDuration</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                        {
+                            <div class="mb-4">
+                                <h4>
+                                    <i class="fas fa-video text-danger"></i>
+                                    ویدیو آموزشی
+                                </h4>
+                                <a href="@Model.VideoUrl" target="_blank" class="btn btn-danger">
+                                    <i class="fas fa-play"></i> مشاهده ویدیو
+                                </a>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+                        {
+                            <div class="mb-4">
+                                <a href="@Model.RelatedLinkUrl" class="btn btn-outline-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> اطلاعات بیشتر
+                                </a>
+                            </div>
+                        }
+
+                        <div class="border-top pt-4 mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-eye text-muted mr-2"></i>
+                                        <span class="text-muted">@Model.ViewCount بازدید</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-right"></i> بازگشت به لیست خدمات
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <style>
+        .medical-service-detail-page {
+            position: relative;
+        }
+
+        .service-content {
+            line-height: 2;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .card.shadow-lg {
+            border-radius: 15px;
+        }
+
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+}
+

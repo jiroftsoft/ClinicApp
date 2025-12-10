@@ -57,7 +57,11 @@ namespace ClinicApp.Interfaces
         /// <summary>
         /// تعداد کل آیتم‌ها (برای سازگاری)
         /// </summary>
-        public int TotalCount => TotalItems;
+        public int TotalCount
+        {
+            get => TotalItems;
+            set => TotalItems = value;
+        }
 
         /// <summary>
         /// تعداد کل صفحات

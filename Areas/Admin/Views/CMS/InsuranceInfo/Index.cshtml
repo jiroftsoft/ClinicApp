@@ -1,0 +1,300 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.InsuranceInfoIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت اطلاعات بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .insurance-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .insurance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #f8f9fa;
+            padding: 5px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-shield-alt text-primary"></i>
+            مدیریت اطلاعات بیمه
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> بیمه جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "InsuranceInfo", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در نام بیمه..." value="@Request.QueryString["SearchTerm"]">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="InsuranceType" class="form-control">
+                        <option value="">همه انواع</option>
+                        @if (ViewBag.InsuranceTypes != null)
+                        {
+                            foreach (var type in ViewBag.InsuranceTypes)
+                            {
+                                <option value="@type.InsuranceType" @(Request.QueryString["InsuranceType"] == type.InsuranceType ? "selected" : "")>@type.DisplayName (@type.Count)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsActive" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
+                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsFeatured" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsFeatured"] == "true" ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Request.QueryString["IsFeatured"] == "false" ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Insurance Infos List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست بیمه‌ها (@Model.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>لوگو</th>
+                                <th>نام بیمه</th>
+                                <th>نوع</th>
+                                <th>درصد پوشش</th>
+                                <th>وضعیت</th>
+                                <th>ویژه</th>
+                                <th>تماس</th>
+                                <th>بازدید</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.LogoUrl))
+                                        {
+                                            <img src="@item.LogoUrl" alt="@item.InsuranceName" class="logo-img">
+                                        }
+                                        else if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@item.ThumbnailUrl" alt="@item.InsuranceName" class="logo-img">
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-shield-alt fa-2x text-muted"></i>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@item.InsuranceName</strong>
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(item.Description.Length > 60 ? item.Description.Substring(0, 60) + "..." : item.Description)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@(GetTypeDisplayName(item.InsuranceType))</span>
+                                    </td>
+                                    <td>
+                                        @if (item.CoveragePercentage.HasValue)
+                                        {
+                                            <span class="badge badge-success">@item.CoveragePercentage.Value%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsFeatured)
+                                        {
+                                            <span class="badge badge-info status-badge">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ContactPhone))
+                                        {
+                                            <small><i class="fas fa-phone"></i> @item.ContactPhone</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@item.ViewCount</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.InsuranceInfoId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.InsuranceInfoId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsActive)
+                                            {
+                                                using (Html.BeginForm("Activate", "InsuranceInfo", new { id = item.InsuranceInfoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Deactivate", "InsuranceInfo", new { id = item.InsuranceInfoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "InsuranceInfo", new { id = item.InsuranceInfoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این بیمه اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ بیمه‌ای یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetTypeDisplayName(string insuranceType)
+    {
+        return insuranceType switch
+        {
+            "basic" => "بیمه پایه",
+            "supplementary" => "بیمه تکمیلی",
+            "private" => "بیمه خصوصی",
+            "government" => "بیمه دولتی",
+            _ => insuranceType ?? "عمومی"
+        };
+    }
+}
+

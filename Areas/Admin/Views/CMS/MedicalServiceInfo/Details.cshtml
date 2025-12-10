@@ -1,0 +1,270 @@
+@model ClinicApp.ViewModels.CMS.MedicalServiceInfoDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات اطلاعات خدمت پزشکی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-stethoscope text-success"></i>
+            جزئیات اطلاعات خدمت پزشکی
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.MedicalServiceInfoId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4 @(Model.IsFeatured ? "border-info" : "")">
+                <div class="card-header py-3 @(Model.IsFeatured ? "bg-info text-white" : "")">
+                    <h6 class="m-0 font-weight-bold">
+                        @Model.ServiceTitle
+                        @if (Model.IsFeatured)
+                        {
+                            <span class="badge badge-light mr-2">ویژه</span>
+                        }
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-4 text-center">
+                            <img src="@Model.ImageUrl" alt="@Model.ServiceTitle" class="img-fluid rounded" style="max-height: 400px; width: 100%; object-fit: cover;">
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات کوتاه</h5>
+                            <p class="text-muted">@Model.Description</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.FullDescription))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات کامل</h5>
+                            <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                                @Html.Raw(Model.FullDescription)
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Features))
+                    {
+                        <div class="mb-3">
+                            <h5>ویژگی‌ها</h5>
+                            <ul class="list-group">
+                                @foreach (var feature in Model.Features.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check-circle text-success mr-2"></i>
+                                        @feature.Trim()
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.InsuranceCoverage))
+                    {
+                        <div class="mb-3">
+                            <h5>پوشش بیمه</h5>
+                            <ul class="list-group">
+                                @foreach (var coverage in Model.InsuranceCoverage.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li class="list-group-item">
+                                        <i class="fas fa-shield-alt text-primary mr-2"></i>
+                                        @coverage.Trim()
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.RequiredDocuments))
+                    {
+                        <div class="mb-3">
+                            <h5>مدارک مورد نیاز</h5>
+                            <ul class="list-group">
+                                @foreach (var doc in Model.RequiredDocuments.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li class="list-group-item">
+                                        <i class="fas fa-file-alt text-info mr-2"></i>
+                                        @doc.Trim()
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>ویدیو آموزشی</h5>
+                            <a href="@Model.VideoUrl" target="_blank" class="btn btn-outline-primary">
+                                <i class="fas fa-video"></i> مشاهده ویدیو
+                            </a>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>لینک مرتبط</h5>
+                            <p><a href="@Model.RelatedLinkUrl" target="_blank">@Model.RelatedLinkUrl</a></p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات خدمت</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.MedicalServiceInfoId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>خدمت:</strong></td>
+                            <td>@Model.ServiceTitle</td>
+                        </tr>
+                        <tr>
+                            <td><strong>کد خدمت:</strong></td>
+                            <td>@Model.ServiceCode</td>
+                        </tr>
+                        <tr>
+                            <td><strong>دسته‌بندی:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.ServiceCategoryName</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>قیمت:</strong></td>
+                            <td>
+                                @if (Model.Price.HasValue)
+                                {
+                                    <span class="badge badge-success">@(Model.Price.Value.ToString("N0")) ریال</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>قیمت Service:</strong></td>
+                            <td>
+                                @if (Model.ServicePrice.HasValue)
+                                {
+                                    <span>@(Model.ServicePrice.Value.ToString("N0")) ریال</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>مدت زمان:</strong></td>
+                            <td>@(Model.EstimatedDuration ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ویژه:</strong></td>
+                            <td>
+                                @if (Model.IsFeatured)
+                                {
+                                    <span class="badge badge-info">ویژه</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">عادی</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>بازدید:</strong></td>
+                            <td>@Model.ViewCount</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Slug:</strong></td>
+                            <td>@(Model.Slug ?? "-")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-info shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-info mb-3">اطلاعات SEO</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>عنوان متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaTitle) ? "-" : Model.MetaTitle)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>توضیحات متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaDescription) ? "-" : Model.MetaDescription)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,302 @@
+@model ClinicApp.ViewModels.CMS.MedicalEquipmentCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش تجهیز پزشکی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #e3e6f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #e74a3b;
+            font-weight: bold;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .section-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-x-ray text-primary"></i>
+            ویرایش تجهیز پزشکی
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.MedicalEquipmentId })" class="btn btn-info shadow-sm" style="border-radius: 8px;">
+                <i class="fas fa-eye"></i> مشاهده
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary shadow-sm" style="border-radius: 8px;">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 12px;">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="form-container">
+        @using (Html.BeginForm("Edit", "MedicalEquipment", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.MedicalEquipmentId)
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <!-- اطلاعات اصلی -->
+            <div class="section-header">
+                <h5><i class="fas fa-info-circle"></i> اطلاعات اصلی</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.EquipmentName, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.EquipmentName, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.EquipmentName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model)
+                        @Html.TextBoxFor(m => m.Model, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Manufacturer)
+                        @Html.TextBoxFor(m => m.Manufacturer, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Manufacturer, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Category, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.Category, ViewBag.Categories as SelectList, "لطفاً دسته‌بندی را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ShortDescription)
+                        @Html.TextAreaFor(m => m.ShortDescription, new { @class = "form-control", rows = "2" })
+                        @Html.ValidationMessageFor(m => m.ShortDescription, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات فنی -->
+            <div class="section-header">
+                <h5><i class="fas fa-cogs"></i> اطلاعات فنی</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Description)
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4" })
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.TechnicalSpecifications)
+                        @Html.TextAreaFor(m => m.TechnicalSpecifications, new { @class = "form-control", rows = "5" })
+                        @Html.ValidationMessageFor(m => m.TechnicalSpecifications, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تصاویر و رسانه -->
+            <div class="section-header">
+                <h5><i class="fas fa-images"></i> تصاویر و رسانه</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ImageUrl)
+                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.VideoUrl)
+                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ImageUrls)
+                        @Html.TextAreaFor(m => m.ImageUrls, new { @class = "form-control", rows = "2" })
+                        @Html.ValidationMessageFor(m => m.ImageUrls, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تاریخ‌ها -->
+            <div class="section-header">
+                <h5><i class="fas fa-calendar-alt"></i> تاریخ‌ها</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.PurchaseDate)
+                        @Html.TextBoxFor(m => m.PurchaseDate, new { @class = "form-control", type = "date" })
+                        @Html.ValidationMessageFor(m => m.PurchaseDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.InstallationDate)
+                        @Html.TextBoxFor(m => m.InstallationDate, new { @class = "form-control", type = "date" })
+                        @Html.ValidationMessageFor(m => m.InstallationDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.WarrantyExpiryDate)
+                        @Html.TextBoxFor(m => m.WarrantyExpiryDate, new { @class = "form-control", type = "date" })
+                        @Html.ValidationMessageFor(m => m.WarrantyExpiryDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- ویژگی‌ها و SEO -->
+            <div class="section-header">
+                <h5><i class="fas fa-star"></i> ویژگی‌ها و SEO</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Features)
+                        @Html.TextAreaFor(m => m.Features, new { @class = "form-control", rows = "3" })
+                        @Html.ValidationMessageFor(m => m.Features, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Status)
+                        @Html.DropDownListFor(m => m.Status, ViewBag.Statuses as SelectList, "لطفاً وضعیت را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Status, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Slug)
+                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.MetaTitle)
+                        @Html.TextBoxFor(m => m.MetaTitle, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.MetaTitle, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.MetaDescription)
+                        @Html.TextAreaFor(m => m.MetaDescription, new { @class = "form-control", rows = "2" })
+                        @Html.ValidationMessageFor(m => m.MetaDescription, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تنظیمات -->
+            <div class="section-header">
+                <h5><i class="fas fa-sliders-h"></i> تنظیمات</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check form-check-inline">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                        </div>
+                        <div class="form-check form-check-inline">
+                            @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 8px;">
+                    <i class="fas fa-save"></i> ذخیره تغییرات
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg shadow-sm" style="border-radius: 8px;">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
+    </div>
+</div>
+

@@ -1,0 +1,298 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.HealthTipIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت نکات سلامت";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .healthtip-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .healthtip-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .search-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .tip-image {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-heartbeat text-danger"></i>
+            مدیریت نکات سلامت
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> نکته جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "HealthTip", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان و محتوا..." value="@Request.QueryString["SearchTerm"]">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="Category" class="form-control">
+                        <option value="">همه دسته‌بندی‌ها</option>
+                        @if (ViewBag.Categories != null)
+                        {
+                            foreach (var cat in ViewBag.Categories)
+                            {
+                                <option value="@cat.Category" @(Request.QueryString["Category"] == cat.Category ? "selected" : "")>@cat.DisplayName (@cat.Count)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsPublished" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsPublished"] == "true" ? "selected" : "")>منتشر شده</option>
+                        <option value="false" @(Request.QueryString["IsPublished"] == "false" ? "selected" : "")>منتشر نشده</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsFeatured" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsFeatured"] == "true" ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Request.QueryString["IsFeatured"] == "false" ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Health Tips List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست نکات سلامت (@Model.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>تصویر</th>
+                                <th>عنوان</th>
+                                <th>دسته‌بندی</th>
+                                <th>وضعیت</th>
+                                <th>ویژه</th>
+                                <th>تاریخ انتشار</th>
+                                <th>تاریخ انقضا</th>
+                                <th>بازدید</th>
+                                <th>اشتراک</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@item.ThumbnailUrl" alt="@item.Title" class="tip-image">
+                                        }
+                                        else if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.Title" class="tip-image">
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">بدون تصویر</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@item.Title</strong>
+                                        @if (!string.IsNullOrEmpty(item.Summary))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(item.Summary.Length > 80 ? item.Summary.Substring(0, 80) + "..." : item.Summary)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@(GetCategoryDisplayName(item.Category))</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsPublished)
+                                        {
+                                            <span class="badge badge-success status-badge">منتشر شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">منتشر نشده</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsFeatured)
+                                        {
+                                            <span class="badge badge-info status-badge">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                        }
+                                    </td>
+                                    <td>@(item.PublishedAt?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                    <td>
+                                        @if (item.ExpiryDate.HasValue)
+                                        {
+                                            <span class="@(item.ExpiryDate.Value < DateTime.Now ? "text-danger" : "")">@item.ExpiryDate.Value.ToString("yyyy/MM/dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+                                    <td>@item.ViewCount</td>
+                                    <td>@item.ShareCount</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.HealthTipId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.HealthTipId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsPublished)
+                                            {
+                                                using (Html.BeginForm("Publish", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="انتشار" onclick="return confirm('آیا از انتشار این نکته سلامت اطمینان دارید؟')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Unpublish", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="لغو انتشار" onclick="return confirm('آیا از لغو انتشار این نکته سلامت اطمینان دارید؟')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این نکته سلامت اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ نکته سلامتی یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetCategoryDisplayName(string category)
+    {
+        return category switch
+        {
+            "prevention" => "پیشگیری",
+            "nutrition" => "تغذیه",
+            "exercise" => "ورزش",
+            "diseases" => "بیماری‌ها",
+            "general" => "عمومی",
+            _ => category ?? "عمومی"
+        };
+    }
+}
+

@@ -1,0 +1,156 @@
+@model ClinicApp.ViewModels.CMS.ClinicWorkingHoursDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات ساعات کاری";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock text-primary"></i>
+            جزئیات ساعات کاری
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.ClinicWorkingHoursId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 @(Model.IsOpen ? "bg-success text-white" : "bg-secondary text-white")">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-day fa-2x mr-3"></i>
+                        <h6 class="m-0 font-weight-bold">
+                            @Model.DayName
+                            @if (!Model.IsOpen)
+                            {
+                                <span class="badge badge-light mr-2">تعطیل</span>
+                            }
+                        </h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات</h5>
+                            <p class="text-muted">@Model.Notes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات ساعات کاری</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.ClinicWorkingHoursId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>روز هفته:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.DayName</span>
+                                <small class="text-muted">(روز @Model.DayOfWeek)</small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ساعات کاری:</strong></td>
+                            <td>
+                                @if (Model.IsOpen)
+                                {
+                                    <span class="badge badge-success" style="font-family: 'Courier New', monospace; font-size: 1rem;">
+                                        @Model.TimeRange
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">تعطیل</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>زمان شروع:</strong></td>
+                            <td>@Model.StartTime.ToString(@"hh\:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>زمان پایان:</strong></td>
+                            <td>@Model.EndTime.ToString(@"hh\:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>کلینیک:</strong></td>
+                            <td>@(Model.ClinicName ?? "پیش‌فرض")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>باز/تعطیل:</strong></td>
+                            <td>
+                                @if (Model.IsOpen)
+                                {
+                                    <span class="badge badge-info">باز</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">تعطیل</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,257 @@
+@model ClinicApp.ViewModels.CMS.EmergencyContactDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات تماس اضطراری";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-phone-alt text-danger"></i>
+            جزئیات تماس اضطراری
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.EmergencyContactId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4 @(Model.IsAlwaysVisible ? "border-danger" : "")">
+                <div class="card-header py-3 @(Model.IsAlwaysVisible ? "bg-danger text-white" : "")">
+                    <div class="d-flex align-items-center">
+                        @if (!string.IsNullOrEmpty(Model.IconUrl))
+                        {
+                            <img src="@Model.IconUrl" alt="@Model.Title" class="mr-3" style="max-height: 50px;">
+                        }
+                        else
+                        {
+                            <i class="fas fa-phone-alt fa-2x mr-3"></i>
+                        }
+                        <h6 class="m-0 font-weight-bold">
+                            @Model.Title
+                            @if (Model.IsAlwaysVisible)
+                            {
+                                <span class="badge badge-light mr-2">همیشه قابل مشاهده</span>
+                            }
+                        </h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.ShortDescription))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات کوتاه</h5>
+                            <p class="text-muted">@Model.ShortDescription</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Instructions))
+                    {
+                        <div class="mb-3">
+                            <h5>دستورالعمل‌ها</h5>
+                            <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                                <p class="mb-0">@Model.Instructions</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-danger shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-danger mb-3">اطلاعات تماس</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.EmergencyContactId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>نوع:</strong></td>
+                            <td>
+                                <span class="badge badge-danger">@GetTypeDisplayName(Model.ContactType)</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>شماره تماس:</strong></td>
+                            <td>
+                                <a href="tel:@Model.PhoneNumber" class="btn btn-sm btn-success">
+                                    <i class="fas fa-phone"></i> @Model.PhoneNumber
+                                </a>
+                            </td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.SecondaryPhoneNumber))
+                        {
+                            <tr>
+                                <td><strong>شماره دوم:</strong></td>
+                                <td>
+                                    <a href="tel:@Model.SecondaryPhoneNumber" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-phone"></i> @Model.SecondaryPhoneNumber
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Address))
+                        {
+                            <tr>
+                                <td><strong>آدرس:</strong></td>
+                                <td>@Model.Address</td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <tr>
+                                <td><strong>ایمیل:</strong></td>
+                                <td><a href="mailto:@Model.Email">@Model.Email</a></td>
+                            </tr>
+                        }
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>همیشه قابل مشاهده:</strong></td>
+                            <td>
+                                @if (Model.IsAlwaysVisible)
+                                {
+                                    <span class="badge badge-danger">بله</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">خیر</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Slug:</strong></td>
+                            <td>@(Model.Slug ?? "-")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-info shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-info mb-3">لینک‌ها</h6>
+                    <table class="table table-sm">
+                        @if (!string.IsNullOrEmpty(Model.MapUrl))
+                        {
+                            <tr>
+                                <td><strong>نقشه:</strong></td>
+                                <td><a href="@Model.MapUrl" target="_blank" class="btn btn-sm btn-outline-primary">مشاهده نقشه</a></td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.WhatsAppUrl))
+                        {
+                            <tr>
+                                <td><strong>واتساپ:</strong></td>
+                                <td><a href="@Model.WhatsAppUrl" target="_blank" class="btn btn-sm btn-success">واتساپ</a></td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.TelegramUrl))
+                        {
+                            <tr>
+                                <td><strong>تلگرام:</strong></td>
+                                <td><a href="@Model.TelegramUrl" target="_blank" class="btn btn-sm btn-info">تلگرام</a></td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
+                        {
+                            <tr>
+                                <td><strong>وب‌سایت:</strong></td>
+                                <td><a href="@Model.WebsiteUrl" target="_blank" class="btn btn-sm btn-outline-info">وب‌سایت</a></td>
+                            </tr>
+                        }
+                        @if (string.IsNullOrEmpty(Model.MapUrl) && string.IsNullOrEmpty(Model.WhatsAppUrl) && string.IsNullOrEmpty(Model.TelegramUrl) && string.IsNullOrEmpty(Model.WebsiteUrl))
+                        {
+                            <tr>
+                                <td colspan="2" class="text-muted">لینکی ثبت نشده است</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات SEO</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>عنوان متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaTitle) ? "-" : Model.MetaTitle)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>توضیحات متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaDescription) ? "-" : Model.MetaDescription)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetTypeDisplayName(string contactType)
+    {
+        return contactType switch
+        {
+            "Emergency" => "اورژانس",
+            "Ambulance" => "آمبولانس",
+            "Poison Control" => "مرکز مسمومیت",
+            "Fire" => "آتش‌نشانی",
+            "Police" => "پلیس",
+            "Hospital" => "بیمارستان",
+            "Clinic" => "کلینیک",
+            _ => contactType ?? "عمومی"
+        };
+    }
+}
+

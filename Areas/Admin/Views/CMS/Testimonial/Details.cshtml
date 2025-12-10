@@ -1,0 +1,161 @@
+@model ClinicApp.ViewModels.CMS.TestimonialDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات نظر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">جزئیات نظر</h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.TestimonialId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4 @(Model.IsFeatured ? "border-info" : "")">
+                <div class="card-header py-3 @(Model.IsFeatured ? "bg-info text-white" : "")">
+                    <h6 class="m-0 font-weight-bold">
+                        نظر @Model.PatientName
+                        @if (Model.IsFeatured)
+                        {
+                            <span class="badge badge-light mr-2">ویژه</span>
+                        }
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        @if (!string.IsNullOrEmpty(Model.PatientInitials))
+                        {
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mr-3" style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                                @Model.PatientInitials
+                            </div>
+                        }
+                        <div>
+                            <h4>@Model.PatientName</h4>
+                            @if (!string.IsNullOrEmpty(Model.DoctorName))
+                            {
+                                <p class="text-muted mb-0">پزشک: @Model.DoctorName</p>
+                            }
+                            <div class="mt-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @(i <= Model.Rating ? "text-warning" : "text-muted")" style="font-size: 1.5rem;"></i>
+                                }
+                                <span class="ml-2">(@Model.Rating از 5)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Comment))
+                    {
+                        <div class="mb-4">
+                            <h5>نظر</h5>
+                            <p class="text-muted" style="font-size: 1.1rem; line-height: 1.8;">@Model.Comment</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.PhotoUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>تصویر</h5>
+                            <img src="@Model.PhotoUrl" alt="@Model.PatientName" class="img-fluid rounded" style="max-height: 300px;">
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>ویدیو</h5>
+                            <a href="@Model.VideoUrl" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-play"></i> مشاهده ویدیو
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات نظر</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.TestimonialId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsApproved)
+                                {
+                                    <span class="badge badge-success">تایید شده</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">در انتظار تایید</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ویژه:</strong></td>
+                            <td>
+                                @if (Model.IsFeatured)
+                                {
+                                    <span class="badge badge-info">ویژه</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">عادی</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تاریخ تایید:</strong></td>
+                            <td>@(Model.ApprovedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

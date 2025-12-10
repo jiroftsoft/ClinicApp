@@ -3,6 +3,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Triage;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Entities.CMS;
 using EntityFramework.DynamicFilters;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -145,6 +146,20 @@ namespace ClinicApp.Models
         public DbSet<TriageVitalSigns> TriageVitalSigns { get; set; }
         public DbSet<TriageProtocol> TriageProtocols { get; set; }
         public DbSet<TriageReassessment> TriageReassessments { get; set; }
+
+        // ========== موجودیت‌های جدید برای سیستم مدیریت محتوا (CMS) ==========
+        public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<Slider> Sliders { get; set; }
+        public DbSet<Announcement> Announcements { get; set; }
+        public DbSet<Testimonial> Testimonials { get; set; }
+        public DbSet<GalleryItem> GalleryItems { get; set; }
+        public DbSet<FAQ> FAQs { get; set; }
+        public DbSet<HealthTip> HealthTips { get; set; }
+        public DbSet<InsuranceInfo> InsuranceInfos { get; set; }
+        public DbSet<MedicalServiceInfo> MedicalServiceInfos { get; set; }
+        public DbSet<EmergencyContact> EmergencyContacts { get; set; }
+        public DbSet<ClinicWorkingHours> ClinicWorkingHours { get; set; }
+        public DbSet<MedicalEquipment> MedicalEquipments { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

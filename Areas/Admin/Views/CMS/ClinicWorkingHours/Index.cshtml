@@ -1,0 +1,268 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.ClinicWorkingHoursIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت ساعات کاری کلینیک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .working-hours-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .working-hours-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .time-range {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock text-primary"></i>
+            مدیریت ساعات کاری کلینیک
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> ساعات کاری جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "ClinicWorkingHours", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <select name="ClinicId" class="form-control">
+                        <option value="">همه کلینیک‌ها</option>
+                        @if (ViewBag.Clinics != null)
+                        {
+                            foreach (var clinic in ViewBag.Clinics)
+                            {
+                                <option value="@clinic.Value" @(Request.QueryString["ClinicId"] == clinic.Value ? "selected" : "")>@clinic.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="DayOfWeek" class="form-control">
+                        <option value="">همه روزها</option>
+                        @if (ViewBag.DaysOfWeek != null)
+                        {
+                            foreach (var day in ViewBag.DaysOfWeek)
+                            {
+                                <option value="@day.Value" @(Request.QueryString["DayOfWeek"] == day.Value ? "selected" : "")>@day.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsOpen" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsOpen"] == "true" ? "selected" : "")>باز</option>
+                        <option value="false" @(Request.QueryString["IsOpen"] == "false" ? "selected" : "")>تعطیل</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsActive" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
+                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Working Hours List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست ساعات کاری (@Model.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>روز هفته</th>
+                                <th>ساعات کاری</th>
+                                <th>وضعیت</th>
+                                <th>کلینیک</th>
+                                <th>ترتیب</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.DayName</strong>
+                                        <br />
+                                        <small class="text-muted">(روز @item.DayOfWeek)</small>
+                                    </td>
+                                    <td>
+                                        @if (item.IsOpen)
+                                        {
+                                            <span class="time-range">@item.TimeRange</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">تعطیل</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.Notes))
+                                        {
+                                            <br />
+                                            <small class="text-muted"><i class="fas fa-info-circle"></i> @item.Notes</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">غیرفعال</span>
+                                        }
+                                        <br />
+                                        @if (item.IsOpen)
+                                        {
+                                            <span class="badge badge-info status-badge">باز</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">تعطیل</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @(item.ClinicName ?? "پیش‌فرض")
+                                    </td>
+                                    <td>
+                                        @item.DisplayOrder
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.ClinicWorkingHoursId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.ClinicWorkingHoursId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsActive)
+                                            {
+                                                using (Html.BeginForm("Activate", "ClinicWorkingHours", new { id = item.ClinicWorkingHoursId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Deactivate", "ClinicWorkingHours", new { id = item.ClinicWorkingHoursId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "ClinicWorkingHours", new { id = item.ClinicWorkingHoursId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این ساعات کاری اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ ساعات کاری ثبت نشده است.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

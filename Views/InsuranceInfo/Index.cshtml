@@ -1,0 +1,234 @@
+@model List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel>
+@{
+    ViewBag.Title = "بیمه‌های طرف قرارداد";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="insurance-info-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-shield-alt text-primary"></i>
+                    بیمه‌های طرف قرارداد
+                </h1>
+                <p class="lead text-muted">بیمه‌هایی که با کلینیک ما همکاری می‌کنند</p>
+            </div>
+        </div>
+
+        <!-- Type Filter -->
+        @if (ViewBag.InsuranceTypes != null && ((List<ClinicApp.ViewModels.CMS.InsuranceInfoTypeViewModel>)ViewBag.InsuranceTypes).Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="btn-group flex-wrap" role="group">
+                                <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.SelectedType == null ? "primary" : "outline-primary") mb-2">
+                                    <i class="fas fa-list"></i> همه (@Model?.Count ?? 0)
+                                </a>
+                                @foreach (var type in ViewBag.InsuranceTypes)
+                                {
+                                    <a href="@Url.Action("Index", new { insuranceType = type.InsuranceType })" class="btn btn-@(ViewBag.SelectedType == type.InsuranceType ? "primary" : "outline-primary") mb-2">
+                                        <i class="@type.IconClass"></i> @type.DisplayName (@type.Count)
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Search Box -->
+        <div class="row mb-4">
+            <div class="col-md-8 offset-md-2">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="text" id="insuranceSearchInput" class="form-control form-control-lg" placeholder="جستجو در بیمه‌ها...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary btn-lg" type="button" onclick="searchInsurances()">
+                                    <i class="fas fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insurance Infos Grid -->
+        <div class="row" id="insuranceContainer">
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var insurance in Model)
+                {
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                        <div class="card insurance-card h-100 shadow-lg border-0">
+                            <div class="card-body text-center p-4">
+                                @if (!string.IsNullOrEmpty(insurance.LogoUrl))
+                                {
+                                    <img src="@insurance.LogoUrl" alt="@insurance.InsuranceName" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                }
+                                else if (!string.IsNullOrEmpty(insurance.ThumbnailUrl))
+                                {
+                                    <img src="@insurance.ThumbnailUrl" alt="@insurance.InsuranceName" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                }
+                                else
+                                {
+                                    <div class="mb-3">
+                                        <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                                    </div>
+                                }
+                                
+                                <h5 class="card-title font-weight-bold mb-2">@insurance.InsuranceName</h5>
+                                
+                                <div class="mb-2">
+                                    <span class="badge badge-info">
+                                        <i class="@GetTypeIcon(insurance.InsuranceType)"></i>
+                                        @insurance.TypeDisplayName
+                                    </span>
+                                </div>
+                                
+                                @if (insurance.CoveragePercentage.HasValue)
+                                {
+                                    <div class="mb-3">
+                                        <span class="badge badge-success badge-lg">
+                                            <i class="fas fa-percentage"></i>
+                                            پوشش @insurance.CoveragePercentage.Value%
+                                        </span>
+                                    </div>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(insurance.Description))
+                                {
+                                    <p class="card-text text-muted small mb-3">
+                                        @(insurance.Description.Length > 100 ? insurance.Description.Substring(0, 100) + "..." : insurance.Description)
+                                    </p>
+                                }
+                                
+                                <div class="mt-auto">
+                                    <a href="@Url.Action("Details", new { slug = insurance.Slug })" class="btn btn-outline-primary btn-sm btn-block" onclick="incrementInsuranceView(@insurance.InsuranceInfoId)">
+                                        <i class="fas fa-info-circle"></i> اطلاعات بیشتر
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h4>هیچ بیمه‌ای یافت نشد</h4>
+                        <p class="mb-0">لطفاً نوع بیمه دیگری را انتخاب کنید یا کلمه جستجوی دیگری وارد کنید.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function incrementInsuranceView(insuranceInfoId) {
+            $.ajax({
+                url: '@Url.Action("IncrementView", "InsuranceInfo")',
+                type: 'POST',
+                data: { id: insuranceInfoId },
+                success: function() {
+                    // ViewCount افزایش یافت
+                }
+            });
+        }
+
+        function searchInsurances() {
+            var searchTerm = $('#insuranceSearchInput').val();
+            if (!searchTerm || searchTerm.trim() === '') {
+                alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("Search", "InsuranceInfo")',
+                type: 'POST',
+                data: { searchTerm: searchTerm },
+                success: function(response) {
+                    if (response.success && response.data && response.data.length > 0) {
+                        displaySearchResults(response.data);
+                    } else {
+                        alert('نتیجه‌ای یافت نشد');
+                    }
+                },
+                error: function() {
+                    alert('خطا در جستجو');
+                }
+            });
+        }
+
+        function displaySearchResults(results) {
+            var html = '';
+            for (var i = 0; i < results.length; i++) {
+                var insurance = results[i];
+                html += '<div class="col-lg-3 col-md-4 col-sm-6 mb-4">';
+                html += '<div class="card insurance-card h-100 shadow-lg border-0">';
+                html += '<div class="card-body text-center p-4">';
+                if (insurance.LogoUrl) {
+                    html += '<img src="' + insurance.LogoUrl + '" alt="' + insurance.InsuranceName + '" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">';
+                } else {
+                    html += '<div class="mb-3"><i class="fas fa-shield-alt fa-3x text-primary"></i></div>';
+                }
+                html += '<h5 class="card-title font-weight-bold mb-2">' + insurance.InsuranceName + '</h5>';
+                html += '<a href="/InsuranceInfo/Details?slug=' + insurance.Slug + '" class="btn btn-outline-primary btn-sm btn-block"><i class="fas fa-info-circle"></i> اطلاعات بیشتر</a>';
+                html += '</div></div></div>';
+            }
+            $('#insuranceContainer').html(html);
+        }
+
+        // جستجو با Enter
+        $('#insuranceSearchInput').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchInsurances();
+            }
+        });
+    </script>
+
+    <style>
+        .insurance-info-page {
+            position: relative;
+        }
+
+        .insurance-card {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .insurance-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
+        }
+
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+}
+
+@functions {
+    private string GetTypeIcon(string insuranceType)
+    {
+        return insuranceType switch
+        {
+            "basic" => "fas fa-shield-alt",
+            "supplementary" => "fas fa-plus-circle",
+            "private" => "fas fa-building",
+            "government" => "fas fa-landmark",
+            _ => "fas fa-info-circle"
+        };
+    }
+}
+

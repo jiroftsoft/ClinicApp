@@ -1,0 +1,174 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.MedicalEquipmentIndexViewModel>
+@{
+    ViewBag.Title = "تجهیزات پزشکی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .equipment-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .equipment-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        .equipment-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        .category-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 font-weight-bold mb-3" style="color: #2c3e50;">
+                <i class="fas fa-x-ray text-primary"></i>
+                تجهیزات پزشکی
+            </h1>
+            <p class="lead text-muted">
+                با استفاده از پیشرفته‌ترین تجهیزات پزشکی، بهترین خدمات را به شما ارائه می‌دهیم
+            </p>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "MedicalEquipment", FormMethod.Get, new { @class = "form-inline justify-content-center" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="search" class="form-control" placeholder="جستجو..." value="@ViewBag.Search" style="border-radius: 8px; min-width: 250px;">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="category" class="form-control" style="border-radius: 8px;">
+                        <option value="">همه دسته‌بندی‌ها</option>
+                        @if (ViewBag.Categories != null)
+                        {
+                            foreach (var cat in ViewBag.Categories)
+                            {
+                                <option value="@cat.Value" @(ViewBag.Category == cat.Value ? "selected" : "")>@cat.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2" style="border-radius: 8px;">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Equipment Grid -->
+    @if (Model.Items != null && Model.Items.Any())
+    {
+        <div class="equipment-grid">
+            @foreach (var item in Model.Items)
+            {
+                <div class="equipment-card">
+                    <a href="@Url.Action("Details", new { slug = item.EquipmentName.Replace(" ", "-").ToLower() })" style="text-decoration: none; color: inherit;">
+                        <div class="equipment-image-wrapper position-relative">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.EquipmentName" class="equipment-image">
+                            }
+                            else
+                            {
+                                <div class="equipment-image d-flex align-items-center justify-content-center" 
+                                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <i class="fas fa-x-ray fa-4x text-white"></i>
+                                </div>
+                            }
+                            <div class="position-absolute" style="top: 15px; right: 15px;">
+                                <span class="category-badge">@item.CategoryDisplayName</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-weight-bold mb-2" style="color: #2c3e50;">@item.EquipmentName</h4>
+                            @if (!string.IsNullOrEmpty(item.Model))
+                            {
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-tag text-primary"></i> @item.Model
+                                </p>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Manufacturer))
+                            {
+                                <p class="text-muted mb-3">
+                                    <i class="fas fa-industry text-primary"></i> @item.Manufacturer
+                                </p>
+                            }
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">
+                                    <i class="fas fa-eye"></i> @item.ViewCount
+                                </span>
+                                <span class="btn btn-sm btn-primary" style="border-radius: 20px;">
+                                    مشاهده جزئیات <i class="fas fa-arrow-left"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        if (Model.TotalPages > 1)
+        {
+            <nav aria-label="صفحه‌بندی" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    @if (Model.PageNumber > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1, category = ViewBag.Category, search = ViewBag.Search })" style="border-radius: 8px; margin: 0 2px;">
+                                <i class="fas fa-chevron-right"></i> قبلی
+                            </a>
+                        </li>
+                    }
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i, category = ViewBag.Category, search = ViewBag.Search })" style="border-radius: 8px; margin: 0 2px;">
+                                @i
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PageNumber < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1, category = ViewBag.Category, search = ViewBag.Search })" style="border-radius: 8px; margin: 0 2px;">
+                                بعدی <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-x-ray fa-4x text-muted mb-3"></i>
+            <p class="text-muted">هیچ تجهیز پزشکی یافت نشد.</p>
+        </div>
+    }
+</div>
+

@@ -1,0 +1,243 @@
+@model List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>
+@{
+    ViewBag.Title = "سوالات متداول";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="faq-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-question-circle text-primary"></i>
+                    سوالات متداول
+                </h1>
+                <p class="lead text-muted">پاسخ به سوالات رایج شما درباره کلینیک و خدمات</p>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        @if (ViewBag.Categories != null && ((List<ClinicApp.ViewModels.CMS.FAQCategoryViewModel>)ViewBag.Categories).Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="btn-group flex-wrap" role="group">
+                                <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.SelectedCategory == null ? "primary" : "outline-primary") mb-2">
+                                    همه (@(((List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>)Model)?.Count ?? 0))
+                                </a>
+                                @foreach (var cat in ViewBag.Categories)
+                                {
+                                    <a href="@Url.Action("Index", new { category = cat.Category })" class="btn btn-@(ViewBag.SelectedCategory == cat.Category ? "primary" : "outline-primary") mb-2">
+                                        @cat.DisplayName (@cat.Count)
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Search Box -->
+        <div class="row mb-4">
+            <div class="col-md-8 offset-md-2">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="text" id="faqSearchInput" class="form-control form-control-lg" placeholder="جستجو در سوالات متداول...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary btn-lg" type="button" onclick="searchFAQs()">
+                                    <i class="fas fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQs List -->
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="accordion" id="faqAccordion">
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var faq = Model[i];
+                            var collapseId = $"faqCollapse{i}";
+                            var headingId = $"faqHeading{i}";
+                            
+                            <div class="card mb-3 shadow-sm faq-card">
+                                <div class="card-header bg-white" id="@headingId">
+                                    <h5 class="mb-0">
+                                        <button class="btn btn-link btn-block text-left text-dark" type="button" 
+                                                data-toggle="collapse" data-target="#@collapseId" 
+                                                aria-expanded="false" 
+                                                aria-controls="@collapseId"
+                                                onclick="incrementFAQView(@faq.FAQId)">
+                                            <i class="fas fa-chevron-right mr-2"></i>
+                                            <strong>@faq.Question</strong>
+                                            @if (faq.Tags != null && faq.Tags.Any())
+                                            {
+                                                <span class="float-left">
+                                                    @foreach (var tag in faq.Tags.Take(2))
+                                                    {
+                                                        <span class="badge badge-secondary badge-sm mr-1">@tag</span>
+                                                    }
+                                                </span>
+                                            }
+                                        </button>
+                                    </h5>
+                                </div>
+                                <div id="@collapseId" class="collapse" 
+                                     aria-labelledby="@headingId" data-parent="#faqAccordion">
+                                    <div class="card-body">
+                                        <div class="faq-answer">
+                                            @Html.Raw(faq.Answer)
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(faq.RelatedLinkUrl))
+                                        {
+                                            <div class="mt-3">
+                                                <a href="@faq.RelatedLinkUrl" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i> اطلاعات بیشتر
+                                                </a>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h4>هیچ سوال متداولی یافت نشد</h4>
+                        <p class="mb-0">لطفاً دسته‌بندی دیگری را انتخاب کنید یا کلمه جستجوی دیگری وارد کنید.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function incrementFAQView(faqId) {
+            $.ajax({
+                url: '@Url.Action("IncrementView", "FAQ")',
+                type: 'POST',
+                data: { id: faqId },
+                success: function() {
+                    // ViewCount افزایش یافت
+                }
+            });
+        }
+
+        function searchFAQs() {
+            var searchTerm = $('#faqSearchInput').val();
+            if (!searchTerm || searchTerm.trim() === '') {
+                alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("Search", "FAQ")',
+                type: 'POST',
+                data: { searchTerm: searchTerm },
+                success: function(response) {
+                    if (response.success && response.data && response.data.length > 0) {
+                        // نمایش نتایج جستجو
+                        displaySearchResults(response.data);
+                    } else {
+                        alert('نتیجه‌ای یافت نشد');
+                    }
+                },
+                error: function() {
+                    alert('خطا در جستجو');
+                }
+            });
+        }
+
+        function displaySearchResults(results) {
+            // پیاده‌سازی نمایش نتایج جستجو
+            var html = '';
+            for (var i = 0; i < results.length; i++) {
+                var faq = results[i];
+                html += '<div class="card mb-3 shadow-sm faq-card">';
+                html += '<div class="card-header bg-white">';
+                html += '<h5 class="mb-0"><strong>' + faq.Question + '</strong></h5>';
+                html += '</div>';
+                html += '<div class="card-body">';
+                html += '<div class="faq-answer">' + faq.Answer + '</div>';
+                html += '</div>';
+                html += '</div>';
+            }
+            $('#faqAccordion').html(html);
+        }
+
+        // انیمیشن برای باز و بسته شدن FAQ
+        $('#faqAccordion').on('show.bs.collapse', function (e) {
+            $(e.target).prev('.card-header').find('.fa-chevron-right').removeClass('fa-chevron-right').addClass('fa-chevron-down');
+        });
+
+        $('#faqAccordion').on('hide.bs.collapse', function (e) {
+            $(e.target).prev('.card-header').find('.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-right');
+        });
+
+        // جستجو با Enter
+        $('#faqSearchInput').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchFAQs();
+            }
+        });
+    </script>
+
+    <style>
+        .faq-page {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .faq-card {
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .faq-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+        }
+
+        .faq-card .card-header {
+            border-bottom: 2px solid #e9ecef;
+            border-radius: 10px 10px 0 0 !important;
+        }
+
+        .faq-card .btn-link {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 600;
+            padding: 1rem;
+        }
+
+        .faq-card .btn-link:hover {
+            color: #007bff;
+        }
+
+        .faq-card .btn-link:focus {
+            box-shadow: none;
+        }
+
+        .faq-answer {
+            line-height: 1.8;
+            color: #495057;
+        }
+    </style>
+}
+

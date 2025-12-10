@@ -1,0 +1,184 @@
+@model List<ClinicApp.ViewModels.CMS.TestimonialIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت نظرات بیماران";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت نظرات بیماران</h1>
+        <div>
+            <a href="@Url.Action("Pending")" class="btn btn-warning mr-2">
+                <i class="fas fa-clock"></i> نظرات در انتظار تایید (@(Model?.Count(t => !t.IsApproved) ?? 0))
+            </a>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus"></i> نظر جدید
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includePending" @(ViewBag.IncludePending == true ? "checked" : "") onchange="togglePending()">
+                <label class="form-check-label" for="includePending">
+                    نمایش نظرات در انتظار تایید
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست نظرات (@Model.Count مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>بیمار</th>
+                                <th>نظر</th>
+                                <th>پزشک</th>
+                                <th>امتیاز</th>
+                                <th>وضعیت</th>
+                                <th>ویژه</th>
+                                <th>تاریخ</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="@(!item.IsApproved ? "table-warning" : item.IsFeatured ? "table-info" : "")">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(item.PatientInitials))
+                                            {
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mr-2" style="width: 40px; height: 40px; font-weight: bold;">
+                                                    @item.PatientInitials
+                                                </div>
+                                            }
+                                            <div>
+                                                <strong>@item.PatientName</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Comment))
+                                        {
+                                            <span>@(item.Comment.Length > 100 ? item.Comment.Substring(0, 100) + "..." : item.Comment)</span>
+                                        }
+                                    </td>
+                                    <td>@(item.DoctorName ?? "-")</td>
+                                    <td>
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="fas fa-star @(i <= item.Rating ? "text-warning" : "text-muted")"></i>
+                                        }
+                                        <span class="ml-1">(@item.Rating)</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsApproved)
+                                        {
+                                            <span class="badge badge-success">تایید شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">در انتظار تایید</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsFeatured)
+                                        {
+                                            <span class="badge badge-info">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">عادی</span>
+                                        }
+                                    </td>
+                                    <td>@item.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.TestimonialId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.TestimonialId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsApproved)
+                                            {
+                                                using (Html.BeginForm("Approve", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="تایید">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                                using (Html.BeginForm("Reject", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="رد" onclick="return confirm('آیا از رد این نظر اطمینان دارید؟')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این نظر اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ نظری یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePending() {
+        var includePending = document.getElementById('includePending').checked;
+        window.location.href = '@Url.Action("Index")?includePending=' + includePending;
+    }
+</script>
+

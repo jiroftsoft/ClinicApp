@@ -1,0 +1,390 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.MedicalEquipmentIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت تجهیزات پزشکی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .equipment-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .equipment-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-color: #007bff;
+        }
+        .equipment-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .category-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .featured-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            min-width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-x-ray text-primary"></i>
+            مدیریت تجهیزات پزشکی
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus-circle"></i> تجهیز جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+        <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+            <h6 class="m-0 font-weight-bold text-white">
+                <i class="fas fa-filter"></i> جستجو و فیلتر
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "MedicalEquipment", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در نام، مدل، سازنده..." value="@Request.QueryString["SearchTerm"]" style="border-radius: 8px;">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="Category" class="form-control" style="border-radius: 8px;">
+                        <option value="">همه دسته‌بندی‌ها</option>
+                        @if (ViewBag.Categories != null)
+                        {
+                            foreach (var category in ViewBag.Categories)
+                            {
+                                <option value="@category.Value" @(Request.QueryString["Category"] == category.Value ? "selected" : "")>@category.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="Status" class="form-control" style="border-radius: 8px;">
+                        <option value="">همه وضعیت‌ها</option>
+                        @if (ViewBag.Statuses != null)
+                        {
+                            foreach (var status in ViewBag.Statuses)
+                            {
+                                <option value="@status.Value" @(Request.QueryString["Status"] == status.Value ? "selected" : "")>@status.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsActive" class="form-control" style="border-radius: 8px;">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
+                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsFeatured" class="form-control" style="border-radius: 8px;">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsFeatured"] == "true" ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Request.QueryString["IsFeatured"] == "false" ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2 shadow-sm" style="border-radius: 8px;">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2 shadow-sm" style="border-radius: 8px;">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Equipment List -->
+    <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+        <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+            <h6 class="m-0 font-weight-bold text-white">
+                <i class="fas fa-list"></i> لیست تجهیزات پزشکی (@Model.TotalCount مورد)
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background: #f8f9fa;">
+                            <tr>
+                                <th style="border-top: none;">تصویر</th>
+                                <th style="border-top: none;">نام تجهیز</th>
+                                <th style="border-top: none;">مدل / سازنده</th>
+                                <th style="border-top: none;">دسته‌بندی</th>
+                                <th style="border-top: none;">وضعیت</th>
+                                <th style="border-top: none;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr class="equipment-card" style="cursor: pointer;" onclick="window.location='@Url.Action("Details", new { id = item.MedicalEquipmentId })'">
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.EquipmentName" class="equipment-image">
+                                        }
+                                        else
+                                        {
+                                            <div class="equipment-image">
+                                                <i class="fas fa-x-ray"></i>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <strong class="text-dark">@item.EquipmentName</strong>
+                                                @if (item.IsFeatured)
+                                                {
+                                                    <span class="featured-badge mr-2">ویژه</span>
+                                                }
+                                                <br />
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-alt"></i> @item.CreatedAt.ToString("yyyy/MM/dd")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            @if (!string.IsNullOrEmpty(item.Model))
+                                            {
+                                                <span class="text-dark"><i class="fas fa-tag"></i> @item.Model</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Manufacturer))
+                                            {
+                                                <br />
+                                                <small class="text-muted"><i class="fas fa-industry"></i> @item.Manufacturer</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="category-badge">@item.CategoryDisplayName</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            @if (item.IsActive)
+                                            {
+                                                <span class="badge badge-success status-badge">
+                                                    <i class="fas fa-check-circle"></i> فعال
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-warning status-badge">
+                                                    <i class="fas fa-pause-circle"></i> غیرفعال
+                                                </span>
+                                            }
+                                            <br />
+                                            @if (!string.IsNullOrEmpty(item.Status))
+                                            {
+                                                <span class="badge badge-info status-badge mt-1">
+                                                    @GetStatusDisplayName(item.Status)
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons" onclick="event.stopPropagation();">
+                                            <a href="@Url.Action("Details", new { id = item.MedicalEquipmentId })" class="btn btn-sm btn-info btn-action" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.MedicalEquipmentId })" class="btn btn-sm btn-primary btn-action" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsFeatured)
+                                            {
+                                                using (Html.BeginForm("SetFeatured", "MedicalEquipment", new { id = item.MedicalEquipmentId, isFeatured = true }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning btn-action" title="تنظیم به عنوان ویژه">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("SetFeatured", "MedicalEquipment", new { id = item.MedicalEquipmentId, isFeatured = false }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-secondary btn-action" title="حذف از ویژه">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (!item.IsActive)
+                                            {
+                                                using (Html.BeginForm("Activate", "MedicalEquipment", new { id = item.MedicalEquipmentId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success btn-action" title="فعال">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Deactivate", "MedicalEquipment", new { id = item.MedicalEquipmentId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning btn-action" title="غیرفعال">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "MedicalEquipment", new { id = item.MedicalEquipmentId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger btn-action" title="حذف" onclick="return confirm('آیا از حذف این تجهیز پزشکی اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="card-footer bg-white" style="border-radius: 0 0 12px 12px;">
+                        <nav aria-label="صفحه‌بندی">
+                            <ul class="pagination justify-content-center mb-0">
+                                @if (Model.PageNumber > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })" style="border-radius: 8px; margin: 0 2px;">
+                                            <i class="fas fa-chevron-right"></i> قبلی
+                                        </a>
+                                    </li>
+                                }
+                                @for (int i = 1; i <= Model.TotalPages; i++)
+                                {
+                                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i })" style="border-radius: 8px; margin: 0 2px;">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+                                @if (Model.PageNumber < Model.TotalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })" style="border-radius: 8px; margin: 0 2px;">
+                                            بعدی <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-x-ray fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">هیچ تجهیز پزشکی ثبت نشده است.</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> ایجاد تجهیز جدید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStatusDisplayName(string status)
+    {
+        return status switch
+        {
+            "Active" => "فعال",
+            "Maintenance" => "تعمیر",
+            "Inactive" => "غیرفعال",
+            _ => status ?? "نامشخص"
+        };
+    }
+}
+

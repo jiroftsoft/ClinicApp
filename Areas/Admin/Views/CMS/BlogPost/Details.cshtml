@@ -1,0 +1,157 @@
+@model ClinicApp.ViewModels.CMS.BlogPostDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات مقاله";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">جزئیات مقاله</h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.BlogPostId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">@Model.Title</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-4">
+                            <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded" style="max-height: 400px; width: 100%; object-fit: cover;">
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <h4>خلاصه</h4>
+                        <p class="text-muted">@(string.IsNullOrEmpty(Model.Summary) ? "-" : Model.Summary)</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h4>محتوا</h4>
+                        <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                            @Html.Raw(Model.Content)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-left-primary shadow mb-3">
+                        <div class="card-body">
+                            <h6 class="font-weight-bold text-primary mb-3">اطلاعات مقاله</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>شناسه:</strong></td>
+                                    <td>@Model.BlogPostId</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>دسته‌بندی:</strong></td>
+                                    <td>@(Model.CategoryName ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>نویسنده:</strong></td>
+                                    <td>@(Model.AuthorName ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>وضعیت:</strong></td>
+                                    <td>
+                                        @if (Model.IsPublished)
+                                        {
+                                            <span class="badge badge-success">منتشر شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">منتشر نشده</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ویژه:</strong></td>
+                                    <td>
+                                        @if (Model.IsFeatured)
+                                        {
+                                            <span class="badge badge-info">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">عادی</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تاریخ انتشار:</strong></td>
+                                    <td>@(Model.PublishedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>بازدید:</strong></td>
+                                    <td>@Model.ViewCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ترتیب نمایش:</strong></td>
+                                    <td>@(Model.DisplayOrder ?? 0)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Slug:</strong></td>
+                                    <td>@(Model.Slug ?? "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card border-left-info shadow mb-3">
+                        <div class="card-body">
+                            <h6 class="font-weight-bold text-info mb-3">اطلاعات SEO</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>عنوان متا:</strong></td>
+                                    <td>@(string.IsNullOrEmpty(Model.MetaTitle) ? "-" : Model.MetaTitle)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>توضیحات متا:</strong></td>
+                                    <td>@(string.IsNullOrEmpty(Model.MetaDescription) ? "-" : Model.MetaDescription)</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card border-left-secondary shadow">
+                        <div class="card-body">
+                            <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>تاریخ ایجاد:</strong></td>
+                                    <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ایجاد کننده:</strong></td>
+                                    <td>@Model.CreatedByUserName</td>
+                                </tr>
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>آخرین ویرایش:</strong></td>
+                                        <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ویرایش کننده:</strong></td>
+                                        <td>@(Model.UpdatedByUserName ?? "-")</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

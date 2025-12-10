@@ -1,0 +1,165 @@
+@model ClinicApp.ViewModels.CMS.ClinicWorkingHoursCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد ساعات کاری جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock text-primary"></i>
+            ایجاد ساعات کاری جدید
+        </h1>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "ClinicWorkingHours", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ClinicId)
+                        @Html.DropDownListFor(m => m.ClinicId, ViewBag.Clinics as SelectList, "پیش‌فرض (همه کلینیک‌ها)", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.ClinicId, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">اگر خالی باشد، برای همه کلینیک‌ها اعمال می‌شود</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DayOfWeek, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.DayOfWeek, ViewBag.DaysOfWeek as SelectList, "لطفاً روز هفته را انتخاب کنید", new { @class = "form-control", @id = "DayOfWeek" })
+                        @Html.ValidationMessageFor(m => m.DayOfWeek, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DayName, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DayName, new { @class = "form-control", @id = "DayName", placeholder = "مثال: شنبه" })
+                        @Html.ValidationMessageFor(m => m.DayName, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">این فیلد به صورت خودکار پر می‌شود</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.StartTime, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.StartTime, new { @class = "form-control", type = "time", @Value = "08:00" })
+                        @Html.ValidationMessageFor(m => m.StartTime, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.EndTime, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.EndTime, new { @class = "form-control", type = "time", @Value = "20:00" })
+                        @Html.ValidationMessageFor(m => m.EndTime, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Notes)
+                        @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2", placeholder = "مثال: فقط پذیرش با نوبت قبلی" })
+                        @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsOpen, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsOpen, new { @class = "form-check-label" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // پر کردن خودکار DayName بر اساس DayOfWeek
+            $('#DayOfWeek').change(function() {
+                var dayNames = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+                var selectedValue = $(this).val();
+                if (selectedValue !== '') {
+                    $('#DayName').val(dayNames[selectedValue]);
+                }
+            });
+        });
+    </script>
+}
+

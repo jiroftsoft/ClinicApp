@@ -1,0 +1,234 @@
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.BlogPostIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت مقالات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .blogpost-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .blogpost-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .search-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت مقالات</h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> مقاله جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "BlogPost", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان..." value="@Request.QueryString["SearchTerm"]">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsPublished" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsPublished"] == "true" ? "selected" : "")>منتشر شده</option>
+                        <option value="false" @(Request.QueryString["IsPublished"] == "false" ? "selected" : "")>منتشر نشده</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsFeatured" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsFeatured"] == "true" ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Request.QueryString["IsFeatured"] == "false" ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Blog Posts List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست مقالات (@Model.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>عنوان</th>
+                                <th>دسته‌بندی</th>
+                                <th>نویسنده</th>
+                                <th>وضعیت</th>
+                                <th>ویژه</th>
+                                <th>تاریخ انتشار</th>
+                                <th>بازدید</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.Title</strong>
+                                        @if (!string.IsNullOrEmpty(item.Summary))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(item.Summary.Length > 100 ? item.Summary.Substring(0, 100) + "..." : item.Summary)</small>
+                                        }
+                                    </td>
+                                    <td>@(item.CategoryName ?? "-")</td>
+                                    <td>@(item.AuthorName ?? "-")</td>
+                                    <td>
+                                        @if (item.IsPublished)
+                                        {
+                                            <span class="badge badge-success status-badge">منتشر شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">منتشر نشده</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsFeatured)
+                                        {
+                                            <span class="badge badge-info status-badge">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                        }
+                                    </td>
+                                    <td>@(item.PublishedAt?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                    <td>@item.ViewCount</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.BlogPostId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.BlogPostId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsPublished)
+                                            {
+                                                using (Html.BeginForm("Publish", "BlogPost", new { id = item.BlogPostId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="انتشار" onclick="return confirm('آیا از انتشار این مقاله اطمینان دارید؟')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Unpublish", "BlogPost", new { id = item.BlogPostId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="لغو انتشار" onclick="return confirm('آیا از لغو انتشار این مقاله اطمینان دارید؟')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "BlogPost", new { id = item.BlogPostId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این مقاله اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ مقاله‌ای یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

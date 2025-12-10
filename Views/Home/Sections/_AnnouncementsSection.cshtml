@@ -1,0 +1,69 @@
+@model List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>
+@{
+    if (Model == null || !Model.Any())
+    {
+        return;
+    }
+}
+
+<section class="announcements-section py-4" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div id="announcementsCarousel" class="carousel slide" data-ride="carousel" data-interval="5000">
+                    <div class="carousel-inner">
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var announcement = Model[i];
+                            var alertClass = announcement.Type == "warning" ? "alert-warning" :
+                                           announcement.Type == "error" ? "alert-danger" :
+                                           announcement.Type == "success" ? "alert-success" :
+                                           "alert-info";
+                            
+                            <div class="carousel-item @(i == 0 ? "active" : "")">
+                                <div class="alert @alertClass alert-dismissible fade show mb-0" role="alert">
+                                    <div class="container">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-10">
+                                                @if (announcement.IsImportant)
+                                                {
+                                                    <strong><i class="fas fa-exclamation-triangle"></i> مهم: </strong>
+                                                }
+                                                <strong>@announcement.Title</strong>
+                                                @if (!string.IsNullOrEmpty(announcement.Content))
+                                                {
+                                                    <span> - @(announcement.Content.Length > 100 ? announcement.Content.Substring(0, 100) + "..." : announcement.Content)</span>
+                                                }
+                                                @if (!string.IsNullOrEmpty(announcement.LinkUrl))
+                                                {
+                                                    <a href="@announcement.LinkUrl" class="alert-link mr-2">ادامه مطلب</a>
+                                                }
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (Model.Count > 1)
+                    {
+                        <a class="carousel-control-prev" href="#announcementsCarousel" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">قبلی</span>
+                        </a>
+                        <a class="carousel-control-next" href="#announcementsCarousel" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">بعدی</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+

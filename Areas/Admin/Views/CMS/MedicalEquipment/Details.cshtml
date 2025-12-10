@@ -1,0 +1,332 @@
+@model ClinicApp.ViewModels.CMS.MedicalEquipmentDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات تجهیز پزشکی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .equipment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .equipment-image-large {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 4px solid white;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .info-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .info-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+        }
+        .feature-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+        .image-gallery {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .gallery-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e3e6f0;
+            transition: all 0.3s ease;
+        }
+        .gallery-image:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-x-ray text-primary"></i>
+            جزئیات تجهیز پزشکی
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.MedicalEquipmentId })" class="btn btn-primary shadow-sm" style="border-radius: 8px;">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary shadow-sm" style="border-radius: 8px;">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <!-- Equipment Header -->
+    <div class="equipment-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.EquipmentName" class="equipment-image-large">
+                }
+                else
+                {
+                    <div class="equipment-image-large d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2);">
+                        <i class="fas fa-x-ray fa-4x"></i>
+                    </div>
+                }
+            </div>
+            <div class="col-md-9">
+                <h2 class="mb-3">@Model.EquipmentName</h2>
+                @if (!string.IsNullOrEmpty(Model.Model))
+                {
+                    <p class="mb-2"><i class="fas fa-tag"></i> <strong>مدل:</strong> @Model.Model</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Manufacturer))
+                {
+                    <p class="mb-2"><i class="fas fa-industry"></i> <strong>سازنده:</strong> @Model.Manufacturer</p>
+                }
+                <div class="mt-3">
+                    <span class="badge badge-light badge-lg mr-2" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                        @Model.CategoryDisplayName
+                    </span>
+                    @if (Model.IsFeatured)
+                    {
+                        <span class="badge badge-warning badge-lg mr-2" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                            <i class="fas fa-star"></i> ویژه
+                        </span>
+                    }
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge badge-success badge-lg" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                            <i class="fas fa-check-circle"></i> فعال
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Description -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h5 class="mb-0"><i class="fas fa-align-right"></i> توضیحات</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">@Html.Raw(Model.Description)</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Technical Specifications -->
+            @if (!string.IsNullOrEmpty(Model.TechnicalSpecifications))
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h5 class="mb-0"><i class="fas fa-cogs"></i> مشخصات فنی</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted">@Html.Raw(Model.TechnicalSpecifications)</div>
+                    </div>
+                </div>
+            }
+
+            <!-- Features -->
+            @if (Model.Features != null && Model.Features.Any())
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h5 class="mb-0"><i class="fas fa-star"></i> ویژگی‌ها</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var feature in Model.Features)
+                        {
+                            <span class="feature-badge">@feature</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Image Gallery -->
+            @if (Model.ImageUrls != null && Model.ImageUrls.Any())
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h5 class="mb-0"><i class="fas fa-images"></i> گالری تصاویر</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="image-gallery">
+                            @foreach (var imageUrl in Model.ImageUrls)
+                            {
+                                <img src="@imageUrl" alt="@Model.EquipmentName" class="gallery-image">
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Video -->
+            @if (!string.IsNullOrEmpty(Model.VideoUrl))
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h5 class="mb-0"><i class="fas fa-video"></i> ویدیو معرفی</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Model.VideoUrl" target="_blank" class="btn btn-danger">
+                            <i class="fab fa-youtube"></i> مشاهده ویدیو
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <!-- Equipment Info -->
+            <div class="info-card mb-3">
+                <div class="info-card-header">
+                    <h6 class="mb-0 font-weight-bold"><i class="fas fa-info-circle"></i> اطلاعات تجهیز</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.MedicalEquipmentId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>دسته‌بندی:</strong></td>
+                            <td><span class="badge badge-primary">@Model.CategoryDisplayName</span></td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.Status))
+                        {
+                            <tr>
+                                <td><strong>وضعیت:</strong></td>
+                                <td><span class="badge badge-info">@GetStatusDisplayName(Model.Status)</span></td>
+                            </tr>
+                        }
+                        @if (Model.PurchaseDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>تاریخ خرید:</strong></td>
+                                <td>@Model.PurchaseDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        @if (Model.InstallationDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>تاریخ نصب:</strong></td>
+                                <td>@Model.InstallationDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        @if (Model.WarrantyExpiryDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>انقضای گارانتی:</strong></td>
+                                <td>@Model.WarrantyExpiryDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td><strong>تعداد بازدید:</strong></td>
+                            <td><span class="badge badge-secondary">@Model.ViewCount</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SEO Info -->
+            <div class="info-card mb-3">
+                <div class="info-card-header">
+                    <h6 class="mb-0 font-weight-bold"><i class="fas fa-search"></i> اطلاعات SEO</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td><strong>Slug:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.Slug) ? "-" : Model.Slug)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>عنوان متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaTitle) ? "-" : Model.MetaTitle)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>توضیحات متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaDescription) ? "-" : (Model.MetaDescription.Length > 50 ? Model.MetaDescription.Substring(0, 50) + "..." : Model.MetaDescription))</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h6 class="mb-0 font-weight-bold"><i class="fas fa-cog"></i> اطلاعات سیستم</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStatusDisplayName(string status)
+    {
+        return status switch
+        {
+            "Active" => "فعال",
+            "Maintenance" => "تعمیر",
+            "Inactive" => "غیرفعال",
+            _ => status ?? "نامشخص"
+        };
+    }
+}
+

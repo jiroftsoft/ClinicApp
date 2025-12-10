@@ -1,0 +1,124 @@
+@model ClinicApp.ViewModels.HomePageViewModel
+@{
+    var equipments = Model?.MedicalEquipments ?? new List<ClinicApp.ViewModels.CMS.MedicalEquipmentPublicViewModel>();
+}
+
+@if (equipments != null && equipments.Any())
+{
+    <section class="medical-equipment-section py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="display-4 font-weight-bold mb-3" style="color: #2c3e50;">
+                        <i class="fas fa-x-ray text-primary"></i>
+                        تجهیزات پزشکی مدرن
+                    </h2>
+                    <p class="lead text-muted">
+                        با استفاده از پیشرفته‌ترین تجهیزات پزشکی، بهترین خدمات را به شما ارائه می‌دهیم
+                    </p>
+                </div>
+            </div>
+
+            <div class="row">
+                @foreach (var equipment in equipments.Take(6))
+                {
+                    <div class="col-md-4 col-lg-4 mb-4">
+                        <div class="equipment-card h-100 shadow-lg" style="border-radius: 16px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: white;">
+                            <div class="equipment-image-wrapper position-relative" style="height: 250px; overflow: hidden;">
+                                @if (!string.IsNullOrEmpty(equipment.ImageUrl))
+                                {
+                                    <img src="@equipment.ImageUrl" alt="@equipment.EquipmentName" 
+                                         class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s ease;">
+                                }
+                                else
+                                {
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center" 
+                                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="fas fa-x-ray fa-4x text-white"></i>
+                                    </div>
+                                }
+                                <div class="equipment-overlay position-absolute w-100 h-100" 
+                                     style="background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 100%); top: 0; left: 0; opacity: 0; transition: opacity 0.3s ease;">
+                                </div>
+                                <div class="equipment-category position-absolute" 
+                                     style="top: 15px; right: 15px; background: rgba(255,255,255,0.9); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #667eea;">
+                                    @equipment.CategoryDisplayName
+                                </div>
+                            </div>
+                            <div class="equipment-content p-4">
+                                <h4 class="font-weight-bold mb-2" style="color: #2c3e50;">
+                                    @equipment.EquipmentName
+                                </h4>
+                                @if (!string.IsNullOrEmpty(equipment.Model))
+                                {
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-tag text-primary"></i> @equipment.Model
+                                    </p>
+                                }
+                                @if (!string.IsNullOrEmpty(equipment.ShortDescription))
+                                {
+                                    <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                                        @(equipment.ShortDescription.Length > 100 ? equipment.ShortDescription.Substring(0, 100) + "..." : equipment.ShortDescription)
+                                    </p>
+                                }
+                                @if (equipment.Features != null && equipment.Features.Any())
+                                {
+                                    <div class="equipment-features mb-3">
+                                        @foreach (var feature in equipment.Features.Take(3))
+                                        {
+                                            <span class="badge badge-light mr-1 mb-1" style="font-size: 0.75rem;">
+                                                <i class="fas fa-check-circle text-success"></i> @feature
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="@Url.Action("Details", "MedicalEquipment", new { slug = equipment.Slug })" 
+                                       class="btn btn-primary btn-sm" style="border-radius: 20px;">
+                                        <i class="fas fa-arrow-left"></i> مشاهده جزئیات
+                                    </a>
+                                    <small class="text-muted">
+                                        <i class="fas fa-eye"></i> @equipment.ViewCount
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (equipments.Count > 6)
+            {
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <a href="@Url.Action("Index", "MedicalEquipment")" 
+                           class="btn btn-lg btn-outline-primary shadow-sm" style="border-radius: 30px; padding: 0.75rem 2rem;">
+                            <i class="fas fa-list"></i> مشاهده همه تجهیزات
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Hover effect for equipment cards
+            $('.equipment-card').hover(
+                function() {
+                    $(this).find('img').css('transform', 'scale(1.1)');
+                    $(this).find('.equipment-overlay').css('opacity', '1');
+                    $(this).css('transform', 'translateY(-8px)');
+                },
+                function() {
+                    $(this).find('img').css('transform', 'scale(1)');
+                    $(this).find('.equipment-overlay').css('opacity', '0');
+                    $(this).css('transform', 'translateY(0)');
+                }
+            );
+        });
+    </script>
+}
+

@@ -1,0 +1,135 @@
+@model ClinicApp.ViewModels.CMS.TestimonialCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش نظر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">ویرایش نظر</h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.TestimonialId })" class="btn btn-info">
+                <i class="fas fa-eye"></i> مشاهده
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            @using (Html.BeginForm("Edit", "Testimonial", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.TestimonialId)
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PatientName, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.PatientName, new { @class = "form-control", placeholder = "نام بیمار" })
+                            @Html.ValidationMessageFor(m => m.PatientName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PatientInitials)
+                            @Html.TextBoxFor(m => m.PatientInitials, new { @class = "form-control", placeholder = "حروف اول" })
+                            @Html.ValidationMessageFor(m => m.PatientInitials, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Comment, new { @class = "required" })
+                            @Html.TextAreaFor(m => m.Comment, new { @class = "form-control", rows = "5", placeholder = "نظر بیمار" })
+                            @Html.ValidationMessageFor(m => m.Comment, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Rating, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.Rating, new { @class = "form-control", type = "number", min = "0", max = "5", step = "0.5" })
+                            @Html.ValidationMessageFor(m => m.Rating, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.DoctorName)
+                            @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", placeholder = "نام پزشک (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.DoctorName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.DisplayOrder)
+                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number" })
+                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhotoUrl)
+                            @Html.TextBoxFor(m => m.PhotoUrl, new { @class = "form-control", placeholder = "/Content/Images/testimonials/..." })
+                            @Html.ValidationMessageFor(m => m.PhotoUrl, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.VideoUrl)
+                            @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "آدرس ویدیو (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.IsApproved, new { @class = "form-check-input" })
+                                @Html.LabelFor(m => m.IsApproved, new { @class = "form-check-label" })
+                            </div>
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                                @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> ذخیره تغییرات
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> انصراف
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

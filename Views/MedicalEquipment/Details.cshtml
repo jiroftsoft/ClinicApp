@@ -1,0 +1,310 @@
+@model ClinicApp.ViewModels.CMS.MedicalEquipmentDetailsViewModel
+@{
+    ViewBag.Title = Model.EquipmentName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .equipment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        .equipment-image-large {
+            width: 300px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 5px solid white;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+        }
+        .info-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .info-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .info-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.25rem 1.75rem;
+            border-radius: 16px 16px 0 0;
+        }
+        .feature-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            margin: 0.3rem;
+            display: inline-block;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .gallery-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid #e3e6f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .gallery-image:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <!-- Equipment Header -->
+    <div class="equipment-header">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.EquipmentName" class="equipment-image-large">
+                }
+                else
+                {
+                    <div class="equipment-image-large d-flex align-items-center justify-content-center mx-auto" style="background: rgba(255,255,255,0.2);">
+                        <i class="fas fa-x-ray fa-5x"></i>
+                    </div>
+                }
+            </div>
+            <div class="col-md-8">
+                <h1 class="display-4 mb-3 font-weight-bold">@Model.EquipmentName</h1>
+                @if (!string.IsNullOrEmpty(Model.Model))
+                {
+                    <p class="h5 mb-2">
+                        <i class="fas fa-tag"></i> <strong>مدل:</strong> @Model.Model
+                    </p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Manufacturer))
+                {
+                    <p class="h5 mb-3">
+                        <i class="fas fa-industry"></i> <strong>سازنده:</strong> @Model.Manufacturer
+                    </p>
+                }
+                <div class="mt-4">
+                    <span class="badge badge-light badge-lg mr-2" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                        <i class="fas fa-tag"></i> @Model.CategoryDisplayName
+                    </span>
+                    @if (Model.IsFeatured)
+                    {
+                        <span class="badge badge-warning badge-lg mr-2" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                            <i class="fas fa-star"></i> ویژه
+                        </span>
+                    }
+                    <span class="badge badge-info badge-lg" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                        <i class="fas fa-eye"></i> @Model.ViewCount بازدید
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Description -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h4 class="mb-0"><i class="fas fa-align-right"></i> توضیحات</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="text-muted" style="font-size: 1.05rem; line-height: 1.8;">
+                            @Html.Raw(Model.Description)
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Technical Specifications -->
+            @if (!string.IsNullOrEmpty(Model.TechnicalSpecifications))
+            {
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h4 class="mb-0"><i class="fas fa-cogs"></i> مشخصات فنی</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="text-muted" style="font-size: 1.05rem; line-height: 1.8;">
+                            @Html.Raw(Model.TechnicalSpecifications)
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Features -->
+            @if (Model.Features != null && Model.Features.Any())
+            {
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h4 class="mb-0"><i class="fas fa-star"></i> ویژگی‌ها</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        @foreach (var feature in Model.Features)
+                        {
+                            <span class="feature-badge">
+                                <i class="fas fa-check-circle"></i> @feature
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Image Gallery -->
+            @if (Model.ImageUrls != null && Model.ImageUrls.Any())
+            {
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h4 class="mb-0"><i class="fas fa-images"></i> گالری تصاویر</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="image-gallery">
+                            @foreach (var imageUrl in Model.ImageUrls)
+                            {
+                                <img src="@imageUrl" alt="@Model.EquipmentName" class="gallery-image" onclick="openImageModal('@imageUrl')">
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Video -->
+            @if (!string.IsNullOrEmpty(Model.VideoUrl))
+            {
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h4 class="mb-0"><i class="fas fa-video"></i> ویدیو معرفی</h4>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <a href="@Model.VideoUrl" target="_blank" class="btn btn-danger btn-lg" style="border-radius: 30px; padding: 1rem 2rem;">
+                            <i class="fab fa-youtube fa-2x"></i>
+                            <br />
+                            <span class="mt-2 d-block">مشاهده ویدیو</span>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <!-- Equipment Info -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-info-circle"></i> اطلاعات تجهیز</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td><strong>دسته‌بندی:</strong></td>
+                            <td><span class="badge badge-primary">@Model.CategoryDisplayName</span></td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.Status))
+                        {
+                            <tr>
+                                <td><strong>وضعیت:</strong></td>
+                                <td><span class="badge badge-info">@GetStatusDisplayName(Model.Status)</span></td>
+                            </tr>
+                        }
+                        @if (Model.PurchaseDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>تاریخ خرید:</strong></td>
+                                <td>@Model.PurchaseDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        @if (Model.InstallationDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>تاریخ نصب:</strong></td>
+                                <td>@Model.InstallationDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        @if (Model.WarrantyExpiryDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>انقضای گارانتی:</strong></td>
+                                <td>@Model.WarrantyExpiryDate.Value.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td><strong>تعداد بازدید:</strong></td>
+                            <td><span class="badge badge-secondary">@Model.ViewCount</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-phone"></i> تماس با ما</h5>
+                </div>
+                <div class="card-body text-center">
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-primary btn-block mb-2" style="border-radius: 30px;">
+                        <i class="fas fa-calendar-check"></i> رزرو نوبت
+                    </a>
+                    <a href="@Url.Action("Contact", "Home")" class="btn btn-outline-primary btn-block" style="border-radius: 30px;">
+                        <i class="fas fa-envelope"></i> تماس با کلینیک
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Model.EquipmentName</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="@Model.EquipmentName" class="img-fluid" style="border-radius: 12px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openImageModal(imageUrl) {
+            $('#modalImage').attr('src', imageUrl);
+            $('#imageModal').modal('show');
+        }
+    </script>
+}
+
+@functions {
+    private string GetStatusDisplayName(string status)
+    {
+        return status switch
+        {
+            "Active" => "فعال",
+            "Maintenance" => "تعمیر",
+            "Inactive" => "غیرفعال",
+            _ => status ?? "نامشخص"
+        };
+    }
+}
+

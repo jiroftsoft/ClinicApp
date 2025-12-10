@@ -1,0 +1,146 @@
+@model ClinicApp.ViewModels.CMS.HealthTipPublicViewModel
+@{
+    ViewBag.Title = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="health-tip-detail-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="card shadow-lg border-0">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" class="card-img-top" alt="@Model.Title" style="max-height: 400px; object-fit: cover;">
+                    }
+                    
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <span class="badge badge-primary badge-lg">
+                                <i class="@GetCategoryIcon(Model.Category)"></i>
+                                @Model.CategoryDisplayName
+                            </span>
+                            @if (Model.Tags != null && Model.Tags.Any())
+                            {
+                                foreach (var tag in Model.Tags)
+                                {
+                                    <span class="badge badge-secondary mr-1">@tag</span>
+                                }
+                            }
+                        </div>
+
+                        <h1 class="card-title mb-4">@Model.Title</h1>
+
+                        @if (!string.IsNullOrEmpty(Model.Summary))
+                        {
+                            <div class="alert alert-info mb-4">
+                                <strong>خلاصه:</strong> @Model.Summary
+                            </div>
+                        }
+
+                        <div class="health-tip-content mb-4">
+                            @Html.Raw(Model.Content)
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+                        {
+                            <div class="mb-4">
+                                <a href="@Model.RelatedLinkUrl" class="btn btn-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> اطلاعات بیشتر
+                                </a>
+                            </div>
+                        }
+
+                        <div class="border-top pt-4 mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-eye text-muted mr-2"></i>
+                                        <span class="text-muted">@Model.ViewCount بازدید</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <button class="btn btn-outline-primary" onclick="shareHealthTip(@Model.HealthTipId)">
+                                        <i class="fas fa-share-alt"></i> اشتراک‌گذاری
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right"></i> بازگشت به لیست نکات سلامت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function shareHealthTip(healthTipId) {
+            // افزایش تعداد اشتراک‌گذاری
+            $.ajax({
+                url: '@Url.Action("IncrementShare", "HealthTip")',
+                type: 'POST',
+                data: { id: healthTipId },
+                success: function() {
+                    // اشتراک‌گذاری در شبکه‌های اجتماعی
+                    if (navigator.share) {
+                        navigator.share({
+                            title: '@Model.Title',
+                            text: '@(Model.Summary ?? "")',
+                            url: window.location.href
+                        });
+                    } else {
+                        // Fallback: کپی لینک
+                        var url = window.location.href;
+                        navigator.clipboard.writeText(url).then(function() {
+                            alert('لینک کپی شد!');
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .health-tip-detail-page {
+            position: relative;
+        }
+
+        .health-tip-content {
+            line-height: 2;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .card.shadow-lg {
+            border-radius: 15px;
+        }
+
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+}
+
+@functions {
+    private string GetCategoryIcon(string category)
+    {
+        return category switch
+        {
+            "prevention" => "fas fa-shield-alt",
+            "nutrition" => "fas fa-apple-alt",
+            "exercise" => "fas fa-running",
+            "diseases" => "fas fa-stethoscope",
+            "general" => "fas fa-heart",
+            _ => "fas fa-info-circle"
+        };
+    }
+}
+

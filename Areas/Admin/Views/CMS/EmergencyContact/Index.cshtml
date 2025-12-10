@@ -1,0 +1,280 @@
+@using Org.BouncyCastle.Asn1.Ocsp
+@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.EmergencyContactIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت تماس‌های اضطراری";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .emergency-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .emergency-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .icon-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-phone-alt text-danger"></i>
+            مدیریت تماس‌های اضطراری
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> تماس اضطراری جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "EmergencyContact", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان و شماره تماس..." value="@Request.QueryString["SearchTerm"]">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="ContactType" class="form-control">
+                        <option value="">همه انواع</option>
+                        @if (ViewBag.ContactTypes != null)
+                        {
+                            foreach (var type in ViewBag.ContactTypes)
+                            {
+                                <option value="@type.Value" @(Request.QueryString["ContactType"] == type.Value ? "selected" : "")>@type.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsActive" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
+                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsAlwaysVisible" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsAlwaysVisible"] == "true" ? "selected" : "")>همیشه قابل مشاهده</option>
+                        <option value="false" @(Request.QueryString["IsAlwaysVisible"] == "false" ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Emergency Contacts List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست تماس‌های اضطراری (@Model.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>آیکون</th>
+                                <th>عنوان</th>
+                                <th>نوع</th>
+                                <th>شماره تماس</th>
+                                <th>وضعیت</th>
+                                <th>همیشه قابل مشاهده</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.IconUrl))
+                                        {
+                                            <img src="@item.IconUrl" alt="@item.Title" class="icon-img">
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-phone-alt fa-2x text-danger"></i>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@item.Title</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@GetTypeDisplayName(item.ContactType)</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <i class="fas fa-phone text-success"></i> @item.PhoneNumber
+                                            @if (!string.IsNullOrEmpty(item.SecondaryPhoneNumber))
+                                            {
+                                                <br />
+                                                <small><i class="fas fa-phone text-secondary"></i> @item.SecondaryPhoneNumber</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsAlwaysVisible)
+                                        {
+                                            <span class="badge badge-danger status-badge">همیشه قابل مشاهده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.EmergencyContactId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.EmergencyContactId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!item.IsActive)
+                                            {
+                                                using (Html.BeginForm("Activate", "EmergencyContact", new { id = item.EmergencyContactId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Deactivate", "EmergencyContact", new { id = item.EmergencyContactId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "EmergencyContact", new { id = item.EmergencyContactId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این تماس اضطراری اطمینان دارید؟')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ تماس اضطراری یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetTypeDisplayName(string contactType)
+    {
+        return contactType switch
+        {
+            "Emergency" => "اورژانس",
+            "Ambulance" => "آمبولانس",
+            "Poison Control" => "مرکز مسمومیت",
+            "Fire" => "آتش‌نشانی",
+            "Police" => "پلیس",
+            "Hospital" => "بیمارستان",
+            "Clinic" => "کلینیک",
+            _ => contactType ?? "عمومی"
+        };
+    }
+}
+

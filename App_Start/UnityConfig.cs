@@ -63,6 +63,9 @@ using ClinicApp.Services.Payment.POS;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Services.Appointment;
 using ClinicApp.Repositories.Appointment;
+using ClinicApp.Interfaces.CMS;
+using ClinicApp.Repositories.CMS;
+using ClinicApp.Services.CMS;
 
 namespace ClinicApp
 {
@@ -334,6 +337,9 @@ namespace ClinicApp
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
+                
+                // Register HomePage Service
+                container.RegisterType<IHomePageService, HomePageService>(new PerRequestLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
 
                 // ثبت سرویس‌های تریاژ
@@ -375,6 +381,34 @@ namespace ClinicApp
 
                 // Register Service Management services
                 container.RegisterType<IServiceManagementService, ServiceManagementService>(new PerRequestLifetimeManager());
+                
+                // ========== ثبت Repository های CMS ==========
+                container.RegisterType<IBlogPostRepository, BlogPostRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<ISliderRepository, SliderRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IAnnouncementRepository, AnnouncementRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<ITestimonialRepository, TestimonialRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IGalleryItemRepository, GalleryItemRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IFAQRepository, FAQRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IHealthTipRepository, HealthTipRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceInfoRepository, InsuranceInfoRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IMedicalServiceInfoRepository, MedicalServiceInfoRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IEmergencyContactRepository, EmergencyContactRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IClinicWorkingHoursRepository, ClinicWorkingHoursRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IMedicalEquipmentRepository, MedicalEquipmentRepository>(new PerRequestLifetimeManager());
+                
+                // ========== ثبت Service های CMS ==========
+                container.RegisterType<IBlogPostService, BlogPostService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISliderService, SliderService>(new PerRequestLifetimeManager());
+                container.RegisterType<IAnnouncementService, AnnouncementService>(new PerRequestLifetimeManager());
+                container.RegisterType<ITestimonialService, TestimonialService>(new PerRequestLifetimeManager());
+                container.RegisterType<IGalleryService, GalleryService>(new PerRequestLifetimeManager());
+                container.RegisterType<IFAQService, FAQService>(new PerRequestLifetimeManager());
+                container.RegisterType<IHealthTipService, HealthTipService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceInfoService, InsuranceInfoService>(new PerRequestLifetimeManager());
+                container.RegisterType<IMedicalServiceInfoService, MedicalServiceInfoService>(new PerRequestLifetimeManager());
+                container.RegisterType<IEmergencyContactService, EmergencyContactService>(new PerRequestLifetimeManager());
+                container.RegisterType<IClinicWorkingHoursService, ClinicWorkingHoursService>(new PerRequestLifetimeManager());
+                container.RegisterType<IMedicalEquipmentService, MedicalEquipmentService>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Repositories
                 container.RegisterType<IDoctorCrudRepository, DoctorCrudRepository>(new PerRequestLifetimeManager());
