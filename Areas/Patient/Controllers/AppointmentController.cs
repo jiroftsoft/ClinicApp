@@ -255,8 +255,24 @@ namespace ClinicApp.Areas.Patient.Controllers
                         // persian-datepicker تاریخ را به فرمت YYYY/MM/DD ارسال می‌کند
                         // اما ممکن است به صورت timestamp هم ارسال شود
                         
-                        // اول: بررسی timestamp (milliseconds)
-                        if (long.TryParse(date, out long timestamp))
+                        // ✅ اول: بررسی تاریخ شمسی (YYYY/MM/DD) - اولویت با تاریخ شمسی
+                        // این مهم است چون اگر تاریخ به صورت "2" یا "02" ارسال شود، نباید به عنوان timestamp در نظر گرفته شود
+                        if (date.Contains("/") && date.Split('/').Length == 3)
+                        {
+                            var parts = date.Split('/');
+                            var year = int.Parse(parts[0]);
+                            var month = int.Parse(parts[1]);
+                            var day = int.Parse(parts[2]);
+                            
+                            var persianCalendar = new System.Globalization.PersianCalendar();
+                            appointmentDate = persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
+                            appointmentDate = appointmentDate.Date; // فقط تاریخ، بدون زمان
+                            _logger.Information("تاریخ شمسی تبدیل شد: {PersianDate} -> {Date}, DayOfWeek: {DayOfWeek}", 
+                                date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
+                        }
+                        // ✅ دوم: بررسی timestamp (فقط اگر تاریخ شمسی نباشد)
+                        // فقط timestamp های معتبر (بزرگتر از 1000000000 که معادل سال 2001 است) را در نظر می‌گیریم
+                        else if (long.TryParse(date, out long timestamp) && timestamp > 1000000000)
                         {
                             // تبدیل timestamp به DateTime
                             // توجه: persian-datepicker ممکن است timestamp را به صورت milliseconds ارسال کند
@@ -281,21 +297,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Information("تاریخ از timestamp تبدیل شد: {Timestamp} -> {Date}, DayOfWeek: {DayOfWeek}", 
                                 timestamp, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
                         }
-                        // دوم: بررسی تاریخ شمسی (YYYY/MM/DD)
-                        else if (date.Contains("/") && date.Split('/').Length == 3)
-                        {
-                            var parts = date.Split('/');
-                            var year = int.Parse(parts[0]);
-                            var month = int.Parse(parts[1]);
-                            var day = int.Parse(parts[2]);
-                            
-                            var persianCalendar = new System.Globalization.PersianCalendar();
-                            appointmentDate = persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
-                            appointmentDate = appointmentDate.Date; // فقط تاریخ، بدون زمان
-                            _logger.Information("تاریخ شمسی تبدیل شد: {PersianDate} -> {Date}, DayOfWeek: {DayOfWeek}", 
-                                date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
-                        }
-                        // سوم: استفاده از PersianDateHelper
+                        // ✅ سوم: استفاده از PersianDateHelper
                         else
                         {
                             try

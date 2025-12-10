@@ -4,10 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Enums;
+using ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Helpers;
+using ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Validators;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
 
@@ -17,20 +21,44 @@ namespace ClinicApp.Services.ClinicAdmin
     /// سرویس بهینه‌سازی برنامه کاری پزشکان
     /// این سرویس مسئول بهینه‌سازی زمان‌بندی و توزیع بار کاری است
     /// طبق DESIGN_PRINCIPLES_CONTRACT: پیاده‌سازی کامل برای محیط پزشکی
+    /// 
+    /// اصول طراحی:
+    /// - Single Responsibility: Orchestration و هماهنگی Strategy ها
+    /// - Dependency Inversion: وابستگی به Interfaces
+    /// - Open/Closed: قابل توسعه بدون تغییر کد موجود
     /// </summary>
     public class ScheduleOptimizationService : IScheduleOptimizationService
     {
         private readonly IDoctorScheduleRepository _doctorScheduleRepository;
         private readonly IDoctorCrudService _doctorCrudService;
+        private readonly IWorkloadAnalyzer _workloadAnalyzer;
+        private readonly IBreakTimeOptimizer _breakTimeOptimizer;
+        private readonly IPriorityManager _priorityManager;
+        private readonly IPatientDistributor _patientDistributor;
+        private readonly IEmergencySlotManager _emergencySlotManager;
+        private readonly ICostAnalyzer _costAnalyzer;
         private readonly ILogger _logger;
 
         public ScheduleOptimizationService(
             IDoctorScheduleRepository doctorScheduleRepository,
-            IDoctorCrudService doctorCrudService)
+            IDoctorCrudService doctorCrudService,
+            IWorkloadAnalyzer workloadAnalyzer,
+            IBreakTimeOptimizer breakTimeOptimizer,
+            IPriorityManager priorityManager,
+            IPatientDistributor patientDistributor,
+            IEmergencySlotManager emergencySlotManager,
+            ICostAnalyzer costAnalyzer,
+            ILogger logger)
         {
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
-            _logger = Log.ForContext<ScheduleOptimizationService>();
+            _workloadAnalyzer = workloadAnalyzer ?? throw new ArgumentNullException(nameof(workloadAnalyzer));
+            _breakTimeOptimizer = breakTimeOptimizer ?? throw new ArgumentNullException(nameof(breakTimeOptimizer));
+            _priorityManager = priorityManager ?? throw new ArgumentNullException(nameof(priorityManager));
+            _patientDistributor = patientDistributor ?? throw new ArgumentNullException(nameof(patientDistributor));
+            _emergencySlotManager = emergencySlotManager ?? throw new ArgumentNullException(nameof(emergencySlotManager));
+            _costAnalyzer = costAnalyzer ?? throw new ArgumentNullException(nameof(costAnalyzer));
+            _logger = logger?.ForContext<ScheduleOptimizationService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -40,21 +68,17 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی برنامه کاری روزانه برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Information("شروع بهینه‌سازی برنامه کاری روزانه - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                // اعتبارسنجی پارامترها
-                if (doctorId <= 0)
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateDailyOptimizationRequest(doctorId, date);
+                if (!validation.IsValid)
                 {
-                    return ServiceResult<WorkloadBalanceResult>.Failed("شناسه پزشک نامعتبر است.");
+                    return ServiceResult<WorkloadBalanceResult>.Failed(validation.ErrorMessage);
                 }
 
-                if (date.Date < DateTime.Today)
-                {
-                    return ServiceResult<WorkloadBalanceResult>.Failed("تاریخ مورد نظر نمی‌تواند در گذشته باشد.");
-                }
-
-                // بررسی وجود پزشک
+                // ✅ بررسی وجود پزشک
                 var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
@@ -62,7 +86,7 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult<WorkloadBalanceResult>.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
-                // دریافت برنامه کاری پزشک
+                // ✅ دریافت برنامه کاری پزشک
                 var schedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
                 if (schedule == null)
                 {
@@ -70,83 +94,74 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult<WorkloadBalanceResult>.Failed("برنامه کاری برای این پزشک تعریف نشده است.");
                 }
 
-                // تحلیل بار کاری روزانه
+                // ✅ تحلیل بار کاری روزانه با استفاده از WorkloadAnalyzer
+                var workloadResult = await _workloadAnalyzer.AnalyzeDailyWorkloadAsync(doctorId, date);
+                if (!workloadResult.Success || workloadResult.Data == null)
+                {
+                    return ServiceResult<WorkloadBalanceResult>.Failed(workloadResult.Message ?? "خطا در تحلیل بار کاری");
+                }
+
+                var workloadAnalysis = workloadResult.Data;
+
+                // ✅ بهینه‌سازی زمان‌های استراحت
                 var workDay = schedule.WorkDays?.FirstOrDefault(w => w.DayOfWeek == (int)date.DayOfWeek && w.IsActive);
-                if (workDay == null)
+                var timeRange = workDay?.TimeRanges?.FirstOrDefault(tr => tr.IsActive);
+                
+                List<BreakTimeSlot> breakSlots = new List<BreakTimeSlot>();
+                if (timeRange != null && workloadAnalysis.TotalWorkMinutes > 0)
                 {
-                    _logger.Information("روز کاری برای پزشک {DoctorId} در تاریخ {Date} یافت نشد", doctorId, date.ToString("yyyy/MM/dd"));
-                    return ServiceResult<WorkloadBalanceResult>.Successful(new WorkloadBalanceResult
+                    var breakResult = await _breakTimeOptimizer.OptimizeBreakTimesAsync(
+                        doctorId,
+                        date,
+                        timeRange.StartTime,
+                        timeRange.EndTime,
+                        workloadAnalysis.TotalWorkMinutes);
+
+                    if (breakResult.Success && breakResult.Data != null)
                     {
-                        Status = WorkloadBalanceStatus.NoWorkDay,
-                        Message = "روز کاری برای این تاریخ تعریف نشده است.",
-                        OptimizedSlots = new List<TimeSlotViewModel>()
-                    });
+                        breakSlots = breakResult.Data;
+                    }
                 }
 
-                // محاسبه بار کاری
-                var timeRange = workDay.TimeRanges?.FirstOrDefault(tr => tr.IsActive);
-                if (timeRange == null)
+                // ✅ تولید اسلات‌های بهینه شده
+                var optimizedSlots = new List<TimeSlotViewModel>();
+                if (workDay != null && timeRange != null)
                 {
-                    _logger.Information("بازه زمانی برای روز کاری پزشک {DoctorId} در تاریخ {Date} یافت نشد", doctorId, date.ToString("yyyy/MM/dd"));
-                    return ServiceResult<WorkloadBalanceResult>.Successful(new WorkloadBalanceResult
-                    {
-                        Status = WorkloadBalanceStatus.NoWorkDay,
-                        Message = "بازه زمانی برای این روز تعریف نشده است.",
-                        OptimizedSlots = new List<TimeSlotViewModel>()
-                    });
+                    optimizedSlots = TimeSlotGenerator.GenerateTimeSlotsWithBreaks(
+                        date,
+                        timeRange.StartTime,
+                        timeRange.EndTime,
+                        schedule.AppointmentDuration,
+                        breakSlots,
+                        doctorResult.Data.FullName);
                 }
 
-                var totalWorkMinutes = (timeRange.EndTime - timeRange.StartTime).TotalMinutes;
-                var appointmentCount = (int)(totalWorkMinutes / 30); // فرض بر 30 دقیقه برای هر نوبت
-                var breakTimeMinutes = 0; // در حال حاضر ثابت
-
-                // تحلیل وضعیت بار کاری
-                WorkloadBalanceStatus status;
-                string message;
-
-                if (appointmentCount <= 8)
-                {
-                    status = WorkloadBalanceStatus.Light;
-                    message = "بار کاری سبک - امکان افزایش تعداد نوبت‌ها";
-                }
-                else if (appointmentCount <= 12)
-                {
-                    status = WorkloadBalanceStatus.Balanced;
-                    message = "بار کاری متعادل - وضعیت مطلوب";
-                }
-                else if (appointmentCount <= 16)
-                {
-                    status = WorkloadBalanceStatus.Heavy;
-                    message = "بار کاری سنگین - نیاز به بهینه‌سازی";
-                }
-                else
-                {
-                    status = WorkloadBalanceStatus.Overloaded;
-                    message = "بار کاری بیش از حد - نیاز به کاهش فوری";
-                }
-
-                // تولید اسلات‌های بهینه شده
-                var optimizedSlots = await GenerateOptimizedTimeSlotsAsync(workDay, date, doctorResult.Data.FullName);
+                // ✅ تولید توصیه‌ها
+                var recommendations = RecommendationGenerator.GenerateRecommendations(
+                    workloadAnalysis.Status,
+                    workloadAnalysis.CurrentAppointments,
+                    workloadAnalysis.MaxCapacity,
+                    workloadAnalysis.BreakTimeMinutes);
 
                 var result = new WorkloadBalanceResult
                 {
-                    Status = status,
-                    Message = message,
-                    TotalAppointments = appointmentCount,
-                    TotalWorkMinutes = (int)totalWorkMinutes,
-                    BreakTimeMinutes = breakTimeMinutes,
+                    Status = workloadAnalysis.Status,
+                    Message = GetStatusMessage(workloadAnalysis.Status),
+                    TotalAppointments = workloadAnalysis.CurrentAppointments,
+                    TotalWorkMinutes = workloadAnalysis.TotalWorkMinutes,
+                    BreakTimeMinutes = workloadAnalysis.BreakTimeMinutes,
                     OptimizedSlots = optimizedSlots,
-                    Recommendations = GenerateRecommendations(status, appointmentCount, breakTimeMinutes)
+                    Recommendations = recommendations
                 };
 
-                _logger.Information("بهینه‌سازی برنامه کاری روزانه برای پزشک {DoctorId} در تاریخ {Date} با موفقیت انجام شد. وضعیت: {Status}", 
-                    doctorId, date.ToString("yyyy/MM/dd"), status);
+                _logger.Information("بهینه‌سازی برنامه کاری روزانه تکمیل شد - DoctorId: {DoctorId}, Date: {Date}, Status: {Status}", 
+                    doctorId, date.ToString("yyyy/MM/dd"), workloadAnalysis.Status);
 
                 return ServiceResult<WorkloadBalanceResult>.Successful(result);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی برنامه کاری روزانه برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Error(ex, "خطا در بهینه‌سازی برنامه کاری روزانه - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
                 return ServiceResult<WorkloadBalanceResult>.Failed("خطا در بهینه‌سازی برنامه کاری روزانه");
             }
@@ -260,27 +275,57 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی زمان‌های استراحت برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Information("شروع بهینه‌سازی زمان‌های استراحت - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                var breakSlots = new List<BreakTimeSlot>();
-
-                // در حال حاضر این متد ساده است
-                // در آینده با الگوریتم‌های پیشرفته پیاده‌سازی خواهد شد
-                breakSlots.Add(new BreakTimeSlot
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateDailyOptimizationRequest(doctorId, date);
+                if (!validation.IsValid)
                 {
-                    StartTime = new TimeSpan(12, 0, 0),
-                    EndTime = new TimeSpan(13, 0, 0),
-                    Type = BreakType.Lunch,
-                    Duration = 60,
-                    IsOptimized = true
-                });
+                    return ServiceResult<List<BreakTimeSlot>>.Failed(validation.ErrorMessage);
+                }
 
-                return ServiceResult<List<BreakTimeSlot>>.Successful(breakSlots);
+                // ✅ دریافت برنامه کاری
+                var schedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
+                if (schedule == null)
+                {
+                    return ServiceResult<List<BreakTimeSlot>>.Failed("برنامه کاری برای این پزشک تعریف نشده است.");
+                }
+
+                var workDay = schedule.WorkDays?.FirstOrDefault(w => w.DayOfWeek == (int)date.DayOfWeek && w.IsActive);
+                var timeRange = workDay?.TimeRanges?.FirstOrDefault(tr => tr.IsActive);
+
+                if (timeRange == null)
+                {
+                    return ServiceResult<List<BreakTimeSlot>>.Successful(new List<BreakTimeSlot>());
+                }
+
+                // ✅ محاسبه کل زمان کار
+                var totalWorkMinutes = WorkloadCalculator.CalculateTotalWorkMinutes(
+                    timeRange.StartTime,
+                    timeRange.EndTime);
+
+                // ✅ استفاده از BreakTimeOptimizer
+                var result = await _breakTimeOptimizer.OptimizeBreakTimesAsync(
+                    doctorId,
+                    date,
+                    timeRange.StartTime,
+                    timeRange.EndTime,
+                    totalWorkMinutes);
+
+                if (!result.Success)
+                {
+                    return ServiceResult<List<BreakTimeSlot>>.Failed(result.Message);
+                }
+
+                _logger.Information("بهینه‌سازی زمان‌های استراحت تکمیل شد - DoctorId: {DoctorId}, Count: {Count}",
+                    doctorId, result.Data?.Count ?? 0);
+
+                return ServiceResult<List<BreakTimeSlot>>.Successful(result.Data ?? new List<BreakTimeSlot>());
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی زمان‌های استراحت برای پزشک {DoctorId}", doctorId);
+                _logger.Error(ex, "خطا در بهینه‌سازی زمان‌های استراحت - DoctorId: {DoctorId}", doctorId);
                 return ServiceResult<List<BreakTimeSlot>>.Failed("خطا در بهینه‌سازی زمان‌های استراحت");
             }
         }
@@ -292,16 +337,27 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی اولویت‌های نوبت‌ها برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Information("شروع بهینه‌سازی اولویت‌های نوبت‌ها - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                // در حال حاضر این متد ساده است
-                // در آینده با الگوریتم‌های پیشرفته پیاده‌سازی خواهد شد
-                return ServiceResult<bool>.Successful(true);
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateDailyOptimizationRequest(doctorId, date);
+                if (!validation.IsValid)
+                {
+                    return ServiceResult<bool>.Failed(validation.ErrorMessage);
+                }
+
+                // ✅ استفاده از PriorityManager
+                var result = await _priorityManager.OptimizeAppointmentPrioritiesAsync(doctorId, date);
+
+                _logger.Information("بهینه‌سازی اولویت‌های نوبت‌ها تکمیل شد - DoctorId: {DoctorId}, Success: {Success}",
+                    doctorId, result.Success);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی اولویت‌های نوبت‌ها برای پزشک {DoctorId}", doctorId);
+                _logger.Error(ex, "خطا در بهینه‌سازی اولویت‌های نوبت‌ها - DoctorId: {DoctorId}", doctorId);
                 return ServiceResult<bool>.Failed("خطا در بهینه‌سازی اولویت‌های نوبت‌ها");
             }
         }
@@ -313,23 +369,27 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی توزیع بیماران برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Information("شروع بهینه‌سازی توزیع بیماران - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                var result = new PatientDistributionResult
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateDailyOptimizationRequest(doctorId, date);
+                if (!validation.IsValid)
                 {
-                    TotalPatients = 0,
-                    DistributionByType = new Dictionary<string, int>(),
-                    Recommendations = new List<string>()
-                };
+                    return ServiceResult<PatientDistributionResult>.Failed(validation.ErrorMessage);
+                }
 
-                // در حال حاضر این متد ساده است
-                // در آینده با الگوریتم‌های پیشرفته پیاده‌سازی خواهد شد
-                return ServiceResult<PatientDistributionResult>.Successful(result);
+                // ✅ استفاده از PatientDistributor
+                var result = await _patientDistributor.OptimizePatientDistributionAsync(doctorId, date);
+
+                _logger.Information("بهینه‌سازی توزیع بیماران تکمیل شد - DoctorId: {DoctorId}, Total: {Total}",
+                    doctorId, result.Data?.TotalPatients ?? 0);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی توزیع بیماران برای پزشک {DoctorId}", doctorId);
+                _logger.Error(ex, "خطا در بهینه‌سازی توزیع بیماران - DoctorId: {DoctorId}", doctorId);
                 return ServiceResult<PatientDistributionResult>.Failed("خطا در بهینه‌سازی توزیع بیماران");
             }
         }
@@ -341,27 +401,27 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی زمان‌های اورژانس برای پزشک {DoctorId} در تاریخ {Date}", 
+                _logger.Information("شروع بهینه‌سازی زمان‌های اورژانس - DoctorId: {DoctorId}, Date: {Date}", 
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                var emergencySlots = new List<EmergencyTimeSlot>();
-
-                // در حال حاضر این متد ساده است
-                // در آینده با الگوریتم‌های پیشرفته پیاده‌سازی خواهد شد
-                emergencySlots.Add(new EmergencyTimeSlot
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateDailyOptimizationRequest(doctorId, date);
+                if (!validation.IsValid)
                 {
-                    StartTime = new TimeSpan(8, 0, 0),
-                    EndTime = new TimeSpan(9, 0, 0),
-                    Priority = EmergencyPriority.High,
-                    Type = EmergencyType.Critical,
-                    IsAvailable = true
-                });
+                    return ServiceResult<List<EmergencyTimeSlot>>.Failed(validation.ErrorMessage);
+                }
 
-                return ServiceResult<List<EmergencyTimeSlot>>.Successful(emergencySlots);
+                // ✅ استفاده از EmergencySlotManager
+                var result = await _emergencySlotManager.OptimizeEmergencyTimesAsync(doctorId, date);
+
+                _logger.Information("بهینه‌سازی زمان‌های اورژانس تکمیل شد - DoctorId: {DoctorId}, Count: {Count}",
+                    doctorId, result.Data?.Count ?? 0);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی زمان‌های اورژانس برای پزشک {DoctorId}", doctorId);
+                _logger.Error(ex, "خطا در بهینه‌سازی زمان‌های اورژانس - DoctorId: {DoctorId}", doctorId);
                 return ServiceResult<List<EmergencyTimeSlot>>.Failed("خطا در بهینه‌سازی زمان‌های اورژانس");
             }
         }
@@ -422,24 +482,27 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست بهینه‌سازی هزینه‌ها برای پزشک {DoctorId} از {StartDate} تا {EndDate}", 
+                _logger.Information("شروع بهینه‌سازی هزینه‌ها - DoctorId: {DoctorId}, From: {StartDate}, To: {EndDate}", 
                     doctorId, startDate.ToString("yyyy/MM/dd"), endDate.ToString("yyyy/MM/dd"));
 
-                var report = new CostOptimizationReport
+                // ✅ اعتبارسنجی
+                var validation = OptimizationRequestValidator.ValidateCostOptimizationRequest(doctorId, startDate, endDate);
+                if (!validation.IsValid)
                 {
-                    TotalRevenue = 0,
-                    TotalCosts = 0,
-                    NetProfit = 0,
-                    Suggestions = new List<CostOptimizationSuggestion>()
-                };
+                    return ServiceResult<CostOptimizationReport>.Failed(validation.ErrorMessage);
+                }
 
-                // در حال حاضر این متد ساده است
-                // در آینده با الگوریتم‌های پیشرفته پیاده‌سازی خواهد شد
-                return ServiceResult<CostOptimizationReport>.Successful(report);
+                // ✅ استفاده از CostAnalyzer
+                var result = await _costAnalyzer.OptimizeCostsAsync(doctorId, startDate, endDate);
+
+                _logger.Information("بهینه‌سازی هزینه‌ها تکمیل شد - DoctorId: {DoctorId}, Revenue: {Revenue}, Costs: {Costs}",
+                    doctorId, result.Data?.TotalRevenue ?? 0, result.Data?.TotalCosts ?? 0);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بهینه‌سازی هزینه‌ها برای پزشک {DoctorId}", doctorId);
+                _logger.Error(ex, "خطا در بهینه‌سازی هزینه‌ها - DoctorId: {DoctorId}", doctorId);
                 return ServiceResult<CostOptimizationReport>.Failed("خطا در بهینه‌سازی هزینه‌ها");
             }
         }
@@ -447,91 +510,25 @@ namespace ClinicApp.Services.ClinicAdmin
         #region Private Helper Methods
 
         /// <summary>
-        /// تولید اسلات‌های زمانی بهینه شده
+        /// دریافت پیام وضعیت
         /// </summary>
-        private async Task<List<TimeSlotViewModel>> GenerateOptimizedTimeSlotsAsync(DoctorWorkDay workDay, DateTime date, string doctorName)
+        private string GetStatusMessage(WorkloadBalanceStatus status)
         {
-            var slots = new List<TimeSlotViewModel>();
-            var timeRange = workDay.TimeRanges?.FirstOrDefault(tr => tr.IsActive);
-            if (timeRange == null)
-            {
-                return slots;
-            }
-
-            var currentTime = timeRange.StartTime;
-            var appointmentDuration = 30; // فرض بر 30 دقیقه برای هر نوبت
-
-            while (currentTime < timeRange.EndTime)
-            {
-                var endTime = currentTime.Add(TimeSpan.FromMinutes(appointmentDuration));
-                
-                if (endTime <= timeRange.EndTime)
-                {
-                    slots.Add(new TimeSlotViewModel
-                    {
-                        SlotId = 0,
-                        SlotDate = date,
-                        StartTime = currentTime,
-                        EndTime = endTime,
-                        Duration = appointmentDuration,
-                        Price = 0, // در حال حاضر ثابت
-                        Status = "Available",
-                        IsAvailable = true,
-                        IsEmergencySlot = false,
-                        IsWalkInAllowed = false, // در حال حاضر ثابت
-                        Priority = "عادی",
-                        DoctorName = doctorName,
-                        Specialization = "نامشخص", // در حال حاضر ثابت
-                        ClinicName = "نامشخص", // در حال حاضر ثابت
-                        ClinicAddress = "نامشخص" // در حال حاضر ثابت
-                    });
-                }
-
-                currentTime = endTime;
-            }
-
-            return slots;
-        }
-
-        /// <summary>
-        /// تولید توصیه‌های بهینه‌سازی
-        /// </summary>
-        private List<string> GenerateRecommendations(WorkloadBalanceStatus status, int appointmentCount, int breakTimeMinutes)
-        {
-            var recommendations = new List<string>();
-
             switch (status)
             {
                 case WorkloadBalanceStatus.Light:
-                    recommendations.Add("افزایش تعداد نوبت‌ها برای استفاده بهتر از زمان");
-                    recommendations.Add("اضافه کردن خدمات مشاوره‌ای");
-                    break;
-
+                    return "بار کاری سبک - امکان افزایش تعداد نوبت‌ها";
                 case WorkloadBalanceStatus.Balanced:
-                    recommendations.Add("حفظ وضعیت فعلی");
-                    recommendations.Add("بررسی امکان بهبود کیفیت خدمات");
-                    break;
-
+                    return "بار کاری متعادل - وضعیت مطلوب";
                 case WorkloadBalanceStatus.Heavy:
-                    recommendations.Add("کاهش تعداد نوبت‌ها");
-                    recommendations.Add("افزایش زمان استراحت بین نوبت‌ها");
-                    recommendations.Add("استفاده از سیستم نوبت‌دهی هوشمند");
-                    break;
-
+                    return "بار کاری سنگین - نیاز به بهینه‌سازی";
                 case WorkloadBalanceStatus.Overloaded:
-                    recommendations.Add("کاهش فوری تعداد نوبت‌ها");
-                    recommendations.Add("افزایش زمان استراحت");
-                    recommendations.Add("استفاده از پزشک کمکی");
-                    recommendations.Add("بررسی مجدد برنامه کاری");
-                    break;
+                    return "بار کاری بیش از حد - نیاز به کاهش فوری";
+                case WorkloadBalanceStatus.NoWorkDay:
+                    return "روز کاری برای این تاریخ تعریف نشده است";
+                default:
+                    return "وضعیت نامشخص";
             }
-
-            if (breakTimeMinutes < 60)
-            {
-                recommendations.Add("افزایش زمان استراحت برای حفظ کیفیت خدمات");
-            }
-
-            return recommendations;
         }
 
         #endregion

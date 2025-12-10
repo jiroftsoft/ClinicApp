@@ -757,6 +757,189 @@ else if (Model.SelectedDoctorId.HasValue)
             };
 
             var selectedDate = '@(Model.SelectedDate.ToString("yyyy/MM/dd"))';
+            var selectedDoctorId = '@(Model.SelectedDoctorId?.ToString() ?? "")';
+
+            // ✅ متغیرهای enterprise-level برای مدیریت state
+            var datePickerInitialized = false;
+            var lastProcessedDate = null;
+            var dateChangeTimeout = null;
+            var isProcessingDate = false;
+            var filterFormSubmitting = false;
+            var isInitialLoad = true; // ✅ Flag برای جلوگیری از polling در بارگذاری اولیه
+            var pollingEnabled = false; // ✅ Flag برای فعال/غیرفعال کردن polling
+
+            // ✅ تابع helper برای تبدیل اعداد فارسی به انگلیسی
+            function convertPersianToEnglishNumbers(str) {
+                if (!str) return str;
+                var persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                var englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                var result = str;
+                for (var i = 0; i < persianNumbers.length; i++) {
+                    result = result.replace(new RegExp(persianNumbers[i], 'g'), englishNumbers[i]);
+                }
+                return result;
+            }
+
+            // ✅ تابع helper مرکزی برای دریافت تاریخ شمسی از datepicker (ضد گلوله)
+            function getPersianDateFromPicker(datePickerInstance, useDelay) {
+                if (!datePickerInstance) {
+                    console.error('getPersianDateFromPicker: datePickerInstance is null');
+                    return null;
+                }
+                
+                var persianDateStr = null;
+                
+                // ✅ روش 1: استفاده مستقیم از selected object (jy, jm, jd) - بهترین و قابل اعتمادترین روش
+                try {
+                    var selected = datePickerInstance.selected;
+                    if (selected && 
+                        typeof selected.jy === 'number' && 
+                        typeof selected.jm === 'number' && 
+                        typeof selected.jd === 'number' &&
+                        selected.jy > 0 && 
+                        selected.jm >= 1 && selected.jm <= 12 && 
+                        selected.jd >= 1 && selected.jd <= 31) {
+                        
+                        var year = String(selected.jy).padStart(4, '0');
+                        var month = String(selected.jm).padStart(2, '0');
+                        var day = String(selected.jd).padStart(2, '0');
+                        persianDateStr = year + '/' + month + '/' + day;
+                        
+                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            console.log('✅ [Method 1] Got date from selected object (jy/jm/jd):', persianDateStr);
+                            return persianDateStr;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('getPersianDateFromPicker [Method 1] failed:', e);
+                }
+                
+                // ✅ روش 2: استفاده از getFormattedDate
+                try {
+                    var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                    if (formattedDate && 
+                        typeof formattedDate === 'string' && 
+                        formattedDate.includes('/') && 
+                        formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        persianDateStr = formattedDate;
+                        console.log('✅ [Method 2] Got date from getFormattedDate:', persianDateStr);
+                        return persianDateStr;
+                    }
+                } catch (e) {
+                    console.warn('getPersianDateFromPicker [Method 2] failed:', e);
+                }
+                
+                // ✅ روش 3: استفاده از input value
+                try {
+                    var inputValue = $("#date").val();
+                    if (inputValue && 
+                        typeof inputValue === 'string' && 
+                        inputValue.includes('/') && 
+                        inputValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        persianDateStr = inputValue;
+                        console.log('✅ [Method 3] Got date from input value:', persianDateStr);
+                        return persianDateStr;
+                    }
+                } catch (e) {
+                    console.warn('getPersianDateFromPicker [Method 3] failed:', e);
+                }
+                
+                return persianDateStr;
+            }
+
+            // ✅ تابع enterprise-level برای پردازش تاریخ از input (مطمئن‌ترین روش)
+            function processDateFromInput(forceProcess) {
+                // جلوگیری از duplicate calls (مگر اینکه forceProcess باشد)
+                if (isProcessingDate && !forceProcess) {
+                    return;
+                }
+                
+                var inputValue = $("#date").val();
+                
+                // ✅ تبدیل اعداد فارسی به انگلیسی
+                inputValue = convertPersianToEnglishNumbers(inputValue);
+                
+                // بررسی اینکه آیا مقدار input تغییر کرده است
+                if (!inputValue || (!forceProcess && inputValue === lastProcessedDate)) {
+                    return;
+                }
+                
+                // ✅ بررسی فرمت تاریخ (با پشتیبانی از اعداد فارسی)
+                var datePattern = /^(\d{4})\/(\d{2})\/(\d{2})$/;
+                var match = inputValue.match(datePattern);
+                
+                if (!match) {
+                    console.log('❌ Invalid date format:', inputValue);
+                    return;
+                }
+                
+                isProcessingDate = true;
+                
+                // ✅ ساخت تاریخ با فرمت استاندارد
+                var year = match[1];
+                var month = match[2];
+                var day = match[3];
+                var persianDateStr = year + '/' + month + '/' + day;
+                
+                console.log('✅ [Enterprise Method] Processing date:', persianDateStr, '(from input:', inputValue + ')');
+                
+                // ✅ اگر datePicker instance موجود است، از آن برای validation استفاده می‌کنیم
+                try {
+                    var datePickerInstance = $("#date").data('pDatepicker');
+                    if (datePickerInstance) {
+                        var dateFromPicker = getPersianDateFromPicker(datePickerInstance, false);
+                        if (dateFromPicker) {
+                            persianDateStr = dateFromPicker;
+                            console.log('✅ [Enterprise Method] Using date from datePicker:', persianDateStr);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error accessing datePicker instance:', e);
+                }
+                
+                lastProcessedDate = persianDateStr;
+                
+                // ✅ اعمال فیلتر به صورت خودکار (فقط اگر بارگذاری اولیه نباشد)
+                if (!isInitialLoad) {
+                    applyFilters(persianDateStr, $('#doctorId').val());
+                } else {
+                    // در بارگذاری اولیه، فقط تاریخ را ذخیره می‌کنیم
+                    console.log('✅ [Initial Load] Date set:', persianDateStr);
+                }
+                
+                // Reset flag بعد از یک تاخیر کوتاه
+                setTimeout(function() {
+                    isProcessingDate = false;
+                }, 100);
+            }
+
+            // ✅ تابع برای اعمال فیلترها
+            function applyFilters(date, doctorId) {
+                if (filterFormSubmitting) {
+                    return;
+                }
+                
+                var url = '@Url.Action("Available")';
+                var params = [];
+                
+                if (date && date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                    params.push('date=' + encodeURIComponent(date));
+                }
+                
+                if (doctorId) {
+                    params.push('doctorId=' + encodeURIComponent(doctorId));
+                }
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                console.log('✅ Applying filters:', url);
+                
+                // اعمال فیلتر با redirect
+                filterFormSubmitting = true;
+                window.location.href = url;
+            }
 
             // راه‌اندازی Persian DatePicker
             $("#date").pDatepicker({
@@ -773,7 +956,165 @@ else if (Model.SelectedDoctorId.HasValue)
                         showHint: true,
                         leapYearMode: 'algorithmic'
                     }
+                },
+                onSelect: function (selectedDateValue) {
+                    console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
+                    
+                    // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
+                    if (!pollingEnabled) {
+                        pollingEnabled = true;
+                        startDatePolling();
+                    }
+                    isInitialLoad = false; // ✅ دیگر بارگذاری اولیه نیست
+                    
+                    // ✅ روش Enterprise: پردازش مستقیم تاریخ بدون debounce زیاد
+                    if (dateChangeTimeout) {
+                        clearTimeout(dateChangeTimeout);
+                    }
+                    
+                    dateChangeTimeout = setTimeout(function() {
+                        processDateFromInput(true); // force process
+                    }, 50); // تاخیر کوتاه برای اطمینان از به‌روزرسانی input
                 }
+            });
+
+            // ✅ Event Listeners Enterprise-Level (مطمئن‌ترین روش در پروژه‌های enterprise)
+            // 1. change event - وقتی کاربر تاریخ را انتخاب می‌کند
+            $("#date").on('change', function() {
+                console.log('✅ [Enterprise] change event triggered');
+                // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
+                if (!pollingEnabled) {
+                    pollingEnabled = true;
+                    startDatePolling();
+                }
+                isInitialLoad = false; // ✅ دیگر بارگذاری اولیه نیست
+                processDateFromInput(true); // force process
+            });
+            
+            // 2. input event - برای تغییرات real-time
+            $("#date").on('input', function() {
+                var inputValue = $(this).val();
+                var englishValue = convertPersianToEnglishNumbers(inputValue);
+                if (englishValue && englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                    // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
+                    if (!pollingEnabled) {
+                        pollingEnabled = true;
+                        startDatePolling();
+                    }
+                    isInitialLoad = false; // ✅ دیگر بارگذاری اولیه نیست
+                    
+                    if (dateChangeTimeout) {
+                        clearTimeout(dateChangeTimeout);
+                    }
+                    dateChangeTimeout = setTimeout(function() {
+                        processDateFromInput(true); // force process
+                    }, 300); // debounce برای input event
+                }
+            });
+            
+            // 3. blur event - وقتی کاربر از input خارج می‌شود
+            $("#date").on('blur', function() {
+                console.log('✅ [Enterprise] blur event triggered');
+                // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
+                if (!pollingEnabled) {
+                    pollingEnabled = true;
+                    startDatePolling();
+                }
+                isInitialLoad = false; // ✅ دیگر بارگذاری اولیه نیست
+                processDateFromInput(true); // force process
+            });
+            
+            // 4. focus event - وقتی کاربر روی input کلیک می‌کند (فقط برای tracking)
+            $("#date").on('focus', function() {
+                console.log('✅ [Enterprise] focus event triggered');
+                // ✅ فعال کردن polling وقتی کاربر روی input کلیک می‌کند
+                if (!pollingEnabled) {
+                    pollingEnabled = true;
+                    startDatePolling();
+                }
+            });
+
+            // ✅ Polling Mechanism Enterprise-Level (برای اطمینان از پردازش تاریخ)
+            var pollingInterval = null;
+            var lastPolledValue = null;
+            
+            function startDatePolling() {
+                // ✅ فقط اگر polling فعال باشد
+                if (!pollingEnabled) {
+                    return;
+                }
+                
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                }
+                
+                pollingInterval = setInterval(function() {
+                    // ✅ فقط اگر polling فعال باشد
+                    if (!pollingEnabled) {
+                        return;
+                    }
+                    
+                    var currentValue = $("#date").val();
+                    if (currentValue && currentValue !== lastPolledValue) {
+                        var englishValue = convertPersianToEnglishNumbers(currentValue);
+                        if (englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            console.log('✅ [Polling] Date changed detected:', englishValue);
+                            lastPolledValue = currentValue;
+                            processDateFromInput(true); // force process
+                        }
+                    }
+                }, 500); // هر 500ms چک می‌کند
+            }
+            
+            // ✅ Initialize تاریخ اولیه و تنظیم flags
+            setTimeout(function() {
+                // تنظیم تاریخ اولیه در lastProcessedDate و lastPolledValue
+                var initialDate = $("#date").val();
+                if (initialDate) {
+                    initialDate = convertPersianToEnglishNumbers(initialDate);
+                    if (initialDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        lastProcessedDate = initialDate;
+                        lastPolledValue = $("#date").val();
+                        console.log('✅ [Initial Load] Date initialized:', initialDate);
+                    }
+                }
+                
+                // ✅ بعد از 2 ثانیه، بارگذاری اولیه تمام شده است
+                setTimeout(function() {
+                    isInitialLoad = false;
+                    pollingEnabled = true; // ✅ فعال کردن polling فقط بعد از بارگذاری اولیه
+                    datePickerInitialized = true;
+                    console.log('✅ DatePicker initialized, polling enabled');
+                }, 2000);
+            }, 1000);
+
+            // ✅ فیلتر پزشک - اعمال خودکار فیلتر
+            $('#doctorId').on('change', function() {
+                var doctorId = $(this).val();
+                var date = $("#date").val();
+                
+                if (date) {
+                    date = convertPersianToEnglishNumbers(date);
+                }
+                
+                console.log('✅ Doctor filter changed:', doctorId);
+                applyFilters(date, doctorId);
+            });
+
+            // ✅ بهبود فرم فیلتر - جلوگیری از submit پیش‌فرض و استفاده از تابع applyFilters
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var date = $("#date").val();
+                var doctorId = $('#doctorId').val();
+                
+                // تبدیل اعداد فارسی به انگلیسی
+                if (date) {
+                    date = convertPersianToEnglishNumbers(date);
+                }
+                
+                console.log('✅ Filter form submitted:', { date: date, doctorId: doctorId });
+                applyFilters(date, doctorId);
             });
 
             // انتخاب پزشک
@@ -782,10 +1123,17 @@ else if (Model.SelectedDoctorId.HasValue)
                 
                 var doctorId = $(this).data('doctor-id');
                 var date = $('#date').val();
+                
+                // تبدیل اعداد فارسی به انگلیسی
                 if (date) {
-                    window.location.href = '@Url.Action("Available")?doctorId=' + doctorId + '&date=' + date;
+                    date = convertPersianToEnglishNumbers(date);
+                }
+                
+                if (date && date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                    applyFilters(date, doctorId);
                 } else {
-                    toastr.info('لطفاً ابتدا تاریخ را انتخاب کنید', 'اطلاعات');
+                    // اگر تاریخ انتخاب نشده، فقط پزشک را فیلتر می‌کنیم
+                    applyFilters(null, doctorId);
                 }
             });
 

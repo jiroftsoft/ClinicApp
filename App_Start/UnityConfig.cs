@@ -405,8 +405,22 @@ namespace ClinicApp
                 // Register Appointment Booking Service
                 container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
 
-                // Register Schedule Optimization Service
+                // Register Schedule Optimization Service and Strategies
                 container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());
+                
+                // Register Schedule Optimization Strategies
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.IWorkloadAnalyzer, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.WorkloadAnalyzer>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.IBreakTimeOptimizer, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.BreakTimeOptimizer>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.IPriorityManager, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.PriorityManager>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.IPatientDistributor, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.PatientDistributor>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.IEmergencySlotManager, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.EmergencySlotManager>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.ClinicAdmin.ScheduleOptimization.ICostAnalyzer, 
+                    ClinicApp.Services.ClinicAdmin.ScheduleOptimization.Strategies.CostAnalyzer>(new PerRequestLifetimeManager());
 
                 // Register Emergency Booking Service
                 container.RegisterType<IEmergencyBookingService, EmergencyBookingService>(new PerRequestLifetimeManager());

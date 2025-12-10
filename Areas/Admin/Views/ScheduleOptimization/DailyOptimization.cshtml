@@ -161,7 +161,26 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">وضعیت بهینه‌سازی:</label>
                             <p>
-                                <span class="badge bg-success fs-6">@Model.Status</span>
+                                @{
+                                    var statusClass = Model.Status switch
+                                    {
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Light => "bg-info",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Balanced => "bg-success",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Heavy => "bg-warning",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Overloaded => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                    var statusText = Model.Status switch
+                                    {
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Light => "سبک",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Balanced => "متعادل",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Heavy => "سنگین",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.Overloaded => "بیش از حد",
+                                        ClinicApp.Models.Enums.WorkloadBalanceStatus.NoWorkDay => "بدون روز کاری",
+                                        _ => "نامشخص"
+                                    };
+                                }
+                                <span class="badge @statusClass fs-6">@statusText</span>
                             </p>
                         </div>
                     </div>
@@ -302,7 +321,7 @@
 </div>
 
 @section Scripts {
-    @Scripts.Render("~/bundles/persian-datepicker")
+    @* ✅ Persian DatePicker در bundle/bootstrap موجود است، نیازی به bundle جداگانه نیست *@
     
     <script>
         $(document).ready(function() {
@@ -348,16 +367,43 @@
             });
         });
 
-        // Reset Form
+        // ✅ Reset Form - Production-Ready: استفاده از selector درست
         function resetForm() {
-            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
-                document.getElementById('optimizationForm').reset();
-                $('.needs-validation').removeClass('was-validated');
-                
-                // Reset default values
-                $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
-                $('input[name="maxAppointments"]').val('20');
-                $('input[name="breakDuration"]').val('30');
+            try {
+                if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                    // ✅ پیدا کردن form با استفاده از selector درست
+                    var form = $('form.needs-validation').first();
+                    if (form.length === 0) {
+                        form = $('form').first();
+                    }
+                    
+                    if (form.length > 0) {
+                        form[0].reset();
+                        form.removeClass('was-validated');
+                        
+                        // ✅ Reset default values
+                        $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                        $('input[name="maxAppointments"]').val('20');
+                        $('input[name="breakDuration"]').val('30');
+                        
+                        // ✅ Reset Persian DatePicker
+                        $('.persian-date').each(function() {
+                            var $input = $(this);
+                            if ($input.data('persianDatepicker')) {
+                                $input.persianDatepicker('setDate', null);
+                            }
+                        });
+                    } else {
+                        console.warn('Form not found for reset');
+                    }
+                }
+            } catch (error) {
+                console.error('Error in resetForm:', error);
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage('خطا در بازنشانی فرم');
+                } else {
+                    alert('خطا در بازنشانی فرم');
+                }
             }
         }
 
@@ -393,9 +439,22 @@
             $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
         });
 
+        // ✅ Show Success Message - Production-Ready
         function showSuccessMessage(message) {
-            // You can implement a proper toast notification here
-            alert(message);
+            if (typeof toastr !== 'undefined') {
+                toastr.success(message, 'موفقیت');
+            } else {
+                alert(message);
+            }
+        }
+
+        // ✅ Show Error Message - Production-Ready
+        function showErrorMessage(message) {
+            if (typeof toastr !== 'undefined') {
+                toastr.error(message, 'خطا');
+            } else {
+                alert(message);
+            }
         }
     </script>
 }

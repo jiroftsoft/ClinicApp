@@ -111,39 +111,39 @@
         </div>
     </div>
 
-    <!-- Quick Optimization Tools -->
+    <!-- ✅ Quick Optimization Tools - Production-Ready: فرم رسمی و اداری -->
     <div class="row mb-4">
         <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
+            <div class="card shadow mb-4 border-top-primary">
+                <div class="card-header py-3 bg-white">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-tools me-1"></i>
-                        ابزارهای سریع
+                        <i class="fas fa-tools me-2"></i>
+                        ابزارهای بهینه‌سازی
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <button type="button" class="btn btn-outline-primary w-100" onclick="quickOptimizeBreakTimes()">
-                                <i class="fas fa-coffee me-1"></i>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-primary w-100 btn-sm" onclick="quickOptimizeBreakTimes()">
+                                <i class="fas fa-coffee me-2"></i>
                                 بهینه‌سازی زمان استراحت
                             </button>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <button type="button" class="btn btn-outline-warning w-100" onclick="quickOptimizeEmergencyTimes()">
-                                <i class="fas fa-ambulance me-1"></i>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-warning w-100 btn-sm" onclick="quickOptimizeEmergencyTimes()">
+                                <i class="fas fa-ambulance me-2"></i>
                                 بهینه‌سازی زمان اورژانس
                             </button>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <button type="button" class="btn btn-outline-success w-100" onclick="quickBalanceWorkload()">
-                                <i class="fas fa-balance-scale me-1"></i>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-success w-100 btn-sm" onclick="quickBalanceWorkload()">
+                                <i class="fas fa-balance-scale me-2"></i>
                                 متعادل‌سازی بار کاری
                             </button>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <button type="button" class="btn btn-outline-info w-100" onclick="generateOptimizationReport()">
-                                <i class="fas fa-file-alt me-1"></i>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-info w-100 btn-sm" onclick="generateOptimizationReport()">
+                                <i class="fas fa-file-alt me-2"></i>
                                 تولید گزارش
                             </button>
                         </div>
@@ -153,47 +153,48 @@
         </div>
 
         <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
+            <div class="card shadow mb-4 border-top-info">
+                <div class="card-header py-3 bg-white">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-chart-pie me-1"></i>
-                        آمار کلی
+                        <i class="fas fa-chart-pie me-2"></i>
+                        آمار کلی بهینه‌سازی
                     </h6>
                 </div>
                 <div class="card-body">
-                    <canvas id="optimizationChart" width="400" height="200"></canvas>
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="optimizationChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Optimizations -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
+    <!-- ✅ Recent Optimizations - Production-Ready: جدول رسمی و اداری -->
+    <div class="card shadow mb-4 border-top-success">
+        <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-history me-1"></i>
-                آخرین بهینه‌سازی‌ها
+                <i class="fas fa-history me-2"></i>
+                تاریخچه بهینه‌سازی‌ها
             </h6>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="recentOptimizationsTable">
-                    <thead class="table-dark">
+                <table class="table table-bordered table-hover mb-0" id="recentOptimizationsTable">
+                    <thead class="table-light">
                         <tr>
-                            <th>تاریخ</th>
-                            <th>پزشک</th>
-                            <th>نوع بهینه‌سازی</th>
-                            <th>وضعیت</th>
-                            <th>نتایج</th>
-                            <th>عملیات</th>
+                            <th class="text-center" style="width: 120px;">تاریخ</th>
+                            <th class="text-center">پزشک</th>
+                            <th class="text-center" style="width: 150px;">نوع بهینه‌سازی</th>
+                            <th class="text-center" style="width: 100px;">وضعیت</th>
+                            <th class="text-center">نتایج</th>
+                            <th class="text-center" style="width: 100px;">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>هیچ بهینه‌سازی‌ای یافت نشد</p>
-                                <p>برای شروع، یکی از ابزارهای بهینه‌سازی را انتخاب کنید</p>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block"></i>
+                                <p class="mb-0">در حال بارگذاری...</p>
                             </td>
                         </tr>
                     </tbody>
@@ -202,91 +203,124 @@
         </div>
     </div>
 
-    <!-- Optimization Recommendations -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
+    <!-- ✅ Optimization Recommendations - Production-Ready: کارت‌های رسمی -->
+    <div class="card shadow mb-4 border-top-warning">
+        <div class="card-header py-3 bg-white">
             <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-lightbulb me-1"></i>
+                <i class="fas fa-lightbulb me-2"></i>
                 پیشنهادات بهینه‌سازی
             </h6>
         </div>
         <div class="card-body">
-            <div class="row" id="recommendationsContainer">
+            <div class="row g-3" id="recommendationsContainer">
                 <div class="col-12 text-center text-muted py-4">
-                    <i class="fas fa-lightbulb fa-2x mb-2"></i>
-                    <p>هیچ پیشنهادی در حال حاضر موجود نیست</p>
-                    <p>برای دریافت پیشنهادات، ابتدا برنامه کاری پزشکان را بررسی کنید</p>
+                    <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block"></i>
+                    <p class="mb-0">در حال بارگذاری پیشنهادات...</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Optimization Modal -->
+<!-- ✅ Quick Optimization Modal - Production-Ready: فرم رسمی و اداری -->
 <div class="modal fade" id="quickOptimizationModal" tabindex="-1" aria-labelledby="quickOptimizationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quickOptimizationModalLabel">بهینه‌سازی سریع</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="quickOptimizationModalLabel">
+                    <i class="fas fa-cog me-2"></i>
+                    بهینه‌سازی برنامه کاری
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <div class="modal-body">
-                <form id="quickOptimizationForm">
-                    <div class="row">
+                <form id="quickOptimizationForm" class="needs-validation" novalidate>
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="quickDoctorId" class="form-label">پزشک</label>
-                                <select id="quickDoctorId" name="doctorId" class="form-select" required>
-                                    <option value="">انتخاب پزشک</option>
-                                    @if (ViewBag.Doctors != null)
+                            <label for="quickDoctorId" class="form-label fw-bold">
+                                <i class="fas fa-user-md me-1"></i>
+                                پزشک <span class="text-danger">*</span>
+                            </label>
+                            <select id="quickDoctorId" name="doctorId" class="form-select" required>
+                                <option value="">-- انتخاب پزشک --</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
                                     {
-                                        foreach (var doctor in ViewBag.Doctors)
-                                        {
-                                            <option value="@doctor.Value">@doctor.Text</option>
-                                        }
+                                        <option value="@doctor.Value">@doctor.Text</option>
                                     }
-                                </select>
-                            </div>
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="quickDate" class="form-label">تاریخ</label>
-                                <input type="text" id="quickDate" name="date" class="form-control persian-date" 
-                                       placeholder="انتخاب تاریخ" required>
-                            </div>
+                            <label for="quickDate" class="form-label fw-bold">
+                                <i class="fas fa-calendar me-1"></i>
+                                تاریخ <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="quickDate" name="date" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ" required>
+                            <input type="hidden" id="quickDateGregorian" name="dateGregorian">
+                            <div class="invalid-feedback">لطفاً تاریخ را انتخاب کنید</div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="optimizationType" class="form-label">نوع بهینه‌سازی</label>
+                    <div class="mt-3">
+                        <label for="optimizationType" class="form-label fw-bold">
+                            <i class="fas fa-tasks me-1"></i>
+                            نوع بهینه‌سازی <span class="text-danger">*</span>
+                        </label>
                         <select id="optimizationType" name="optimizationType" class="form-select" required>
-                            <option value="">انتخاب کنید</option>
-                            <option value="break">زمان استراحت</option>
-                            <option value="emergency">زمان اورژانس</option>
-                            <option value="workload">بار کاری</option>
+                            <option value="">-- انتخاب نوع بهینه‌سازی --</option>
+                            <option value="break">بهینه‌سازی زمان استراحت</option>
+                            <option value="emergency">بهینه‌سازی زمان اورژانس</option>
+                            <option value="workload">متعادل‌سازی بار کاری</option>
                         </select>
+                        <div class="invalid-feedback">لطفاً نوع بهینه‌سازی را انتخاب کنید</div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-primary" onclick="executeQuickOptimization()">اجرای بهینه‌سازی</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" onclick="executeQuickOptimization()">
+                    <i class="fas fa-check me-1"></i>
+                    اجرای بهینه‌سازی
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @Scripts.Render("~/bundles/persian-datepicker")
+    @* ✅ Persian DatePicker در bundle/bootstrap موجود است، نیازی به bundle جداگانه نیست *@
     @Scripts.Render("~/bundles/plugins")
     
     <script>
         $(document).ready(function() {
-            // Initialize Persian DatePicker
-            $('.persian-date').persianDatepicker({
+            // ✅ Initialize Persian DatePicker - Production-Ready: تبدیل خودکار به میلادی
+            $('#quickDate').persianDatepicker({
                 format: 'YYYY/MM/DD',
                 initialValue: false,
                 autoClose: true,
-                persianDigit: false
+                persianDigit: false,
+                onSelect: function(unix) {
+                    try {
+                        // ✅ تبدیل timestamp به تاریخ میلادی
+                        var gregorianDate = new Date(unix);
+                        var year = gregorianDate.getFullYear();
+                        var month = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+                        var day = String(gregorianDate.getDate()).padStart(2, '0');
+                        var gregorianDateString = year + '-' + month + '-' + day;
+                        
+                        // ✅ ذخیره تاریخ میلادی در hidden input
+                        $('#quickDateGregorian').val(gregorianDateString);
+                        console.log('✅ Persian Date Selected:', $('#quickDate').val(), '-> Gregorian:', gregorianDateString);
+                    } catch (error) {
+                        console.error('❌ Error converting Persian date to Gregorian:', error);
+                    }
+                }
             });
 
             // Load dashboard data
@@ -296,41 +330,350 @@
             initializeOptimizationChart();
         });
 
-        // Load Dashboard Data
+        // ✅ Load Dashboard Data - Production-Ready: دریافت داده‌های واقعی از سرور
         function loadDashboardData() {
-            // Simulate loading data (replace with actual API calls)
-            setTimeout(() => {
-                $('#activeDoctorsCount').text('12');
-                $('#todayAppointmentsCount').text('45');
-                $('#optimizationsCount').text('8');
-                $('#optimizationPercentage').text('85%');
-            }, 1000);
+            try {
+                // نمایش Loading State
+                $('#activeDoctorsCount').html('<i class="fas fa-spinner fa-spin"></i>');
+                $('#todayAppointmentsCount').html('<i class="fas fa-spinner fa-spin"></i>');
+                $('#optimizationsCount').html('<i class="fas fa-spinner fa-spin"></i>');
+                $('#optimizationPercentage').html('<i class="fas fa-spinner fa-spin"></i>');
+
+                // ✅ AJAX Call برای دریافت داده‌های واقعی
+                var url = '@Url.Action("GetDashboardStats", "ScheduleOptimization", new { area = "Admin" })';
+                console.log('AJAX URL:', url); // ✅ Debug Log
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    cache: false,
+                    timeout: 30000, // ✅ Timeout 30 ثانیه
+                    success: function(response) {
+                        console.log('✅ Dashboard Stats Response (Full):', JSON.stringify(response, null, 2)); // ✅ Debug Log کامل
+                        console.log('Response Type:', typeof response); // ✅ Debug Log
+                        console.log('Response Success:', response?.success); // ✅ Debug Log
+                        console.log('Response Data:', response?.data); // ✅ Debug Log
+                        console.log('Response Data Type:', typeof response?.data); // ✅ Debug Log
+                        
+                        // ✅ بررسی Response
+                        if (!response) {
+                            console.error('❌ Response is null or undefined');
+                            showErrorMessage('پاسخ سرور نامعتبر است');
+                            setDefaultValues();
+                            return;
+                        }
+                        
+                        // ✅ بررسی success
+                        if (!response.success) {
+                            console.error('❌ Response success is false:', response.message);
+                            showErrorMessage(response.message || 'خطا در دریافت آمار داشبورد');
+                            setDefaultValues();
+                            return;
+                        }
+                        
+                        // ✅ بررسی data
+                        if (!response.data) {
+                            console.error('❌ Response data is null or undefined');
+                            showErrorMessage('داده‌ای دریافت نشد');
+                            setDefaultValues();
+                            return;
+                        }
+                        
+                        var data = response.data;
+                        console.log('✅ Data Object (Full):', JSON.stringify(data, null, 2)); // ✅ Debug Log کامل
+                        console.log('✅ Active Doctors Count (Raw):', data.activeDoctorsCount, 'Type:', typeof data.activeDoctorsCount); // ✅ Debug Log
+                        console.log('✅ Today Appointments Count (Raw):', data.todayAppointmentsCount, 'Type:', typeof data.todayAppointmentsCount); // ✅ Debug Log
+                        console.log('✅ All Data Keys:', Object.keys(data)); // ✅ Debug Log - بررسی تمام propertyها
+                        
+                        // ✅ نمایش داده‌های واقعی - استفاده از Number() برای تبدیل دقیق‌تر
+                        var activeDoctors = Number(data.activeDoctorsCount) || 0;
+                        var todayAppointments = Number(data.todayAppointmentsCount) || 0;
+                        var optimizations = Number(data.optimizationsCount) || 0;
+                        var percentage = Number(data.optimizationPercentage) || 0;
+                        
+                        console.log('✅ Parsed Values:', { activeDoctors, todayAppointments, optimizations, percentage }); // ✅ Debug Log
+                        console.log('✅ Will Update DOM with:', { 
+                            activeDoctors: formatNumber(activeDoctors), 
+                            todayAppointments: formatNumber(todayAppointments),
+                            optimizations: formatNumber(optimizations),
+                            percentage: formatPercentage(percentage)
+                        }); // ✅ Debug Log
+                        
+                        $('#activeDoctorsCount').text(formatNumber(activeDoctors));
+                        $('#todayAppointmentsCount').text(formatNumber(todayAppointments));
+                        $('#optimizationsCount').text(formatNumber(optimizations));
+                        $('#optimizationPercentage').text(formatPercentage(percentage));
+
+                        // ✅ به‌روزرسانی Chart با داده‌های واقعی
+                        if (data.chartData) {
+                            console.log('Chart Data:', data.chartData); // ✅ Debug Log
+                            updateOptimizationChart(data.chartData);
+                        }
+
+                        // ✅ بارگذاری آخرین بهینه‌سازی‌ها
+                        loadRecentOptimizations();
+
+                        // ✅ بارگذاری پیشنهادات
+                        loadRecommendations();
+                        
+                        console.log('✅ Dashboard data loaded successfully'); // ✅ Debug Log
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت آمار داشبورد:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        }); // ✅ Debug Log کامل
+                        
+                        // ✅ نمایش پیام خطای دقیق‌تر
+                        var errorMessage = 'خطا در ارتباط با سرور';
+                        if (xhr.status === 404) {
+                            errorMessage = 'صفحه مورد نظر یافت نشد';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'خطای داخلی سرور';
+                        }
+                        
+                        showErrorMessage(errorMessage);
+                        setDefaultValues();
+                    }
+                });
+            } catch (error) {
+                console.error('خطا در loadDashboardData:', error);
+                setDefaultValues();
+            }
         }
 
-        // Initialize Optimization Chart
+        // ✅ Format Number با جداکننده هزارگان
+        function formatNumber(num) {
+            if (num == null || num === undefined) return '0';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // ✅ Format Percentage
+        function formatPercentage(num) {
+            if (num == null || num === undefined) return '0%';
+            return parseFloat(num).toFixed(1) + '%';
+        }
+
+        // ✅ Set Default Values در صورت خطا
+        function setDefaultValues() {
+            $('#activeDoctorsCount').text('0');
+            $('#todayAppointmentsCount').text('0');
+            $('#optimizationsCount').text('0');
+            $('#optimizationPercentage').text('0%');
+        }
+
+        // ✅ Load Recent Optimizations
+        function loadRecentOptimizations() {
+            try {
+                $.ajax({
+                    url: '@Url.Action("GetRecentOptimizations", "ScheduleOptimization")',
+                    type: 'GET',
+                    dataType: 'json',
+                    cache: false,
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            renderRecentOptimizations(response.data);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت آخرین بهینه‌سازی‌ها:', error);
+                    }
+                });
+            } catch (error) {
+                console.error('خطا در loadRecentOptimizations:', error);
+            }
+        }
+
+        // ✅ Render Recent Optimizations
+        function renderRecentOptimizations(optimizations) {
+            var tbody = $('#recentOptimizationsTable tbody');
+            tbody.empty();
+
+            if (optimizations == null || optimizations.length === 0) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>هیچ بهینه‌سازی‌ای یافت نشد</p>
+                            <p>برای شروع، یکی از ابزارهای بهینه‌سازی را انتخاب کنید</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            optimizations.forEach(function(opt) {
+                var row = `
+                    <tr>
+                        <td>${opt.optimizationDateShamsi || formatDate(opt.optimizationDate)}</td>
+                        <td>${escapeHtml(opt.doctorName || 'نامشخص')}</td>
+                        <td>${escapeHtml(opt.optimizationType || 'نامشخص')}</td>
+                        <td><span class="badge bg-success">${escapeHtml(opt.status || 'موفق')}</span></td>
+                        <td>${escapeHtml(opt.results || '-')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewOptimizationDetails(${opt.optimizationId})">
+                                <i class="fas fa-eye"></i> مشاهده
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        // ✅ Load Recommendations
+        function loadRecommendations() {
+            try {
+                $.ajax({
+                    url: '@Url.Action("GetRecommendations", "ScheduleOptimization")',
+                    type: 'GET',
+                    dataType: 'json',
+                    cache: false,
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            renderRecommendations(response.data);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت پیشنهادات:', error);
+                    }
+                });
+            } catch (error) {
+                console.error('خطا در loadRecommendations:', error);
+            }
+        }
+
+        // ✅ Render Recommendations
+        function renderRecommendations(recommendations) {
+            var container = $('#recommendationsContainer');
+            container.empty();
+
+            if (recommendations == null || recommendations.length === 0) {
+                container.html(`
+                    <div class="col-12 text-center text-muted py-4">
+                        <i class="fas fa-lightbulb fa-2x mb-2"></i>
+                        <p>هیچ پیشنهادی در حال حاضر موجود نیست</p>
+                        <p>برای دریافت پیشنهادات، ابتدا برنامه کاری پزشکان را بررسی کنید</p>
+                    </div>
+                `);
+                return;
+            }
+
+            recommendations.forEach(function(rec) {
+                var card = `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-left-warning h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lightbulb text-warning fa-2x me-3"></i>
+                                    <p class="mb-0">${escapeHtml(rec)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.append(card);
+            });
+        }
+
+        // ✅ Update Optimization Chart
+        function updateOptimizationChart(chartData) {
+            if (!chartData || !window.optimizationChartInstance) return;
+
+            window.optimizationChartInstance.data.labels = chartData.labels || [];
+            window.optimizationChartInstance.data.datasets[0].data = chartData.data || [];
+            window.optimizationChartInstance.data.datasets[0].backgroundColor = chartData.backgroundColors || [];
+            window.optimizationChartInstance.update();
+        }
+
+        // ✅ Helper Functions
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                var date = new Date(dateString);
+                return date.toLocaleDateString('fa-IR');
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        function showErrorMessage(message) {
+            // ✅ استفاده از Toast Notification یا Alert
+            if (typeof toastr !== 'undefined') {
+                toastr.error(message, 'خطا');
+            } else {
+                alert(message);
+            }
+        }
+
+        function viewOptimizationDetails(optimizationId) {
+            // TODO: پیاده‌سازی مشاهده جزئیات بهینه‌سازی
+            console.log('View optimization details:', optimizationId);
+        }
+
+        // ✅ Initialize Optimization Chart - Production-Ready
         function initializeOptimizationChart() {
-            const ctx = document.getElementById('optimizationChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['بهینه شده', 'نیاز به بهینه‌سازی', 'در حال بررسی'],
-                    datasets: [{
-                        data: [65, 25, 10],
-                        backgroundColor: ['#28a745', '#ffc107', '#17a2b8'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            try {
+                const ctx = document.getElementById('optimizationChart');
+                if (!ctx) {
+                    console.error('Chart canvas not found');
+                    return;
+                }
+
+                window.optimizationChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['بهینه شده', 'نیاز به بهینه‌سازی', 'در حال بررسی'],
+                        datasets: [{
+                            data: [0, 0, 0], // ✅ داده‌های اولیه، بعداً از سرور به‌روز می‌شوند
+                            backgroundColor: ['#28a745', '#ffc107', '#17a2b8'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: 'Vazir, Arial, sans-serif',
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.label || '';
+                                        var value = context.parsed || 0;
+                                        return label + ': ' + formatNumber(value);
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('خطا در initializeOptimizationChart:', error);
+            }
         }
 
         // Quick Optimization Functions
@@ -352,32 +695,117 @@
             $('#quickOptimizationModal').modal('show');
         }
 
+        // ✅ Execute Quick Optimization - Production-Ready: استفاده از API واقعی
         function executeQuickOptimization() {
-            const doctorId = $('#quickDoctorId').val();
-            const date = $('#quickDate').val();
-            const type = $('#optimizationType').val();
+            try {
+                const doctorId = $('#quickDoctorId').val();
+                const persianDate = $('#quickDate').val();
+                const gregorianDate = $('#quickDateGregorian').val(); // ✅ تاریخ میلادی از hidden input
+                const type = $('#optimizationType').val();
 
-            if (!doctorId || !date || !type) {
-                alert('لطفاً تمام فیلدها را پر کنید');
-                return;
+                // ✅ Validation
+                if (!doctorId || !persianDate || !gregorianDate || !type) {
+                    showErrorMessage('لطفاً تمام فیلدها را پر کنید');
+                    return;
+                }
+
+                // ✅ Show loading state
+                const submitBtn = $('button[onclick="executeQuickOptimization()"]');
+                const originalText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
+
+                // ✅ Get Anti-Forgery Token
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                if (!token) {
+                    // ✅ اگر token در input نبود، از form بگیر
+                    token = $('#quickOptimizationForm input[name="__RequestVerificationToken"]').val();
+                }
+
+                console.log('Quick Optimization Data:', { 
+                    doctorId, 
+                    persianDate, 
+                    gregorianDate, 
+                    type, 
+                    token: token ? 'exists' : 'missing' 
+                }); // ✅ Debug Log
+
+                // ✅ Determine API endpoint based on type
+                var url = '';
+                var data = {
+                    doctorId: parseInt(doctorId),
+                    date: gregorianDate, // ✅ استفاده از تاریخ میلادی
+                    __RequestVerificationToken: token
+                };
+
+                switch (type) {
+                    case 'break':
+                        url = '@Url.Action("OptimizeBreakTimes", "ScheduleOptimization")';
+                        break;
+                    case 'emergency':
+                        url = '@Url.Action("OptimizeEmergencyTimes", "ScheduleOptimization")';
+                        break;
+                    case 'workload':
+                        url = '@Url.Action("BalanceWorkload", "ScheduleOptimization")';
+                        data.startDate = gregorianDate; // ✅ استفاده از تاریخ میلادی
+                        data.endDate = gregorianDate; // برای BalanceWorkload نیاز به endDate است (در حال حاضر همان تاریخ)
+                        break;
+                    default:
+                        showErrorMessage('نوع بهینه‌سازی نامعتبر است');
+                        submitBtn.prop('disabled', false).html(originalText);
+                        return;
+                }
+
+                // ✅ AJAX Call
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: data,
+                    dataType: 'json',
+                    cache: false,
+                    success: function(response) {
+                        $('#quickOptimizationModal').modal('hide');
+                        submitBtn.prop('disabled', false).html(originalText);
+                        
+                        if (response.success) {
+                            showSuccessMessage(response.message || 'بهینه‌سازی با موفقیت انجام شد');
+                            // ✅ Refresh dashboard
+                            loadDashboardData();
+                        } else {
+                            showErrorMessage(response.message || 'خطا در اجرای بهینه‌سازی');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در executeQuickOptimization:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        }); // ✅ Debug Log کامل
+                        
+                        submitBtn.prop('disabled', false).html(originalText);
+                        
+                        // ✅ نمایش پیام خطای دقیق‌تر
+                        var errorMessage = 'خطا در ارتباط با سرور';
+                        if (xhr.status === 404) {
+                            errorMessage = 'صفحه مورد نظر یافت نشد';
+                        } else if (xhr.status === 500) {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.message || 'خطای داخلی سرور';
+                            } catch (e) {
+                                errorMessage = 'خطای داخلی سرور - لطفاً لاگ‌های سرور را بررسی کنید';
+                            }
+                        } else if (xhr.status === 400) {
+                            errorMessage = 'درخواست نامعتبر - لطفاً فیلدها را بررسی کنید';
+                        }
+                        
+                        showErrorMessage(errorMessage);
+                    }
+                });
+            } catch (error) {
+                console.error('خطا در executeQuickOptimization:', error);
+                showErrorMessage('خطای غیرمنتظره رخ داد');
             }
-
-            // Show loading state
-            const submitBtn = $('button[onclick="executeQuickOptimization()"]');
-            const originalText = submitBtn.html();
-            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
-
-            // Simulate API call
-            setTimeout(() => {
-                $('#quickOptimizationModal').modal('hide');
-                submitBtn.prop('disabled', false).html(originalText);
-                
-                // Show success message
-                showSuccessMessage('بهینه‌سازی با موفقیت انجام شد');
-                
-                // Refresh dashboard
-                loadDashboardData();
-            }, 2000);
         }
 
         function generateOptimizationReport() {
@@ -385,9 +813,13 @@
             window.location.href = '@Url.Action("Report", "ScheduleOptimization")';
         }
 
+        // ✅ Show Success Message - Production-Ready
         function showSuccessMessage(message) {
-            // You can implement a proper toast notification here
-            alert(message);
+            if (typeof toastr !== 'undefined') {
+                toastr.success(message, 'موفقیت');
+            } else {
+                alert(message);
+            }
         }
     </script>
 }

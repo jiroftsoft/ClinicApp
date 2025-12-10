@@ -460,6 +460,8 @@
                 // این روش مستقیماً تاریخ شمسی را از datepicker می‌گیرد و از timezone offset جلوگیری می‌کند
                 try {
                     var selected = datePickerInstance.selected;
+                    console.log('✅ [getPersianDateFromPicker] selected object:', selected);
+                    
                     if (selected && 
                         typeof selected.jy === 'number' && 
                         typeof selected.jm === 'number' && 
@@ -473,11 +475,18 @@
                         var day = String(selected.jd).padStart(2, '0');
                         persianDateStr = year + '/' + month + '/' + day;
                         
+                        console.log('✅ [getPersianDateFromPicker] Raw values - jy:', selected.jy, 'jm:', selected.jm, 'jd:', selected.jd);
+                        console.log('✅ [getPersianDateFromPicker] Formatted date:', persianDateStr);
+                        
                         // ✅ Validation: بررسی فرمت تاریخ
                         if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
                             console.log('✅ [Method 1] Got date from selected object (jy/jm/jd):', persianDateStr);
                             return persianDateStr;
+                        } else {
+                            console.warn('❌ [Method 1] Invalid date format:', persianDateStr);
                         }
+                    } else {
+                        console.warn('❌ [Method 1] Invalid selected object:', selected);
                     }
                 } catch (e) {
                     console.warn('getPersianDateFromPicker [Method 1] failed:', e);
@@ -731,30 +740,35 @@
                 
                 isProcessingDate = true;
                 
-                // ✅ ساخت تاریخ با فرمت استاندارد
-                var year = match[1];
-                var month = match[2];
-                var day = match[3];
-                var persianDateStr = year + '/' + month + '/' + day;
+                // ✅ اولویت با datePicker instance (قابل اعتمادترین روش)
+                var persianDateStr = null;
                 
-                console.log('✅ [Enterprise Method] Processing date:', persianDateStr, '(from input:', inputValue + ')');
-                
-                // ✅ اگر datePicker instance موجود است، از آن برای validation استفاده می‌کنیم
                 try {
                     var datePickerInstance = $("#appointmentDate").data('pDatepicker');
                     if (datePickerInstance) {
-                        // تلاش برای دریافت تاریخ از datePicker instance (برای validation)
+                        // ✅ تلاش برای دریافت تاریخ از datePicker instance (اولویت اول)
                         var dateFromPicker = getPersianDateFromPicker(datePickerInstance, false);
-                        if (dateFromPicker) {
-                            // استفاده از تاریخ از datePicker (قابل اعتمادتر)
+                        if (dateFromPicker && dateFromPicker.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
                             persianDateStr = dateFromPicker;
-                            console.log('✅ [Enterprise Method] Using date from datePicker:', persianDateStr);
+                            console.log('✅ [Enterprise Method] Using date from datePicker (priority):', persianDateStr);
                         }
                     }
                 } catch (e) {
                     console.warn('Error accessing datePicker instance:', e);
-                    // در صورت خطا، از input استفاده می‌کنیم
                 }
+                
+                // ✅ اگر datePicker تاریخ نداشت، از input value استفاده می‌کنیم (fallback)
+                if (!persianDateStr) {
+                    var year = match[1];
+                    var month = match[2];
+                    var day = match[3];
+                    persianDateStr = year + '/' + month + '/' + day;
+                    console.log('✅ [Enterprise Method] Using date from input (fallback):', persianDateStr);
+                }
+                
+                // ✅ Log نهایی برای debugging
+                console.log('✅ [Enterprise Method] Final date to process:', persianDateStr);
+                console.log('✅ [Enterprise Method] Original input value:', inputValue);
                 
                 lastProcessedDate = persianDateStr;
                 
@@ -1188,6 +1202,22 @@
                     toastr.warning('لطفاً تاریخ را انتخاب کنید', 'هشدار');
                     return;
                 }
+
+                // ✅ تبدیل اعداد فارسی به انگلیسی قبل از ارسال به سرور
+                date = convertPersianToEnglishNumbers(date);
+                
+                // ✅ Validation تاریخ قبل از ارسال
+                if (!date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                    console.error('❌ Invalid date format sent to server:', date);
+                    toastr.error('فرمت تاریخ نامعتبر است', 'خطا');
+                    return;
+                }
+
+                // ✅ Log تاریخ ارسالی به سرور برای debugging
+                console.log('✅ [loadTimeSlots] Sending request to server:');
+                console.log('   - doctorId:', doctorId);
+                console.log('   - date:', date);
+                console.log('   - date type:', typeof date);
 
                 // نمایش loading
                 $('#timeSlotsGrid').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</div>');
