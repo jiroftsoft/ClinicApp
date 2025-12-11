@@ -391,6 +391,7 @@ namespace ClinicApp
                 container.RegisterType<IAnnouncementRepository, AnnouncementRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<ITestimonialRepository, TestimonialRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IGalleryItemRepository, GalleryItemRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IVideoRepository, VideoRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IFAQRepository, FAQRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipRepository, HealthTipRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoRepository, InsuranceInfoRepository>(new PerRequestLifetimeManager());
@@ -411,6 +412,8 @@ namespace ClinicApp
                 container.RegisterType<IAnnouncementService, AnnouncementService>(new PerRequestLifetimeManager());
                 container.RegisterType<ITestimonialService, TestimonialService>(new PerRequestLifetimeManager());
                 container.RegisterType<IGalleryService, GalleryService>(new PerRequestLifetimeManager());
+                container.RegisterType<IVideoService, VideoService>(new PerRequestLifetimeManager());
+                container.RegisterType<IVideoUploadService, VideoUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<IFAQService, FAQService>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipService, HealthTipService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoService, InsuranceInfoService>(new PerRequestLifetimeManager());

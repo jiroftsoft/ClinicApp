@@ -19,6 +19,17 @@ namespace ClinicApp.ViewModels.CMS
         public int DisplayOrder { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel برای نمایش لیست گالری با فیلتر دسته‌بندی
+    /// طراحی شده برای محیط Production درمانی با Strongly-Typed
+    /// </summary>
+    public class GalleryIndexViewModel
+    {
+        public List<GalleryItemIndexViewModel> Items { get; set; }
+        public List<string> Categories { get; set; }
+        public string SelectedCategory { get; set; }
+    }
+
     #endregion
 
     #region GalleryItem Create & Edit
@@ -36,7 +47,8 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "توضیحات")]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "تصویر الزامی است.")]
+        // ImageUrl is not Required here because it's set after file upload in ProcessImageUpload
+        // Validation is done in ProcessImageUpload method
         [MaxLength(500, ErrorMessage = "آدرس تصویر نمی‌تواند بیش از 500 کاراکتر باشد.")]
         [Display(Name = "آدرس تصویر")]
         public string ImageUrl { get; set; }

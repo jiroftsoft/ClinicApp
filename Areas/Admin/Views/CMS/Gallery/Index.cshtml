@@ -1,10 +1,8 @@
-@model List<ClinicApp.ViewModels.CMS.GalleryItemIndexViewModel>
+@model ClinicApp.ViewModels.CMS.GalleryIndexViewModel
 @{
     ViewBag.Title = "مدیریت گالری";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
-
-@Html.AntiForgeryToken()
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -14,36 +12,20 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
     <!-- Filter by Category -->
-    @if (ViewBag.Categories != null && ((List<string>)ViewBag.Categories).Any())
+    @if (Model.Categories != null && Model.Categories.Any())
     {
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="btn-group" role="group">
-                    <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.SelectedCategory == null ? "primary" : "secondary")">همه</a>
-                    @foreach (var cat in ViewBag.Categories)
+                    <a href="@Url.Action("Index")" class="btn btn-@(string.IsNullOrEmpty(Model.SelectedCategory) ? "primary" : "secondary")">
+                        <i class="fas fa-th"></i> همه
+                    </a>
+                    @foreach (var cat in Model.Categories)
                     {
-                        <a href="@Url.Action("Index", new { category = cat })" class="btn btn-@(ViewBag.SelectedCategory == cat ? "primary" : "secondary")">@cat</a>
+                        <a href="@Url.Action("Index", new { category = cat })" class="btn btn-@(Model.SelectedCategory == cat ? "primary" : "secondary")">
+                            @cat
+                        </a>
                     }
                 </div>
             </div>
@@ -53,13 +35,16 @@
     <!-- Gallery Items Grid -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست آیتم‌های گالری (@Model.Count مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-images"></i> لیست آیتم‌های گالری 
+                <span class="badge badge-primary">@(Model.Items?.Count ?? 0) مورد</span>
+            </h6>
         </div>
         <div class="card-body">
-            @if (Model != null && Model.Any())
+            @if (Model.Items != null && Model.Items.Any())
             {
                 <div class="row">
-                    @foreach (var item in Model)
+                    @foreach (var item in Model.Items)
                     {
                         <div class="col-md-4 mb-4">
                             <div class="card h-100">
@@ -115,10 +100,10 @@
                                                 </button>
                                             }
                                         }
-                                        @using (Html.BeginForm("Delete", "Gallery", new { id = item.GalleryItemId }, FormMethod.Post, new { @class = "d-inline" }))
+                                        @using (Html.BeginForm("Delete", "Gallery", new { id = item.GalleryItemId }, FormMethod.Post, new { @class = "d-inline delete-form" }))
                                         {
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این آیتم گالری اطمینان دارید؟')">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="حذف" data-title="@item.Title">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         }
@@ -138,4 +123,33 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // SweetAlert for Delete Confirmation
+            $('.delete-form').on('submit', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var title = form.find('button[type="submit"]').data('title') || 'این آیتم';
+
+                Swal.fire({
+                    title: 'آیا مطمئن هستید؟',
+                    text: 'آیا از حذف "' + title + '" اطمینان دارید؟ این عمل قابل بازگشت نیست.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'بله، حذف کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}
 

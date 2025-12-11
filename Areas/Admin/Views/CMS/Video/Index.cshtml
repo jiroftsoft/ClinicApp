@@ -1,0 +1,203 @@
+@model List<ClinicApp.ViewModels.CMS.VideoIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت ویدیوها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var searchModel = ViewBag.SearchModel as ClinicApp.ViewModels.CMS.VideoSearchViewModel ?? new ClinicApp.ViewModels.CMS.VideoSearchViewModel();
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت ویدیوها</h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> ویدیو جدید
+        </a>
+    </div>
+
+    <!-- Search & Filter Section -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "Video", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mr-2">
+                    @Html.TextBoxFor(m => searchModel.SearchTerm, new { @class = "form-control", placeholder = "جستجو..." })
+                </div>
+                <div class="form-group mr-2">
+                    @Html.DropDownListFor(m => searchModel.Category, 
+                        new SelectList(categories, searchModel.Category), 
+                        "همه دسته‌بندی‌ها", 
+                        new { @class = "form-control" })
+                </div>
+                <div class="form-group mr-2">
+                    @Html.DropDownListFor(m => searchModel.VideoType,
+                        new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Enums.VideoType)), searchModel.VideoType),
+                        "همه انواع",
+                        new { @class = "form-control" })
+                </div>
+                <div class="form-group mr-2">
+                    @Html.DropDownListFor(m => searchModel.IsActive,
+                        new SelectList(new[] { new { Value = (bool?)true, Text = "فعال" }, new { Value = (bool?)false, Text = "غیرفعال" } }, "Value", "Text", searchModel.IsActive),
+                        "همه وضعیت‌ها",
+                        new { @class = "form-control" })
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mr-2">
+                    <i class="fas fa-redo"></i> پاک کردن فیلتر
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Videos List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-video"></i> لیست ویدیوها
+                <span class="badge badge-primary">@(Model?.Count ?? 0) مورد</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Thumbnail</th>
+                                <th>عنوان</th>
+                                <th>نوع</th>
+                                <th>دسته‌بندی</th>
+                                <th>مدت زمان</th>
+                                <th>بازدید</th>
+                                <th>وضعیت</th>
+                                <th>ترتیب</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var video in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(video.ThumbnailUrl))
+                                        {
+                                            <img src="@video.ThumbnailUrl" alt="@video.Title" class="img-thumbnail" style="max-width: 100px; max-height: 60px; object-fit: cover;">
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">بدون تصویر</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@video.Title</strong>
+                                        @if (!string.IsNullOrEmpty(video.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(video.Description.Length > 50 ? video.Description.Substring(0, 50) + "..." : video.Description)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@video.VideoTypeName</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">@(video.Category ?? "عمومی")</span>
+                                    </td>
+                                    <td>@(video.DurationFormatted ?? "-")</td>
+                                    <td>
+                                        <i class="fas fa-eye"></i> @video.ViewCount
+                                    </td>
+                                    <td>
+                                        @if (video.IsActive)
+                                        {
+                                            <span class="badge badge-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>@video.DisplayOrder</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = video.VideoId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = video.VideoId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (video.IsActive)
+                                            {
+                                                using (Html.BeginForm("Deactivate", "Video", new { id = video.VideoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Activate", "Video", new { id = video.VideoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                        <i class="fas fa-play"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "Video", new { id = video.VideoId }, FormMethod.Post, new { @class = "d-inline delete-form" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" data-title="@video.Title">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ ویدیویی یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // SweetAlert for Delete Confirmation
+            $('.delete-form').on('submit', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var title = form.find('button[type="submit"]').data('title') || 'این ویدیو';
+
+                Swal.fire({
+                    title: 'آیا مطمئن هستید؟',
+                    text: 'آیا از حذف "' + title + '" اطمینان دارید؟ این عمل قابل بازگشت نیست.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'بله، حذف کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}
+

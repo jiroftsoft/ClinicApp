@@ -4,7 +4,39 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-@Html.AntiForgeryToken()
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .thumbnail-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+        }
+    </style>
+}
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -19,19 +51,8 @@
         </div>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            @using (Html.BeginForm("Edit", "Gallery", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+    <div class="form-container">
+        @using (Html.BeginForm("Edit", "Gallery", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
             {
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.GalleryItemId)
@@ -60,16 +81,52 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            @Html.LabelFor(m => m.ImageUrl, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/gallery/..." })
+                            @Html.LabelFor(m => m.ImageUrl, "تصویر اصلی", new { @class = "required" })
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                <label class="custom-file-label" for="ImageFile">انتخاب تصویر جدید (اختیاری)...</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                            </small>
+                            @Html.HiddenFor(m => m.ImageUrl)
                             @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                            {
+                                <div class="mt-2">
+                                    <p class="text-muted"><strong>تصویر فعلی:</strong></p>
+                                    <img src="@Model.ImageUrl" alt="تصویر فعلی" class="img-thumbnail image-preview">
+                                </div>
+                            }
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <p class="text-muted"><strong>پیش‌نمایش تصویر جدید:</strong></p>
+                                <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="image-preview">
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            @Html.LabelFor(m => m.ThumbnailUrl)
-                            @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/gallery/thumbnails/..." })
+                            @Html.LabelFor(m => m.ThumbnailUrl, "تصویر کوچک (Thumbnail)")
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک جدید (اختیاری)...</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> اگر انتخاب نشود، به صورت خودکار از تصویر اصلی ایجاد می‌شود (300x300)
+                            </small>
+                            @Html.HiddenFor(m => m.ThumbnailUrl)
                             @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                            @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                            {
+                                <div class="mt-2">
+                                    <p class="text-muted"><strong>Thumbnail فعلی:</strong></p>
+                                    <img src="@Model.ThumbnailUrl" alt="Thumbnail فعلی" class="img-thumbnail thumbnail-preview">
+                                </div>
+                            }
+                            <div id="thumbnailPreview" class="mt-2" style="display: none;">
+                                <p class="text-muted"><strong>پیش‌نمایش Thumbnail جدید:</strong></p>
+                                <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش Thumbnail" class="thumbnail-preview">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,4 +173,56 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Preview تصویر اصلی
+            $('#ImageFile').on('change', function (e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreviewImg').attr('src', e.target.result);
+                        $('#imagePreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // نمایش نام فایل
+                    $(this).next('.custom-file-label').html(file.name);
+                } else {
+                    $('#imagePreview').hide();
+                    $(this).next('.custom-file-label').html('انتخاب تصویر جدید (اختیاری)...');
+                }
+            });
+
+            // Preview Thumbnail
+            $('#ThumbnailFile').on('change', function (e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#thumbnailPreviewImg').attr('src', e.target.result);
+                        $('#thumbnailPreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // نمایش نام فایل
+                    $(this).next('.custom-file-label').html(file.name);
+                } else {
+                    $('#thumbnailPreview').hide();
+                    $(this).next('.custom-file-label').html('انتخاب تصویر کوچک جدید (اختیاری)...');
+                }
+            });
+
+            // نمایش نام فایل برای custom-file-input
+            $('.custom-file-input').on('change', function () {
+                var fileName = $(this).val().split('\\').pop();
+                if (fileName) {
+                    $(this).next('.custom-file-label').html(fileName);
+                }
+            });
+        });
+    </script>
+}
 

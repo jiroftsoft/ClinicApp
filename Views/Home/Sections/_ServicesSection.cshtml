@@ -12,7 +12,7 @@
         <div class="row">
             @if (Model.Services != null && Model.Services.Any())
             {
-                @foreach (var service in Model.Services)
+                foreach (var service in Model.Services)
                 {
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card service-card h-100 hover-scale" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">

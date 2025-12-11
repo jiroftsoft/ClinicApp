@@ -162,6 +162,7 @@ namespace ClinicApp.Models
         public DbSet<EmergencyContact> EmergencyContacts { get; set; }
         public DbSet<ClinicWorkingHours> ClinicWorkingHours { get; set; }
         public DbSet<MedicalEquipment> MedicalEquipments { get; set; }
+        public DbSet<Video> Videos { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

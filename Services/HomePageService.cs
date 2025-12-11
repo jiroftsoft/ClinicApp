@@ -34,6 +34,13 @@ namespace ClinicApp.Services
         private readonly IAnnouncementRepository _announcementRepository;
         private readonly IClinicWorkingHoursService _clinicWorkingHoursService;
         private readonly IMedicalEquipmentService _medicalEquipmentService;
+        private readonly IVideoService _videoService;
+        private readonly IAnnouncementService _announcementService;
+        private readonly IFAQService _faqService;
+        private readonly IHealthTipService _healthTipService;
+        private readonly IInsuranceInfoService _insuranceInfoService;
+        private readonly IMedicalServiceInfoService _medicalServiceInfoService;
+        private readonly IEmergencyContactService _emergencyContactService;
 
         public HomePageService(
             ApplicationDbContext context,
@@ -47,7 +54,14 @@ namespace ClinicApp.Services
             IGalleryItemRepository galleryItemRepository,
             IAnnouncementRepository announcementRepository,
             IClinicWorkingHoursService clinicWorkingHoursService,
-            IMedicalEquipmentService medicalEquipmentService)
+            IMedicalEquipmentService medicalEquipmentService,
+            IVideoService videoService,
+            IAnnouncementService announcementService,
+            IFAQService faqService,
+            IHealthTipService healthTipService,
+            IInsuranceInfoService insuranceInfoService,
+            IMedicalServiceInfoService medicalServiceInfoService,
+            IEmergencyContactService emergencyContactService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -61,6 +75,13 @@ namespace ClinicApp.Services
             _announcementRepository = announcementRepository ?? throw new ArgumentNullException(nameof(announcementRepository));
             _clinicWorkingHoursService = clinicWorkingHoursService ?? throw new ArgumentNullException(nameof(clinicWorkingHoursService));
             _medicalEquipmentService = medicalEquipmentService ?? throw new ArgumentNullException(nameof(medicalEquipmentService));
+            _videoService = videoService ?? throw new ArgumentNullException(nameof(videoService));
+            _announcementService = announcementService ?? throw new ArgumentNullException(nameof(announcementService));
+            _faqService = faqService ?? throw new ArgumentNullException(nameof(faqService));
+            _healthTipService = healthTipService ?? throw new ArgumentNullException(nameof(healthTipService));
+            _insuranceInfoService = insuranceInfoService ?? throw new ArgumentNullException(nameof(insuranceInfoService));
+            _medicalServiceInfoService = medicalServiceInfoService ?? throw new ArgumentNullException(nameof(medicalServiceInfoService));
+            _emergencyContactService = emergencyContactService ?? throw new ArgumentNullException(nameof(emergencyContactService));
         }
 
         /// <summary>
@@ -73,18 +94,53 @@ namespace ClinicApp.Services
                 var effectiveClinicId = clinicId ?? 1; // کلینیک پیش‌فرض: شفا
                 _logger.Information("دریافت داده‌های صفحه اصلی - ClinicId: {ClinicId}", effectiveClinicId);
 
+                // لود موازی تمام بخش‌ها برای بهینه‌سازی Performance
+                var heroTask = GetHeroSectionAsync(effectiveClinicId);
+                var valuePropTask = GetValuePropositionAsync(effectiveClinicId);
+                var servicesTask = GetServicesSectionAsync(6, effectiveClinicId);
+                var doctorsTask = GetDoctorsSectionAsync(4, effectiveClinicId);
+                var quickAppointmentTask = GetQuickAppointmentSectionAsync(effectiveClinicId);
+                var testimonialsTask = GetTestimonialsSectionAsync(3, effectiveClinicId);
+                var galleryTask = GetGallerySectionAsync(6, effectiveClinicId);
+                var blogTask = GetBlogSectionAsync(3, effectiveClinicId);
+                var videosTask = GetVideoSectionAsync(6, "endoscopy", effectiveClinicId);
+                var contactTask = GetContactSectionAsync(effectiveClinicId);
+                var medicalEquipmentsTask = GetMedicalEquipmentsSectionAsync(6);
+                
+                // لود بخش‌های اضافی
+                var announcementsTask = GetAnnouncementsSectionAsync(5);
+                var faqsTask = GetFAQsSectionAsync(5);
+                var healthTipsTask = GetHealthTipsSectionAsync(6);
+                var insuranceInfosTask = GetInsuranceInfosSectionAsync(8);
+                var medicalServiceInfosTask = GetMedicalServiceInfosSectionAsync(6);
+                var emergencyContactsTask = GetEmergencyContactsSectionAsync();
+
+                // انتظار برای تمام Task ها
+                await Task.WhenAll(
+                    heroTask, valuePropTask, servicesTask, doctorsTask, quickAppointmentTask,
+                    testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
+                    medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
+                    insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask);
+
                 var viewModel = new HomePageViewModel
                 {
-                    Hero = await GetHeroSectionAsync(effectiveClinicId),
-                    ValueProposition = await GetValuePropositionAsync(effectiveClinicId),
-                    Services = await GetServicesSectionAsync(6, effectiveClinicId),
-                    Doctors = await GetDoctorsSectionAsync(4, effectiveClinicId),
-                    QuickAppointment = await GetQuickAppointmentSectionAsync(effectiveClinicId),
-                    Testimonials = await GetTestimonialsSectionAsync(3, effectiveClinicId),
-                    Gallery = await GetGallerySectionAsync(6, effectiveClinicId),
-                    Blog = await GetBlogSectionAsync(3, effectiveClinicId),
-                    Contact = await GetContactSectionAsync(effectiveClinicId),
-                    MedicalEquipments = await GetMedicalEquipmentsSectionAsync(6)
+                    Hero = await heroTask,
+                    ValueProposition = await valuePropTask,
+                    Services = await servicesTask,
+                    Doctors = await doctorsTask,
+                    QuickAppointment = await quickAppointmentTask,
+                    Testimonials = await testimonialsTask,
+                    Gallery = await galleryTask,
+                    Blog = await blogTask,
+                    Videos = await videosTask,
+                    Contact = await contactTask,
+                    MedicalEquipments = await medicalEquipmentsTask,
+                    Announcements = await announcementsTask,
+                    FAQs = await faqsTask,
+                    HealthTips = await healthTipsTask,
+                    InsuranceInfos = await insuranceInfosTask,
+                    MedicalServiceInfos = await medicalServiceInfosTask,
+                    EmergencyContacts = await emergencyContactsTask
                 };
 
                 _logger.Information("✅ داده‌های صفحه اصلی با موفقیت دریافت شد");
@@ -434,6 +490,82 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت داده‌های بخش Video
+        /// </summary>
+        public async Task<VideoSectionViewModel> GetVideoSectionAsync(int count = 6, string category = null, int? clinicId = null)
+        {
+            try
+            {
+                var videosResult = await _videoService.GetVideosForHomePageAsync(count, category);
+                
+                if (!videosResult.Success || videosResult.Data == null || !videosResult.Data.Any())
+                {
+                    return new VideoSectionViewModel
+                    {
+                        SectionTitle = "ویدیوهای کلینیک",
+                        SectionSubtitle = "آخرین ویدیوهای آموزشی و معرفی خدمات",
+                        Videos = new List<VideoItemViewModel>()
+                    };
+                }
+
+                var videoViewModels = videosResult.Data.Select(v => new VideoItemViewModel
+                {
+                    VideoId = v.VideoId,
+                    Title = v.Title,
+                    Description = v.Description,
+                    VideoUrl = v.VideoUrl,
+                    EmbedUrl = v.EmbedUrl,
+                    ThumbnailUrl = v.ThumbnailUrl,
+                    Category = v.Category,
+                    Duration = v.Duration,
+                    DurationFormatted = v.DurationFormatted,
+                    ViewCount = v.ViewCount,
+                    VideoType = v.VideoType,
+                    VideoTypeName = GetVideoTypeName(v.VideoType)
+                }).ToList();
+
+                return new VideoSectionViewModel
+                {
+                    SectionTitle = category == "endoscopy" ? "ویدیوهای اندوسکوپی" : "ویدیوهای کلینیک",
+                    SectionSubtitle = category == "endoscopy" 
+                        ? "معرفی بخش اندوسکوپی و خدمات مرتبط" 
+                        : "آخرین ویدیوهای آموزشی و معرفی خدمات",
+                    Videos = videoViewModels
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Video Section");
+                return new VideoSectionViewModel
+                {
+                    SectionTitle = "ویدیوهای کلینیک",
+                    SectionSubtitle = "آخرین ویدیوهای آموزشی و معرفی خدمات",
+                    Videos = new List<VideoItemViewModel>()
+                };
+            }
+        }
+
+        /// <summary>
+        /// Helper method برای تبدیل VideoType به نام فارسی
+        /// </summary>
+        private string GetVideoTypeName(ClinicApp.Models.Enums.VideoType videoType)
+        {
+            switch (videoType)
+            {
+                case ClinicApp.Models.Enums.VideoType.YouTube:
+                    return "YouTube";
+                case ClinicApp.Models.Enums.VideoType.Vimeo:
+                    return "Vimeo";
+                case ClinicApp.Models.Enums.VideoType.Aparat:
+                    return "آپارات";
+                case ClinicApp.Models.Enums.VideoType.DirectUpload:
+                    return "آپلود مستقیم";
+                default:
+                    return "نامشخص";
+            }
+        }
+
+        /// <summary>
         /// دریافت داده‌های بخش Contact
         /// </summary>
         public async Task<ContactSectionViewModel> GetContactSectionAsync(int? clinicId = null)
@@ -483,6 +615,12 @@ namespace ClinicApp.Services
                     workingHoursText = "تماس بگیرید";
                 }
 
+                // دریافت تماس‌های اضطراری برای نمایش در Contact Section
+                var emergencyContactsResult = await _emergencyContactService.GetActiveContactsAsync();
+                var emergencyContacts = emergencyContactsResult.Success && emergencyContactsResult.Data != null 
+                    ? emergencyContactsResult.Data 
+                    : new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>();
+
                 return new ContactSectionViewModel
                 {
                     SectionTitle = "تماس با ما",
@@ -498,7 +636,8 @@ namespace ClinicApp.Services
                     GoogleMapsEmbedUrl = "https://www.google.com/maps/embed?pb=...",
                     GoogleMapsLink = "https://www.google.com/maps?q=...",
                     WhatsAppNumber = "09022487373",
-                    WhatsAppLink = "https://wa.me/989123456789"
+                    WhatsAppLink = "https://wa.me/989123456789",
+                    EmergencyContacts = emergencyContacts
                 };
             }
             catch (Exception ex)
@@ -513,6 +652,108 @@ namespace ClinicApp.Services
                         PhoneNumber = "034-3222-1234"
                     }
                 };
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش Announcements
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>> GetAnnouncementsSectionAsync(int count = 5)
+        {
+            try
+            {
+                var result = await _announcementService.GetImportantAnnouncementsAsync(count);
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Announcements Section");
+                return new List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش FAQs
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>> GetFAQsSectionAsync(int count = 5)
+        {
+            try
+            {
+                var result = await _faqService.GetFeaturedFAQsAsync(count);
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های FAQs Section");
+                return new List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش Health Tips
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel>> GetHealthTipsSectionAsync(int count = 6)
+        {
+            try
+            {
+                var result = await _healthTipService.GetFeaturedHealthTipsAsync(count);
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Health Tips Section");
+                return new List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش Insurance Info
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel>> GetInsuranceInfosSectionAsync(int count = 8)
+        {
+            try
+            {
+                var result = await _insuranceInfoService.GetFeaturedInsuranceInfosAsync(count);
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Insurance Info Section");
+                return new List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش Medical Service Info
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel>> GetMedicalServiceInfosSectionAsync(int count = 6)
+        {
+            try
+            {
+                var result = await _medicalServiceInfoService.GetFeaturedServiceInfosAsync(count);
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Medical Service Info Section");
+                return new List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های بخش Emergency Contacts
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>> GetEmergencyContactsSectionAsync()
+        {
+            try
+            {
+                var result = await _emergencyContactService.GetActiveContactsAsync();
+                return result.Success && result.Data != null ? result.Data : new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Emergency Contacts Section");
+                return new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>();
             }
         }
 

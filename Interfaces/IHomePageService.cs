@@ -62,6 +62,13 @@ namespace ClinicApp.Interfaces
         Task<BlogSectionViewModel> GetBlogSectionAsync(int count = 3, int? clinicId = null);
 
         /// <summary>
+        /// دریافت داده‌های بخش Video
+        /// </summary>
+        /// <param name="count">تعداد ویدیوها برای نمایش (پیش‌فرض: 6)</param>
+        /// <param name="category">دسته‌بندی ویدیو (اختیاری)</param>
+        Task<VideoSectionViewModel> GetVideoSectionAsync(int count = 6, string category = null, int? clinicId = null);
+
+        /// <summary>
         /// دریافت داده‌های بخش Contact
         /// </summary>
         Task<ContactSectionViewModel> GetContactSectionAsync(int? clinicId = null);

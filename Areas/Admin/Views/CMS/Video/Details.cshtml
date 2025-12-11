@@ -1,0 +1,211 @@
+@model ClinicApp.ViewModels.CMS.VideoDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات ویدیو";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // ساخت Embed URL برای نمایش ویدیو
+    string embedUrl = "";
+    if (Model.VideoType == ClinicApp.Models.Enums.VideoType.YouTube)
+    {
+        var videoId = "";
+        if (Model.VideoUrl.Contains("youtube.com/watch?v="))
+        {
+            var index = Model.VideoUrl.IndexOf("v=") + 2;
+            var endIndex = Model.VideoUrl.IndexOf("&", index);
+            if (endIndex == -1) 
+            {
+                endIndex = Model.VideoUrl.Length;
+            }
+            videoId = Model.VideoUrl.Substring(index, endIndex - index);
+        }
+        else if (Model.VideoUrl.Contains("youtu.be/"))
+        {
+            var index = Model.VideoUrl.IndexOf("youtu.be/") + 9;
+            var endIndex = Model.VideoUrl.IndexOf("?", index);
+            if (endIndex == -1) 
+            {
+                endIndex = Model.VideoUrl.Length;
+            }
+            videoId = Model.VideoUrl.Substring(index, endIndex - index);
+        }
+        else if (Model.VideoUrl.Contains("youtube.com/embed/"))
+        {
+            var index = Model.VideoUrl.IndexOf("embed/") + 6;
+            var endIndex = Model.VideoUrl.IndexOf("?", index);
+            if (endIndex == -1) 
+            {
+                endIndex = Model.VideoUrl.Length;
+            }
+            videoId = Model.VideoUrl.Substring(index, endIndex - index);
+        }
+        if (!string.IsNullOrEmpty(videoId))
+        {
+            embedUrl = $"https://www.youtube.com/embed/{videoId}";
+        }
+    }
+    else if (Model.VideoType == ClinicApp.Models.Enums.VideoType.Vimeo)
+    {
+        var videoId = "";
+        if (Model.VideoUrl.Contains("vimeo.com/"))
+        {
+            var index = Model.VideoUrl.IndexOf("vimeo.com/") + 10;
+            var endIndex = Model.VideoUrl.IndexOf("/", index);
+            if (endIndex == -1) 
+            {
+                endIndex = Model.VideoUrl.Length;
+            }
+            videoId = Model.VideoUrl.Substring(index, endIndex - index);
+        }
+        if (!string.IsNullOrEmpty(videoId))
+        {
+            embedUrl = $"https://player.vimeo.com/video/{videoId}";
+        }
+    }
+    else
+    {
+        embedUrl = Model.VideoUrl; // Direct Upload
+    }
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">جزئیات ویدیو</h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.VideoId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">@Model.Title</h6>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(embedUrl))
+                    {
+                        <div class="mb-4 text-center">
+                            @if (Model.VideoType == ClinicApp.Models.Enums.VideoType.DirectUpload)
+                            {
+                                <video controls style="max-width: 100%; max-height: 500px;">
+                                    <source src="@embedUrl" type="video/mp4">
+                                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                                </video>
+                            }
+                            else
+                            {
+                                <div class="embed-responsive embed-responsive-16by9">
+                                    <iframe class="embed-responsive-item" src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات</h5>
+                            <p class="text-muted">@Model.Description</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>تصویر کوچک</h5>
+                            <img src="@Model.ThumbnailUrl" alt="@Model.Title" class="img-thumbnail" style="max-width: 300px;">
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات ویدیو</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.VideoId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>نوع:</strong></td>
+                            <td><span class="badge badge-info">@Model.VideoTypeName</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>دسته‌بندی:</strong></td>
+                            <td><span class="badge badge-secondary">@(Model.Category ?? "عمومی")</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>مدت زمان:</strong></td>
+                            <td>@(Model.DurationFormatted ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>بازدید:</strong></td>
+                            <td><i class="fas fa-eye"></i> @Model.ViewCount</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>لینک:</strong></td>
+                            <td>
+                                <a href="@Model.VideoUrl" target="_blank" class="btn btn-sm btn-link">
+                                    <i class="fas fa-external-link-alt"></i> مشاهده
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

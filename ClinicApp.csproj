@@ -486,6 +486,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalServiceInfoController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\SliderController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\TestimonialController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\VideoController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDashboardController.cs" />
@@ -580,6 +581,7 @@
     <Compile Include="Controllers\Triage\TriageQueueController.cs" />
     <Compile Include="Controllers\Triage\TriageReassessmentController.cs" />
     <Compile Include="Controllers\Triage\TriageReportController.cs" />
+    <Compile Include="Controllers\VideoApiController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
@@ -701,6 +703,8 @@
     <Compile Include="Interfaces\CMS\ISliderService.cs" />
     <Compile Include="Interfaces\CMS\ITestimonialRepository.cs" />
     <Compile Include="Interfaces\CMS\ITestimonialService.cs" />
+    <Compile Include="Interfaces\CMS\IVideoRepository.cs" />
+    <Compile Include="Interfaces\CMS\IVideoService.cs" />
     <Compile Include="Interfaces\Finance\IFinancialYearService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IBusinessRule.cs" />
@@ -743,6 +747,7 @@
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\IServiceCalculationService.cs" />
     <Compile Include="Interfaces\IServiceRepository.cs" />
+    <Compile Include="Interfaces\IVideoUploadService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
@@ -822,6 +827,14 @@
     <Compile Include="Migrations\202512110702081_BlogPostLikeSystem.Designer.cs">
       <DependentUpon>202512110702081_BlogPostLikeSystem.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512110823532_AddVideoTable.cs" />
+    <Compile Include="Migrations\202512110823532_AddVideoTable.Designer.cs">
+      <DependentUpon>202512110823532_AddVideoTable.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202512110838012_Whatewvedio.cs" />
+    <Compile Include="Migrations\202512110838012_Whatewvedio.Designer.cs">
+      <DependentUpon>202512110838012_Whatewvedio.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -843,6 +856,8 @@
     <Compile Include="Models\Entities\CMS\MedicalServiceInfo.cs" />
     <Compile Include="Models\Entities\CMS\Slider.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
+    <Compile Include="Models\Entities\CMS\Video.cs" />
+    <Compile Include="Models\Enums\VideoType.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\CMS\AnnouncementRepository.cs" />
@@ -859,6 +874,7 @@
     <Compile Include="Repositories\CMS\MedicalServiceInfoRepository.cs" />
     <Compile Include="Repositories\CMS\SliderRepository.cs" />
     <Compile Include="Repositories\CMS\TestimonialRepository.cs" />
+    <Compile Include="Repositories\CMS\VideoRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -1209,6 +1225,7 @@
     <Compile Include="Services\CMS\MedicalServiceInfoService.cs" />
     <Compile Include="Services\CMS\SliderService.cs" />
     <Compile Include="Services\CMS\TestimonialService.cs" />
+    <Compile Include="Services\CMS\VideoService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\HomePageService.cs" />
     <Compile Include="Services\ImageUploadService.cs" />
@@ -1381,6 +1398,7 @@
     <Compile Include="Services\Triage\TriageWorkflowIntegration.cs" />
     <Compile Include="Services\UserContext\IUserContextService.cs" />
     <Compile Include="Services\UserContext\UserContextService.cs" />
+    <Compile Include="Services\VideoUploadService.cs" />
     <Compile Include="Validators\InsuranceTariffValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
@@ -1402,6 +1420,7 @@
     <Compile Include="ViewModels\CMS\MedicalServiceInfoViewModels.cs" />
     <Compile Include="ViewModels\CMS\SliderViewModels.cs" />
     <Compile Include="ViewModels\CMS\TestimonialViewModels.cs" />
+    <Compile Include="ViewModels\CMS\VideoViewModels.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
@@ -4178,6 +4197,10 @@
     <Content Include="Areas\Admin\Views\Shared\_PersianDatePickerScript.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\BlogPostComment\Index.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\BlogPostComment\_CommentsList.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Video\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Video\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Video\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Video\Details.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5574,6 +5597,23 @@
     <Content Include="Content\plugins\tinymce\langs\README.md" />
     <Content Include="Views\BlogPost\_CommentSection.cshtml" />
     <Content Include="Views\BlogPost\_LikeSection.cshtml" />
+    <Content Include="Views\Home\Sections\_AnnouncementsSection.cshtml" />
+    <Content Include="Views\Home\Sections\_BlogSection.cshtml" />
+    <Content Include="Views\Home\Sections\_ContactSection.cshtml" />
+    <Content Include="Views\Home\Sections\_DoctorsSection.cshtml" />
+    <Content Include="Views\Home\Sections\_EmergencyContactsSection.cshtml" />
+    <Content Include="Views\Home\Sections\_FAQSection.cshtml" />
+    <Content Include="Views\Home\Sections\_GallerySection.cshtml" />
+    <Content Include="Views\Home\Sections\_HealthTipsSection.cshtml" />
+    <Content Include="Views\Home\Sections\_HeroSection.cshtml" />
+    <Content Include="Views\Home\Sections\_InsuranceInfoSection.cshtml" />
+    <Content Include="Views\Home\Sections\_MedicalEquipmentSection.cshtml" />
+    <Content Include="Views\Home\Sections\_MedicalServicesSection.cshtml" />
+    <Content Include="Views\Home\Sections\_QuickAppointmentSection.cshtml" />
+    <Content Include="Views\Home\Sections\_ServicesSection.cshtml" />
+    <Content Include="Views\Home\Sections\_TestimonialsSection.cshtml" />
+    <Content Include="Views\Home\Sections\_ValuePropositionSection.cshtml" />
+    <Content Include="Views\Home\Sections\_VideoSection.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -5788,6 +5828,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512110702081_BlogPostLikeSystem.resx">
       <DependentUpon>202512110702081_BlogPostLikeSystem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512110823532_AddVideoTable.resx">
+      <DependentUpon>202512110823532_AddVideoTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512110838012_Whatewvedio.resx">
+      <DependentUpon>202512110838012_Whatewvedio.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

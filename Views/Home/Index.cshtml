@@ -5,52 +5,106 @@
 
 <main class="animate-section" id="mainContent">
     <!-- Announcements Section (Important Announcements) -->
-    @Html.Action("AnnouncementsSection", "Home")
+    @if (Model.Announcements != null && Model.Announcements.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
+    }
     
     <!-- Hero Section -->
-    @Html.Action("HeroSection", "Home")
+    @if (Model.Hero != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
+    }
     
     <!-- Value Proposition Section -->
-    @Html.Action("ValuePropositionSection", "Home")
+    @if (Model.ValueProposition != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
+    }
     
     <!-- Services Section -->
-    @Html.Action("ServicesSection", "Home")
+    @if (Model.Services != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
+    }
     
     <!-- Medical Services Info Section -->
-    @Html.Action("MedicalServicesSection", "Home")
+    @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
+    }
     
     <!-- Doctors Section -->
-    @Html.Action("DoctorsSection", "Home")
+    @if (Model.Doctors != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
+    }
     
     <!-- Quick Appointment Section -->
-    @Html.Action("QuickAppointmentSection", "Home")
+    @if (Model.QuickAppointment != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
+    }
     
     <!-- Testimonials Section -->
-    @Html.Action("TestimonialsSection", "Home")
+    @if (Model.Testimonials != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
+    }
     
     <!-- Gallery Section -->
-    @Html.Action("GallerySection", "Home")
+    @if (Model.Gallery != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
+    }
     
     <!-- Blog Section -->
-    @Html.Action("BlogSection", "Home")
+    @if (Model.Blog != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
+    }
+    
+    <!-- Video Section -->
+    @if (Model.Videos != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
+    }
     
     <!-- Health Tips Section -->
-    @Html.Action("HealthTipsSection", "Home")
+    @if (Model.HealthTips != null && Model.HealthTips.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
+    }
     
     <!-- Insurance Info Section -->
-    @Html.Action("InsuranceInfoSection", "Home")
+    @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
+    }
     
     <!-- FAQ Section -->
-    @Html.Action("FAQSection", "Home")
+    @if (Model.FAQs != null && Model.FAQs.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
+    }
     
     <!-- Emergency Contacts Section -->
-    @Html.Action("EmergencyContactsSection", "Home")
+    @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", Model.EmergencyContacts)
+    }
     
     <!-- Medical Equipment Section -->
-    @Html.Action("MedicalEquipmentSection", "Home")
+    @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
+    }
     
     <!-- Contact Section -->
-    @Html.Action("ContactSection", "Home")
+    @if (Model.Contact != null)
+    {
+        @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
+    }
 </main>
 
 @section Scripts {

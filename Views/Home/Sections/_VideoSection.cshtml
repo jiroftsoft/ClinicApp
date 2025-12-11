@@ -1,0 +1,295 @@
+@model ClinicApp.ViewModels.VideoSectionViewModel
+
+@if (Model.Videos != null && Model.Videos.Any())
+{
+    <section class="video-section mb-5 py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="h1 text-white" style="font-weight: 700; margin-bottom: 1rem;">@Model.SectionTitle</h2>
+                <p class="lead text-white" style="max-width: 700px; margin: 0 auto; opacity: 0.9;">
+                    @Model.SectionSubtitle
+                </p>
+            </div>
+
+            <div class="row">
+                @foreach (var video in Model.Videos)
+                {
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card video-card h-100" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
+                            <div class="video-thumbnail-container position-relative" style="cursor: pointer;" data-video-id="@video.VideoId" data-embed-url="@video.EmbedUrl" data-video-type="@video.VideoType">
+                                @if (!string.IsNullOrEmpty(video.ThumbnailUrl))
+                                {
+                                    <img src="@video.ThumbnailUrl" 
+                                         class="card-img-top w-100" 
+                                         alt="@video.Title"
+                                         style="height: 250px; object-fit: cover; transition: transform 0.3s ease;"
+                                         onerror="this.src='/Content/Images/default-video.jpg'">
+                                }
+                                else
+                                {
+                                    <div class="card-img-top w-100 d-flex align-items-center justify-content-center bg-dark" style="height: 250px;">
+                                        <i class="fas fa-video fa-3x text-white"></i>
+                                    </div>
+                                }
+                                
+                                <!-- Play Button Overlay -->
+                                <div class="play-button-overlay position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                    <div class="play-button-circle" style="width: 70px; height: 70px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
+                                        <i class="fas fa-play text-primary" style="font-size: 24px; margin-left: 5px;"></i>
+                                    </div>
+                                </div>
+                                
+                                @if (video.DurationFormatted != null)
+                                {
+                                    <div class="position-absolute" style="bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                                        <i class="fas fa-clock"></i> @video.DurationFormatted
+                                    </div>
+                                }
+                            </div>
+                            
+                            <div class="card-body">
+                                <h5 class="card-title mb-2" style="font-weight: 600; color: #333;">
+                                    @video.Title
+                                </h5>
+                                @if (!string.IsNullOrEmpty(video.Description))
+                                {
+                                    <p class="card-text text-muted" style="font-size: 14px; line-height: 1.6;">
+                                        @(video.Description.Length > 100 ? video.Description.Substring(0, 100) + "..." : video.Description)
+                                    </p>
+                                }
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        <span class="badge badge-info">@video.VideoTypeName</span>
+                                        @if (!string.IsNullOrEmpty(video.Category))
+                                        {
+                                            <span class="badge badge-secondary">@video.Category</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-eye"></i> @video.ViewCount
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Video Modal -->
+    <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-labelledby="videoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content" style="background: #000; border: none;">
+                <div class="modal-header" style="border: none; padding: 10px;">
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="videoModalContent" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        <iframe id="videoModalIframe" 
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                                allowfullscreen 
+                                allow="autoplay; encrypted-media">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .video-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .video-card:hover .card-img-top {
+        transform: scale(1.05);
+    }
+    
+    .play-button-circle:hover {
+        transform: scale(1.1);
+        background: rgba(255,255,255,1) !important;
+    }
+</style>
+
+<script>
+    // Production-Ready: استفاده از Vanilla JavaScript برای عدم وابستگی به jQuery
+    (function() {
+        'use strict';
+        
+        // تابع کمکی برای بررسی آماده بودن DOM
+        function domReady(fn) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fn);
+            } else {
+                fn();
+            }
+        }
+        
+        // تابع کمکی برای AJAX (Vanilla JavaScript)
+        function makeRequest(url, method, data, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (callback) callback(null, response);
+                        } catch (e) {
+                            if (callback) callback(e, null);
+                        }
+                    } else {
+                        if (callback) callback(new Error('Request failed'), null);
+                    }
+                }
+            };
+            
+            if (data) {
+                xhr.send(JSON.stringify(data));
+            } else {
+                xhr.send();
+            }
+        }
+        
+        // اجرای کد پس از آماده شدن DOM
+        domReady(function() {
+            // باز کردن ویدیو در Modal
+            var thumbnailContainers = document.querySelectorAll('.video-thumbnail-container');
+            
+            thumbnailContainers.forEach(function(container) {
+                container.addEventListener('click', function() {
+                    var embedUrl = this.getAttribute('data-embed-url');
+                    var videoType = this.getAttribute('data-video-type');
+                    var videoId = this.getAttribute('data-video-id');
+                    
+                    if (!embedUrl) {
+                        console.error('Embed URL not found');
+                        return;
+                    }
+                    
+                    // تنظیم iframe در Modal
+                    var iframe = document.getElementById('videoModalIframe');
+                    var modal = document.getElementById('videoModal');
+                    
+                    if (iframe) {
+                        iframe.setAttribute('src', embedUrl);
+                    }
+                    
+                    // نمایش Modal (Bootstrap 4/5)
+                    if (modal) {
+                        // بررسی وجود jQuery و Bootstrap
+                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.modal !== 'undefined') {
+                            jQuery(modal).modal('show');
+                        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                            var bsModal = new bootstrap.Modal(modal);
+                            bsModal.show();
+                        } else {
+                            // Fallback: نمایش ساده Modal
+                            modal.style.display = 'block';
+                            modal.classList.add('show');
+                            document.body.classList.add('modal-open');
+                            
+                            // اضافه کردن backdrop
+                            var backdrop = document.createElement('div');
+                            backdrop.className = 'modal-backdrop fade show';
+                            backdrop.id = 'videoModalBackdrop';
+                            document.body.appendChild(backdrop);
+                        }
+                    }
+                    
+                    // افزایش تعداد بازدید (AJAX)
+                    if (videoId) {
+                        makeRequest('/api/Video/IncrementViewCount', 'POST', { videoId: parseInt(videoId) }, function(error, response) {
+                            if (error) {
+                                console.error('Error incrementing view count:', error);
+                            }
+                            // Refresh view count if needed
+                        });
+                    }
+                });
+            });
+            
+            // پاک کردن iframe هنگام بستن Modal (برای توقف پخش)
+            var videoModal = document.getElementById('videoModal');
+            if (videoModal) {
+                // برای Bootstrap 4 (jQuery)
+                if (typeof jQuery !== 'undefined') {
+                    jQuery(videoModal).on('hidden.bs.modal', function() {
+                        var iframe = document.getElementById('videoModalIframe');
+                        if (iframe) {
+                            iframe.setAttribute('src', '');
+                        }
+                    });
+                }
+                
+                // برای Bootstrap 5 (Vanilla JS)
+                videoModal.addEventListener('hidden.bs.modal', function() {
+                    var iframe = document.getElementById('videoModalIframe');
+                    if (iframe) {
+                        iframe.setAttribute('src', '');
+                    }
+                    
+                    // حذف backdrop در صورت وجود
+                    var backdrop = document.getElementById('videoModalBackdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                });
+                
+                // Fallback: بستن Modal با کلیک روی backdrop
+                videoModal.addEventListener('click', function(e) {
+                    if (e.target === videoModal) {
+                        var iframe = document.getElementById('videoModalIframe');
+                        if (iframe) {
+                            iframe.setAttribute('src', '');
+                        }
+                        videoModal.style.display = 'none';
+                        videoModal.classList.remove('show');
+                        document.body.classList.remove('modal-open');
+                        
+                        var backdrop = document.getElementById('videoModalBackdrop');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                    }
+                });
+                
+                // بستن Modal با دکمه Close
+                var closeButtons = videoModal.querySelectorAll('[data-dismiss="modal"], [data-bs-dismiss="modal"], .close');
+                closeButtons.forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var iframe = document.getElementById('videoModalIframe');
+                        if (iframe) {
+                            iframe.setAttribute('src', '');
+                        }
+                        
+                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.modal !== 'undefined') {
+                            jQuery(videoModal).modal('hide');
+                        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                            var bsModal = bootstrap.Modal.getInstance(videoModal);
+                            if (bsModal) {
+                                bsModal.hide();
+                            }
+                        } else {
+                            videoModal.style.display = 'none';
+                            videoModal.classList.remove('show');
+                            document.body.classList.remove('modal-open');
+                            
+                            var backdrop = document.getElementById('videoModalBackdrop');
+                            if (backdrop) {
+                                backdrop.remove();
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    })();
+</script>
+

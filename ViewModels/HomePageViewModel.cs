@@ -18,8 +18,17 @@ namespace ClinicApp.ViewModels
         public TestimonialsSectionViewModel Testimonials { get; set; }
         public GallerySectionViewModel Gallery { get; set; }
         public BlogSectionViewModel Blog { get; set; }
+        public VideoSectionViewModel Videos { get; set; }
         public ContactSectionViewModel Contact { get; set; }
         public List<ClinicApp.ViewModels.CMS.MedicalEquipmentPublicViewModel> MedicalEquipments { get; set; }
+        
+        // بخش‌های اضافی که قبلاً از Html.Action استفاده می‌شدند (Strongly-Typed)
+        public List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel> Announcements { get; set; }
+        public List<ClinicApp.ViewModels.CMS.FAQPublicViewModel> FAQs { get; set; }
+        public List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel> HealthTips { get; set; }
+        public List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel> InsuranceInfos { get; set; }
+        public List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel> MedicalServiceInfos { get; set; }
+        public List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel> EmergencyContacts { get; set; }
     }
 
     #region Hero Section
@@ -223,6 +232,36 @@ namespace ClinicApp.ViewModels
 
     #endregion
 
+    #region Video Section
+
+    /// <summary>
+    /// ViewModel برای بخش ویدیوها
+    /// </summary>
+    public class VideoSectionViewModel
+    {
+        public string SectionTitle { get; set; }
+        public string SectionSubtitle { get; set; }
+        public List<VideoItemViewModel> Videos { get; set; } = new List<VideoItemViewModel>();
+    }
+
+    public class VideoItemViewModel
+    {
+        public int VideoId { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string VideoUrl { get; set; }
+        public string EmbedUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
+        public string Category { get; set; }
+        public int? Duration { get; set; }
+        public string DurationFormatted { get; set; }
+        public int ViewCount { get; set; }
+        public ClinicApp.Models.Enums.VideoType VideoType { get; set; }
+        public string VideoTypeName { get; set; }
+    }
+
+    #endregion
+
     #region Contact Section
 
     /// <summary>
@@ -236,6 +275,7 @@ namespace ClinicApp.ViewModels
         public string GoogleMapsLink { get; set; }
         public string WhatsAppNumber { get; set; }
         public string WhatsAppLink { get; set; }
+        public List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel> EmergencyContacts { get; set; }
     }
 
     public class ClinicInfoViewModel

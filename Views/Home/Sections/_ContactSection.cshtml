@@ -6,8 +6,8 @@
             <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">@Model.SectionTitle</h2>
         </div>
 
-        <!-- Emergency Contacts (اگر در ViewBag موجود باشد) -->
-        @if (ViewBag.EmergencyContacts != null)
+        <!-- Emergency Contacts (Strongly-Typed) -->
+        @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
         {
             <div class="row mb-5">
                 <div class="col-12">
@@ -20,7 +20,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                @foreach (var contact in ViewBag.EmergencyContacts)
+                                @foreach (var contact in Model.EmergencyContacts)
                                 {
                                     <div class="col-md-4 mb-3">
                                         <div class="d-flex align-items-center">

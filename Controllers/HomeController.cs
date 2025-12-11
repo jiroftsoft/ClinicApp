@@ -89,7 +89,7 @@ namespace ClinicApp.Controllers
                 var announcements = await _announcementService.GetImportantAnnouncementsAsync(5);
                 if (announcements.Success && announcements.Data != null && announcements.Data.Any())
                 {
-                    return PartialView("_AnnouncementsSection", announcements.Data);
+                    return PartialView("Sections/_AnnouncementsSection", announcements.Data);
                 }
                 return new EmptyResult();
             }
@@ -111,7 +111,7 @@ namespace ClinicApp.Controllers
                 var faqs = await _faqService.GetFeaturedFAQsAsync(5);
                 if (faqs.Success && faqs.Data != null && faqs.Data.Any())
                 {
-                    return PartialView("_FAQSection", faqs.Data);
+                    return PartialView("Sections/_FAQSection", faqs.Data);
                 }
                 return new EmptyResult();
             }
@@ -133,7 +133,7 @@ namespace ClinicApp.Controllers
                 var healthTips = await _healthTipService.GetFeaturedHealthTipsAsync(6);
                 if (healthTips.Success && healthTips.Data != null && healthTips.Data.Any())
                 {
-                    return PartialView("_HealthTipsSection", healthTips.Data);
+                    return PartialView("Sections/_HealthTipsSection", healthTips.Data);
                 }
                 return new EmptyResult();
             }
@@ -155,7 +155,7 @@ namespace ClinicApp.Controllers
                 var insurances = await _insuranceInfoService.GetFeaturedInsuranceInfosAsync(8);
                 if (insurances.Success && insurances.Data != null && insurances.Data.Any())
                 {
-                    return PartialView("_InsuranceInfoSection", insurances.Data);
+                    return PartialView("Sections/_InsuranceInfoSection", insurances.Data);
                 }
                 return new EmptyResult();
             }
@@ -177,7 +177,7 @@ namespace ClinicApp.Controllers
                 var services = await _medicalServiceInfoService.GetFeaturedServiceInfosAsync(6);
                 if (services.Success && services.Data != null && services.Data.Any())
                 {
-                    return PartialView("_MedicalServicesSection", services.Data);
+                    return PartialView("Sections/_MedicalServicesSection", services.Data);
                 }
                 return new EmptyResult();
             }
@@ -199,7 +199,7 @@ namespace ClinicApp.Controllers
                 var contacts = await _emergencyContactService.GetActiveContactsAsync();
                 if (contacts.Success && contacts.Data != null && contacts.Data.Any())
                 {
-                    return PartialView("_EmergencyContactsSection", contacts.Data);
+                    return PartialView("Sections/_EmergencyContactsSection", contacts.Data);
                 }
                 return new EmptyResult();
             }
@@ -243,7 +243,7 @@ namespace ClinicApp.Controllers
                 var viewModel = await _homePageService.GetHomePageDataAsync();
                 if (viewModel?.MedicalEquipments != null && viewModel.MedicalEquipments.Any())
                 {
-                    return PartialView("_MedicalEquipmentSection", viewModel);
+                    return PartialView("Sections/_MedicalEquipmentSection", viewModel);
                 }
                 return new EmptyResult();
             }
@@ -261,7 +261,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> HeroSection()
         {
             var hero = await _homePageService.GetHeroSectionAsync();
-            return PartialView("_HeroSection", hero);
+            return PartialView("Sections/_HeroSection", hero);
         }
 
         /// <summary>
@@ -272,7 +272,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> ValuePropositionSection()
         {
             var valueProp = await _homePageService.GetValuePropositionAsync();
-            return PartialView("_ValuePropositionSection", valueProp);
+            return PartialView("Sections/_ValuePropositionSection", valueProp);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> ServicesSection()
         {
             var services = await _homePageService.GetServicesSectionAsync(6);
-            return PartialView("_ServicesSection", services);
+            return PartialView("Sections/_ServicesSection", services);
         }
 
         /// <summary>
@@ -294,7 +294,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> DoctorsSection()
         {
             var doctors = await _homePageService.GetDoctorsSectionAsync(4);
-            return PartialView("_DoctorsSection", doctors);
+            return PartialView("Sections/_DoctorsSection", doctors);
         }
 
         /// <summary>
@@ -305,7 +305,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> QuickAppointmentSection()
         {
             var quickAppointment = await _homePageService.GetQuickAppointmentSectionAsync();
-            return PartialView("_QuickAppointmentSection", quickAppointment);
+            return PartialView("Sections/_QuickAppointmentSection", quickAppointment);
         }
 
         /// <summary>
@@ -316,7 +316,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> TestimonialsSection()
         {
             var testimonials = await _homePageService.GetTestimonialsSectionAsync(3);
-            return PartialView("_TestimonialsSection", testimonials);
+            return PartialView("Sections/_TestimonialsSection", testimonials);
         }
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> GallerySection()
         {
             var gallery = await _homePageService.GetGallerySectionAsync(6);
-            return PartialView("_GallerySection", gallery);
+            return PartialView("Sections/_GallerySection", gallery);
         }
 
         /// <summary>
@@ -338,7 +338,18 @@ namespace ClinicApp.Controllers
         public async Task<ActionResult> BlogSection()
         {
             var blog = await _homePageService.GetBlogSectionAsync(3);
-            return PartialView("_BlogSection", blog);
+            return PartialView("Sections/_BlogSection", blog);
+        }
+
+        /// <summary>
+        /// بخش Video
+        /// </summary>
+        [OutputCache(Duration = 600, VaryByParam = "category")]
+        [ChildActionOnly]
+        public async Task<ActionResult> VideoSection(string category = null)
+        {
+            var videos = await _homePageService.GetVideoSectionAsync(6, category);
+            return PartialView("Sections/_VideoSection", videos);
         }
 
         /// <summary>
@@ -357,7 +368,7 @@ namespace ClinicApp.Controllers
                 ViewBag.EmergencyContacts = emergencyContacts.Data;
             }
             
-            return PartialView("_ContactSection", contact);
+            return PartialView("Sections/_ContactSection", contact);
         }
 
         #endregion
