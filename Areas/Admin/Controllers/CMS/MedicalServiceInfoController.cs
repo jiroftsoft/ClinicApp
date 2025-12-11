@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -22,16 +24,27 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         private readonly IMedicalServiceInfoService _medicalServiceInfoService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
+        private readonly IImageUploadService _imageUploadService;
         private readonly ILogger _logger;
+
+        // Production Configuration
+        private const string ServiceImageUploadPath = "~/Content/Images/services";
+        private const string ServiceThumbnailUploadPath = "~/Content/Images/services/thumbnails";
+        private const int ThumbnailWidth = 300;
+        private const int ThumbnailHeight = 300;
+        private const int MaxImageWidth = 1920; // Full HD
+        private const int MaxImageHeight = 1080; // Full HD
 
         public MedicalServiceInfoController(
             IMedicalServiceInfoService medicalServiceInfoService,
             ICurrentUserService currentUserService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IImageUploadService imageUploadService)
         {
             _medicalServiceInfoService = medicalServiceInfoService ?? throw new ArgumentNullException(nameof(medicalServiceInfoService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _imageUploadService = imageUploadService ?? throw new ArgumentNullException(nameof(imageUploadService));
             _logger = Log.ForContext<MedicalServiceInfoController>();
         }
 
@@ -60,41 +73,65 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست اطلاعات خدمات پزشکی: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
-                    return View(new PagedResult<MedicalServiceInfoIndexViewModel>(new System.Collections.Generic.List<MedicalServiceInfoIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
+                    NotificationHelper.SetError(TempData, result.Message);
+                    
+                    var emptyViewModel = new MedicalServiceInfoAdminIndexViewModel
+                    {
+                        MedicalServiceInfos = new PagedResult<MedicalServiceInfoIndexViewModel>(new List<MedicalServiceInfoIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize),
+                        Services = new List<MedicalServiceInfoServiceViewModel>(),
+                        ServiceCategories = new List<MedicalServiceInfoCategoryViewModel>(),
+                        SearchModel = searchModel
+                    };
+                    return View(GetViewPath("Index"), emptyViewModel);
                 }
 
                 // بارگذاری دسته‌بندی‌های خدمات برای فیلتر
                 var serviceCategories = await _context.ServiceCategories
                     .Where(sc => !sc.IsDeleted)
                     .OrderBy(sc => sc.Title)
-                    .Select(sc => new SelectListItem
+                    .Select(sc => new MedicalServiceInfoCategoryViewModel
                     {
-                        Value = sc.ServiceCategoryId.ToString(),
-                        Text = sc.Title
+                        ServiceCategoryId = sc.ServiceCategoryId,
+                        Title = sc.Title
                     })
                     .ToListAsync();
-                ViewBag.ServiceCategories = serviceCategories;
 
                 // بارگذاری خدمات برای فیلتر
                 var services = await _context.Services
                     .Where(s => !s.IsDeleted)
                     .OrderBy(s => s.Title)
-                    .Select(s => new SelectListItem
+                    .Select(s => new MedicalServiceInfoServiceViewModel
                     {
-                        Value = s.ServiceId.ToString(),
-                        Text = s.Title + " (" + s.ServiceCode + ")"
+                        ServiceId = s.ServiceId,
+                        ServiceTitle = s.Title,
+                        ServiceCode = s.ServiceCode,
+                        ServiceCategoryTitle = s.ServiceCategory != null ? s.ServiceCategory.Title : ""
                     })
                     .ToListAsync();
-                ViewBag.Services = services;
 
-                return View(result.Data);
+                var viewModel = new MedicalServiceInfoAdminIndexViewModel
+                {
+                    MedicalServiceInfos = result.Data,
+                    Services = services,
+                    ServiceCategories = serviceCategories,
+                    SearchModel = searchModel
+                };
+
+                return View(GetViewPath("Index"), viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست اطلاعات خدمات پزشکی");
-                TempData["Error"] = "خطا در بارگذاری لیست اطلاعات خدمات پزشکی";
-                return View(new PagedResult<MedicalServiceInfoIndexViewModel>(new System.Collections.Generic.List<MedicalServiceInfoIndexViewModel>(), 0, 1, 10));
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری لیست اطلاعات خدمات پزشکی");
+                
+                var emptyViewModel = new MedicalServiceInfoAdminIndexViewModel
+                {
+                    MedicalServiceInfos = new PagedResult<MedicalServiceInfoIndexViewModel>(new List<MedicalServiceInfoIndexViewModel>(), 0, 1, 10),
+                    Services = new List<MedicalServiceInfoServiceViewModel>(),
+                    ServiceCategories = new List<MedicalServiceInfoCategoryViewModel>(),
+                    SearchModel = new MedicalServiceInfoSearchViewModel { PageNumber = 1, PageSize = 10 }
+                };
+                return View(GetViewPath("Index"), emptyViewModel);
             }
         }
 
@@ -111,16 +148,16 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش جزئیات اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در بارگذاری جزئیات اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری جزئیات اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -135,19 +172,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             try
             {
                 // بارگذاری لیست خدمات برای dropdown
-                var services = await _context.Services
-                    .Include(s => s.ServiceCategory)
-                    .Where(s => !s.IsDeleted && s.IsActive)
-                    .OrderBy(s => s.ServiceCategory.Title)
-                    .ThenBy(s => s.Title)
-                    .Select(s => new SelectListItem
-                    {
-                        Value = s.ServiceId.ToString(),
-                        Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")"
-                    })
-                    .ToListAsync();
-
-                ViewBag.Services = services;
+                var services = await GetServicesAsync();
 
                 var model = new MedicalServiceInfoCreateEditViewModel
                 {
@@ -156,12 +181,18 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     DisplayOrder = 0
                 };
 
-                return View(model);
+                var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                {
+                    Model = model,
+                    Services = services
+                };
+
+                return View(GetViewPath("Create"), pageViewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ایجاد اطلاعات خدمت پزشکی");
-                TempData["Error"] = "خطا در بارگذاری فرم ایجاد اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ایجاد اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -175,23 +206,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست ایجاد اطلاعات خدمت پزشکی جدید توسط کاربر {UserId}", _currentUserService.UserId);
 
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model);
+
+                var services = await GetServicesAsync();
+
                 if (!ModelState.IsValid)
                 {
-                    // بارگذاری مجدد لیست خدمات
-                    var services = await _context.Services
-                        .Include(s => s.ServiceCategory)
-                        .Where(s => !s.IsDeleted && s.IsActive)
-                        .OrderBy(s => s.ServiceCategory.Title)
-                        .ThenBy(s => s.Title)
-                        .Select(s => new SelectListItem
-                        {
-                            Value = s.ServiceId.ToString(),
-                            Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")"
-                        })
-                        .ToListAsync();
-                    ViewBag.Services = services;
-
-                    return View(model);
+                    var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                    {
+                        Model = model,
+                        Services = services
+                    };
+                    return View(GetViewPath("Create"), pageViewModel);
                 }
 
                 var result = await _medicalServiceInfoService.CreateMedicalServiceInfoAsync(model);
@@ -199,34 +226,32 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در ایجاد اطلاعات خدمت پزشکی: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     
-                    // بارگذاری مجدد لیست خدمات
-                    var services = await _context.Services
-                        .Include(s => s.ServiceCategory)
-                        .Where(s => !s.IsDeleted && s.IsActive)
-                        .OrderBy(s => s.ServiceCategory.Title)
-                        .ThenBy(s => s.Title)
-                        .Select(s => new SelectListItem
-                        {
-                            Value = s.ServiceId.ToString(),
-                            Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")"
-                        })
-                        .ToListAsync();
-                    ViewBag.Services = services;
-
-                    return View(model);
+                    var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                    {
+                        Model = model,
+                        Services = services
+                    };
+                    return View(GetViewPath("Create"), pageViewModel);
                 }
 
                 _logger.Information("اطلاعات خدمت پزشکی با موفقیت ایجاد شد - MedicalServiceInfoId: {MedicalServiceInfoId}", result.Data.MedicalServiceInfoId);
-                TempData["Success"] = "اطلاعات خدمت پزشکی با موفقیت ایجاد شد";
+                NotificationHelper.SetSuccess(TempData, "اطلاعات خدمت پزشکی با موفقیت ایجاد شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ایجاد اطلاعات خدمت پزشکی");
-                TempData["Error"] = "خطا در ایجاد اطلاعات خدمت پزشکی";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در ایجاد اطلاعات خدمت پزشکی");
+                
+                var services = await GetServicesAsync();
+                var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                {
+                    Model = model,
+                    Services = services
+                };
+                return View(GetViewPath("Create"), pageViewModel);
             }
         }
 
@@ -243,32 +268,25 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
                 // بارگذاری لیست خدمات برای dropdown
-                var services = await _context.Services
-                    .Include(s => s.ServiceCategory)
-                    .Where(s => !s.IsDeleted && s.IsActive)
-                    .OrderBy(s => s.ServiceCategory.Title)
-                    .ThenBy(s => s.Title)
-                    .Select(s => new SelectListItem
-                    {
-                        Value = s.ServiceId.ToString(),
-                        Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")",
-                        Selected = s.ServiceId == result.Data.ServiceId
-                    })
-                    .ToListAsync();
+                var services = await GetServicesAsync();
 
-                ViewBag.Services = services;
+                var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                {
+                    Model = result.Data,
+                    Services = services
+                };
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), pageViewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ویرایش اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در بارگذاری فرم ویرایش اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ویرایش اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -282,24 +300,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست به‌روزرسانی اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", model.MedicalServiceInfoId);
 
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model);
+
+                var services = await GetServicesAsync();
+
                 if (!ModelState.IsValid)
                 {
-                    // بارگذاری مجدد لیست خدمات
-                    var services = await _context.Services
-                        .Include(s => s.ServiceCategory)
-                        .Where(s => !s.IsDeleted && s.IsActive)
-                        .OrderBy(s => s.ServiceCategory.Title)
-                        .ThenBy(s => s.Title)
-                        .Select(s => new SelectListItem
-                        {
-                            Value = s.ServiceId.ToString(),
-                            Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")",
-                            Selected = s.ServiceId == model.ServiceId
-                        })
-                        .ToListAsync();
-                    ViewBag.Services = services;
-
-                    return View(model);
+                    var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                    {
+                        Model = model,
+                        Services = services
+                    };
+                    return View(GetViewPath("Edit"), pageViewModel);
                 }
 
                 var result = await _medicalServiceInfoService.UpdateMedicalServiceInfoAsync(model);
@@ -307,35 +320,32 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در به‌روزرسانی اطلاعات خدمت پزشکی: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     
-                    // بارگذاری مجدد لیست خدمات
-                    var services = await _context.Services
-                        .Include(s => s.ServiceCategory)
-                        .Where(s => !s.IsDeleted && s.IsActive)
-                        .OrderBy(s => s.ServiceCategory.Title)
-                        .ThenBy(s => s.Title)
-                        .Select(s => new SelectListItem
-                        {
-                            Value = s.ServiceId.ToString(),
-                            Text = s.ServiceCategory.Title + " - " + s.Title + " (" + s.ServiceCode + ")",
-                            Selected = s.ServiceId == model.ServiceId
-                        })
-                        .ToListAsync();
-                    ViewBag.Services = services;
-
-                    return View(model);
+                    var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                    {
+                        Model = model,
+                        Services = services
+                    };
+                    return View(GetViewPath("Edit"), pageViewModel);
                 }
 
                 _logger.Information("اطلاعات خدمت پزشکی با موفقیت به‌روزرسانی شد - MedicalServiceInfoId: {MedicalServiceInfoId}", model.MedicalServiceInfoId);
-                TempData["Success"] = "اطلاعات خدمت پزشکی با موفقیت به‌روزرسانی شد";
+                NotificationHelper.SetSuccess(TempData, "اطلاعات خدمت پزشکی با موفقیت به‌روزرسانی شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", model.MedicalServiceInfoId);
-                TempData["Error"] = "خطا در به‌روزرسانی اطلاعات خدمت پزشکی";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی اطلاعات خدمت پزشکی");
+                
+                var services = await GetServicesAsync();
+                var pageViewModel = new MedicalServiceInfoCreateEditPageViewModel
+                {
+                    Model = model,
+                    Services = services
+                };
+                return View(GetViewPath("Edit"), pageViewModel);
             }
         }
 
@@ -355,11 +365,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "اطلاعات خدمت پزشکی با موفقیت حذف شد";
+                    NotificationHelper.SetSuccess(TempData, "اطلاعات خدمت پزشکی با موفقیت حذف شد");
                 }
 
                 return RedirectToAction("Index");
@@ -367,7 +377,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در حذف اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در حذف اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در حذف اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -386,11 +396,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "اطلاعات خدمت پزشکی با موفقیت فعال شد";
+                    NotificationHelper.SetSuccess(TempData, "اطلاعات خدمت پزشکی با موفقیت فعال شد");
                 }
 
                 return RedirectToAction("Index");
@@ -398,7 +408,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در فعال‌سازی اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در فعال‌سازی اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در فعال‌سازی اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -413,11 +423,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "اطلاعات خدمت پزشکی با موفقیت غیرفعال شد";
+                    NotificationHelper.SetSuccess(TempData, "اطلاعات خدمت پزشکی با موفقیت غیرفعال شد");
                 }
 
                 return RedirectToAction("Index");
@@ -425,7 +435,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در غیرفعال‌سازی اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در غیرفعال‌سازی اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در غیرفعال‌سازی اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
             }
         }
@@ -444,11 +454,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = isFeatured ? "اطلاعات خدمت پزشکی به عنوان ویژه تنظیم شد" : "اطلاعات خدمت پزشکی از حالت ویژه خارج شد";
+                    NotificationHelper.SetSuccess(TempData, isFeatured ? "اطلاعات خدمت پزشکی به عنوان ویژه تنظیم شد" : "اطلاعات خدمت پزشکی از حالت ویژه خارج شد");
                 }
 
                 return RedirectToAction("Index");
@@ -456,8 +466,135 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در تنظیم وضعیت ویژه اطلاعات خدمت پزشکی - MedicalServiceInfoId: {MedicalServiceInfoId}", id);
-                TempData["Error"] = "خطا در تنظیم وضعیت ویژه اطلاعات خدمت پزشکی";
+                NotificationHelper.SetError(TempData, "خطا در تنظیم وضعیت ویژه اطلاعات خدمت پزشکی");
                 return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// دریافت لیست خدمات برای dropdown
+        /// </summary>
+        private async Task<List<MedicalServiceInfoServiceViewModel>> GetServicesAsync()
+        {
+            try
+            {
+                var services = await _context.Services
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => !s.IsDeleted && s.IsActive)
+                    .ToListAsync();
+
+                return services
+                    .OrderBy(s => s.ServiceCategory != null ? s.ServiceCategory.Title : "")
+                    .ThenBy(s => s.Title)
+                    .Select(s => new MedicalServiceInfoServiceViewModel
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceTitle = (s.ServiceCategory != null ? s.ServiceCategory.Title + " - " : "") + s.Title + " (" + s.ServiceCode + ")",
+                        ServiceCode = s.ServiceCode,
+                        ServiceCategoryTitle = s.ServiceCategory != null ? s.ServiceCategory.Title : ""
+                    })
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست خدمات");
+                return new List<MedicalServiceInfoServiceViewModel>();
+            }
+        }
+
+        #endregion
+
+        #region Image Upload
+
+        /// <summary>
+        /// پردازش آپلود تصویر اطلاعات خدمت پزشکی
+        /// طراحی شده برای محیط Production درمانی با رعایت اصول SRP
+        /// </summary>
+        private async Task ProcessImageUpload(MedicalServiceInfoCreateEditViewModel model)
+        {
+            try
+            {
+                var imageFile = Request.Files["ImageFile"];
+                var thumbnailFile = Request.Files["ThumbnailFile"];
+
+                // اگر تصویر اصلی آپلود شده
+                if (imageFile != null && imageFile.ContentLength > 0)
+                {
+                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
+                        imageFile,
+                        ServiceImageUploadPath,
+                        ServiceThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        MaxImageWidth,
+                        MaxImageHeight);
+
+                    if (!uploadResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود تصویر: {ErrorMessage}", uploadResult.Message);
+                        NotificationHelper.SetError(TempData, uploadResult.Message);
+                        ModelState.AddModelError("ImageFile", uploadResult.Message);
+                        return;
+                    }
+
+                    // حذف تصویر قبلی در صورت وجود (فقط در Edit)
+                    if (model.MedicalServiceInfoId > 0 && !string.IsNullOrEmpty(model.ImageUrl))
+                    {
+                        _imageUploadService.DeleteImage(model.ImageUrl);
+                    }
+
+                    // تنظیم مسیر تصویر اصلی
+                    model.ImageUrl = uploadResult.Data.ImageUrl;
+
+                    // اگر thumbnail جداگانه آپلود نشده، از thumbnail خودکار استفاده کن
+                    if (thumbnailFile == null || thumbnailFile.ContentLength == 0)
+                    {
+                        model.ThumbnailUrl = uploadResult.Data.ThumbnailUrl;
+                    }
+
+                    _logger.Information("تصویر با موفقیت آپلود شد: {ImageUrl}, Thumbnail: {ThumbnailUrl}",
+                        model.ImageUrl, model.ThumbnailUrl);
+                }
+
+                // اگر thumbnail جداگانه آپلود شده
+                if (thumbnailFile != null && thumbnailFile.ContentLength > 0)
+                {
+                    var thumbnailResult = _imageUploadService.UploadImageWithThumbnail(
+                        thumbnailFile,
+                        ServiceThumbnailUploadPath,
+                        ServiceThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        ThumbnailWidth,
+                        ThumbnailHeight);
+
+                    if (!thumbnailResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود thumbnail: {ErrorMessage}", thumbnailResult.Message);
+                        NotificationHelper.SetError(TempData, thumbnailResult.Message);
+                        ModelState.AddModelError("ThumbnailFile", thumbnailResult.Message);
+                        return;
+                    }
+
+                    // حذف thumbnail قبلی در صورت وجود (فقط در Edit)
+                    if (model.MedicalServiceInfoId > 0 && !string.IsNullOrEmpty(model.ThumbnailUrl))
+                    {
+                        _imageUploadService.DeleteImage(model.ThumbnailUrl);
+                    }
+
+                    model.ThumbnailUrl = thumbnailResult.Data.ImageUrl;
+                    _logger.Information("Thumbnail جداگانه با موفقیت آپلود شد: {ThumbnailUrl}", model.ThumbnailUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پردازش آپلود تصویر");
+                NotificationHelper.SetError(TempData, "خطا در آپلود تصویر");
+                ModelState.AddModelError("", "خطا در آپلود تصویر");
             }
         }
 

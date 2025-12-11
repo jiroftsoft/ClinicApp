@@ -1785,6 +1785,7 @@
     <Content Include="Content\Insurance\supplementary-insurance.css" />
     <Content Include="Content\Insurance\supplementary-tariff.css" />
     <Content Include="Content\js\admin-layout.js" />
+    <Content Include="Content\js\admin-notification-service.js" />
     <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />

@@ -1,4 +1,4 @@
-@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.MedicalServiceInfoIndexViewModel>
+@model ClinicApp.ViewModels.CMS.MedicalServiceInfoAdminIndexViewModel
 @{
     ViewBag.Title = "مدیریت اطلاعات خدمات پزشکی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -14,19 +14,62 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
-        .service-info-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
+
+            .service-info-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+
         .status-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            padding: 0.35rem 0.65rem;
+            font-weight: 600;
         }
+
         .service-image {
             width: 80px;
             height: 60px;
             object-fit: cover;
             border-radius: 4px;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-info {
+            background-color: #17a2b8 !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-success {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+            opacity: 1 !important;
+        }
+
+        .text-muted {
+            color: #495057 !important;
+            opacity: 1 !important;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .table td .badge {
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.4rem 0.7rem;
         }
     </style>
 }
@@ -42,26 +85,6 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
     <!-- Search Panel -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
@@ -71,16 +94,16 @@
             @using (Html.BeginForm("Index", "MedicalServiceInfo", FormMethod.Get, new { @class = "form-inline" }))
             {
                 <div class="form-group mb-2 mr-2">
-                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان و توضیحات..." value="@Request.QueryString["SearchTerm"]">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان و توضیحات..." value="@(Model.SearchModel?.SearchTerm ?? "")">
                 </div>
                 <div class="form-group mb-2 mr-2">
                     <select name="ServiceCategoryId" class="form-control">
                         <option value="">همه دسته‌بندی‌ها</option>
-                        @if (ViewBag.ServiceCategories != null)
+                        @if (Model.ServiceCategories != null)
                         {
-                            foreach (var cat in ViewBag.ServiceCategories)
+                            foreach (var cat in Model.ServiceCategories)
                             {
-                                <option value="@cat.Value" @(Request.QueryString["ServiceCategoryId"] == cat.Value ? "selected" : "")>@cat.Text</option>
+                                <option value="@cat.ServiceCategoryId" @(Model.SearchModel != null && Model.SearchModel.ServiceCategoryId == cat.ServiceCategoryId ? "selected" : "")>@cat.Title</option>
                             }
                         }
                     </select>
@@ -88,11 +111,11 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="ServiceId" class="form-control">
                         <option value="">همه خدمات</option>
-                        @if (ViewBag.Services != null)
+                        @if (Model.Services != null)
                         {
-                            foreach (var svc in ViewBag.Services)
+                            foreach (var svc in Model.Services)
                             {
-                                <option value="@svc.Value" @(Request.QueryString["ServiceId"] == svc.Value ? "selected" : "")>@svc.Text</option>
+                                <option value="@svc.ServiceId" @(Model.SearchModel != null && Model.SearchModel.ServiceId == svc.ServiceId ? "selected" : "")>@svc.ServiceTitle</option>
                             }
                         }
                     </select>
@@ -100,15 +123,15 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="IsActive" class="form-control">
                         <option value="">همه</option>
-                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
-                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                        <option value="true" @(Model.SearchModel != null && Model.SearchModel.IsActive == true ? "selected" : "")>فعال</option>
+                        <option value="false" @(Model.SearchModel != null && Model.SearchModel.IsActive == false ? "selected" : "")>غیرفعال</option>
                     </select>
                 </div>
                 <div class="form-group mb-2 mr-2">
                     <select name="IsFeatured" class="form-control">
                         <option value="">همه</option>
-                        <option value="true" @(Request.QueryString["IsFeatured"] == "true" ? "selected" : "")>ویژه</option>
-                        <option value="false" @(Request.QueryString["IsFeatured"] == "false" ? "selected" : "")>عادی</option>
+                        <option value="true" @(Model.SearchModel != null && Model.SearchModel.IsFeatured == true ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Model.SearchModel != null && Model.SearchModel.IsFeatured == false ? "selected" : "")>عادی</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary mb-2">
@@ -124,10 +147,10 @@
     <!-- Medical Service Infos List -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست اطلاعات خدمات پزشکی (@Model.TotalCount مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">لیست اطلاعات خدمات پزشکی (@(Model.MedicalServiceInfos?.TotalCount ?? 0) مورد)</h6>
         </div>
         <div class="card-body">
-            @if (Model.Items != null && Model.Items.Any())
+            @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Items != null && Model.MedicalServiceInfos.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
@@ -144,7 +167,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.Items)
+                            @foreach (var item in Model.MedicalServiceInfos.Items)
                             {
                                 <tr>
                                     <td>
@@ -172,16 +195,23 @@
                                         }
                                     </td>
                                     <td>
-                                        <span class="badge badge-info">@item.ServiceCategoryName</span>
+                                        @if (!string.IsNullOrEmpty(item.ServiceCategoryName))
+                                        {
+                                            <span class="badge badge-info">@item.ServiceCategoryName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important;">بدون دسته‌بندی</span>
+                                        }
                                     </td>
                                     <td>
                                         @if (item.Price.HasValue)
                                         {
-                                            <span class="badge badge-success">@(item.Price.Value.ToString("N0")) ریال</span>
+                                            <span class="badge badge-success" style="font-size: 0.875rem; font-weight: 600;">@(item.Price.Value.ToString("N0")) ریال</span>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important;">تعیین نشده</span>
                                         }
                                     </td>
                                     <td>
@@ -201,10 +231,12 @@
                                         }
                                         else
                                         {
-                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                            <span class="badge badge-secondary status-badge" style="background-color: #6c757d !important; color: #ffffff !important;">عادی</span>
                                         }
                                     </td>
-                                    <td>@item.ViewCount</td>
+                                    <td>
+                                        <span style="font-weight: 600; color: #495057;">@item.ViewCount</span>
+                                    </td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="@Url.Action("Details", new { id = item.MedicalServiceInfoId })" class="btn btn-sm btn-info" title="جزئیات">
@@ -233,10 +265,10 @@
                                                     </button>
                                                 }
                                             }
-                                            @using (Html.BeginForm("Delete", "MedicalServiceInfo", new { id = item.MedicalServiceInfoId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            @using (Html.BeginForm("Delete", "MedicalServiceInfo", new { id = item.MedicalServiceInfoId }, FormMethod.Post, new { @class = "d-inline delete-form" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این اطلاعات خدمت اطمینان دارید؟')">
+                                                <button type="submit" class="btn btn-sm btn-danger delete-btn" title="حذف" data-id="@item.MedicalServiceInfoId" data-title="@item.ServiceTitle">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -249,26 +281,26 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.TotalPages > 1)
                 {
                     <nav aria-label="صفحه‌بندی">
                         <ul class="pagination justify-content-center">
-                            @if (Model.PageNumber > 1)
+                            @if (Model.MedicalServiceInfos.PageNumber > 1)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.MedicalServiceInfos.PageNumber - 1 })">قبلی</a>
                                 </li>
                             }
-                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            @for (int i = 1; i <= Model.MedicalServiceInfos.TotalPages; i++)
                             {
-                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <li class="page-item @(i == Model.MedicalServiceInfos.PageNumber ? "active" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
                                 </li>
                             }
-                            @if (Model.PageNumber < Model.TotalPages)
+                            @if (Model.MedicalServiceInfos.PageNumber < Model.MedicalServiceInfos.TotalPages)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.MedicalServiceInfos.PageNumber + 1 })">بعدی</a>
                                 </li>
                             }
                         </ul>
@@ -284,4 +316,38 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script>
+        // SweetAlert2 برای حذف
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var form = this.closest('form');
+                    var id = this.getAttribute('data-id');
+                    var title = this.getAttribute('data-title') || 'این اطلاعات خدمت';
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از حذف ' + title + ' اطمینان دارید؟ این عمل قابل بازگشت نیست.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، حذف شود',
+                        cancelButtonText: 'انصراف',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
 

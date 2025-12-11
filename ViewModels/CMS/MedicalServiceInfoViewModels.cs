@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 
 namespace ClinicApp.ViewModels.CMS
 {
@@ -16,6 +17,34 @@ namespace ClinicApp.ViewModels.CMS
         public bool? IsFeatured { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+    }
+
+    public class MedicalServiceInfoServiceViewModel
+    {
+        public int ServiceId { get; set; }
+        public string ServiceTitle { get; set; }
+        public string ServiceCode { get; set; }
+        public string ServiceCategoryTitle { get; set; }
+    }
+
+    public class MedicalServiceInfoCategoryViewModel
+    {
+        public int ServiceCategoryId { get; set; }
+        public string Title { get; set; }
+    }
+
+    public class MedicalServiceInfoAdminIndexViewModel
+    {
+        public PagedResult<MedicalServiceInfoIndexViewModel> MedicalServiceInfos { get; set; }
+        public List<MedicalServiceInfoServiceViewModel> Services { get; set; }
+        public List<MedicalServiceInfoCategoryViewModel> ServiceCategories { get; set; }
+        public MedicalServiceInfoSearchViewModel SearchModel { get; set; }
+    }
+
+    public class MedicalServiceInfoCreateEditPageViewModel
+    {
+        public MedicalServiceInfoCreateEditViewModel Model { get; set; }
+        public List<MedicalServiceInfoServiceViewModel> Services { get; set; }
     }
 
     public class MedicalServiceInfoIndexViewModel

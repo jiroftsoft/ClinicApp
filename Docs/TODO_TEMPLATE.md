@@ -151,7 +151,6 @@
 
 ### 5.1 Design Consistency
 - [ ] استفاده از فونت Vazir
-- [ ] استفاده از رنگ‌های استاندارد
 - [ ] استفاده از Card Components
 - [ ] استفاده از Button Styles
 - [ ] استفاده از Form Styles
@@ -172,9 +171,65 @@
 
 ---
 
-## Phase 6: Notification System (سیستم پیام‌ها)
+## Phase 6: Color Scheme Standardization (استانداردسازی رنگ‌بندی)
 
-### 6.1 Toastr Integration
+### 6.1 بررسی و حذف رنگ‌های جیق و جلف
+- [ ] بررسی تمام Gradient های رنگی
+- [ ] حذف تمام `linear-gradient` های پیچیده
+- [ ] حذف رنگ‌های روشن و جیق (مثل `#f093fb`, `#f5576c`)
+- [ ] حذف رنگ‌های نئون و درخشان
+- [ ] بررسی Border-radius های بزرگ (20px+)
+
+### 6.2 پیاده‌سازی پالت رنگ استاندارد
+- [ ] تعریف CSS Variables برای رنگ‌های استاندارد:
+  - [ ] `--medical-primary: #2c5aa0`
+  - [ ] `--medical-secondary: #6c757d`
+  - [ ] `--medical-success: #28a745`
+  - [ ] `--medical-danger: #dc3545`
+  - [ ] `--medical-warning: #ffc107`
+  - [ ] `--medical-info: #17a2b8`
+  - [ ] `--medical-light: #f8f9fa`
+  - [ ] `--medical-bg: #ffffff`
+  - [ ] `--medical-dark: #212529`
+  - [ ] `--medical-text: #212529`
+  - [ ] `--medical-text-muted: #6c757d`
+  - [ ] `--medical-border: #dee2e6`
+- [ ] استفاده از CSS Variables در تمام استایل‌ها
+
+### 6.3 بهینه‌سازی Header و Card Header
+- [ ] جایگزینی Gradient با `background-color: var(--medical-primary)`
+- [ ] استفاده از رنگ سفید برای متن
+- [ ] Border-radius مناسب (12px حداکثر)
+
+### 6.4 بهینه‌سازی Badge و Label
+- [ ] استفاده از رنگ‌های ساده (نه Gradient)
+- [ ] Border-radius مناسب (6px)
+- [ ] استفاده از `--medical-primary` برای Badge اصلی
+
+### 6.5 بهینه‌سازی Button
+- [ ] استفاده از `background-color` (نه Gradient)
+- [ ] Border-radius مناسب (6px)
+- [ ] استفاده از `--medical-primary` برای Button اصلی
+
+### 6.6 بهینه‌سازی Card و Container
+- [ ] استفاده از `background-color: var(--medical-bg)`
+- [ ] Border ساده: `1px solid var(--medical-border)`
+- [ ] Border-radius مناسب (12px حداکثر)
+- [ ] Box-shadow ملایم
+
+### 6.7 Testing
+- [ ] بررسی تمام صفحات برای رنگ‌های جیق و جلف
+- [ ] اطمینان از یکنواختی رنگ‌بندی
+- [ ] بررسی Contrast Ratio برای خوانایی
+- [ ] تست در محیط Production
+
+**زمان تخمینی:** 0.5-1 روز
+
+---
+
+## Phase 7: Notification System (سیستم پیام‌ها)
+
+### 7.1 Toastr Integration
 - [ ] حذف تمام Alert های Bootstrap
 - [ ] اطمینان از لود شدن Toastr
 - [ ] تست Success Messages
@@ -182,7 +237,7 @@
 - [ ] تست Warning Messages
 - [ ] تست Info Messages
 
-### 6.2 SweetAlert Integration
+### 7.2 SweetAlert Integration
 - [ ] جایگزینی confirm() با SweetAlert
 - [ ] پیاده‌سازی Delete Confirmation
 - [ ] پیاده‌سازی Publish Confirmation
@@ -191,9 +246,9 @@
 
 ---
 
-## Phase 7: Persian DatePicker Integration (یکپارچه‌سازی تقویم شمسی)
+## Phase 8: Persian DatePicker Integration (یکپارچه‌سازی تقویم شمسی)
 
-### 7.1 View Implementation
+### 8.1 View Implementation
 - [ ] شناسایی تمام فیلدهای تاریخ در فرم
 - [ ] جایگزینی datetime-local با _PersianDatePicker
 - [ ] تنظیم ViewBag برای هر فیلد تاریخ:
@@ -207,7 +262,7 @@
 - [ ] اضافه کردن _PersianDatePickerScript به Scripts section
 - [ ] حذف تمام استفاده از datetime-local
 
-### 7.2 Controller Implementation
+### 8.2 Controller Implementation
 - [ ] اضافه کردن using ClinicApp.Helpers
 - [ ] Parse کردن تاریخ‌ها در Create Action:
   - [ ] model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
@@ -216,7 +271,7 @@
   - [ ] model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
   - [ ] model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
 
-### 7.3 Display Implementation
+### 8.3 Display Implementation
 - [ ] به‌روزرسانی Index View برای نمایش تاریخ شمسی:
   - [ ] استفاده از PersianDateHelper.ToPersianDate(item.Date)
 - [ ] به‌روزرسانی Details View برای نمایش تاریخ شمسی:
@@ -232,43 +287,43 @@
 
 ---
 
-## Phase 8: CKEditor Integration (یکپارچه‌سازی ویرایشگر متن)
+## Phase 9: CKEditor Integration (یکپارچه‌سازی ویرایشگر متن)
 
-### 8.1 بررسی نیاز به CKEditor
+### 9.1 بررسی نیاز به CKEditor
 - [ ] آیا فیلد متنی طولانی است؟
 - [ ] آیا نیاز به فرمت‌بندی متن است؟
 - [ ] آیا محتوا شامل HTML است؟
 
-### 8.2 ViewModel Configuration
+### 9.2 ViewModel Configuration
 - [ ] اضافه کردن `[AllowHtml]` به فیلدهای HTML
 - [ ] اضافه کردن Validation Attributes
 - [ ] اضافه کردن Display Names
 
-### 8.3 Controller Configuration
+### 9.3 Controller Configuration
 - [ ] اضافه کردن `[ValidateInput(false)]` به POST Actions
 - [ ] بررسی ModelState برای فیلدهای HTML
 - [ ] مدیریت خطاهای HTML
 
-### 8.4 View Implementation (Create)
+### 9.4 View Implementation (Create)
 - [ ] اضافه کردن `@Html.Partial("_CKEditorScript")` در `@section Scripts`
 - [ ] ایجاد TextArea با ID منحصر به فرد
 - [ ] اضافه کردن `@Html.Partial("_CKEditorInit")` با selector و height
 - [ ] اضافه کردن Validation Messages
 - [ ] اضافه کردن Help Text
 
-### 8.5 View Implementation (Edit)
+### 9.5 View Implementation (Edit)
 - [ ] اضافه کردن `@Html.Partial("_CKEditorScript")` در `@section Scripts`
 - [ ] ایجاد TextArea با ID منحصر به فرد
 - [ ] اضافه کردن `@Html.Partial("_CKEditorInit")` با selector و height
 - [ ] نمایش محتوای موجود در CKEditor
 - [ ] اضافه کردن Validation Messages
 
-### 8.6 Display Implementation (Index/Details)
+### 9.6 Display Implementation (Index/Details)
 - [ ] استفاده از `Html.Raw()` برای نمایش HTML
 - [ ] استفاده از `StringHelper.StripHtmlAndTruncate()` برای خلاصه (در صورت نیاز)
 - [ ] بررسی XSS Protection
 
-### 8.7 Testing
+### 9.7 Testing
 - [ ] تست بارگذاری CKEditor
 - [ ] تست فرمت‌بندی فارسی
 - [ ] تست جهت راست‌به‌چپ
@@ -280,13 +335,13 @@
 
 ---
 
-## Phase 9: Image Upload System (سیستم آپلود تصویر)
+## Phase 10: Image Upload System (سیستم آپلود تصویر)
 
-### 8.1 Service Integration
+### 10.1 Service Integration
 - [ ] بررسی ثبت IImageUploadService در UnityConfig
 - [ ] اطمینان از وجود ImageUploadService در پروژه
 
-### 8.2 Controller Implementation
+### 10.2 Controller Implementation
 - [ ] تزریق IImageUploadService در Constructor
 - [ ] تعریف Constants برای مسیرها:
   - [ ] ImageUploadPath (مثلاً ~/Content/Images/module-name)
@@ -306,7 +361,7 @@
 - [ ] فراخوانی ProcessImageUpload در Create Action (قبل از ModelState.IsValid)
 - [ ] فراخوانی ProcessImageUpload در Edit Action (قبل از ModelState.IsValid)
 
-### 8.3 View Implementation
+### 10.3 View Implementation
 - [ ] اضافه کردن enctype="multipart/form-data" به Form
 - [ ] اضافه کردن File Input برای تصویر اصلی:
   - [ ] id="ImageFile" name="ImageFile"
@@ -336,7 +391,7 @@
   - [ ] به‌روزرسانی Label با نام فایل
   - [ ] استفاده از AdminNotification برای خطاها
 
-### 8.4 Testing
+### 10.4 Testing
 - [ ] تست آپلود تصویر اصلی در Create
 - [ ] تست ایجاد thumbnail خودکار
 - [ ] تست آپلود thumbnail جداگانه
@@ -349,27 +404,27 @@
 
 ---
 
-## Phase 10: Testing & Quality Assurance (تست و کنترل کیفیت)
+## Phase 11: Testing & Quality Assurance (تست و کنترل کیفیت)
 
-### 9.1 Unit Testing
+### 11.1 Unit Testing
 - [ ] تست Repository Methods
 - [ ] تست Service Methods
 - [ ] تست Controller Actions
 - [ ] تست ViewModels
 
-### 9.2 Integration Testing
+### 11.2 Integration Testing
 - [ ] تست End-to-End Flows
 - [ ] تست Database Operations
 - [ ] تست File Upload Operations
 - [ ] تست Notification System
 
-### 9.3 Security Testing
+### 11.3 Security Testing
 - [ ] تست SQL Injection Protection
 - [ ] تست XSS Protection
 - [ ] تست CSRF Protection
 - [ ] تست Authorization Checks
 
-### 9.4 Performance Testing
+### 11.4 Performance Testing
 - [ ] تست Page Load Time
 - [ ] تست Database Query Performance
 - [ ] تست Image Upload Performance
@@ -377,23 +432,23 @@
 
 ---
 
-## Phase 11: Code Review & Optimization (بازبینی و بهینه‌سازی)
+## Phase 12: Code Review & Optimization (بازبینی و بهینه‌سازی)
 
-### 10.1 Code Review Checklist
+### 12.1 Code Review Checklist
 - [ ] بررسی Strongly-Typed
 - [ ] بررسی SRP Principles
 - [ ] بررسی Error Handling
 - [ ] بررسی Logging
 - [ ] بررسی Security
 
-### 10.2 Code Optimization
+### 12.2 Code Optimization
 - [ ] بهینه‌سازی Database Queries
 - [ ] حذف N+1 Queries
 - [ ] بهینه‌سازی JavaScript
 - [ ] بهینه‌سازی CSS
 - [ ] Minification Resources
 
-### 10.3 Documentation
+### 12.3 Documentation
 - [ ] به‌روزرسانی Code Comments
 - [ ] ایجاد API Documentation
 - [ ] به‌روزرسانی README
@@ -401,7 +456,7 @@
 
 ---
 
-## Phase 12: Deployment Preparation (آماده‌سازی برای Production)
+## Phase 13: Deployment Preparation (آماده‌سازی برای Production)
 
 ### 11.1 Pre-Deployment Checklist
 - [ ] تمام Tests پاس شده‌اند
@@ -437,12 +492,14 @@
 ### زمان‌بندی پیشنهادی:
 - Phase 1-2: 2-3 روز
 - Phase 3-4: 3-4 روز
-- Phase 5-6: 2-3 روز
-- Phase 7: 1 روز (Persian DatePicker Integration)
-- Phase 8: 0.5-1 روز (CKEditor Integration)
-- Phase 9: 1-2 روز (Image Upload System)
-- Phase 10-11: 2-3 روز
-- Phase 12: 1 روز
+- Phase 5: 1-2 روز (UI/UX Optimization)
+- Phase 6: 0.5-1 روز (Color Scheme Standardization)
+- Phase 7: 1 روز (Notification System)
+- Phase 8: 1 روز (Persian DatePicker Integration)
+- Phase 9: 0.5-1 روز (CKEditor Integration)
+- Phase 10: 1-2 روز (Image Upload System)
+- Phase 11-12: 2-3 روز
+- Phase 13: 1 روز
 
 **کل زمان:** 12-17 روز کاری
 

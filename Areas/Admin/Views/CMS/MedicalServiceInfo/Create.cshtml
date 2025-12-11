@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.CMS.MedicalServiceInfoCreateEditViewModel
+@model ClinicApp.ViewModels.CMS.MedicalServiceInfoCreateEditPageViewModel
 @{
     ViewBag.Title = "ایجاد اطلاعات خدمت پزشکی جدید";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -36,18 +36,8 @@
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
     <div class="form-container">
-        @using (Html.BeginForm("Create", "MedicalServiceInfo", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        @using (Html.BeginForm("Create", "MedicalServiceInfo", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -55,9 +45,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ServiceId, new { @class = "required" })
-                        @Html.DropDownListFor(m => m.ServiceId, ViewBag.Services as SelectList, "لطفاً خدمت را انتخاب کنید", new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.ServiceId, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ServiceId, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.Model.ServiceId, new SelectList(Model.Services, "ServiceId", "ServiceTitle"), "لطفاً خدمت را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.ServiceId, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">خدمتی که می‌خواهید اطلاعات CMS برای آن ایجاد کنید</small>
                     </div>
                 </div>
@@ -66,9 +56,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Description)
-                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه (حداکثر 500 کاراکتر)" })
-                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Description)
+                        @Html.TextAreaFor(m => m.Model.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه (حداکثر 500 کاراکتر)" })
+                        @Html.ValidationMessageFor(m => m.Model.Description, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -76,9 +66,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.FullDescription)
-                        @Html.TextAreaFor(m => m.FullDescription, new { @class = "form-control", id = "fullDescriptionEditor", rows = "15" })
-                        @Html.ValidationMessageFor(m => m.FullDescription, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.FullDescription)
+                        @Html.TextAreaFor(m => m.Model.FullDescription, new { @class = "form-control", id = "fullDescriptionEditor", rows = "15" })
+                        @Html.ValidationMessageFor(m => m.Model.FullDescription, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -86,16 +76,40 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ImageUrl)
-                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/services/..." })
-                        @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ImageUrl, "تصویر اصلی")
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">انتخاب تصویر اصلی...</label>
+                        </div>
+                        <div id="imagePreview" class="mb-2" style="display: none;">
+                            <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                            <br />
+                            <small class="text-muted">پیش‌نمایش تصویر</small>
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ImageUrl)
+                        @Html.ValidationMessageFor(m => m.Model.ImageUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ThumbnailUrl)
-                        @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/services/thumbnails/..." })
-                        @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ThumbnailUrl, "تصویر کوچک")
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک...</label>
+                        </div>
+                        <div id="thumbnailPreview" class="mb-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش تصویر کوچک" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                            <br />
+                            <small class="text-muted">پیش‌نمایش تصویر کوچک</small>
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ThumbnailUrl)
+                        @Html.ValidationMessageFor(m => m.Model.ThumbnailUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 300x300
+                        </small>
                     </div>
                 </div>
             </div>
@@ -103,9 +117,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.VideoUrl)
-                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "https://youtube.com/..." })
-                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.VideoUrl)
+                        @Html.TextBoxFor(m => m.Model.VideoUrl, new { @class = "form-control", placeholder = "https://youtube.com/..." })
+                        @Html.ValidationMessageFor(m => m.Model.VideoUrl, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -113,24 +127,24 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Price)
-                        @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", step = "1", min = "0", placeholder = "قیمت نمایشی (ریال)" })
-                        @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Price)
+                        @Html.TextBoxFor(m => m.Model.Price, new { @class = "form-control", type = "number", step = "1", min = "0", placeholder = "قیمت نمایشی (ریال)" })
+                        @Html.ValidationMessageFor(m => m.Model.Price, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">اگر خالی باشد، قیمت از Service گرفته می‌شود</small>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.EstimatedDuration)
-                        @Html.TextBoxFor(m => m.EstimatedDuration, new { @class = "form-control", placeholder = "مثال: 30 دقیقه" })
-                        @Html.ValidationMessageFor(m => m.EstimatedDuration, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.EstimatedDuration)
+                        @Html.TextBoxFor(m => m.Model.EstimatedDuration, new { @class = "form-control", placeholder = "مثال: 30 دقیقه" })
+                        @Html.ValidationMessageFor(m => m.Model.EstimatedDuration, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
-                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
-                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Model.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
+                        @Html.ValidationMessageFor(m => m.Model.DisplayOrder, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -138,9 +152,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Features)
-                        @Html.TextAreaFor(m => m.Features, new { @class = "form-control", rows = "3", placeholder = "مثال: معاینه کامل, تست‌های تشخیصی, مشاوره تخصصی" })
-                        @Html.ValidationMessageFor(m => m.Features, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Features)
+                        @Html.TextAreaFor(m => m.Model.Features, new { @class = "form-control", rows = "3", placeholder = "مثال: معاینه کامل, تست‌های تشخیصی, مشاوره تخصصی" })
+                        @Html.ValidationMessageFor(m => m.Model.Features, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">ویژگی‌ها را با کاما جدا کنید</small>
                     </div>
                 </div>
@@ -149,9 +163,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.InsuranceCoverage)
-                        @Html.TextAreaFor(m => m.InsuranceCoverage, new { @class = "form-control", rows = "3", placeholder = "مثال: بیمه پایه 80%, بیمه تکمیلی 90%" })
-                        @Html.ValidationMessageFor(m => m.InsuranceCoverage, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.InsuranceCoverage)
+                        @Html.TextAreaFor(m => m.Model.InsuranceCoverage, new { @class = "form-control", rows = "3", placeholder = "مثال: بیمه پایه 80%, بیمه تکمیلی 90%" })
+                        @Html.ValidationMessageFor(m => m.Model.InsuranceCoverage, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">اطلاعات پوشش بیمه را با کاما جدا کنید</small>
                     </div>
                 </div>
@@ -160,9 +174,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.RequiredDocuments)
-                        @Html.TextAreaFor(m => m.RequiredDocuments, new { @class = "form-control", rows = "2", placeholder = "مثال: کارت ملی, دفترچه بیمه, نسخه قبلی" })
-                        @Html.ValidationMessageFor(m => m.RequiredDocuments, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.RequiredDocuments)
+                        @Html.TextAreaFor(m => m.Model.RequiredDocuments, new { @class = "form-control", rows = "2", placeholder = "مثال: کارت ملی, دفترچه بیمه, نسخه قبلی" })
+                        @Html.ValidationMessageFor(m => m.Model.RequiredDocuments, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">مدارک مورد نیاز را با کاما جدا کنید</small>
                     </div>
                 </div>
@@ -171,17 +185,17 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Slug)
-                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", placeholder = "آدرس URL (اختیاری)" })
-                        @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Slug)
+                        @Html.TextBoxFor(m => m.Model.Slug, new { @class = "form-control", placeholder = "آدرس URL (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Model.Slug, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">اگر خالی باشد، به صورت خودکار از عنوان خدمت تولید می‌شود</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.RelatedLinkUrl)
-                        @Html.TextBoxFor(m => m.RelatedLinkUrl, new { @class = "form-control", placeholder = "لینک مرتبط (اختیاری)" })
-                        @Html.ValidationMessageFor(m => m.RelatedLinkUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.RelatedLinkUrl)
+                        @Html.TextBoxFor(m => m.Model.RelatedLinkUrl, new { @class = "form-control", placeholder = "لینک مرتبط (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Model.RelatedLinkUrl, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -189,16 +203,16 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.MetaTitle)
-                        @Html.TextBoxFor(m => m.MetaTitle, new { @class = "form-control", placeholder = "عنوان متا برای SEO" })
-                        @Html.ValidationMessageFor(m => m.MetaTitle, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.MetaTitle)
+                        @Html.TextBoxFor(m => m.Model.MetaTitle, new { @class = "form-control", placeholder = "عنوان متا برای SEO" })
+                        @Html.ValidationMessageFor(m => m.Model.MetaTitle, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.MetaDescription)
-                        @Html.TextAreaFor(m => m.MetaDescription, new { @class = "form-control", rows = "3", placeholder = "توضیحات متا برای SEO" })
-                        @Html.ValidationMessageFor(m => m.MetaDescription, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.MetaDescription)
+                        @Html.TextAreaFor(m => m.Model.MetaDescription, new { @class = "form-control", rows = "3", placeholder = "توضیحات متا برای SEO" })
+                        @Html.ValidationMessageFor(m => m.Model.MetaDescription, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -207,8 +221,8 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <div class="form-check">
-                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                            @Html.CheckBoxFor(m => m.Model.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.Model.IsActive, new { @class = "form-check-label" })
                         </div>
                     </div>
                 </div>
@@ -218,8 +232,8 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <div class="form-check">
-                            @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
-                            @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                            @Html.CheckBoxFor(m => m.Model.IsFeatured, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.Model.IsFeatured, new { @class = "form-check-label" })
                         </div>
                     </div>
                 </div>
@@ -244,5 +258,47 @@
         ViewBag.CKEditorHeight = 400;
     }
     @Html.Partial("_CKEditorInit")
+    
+    <script>
+        // Preview Image
+        document.getElementById('ImageFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreviewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Preview Thumbnail
+        document.getElementById('ThumbnailFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('thumbnailPreviewImg').src = e.target.result;
+                    document.getElementById('thumbnailPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Bootstrap custom file input
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+        });
+    </script>
 }
 
