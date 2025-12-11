@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.CMS.MedicalEquipmentCreateEditViewModel
+@model ClinicApp.ViewModels.CMS.MedicalEquipmentCreateEditPageViewModel
 @{
     ViewBag.Title = "ویرایش تجهیز پزشکی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -51,7 +51,7 @@
             ویرایش تجهیز پزشکی
         </h1>
         <div>
-            <a href="@Url.Action("Details", new { id = Model.MedicalEquipmentId })" class="btn btn-info shadow-sm" style="border-radius: 8px;">
+            <a href="@Url.Action("Details", new { id = Model.Model.MedicalEquipmentId })" class="btn btn-info shadow-sm" style="border-radius: 8px;">
                 <i class="fas fa-eye"></i> مشاهده
             </a>
             <a href="@Url.Action("Index")" class="btn btn-secondary shadow-sm" style="border-radius: 8px;">
@@ -60,21 +60,11 @@
         </div>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 12px;">
-            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
     <div class="form-container">
         @using (Html.BeginForm("Edit", "MedicalEquipment", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
-            @Html.HiddenFor(m => m.MedicalEquipmentId)
+            @Html.HiddenFor(m => m.Model.MedicalEquipmentId)
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
             <!-- اطلاعات اصلی -->
@@ -85,16 +75,16 @@
             <div class="row">
                 <div class="col-md-8">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.EquipmentName, new { @class = "required" })
-                        @Html.TextBoxFor(m => m.EquipmentName, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.EquipmentName, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.EquipmentName, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Model.EquipmentName, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.EquipmentName, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
-                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number" })
-                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Model.DisplayOrder, new { @class = "form-control", type = "number" })
+                        @Html.ValidationMessageFor(m => m.Model.DisplayOrder, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -102,23 +92,23 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Model)
-                        @Html.TextBoxFor(m => m.Model, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Model, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Model)
+                        @Html.TextBoxFor(m => m.Model.Model, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Model, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Manufacturer)
-                        @Html.TextBoxFor(m => m.Manufacturer, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Manufacturer, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Manufacturer)
+                        @Html.TextBoxFor(m => m.Model.Manufacturer, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Manufacturer, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Category, new { @class = "required" })
-                        @Html.DropDownListFor(m => m.Category, ViewBag.Categories as SelectList, "لطفاً دسته‌بندی را انتخاب کنید", new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Category, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.Model.Category, new SelectList(Model.Categories, "Category", "DisplayName", Model.Model.Category), "لطفاً دسته‌بندی را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Category, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -126,9 +116,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ShortDescription)
-                        @Html.TextAreaFor(m => m.ShortDescription, new { @class = "form-control", rows = "2" })
-                        @Html.ValidationMessageFor(m => m.ShortDescription, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ShortDescription)
+                        @Html.TextAreaFor(m => m.Model.ShortDescription, new { @class = "form-control", rows = "2" })
+                        @Html.ValidationMessageFor(m => m.Model.ShortDescription, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -141,9 +131,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Description)
-                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4" })
-                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Description)
+                        @Html.TextAreaFor(m => m.Model.Description, new { @class = "form-control", rows = "4" })
+                        @Html.ValidationMessageFor(m => m.Model.Description, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -151,9 +141,10 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.TechnicalSpecifications)
-                        @Html.TextAreaFor(m => m.TechnicalSpecifications, new { @class = "form-control", rows = "5" })
-                        @Html.ValidationMessageFor(m => m.TechnicalSpecifications, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.TechnicalSpecifications)
+                        @Html.TextAreaFor(m => m.Model.TechnicalSpecifications, new { @class = "form-control", id = "technicalSpecificationsEditor", rows = "10" })
+                        @Html.ValidationMessageFor(m => m.Model.TechnicalSpecifications, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">می‌توانید از ویرایشگر برای فرمت‌بندی متن استفاده کنید</small>
                     </div>
                 </div>
             </div>
@@ -166,16 +157,37 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ImageUrl)
-                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ImageUrl, "تصویر اصلی")
+                        @if (!string.IsNullOrEmpty(Model.Model.ImageUrl))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.Model.ImageUrl" alt="تصویر فعلی" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                <br />
+                                <small class="text-muted">تصویر فعلی</small>
+                            </div>
+                        }
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">@(string.IsNullOrEmpty(Model.Model.ImageUrl) ? "انتخاب تصویر اصلی..." : "تغییر تصویر")</label>
+                        </div>
+                        <div id="imagePreview" class="mb-2" style="display: none;">
+                            <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                            <br />
+                            <small class="text-muted">پیش‌نمایش تصویر جدید</small>
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ImageUrl)
+                        @Html.ValidationMessageFor(m => m.Model.ImageUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.VideoUrl)
-                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.VideoUrl)
+                        @Html.TextBoxFor(m => m.Model.VideoUrl, new { @class = "form-control", placeholder = "https://youtube.com/..." })
+                        @Html.ValidationMessageFor(m => m.Model.VideoUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">لینک ویدیو معرفی (اختیاری)</small>
                     </div>
                 </div>
             </div>
@@ -183,9 +195,50 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ImageUrls)
-                        @Html.TextAreaFor(m => m.ImageUrls, new { @class = "form-control", rows = "2" })
-                        @Html.ValidationMessageFor(m => m.ImageUrls, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.ImageUrls, "تصاویر اضافی")
+                        @* نمایش تصاویر موجود *@
+                        @if (!string.IsNullOrEmpty(Model.Model.ImageUrls))
+                        {
+                            try
+                            {
+                                var existingImages = System.Web.Helpers.Json.Decode<List<string>>(Model.Model.ImageUrls);
+                                if (existingImages != null && existingImages.Any())
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label">تصاویر فعلی:</label>
+                                        <div class="row" id="existingImagesContainer">
+                                            @foreach (var imgUrl in existingImages)
+                                            {
+                                                <div class="col-md-3 mb-2 existing-image-item" data-image-url="@imgUrl">
+                                                    <div class="position-relative">
+                                                        <img src="@imgUrl" alt="تصویر" class="img-thumbnail" style="max-width: 100%; height: 150px; object-fit: cover;">
+                                                        <button type="button" class="btn btn-sm btn-danger position-absolute" style="top: 5px; right: 5px;" onclick="removeExistingImage('@imgUrl')">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            catch
+                            {
+                                // اگر JSON معتبر نیست، نادیده بگیر
+                            }
+                        }
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="AdditionalImages" name="AdditionalImages" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple>
+                            <label class="custom-file-label" for="AdditionalImages">افزودن تصاویر جدید (می‌توانید چند تصویر انتخاب کنید)...</label>
+                        </div>
+                        <div id="additionalImagesPreview" class="row mb-2" style="display: none;">
+                            <!-- تصاویر جدید انتخاب شده اینجا نمایش داده می‌شوند -->
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ImageUrls)
+                        @Html.ValidationMessageFor(m => m.Model.ImageUrls, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> می‌توانید چند تصویر را همزمان انتخاب کنید. فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم هر تصویر: 5 مگابایت
+                        </small>
                     </div>
                 </div>
             </div>
@@ -197,25 +250,40 @@
 
             <div class="row">
                 <div class="col-md-4">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.PurchaseDate)
-                        @Html.TextBoxFor(m => m.PurchaseDate, new { @class = "form-control", type = "date" })
-                        @Html.ValidationMessageFor(m => m.PurchaseDate, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "purchaseDatePicker";
+                        ViewBag.PersianDatePickerName = "PurchaseDate";
+                        ViewBag.PersianDatePickerValue = Model.Model.PurchaseDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ خرید";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ خرید (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.InstallationDate)
-                        @Html.TextBoxFor(m => m.InstallationDate, new { @class = "form-control", type = "date" })
-                        @Html.ValidationMessageFor(m => m.InstallationDate, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "installationDatePicker";
+                        ViewBag.PersianDatePickerName = "InstallationDate";
+                        ViewBag.PersianDatePickerValue = Model.Model.InstallationDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ نصب";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ نصب (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.WarrantyExpiryDate)
-                        @Html.TextBoxFor(m => m.WarrantyExpiryDate, new { @class = "form-control", type = "date" })
-                        @Html.ValidationMessageFor(m => m.WarrantyExpiryDate, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "warrantyExpiryDatePicker";
+                        ViewBag.PersianDatePickerName = "WarrantyExpiryDate";
+                        ViewBag.PersianDatePickerValue = Model.Model.WarrantyExpiryDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ انقضای گارانتی";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ انقضای گارانتی (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
             </div>
 
@@ -227,16 +295,40 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Features)
-                        @Html.TextAreaFor(m => m.Features, new { @class = "form-control", rows = "3" })
-                        @Html.ValidationMessageFor(m => m.Features, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Features, "ویژگی‌ها")
+                        @{
+                            // تبدیل JSON Array به خطوط برای نمایش
+                            string featuresText = "";
+                            if (!string.IsNullOrEmpty(Model.Model.Features))
+                            {
+                                try
+                                {
+                                    var featuresList = System.Web.Helpers.Json.Decode<List<string>>(Model.Model.Features);
+                                    if (featuresList != null && featuresList.Any())
+                                    {
+                                        featuresText = string.Join("\n", featuresList);
+                                    }
+                                }
+                                catch
+                                {
+                                    // اگر JSON معتبر نیست، همان مقدار را نمایش بده
+                                    featuresText = Model.Model.Features;
+                                }
+                            }
+                        }
+                        <textarea id="FeaturesText" name="FeaturesText" class="form-control" rows="5" placeholder="هر خط یک ویژگی (مثال:&#10;ویژگی 1&#10;ویژگی 2&#10;ویژگی 3)">@featuresText</textarea>
+                        @Html.HiddenFor(m => m.Model.Features)
+                        @Html.ValidationMessageFor(m => m.Model.Features, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> هر خط یک ویژگی جداگانه است. نیازی به JSON نیست.
+                        </small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Status)
-                        @Html.DropDownListFor(m => m.Status, ViewBag.Statuses as SelectList, "لطفاً وضعیت را انتخاب کنید", new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Status, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Status)
+                        @Html.DropDownListFor(m => m.Model.Status, new SelectList(Model.Statuses, "Status", "DisplayName", Model.Model.Status), "لطفاً وضعیت را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Status, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -244,16 +336,17 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.Slug)
-                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.Slug)
+                        @Html.TextBoxFor(m => m.Model.Slug, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Slug, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">اگر خالی باشد، به صورت خودکار از نام تولید می‌شود</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.MetaTitle)
-                        @Html.TextBoxFor(m => m.MetaTitle, new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.MetaTitle, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.MetaTitle)
+                        @Html.TextBoxFor(m => m.Model.MetaTitle, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.MetaTitle, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -261,9 +354,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.MetaDescription)
-                        @Html.TextAreaFor(m => m.MetaDescription, new { @class = "form-control", rows = "2" })
-                        @Html.ValidationMessageFor(m => m.MetaDescription, "", new { @class = "text-danger" })
+                        @Html.LabelFor(m => m.Model.MetaDescription)
+                        @Html.TextAreaFor(m => m.Model.MetaDescription, new { @class = "form-control", rows = "2" })
+                        @Html.ValidationMessageFor(m => m.Model.MetaDescription, "", new { @class = "text-danger" })
                     </div>
                 </div>
             </div>
@@ -277,12 +370,12 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <div class="form-check form-check-inline">
-                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                            @Html.CheckBoxFor(m => m.Model.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.Model.IsActive, new { @class = "form-check-label" })
                         </div>
                         <div class="form-check form-check-inline">
-                            @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
-                            @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                            @Html.CheckBoxFor(m => m.Model.IsFeatured, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.Model.IsFeatured, new { @class = "form-check-label" })
                         </div>
                     </div>
                 </div>
@@ -300,3 +393,265 @@
     </div>
 </div>
 
+@section Scripts {
+    @Html.Partial("_CKEditorScript")
+    @{
+        ViewBag.CKEditorSelector = "#technicalSpecificationsEditor";
+        ViewBag.CKEditorHeight = 300;
+    }
+    @Html.Partial("_CKEditorInit")
+    @Html.Partial("_PersianDatePickerScript")
+    <script>
+        // Preview Main Image
+        document.getElementById('ImageFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                // بررسی نوع فایل
+                if (!file.type.match('image.*')) {
+                    if (typeof AdminNotification !== 'undefined') {
+                        AdminNotification.error('لطفاً یک فایل تصویری انتخاب کنید.');
+                    }
+                    e.target.value = '';
+                    return;
+                }
+                
+                // بررسی حجم فایل (5 مگابایت)
+                if (file.size > 5 * 1024 * 1024) {
+                    if (typeof AdminNotification !== 'undefined') {
+                        AdminNotification.error('حجم فایل نباید بیشتر از 5 مگابایت باشد.');
+                    }
+                    e.target.value = '';
+                    return;
+                }
+                
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreviewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
+                var label = e.target.nextElementSibling;
+                label.textContent = '@(string.IsNullOrEmpty(Model.Model.ImageUrl) ? "انتخاب تصویر اصلی..." : "تغییر تصویر")';
+            }
+        });
+        
+        // Multiple File Upload for Additional Images
+        var additionalImages = [];
+        var existingImagesToKeep = [];
+        
+        // Initialize existing images
+        $('.existing-image-item').each(function() {
+            existingImagesToKeep.push($(this).data('image-url'));
+        });
+        
+        document.getElementById('AdditionalImages').addEventListener('change', function(e) {
+            var files = e.target.files;
+            var previewContainer = document.getElementById('additionalImagesPreview');
+            previewContainer.innerHTML = '';
+            additionalImages = [];
+            
+            if (files.length > 0) {
+                previewContainer.style.display = 'block';
+                
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    
+                    // بررسی نوع فایل
+                    if (!file.type.match('image.*')) {
+                        if (typeof AdminNotification !== 'undefined') {
+                            AdminNotification.error('فایل ' + file.name + ' یک تصویر معتبر نیست.');
+                        }
+                        continue;
+                    }
+                    
+                    // بررسی حجم فایل (5 مگابایت)
+                    if (file.size > 5 * 1024 * 1024) {
+                        if (typeof AdminNotification !== 'undefined') {
+                            AdminNotification.error('حجم فایل ' + file.name + ' بیشتر از 5 مگابایت است.');
+                        }
+                        continue;
+                    }
+                    
+                    additionalImages.push(file);
+                    
+                    // ایجاد preview
+                    var reader = new FileReader();
+                    reader.onload = (function(file) {
+                        return function(e) {
+                            var col = document.createElement('div');
+                            col.className = 'col-md-3 mb-2';
+                            col.innerHTML = '<div class="position-relative">' +
+                                '<img src="' + e.target.result + '" alt="' + file.name + '" class="img-thumbnail" style="max-width: 100%; height: 150px; object-fit: cover;">' +
+                                '<button type="button" class="btn btn-sm btn-danger position-absolute" style="top: 5px; right: 5px;" onclick="removeAdditionalImage(' + (additionalImages.length - 1) + ')">' +
+                                '<i class="fas fa-times"></i></button>' +
+                                '<small class="d-block text-muted text-center mt-1">' + file.name + '</small>' +
+                                '</div>';
+                            previewContainer.appendChild(col);
+                        };
+                    })(file);
+                    reader.readAsDataURL(file);
+                }
+                
+                // Update label
+                var label = e.target.nextElementSibling;
+                label.textContent = additionalImages.length + ' تصویر جدید انتخاب شده';
+            } else {
+                previewContainer.style.display = 'none';
+                var label = e.target.nextElementSibling;
+                label.textContent = 'افزودن تصاویر جدید (می‌توانید چند تصویر انتخاب کنید)...';
+            }
+        });
+        
+        // Function to remove existing image
+        window.removeExistingImage = function(imageUrl) {
+            existingImagesToKeep = existingImagesToKeep.filter(function(url) {
+                return url !== imageUrl;
+            });
+            
+            // Update hidden field
+            var jsonArray = existingImagesToKeep.length > 0 
+                ? "[" + existingImagesToKeep.map(function(url) { return '"' + url + '"'; }).join(",") + "]"
+                : "";
+            $('#Model_ImageUrls').val(jsonArray);
+            
+            // Remove from DOM
+            $('.existing-image-item[data-image-url="' + imageUrl + '"]').remove();
+            
+            if (existingImagesToKeep.length === 0) {
+                $('#existingImagesContainer').parent().hide();
+            }
+        };
+        
+        // Function to remove image from preview
+        window.removeAdditionalImage = function(index) {
+            additionalImages.splice(index, 1);
+            
+            // Update preview
+            var previewContainer = document.getElementById('additionalImagesPreview');
+            previewContainer.innerHTML = '';
+            
+            // Rebuild preview with remaining images
+            for (var i = 0; i < additionalImages.length; i++) {
+                var file = additionalImages[i];
+                var reader = new FileReader();
+                reader.onload = (function(file, newIndex) {
+                    return function(e) {
+                        var col = document.createElement('div');
+                        col.className = 'col-md-3 mb-2';
+                        col.setAttribute('data-file-index', newIndex);
+                        col.innerHTML = '<div class="position-relative">' +
+                            '<img src="' + e.target.result + '" alt="' + file.name + '" class="img-thumbnail" style="max-width: 100%; height: 150px; object-fit: cover;">' +
+                            '<button type="button" class="btn btn-sm btn-danger position-absolute" style="top: 5px; right: 5px;" onclick="removeAdditionalImage(' + newIndex + ')">' +
+                            '<i class="fas fa-times"></i></button>' +
+                            '<small class="d-block text-muted text-center mt-1">' + file.name + '</small>' +
+                            '</div>';
+                        previewContainer.appendChild(col);
+                    };
+                })(file, i);
+                reader.readAsDataURL(file);
+            }
+            
+            // Update label
+            var label = document.getElementById('AdditionalImages').nextElementSibling;
+            if (additionalImages.length > 0) {
+                label.textContent = additionalImages.length + ' تصویر جدید انتخاب شده';
+            } else {
+                previewContainer.style.display = 'none';
+                label.textContent = 'افزودن تصاویر جدید (می‌توانید چند تصویر انتخاب کنید)...';
+                document.getElementById('AdditionalImages').value = '';
+            }
+        };
+        
+        // تبدیل Features Textarea به JSON Array قبل از submit
+        function convertFeaturesToJson() {
+            var featuresText = $('#FeaturesText').val();
+            if (!featuresText || featuresText.trim() === '') {
+                $('#Model_Features').val('');
+                return;
+            }
+            
+            // تقسیم به خطوط و فیلتر کردن خطوط خالی
+            var features = featuresText.split('\n')
+                .map(function(line) { return line.trim(); })
+                .filter(function(line) { return line.length > 0; });
+            
+            // تبدیل به JSON Array
+            if (features.length > 0) {
+                var jsonArray = "[" + features.map(function(feature) {
+                    // Escape quotes and special characters
+                    var escaped = feature.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    return '"' + escaped + '"';
+                }).join(",") + "]";
+                $('#Model_Features').val(jsonArray);
+            } else {
+                $('#Model_Features').val('');
+            }
+        }
+        
+        // Update hidden field and prepare files before form submit
+        $('form').on('submit', function(e) {
+            // تبدیل Features به JSON
+            convertFeaturesToJson();
+            
+            // Combine existing and new images in hidden field
+            var allImages = existingImagesToKeep.slice(); // Copy existing images
+            
+            // Update hidden field with existing images
+            var jsonArray = allImages.length > 0 
+                ? "[" + allImages.map(function(url) { return '"' + url + '"'; }).join(",") + "]"
+                : "";
+            $('#Model_ImageUrls').val(jsonArray);
+            
+            // حذف input های قبلی
+            $('input[name^="AdditionalImages"]').not('#AdditionalImages').remove();
+            
+            // اضافه کردن فایل‌های جدید با نام‌های مختلف
+            if (additionalImages.length > 0) {
+                for (var i = 0; i < additionalImages.length; i++) {
+                    var file = additionalImages[i];
+                    
+                    // استفاده از DataTransfer برای ایجاد FileList جدید
+                    try {
+                        var dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        
+                        var newInput = document.createElement('input');
+                        newInput.type = 'file';
+                        newInput.name = 'AdditionalImages[' + i + ']';
+                        newInput.style.display = 'none';
+                        newInput.files = dataTransfer.files;
+                        
+                        this.appendChild(newInput);
+                    } catch (ex) {
+                        // اگر DataTransfer پشتیبانی نشد، از روش جایگزین استفاده کن
+                        console.warn('DataTransfer not supported, using alternative method', ex);
+                    }
+                }
+            }
+            
+            // غیرفعال کردن input اصلی multiple
+            document.getElementById('AdditionalImages').disabled = true;
+        });
+        
+        // Bootstrap custom file input
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            if ($(this).attr('multiple')) {
+                var fileCount = this.files.length;
+                if (fileCount > 0) {
+                    $(this).siblings('.custom-file-label').addClass('selected').html(fileCount + ' فایل انتخاب شده');
+                } else {
+                    $(this).siblings('.custom-file-label').removeClass('selected').html('انتخاب فایل...');
+                }
+            } else {
+                $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+            }
+        });
+    </script>
+}

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 
 namespace ClinicApp.ViewModels.CMS
 {
@@ -15,6 +16,12 @@ namespace ClinicApp.ViewModels.CMS
         public bool? IsFeatured { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+    }
+
+    public class InsuranceInfoAdminIndexViewModel
+    {
+        public PagedResult<InsuranceInfoIndexViewModel> InsuranceInfos { get; set; }
+        public List<InsuranceInfoTypeViewModel> InsuranceTypes { get; set; }
     }
 
     public class InsuranceInfoIndexViewModel
@@ -138,6 +145,13 @@ namespace ClinicApp.ViewModels.CMS
     #endregion
 
     #region Insurance Info Public (برای نمایش در سایت)
+
+    public class InsuranceInfoIndexPageViewModel
+    {
+        public List<InsuranceInfoPublicViewModel> InsuranceInfos { get; set; }
+        public List<InsuranceInfoTypeViewModel> InsuranceTypes { get; set; }
+        public string SelectedType { get; set; }
+    }
 
     public class InsuranceInfoPublicViewModel
     {

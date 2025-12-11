@@ -1,4 +1,4 @@
-@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.MedicalEquipmentIndexViewModel>
+@model ClinicApp.ViewModels.CMS.MedicalEquipmentAdminIndexViewModel
 @{
     ViewBag.Title = "مدیریت تجهیزات پزشکی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -8,80 +8,230 @@
 
 @section Styles {
     <style>
+        /* Medical Production Environment - Professional & Clean */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-bg: #ffffff;
+        }
+
+        /* Base Styles - Ensure Text Visibility */
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: var(--medical-bg);
+            color: var(--medical-text);
+        }
+
+        .container-fluid {
+            background-color: var(--medical-bg);
+        }
+
+        /* Header Styles */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--medical-dark);
+            font-weight: 600;
+        }
+
+        /* Card Styles */
         .equipment-card {
-            border: 1px solid #dee2e6;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            margin-bottom: 0;
         }
+
         .equipment-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: var(--medical-primary);
+            background-color: #f8f9fa;
         }
+
+        /* Table Styles */
+        .table {
+            background-color: var(--medical-bg);
+            color: var(--medical-text);
+        }
+
+        .table thead {
+            background-color: var(--medical-light);
+            color: var(--medical-dark);
+        }
+
+        .table thead th {
+            border-bottom: 2px solid var(--medical-border);
+            color: var(--medical-dark);
+            font-weight: 600;
+            padding: 12px;
+        }
+
+        .table tbody td {
+            color: var(--medical-text);
+            padding: 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--medical-border);
+        }
+
+        .table tbody tr {
+            background-color: var(--medical-bg);
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Image Styles */
         .equipment-image {
             width: 80px;
             height: 80px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 6px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 2rem;
+            border: 2px solid var(--medical-border);
         }
+
+        /* Text Styles - Ensure Visibility */
+        .text-dark {
+            color: var(--medical-dark) !important;
+        }
+
+        .text-muted {
+            color: var(--medical-text-muted) !important;
+        }
+
+        strong {
+            color: var(--medical-dark);
+            font-weight: 600;
+        }
+
+        small {
+            color: var(--medical-text-muted);
+        }
+
+        /* Badge Styles */
         .status-badge {
             font-size: 0.75rem;
             padding: 0.35rem 0.7rem;
-            border-radius: 20px;
+            border-radius: 4px;
             font-weight: 600;
+            display: inline-block;
         }
+
         .category-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--medical-primary);
             color: white;
             padding: 0.4rem 0.8rem;
-            border-radius: 20px;
+            border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 600;
+            display: inline-block;
         }
+
         .featured-badge {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background-color: #f5576c;
             color: white;
             padding: 0.3rem 0.6rem;
-            border-radius: 15px;
+            border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 600;
-            animation: pulse 2s infinite;
+            display: inline-block;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
+
+        /* Action Buttons */
         .action-buttons {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
         }
+
         .btn-action {
-            min-width: 40px;
-            height: 40px;
+            min-width: 36px;
+            height: 36px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
+
         .btn-action:hover {
-            transform: scale(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Card Header */
+        .card-header {
+            background-color: var(--medical-primary);
+            color: white;
+            border-bottom: none;
+        }
+
+        .card-header h6 {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Card Body */
+        .card-body {
+            background-color: var(--medical-bg);
+            color: var(--medical-text);
+        }
+
+        /* Form Controls */
+        .form-control {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            color: var(--medical-text);
+        }
+
+        .form-control:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        /* Pagination */
+        .pagination .page-link {
+            color: var(--medical-primary);
+            border-color: var(--medical-border);
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+        }
+
+        /* Empty State */
+        .text-center {
+            color: var(--medical-text-muted);
+        }
+
+        /* Search Panel */
+        .card {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
         }
     </style>
 }
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
+        <h1 class="h3 mb-0" style="color: #212529; font-weight: 600;">
             <i class="fas fa-x-ray text-primary"></i>
             مدیریت تجهیزات پزشکی
         </h1>
@@ -90,29 +240,10 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
 
     <!-- Search Panel -->
-    <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+    <div class="card shadow-sm mb-4" style="border-radius: 8px; border: 1px solid #dee2e6;">
+        <div class="card-header py-3" style="background-color: #2c5aa0; border-radius: 8px 8px 0 0;">
             <h6 class="m-0 font-weight-bold text-white">
                 <i class="fas fa-filter"></i> جستجو و فیلتر
             </h6>
@@ -126,11 +257,11 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="Category" class="form-control" style="border-radius: 8px;">
                         <option value="">همه دسته‌بندی‌ها</option>
-                        @if (ViewBag.Categories != null)
+                        @if (Model.Categories != null)
                         {
-                            foreach (var category in ViewBag.Categories)
+                            foreach (var category in Model.Categories)
                             {
-                                <option value="@category.Value" @(Request.QueryString["Category"] == category.Value ? "selected" : "")>@category.Text</option>
+                                <option value="@category.Category" @(Request.QueryString["Category"] == category.Category ? "selected" : "")>@category.DisplayName</option>
                             }
                         }
                     </select>
@@ -138,11 +269,11 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="Status" class="form-control" style="border-radius: 8px;">
                         <option value="">همه وضعیت‌ها</option>
-                        @if (ViewBag.Statuses != null)
+                        @if (Model.Statuses != null)
                         {
-                            foreach (var status in ViewBag.Statuses)
+                            foreach (var status in Model.Statuses)
                             {
-                                <option value="@status.Value" @(Request.QueryString["Status"] == status.Value ? "selected" : "")>@status.Text</option>
+                                <option value="@status.Status" @(Request.QueryString["Status"] == status.Status ? "selected" : "")>@status.DisplayName</option>
                             }
                         }
                     </select>
@@ -172,29 +303,29 @@
     </div>
 
     <!-- Equipment List -->
-    <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+    <div class="card shadow-sm mb-4" style="border-radius: 8px; border: 1px solid #dee2e6;">
+        <div class="card-header py-3" style="background-color: #2c5aa0; border-radius: 8px 8px 0 0;">
             <h6 class="m-0 font-weight-bold text-white">
-                <i class="fas fa-list"></i> لیست تجهیزات پزشکی (@Model.TotalCount مورد)
+                <i class="fas fa-list"></i> لیست تجهیزات پزشکی (@Model.MedicalEquipments.TotalCount مورد)
             </h6>
         </div>
         <div class="card-body p-0">
-            @if (Model.Items != null && Model.Items.Any())
+            @if (Model.MedicalEquipments.Items != null && Model.MedicalEquipments.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead style="background: #f8f9fa;">
+                        <thead style="background-color: #f8f9fa;">
                             <tr>
-                                <th style="border-top: none;">تصویر</th>
-                                <th style="border-top: none;">نام تجهیز</th>
-                                <th style="border-top: none;">مدل / سازنده</th>
-                                <th style="border-top: none;">دسته‌بندی</th>
-                                <th style="border-top: none;">وضعیت</th>
-                                <th style="border-top: none;">عملیات</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">تصویر</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">نام تجهیز</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">مدل / سازنده</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">دسته‌بندی</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">وضعیت</th>
+                                <th style="border-top: none; color: #212529; font-weight: 600;">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.Items)
+                            @foreach (var item in Model.MedicalEquipments.Items)
                             {
                                 <tr class="equipment-card" style="cursor: pointer;" onclick="window.location='@Url.Action("Details", new { id = item.MedicalEquipmentId })'">
                                     <td>
@@ -212,13 +343,13 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div>
-                                                <strong class="text-dark">@item.EquipmentName</strong>
+                                                <strong style="color: #212529; font-weight: 600; display: block; margin-bottom: 4px;">@item.EquipmentName</strong>
                                                 @if (item.IsFeatured)
                                                 {
                                                     <span class="featured-badge mr-2">ویژه</span>
                                                 }
                                                 <br />
-                                                <small class="text-muted">
+                                                <small style="color: #6c757d; font-size: 0.875rem;">
                                                     <i class="fas fa-calendar-alt"></i> @item.CreatedAt.ToString("yyyy/MM/dd")
                                                 </small>
                                             </div>
@@ -228,12 +359,11 @@
                                         <div>
                                             @if (!string.IsNullOrEmpty(item.Model))
                                             {
-                                                <span class="text-dark"><i class="fas fa-tag"></i> @item.Model</span>
+                                                <span style="color: #212529; font-weight: 500; display: block; margin-bottom: 4px;"><i class="fas fa-tag"></i> @item.Model</span>
                                             }
                                             @if (!string.IsNullOrEmpty(item.Manufacturer))
                                             {
-                                                <br />
-                                                <small class="text-muted"><i class="fas fa-industry"></i> @item.Manufacturer</small>
+                                                <small style="color: #6c757d; font-size: 0.875rem;"><i class="fas fa-industry"></i> @item.Manufacturer</small>
                                             }
                                         </div>
                                     </td>
@@ -314,7 +444,7 @@
                                             @using (Html.BeginForm("Delete", "MedicalEquipment", new { id = item.MedicalEquipmentId }, FormMethod.Post, new { @class = "d-inline" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger btn-action" title="حذف" onclick="return confirm('آیا از حذف این تجهیز پزشکی اطمینان دارید؟')">
+                                                <button type="submit" class="btn btn-sm btn-danger btn-action delete-btn" title="حذف" data-id="@item.MedicalEquipmentId" data-name="@item.EquipmentName">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -327,31 +457,31 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.MedicalEquipments.TotalPages > 1)
                 {
                     <div class="card-footer bg-white" style="border-radius: 0 0 12px 12px;">
                         <nav aria-label="صفحه‌بندی">
                             <ul class="pagination justify-content-center mb-0">
-                                @if (Model.PageNumber > 1)
+                                @if (Model.MedicalEquipments.PageNumber > 1)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })" style="border-radius: 8px; margin: 0 2px;">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.MedicalEquipments.PageNumber - 1 })" style="border-radius: 8px; margin: 0 2px;">
                                             <i class="fas fa-chevron-right"></i> قبلی
                                         </a>
                                     </li>
                                 }
-                                @for (int i = 1; i <= Model.TotalPages; i++)
+                                @for (int i = 1; i <= Model.MedicalEquipments.TotalPages; i++)
                                 {
-                                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <li class="page-item @(i == Model.MedicalEquipments.PageNumber ? "active" : "")">
                                         <a class="page-link" href="@Url.Action("Index", new { page = i })" style="border-radius: 8px; margin: 0 2px;">
                                             @i
                                         </a>
                                     </li>
                                 }
-                                @if (Model.PageNumber < Model.TotalPages)
+                                @if (Model.MedicalEquipments.PageNumber < Model.MedicalEquipments.TotalPages)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })" style="border-radius: 8px; margin: 0 2px;">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.MedicalEquipments.PageNumber + 1 })" style="border-radius: 8px; margin: 0 2px;">
                                             بعدی <i class="fas fa-chevron-left"></i>
                                         </a>
                                     </li>
@@ -363,9 +493,9 @@
             }
             else
             {
-                <div class="text-center py-5">
-                    <i class="fas fa-x-ray fa-4x text-muted mb-3"></i>
-                    <p class="text-muted">هیچ تجهیز پزشکی ثبت نشده است.</p>
+                <div class="text-center py-5" style="background-color: #ffffff;">
+                    <i class="fas fa-x-ray fa-4x mb-3" style="color: #6c757d;"></i>
+                    <p style="color: #6c757d; font-size: 1rem; margin-bottom: 1rem;">هیچ تجهیز پزشکی ثبت نشده است.</p>
                     <a href="@Url.Action("Create")" class="btn btn-primary">
                         <i class="fas fa-plus"></i> ایجاد تجهیز جدید
                     </a>
@@ -386,5 +516,37 @@
             _ => status ?? "نامشخص"
         };
     }
+}
+
+@section Scripts {
+    <script>
+        // SweetAlert2 for delete confirmation
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var form = btn.closest('form');
+                    var equipmentName = btn.getAttribute('data-name');
+                    
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از حذف تجهیز پزشکی "' + equipmentName + '" اطمینان دارید؟',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، حذف کن',
+                        cancelButtonText: 'انصراف',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 }
 

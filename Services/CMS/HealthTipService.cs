@@ -215,6 +215,22 @@ namespace ClinicApp.Services.CMS
                     }
                 }
 
+                // منطق ذخیره PublishedAt:
+                // 1. اگر IsPublished = true و PublishedAt مقدار دارد، از PublishedAt استفاده کن
+                // 2. اگر IsPublished = true و PublishedAt null است، از DateTime.Now استفاده کن
+                // 3. اگر IsPublished = false، PublishedAt = null
+                DateTime? publishedAt = null;
+                if (model.IsPublished)
+                {
+                    publishedAt = model.PublishedAt ?? DateTime.Now;
+                    _logger.Debug("PublishedAt تنظیم شد - IsPublished: {IsPublished}, PublishedAt: {PublishedAt}, Model.PublishedAt: {ModelPublishedAt}",
+                        model.IsPublished, publishedAt, model.PublishedAt);
+                }
+                else
+                {
+                    _logger.Debug("PublishedAt = null - IsPublished: {IsPublished}", model.IsPublished);
+                }
+
                 var healthTip = new HealthTip
                 {
                     Title = model.Title,
@@ -224,7 +240,7 @@ namespace ClinicApp.Services.CMS
                     ThumbnailUrl = model.ThumbnailUrl,
                     Category = model.Category ?? "general",
                     Tags = model.Tags,
-                    PublishedAt = model.IsPublished ? (model.PublishedAt ?? DateTime.Now) : null,
+                    PublishedAt = publishedAt,
                     ExpiryDate = model.ExpiryDate,
                     IsPublished = model.IsPublished,
                     IsFeatured = model.IsFeatured,
@@ -287,17 +303,20 @@ namespace ClinicApp.Services.CMS
                 healthTip.RelatedLinkUrl = model.RelatedLinkUrl;
                 healthTip.ExpiryDate = model.ExpiryDate;
 
-                if (model.IsPublished && !healthTip.PublishedAt.HasValue)
+                // منطق به‌روزرسانی PublishedAt:
+                // 1. اگر IsPublished = true و PublishedAt مقدار دارد، از PublishedAt استفاده کن
+                // 2. اگر IsPublished = true و PublishedAt null است، از DateTime.Now استفاده کن
+                // 3. اگر IsPublished = false، PublishedAt = null
+                if (model.IsPublished)
                 {
                     healthTip.PublishedAt = model.PublishedAt ?? DateTime.Now;
+                    _logger.Debug("PublishedAt تنظیم شد - IsPublished: {IsPublished}, PublishedAt: {PublishedAt}, Model.PublishedAt: {ModelPublishedAt}",
+                        model.IsPublished, healthTip.PublishedAt, model.PublishedAt);
                 }
-                else if (!model.IsPublished)
+                else
                 {
                     healthTip.PublishedAt = null;
-                }
-                else if (model.PublishedAt.HasValue)
-                {
-                    healthTip.PublishedAt = model.PublishedAt;
+                    _logger.Debug("PublishedAt = null - IsPublished: {IsPublished}", model.IsPublished);
                 }
 
                 healthTip.UpdatedByUserId = _currentUserService.UserId;

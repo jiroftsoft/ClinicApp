@@ -34,20 +34,28 @@ namespace ClinicApp.Controllers
                 var insurancesResult = await _insuranceInfoService.GetPublicInsuranceInfosAsync(insuranceType);
                 var typesResult = await _insuranceInfoService.GetInsuranceTypesAsync();
 
-                ViewBag.InsuranceTypes = typesResult.Success ? typesResult.Data : new System.Collections.Generic.List<InsuranceInfoTypeViewModel>();
-                ViewBag.SelectedType = insuranceType;
-
-                if (!insurancesResult.Success)
+                var viewModel = new InsuranceInfoIndexPageViewModel
                 {
-                    return View(new System.Collections.Generic.List<InsuranceInfoPublicViewModel>());
-                }
+                    InsuranceInfos = insurancesResult.Success && insurancesResult.Data != null 
+                        ? insurancesResult.Data 
+                        : new System.Collections.Generic.List<InsuranceInfoPublicViewModel>(),
+                    InsuranceTypes = typesResult.Success && typesResult.Data != null 
+                        ? typesResult.Data 
+                        : new System.Collections.Generic.List<InsuranceInfoTypeViewModel>(),
+                    SelectedType = insuranceType
+                };
 
-                return View(insurancesResult.Data);
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه اطلاعات بیمه");
-                return View(new System.Collections.Generic.List<InsuranceInfoPublicViewModel>());
+                return View(new InsuranceInfoIndexPageViewModel
+                {
+                    InsuranceInfos = new System.Collections.Generic.List<InsuranceInfoPublicViewModel>(),
+                    InsuranceTypes = new System.Collections.Generic.List<InsuranceInfoTypeViewModel>(),
+                    SelectedType = insuranceType
+                });
             }
         }
 

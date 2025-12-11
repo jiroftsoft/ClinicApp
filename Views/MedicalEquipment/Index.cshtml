@@ -6,46 +6,192 @@
 
 @section Styles {
     <style>
+        /* Medical Production Environment - Professional & Clean */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #212529;
+            --medical-border: #dee2e6;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--medical-text);
+        }
+
         .equipment-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 2rem;
         }
+
         .equipment-card {
-            background: white;
-            border-radius: 16px;
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
+
         .equipment-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: var(--medical-primary);
         }
+
+        .equipment-card a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .equipment-image-wrapper {
+            position: relative;
+            height: 250px;
+            overflow: hidden;
+            background-color: var(--medical-light);
+        }
+
         .equipment-image {
             width: 100%;
-            height: 250px;
+            height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
         }
+
+        .equipment-card:hover .equipment-image {
+            transform: scale(1.05);
+        }
+
         .category-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--medical-primary);
             color: white;
-            padding: 0.4rem 1rem;
+            padding: 0.5rem 1rem;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .equipment-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equipment-content h4 {
+            color: var(--medical-dark);
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .equipment-content p {
+            color: var(--medical-text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-content .text-muted {
+            color: var(--medical-text-muted);
+        }
+
+        .equipment-features {
+            margin: 1rem 0;
+        }
+
+        .equipment-features .badge {
+            background-color: var(--medical-light);
+            color: var(--medical-text);
+            border: 1px solid var(--medical-border);
+            padding: 0.4rem 0.8rem;
+            margin: 0.25rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3f73;
+            border-color: #1e3f73;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .card {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
+        }
+
+        .card-body {
+            background-color: var(--medical-bg);
+        }
+
+        .form-control {
+            border: 1px solid var(--medical-border);
+            border-radius: 6px;
+            color: var(--medical-text);
+        }
+
+        .form-control:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--medical-dark);
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: var(--medical-text-muted);
+        }
+
+        .pagination .page-link {
+            color: var(--medical-primary);
+            border-color: var(--medical-border);
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
         }
     </style>
 }
 
-<div class="container py-5">
+<div class="container py-5" style="background-color: #ffffff;">
     <div class="row mb-5">
         <div class="col-12 text-center">
-            <h1 class="display-4 font-weight-bold mb-3" style="color: #2c3e50;">
-                <i class="fas fa-x-ray text-primary"></i>
+            <h1 class="display-4 font-weight-bold mb-3" style="color: #212529;">
+                <i class="fas fa-x-ray" style="color: #2c5aa0;"></i>
                 تجهیزات پزشکی
             </h1>
-            <p class="lead text-muted">
+            <p class="lead" style="color: #6c757d; font-size: 1.1rem;">
                 با استفاده از پیشرفته‌ترین تجهیزات پزشکی، بهترین خدمات را به شما ارائه می‌دهیم
             </p>
         </div>
@@ -102,25 +248,31 @@
                                 <span class="category-badge">@item.CategoryDisplayName</span>
                             </div>
                         </div>
-                        <div class="p-4">
-                            <h4 class="font-weight-bold mb-2" style="color: #2c3e50;">@item.EquipmentName</h4>
+                        <div class="equipment-content">
+                            <h4 style="color: #212529; font-weight: 600; font-size: 1.25rem; margin-bottom: 0.75rem;">@item.EquipmentName</h4>
                             @if (!string.IsNullOrEmpty(item.Model))
                             {
-                                <p class="text-muted mb-2">
-                                    <i class="fas fa-tag text-primary"></i> @item.Model
+                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-tag" style="color: #2c5aa0;"></i> <strong>مدل:</strong> @item.Model
                                 </p>
                             }
                             @if (!string.IsNullOrEmpty(item.Manufacturer))
                             {
-                                <p class="text-muted mb-3">
-                                    <i class="fas fa-industry text-primary"></i> @item.Manufacturer
+                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">
+                                    <i class="fas fa-industry" style="color: #2c5aa0;"></i> <strong>سازنده:</strong> @item.Manufacturer
                                 </p>
                             }
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted">
+                            @if (!string.IsNullOrEmpty(item.ShortDescription))
+                            {
+                                <p style="color: #6c757d; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.6;">
+                                    @(item.ShortDescription.Length > 120 ? item.ShortDescription.Substring(0, 120) + "..." : item.ShortDescription)
+                                </p>
+                            }
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <small style="color: #6c757d; font-size: 0.85rem;">
                                     <i class="fas fa-eye"></i> @item.ViewCount
-                                </span>
-                                <span class="btn btn-sm btn-primary" style="border-radius: 20px;">
+                                </small>
+                                <span class="btn btn-sm btn-primary" style="border-radius: 6px; padding: 0.5rem 1rem;">
                                     مشاهده جزئیات <i class="fas fa-arrow-left"></i>
                                 </span>
                             </div>
@@ -165,9 +317,9 @@
     }
     else
     {
-        <div class="text-center py-5">
-            <i class="fas fa-x-ray fa-4x text-muted mb-3"></i>
-            <p class="text-muted">هیچ تجهیز پزشکی یافت نشد.</p>
+        <div class="text-center py-5" style="background-color: #ffffff; border-radius: 12px; border: 1px solid #dee2e6;">
+            <i class="fas fa-x-ray fa-4x mb-3" style="color: #6c757d;"></i>
+            <p style="color: #6c757d; font-size: 1rem; margin-bottom: 1rem;">هیچ تجهیز پزشکی یافت نشد.</p>
         </div>
     }
 </div>

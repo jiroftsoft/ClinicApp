@@ -6,65 +6,196 @@
 
 @section Styles {
     <style>
+        /* Medical Production Environment - Professional & Clean */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #212529;
+            --medical-border: #dee2e6;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--medical-text);
+        }
+
         .equipment-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 3rem 2rem;
+            background-color: var(--medical-primary);
+            border-radius: 12px;
+            padding: 2.5rem 2rem;
             color: white;
-            margin-bottom: 3rem;
-        }
-        .equipment-image-large {
-            width: 300px;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 20px;
-            border: 5px solid white;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-        }
-        .info-card {
-            border: 1px solid #e3e6f0;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
             margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
+        .equipment-image-large {
+            width: 280px;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .info-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            margin-bottom: 2rem;
+            background-color: var(--medical-bg);
+        }
+
         .info-card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: var(--medical-primary);
         }
+
         .info-card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--medical-primary);
             color: white;
-            padding: 1.25rem 1.75rem;
-            border-radius: 16px 16px 0 0;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
         }
-        .feature-badge {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+
+        .info-card-header h4,
+        .info-card-header h5 {
             color: white;
-            padding: 0.6rem 1.2rem;
-            border-radius: 25px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-body {
+            background-color: var(--medical-bg);
+            color: var(--medical-text);
+            padding: 1.5rem;
+        }
+
+        .feature-badge {
+            background-color: var(--medical-light);
+            color: var(--medical-text);
+            border: 1px solid var(--medical-border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
             margin: 0.3rem;
             display: inline-block;
             font-size: 0.9rem;
-            font-weight: 600;
+            font-weight: 500;
         }
+
+        .feature-badge i {
+            color: var(--medical-success);
+            margin-left: 0.5rem;
+        }
+
         .image-gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 1rem;
         }
+
         .gallery-image {
             width: 100%;
             height: 150px;
             object-fit: cover;
-            border-radius: 12px;
-            border: 3px solid #e3e6f0;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            border: 2px solid var(--medical-border);
+            transition: all 0.2s ease;
             cursor: pointer;
         }
+
         .gallery-image:hover {
-            transform: scale(1.1);
-            border-color: #667eea;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transform: scale(1.05);
+            border-color: var(--medical-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--medical-dark);
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: var(--medical-text-muted);
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+        }
+
+        .badge-primary {
+            background-color: var(--medical-primary);
+            color: white;
+        }
+
+        .badge-info {
+            background-color: var(--medical-info);
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: var(--medical-warning);
+            color: var(--medical-dark);
+        }
+
+        .badge-secondary {
+            background-color: var(--medical-secondary);
+            color: white;
+        }
+
+        .badge-light {
+            background-color: var(--medical-light);
+            color: var(--medical-text);
+            border: 1px solid var(--medical-border);
+        }
+
+        .btn-primary {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3f73;
+            border-color: #1e3f73;
+        }
+
+        .btn-outline-primary {
+            color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            border-radius: 6px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            color: white;
+        }
+
+        .table {
+            color: var(--medical-text);
+        }
+
+        .table td {
+            border-color: var(--medical-border);
+        }
+
+        .table td strong {
+            color: var(--medical-dark);
         }
     </style>
 }
@@ -100,16 +231,16 @@
                     </p>
                 }
                 <div class="mt-4">
-                    <span class="badge badge-light badge-lg mr-2" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                    <span class="badge badge-primary mr-2" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
                         <i class="fas fa-tag"></i> @Model.CategoryDisplayName
                     </span>
                     @if (Model.IsFeatured)
                     {
-                        <span class="badge badge-warning badge-lg mr-2" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                        <span class="badge badge-warning mr-2" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
                             <i class="fas fa-star"></i> ویژه
                         </span>
                     }
-                    <span class="badge badge-info badge-lg" style="font-size: 1.1rem; padding: 0.6rem 1.2rem;">
+                    <span class="badge badge-info" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
                         <i class="fas fa-eye"></i> @Model.ViewCount بازدید
                     </span>
                 </div>
@@ -193,10 +324,8 @@
                         <h4 class="mb-0"><i class="fas fa-video"></i> ویدیو معرفی</h4>
                     </div>
                     <div class="card-body p-4 text-center">
-                        <a href="@Model.VideoUrl" target="_blank" class="btn btn-danger btn-lg" style="border-radius: 30px; padding: 1rem 2rem;">
-                            <i class="fab fa-youtube fa-2x"></i>
-                            <br />
-                            <span class="mt-2 d-block">مشاهده ویدیو</span>
+                        <a href="@Model.VideoUrl" target="_blank" class="btn btn-danger btn-lg" style="border-radius: 6px; padding: 0.75rem 1.5rem;">
+                            <i class="fab fa-youtube"></i> مشاهده ویدیو
                         </a>
                     </div>
                 </div>
@@ -256,14 +385,14 @@
                 <div class="info-card-header">
                     <h5 class="mb-0 font-weight-bold"><i class="fas fa-phone"></i> تماس با ما</h5>
                 </div>
-                <div class="card-body text-center">
-                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-primary btn-block mb-2" style="border-radius: 30px;">
-                        <i class="fas fa-calendar-check"></i> رزرو نوبت
-                    </a>
-                    <a href="@Url.Action("Contact", "Home")" class="btn btn-outline-primary btn-block" style="border-radius: 30px;">
-                        <i class="fas fa-envelope"></i> تماس با کلینیک
-                    </a>
-                </div>
+                    <div class="card-body text-center">
+                        <a href="@Url.Action("Index", "Appointment")" class="btn btn-primary btn-block mb-2" style="border-radius: 6px;">
+                            <i class="fas fa-calendar-check"></i> رزرو نوبت
+                        </a>
+                        <a href="@Url.Action("Contact", "Home")" class="btn btn-outline-primary btn-block" style="border-radius: 6px;">
+                            <i class="fas fa-envelope"></i> تماس با کلینیک
+                        </a>
+                    </div>
             </div>
         </div>
     </div>

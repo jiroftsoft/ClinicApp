@@ -41,18 +41,10 @@
         </div>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
     <div class="form-container">
-        @using (Html.BeginForm("Edit", "HealthTip", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        @using (Html.BeginForm("Edit", "HealthTip", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.HealthTipId)
@@ -91,16 +83,52 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ImageUrl)
-                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/health-tips/..." })
+                        @Html.LabelFor(m => m.ImageUrl, "تصویر اصلی")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">انتخاب تصویر اصلی...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
+                        @Html.HiddenFor(m => m.ImageUrl)
                         @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Model.ImageUrl" alt="تصویر فعلی" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                <br />
+                                <small class="text-muted">تصویر فعلی</small>
+                            </div>
+                        }
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ThumbnailUrl)
-                        @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/health-tips/thumbnails/..." })
+                        @Html.LabelFor(m => m.ThumbnailUrl, "تصویر کوچک (Thumbnail)")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک (اختیاری)...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> اگر انتخاب نشود، به صورت خودکار از تصویر اصلی ایجاد می‌شود (300x300)
+                        </small>
+                        @Html.HiddenFor(m => m.ThumbnailUrl)
                         @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                        <div id="thumbnailPreview" class="mt-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش Thumbnail" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Model.ThumbnailUrl" alt="Thumbnail فعلی" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                <br />
+                                <small class="text-muted">Thumbnail فعلی</small>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -137,18 +165,28 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.PublishedAt)
-                        @Html.TextBoxFor(m => m.PublishedAt, new { @class = "form-control", type = "datetime-local" })
-                        @Html.ValidationMessageFor(m => m.PublishedAt, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "publishedAtPicker";
+                        ViewBag.PersianDatePickerName = "PublishedAt";
+                        ViewBag.PersianDatePickerValue = Model.PublishedAt;
+                        ViewBag.PersianDatePickerLabel = "تاریخ انتشار";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ انتشار (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، تاریخ فعلی استفاده می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
                 <div class="col-md-6">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.ExpiryDate)
-                        @Html.TextBoxFor(m => m.ExpiryDate, new { @class = "form-control", type = "datetime-local" })
-                        @Html.ValidationMessageFor(m => m.ExpiryDate, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "expiryDatePicker";
+                        ViewBag.PersianDatePickerName = "ExpiryDate";
+                        ViewBag.PersianDatePickerValue = Model.ExpiryDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ انقضا";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ انقضا (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "برای نکات موقت (اختیاری)";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
             </div>
 
@@ -230,5 +268,122 @@
         ViewBag.CKEditorHeight = 400;
     }
     @Html.Partial("_CKEditorInit")
+    @Html.Partial("_PersianDatePickerScript")
+    
+    <script>
+        // Production-Ready: Image Preview and File Input Handling
+        (function() {
+            'use strict';
+            
+            // تابع کمکی برای بررسی آماده بودن DOM
+            function domReady(fn) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', fn);
+                } else {
+                    fn();
+                }
+            }
+            
+            domReady(function() {
+                // Image File Preview
+                var imageFileInput = document.getElementById('ImageFile');
+                var imagePreview = document.getElementById('imagePreview');
+                var imagePreviewImg = document.getElementById('imagePreviewImg');
+                var imageFileLabel = document.querySelector('label[for="ImageFile"]');
+                
+                if (imageFileInput) {
+                    imageFileInput.addEventListener('change', function(e) {
+                        var file = e.target.files[0];
+                        if (file) {
+                            // بررسی نوع فایل
+                            if (!file.type.match('image.*')) {
+                                if (typeof AdminNotification !== 'undefined') {
+                                    AdminNotification.error('لطفاً یک فایل تصویری انتخاب کنید.');
+                                }
+                                e.target.value = '';
+                                return;
+                            }
+                            
+                            // بررسی حجم فایل (5 مگابایت)
+                            if (file.size > 5 * 1024 * 1024) {
+                                if (typeof AdminNotification !== 'undefined') {
+                                    AdminNotification.error('حجم فایل نباید بیشتر از 5 مگابایت باشد.');
+                                }
+                                e.target.value = '';
+                                return;
+                            }
+                            
+                            // نمایش پیش‌نمایش
+                            var reader = new FileReader();
+                            reader.onload = function(e) {
+                                imagePreviewImg.src = e.target.result;
+                                imagePreview.style.display = 'block';
+                            };
+                            reader.readAsDataURL(file);
+                            
+                            // به‌روزرسانی label
+                            if (imageFileLabel) {
+                                imageFileLabel.textContent = file.name;
+                            }
+                        } else {
+                            imagePreview.style.display = 'none';
+                            if (imageFileLabel) {
+                                imageFileLabel.textContent = 'انتخاب تصویر اصلی...';
+                            }
+                        }
+                    });
+                }
+                
+                // Thumbnail File Preview
+                var thumbnailFileInput = document.getElementById('ThumbnailFile');
+                var thumbnailPreview = document.getElementById('thumbnailPreview');
+                var thumbnailPreviewImg = document.getElementById('thumbnailPreviewImg');
+                var thumbnailFileLabel = document.querySelector('label[for="ThumbnailFile"]');
+                
+                if (thumbnailFileInput) {
+                    thumbnailFileInput.addEventListener('change', function(e) {
+                        var file = e.target.files[0];
+                        if (file) {
+                            // بررسی نوع فایل
+                            if (!file.type.match('image.*')) {
+                                if (typeof AdminNotification !== 'undefined') {
+                                    AdminNotification.error('لطفاً یک فایل تصویری انتخاب کنید.');
+                                }
+                                e.target.value = '';
+                                return;
+                            }
+                            
+                            // بررسی حجم فایل (5 مگابایت)
+                            if (file.size > 5 * 1024 * 1024) {
+                                if (typeof AdminNotification !== 'undefined') {
+                                    AdminNotification.error('حجم فایل نباید بیشتر از 5 مگابایت باشد.');
+                                }
+                                e.target.value = '';
+                                return;
+                            }
+                            
+                            // نمایش پیش‌نمایش
+                            var reader = new FileReader();
+                            reader.onload = function(e) {
+                                thumbnailPreviewImg.src = e.target.result;
+                                thumbnailPreview.style.display = 'block';
+                            };
+                            reader.readAsDataURL(file);
+                            
+                            // به‌روزرسانی label
+                            if (thumbnailFileLabel) {
+                                thumbnailFileLabel.textContent = file.name;
+                            }
+                        } else {
+                            thumbnailPreview.style.display = 'none';
+                            if (thumbnailFileLabel) {
+                                thumbnailFileLabel.textContent = 'انتخاب تصویر کوچک (اختیاری)...';
+                            }
+                        }
+                    });
+                }
+            });
+        })();
+    </script>
 }
 

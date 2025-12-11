@@ -47,7 +47,7 @@
     }
 
     <div class="form-container">
-        @using (Html.BeginForm("Create", "InsuranceInfo", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        @using (Html.BeginForm("Create", "InsuranceInfo", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -108,16 +108,32 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.LogoUrl)
-                        @Html.TextBoxFor(m => m.LogoUrl, new { @class = "form-control", placeholder = "/Content/Images/insurance/logo.png" })
+                        @Html.LabelFor(m => m.LogoUrl, "لوگو")
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="LogoFile" name="LogoFile" accept="image/*">
+                            <label class="custom-file-label" for="LogoFile">انتخاب فایل لوگو</label>
+                        </div>
+                        <div id="logoPreview" class="mb-2" style="display: none;">
+                            <img id="logoPreviewImg" src="" alt="پیش‌نمایش لوگو" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                        @Html.TextBoxFor(m => m.LogoUrl, new { @class = "form-control", placeholder = "یا آدرس URL لوگو را وارد کنید", @readonly = "readonly" })
                         @Html.ValidationMessageFor(m => m.LogoUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">فرمت‌های مجاز: JPG, PNG, GIF. حداکثر اندازه: 5MB</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ThumbnailUrl)
-                        @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/insurance/thumb.png" })
+                        @Html.LabelFor(m => m.ThumbnailUrl, "تصویر کوچک")
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/*">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب فایل تصویر کوچک</label>
+                        </div>
+                        <div id="thumbnailPreview" class="mb-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش تصویر کوچک" class="img-thumbnail" style="max-width: 300px; max-height: 300px;">
+                        </div>
+                        @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "یا آدرس URL تصویر کوچک را وارد کنید", @readonly = "readonly" })
                         @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">فرمت‌های مجاز: JPG, PNG, GIF. حداکثر اندازه: 5MB</small>
                     </div>
                 </div>
             </div>
@@ -225,5 +241,47 @@
         ViewBag.CKEditorHeight = 300;
     }
     @Html.Partial("_CKEditorInit")
+    
+    <script>
+        // Preview Logo
+        document.getElementById('LogoFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoPreviewImg').src = e.target.result;
+                    document.getElementById('logoPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Preview Thumbnail
+        document.getElementById('ThumbnailFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('thumbnailPreviewImg').src = e.target.result;
+                    document.getElementById('thumbnailPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Bootstrap custom file input
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+        });
+    </script>
 }
 

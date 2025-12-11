@@ -9,8 +9,13 @@ ClinicApp یک سیستم جامع مدیریت کلینیک است که با AS
 
 ### **🚨 مهم: قبل از هر تغییر، قراردادها را مطالعه کنید**
 
-تمام قراردادهای الزام‌آور پروژه در پوشه `CONTRACTS/` قرار دارند:
+تمام قراردادهای الزام‌آور پروژه در پوشه‌های `CONTRACTS/` و `Docs/` قرار دارند:
 
+#### **قراردادهای اصلی:**
+- **[قرارداد توسعه و استانداردهای کدنویسی](Docs/DEVELOPMENT_CONTRACT.md)** ⭐ **الزامی برای تمام توسعه‌ها**
+- **[Template TODO List](Docs/TODO_TEMPLATE.md)** - الگوی TODO List برای تمام ماژول‌ها
+
+#### **قراردادهای موجود:**
 - **[فهرست کامل قراردادها](CONTRACTS/README.md)** - راهنمای کامل تمام قراردادها
 - **[قرارداد تبعیت هوش مصنوعی](CONTRACTS/AI_COMPLIANCE_CONTRACT.md)** - 15 بند الزام‌آور
 - **[چک‌لیست پیش‌پرواز](CONTRACTS/PREFLIGHT_CHECKLIST_CONTRACT.md)** - بررسی قبل از هر تغییر
@@ -103,6 +108,19 @@ ClinicApp/
 - از **[استانداردهای فرم‌ها](CONTRACTS/FormStandards.md)** استفاده کنید
 - از **[استانداردهای نمایش جزئیات](CONTRACTS/DETAILS_DISPLAY_STANDARDS.md)** پیروی کنید
 
+### **استانداردهای تقویم شمسی:**
+- از **[راهنمای تقویم شمسی](Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md)** برای استفاده از Persian DatePicker پیروی کنید
+- تمام فیلدهای تاریخ باید از `_PersianDatePicker` partial view استفاده کنند
+- تمام Controller ها باید از `ParseDateFromHiddenInput` برای parse کردن تاریخ استفاده کنند
+- تمام نمایش تاریخ‌ها باید از `PersianDateHelper.ToPersianDate` استفاده کنند
+
+### **استانداردهای آپلود تصویر:**
+- از **[راهنمای سیستم آپلود تصویر](Docs/IMAGE_UPLOAD_SYSTEM_GUIDE.md)** برای استفاده از Image Upload System پیروی کنید
+- تمام آپلودهای تصویر باید از `IImageUploadService` استفاده کنند
+- تمام Controller ها باید متد `ProcessImageUpload` را پیاده‌سازی کنند
+- تمام فرم‌ها باید `enctype="multipart/form-data"` داشته باشند
+- تمام File Input ها باید Preview و Validation JavaScript داشته باشند
+
 ---
 
 ## 🧪 **تست‌ها**
@@ -132,6 +150,9 @@ dotnet test --filter "Category=Integration"
 - **[تحلیل جامع پروژه](PROJECT_COMPREHENSIVE_ANALYSIS.md)**
 - **[قراردادهای پروژه](CONTRACTS/)**
 - **[قالب‌های استاندارد](TEMPLATES/)**
+- **[راهنمای تقویم شمسی](Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md)** - راهنمای کامل استفاده از Persian DatePicker
+- **[راهنمای سیستم پیام‌ها](Docs/NOTIFICATION_SYSTEM_GUIDE.md)** - راهنمای استفاده از Toastr و SweetAlert
+- **[راهنمای سیستم آپلود تصویر](Docs/IMAGE_UPLOAD_SYSTEM_GUIDE.md)** - راهنمای کامل سیستم آپلود تصویر
 
 ### **مستندسازی:**
 - تمام کلاس‌ها و متدها باید مستندسازی شوند

@@ -48,25 +48,7 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
     <!-- Search Panel -->
     <div class="card shadow mb-4">
@@ -214,7 +196,7 @@
                                                 using (Html.BeginForm("Publish", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-success" title="انتشار" onclick="return confirm('آیا از انتشار این نکته سلامت اطمینان دارید؟')">
+                                                    <button type="submit" class="btn btn-sm btn-success btn-publish" title="انتشار" data-healthtip-id="@item.HealthTipId" data-healthtip-title="@item.Title">
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                 }
@@ -224,7 +206,7 @@
                                                 using (Html.BeginForm("Unpublish", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-warning" title="لغو انتشار" onclick="return confirm('آیا از لغو انتشار این نکته سلامت اطمینان دارید؟')">
+                                                    <button type="submit" class="btn btn-sm btn-warning btn-unpublish" title="لغو انتشار" data-healthtip-id="@item.HealthTipId" data-healthtip-title="@item.Title">
                                                         <i class="fas fa-times"></i>
                                                     </button>
                                                 }
@@ -232,7 +214,7 @@
                                             @using (Html.BeginForm("Delete", "HealthTip", new { id = item.HealthTipId }, FormMethod.Post, new { @class = "d-inline" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این نکته سلامت اطمینان دارید؟')">
+                                                <button type="submit" class="btn btn-sm btn-danger btn-delete" title="حذف" data-healthtip-id="@item.HealthTipId" data-healthtip-title="@item.Title">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -245,7 +227,7 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.TotalPages > 1)
                 {
                     <nav aria-label="صفحه‌بندی">
                         <ul class="pagination justify-content-center">
@@ -280,6 +262,117 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Production-Ready: SweetAlert Confirmations for HealthTip Actions
+        (function() {
+            'use strict';
+            
+            // تابع کمکی برای بررسی آماده بودن DOM
+            function domReady(fn) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', fn);
+                } else {
+                    fn();
+                }
+            }
+            
+            domReady(function() {
+                // بررسی وجود SweetAlert2
+                if (typeof Swal === 'undefined') {
+                    console.error('SweetAlert2 library not loaded');
+                    return;
+                }
+                
+                // Publish Confirmation
+                var publishButtons = document.querySelectorAll('.btn-publish');
+                publishButtons.forEach(function(button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var form = button.closest('form');
+                        var healthTipId = button.getAttribute('data-healthtip-id');
+                        var healthTipTitle = button.getAttribute('data-healthtip-title');
+                        
+                        Swal.fire({
+                            title: 'آیا از انتشار این نکته سلامت اطمینان دارید؟',
+                            text: healthTipTitle || 'نکته سلامت',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#28a745',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'بله، منتشر کن',
+                            cancelButtonText: 'خیر، انصراف',
+                            reverseButtons: true,
+                            focusConfirm: false
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                });
+                
+                // Unpublish Confirmation
+                var unpublishButtons = document.querySelectorAll('.btn-unpublish');
+                unpublishButtons.forEach(function(button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var form = button.closest('form');
+                        var healthTipId = button.getAttribute('data-healthtip-id');
+                        var healthTipTitle = button.getAttribute('data-healthtip-title');
+                        
+                        Swal.fire({
+                            title: 'آیا از لغو انتشار این نکته سلامت اطمینان دارید؟',
+                            text: healthTipTitle || 'نکته سلامت',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#ffc107',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'بله، لغو انتشار',
+                            cancelButtonText: 'خیر، انصراف',
+                            reverseButtons: true,
+                            focusConfirm: false
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                });
+                
+                // Delete Confirmation
+                var deleteButtons = document.querySelectorAll('.btn-delete');
+                deleteButtons.forEach(function(button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var form = button.closest('form');
+                        var healthTipId = button.getAttribute('data-healthtip-id');
+                        var healthTipTitle = button.getAttribute('data-healthtip-title');
+                        
+                        Swal.fire({
+                            title: 'آیا از حذف این نکته سلامت اطمینان دارید؟',
+                            text: healthTipTitle || 'نکته سلامت',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'بله، حذف کن',
+                            cancelButtonText: 'خیر، انصراف',
+                            reverseButtons: true,
+                            focusConfirm: false,
+                            dangerMode: true
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                });
+            });
+        })();
+    </script>
+}
 
 @functions {
     private string GetCategoryDisplayName(string category)

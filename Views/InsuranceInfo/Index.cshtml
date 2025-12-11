@@ -1,4 +1,4 @@
-@model List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel>
+@model ClinicApp.ViewModels.CMS.InsuranceInfoIndexPageViewModel
 @{
     ViewBag.Title = "بیمه‌های طرف قرارداد";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -17,19 +17,19 @@
         </div>
 
         <!-- Type Filter -->
-        @if (ViewBag.InsuranceTypes != null && ((List<ClinicApp.ViewModels.CMS.InsuranceInfoTypeViewModel>)ViewBag.InsuranceTypes).Any())
+        @if (Model.InsuranceTypes != null && Model.InsuranceTypes.Any())
         {
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <div class="btn-group flex-wrap" role="group">
-                                <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.SelectedType == null ? "primary" : "outline-primary") mb-2">
-                                    <i class="fas fa-list"></i> همه (@Model?.Count ?? 0)
+                                <a href="@Url.Action("Index")" class="btn btn-@(Model.SelectedType == null ? "primary" : "outline-primary") mb-2">
+                                    <i class="fas fa-list"></i> همه (@(Model.InsuranceInfos?.Count ?? 0))
                                 </a>
-                                @foreach (var type in ViewBag.InsuranceTypes)
+                                @foreach (var type in Model.InsuranceTypes)
                                 {
-                                    <a href="@Url.Action("Index", new { insuranceType = type.InsuranceType })" class="btn btn-@(ViewBag.SelectedType == type.InsuranceType ? "primary" : "outline-primary") mb-2">
+                                    <a href="@Url.Action("Index", new { insuranceType = type.InsuranceType })" class="btn btn-@(Model.SelectedType == type.InsuranceType ? "primary" : "outline-primary") mb-2">
                                         <i class="@type.IconClass"></i> @type.DisplayName (@type.Count)
                                     </a>
                                 }
@@ -60,9 +60,9 @@
 
         <!-- Insurance Infos Grid -->
         <div class="row" id="insuranceContainer">
-            @if (Model != null && Model.Any())
+            @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
             {
-                @foreach (var insurance in Model)
+                foreach (var insurance in Model.InsuranceInfos)
                 {
                     <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                         <div class="card insurance-card h-100 shadow-lg border-0">

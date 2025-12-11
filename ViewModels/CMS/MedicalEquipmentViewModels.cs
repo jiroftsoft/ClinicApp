@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 
 namespace ClinicApp.ViewModels.CMS
 {
@@ -16,6 +17,25 @@ namespace ClinicApp.ViewModels.CMS
         public bool? IsFeatured { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+    }
+
+    public class MedicalEquipmentCategoryViewModel
+    {
+        public string Category { get; set; }
+        public string DisplayName { get; set; }
+    }
+
+    public class MedicalEquipmentStatusViewModel
+    {
+        public string Status { get; set; }
+        public string DisplayName { get; set; }
+    }
+
+    public class MedicalEquipmentAdminIndexViewModel
+    {
+        public PagedResult<MedicalEquipmentIndexViewModel> MedicalEquipments { get; set; }
+        public List<MedicalEquipmentCategoryViewModel> Categories { get; set; }
+        public List<MedicalEquipmentStatusViewModel> Statuses { get; set; }
     }
 
     public class MedicalEquipmentIndexViewModel
@@ -38,6 +58,13 @@ namespace ClinicApp.ViewModels.CMS
     #endregion
 
     #region Medical Equipment Create & Edit
+
+    public class MedicalEquipmentCreateEditPageViewModel
+    {
+        public MedicalEquipmentCreateEditViewModel Model { get; set; }
+        public List<MedicalEquipmentCategoryViewModel> Categories { get; set; }
+        public List<MedicalEquipmentStatusViewModel> Statuses { get; set; }
+    }
 
     public class MedicalEquipmentCreateEditViewModel
     {
@@ -67,6 +94,7 @@ namespace ClinicApp.ViewModels.CMS
 
         [MaxLength(5000, ErrorMessage = "مشخصات فنی نمی‌تواند بیش از 5000 کاراکتر باشد.")]
         [Display(Name = "مشخصات فنی")]
+        [System.Web.Mvc.AllowHtml]
         public string TechnicalSpecifications { get; set; }
 
         [MaxLength(500, ErrorMessage = "آدرس تصویر اصلی نمی‌تواند بیش از 500 کاراکتر باشد.")]

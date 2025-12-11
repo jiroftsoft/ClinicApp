@@ -1,4 +1,5 @@
-@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.InsuranceInfoIndexViewModel>
+@using Org.BouncyCastle.Asn1.Ocsp
+@model ClinicApp.ViewModels.CMS.InsuranceInfoAdminIndexViewModel
 @{
     ViewBag.Title = "مدیریت اطلاعات بیمه";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -44,25 +45,7 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
     <!-- Search Panel -->
     <div class="card shadow mb-4">
@@ -78,9 +61,9 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="InsuranceType" class="form-control">
                         <option value="">همه انواع</option>
-                        @if (ViewBag.InsuranceTypes != null)
+                        @if (Model.InsuranceTypes != null && Model.InsuranceTypes.Any())
                         {
-                            foreach (var type in ViewBag.InsuranceTypes)
+                            foreach (var type in Model.InsuranceTypes)
                             {
                                 <option value="@type.InsuranceType" @(Request.QueryString["InsuranceType"] == type.InsuranceType ? "selected" : "")>@type.DisplayName (@type.Count)</option>
                             }
@@ -114,10 +97,10 @@
     <!-- Insurance Infos List -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست بیمه‌ها (@Model.TotalCount مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">لیست بیمه‌ها (@(Model.InsuranceInfos?.TotalCount ?? 0) مورد)</h6>
         </div>
         <div class="card-body">
-            @if (Model.Items != null && Model.Items.Any())
+            @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Items != null && Model.InsuranceInfos.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
@@ -135,7 +118,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.Items)
+                            @foreach (var item in Model.InsuranceInfos.Items)
                             {
                                 <tr>
                                     <td>
@@ -235,7 +218,7 @@
                                             @using (Html.BeginForm("Delete", "InsuranceInfo", new { id = item.InsuranceInfoId }, FormMethod.Post, new { @class = "d-inline" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این بیمه اطمینان دارید؟')">
+                                                <button type="submit" class="btn btn-sm btn-danger delete-btn" title="حذف" data-item-name="@item.InsuranceName">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -248,26 +231,26 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.InsuranceInfos != null && Model.InsuranceInfos.TotalPages > 1)
                 {
                     <nav aria-label="صفحه‌بندی">
                         <ul class="pagination justify-content-center">
-                            @if (Model.PageNumber > 1)
+                            @if (Model.InsuranceInfos.PageNumber > 1)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.InsuranceInfos.PageNumber - 1 })">قبلی</a>
                                 </li>
                             }
-                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            @for (int i = 1; i <= Model.InsuranceInfos.TotalPages; i++)
                             {
-                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <li class="page-item @(i == Model.InsuranceInfos.PageNumber ? "active" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
                                 </li>
                             }
-                            @if (Model.PageNumber < Model.TotalPages)
+                            @if (Model.InsuranceInfos.PageNumber < Model.InsuranceInfos.TotalPages)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.InsuranceInfos.PageNumber + 1 })">بعدی</a>
                                 </li>
                             }
                         </ul>
@@ -283,6 +266,48 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Production-Ready: SweetAlert Confirmations for InsuranceInfo Actions
+        document.addEventListener('DOMContentLoaded', function () {
+            // حذف با تایید SweetAlert
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const form = button.closest('form');
+                    const itemName = button.getAttribute('data-item-name') || 'این بیمه';
+
+                    // بررسی وجود SweetAlert2
+                    if (typeof Swal === 'undefined') {
+                        console.error('SweetAlert2 library not loaded');
+                        if (confirm('آیا از حذف ' + itemName + ' اطمینان دارید؟')) {
+                            form.submit();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از حذف ' + itemName + ' اطمینان دارید؟ این عمل قابل بازگشت نیست.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، حذف کن',
+                        cancelButtonText: 'لغو',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
 
 @functions {
     private string GetTypeDisplayName(string insuranceType)
