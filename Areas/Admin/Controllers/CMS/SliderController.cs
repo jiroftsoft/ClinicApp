@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class SliderController : Controller
+    public class SliderController : BaseCMSController
     {
         private readonly ISliderService _sliderService;
         private readonly ICurrentUserService _currentUserService;

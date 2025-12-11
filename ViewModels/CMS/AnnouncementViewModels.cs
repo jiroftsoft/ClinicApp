@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Web.Mvc;
 using ClinicApp.Helpers;
 
 namespace ClinicApp.ViewModels.CMS
@@ -35,6 +36,7 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "عنوان")]
         public string Title { get; set; }
 
+        [AllowHtml] // اجازه HTML برای CKEditor
         [MaxLength(2000, ErrorMessage = "محتوا نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         [Display(Name = "محتوا")]
         public string Content { get; set; }

@@ -55,7 +55,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         @Html.LabelFor(m => m.ClinicId)
-                        @Html.DropDownListFor(m => m.ClinicId, ViewBag.Clinics as SelectList, "پیش‌فرض (همه کلینیک‌ها)", new { @class = "form-control" })
+                        @Html.DropDownListFor(m => m.ClinicId, new SelectList(Model.Clinics, "Value", "Text"), "پیش‌فرض (همه کلینیک‌ها)", new { @class = "form-control" })
                         @Html.ValidationMessageFor(m => m.ClinicId, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">اگر خالی باشد، برای همه کلینیک‌ها اعمال می‌شود</small>
                     </div>
@@ -63,7 +63,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         @Html.LabelFor(m => m.DayOfWeek, new { @class = "required" })
-                        @Html.DropDownListFor(m => m.DayOfWeek, ViewBag.DaysOfWeek as SelectList, "لطفاً روز هفته را انتخاب کنید", new { @class = "form-control", @id = "DayOfWeek" })
+                        @Html.DropDownListFor(m => m.DayOfWeek, new SelectList(Model.DaysOfWeek, "Value", "Text"), "لطفاً روز هفته را انتخاب کنید", new { @class = "form-control", @id = "DayOfWeek" })
                         @Html.ValidationMessageFor(m => m.DayOfWeek, "", new { @class = "text-danger" })
                     </div>
                 </div>

@@ -1,0 +1,119 @@
+@*
+    Component قابل استفاده مجدد برای Persian DatePicker
+    استفاده:
+    @{
+        ViewBag.PersianDatePickerId = "startDatePicker";
+        ViewBag.PersianDatePickerName = "StartDate";
+        ViewBag.PersianDatePickerValue = Model.StartDate;
+        ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+        ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
+        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
+        ViewBag.PersianDatePickerRequired = false;
+        ViewBag.PersianDatePickerValidationExpression = "m => m.StartDate"; // برای ValidationMessageFor
+    }
+    @Html.Partial("_PersianDatePicker")
+*@
+@{
+    var id = ViewBag.PersianDatePickerId ?? "persianDatePicker";
+    var name = ViewBag.PersianDatePickerName ?? "PersianDate";
+    var value = ViewBag.PersianDatePickerValue as DateTime?;
+    var label = ViewBag.PersianDatePickerLabel ?? "تاریخ";
+    var placeholder = ViewBag.PersianDatePickerPlaceholder ?? "تاریخ را انتخاب کنید";
+    var helpText = ViewBag.PersianDatePickerHelpText as string;
+    var required = ViewBag.PersianDatePickerRequired ?? false;
+    var cssClass = ViewBag.PersianDatePickerCssClass ?? "form-control";
+    
+    // تبدیل تاریخ میلادی به شمسی برای نمایش
+    string persianDateValue = "";
+    if (value.HasValue)
+    {
+        try
+        {
+            // بررسی اینکه تاریخ معتبر است
+            var dateValue = value.Value;
+            if (dateValue != DateTime.MinValue && dateValue != DateTime.MaxValue)
+            {
+                // بررسی اینکه سال معقول است (باید بین 1300 تا 1500 شمسی باشد)
+                // این بررسی اضافی برای جلوگیری از نمایش تاریخ‌های اشتباه است
+                var testPersian = ClinicApp.Helpers.PersianDateHelper.ToPersianDate(dateValue);
+                
+                // بررسی اینکه آیا سال شمسی معقول است (باید بین 1300 تا 1500 باشد)
+                if (!string.IsNullOrEmpty(testPersian) && testPersian.Length >= 4)
+                {
+                    var yearStr = testPersian.Substring(0, 4);
+                    if (int.TryParse(yearStr, out int year) && year >= 1300 && year <= 1500)
+                    {
+                        persianDateValue = testPersian;
+                    }
+                    else
+                    {
+                        // اگر سال معقول نیست، خالی می‌کنیم
+                        persianDateValue = "";
+                    }
+                }
+                else
+                {
+                    persianDateValue = testPersian;
+                }
+            }
+            else
+            {
+                persianDateValue = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            // در صورت خطا، مقدار خالی می‌کنیم
+            persianDateValue = "";
+            // لاگ خطا (در production می‌توانید از Serilog استفاده کنید)
+            System.Diagnostics.Debug.WriteLine($"Error converting date to Persian: {ex.Message}");
+        }
+    }
+}
+
+<div class="form-group">
+    <label for="@id" class="@(required ? "required" : "")">
+        @label
+        @if (required)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <div class="date-picker-wrapper">
+        <i class="fas fa-calendar date-picker-icon"></i>
+        <input type="text" 
+               id="@id" 
+               name="@name" 
+               class="@cssClass persian-date" 
+               placeholder="@placeholder" 
+               autocomplete="off"
+               value="@persianDateValue"
+               data-persian-datepicker="true" />
+    </div>
+    @if (!string.IsNullOrEmpty(helpText))
+    {
+        <small class="form-text text-muted">@helpText</small>
+    }
+    @* Validation message - بررسی خطاها و نمایش *@
+    @{
+        var hasError = ViewData.ModelState.ContainsKey(name) && ViewData.ModelState[name].Errors.Count > 0;
+        var errorMessage = hasError ? ViewData.ModelState[name].Errors[0].ErrorMessage : "";
+    }
+    @if (hasError)
+    {
+        <span class="field-validation-error text-danger">@errorMessage</span>
+    }
+    else
+    {
+        @* برای client-side validation - ASP.NET MVC خودش این را مدیریت می‌کند *@
+        <span class="field-validation-valid text-danger" data-valmsg-for="@name" data-valmsg-replace="true"></span>
+    }
+</div>
+
+<style>
+    /* مخفی کردن validation message های خالی */
+    .field-validation-valid {
+        display: none !important;
+    }
+</style>
+

@@ -6,6 +6,53 @@
 
 @Html.AntiForgeryToken()
 
+@section Styles {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .date-picker-wrapper {
+            position: relative;
+        }
+        .date-picker-wrapper .form-control {
+            cursor: pointer;
+        }
+        .date-picker-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+        .section-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            margin-top: 2rem;
+        }
+        .section-header h5 {
+            color: #495057;
+            font-weight: 600;
+            margin: 0;
+        }
+        .section-header:first-child {
+            margin-top: 0;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">ویرایش اطلاعیه</h1>
@@ -19,6 +66,16 @@
         </div>
     </div>
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -29,124 +86,171 @@
         </div>
     }
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            @using (Html.BeginForm("Edit", "Announcement", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-            {
-                @Html.AntiForgeryToken()
-                @Html.HiddenFor(m => m.AnnouncementId)
-                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="form-container">
+        @using (Html.BeginForm("Edit", "Announcement", FormMethod.Post, new { @class = "form-horizontal", role = "form", id = "announcementForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.AnnouncementId)
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Title, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "عنوان اطلاعیه" })
-                            @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+            <!-- اطلاعات پایه -->
+            <div class="section-header">
+                <h5><i class="fas fa-info-circle"></i> اطلاعات پایه</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Title, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "عنوان اطلاعیه" })
+                        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Content)
+                        @Html.TextAreaFor(m => m.Content, new { @class = "form-control", id = "contentEditor", rows = "8", placeholder = "محتوا و متن اطلاعیه..." })
+                        @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- رسانه و لینک -->
+            <div class="section-header">
+                <h5><i class="fas fa-link"></i> رسانه و لینک</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ImageUrl)
+                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/announcements/..." })
+                        @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.LinkUrl)
+                        @Html.TextBoxFor(m => m.LinkUrl, new { @class = "form-control", placeholder = "لینک مقصد (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.LinkUrl, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تنظیمات نمایش -->
+            <div class="section-header">
+                <h5><i class="fas fa-cog"></i> تنظیمات نمایش</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Type)
+                        @Html.DropDownListFor(m => m.Type, new SelectList(new[] { 
+                            new SelectListItem { Text = "اطلاعات", Value = "info" },
+                            new SelectListItem { Text = "هشدار", Value = "warning" },
+                            new SelectListItem { Text = "موفقیت", Value = "success" },
+                            new SelectListItem { Text = "خطا", Value = "error" }
+                        }, "Value", "Text", Model.Type), new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Type, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.TargetAudience)
+                        @Html.DropDownListFor(m => m.TargetAudience, new SelectList(new[] { 
+                            new SelectListItem { Text = "همه", Value = "all" },
+                            new SelectListItem { Text = "بیماران", Value = "patients" },
+                            new SelectListItem { Text = "پزشکان", Value = "doctors" },
+                            new SelectListItem { Text = "کارکنان", Value = "staff" }
+                        }, "Value", "Text", Model.TargetAudience), new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.TargetAudience, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>وضعیت</label>
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                        </div>
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsImportant, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsImportant, new { @class = "form-check-label" })
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Content)
-                            @Html.TextAreaFor(m => m.Content, new { @class = "form-control", rows = "5", placeholder = "محتوا و متن اطلاعیه" })
-                            @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
+            <!-- تاریخ‌ها -->
+            <div class="section-header">
+                <h5><i class="fas fa-calendar-alt"></i> تاریخ شروع و پایان</h5>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.ImageUrl)
-                            @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/announcements/..." })
-                            @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.LinkUrl)
-                            @Html.TextBoxFor(m => m.LinkUrl, new { @class = "form-control", placeholder = "لینک مقصد (اختیاری)" })
-                            @Html.ValidationMessageFor(m => m.LinkUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "startDatePicker";
+                        ViewBag.PersianDatePickerName = "StartDate";
+                        ViewBag.PersianDatePickerValue = Model.StartDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "endDatePicker";
+                        ViewBag.PersianDatePickerName = "EndDate";
+                        ViewBag.PersianDatePickerValue = Model.EndDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ پایان";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ پایان (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه تا زمان غیرفعال شدن دستی فعال می‌ماند";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
+                </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Type)
-                            @Html.DropDownListFor(m => m.Type, new SelectList(new[] { 
-                                new SelectListItem { Text = "اطلاعات", Value = "info" },
-                                new SelectListItem { Text = "هشدار", Value = "warning" },
-                                new SelectListItem { Text = "موفقیت", Value = "success" },
-                                new SelectListItem { Text = "خطا", Value = "error" }
-                            }, "Value", "Text", Model.Type), new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.Type, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.TargetAudience)
-                            @Html.DropDownListFor(m => m.TargetAudience, new SelectList(new[] { 
-                                new SelectListItem { Text = "همه", Value = "all" },
-                                new SelectListItem { Text = "بیماران", Value = "patients" },
-                                new SelectListItem { Text = "پزشکان", Value = "doctors" },
-                                new SelectListItem { Text = "کارکنان", Value = "staff" }
-                            }, "Value", "Text", Model.TargetAudience), new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.TargetAudience, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number" })
-                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <div class="form-check mt-4">
-                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
-                            </div>
-                            <div class="form-check">
-                                @Html.CheckBoxFor(m => m.IsImportant, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.IsImportant, new { @class = "form-check-label" })
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.StartDate)
-                            @Html.TextBoxFor(m => m.StartDate, new { @class = "form-control", type = "datetime-local" })
-                            @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.EndDate)
-                            @Html.TextBoxFor(m => m.EndDate, new { @class = "form-control", type = "datetime-local" })
-                            @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> ذخیره تغییرات
-                    </button>
-                    <a href="@Url.Action("Index")" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> انصراف
-                    </a>
-                </div>
-            }
-        </div>
+            <!-- دکمه‌های عملیات -->
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره تغییرات
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+                <a href="@Url.Action("Details", new { id = Model.AnnouncementId })" class="btn btn-info">
+                    <i class="fas fa-eye"></i> مشاهده
+                </a>
+            </div>
+        }
     </div>
 </div>
 
+@section Scripts {
+    <!-- CKEditor Scripts -->
+    @Html.Partial("_CKEditorScript")
+    
+    <!-- Persian DatePicker Scripts (Component قابل استفاده مجدد) -->
+    @Html.Partial("_PersianDatePickerScript")
+    
+    <!-- Initialize CKEditor for Content -->
+    @{
+        ViewBag.CKEditorSelector = "#contentEditor";
+        ViewBag.CKEditorHeight = 300;
+    }
+    @Html.Partial("_CKEditorInit")
+}

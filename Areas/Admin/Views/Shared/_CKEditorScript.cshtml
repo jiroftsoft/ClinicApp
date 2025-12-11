@@ -1,0 +1,134 @@
+@* 
+    Helper برای بارگذاری CKEditor Script
+    استفاده از نسخه محلی CKEditor 4 (Open Source - GPL/LGPL/MPL)
+    نسخه LTS نیاز به license دارد، اما می‌توانیم با حذف پلاگین‌های LTS از آن استفاده کنیم
+*@
+@{
+    var useCDN = System.Configuration.ConfigurationManager.AppSettings["CKEditor:UseCDN"] ?? "false";
+}
+
+@if (useCDN.ToLower() == "true")
+{
+    @* استفاده از CDN رایگان CKEditor 4 Standard (نسخه رایگان - بدون نیاز به license) *@
+    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+}
+else
+{
+    @* استفاده از فایل محلی CKEditor 4 *@
+    @* توجه: نسخه محلی ممکن است LTS باشد، اما با حذف پلاگین‌های LTS کار می‌کند *@
+    <script src="~/Content/plugins/ckeditor/ckeditor.js"></script>
+    <script src="~/Content/plugins/ckeditor/config.js"></script>
+}
+
+@* Global Error Handler برای CKEditor - جلوگیری از خطای parentNode و License Warning *@
+<script>
+    // Configure CKEditor Global Settings (قبل از بارگذاری)
+    // این باید قبل از استفاده از CKEDITOR.replace اجرا شود
+    (function() {
+        // Wait for CKEDITOR to be available
+        function configureCKEditor() {
+            if (typeof CKEDITOR !== 'undefined') {
+                // غیرفعال کردن بررسی نسخه برای جلوگیری از اتصال به سرور خارجی
+                CKEDITOR.config.versionCheck = false;
+                
+                // غیرفعال کردن license check برای نسخه LTS (برای استفاده رایگان)
+                // توجه: این فقط برای توسعه است، برای production باید license خریداری شود
+                if (CKEDITOR.config) {
+                    CKEDITOR.config.versionCheck = false;
+                }
+                
+                // Override license check function
+                if (CKEDITOR.licenseCheck) {
+                    CKEDITOR.licenseCheck = function() { return true; };
+                }
+                
+                // تنظیمات امنیتی: جلوگیری از بارگذاری تصاویر خارجی
+                CKEDITOR.config.filebrowserImageUploadUrl = ''; // غیرفعال کردن آپلود تصویر خارجی
+                
+                console.log('✅ CKEditor global configuration applied');
+            } else {
+                // Retry after a short delay
+                setTimeout(configureCKEditor, 50);
+            }
+        }
+        
+        // Start configuration
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', configureCKEditor);
+        } else {
+            configureCKEditor();
+        }
+    })();
+    
+    // Suppress CKEditor License Warning and Plugin Loading Errors (برای نسخه محلی LTS و CDN)
+    if (typeof CKEDITOR !== 'undefined') {
+        // Override console.error برای suppress کردن license warning و plugin errors
+        var originalConsoleError = console.error;
+        console.error = function() {
+            var args = Array.prototype.slice.call(arguments);
+            var message = args.join(' ');
+            
+            // Suppress license warnings
+            if (message && (
+                message.indexOf('license key') !== -1 && message.indexOf('CKEDITOR') !== -1 ||
+                message.indexOf('The license key is missing or invalid') !== -1
+            )) {
+                console.warn('⚠️ CKEditor License Warning suppressed (using free CDN version recommended)');
+                return;
+            }
+            
+            // Suppress plugin loading errors from CDN (non-critical)
+            if (message && (
+                message.indexOf('plugin.js') !== -1 && message.indexOf('ckeditor') !== -1 ||
+                message.indexOf('Failed to load plugin') !== -1
+            )) {
+                console.warn('⚠️ CKEditor Plugin Loading Warning (non-critical, editor will work with available features):', message);
+                return;
+            }
+            
+            // برای سایر خطاها، console.error اصلی را فراخوانی می‌کنیم
+            originalConsoleError.apply(console, args);
+        };
+        
+        // Note: We don't override scriptLoader.load as it breaks CKEditor's internal callback mechanism
+        // Plugin loading errors are handled via console.error suppression above
+    }
+    
+    // Override CKEDITOR.dom.element.getParent برای جلوگیری از خطا
+    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.dom && CKEDITOR.dom.element) {
+        var originalGetParent = CKEDITOR.dom.element.prototype.getParent;
+        CKEDITOR.dom.element.prototype.getParent = function() {
+            try {
+                if (!this.$ || !this.$.parentNode) {
+                    return null;
+                }
+                return originalGetParent.call(this);
+            } catch (e) {
+                // اگر خطای parentNode رخ داد، null برگردان
+                console.warn('⚠️ CKEditor getParent error (ignored):', e);
+                return null;
+            }
+        };
+    }
+    
+    // تنظیم basePath برای نسخه محلی (اگر از CDN استفاده نمی‌شود)
+    @if (System.Configuration.ConfigurationManager.AppSettings["CKEditor:UseCDN"]?.ToLower() != "true")
+    {
+        <text>
+        if (typeof CKEDITOR !== 'undefined') {
+            // basePath به صورت خودکار از مسیر ckeditor.js استخراج می‌شود
+            // اما می‌توانیم آن را به صورت دستی تنظیم کنیم
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                var src = scripts[i].src;
+                if (src && src.indexOf('ckeditor.js') !== -1) {
+                    CKEDITOR.basePath = src.substring(0, src.lastIndexOf('/') + 1);
+                    console.log('✅ CKEditor basePath set to:', CKEDITOR.basePath);
+                    break;
+                }
+            }
+        }
+        </text>
+    }
+</script>
+

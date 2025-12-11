@@ -32,7 +32,7 @@
                                                 <strong>@announcement.Title</strong>
                                                 @if (!string.IsNullOrEmpty(announcement.Content))
                                                 {
-                                                    <span> - @(announcement.Content.Length > 100 ? announcement.Content.Substring(0, 100) + "..." : announcement.Content)</span>
+                                                    <span> - @ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(announcement.Content, 100)</span>
                                                 }
                                                 @if (!string.IsNullOrEmpty(announcement.LinkUrl))
                                                 {

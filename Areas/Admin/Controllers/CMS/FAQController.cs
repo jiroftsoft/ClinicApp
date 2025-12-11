@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -14,7 +15,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class FAQController : Controller
+    public class FAQController : BaseCMSController
     {
         private readonly IFAQService _faqService;
         private readonly ICurrentUserService _currentUserService;
@@ -51,24 +52,60 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 var result = await _faqService.GetFAQsAsync(searchModel);
 
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست FAQ: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(new PagedResult<FAQIndexViewModel>(new System.Collections.Generic.List<FAQIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
+                    
+                    var errorPageViewModel = new FAQIndexPageViewModel
+                    {
+                        PagedResult = new PagedResult<FAQIndexViewModel>(new System.Collections.Generic.List<FAQIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize),
+                        Categories = categories.Select(c => new SelectListItem
+                        {
+                            Value = c.Category,
+                            Text = c.DisplayName
+                        }).ToList()
+                    };
+                    
+                    return View(GetViewPath("Index"), errorPageViewModel);
                 }
 
-                // بارگذاری دسته‌بندی‌ها برای فیلتر
-                var categoriesResult = await _faqService.GetCategoriesAsync();
-                ViewBag.Categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                var pageViewModel = new FAQIndexPageViewModel
+                {
+                    PagedResult = result.Data,
+                    Categories = categories.Select(c => new SelectListItem
+                    {
+                        Value = c.Category,
+                        Text = c.DisplayName
+                    }).ToList()
+                };
 
-                return View(result.Data);
+                return View(GetViewPath("Index"), pageViewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست FAQ");
                 TempData["Error"] = "خطا در بارگذاری لیست FAQ";
-                return View(new PagedResult<FAQIndexViewModel>(new System.Collections.Generic.List<FAQIndexViewModel>(), 0, 1, 10));
+                
+                // Strongly-Typed: ایجاد ViewModel حتی در صورت Exception
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                
+                var errorPageViewModel = new FAQIndexPageViewModel
+                {
+                    PagedResult = new PagedResult<FAQIndexViewModel>(new System.Collections.Generic.List<FAQIndexViewModel>(), 0, 1, 10),
+                    Categories = categories.Select(c => new SelectListItem
+                    {
+                        Value = c.Category,
+                        Text = c.DisplayName
+                    }).ToList()
+                };
+                
+                return View(GetViewPath("Index"), errorPageViewModel);
             }
         }
 
@@ -89,7 +126,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
@@ -104,19 +141,28 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         #region Create
 
         [HttpGet]
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
             try
             {
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                
                 var model = new FAQCreateEditViewModel
                 {
                     IsActive = true,
                     IsFeatured = false,
                     DisplayOrder = 0,
-                    Category = "general"
+                    Category = "general",
+                    Categories = categories.Select(c => new SelectListItem
+                    {
+                        Value = c.Category,
+                        Text = c.DisplayName
+                    }).ToList()
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
@@ -135,9 +181,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست ایجاد FAQ جدید توسط کاربر {UserId}", _currentUserService.UserId);
 
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                model.Categories = categories.Select(c => new SelectListItem
+                {
+                    Value = c.Category,
+                    Text = c.DisplayName,
+                    Selected = c.Category == model.Category
+                }).ToList();
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _faqService.CreateFAQAsync(model);
@@ -146,7 +202,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 {
                     _logger.Warning("خطا در ایجاد FAQ: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 _logger.Information("FAQ با موفقیت ایجاد شد - FAQId: {FAQId}", result.Data.FAQId);
@@ -157,7 +213,18 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در ایجاد FAQ");
                 TempData["Error"] = "خطا در ایجاد FAQ";
-                return View(model);
+                
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel در صورت Exception
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                model.Categories = categories.Select(c => new SelectListItem
+                {
+                    Value = c.Category,
+                    Text = c.DisplayName,
+                    Selected = c.Category == model.Category
+                }).ToList();
+                
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -178,7 +245,17 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                result.Data.Categories = categories.Select(c => new SelectListItem
+                {
+                    Value = c.Category,
+                    Text = c.DisplayName,
+                    Selected = c.Category == result.Data.Category
+                }).ToList();
+
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
@@ -197,9 +274,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست به‌روزرسانی FAQ - FAQId: {FAQId}", model.FAQId);
 
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                model.Categories = categories.Select(c => new SelectListItem
+                {
+                    Value = c.Category,
+                    Text = c.DisplayName,
+                    Selected = c.Category == model.Category
+                }).ToList();
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _faqService.UpdateFAQAsync(model);
@@ -208,7 +295,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 {
                     _logger.Warning("خطا در به‌روزرسانی FAQ: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 _logger.Information("FAQ با موفقیت به‌روزرسانی شد - FAQId: {FAQId}", model.FAQId);
@@ -219,7 +306,18 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی FAQ - FAQId: {FAQId}", model.FAQId);
                 TempData["Error"] = "خطا در به‌روزرسانی FAQ";
-                return View(model);
+                
+                // Strongly-Typed: بارگذاری دسته‌بندی‌ها در ViewModel در صورت Exception
+                var categoriesResult = await _faqService.GetCategoriesAsync();
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                model.Categories = categories.Select(c => new SelectListItem
+                {
+                    Value = c.Category,
+                    Text = c.DisplayName,
+                    Selected = c.Category == model.Category
+                }).ToList();
+                
+                return View(GetViewPath("Edit"), model);
             }
         }
 

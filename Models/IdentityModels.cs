@@ -149,6 +149,8 @@ namespace ClinicApp.Models
 
         // ========== موجودیت‌های جدید برای سیستم مدیریت محتوا (CMS) ==========
         public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<BlogPostComment> BlogPostComments { get; set; }
+        public DbSet<BlogPostLike> BlogPostLikes { get; set; }
         public DbSet<Slider> Sliders { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<Testimonial> Testimonials { get; set; }

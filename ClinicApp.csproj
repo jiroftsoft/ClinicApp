@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props" Condition="Exists('packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props')" />
   <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -215,6 +216,9 @@
       <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json.Bson, Version=1.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.Bson.1.0.2\lib\net45\Newtonsoft.Json.Bson.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="QuestPDF, Version=2025.7.0.0, Culture=neutral, PublicKeyToken=0f3c2b2315ff52c8, processorArchitecture=MSIL">
       <HintPath>packages\QuestPDF.2025.7.0\lib\netstandard2.0\QuestPDF.dll</HintPath>
@@ -328,6 +332,9 @@
       <HintPath>packages\System.Memory.Data.1.0.2\lib\net461\System.Memory.Data.dll</HintPath>
     </Reference>
     <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http.Formatting, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.Client.6.0.0\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
@@ -376,6 +383,12 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.AspNet.WebPages.3.3.0\lib\net45\System.Web.Helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.Core.5.3.0\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.WebHost, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.WebHost.5.3.0\lib\net45\System.Web.Http.WebHost.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Mvc, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.AspNet.Mvc.5.3.0\lib\net45\System.Web.Mvc.dll</HintPath>
@@ -454,11 +467,14 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="App_Start\UnityMvcActivator.cs" />
+    <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\AppointmentAvailabilityController.cs" />
     <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AnnouncementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\BaseCMSController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\BlogPostCommentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\ClinicWorkingHoursController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\EmergencyContactController.cs" />
@@ -522,6 +538,7 @@
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicBankAccountController.cs" />
+    <Compile Include="Controllers\BlogPostCommentApiController.cs" />
     <Compile Include="Controllers\FAQController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\HealthTipController.cs" />
@@ -555,6 +572,7 @@
     <Compile Include="Controllers\Reception\ReceptionServiceManagementController.cs" />
     <Compile Include="Controllers\Reception\ReceptionStatisticsController.cs" />
     <Compile Include="Controllers\Reception\ReceptionTriageIntegrationController.cs" />
+    <Compile Include="Controllers\RedirectController.cs" />
     <Compile Include="Controllers\TokenTestController.cs" />
     <Compile Include="Controllers\Triage\TriageController.cs" />
     <Compile Include="Controllers\Triage\TriageDashboardController.cs" />
@@ -586,6 +604,8 @@
     <Compile Include="Helpers\AgeCalculationHelper.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
+    <Compile Include="Helpers\CKEditorHelper.cs" />
+    <Compile Include="Helpers\ControllerExtensions.cs" />
     <Compile Include="Helpers\CultureHelper.cs" />
     <Compile Include="Helpers\DynamicSqlConfiguration.cs" />
     <Compile Include="Helpers\DynamicSqlHelper.cs" />
@@ -597,6 +617,7 @@
     <Compile Include="Helpers\LoggingConfiguration.cs" />
     <Compile Include="Helpers\LoggingHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
+    <Compile Include="Helpers\NotificationHelper.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\ReceptionAjaxHelper.cs" />
@@ -605,6 +626,7 @@
     <Compile Include="Helpers\Security\SecurityLogger.cs" />
     <Compile Include="Helpers\Security\SensitiveDataMaskingHelper.cs" />
     <Compile Include="Helpers\ServiceResultExtensions.cs" />
+    <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
@@ -653,6 +675,10 @@
     <Compile Include="Interfaces\ClinicAdmin\ScheduleOptimization\IWorkloadAnalyzer.cs" />
     <Compile Include="Interfaces\CMS\IAnnouncementRepository.cs" />
     <Compile Include="Interfaces\CMS\IAnnouncementService.cs" />
+    <Compile Include="Interfaces\CMS\IBlogPostCommentRepository.cs" />
+    <Compile Include="Interfaces\CMS\IBlogPostCommentService.cs" />
+    <Compile Include="Interfaces\CMS\IBlogPostLikeRepository.cs" />
+    <Compile Include="Interfaces\CMS\IBlogPostLikeService.cs" />
     <Compile Include="Interfaces\CMS\IBlogPostRepository.cs" />
     <Compile Include="Interfaces\CMS\IBlogPostService.cs" />
     <Compile Include="Interfaces\CMS\IClinicWorkingHoursRepository.cs" />
@@ -681,6 +707,7 @@
     <Compile Include="Interfaces\IExternalInquiryService.cs" />
     <Compile Include="Interfaces\IFactorSettingService.cs" />
     <Compile Include="Interfaces\IHomePageService.cs" />
+    <Compile Include="Interfaces\IImageUploadService.cs" />
     <Compile Include="Interfaces\IInsuranceTariffCalculationService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
@@ -791,6 +818,10 @@
     <Compile Include="Migrations\202512101436208_CMSTables14040919.Designer.cs">
       <DependentUpon>202512101436208_CMSTables14040919.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512110702081_BlogPostLikeSystem.cs" />
+    <Compile Include="Migrations\202512110702081_BlogPostLikeSystem.Designer.cs">
+      <DependentUpon>202512110702081_BlogPostLikeSystem.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -800,6 +831,8 @@
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Models\Entities\CMS\Announcement.cs" />
     <Compile Include="Models\Entities\CMS\BlogPost.cs" />
+    <Compile Include="Models\Entities\CMS\BlogPostComment.cs" />
+    <Compile Include="Models\Entities\CMS\BlogPostLike.cs" />
     <Compile Include="Models\Entities\CMS\ClinicWorkingHours.cs" />
     <Compile Include="Models\Entities\CMS\EmergencyContact.cs" />
     <Compile Include="Models\Entities\CMS\FAQ.cs" />
@@ -813,6 +846,8 @@
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\CMS\AnnouncementRepository.cs" />
+    <Compile Include="Repositories\CMS\BlogPostCommentRepository.cs" />
+    <Compile Include="Repositories\CMS\BlogPostLikeRepository.cs" />
     <Compile Include="Repositories\CMS\BlogPostRepository.cs" />
     <Compile Include="Repositories\CMS\ClinicWorkingHoursRepository.cs" />
     <Compile Include="Repositories\CMS\EmergencyContactRepository.cs" />
@@ -1161,6 +1196,8 @@
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Validators\OptimizationRequestValidator.cs" />
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Validators\ScheduleOptimizationValidator.cs" />
     <Compile Include="Services\CMS\AnnouncementService.cs" />
+    <Compile Include="Services\CMS\BlogPostCommentService.cs" />
+    <Compile Include="Services\CMS\BlogPostLikeService.cs" />
     <Compile Include="Services\CMS\BlogPostService.cs" />
     <Compile Include="Services\CMS\ClinicWorkingHoursService.cs" />
     <Compile Include="Services\CMS\EmergencyContactService.cs" />
@@ -1174,6 +1211,7 @@
     <Compile Include="Services\CMS\TestimonialService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\HomePageService.cs" />
+    <Compile Include="Services\ImageUploadService.cs" />
     <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
@@ -1352,6 +1390,7 @@
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
     <Compile Include="ViewModels\CMS\AnnouncementViewModels.cs" />
+    <Compile Include="ViewModels\CMS\BlogPostCommentViewModels.cs" />
     <Compile Include="ViewModels\CMS\BlogPostViewModels.cs" />
     <Compile Include="ViewModels\CMS\ClinicWorkingHoursViewModels.cs" />
     <Compile Include="ViewModels\CMS\EmergencyContactViewModels.cs" />
@@ -1730,6 +1769,7 @@
     <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
+    <Content Include="Content\js\persian-datepicker-manager.js" />
     <Content Include="Content\medical-forms.css" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
     <Content Include="Content\plugins\chartjs\chart.umd.min.js" />
@@ -4132,6 +4172,12 @@
     <Content Include="Areas\Admin\Views\CMS\MedicalEquipment\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\MedicalEquipment\Index.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\MedicalEquipment\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_CKEditorInit.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_CKEditorScript.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PersianDatePicker.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PersianDatePickerScript.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\BlogPostComment\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\BlogPostComment\_CommentsList.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -4763,6 +4809,262 @@
     <Content Include="Content\plugins\DataTables\js\responsive.semanticui.min.js" />
     <Content Include="Scripts\chart.js" />
     <Content Include="Scripts\chart.min.js" />
+    <Content Include="Content\plugins\ckeditor\adapters\jquery.js" />
+    <Content Include="Content\plugins\ckeditor\ckeditor.js" />
+    <Content Include="Content\plugins\ckeditor\config.js" />
+    <Content Include="Content\plugins\ckeditor\contents.css" />
+    <Content Include="Content\plugins\ckeditor\lang\af.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ar.js" />
+    <Content Include="Content\plugins\ckeditor\lang\az.js" />
+    <Content Include="Content\plugins\ckeditor\lang\bg.js" />
+    <Content Include="Content\plugins\ckeditor\lang\bn.js" />
+    <Content Include="Content\plugins\ckeditor\lang\bs.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ca.js" />
+    <Content Include="Content\plugins\ckeditor\lang\cs.js" />
+    <Content Include="Content\plugins\ckeditor\lang\cy.js" />
+    <Content Include="Content\plugins\ckeditor\lang\da.js" />
+    <Content Include="Content\plugins\ckeditor\lang\de-ch.js" />
+    <Content Include="Content\plugins\ckeditor\lang\de.js" />
+    <Content Include="Content\plugins\ckeditor\lang\el.js" />
+    <Content Include="Content\plugins\ckeditor\lang\en-au.js" />
+    <Content Include="Content\plugins\ckeditor\lang\en-ca.js" />
+    <Content Include="Content\plugins\ckeditor\lang\en-gb.js" />
+    <Content Include="Content\plugins\ckeditor\lang\en.js" />
+    <Content Include="Content\plugins\ckeditor\lang\eo.js" />
+    <Content Include="Content\plugins\ckeditor\lang\es-mx.js" />
+    <Content Include="Content\plugins\ckeditor\lang\es.js" />
+    <Content Include="Content\plugins\ckeditor\lang\et.js" />
+    <Content Include="Content\plugins\ckeditor\lang\eu.js" />
+    <Content Include="Content\plugins\ckeditor\lang\fa.js" />
+    <Content Include="Content\plugins\ckeditor\lang\fi.js" />
+    <Content Include="Content\plugins\ckeditor\lang\fo.js" />
+    <Content Include="Content\plugins\ckeditor\lang\fr-ca.js" />
+    <Content Include="Content\plugins\ckeditor\lang\fr.js" />
+    <Content Include="Content\plugins\ckeditor\lang\gl.js" />
+    <Content Include="Content\plugins\ckeditor\lang\gu.js" />
+    <Content Include="Content\plugins\ckeditor\lang\he.js" />
+    <Content Include="Content\plugins\ckeditor\lang\hi.js" />
+    <Content Include="Content\plugins\ckeditor\lang\hr.js" />
+    <Content Include="Content\plugins\ckeditor\lang\hu.js" />
+    <Content Include="Content\plugins\ckeditor\lang\id.js" />
+    <Content Include="Content\plugins\ckeditor\lang\is.js" />
+    <Content Include="Content\plugins\ckeditor\lang\it.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ja.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ka.js" />
+    <Content Include="Content\plugins\ckeditor\lang\km.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ko.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ku.js" />
+    <Content Include="Content\plugins\ckeditor\lang\lt.js" />
+    <Content Include="Content\plugins\ckeditor\lang\lv.js" />
+    <Content Include="Content\plugins\ckeditor\lang\mk.js" />
+    <Content Include="Content\plugins\ckeditor\lang\mn.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ms.js" />
+    <Content Include="Content\plugins\ckeditor\lang\nb.js" />
+    <Content Include="Content\plugins\ckeditor\lang\nl.js" />
+    <Content Include="Content\plugins\ckeditor\lang\no.js" />
+    <Content Include="Content\plugins\ckeditor\lang\oc.js" />
+    <Content Include="Content\plugins\ckeditor\lang\pl.js" />
+    <Content Include="Content\plugins\ckeditor\lang\pt-br.js" />
+    <Content Include="Content\plugins\ckeditor\lang\pt.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ro.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ru.js" />
+    <Content Include="Content\plugins\ckeditor\lang\si.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sk.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sl.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sq.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sr-latn.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sr.js" />
+    <Content Include="Content\plugins\ckeditor\lang\sv.js" />
+    <Content Include="Content\plugins\ckeditor\lang\th.js" />
+    <Content Include="Content\plugins\ckeditor\lang\tr.js" />
+    <Content Include="Content\plugins\ckeditor\lang\tt.js" />
+    <Content Include="Content\plugins\ckeditor\lang\ug.js" />
+    <Content Include="Content\plugins\ckeditor\lang\uk.js" />
+    <Content Include="Content\plugins\ckeditor\lang\vi.js" />
+    <Content Include="Content\plugins\ckeditor\lang\zh-cn.js" />
+    <Content Include="Content\plugins\ckeditor\lang\zh.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\a11yhelp.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\af.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ar.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\az.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\bg.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ca.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\cs.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\cy.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\da.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\de-ch.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\de.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\el.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\en-au.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\en-gb.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\en.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\eo.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\es-mx.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\es.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\et.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\eu.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\fa.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\fi.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\fo.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\fr-ca.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\fr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\gl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\gu.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\he.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\hi.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\hr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\hu.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\id.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\it.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ja.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\km.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ko.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ku.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\lt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\lv.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\mk.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\mn.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\nb.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\nl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\no.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\oc.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\pl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\pt-br.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\pt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ro.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ru.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\si.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sk.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sq.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sr-latn.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\sv.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\th.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\tr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\tt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\ug.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\uk.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\vi.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\zh-cn.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\zh.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\a11yhelp\dialogs\lang\_translationstatus.txt" />
+    <Content Include="Content\plugins\ckeditor\plugins\about\dialogs\about.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\about\dialogs\hidpi\logo_ckeditor.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\about\dialogs\logo_ckeditor.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\clipboard\dialogs\paste.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\dialog\dialogDefinition.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\dialog\styles\dialog.css" />
+    <Content Include="Content\plugins\ckeditor\plugins\icons.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\icons_hidpi.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\image\dialogs\image.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\image\images\noimage.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\link\dialogs\anchor.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\link\dialogs\link.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\link\images\anchor.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\link\images\hidpi\anchor.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\magicline\images\hidpi\icon-rtl.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\magicline\images\hidpi\icon.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\magicline\images\icon-rtl.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\magicline\images\icon.png" />
+    <Content Include="Content\plugins\ckeditor\plugins\pastefromgdocs\filter\default.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\pastefromlibreoffice\filter\default.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\pastefromword\filter\default.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\pastetools\filter\common.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\pastetools\filter\image.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\dialogs\dialog.css" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\dialogs\options.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\dialogs\toolbar.css" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\skins\moono-lisa\scayt.css" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\af.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ar.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\az.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\bg.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ca.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\cs.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\cy.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\da.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\de-ch.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\de.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\el.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\en-au.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\en-ca.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\en-gb.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\en.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\eo.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\es-mx.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\es.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\et.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\eu.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\fa.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\fi.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\fr-ca.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\fr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\gl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\he.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\hr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\hu.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\id.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\it.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ja.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\km.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ko.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ku.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\lt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\lv.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\nb.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\nl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\no.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\oc.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\pl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\pt-br.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\pt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ro.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ru.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\si.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sk.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sl.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sq.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sr-latn.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\sv.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\th.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\tr.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\tt.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\ug.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\uk.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\vi.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\zh-cn.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\zh.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\lang\_translationstatus.txt" />
+    <Content Include="Content\plugins\ckeditor\plugins\specialchar\dialogs\specialchar.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\tableselection\styles\tableselection.css" />
+    <Content Include="Content\plugins\ckeditor\plugins\tabletools\dialogs\tableCell.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\table\dialogs\table.js" />
+    <Content Include="Content\plugins\ckeditor\plugins\widget\images\handle.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\dialog.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\dialog_ie.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\dialog_ie8.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\dialog_iequirks.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\editor.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\editor_gecko.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\editor_ie.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\editor_ie8.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\editor_iequirks.css" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\icons.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\icons_hidpi.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\arrow.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\close.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\hidpi\close.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\hidpi\lock-open.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\hidpi\lock.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\hidpi\refresh.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\lock-open.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\lock.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\refresh.png" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\spinner.gif" />
+    <Content Include="Content\plugins\ckeditor\styles.js" />
+    <Content Include="Content\plugins\ckeditor\vendor\promise.js" />
     <Content Include="Scripts\dropzone\basic.css" />
     <Content Include="Scripts\dropzone\basic.min.css" />
     <Content Include="Scripts\dropzone\dropzone-amd-module.js" />
@@ -4845,6 +5147,16 @@
     <Content Include="reports\contracts-knowledge-update.json" />
     <Content Include="reports\contracts-scan.json" />
     <Content Include="reports\preflight-check.json" />
+    <Content Include="Content\plugins\ckeditor\skins\moono-lisa\readme.md" />
+    <Content Include="Content\plugins\ckeditor\SECURITY.md" />
+    <Content Include="Content\plugins\ckeditor\README.md" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\README.md" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\LICENSE.md" />
+    <Content Include="Content\plugins\ckeditor\plugins\scayt\CHANGELOG.md" />
+    <Content Include="Content\plugins\ckeditor\package.json" />
+    <Content Include="Content\plugins\ckeditor\LICENSE.md" />
+    <Content Include="Content\plugins\ckeditor\CHANGES.md" />
+    <Content Include="Content\plugins\ckeditor\bender-runner.config.json" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
@@ -4922,6 +5234,195 @@
     <Content Include="Scripts\reception\reception-toastr-service.js" />
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
+    <Content Include="Content\plugins\tinymce\icons\default\icons.js" />
+    <Content Include="Content\plugins\tinymce\icons\default\icons.min.js" />
+    <Content Include="Content\plugins\tinymce\models\dom\model.js" />
+    <Content Include="Content\plugins\tinymce\models\dom\model.min.js" />
+    <Content Include="Content\plugins\tinymce\notices.txt" />
+    <Content Include="Content\plugins\tinymce\plugins\accordion\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\accordion\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\advlist\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\advlist\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\anchor\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\anchor\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autolink\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autolink\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autoresize\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autoresize\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autosave\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\autosave\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\charmap\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\charmap\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\codesample\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\codesample\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\code\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\code\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\directionality\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\directionality\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\js\emojiimages.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\js\emojiimages.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\js\emojis.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\js\emojis.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\emoticons\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\fullscreen\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\fullscreen\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ar.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\bg-BG.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\bg_BG.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ca.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\cs.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\da.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\de.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\el.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\en.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\es.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\eu.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\fa.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\fi.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\fr-FR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\fr_FR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\he-IL.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\he_IL.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\hi.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\hr.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\hu-HU.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\hu_HU.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\id.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\it.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ja.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\kk.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ko-KR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ko_KR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ms.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\nb-NO.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\nb_NO.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\nl.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\pl.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\pt-BR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\pt-PT.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\pt_BR.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\pt_PT.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ro.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\ru.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\sk.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\sl-SI.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\sl_SI.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\sv-SE.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\sv_SE.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\th-TH.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\th_TH.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\tr.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\uk.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\vi.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\zh-CN.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\zh-TW.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\zh_CN.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\js\i18n\keynav\zh_TW.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\help\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\image\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\image\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\importcss\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\importcss\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\insertdatetime\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\insertdatetime\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\link\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\link\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\lists\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\lists\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\media\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\media\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\nonbreaking\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\nonbreaking\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\pagebreak\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\pagebreak\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\preview\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\preview\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\quickbars\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\quickbars\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\save\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\save\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\searchreplace\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\searchreplace\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\table\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\table\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\visualblocks\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\visualblocks\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\visualchars\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\visualchars\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\plugins\wordcount\plugin.js" />
+    <Content Include="Content\plugins\tinymce\plugins\wordcount\plugin.min.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\dark\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\dark\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\dark\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\default\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\default\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\default\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\document\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\document\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\document\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5-dark\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5-dark\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5-dark\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\tinymce-5\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\writer\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\content\writer\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\content\writer\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.inline.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.inline.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.inline.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.shadowdom.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.shadowdom.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.shadowdom.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.inline.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.inline.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.inline.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.shadowdom.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.shadowdom.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\oxide\skin.shadowdom.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.inline.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.inline.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.inline.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.shadowdom.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.shadowdom.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.shadowdom.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.inline.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.inline.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.inline.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.min.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.shadowdom.css" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.shadowdom.js" />
+    <Content Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.shadowdom.min.css" />
+    <Content Include="Content\plugins\tinymce\themes\silver\theme.js" />
+    <Content Include="Content\plugins\tinymce\themes\silver\theme.min.js" />
+    <Content Include="Content\plugins\tinymce\tinymce.js" />
+    <Content Include="Content\plugins\tinymce\tinymce.min.js" />
     <Content Include="Scripts\toastr.js" />
     <Content Include="Scripts\toastr.min.js" />
     <Content Include="Scripts\triage\triage-dashboard.js" />
@@ -5069,6 +5570,10 @@
     <Content Include="Views\Shared\_EmergencyContactsHeader.cshtml" />
     <Content Include="Views\MedicalEquipment\Index.cshtml" />
     <Content Include="Views\MedicalEquipment\Details.cshtml" />
+    <Content Include="Content\plugins\tinymce\license.md" />
+    <Content Include="Content\plugins\tinymce\langs\README.md" />
+    <Content Include="Views\BlogPost\_CommentSection.cshtml" />
+    <Content Include="Views\BlogPost\_LikeSection.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -5281,9 +5786,62 @@
     <EmbeddedResource Include="Migrations\202512101436208_CMSTables14040919.resx">
       <DependentUpon>202512101436208_CMSTables14040919.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512110702081_BlogPostLikeSystem.resx">
+      <DependentUpon>202512110702081_BlogPostLikeSystem.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionTexts.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\dark\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\dark\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\default\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\default\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\document\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\document\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\tinymce-5-dark\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\tinymce-5-dark\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\tinymce-5\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\tinymce-5\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\writer\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\content\writer\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.inline.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.inline.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.shadowdom.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.shadowdom.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide-dark\skin.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\content.inline.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\content.inline.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\skin.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\skin.shadowdom.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\skin.shadowdom.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\oxide\skin.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.inline.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.inline.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.shadowdom.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.shadowdom.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5-dark\skin.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.inline.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.inline.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\content.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.shadowdom.min.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.shadowdom.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\skins\ui\tinymce-5\skin.ts" />
+    <TypeScriptCompile Include="Content\plugins\tinymce\tinymce.d.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -5326,6 +5884,9 @@
     <Error Condition="!Exists('packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\net472\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\net472\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.targets'))" />
     <Error Condition="!Exists('packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets'))" />
     <Error Condition="!Exists('packages\QuestPDF.2025.7.0\build\net4\QuestPDF.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\QuestPDF.2025.7.0\build\net4\QuestPDF.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props'))" />
+    <Error Condition="!Exists('packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.targets'))" />
+    <Error Condition="!Exists('packages\TinyMCE.8.3.0\build\TinyMCE.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\TinyMCE.8.3.0\build\TinyMCE.targets'))" />
   </Target>
   <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.targets" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.targets')" />
   <Import Project="packages\Microsoft.Data.SqlClient.SNI.5.2.0\build\net462\Microsoft.Data.SqlClient.SNI.targets" Condition="Exists('packages\Microsoft.Data.SqlClient.SNI.5.2.0\build\net462\Microsoft.Data.SqlClient.SNI.targets')" />
@@ -5333,6 +5894,8 @@
   <Import Project="packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\net472\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.targets" Condition="Exists('packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\net472\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.targets')" />
   <Import Project="packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets" Condition="Exists('packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" />
   <Import Project="packages\QuestPDF.2025.7.0\build\net4\QuestPDF.targets" Condition="Exists('packages\QuestPDF.2025.7.0\build\net4\QuestPDF.targets')" />
+  <Import Project="packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.targets" Condition="Exists('packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.targets')" />
+  <Import Project="packages\TinyMCE.8.3.0\build\TinyMCE.targets" Condition="Exists('packages\TinyMCE.8.3.0\build\TinyMCE.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

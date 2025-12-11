@@ -18,7 +18,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:5000 ws://localhost:5000; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <!-- X-Frame-Options should be set in HTTP headers, not in meta tags -->
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -43,9 +43,70 @@
     <link href="~/Content/css/notification-system.css" rel="stylesheet" />
     @RenderSection("styles", required: false)
 
-    <!-- Medical Environment: Icon Fallback CSS -->
+    <!-- Vazir Font for CMS Modules -->
     <style>
-        /* Fallback Icons for Medical Environment */
+        /* Vazir Font Face Definitions */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Vazir.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Medium.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('/Content/Fonts/vazirmatn/Vazir-Light.woff2') format('woff2'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Light.woff') format('woff'),
+                 url('/Content/Fonts/vazirmatn/Vazir-Light.ttf') format('truetype');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* Apply Vazir Font to CMS Modules */
+        body,
+        .container-fluid,
+        .card,
+        .form-control,
+        .btn,
+        .table,
+        .alert,
+        .badge,
+        h1, h2, h3, h4, h5, h6,
+        label,
+        input,
+        textarea,
+        select,
+        .form-group,
+        .navbar,
+        .sidebar {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important;
+        }
+
+        /* Medical Environment: Icon Fallback CSS */
         .fa-medical-kit:before, .fas.fa-medical-kit:before {
             content: "🏥";
         }
@@ -93,7 +154,9 @@
         }
     </style>
 
-    <!-- Preload Font -->
+    <!-- Preload Vazir Font -->
+    <link rel="preload" href="~/Content/Fonts/vazirmatn/Vazir.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="~/Content/Fonts/vazirmatn/Vazir-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <!-- حذف Google Fonts برای سادگی و امنیت Admin Panel -->
     <!-- Schema.org -->
     <script type="application/ld+json">
@@ -279,6 +342,17 @@
     <!-- jsDelivr (می‌گیرد آخرین نسخه) -->
     <script src="~/Content/plugins/chartjs/chart.umd.min.js"></script>
     <!-- یا unpkg -->
+    
+    <!-- Toastr Notification Library -->
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    
+    <!-- SweetAlert2 Library -->
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    
+    <!-- Admin Notification Service -->
+    <script src="~/Content/js/admin-notification-service.js"></script>
+    
     <!-- Admin Layout Scripts -->
     <script src="~/Content/js/admin-layout.js" defer></script>
 
@@ -379,6 +453,26 @@
         });
     </script>
 
+    <!-- Handle TempData Notifications -->
+    <script>
+        $(document).ready(function() {
+            // نمایش پیام‌های TempData با استفاده از NotificationHelper
+            @{
+                var notification = ClinicApp.Helpers.NotificationHelper.GetFirstAvailable(TempData);
+            }
+            @if (notification != null)
+            {
+                <text>
+                if (typeof AdminNotification !== 'undefined') {
+                    AdminNotification.@(notification.Type.ToString().ToLower())(
+                        '@Html.Raw(HttpUtility.JavaScriptStringEncode(notification.Message))',
+                        '@Html.Raw(HttpUtility.JavaScriptStringEncode(notification.Title))'
+                    );
+                }
+                </text>
+            }
+        });
+    </script>
   
     @RenderSection("Scripts", required: false)
 </body>

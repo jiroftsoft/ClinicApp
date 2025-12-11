@@ -1,0 +1,198 @@
+@* 
+    Helper Script برای Initialize کردن CKEditor 4
+    پارامترها:
+    - selector: ID یا selector عنصر textarea (مثلاً "#answerEditor" یا "answerEditor")
+    - height: ارتفاع editor (پیش‌فرض: 300)
+*@
+@{
+    var selector = ViewBag.CKEditorSelector ?? "#editor";
+    var height = ViewBag.CKEditorHeight ?? 300;
+    // حذف # از selector برای CKEditor 4
+    var editorId = selector.StartsWith("#") ? selector.Substring(1) : selector;
+    // تشخیص استفاده از CDN از تنظیمات
+    var useCDN = System.Configuration.ConfigurationManager.AppSettings["CKEditor:UseCDN"] ?? "false";
+    var isCDN = useCDN.ToLower() == "true";
+}
+
+<script>
+    // Initialize CKEditor 4 for medical environment - RTL & Persian
+    (function() {
+        function initializeCKEditor() {
+            if (typeof CKEDITOR !== 'undefined') {
+                var editorElement = document.querySelector('@selector');
+                if (editorElement) {
+                    try {
+                        // پیکربندی سفارشی برای این instance
+                        var customConfig = {
+                            language: 'fa',
+                            contentsLangDirection: 'rtl',
+                            height: @height,
+                            width: '100%',
+                            uiColor: '#f5f5f5',
+                            enterMode: CKEDITOR.ENTER_P,
+                            shiftEnterMode: CKEDITOR.ENTER_BR,
+                            clipboard_handleImages: false,
+                            resize_enabled: true,
+                            allowedContent: true,
+                            autoParagraph: true,
+                            image_previewText: ' ',
+                            linkShowTargetTab: true,
+                            linkShowAdvancedTab: true,
+                            removePlugins: 'elementspath,exportpdf', // حذف exportpdf که نیاز به license دارد
+                            versionCheck: false, // غیرفعال کردن بررسی نسخه برای جلوگیری از اتصال به سرور خارجی
+                            contentsCss: [
+                                'body { direction: rtl; text-align: right; font-family: Tahoma, Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                                'p { margin: 0 0 1em 0; }',
+                                'h1, h2, h3, h4, h5, h6 { margin: 1em 0 0.5em 0; font-weight: bold; }',
+                                'ul, ol { margin: 0.5em 0; padding-right: 2em; }',
+                                'table { border-collapse: collapse; width: 100%; margin: 1em 0; }',
+                                'table td, table th { border: 1px solid #ddd; padding: 8px; text-align: right; }'
+                            ],
+                            // تنظیمات اضافی برای فارسی
+                            forcePasteAsPlainText: false, // اجازه paste با فرمت
+                            pasteFromWordPromptCleanup: false, // عدم نمایش پیام تمیز کردن از Word
+                            pasteFromWordRemoveFontStyles: false, // نگه داشتن استایل‌های فونت
+                            pasteFromWordRemoveStyles: false // نگه داشتن استایل‌ها
+                        };
+                        
+                        // تنظیم Toolbar بر اساس نسخه (CDN Standard یا Local)
+                        @if (isCDN)
+                        {
+                            <text>
+                            // CDN Standard Build - فقط از پلاگین‌های موجود در Standard استفاده می‌کنیم
+                            customConfig.toolbar = [
+                                { name: 'clipboard', items: [ 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo' ] },
+                                { name: 'editing', items: [ 'Find', 'Replace', '-', 'SelectAll' ] },
+                                { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat' ] },
+                                { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', '-', 'BidiLtr', 'BidiRtl' ] },
+                                { name: 'links', items: [ 'Link', 'Unlink', 'Anchor' ] },
+                                { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar' ] },
+                                { name: 'styles', items: [ 'Styles', 'Format' ] },
+                                { name: 'tools', items: [ 'Maximize', 'ShowBlocks', 'Source' ] }
+                            ];
+                            // CDN Standard Build - بدون extraPlugins (justify, colorbutton, font در Standard نیستند)
+                            </text>
+                        }
+                        else
+                        {
+                            <text>
+                            // Local Build 4.22.1 Standard - استفاده از پلاگین‌های موجود
+                            // نسخه Standard شامل justify, colorbutton, font نیست
+                            customConfig.toolbar = [
+                                { name: 'clipboard', items: [ 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo' ] },
+                                { name: 'editing', items: [ 'Find', 'Replace', '-', 'SelectAll' ] },
+                                { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat' ] },
+                                { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', '-', 'BidiLtr', 'BidiRtl' ] },
+                                { name: 'links', items: [ 'Link', 'Unlink', 'Anchor' ] },
+                                { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar' ] },
+                                { name: 'styles', items: [ 'Styles', 'Format' ] },
+                                { name: 'tools', items: [ 'Maximize', 'ShowBlocks', 'Source' ] }
+                            ];
+                            // بدون extraPlugins - نسخه Standard این پلاگین‌ها را ندارد
+                            </text>
+                        }
+                        
+                        // بررسی اینکه آیا editor قبلاً ایجاد شده است
+                        var existingEditor = CKEDITOR.instances['@editorId'];
+                        if (existingEditor) {
+                            try {
+                                // بررسی اینکه container هنوز در DOM است
+                                var container = existingEditor.container;
+                                if (container && container.$) {
+                                    try {
+                                        // بررسی parentNode - اگر خطا داد یعنی از DOM حذف شده
+                                        var hasParent = container.$.parentNode !== null;
+                                        if (hasParent) {
+                                            existingEditor.destroy(true);
+                                        } else {
+                                            delete CKEDITOR.instances['@editorId'];
+                                        }
+                                    } catch (parentNodeError) {
+                                        // اگر خطای parentNode رخ داد، فقط instance را حذف کنیم
+                                        delete CKEDITOR.instances['@editorId'];
+                                    }
+                                } else {
+                                    delete CKEDITOR.instances['@editorId'];
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Warning destroying existing editor:', e);
+                                // حذف دستی از instances
+                                try {
+                                    delete CKEDITOR.instances['@editorId'];
+                                } catch (e2) {
+                                    // Ignore
+                                }
+                            }
+                        }
+                        
+                        // اطمینان از اینکه element هنوز در DOM است
+                        if (!editorElement || !editorElement.parentNode) {
+                            console.error('❌ CKEditor: Element is not in DOM - @selector');
+                            return;
+                        }
+                        
+                        var editor = CKEDITOR.replace('@editorId', customConfig);
+                        
+                        editor.on('instanceReady', function() {
+                            console.log('✅ CKEditor 4 initialized successfully for medical environment - Selector: @selector');
+                            window['editor_@editorId'] = editor; // برای دسترسی از console
+                        });
+                        
+                        editor.on('pluginsLoaded', function(evt) {
+                            // Log loaded plugins for debugging
+                            console.log('✅ CKEditor plugins loaded successfully');
+                        });
+                        
+                        editor.on('error', function(evt) {
+                            // Suppress plugin loading errors if they're non-critical
+                            var errorData = evt.data;
+                            if (errorData && errorData.message && errorData.message.indexOf('plugin') !== -1) {
+                                console.warn('⚠️ CKEditor Plugin Warning (non-critical):', errorData.message);
+                            } else {
+                                console.error('❌ CKEditor Error:', evt);
+                            }
+                        });
+                        
+                        // Handle plugin loading errors gracefully
+                        editor.on('loaded', function() {
+                            // Check if critical plugins failed to load
+                            var missingPlugins = [];
+                            if (customConfig.extraPlugins) {
+                                var requiredPlugins = customConfig.extraPlugins.split(',');
+                                requiredPlugins.forEach(function(pluginName) {
+                                    pluginName = pluginName.trim();
+                                    if (!CKEDITOR.plugins.registered[pluginName]) {
+                                        missingPlugins.push(pluginName);
+                                    }
+                                });
+                            }
+                            if (missingPlugins.length > 0) {
+                                console.warn('⚠️ CKEditor: Some plugins not available:', missingPlugins.join(', '), '- Editor will work with available features');
+                            }
+                        });
+                        
+                        // غیرفعال کردن cleanup handler - CKEditor خودش destroy را مدیریت می‌کند
+                        // و cleanup دستی باعث خطای parentNode می‌شود
+                        // CKEditor به صورت خودکار هنگام unload صفحه editor را destroy می‌کند
+                        // و ما نباید در این فرآیند دخالت کنیم
+                    } catch (error) {
+                        console.error('❌ CKEditor Initialization Error:', error);
+                    }
+                } else {
+                    console.warn('⚠️ CKEditor: Element not found - @selector');
+                }
+            } else {
+                // Retry after a short delay
+                setTimeout(initializeCKEditor, 100);
+            }
+        }
+        
+        // Start initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCKEditor);
+        } else {
+            initializeCKEditor();
+        }
+    })();
+</script>
+

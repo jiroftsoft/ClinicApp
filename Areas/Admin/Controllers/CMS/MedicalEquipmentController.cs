@@ -18,7 +18,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class MedicalEquipmentController : Controller
+    public class MedicalEquipmentController : BaseCMSController
     {
         private readonly IMedicalEquipmentService _medicalEquipmentService;
         private readonly ICurrentUserService _currentUserService;
@@ -62,7 +62,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 {
                     _logger.Warning("خطا در دریافت لیست تجهیزات پزشکی: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(new PagedResult<MedicalEquipmentIndexViewModel>(new System.Collections.Generic.List<MedicalEquipmentIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
+                    return View(GetViewPath("Index"), new PagedResult<MedicalEquipmentIndexViewModel>(new System.Collections.Generic.List<MedicalEquipmentIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
                 }
 
                 // بارگذاری دسته‌بندی‌ها برای فیلتر
@@ -86,13 +86,13 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     new SelectListItem { Text = "غیرفعال", Value = "Inactive" }
                 }, "Value", "Text");
 
-                return View(result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست تجهیزات پزشکی");
                 TempData["Error"] = "خطا در بارگذاری لیست تجهیزات پزشکی";
-                return View(new PagedResult<MedicalEquipmentIndexViewModel>(new System.Collections.Generic.List<MedicalEquipmentIndexViewModel>(), 0, 1, 10));
+                return View(GetViewPath("Index"), new PagedResult<MedicalEquipmentIndexViewModel>(new System.Collections.Generic.List<MedicalEquipmentIndexViewModel>(), 0, 1, 10));
             }
         }
 
@@ -113,7 +113,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
@@ -175,7 +175,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     Status = "Active"
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
@@ -273,7 +273,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "غیرفعال", Value = "Inactive" }
                     }, "Value", "Text", model.Status);
 
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 _logger.Information("تجهیز پزشکی با موفقیت ایجاد شد - MedicalEquipmentId: {MedicalEquipmentId}", result.Data.MedicalEquipmentId);
@@ -284,7 +284,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در ایجاد تجهیز پزشکی");
                 TempData["Error"] = "خطا در ایجاد تجهیز پزشکی";
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -340,7 +340,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     new SelectListItem { Text = "غیرفعال", Value = "Inactive" }
                 }, "Value", "Text", result.Data.Status);
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
@@ -395,7 +395,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "غیرفعال", Value = "Inactive" }
                     }, "Value", "Text", model.Status);
 
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _medicalEquipmentService.UpdateMedicalEquipmentAsync(model);
@@ -440,7 +440,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "غیرفعال", Value = "Inactive" }
                     }, "Value", "Text", model.Status);
 
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 _logger.Information("تجهیز پزشکی با موفقیت به‌روزرسانی شد - MedicalEquipmentId: {MedicalEquipmentId}", model.MedicalEquipmentId);
@@ -451,7 +451,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی تجهیز پزشکی - MedicalEquipmentId: {MedicalEquipmentId}", model.MedicalEquipmentId);
                 TempData["Error"] = "خطا در به‌روزرسانی تجهیز پزشکی";
-                return View(model);
+                return View(GetViewPath("Edit"), model);
             }
         }
 

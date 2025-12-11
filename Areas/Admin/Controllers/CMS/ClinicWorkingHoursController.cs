@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class ClinicWorkingHoursController : Controller
+    public class ClinicWorkingHoursController : BaseCMSController
     {
         private readonly IClinicWorkingHoursService _clinicWorkingHoursService;
         private readonly ICurrentUserService _currentUserService;
@@ -36,6 +37,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = Log.ForContext<ClinicWorkingHoursController>();
         }
+
 
         #region Index & Listing
 
@@ -59,43 +61,95 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 var result = await _clinicWorkingHoursService.GetClinicWorkingHoursAsync(searchModel);
 
-                if (!result.Success)
-                {
-                    _logger.Warning("خطا در دریافت لیست ساعات کاری کلینیک: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
-                    return View(new PagedResult<ClinicWorkingHoursIndexViewModel>(new System.Collections.Generic.List<ClinicWorkingHoursIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
-                }
-
-                // بارگذاری کلینیک‌ها برای فیلتر
+                // Strongly-Typed: بارگذاری کلینیک‌ها و روزهای هفته در ViewModel
                 var clinics = await _context.Set<Clinic>()
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.Name)
                     .ToListAsync();
 
-                ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                if (!result.Success)
                 {
-                    Value = c.ClinicId.ToString(),
-                    Text = c.Name
-                }).ToList();
+                    _logger.Warning("خطا در دریافت لیست ساعات کاری کلینیک: {ErrorMessage}", result.Message);
+                    TempData["Error"] = result.Message;
+                    
+                    // Strongly-Typed: ایجاد ViewModel حتی در صورت خطا
+                    var errorPageViewModel = new ClinicWorkingHoursIndexPageViewModel
+                    {
+                        PagedResult = new PagedResult<ClinicWorkingHoursIndexViewModel>(new System.Collections.Generic.List<ClinicWorkingHoursIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize),
+                        Clinics = clinics.Select(c => new SelectListItem
+                        {
+                            Value = c.ClinicId.ToString(),
+                            Text = c.Name
+                        }).ToList(),
+                        DaysOfWeek = new List<SelectListItem>
+                        {
+                            new SelectListItem { Text = "شنبه", Value = "0" },
+                            new SelectListItem { Text = "یکشنبه", Value = "1" },
+                            new SelectListItem { Text = "دوشنبه", Value = "2" },
+                            new SelectListItem { Text = "سه‌شنبه", Value = "3" },
+                            new SelectListItem { Text = "چهارشنبه", Value = "4" },
+                            new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
+                            new SelectListItem { Text = "جمعه", Value = "6" }
+                        }
+                    };
+                    
+                    return View(GetViewPath("Index"), errorPageViewModel);
+                }
 
-                // بارگذاری روزهای هفته برای فیلتر
-                ViewBag.DaysOfWeek = new SelectList(new[] { 
-                    new SelectListItem { Text = "شنبه", Value = "0" },
-                    new SelectListItem { Text = "یکشنبه", Value = "1" },
-                    new SelectListItem { Text = "دوشنبه", Value = "2" },
-                    new SelectListItem { Text = "سه‌شنبه", Value = "3" },
-                    new SelectListItem { Text = "چهارشنبه", Value = "4" },
-                    new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
-                    new SelectListItem { Text = "جمعه", Value = "6" }
-                }, "Value", "Text");
+                var pageViewModel = new ClinicWorkingHoursIndexPageViewModel
+                {
+                    PagedResult = result.Data,
+                    Clinics = clinics.Select(c => new SelectListItem
+                    {
+                        Value = c.ClinicId.ToString(),
+                        Text = c.Name
+                    }).ToList(),
+                    DaysOfWeek = new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "شنبه", Value = "0" },
+                        new SelectListItem { Text = "یکشنبه", Value = "1" },
+                        new SelectListItem { Text = "دوشنبه", Value = "2" },
+                        new SelectListItem { Text = "سه‌شنبه", Value = "3" },
+                        new SelectListItem { Text = "چهارشنبه", Value = "4" },
+                        new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
+                        new SelectListItem { Text = "جمعه", Value = "6" }
+                    }
+                };
 
-                return View(result.Data);
+                return View(GetViewPath("Index"), pageViewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست ساعات کاری کلینیک");
                 TempData["Error"] = "خطا در بارگذاری لیست ساعات کاری کلینیک";
-                return View(new PagedResult<ClinicWorkingHoursIndexViewModel>(new System.Collections.Generic.List<ClinicWorkingHoursIndexViewModel>(), 0, 1, 10));
+                
+                // Strongly-Typed: ایجاد ViewModel حتی در صورت Exception
+                var clinics = await _context.Set<Clinic>()
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+
+                var errorPageViewModel = new ClinicWorkingHoursIndexPageViewModel
+                {
+                    PagedResult = new PagedResult<ClinicWorkingHoursIndexViewModel>(new System.Collections.Generic.List<ClinicWorkingHoursIndexViewModel>(), 0, 1, 10),
+                    Clinics = clinics.Select(c => new SelectListItem
+                    {
+                        Value = c.ClinicId.ToString(),
+                        Text = c.Name
+                    }).ToList(),
+                    DaysOfWeek = new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "شنبه", Value = "0" },
+                        new SelectListItem { Text = "یکشنبه", Value = "1" },
+                        new SelectListItem { Text = "دوشنبه", Value = "2" },
+                        new SelectListItem { Text = "سه‌شنبه", Value = "3" },
+                        new SelectListItem { Text = "چهارشنبه", Value = "4" },
+                        new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
+                        new SelectListItem { Text = "جمعه", Value = "6" }
+                    }
+                };
+                
+                return View(GetViewPath("Index"), errorPageViewModel);
             }
         }
 
@@ -116,7 +170,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
@@ -135,37 +189,35 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // بارگذاری کلینیک‌ها
+                // Strongly-Typed: بارگذاری کلینیک‌ها و روزهای هفته در ViewModel
                 var clinics = await _context.Set<Clinic>()
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.Name)
                     .ToListAsync();
 
-                ViewBag.Clinics = clinics.Select(c => new SelectListItem
-                {
-                    Value = c.ClinicId.ToString(),
-                    Text = c.Name
-                }).ToList();
-
-                // بارگذاری روزهای هفته
-                ViewBag.DaysOfWeek = new SelectList(new[] { 
-                    new SelectListItem { Text = "شنبه", Value = "0" },
-                    new SelectListItem { Text = "یکشنبه", Value = "1" },
-                    new SelectListItem { Text = "دوشنبه", Value = "2" },
-                    new SelectListItem { Text = "سه‌شنبه", Value = "3" },
-                    new SelectListItem { Text = "چهارشنبه", Value = "4" },
-                    new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
-                    new SelectListItem { Text = "جمعه", Value = "6" }
-                }, "Value", "Text");
-
                 var model = new ClinicWorkingHoursCreateEditViewModel
                 {
                     IsActive = true,
                     IsOpen = true,
-                    DisplayOrder = 0
+                    DisplayOrder = 0,
+                    Clinics = clinics.Select(c => new SelectListItem
+                    {
+                        Value = c.ClinicId.ToString(),
+                        Text = c.Name
+                    }).ToList(),
+                    DaysOfWeek = new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "شنبه", Value = "0" },
+                        new SelectListItem { Text = "یکشنبه", Value = "1" },
+                        new SelectListItem { Text = "دوشنبه", Value = "2" },
+                        new SelectListItem { Text = "سه‌شنبه", Value = "3" },
+                        new SelectListItem { Text = "چهارشنبه", Value = "4" },
+                        new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
+                        new SelectListItem { Text = "جمعه", Value = "6" }
+                    }
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
@@ -185,19 +237,20 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!ModelState.IsValid)
                 {
-                    // بارگذاری مجدد ViewBag
+                    // Strongly-Typed: بارگذاری مجدد Lists در ViewModel
                     var clinics = await _context.Set<Clinic>()
                         .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Name)
                         .ToListAsync();
 
-                    ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                    model.Clinics = clinics.Select(c => new SelectListItem
                     {
                         Value = c.ClinicId.ToString(),
                         Text = c.Name
                     }).ToList();
 
-                    ViewBag.DaysOfWeek = new SelectList(new[] { 
+                    model.DaysOfWeek = new List<SelectListItem>
+                    {
                         new SelectListItem { Text = "شنبه", Value = "0" },
                         new SelectListItem { Text = "یکشنبه", Value = "1" },
                         new SelectListItem { Text = "دوشنبه", Value = "2" },
@@ -205,9 +258,9 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "چهارشنبه", Value = "4" },
                         new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
                         new SelectListItem { Text = "جمعه", Value = "6" }
-                    }, "Value", "Text", model.DayOfWeek.ToString());
+                    };
 
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _clinicWorkingHoursService.CreateClinicWorkingHoursAsync(model);
@@ -217,19 +270,20 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     _logger.Warning("خطا در ایجاد ساعات کاری کلینیک: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
                     
-                    // بارگذاری مجدد ViewBag
+                    // Strongly-Typed: بارگذاری مجدد Lists در ViewModel
                     var clinics = await _context.Set<Clinic>()
                         .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Name)
                         .ToListAsync();
 
-                    ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                    model.Clinics = clinics.Select(c => new SelectListItem
                     {
                         Value = c.ClinicId.ToString(),
                         Text = c.Name
                     }).ToList();
 
-                    ViewBag.DaysOfWeek = new SelectList(new[] { 
+                    model.DaysOfWeek = new List<SelectListItem>
+                    {
                         new SelectListItem { Text = "شنبه", Value = "0" },
                         new SelectListItem { Text = "یکشنبه", Value = "1" },
                         new SelectListItem { Text = "دوشنبه", Value = "2" },
@@ -237,9 +291,9 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "چهارشنبه", Value = "4" },
                         new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
                         new SelectListItem { Text = "جمعه", Value = "6" }
-                    }, "Value", "Text", model.DayOfWeek.ToString());
+                    };
 
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 _logger.Information("ساعات کاری با موفقیت ایجاد شد - ClinicWorkingHoursId: {ClinicWorkingHoursId}", result.Data.ClinicWorkingHoursId);
@@ -250,7 +304,31 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در ایجاد ساعات کاری کلینیک");
                 TempData["Error"] = "خطا در ایجاد ساعات کاری کلینیک";
-                return View(model);
+                
+                // Strongly-Typed: بارگذاری Lists در ViewModel در صورت Exception
+                var clinics = await _context.Set<Clinic>()
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+
+                model.Clinics = clinics.Select(c => new SelectListItem
+                {
+                    Value = c.ClinicId.ToString(),
+                    Text = c.Name
+                }).ToList();
+
+                model.DaysOfWeek = new List<SelectListItem>
+                {
+                    new SelectListItem { Text = "شنبه", Value = "0" },
+                    new SelectListItem { Text = "یکشنبه", Value = "1" },
+                    new SelectListItem { Text = "دوشنبه", Value = "2" },
+                    new SelectListItem { Text = "سه‌شنبه", Value = "3" },
+                    new SelectListItem { Text = "چهارشنبه", Value = "4" },
+                    new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
+                    new SelectListItem { Text = "جمعه", Value = "6" }
+                };
+                
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -271,31 +349,31 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                // بارگذاری کلینیک‌ها
+                // Strongly-Typed: بارگذاری کلینیک‌ها و روزهای هفته در ViewModel
                 var clinics = await _context.Set<Clinic>()
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.Name)
                     .ToListAsync();
 
-                ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                result.Data.Clinics = clinics.Select(c => new SelectListItem
                 {
                     Value = c.ClinicId.ToString(),
                     Text = c.Name,
                     Selected = c.ClinicId == result.Data.ClinicId
                 }).ToList();
 
-                // بارگذاری روزهای هفته
-                ViewBag.DaysOfWeek = new SelectList(new[] { 
-                    new SelectListItem { Text = "شنبه", Value = "0" },
-                    new SelectListItem { Text = "یکشنبه", Value = "1" },
-                    new SelectListItem { Text = "دوشنبه", Value = "2" },
-                    new SelectListItem { Text = "سه‌شنبه", Value = "3" },
-                    new SelectListItem { Text = "چهارشنبه", Value = "4" },
-                    new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
-                    new SelectListItem { Text = "جمعه", Value = "6" }
-                }, "Value", "Text", result.Data.DayOfWeek.ToString());
+                result.Data.DaysOfWeek = new List<SelectListItem>
+                {
+                    new SelectListItem { Text = "شنبه", Value = "0", Selected = result.Data.DayOfWeek == 0 },
+                    new SelectListItem { Text = "یکشنبه", Value = "1", Selected = result.Data.DayOfWeek == 1 },
+                    new SelectListItem { Text = "دوشنبه", Value = "2", Selected = result.Data.DayOfWeek == 2 },
+                    new SelectListItem { Text = "سه‌شنبه", Value = "3", Selected = result.Data.DayOfWeek == 3 },
+                    new SelectListItem { Text = "چهارشنبه", Value = "4", Selected = result.Data.DayOfWeek == 4 },
+                    new SelectListItem { Text = "پنج‌شنبه", Value = "5", Selected = result.Data.DayOfWeek == 5 },
+                    new SelectListItem { Text = "جمعه", Value = "6", Selected = result.Data.DayOfWeek == 6 }
+                };
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
@@ -315,30 +393,31 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!ModelState.IsValid)
                 {
-                    // بارگذاری مجدد ViewBag
+                    // Strongly-Typed: بارگذاری مجدد Lists در ViewModel
                     var clinics = await _context.Set<Clinic>()
                         .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Name)
                         .ToListAsync();
 
-                    ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                    model.Clinics = clinics.Select(c => new SelectListItem
                     {
                         Value = c.ClinicId.ToString(),
                         Text = c.Name,
                         Selected = c.ClinicId == model.ClinicId
                     }).ToList();
 
-                    ViewBag.DaysOfWeek = new SelectList(new[] { 
-                        new SelectListItem { Text = "شنبه", Value = "0" },
-                        new SelectListItem { Text = "یکشنبه", Value = "1" },
-                        new SelectListItem { Text = "دوشنبه", Value = "2" },
-                        new SelectListItem { Text = "سه‌شنبه", Value = "3" },
-                        new SelectListItem { Text = "چهارشنبه", Value = "4" },
-                        new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
-                        new SelectListItem { Text = "جمعه", Value = "6" }
-                    }, "Value", "Text", model.DayOfWeek.ToString());
+                    model.DaysOfWeek = new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "شنبه", Value = "0", Selected = model.DayOfWeek == 0 },
+                        new SelectListItem { Text = "یکشنبه", Value = "1", Selected = model.DayOfWeek == 1 },
+                        new SelectListItem { Text = "دوشنبه", Value = "2", Selected = model.DayOfWeek == 2 },
+                        new SelectListItem { Text = "سه‌شنبه", Value = "3", Selected = model.DayOfWeek == 3 },
+                        new SelectListItem { Text = "چهارشنبه", Value = "4", Selected = model.DayOfWeek == 4 },
+                        new SelectListItem { Text = "پنج‌شنبه", Value = "5", Selected = model.DayOfWeek == 5 },
+                        new SelectListItem { Text = "جمعه", Value = "6", Selected = model.DayOfWeek == 6 }
+                    };
 
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _clinicWorkingHoursService.UpdateClinicWorkingHoursAsync(model);
@@ -348,30 +427,31 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     _logger.Warning("خطا در به‌روزرسانی ساعات کاری کلینیک: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
                     
-                    // بارگذاری مجدد ViewBag
+                    // Strongly-Typed: بارگذاری مجدد Lists در ViewModel
                     var clinics = await _context.Set<Clinic>()
                         .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Name)
                         .ToListAsync();
 
-                    ViewBag.Clinics = clinics.Select(c => new SelectListItem
+                    model.Clinics = clinics.Select(c => new SelectListItem
                     {
                         Value = c.ClinicId.ToString(),
                         Text = c.Name,
                         Selected = c.ClinicId == model.ClinicId
                     }).ToList();
 
-                    ViewBag.DaysOfWeek = new SelectList(new[] { 
-                        new SelectListItem { Text = "شنبه", Value = "0" },
-                        new SelectListItem { Text = "یکشنبه", Value = "1" },
-                        new SelectListItem { Text = "دوشنبه", Value = "2" },
-                        new SelectListItem { Text = "سه‌شنبه", Value = "3" },
-                        new SelectListItem { Text = "چهارشنبه", Value = "4" },
-                        new SelectListItem { Text = "پنج‌شنبه", Value = "5" },
-                        new SelectListItem { Text = "جمعه", Value = "6" }
-                    }, "Value", "Text", model.DayOfWeek.ToString());
+                    model.DaysOfWeek = new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "شنبه", Value = "0", Selected = model.DayOfWeek == 0 },
+                        new SelectListItem { Text = "یکشنبه", Value = "1", Selected = model.DayOfWeek == 1 },
+                        new SelectListItem { Text = "دوشنبه", Value = "2", Selected = model.DayOfWeek == 2 },
+                        new SelectListItem { Text = "سه‌شنبه", Value = "3", Selected = model.DayOfWeek == 3 },
+                        new SelectListItem { Text = "چهارشنبه", Value = "4", Selected = model.DayOfWeek == 4 },
+                        new SelectListItem { Text = "پنج‌شنبه", Value = "5", Selected = model.DayOfWeek == 5 },
+                        new SelectListItem { Text = "جمعه", Value = "6", Selected = model.DayOfWeek == 6 }
+                    };
 
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 _logger.Information("ساعات کاری با موفقیت به‌روزرسانی شد - ClinicWorkingHoursId: {ClinicWorkingHoursId}", model.ClinicWorkingHoursId);
@@ -382,7 +462,32 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی ساعات کاری کلینیک - ClinicWorkingHoursId: {ClinicWorkingHoursId}", model.ClinicWorkingHoursId);
                 TempData["Error"] = "خطا در به‌روزرسانی ساعات کاری کلینیک";
-                return View(model);
+                
+                // Strongly-Typed: بارگذاری Lists در ViewModel در صورت Exception
+                var clinics = await _context.Set<Clinic>()
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+
+                model.Clinics = clinics.Select(c => new SelectListItem
+                {
+                    Value = c.ClinicId.ToString(),
+                    Text = c.Name,
+                    Selected = c.ClinicId == model.ClinicId
+                }).ToList();
+
+                model.DaysOfWeek = new List<SelectListItem>
+                {
+                    new SelectListItem { Text = "شنبه", Value = "0", Selected = model.DayOfWeek == 0 },
+                    new SelectListItem { Text = "یکشنبه", Value = "1", Selected = model.DayOfWeek == 1 },
+                    new SelectListItem { Text = "دوشنبه", Value = "2", Selected = model.DayOfWeek == 2 },
+                    new SelectListItem { Text = "سه‌شنبه", Value = "3", Selected = model.DayOfWeek == 3 },
+                    new SelectListItem { Text = "چهارشنبه", Value = "4", Selected = model.DayOfWeek == 4 },
+                    new SelectListItem { Text = "پنج‌شنبه", Value = "5", Selected = model.DayOfWeek == 5 },
+                    new SelectListItem { Text = "جمعه", Value = "6", Selected = model.DayOfWeek == 6 }
+                };
+                
+                return View(GetViewPath("Edit"), model);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Web.Mvc;
 using ClinicApp.Helpers;
 
 namespace ClinicApp.ViewModels.CMS
@@ -15,6 +16,20 @@ namespace ClinicApp.ViewModels.CMS
         public bool? IsActive { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+
+        // Strongly-Typed Lists - بدون استفاده از ViewBag
+        public List<SelectListItem> Clinics { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> DaysOfWeek { get; set; } = new List<SelectListItem>();
+    }
+
+    /// <summary>
+    /// ViewModel برای صفحه Index با Strongly-Typed Lists
+    /// </summary>
+    public class ClinicWorkingHoursIndexPageViewModel
+    {
+        public Interfaces.PagedResult<ClinicWorkingHoursIndexViewModel> PagedResult { get; set; }
+        public List<SelectListItem> Clinics { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> DaysOfWeek { get; set; } = new List<SelectListItem>();
     }
 
     public class ClinicWorkingHoursIndexViewModel
@@ -78,6 +93,10 @@ namespace ClinicApp.ViewModels.CMS
         [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
         [Display(Name = "توضیحات")]
         public string Notes { get; set; }
+
+        // Strongly-Typed Lists - بدون استفاده از ViewBag
+        public List<SelectListItem> Clinics { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> DaysOfWeek { get; set; } = new List<SelectListItem>();
     }
 
     #endregion

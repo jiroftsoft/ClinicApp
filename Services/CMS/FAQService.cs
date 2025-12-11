@@ -470,6 +470,20 @@ namespace ClinicApp.Services.CMS
                 var categories = await _faqRepository.GetCategoriesAsync();
                 var faqs = await _faqRepository.GetActiveFAQsAsync();
                 
+                // اگر دسته‌بندی‌ای در دیتابیس وجود نداشت، دسته‌بندی‌های پیش‌فرض را برگردان
+                if (categories == null || !categories.Any())
+                {
+                    var defaultCategories = new List<string> { "general", "appointment", "insurance", "services", "costs" };
+                    var defaultViewModels = defaultCategories.Select(c => new FAQCategoryViewModel
+                    {
+                        Category = c,
+                        DisplayName = GetCategoryDisplayName(c),
+                        Count = 0
+                    }).OrderBy(c => c.DisplayName).ToList();
+
+                    return ServiceResult<List<FAQCategoryViewModel>>.Successful(defaultViewModels);
+                }
+                
                 var viewModels = categories.Select(c => new FAQCategoryViewModel
                 {
                     Category = c,
@@ -482,7 +496,17 @@ namespace ClinicApp.Services.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت دسته‌بندی‌های FAQ");
-                return ServiceResult<List<FAQCategoryViewModel>>.Failed("خطا در دریافت دسته‌بندی‌های FAQ");
+                
+                // در صورت خطا نیز دسته‌بندی‌های پیش‌فرض را برگردان
+                var defaultCategories = new List<string> { "general", "appointment", "insurance", "services", "costs" };
+                var defaultViewModels = defaultCategories.Select(c => new FAQCategoryViewModel
+                {
+                    Category = c,
+                    DisplayName = GetCategoryDisplayName(c),
+                    Count = 0
+                }).OrderBy(c => c.DisplayName).ToList();
+
+                return ServiceResult<List<FAQCategoryViewModel>>.Successful(defaultViewModels);
             }
         }
 

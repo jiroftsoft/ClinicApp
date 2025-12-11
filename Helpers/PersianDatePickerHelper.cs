@@ -97,6 +97,55 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// ایجاد Persian DatePicker ساده برای استفاده با Component
+        /// این متد برای استفاده با _PersianDatePicker.cshtml طراحی شده است
+        /// </summary>
+        /// <param name="htmlHelper">HtmlHelper</param>
+        /// <param name="name">نام فیلد</param>
+        /// <param name="value">مقدار DateTime (میلادی)</param>
+        /// <param name="htmlAttributes">ویژگی‌های HTML</param>
+        /// <returns>MvcHtmlString</returns>
+        public static MvcHtmlString PersianDatePicker(this HtmlHelper htmlHelper, string name, DateTime? value = null, object htmlAttributes = null)
+        {
+            var tagBuilder = new TagBuilder("input");
+            tagBuilder.Attributes.Add("type", "text");
+            tagBuilder.Attributes.Add("name", name);
+            tagBuilder.Attributes.Add("id", name);
+            tagBuilder.Attributes.Add("data-persian-datepicker", "true");
+            tagBuilder.Attributes.Add("autocomplete", "off");
+            
+            // تبدیل تاریخ میلادی به شمسی برای نمایش
+            if (value.HasValue)
+            {
+                tagBuilder.Attributes.Add("value", PersianDateHelper.ToPersianDate(value.Value));
+            }
+            
+            if (htmlAttributes != null)
+            {
+                var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+                foreach (var attr in attributes)
+                {
+                    if (attr.Key == "class")
+                    {
+                        tagBuilder.AddCssClass(attr.Value.ToString() + " persian-date");
+                    }
+                    else
+                    {
+                        tagBuilder.Attributes.Add(attr.Key, attr.Value.ToString());
+                    }
+                }
+            }
+            
+            // اضافه کردن class اگر وجود نداشته باشد
+            if (!tagBuilder.Attributes.ContainsKey("class"))
+            {
+                tagBuilder.Attributes.Add("class", "form-control persian-date");
+            }
+            
+            return new MvcHtmlString(tagBuilder.ToString(TagRenderMode.SelfClosing));
+        }
+
+        /// <summary>
         /// ایجاد JavaScript برای DatePicker
         /// </summary>
         /// <param name="id">شناسه element</param>

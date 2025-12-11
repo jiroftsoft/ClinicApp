@@ -4,6 +4,49 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@section Styles {
+    <style>
+        .content-display {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Vazir', Tahoma, Arial, sans-serif;
+            line-height: 1.8;
+            color: #495057;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .content-display p {
+            margin-bottom: 1rem;
+        }
+        .content-display h1, .content-display h2, .content-display h3,
+        .content-display h4, .content-display h5, .content-display h6 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .content-display ul, .content-display ol {
+            margin-right: 2rem;
+            margin-bottom: 1rem;
+        }
+        .content-display table {
+            width: 100%;
+            margin: 1rem 0;
+            border-collapse: collapse;
+        }
+        .content-display table td, .content-display table th {
+            border: 1px solid #dee2e6;
+            padding: 0.5rem;
+            text-align: right;
+        }
+        .announcement-type-badge {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">جزئیات اطلاعیه</h1>
@@ -39,9 +82,11 @@
 
                     @if (!string.IsNullOrEmpty(Model.Content))
                     {
-                        <div class="mb-3">
-                            <h5>محتوا</h5>
-                            <p class="text-muted">@Model.Content</p>
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-file-alt text-primary"></i> محتوا</h5>
+                            <div class="content-display">
+                                @Html.Raw(Model.Content)
+                            </div>
                         </div>
                     }
 
@@ -68,14 +113,36 @@
                         <tr>
                             <td><strong>نوع:</strong></td>
                             <td>
-                                <span class="badge badge-@(Model.Type == "warning" ? "warning" : Model.Type == "error" ? "danger" : Model.Type == "success" ? "success" : "info")">
-                                    @(Model.Type ?? "info")
+                                @{
+                                    var typeDisplayName = Model.Type switch
+                                    {
+                                        "info" => "اطلاعات",
+                                        "warning" => "هشدار",
+                                        "success" => "موفقیت",
+                                        "error" => "خطا",
+                                        _ => Model.Type ?? "اطلاعات"
+                                    };
+                                }
+                                <span class="badge badge-@(Model.Type == "warning" ? "warning" : Model.Type == "error" ? "danger" : Model.Type == "success" ? "success" : "info") announcement-type-badge">
+                                    @typeDisplayName
                                 </span>
                             </td>
                         </tr>
                         <tr>
                             <td><strong>مخاطب:</strong></td>
-                            <td>@(Model.TargetAudience ?? "all")</td>
+                            <td>
+                                @{
+                                    var audienceDisplayName = Model.TargetAudience switch
+                                    {
+                                        "all" => "همه",
+                                        "patients" => "بیماران",
+                                        "doctors" => "پزشکان",
+                                        "staff" => "کارکنان",
+                                        _ => Model.TargetAudience ?? "همه"
+                                    };
+                                }
+                                <span class="badge badge-secondary">@audienceDisplayName</span>
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>وضعیت:</strong></td>
@@ -96,11 +163,33 @@
                         </tr>
                         <tr>
                             <td><strong>تاریخ شروع:</strong></td>
-                            <td>@(Model.StartDate?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                            <td>
+                                @if (Model.StartDate.HasValue)
+                                {
+                                    <span dir="ltr" style="font-family: 'Vazir', Tahoma, Arial, sans-serif;">
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(Model.StartDate.Value, false)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>تاریخ پایان:</strong></td>
-                            <td>@(Model.EndDate?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                            <td>
+                                @if (Model.EndDate.HasValue)
+                                {
+                                    <span dir="ltr" style="font-family: 'Vazir', Tahoma, Arial, sans-serif;">
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(Model.EndDate.Value, false)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
                         </tr>
                     </table>
                 </div>
@@ -112,7 +201,11 @@
                     <table class="table table-sm">
                         <tr>
                             <td><strong>تاریخ ایجاد:</strong></td>
-                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                            <td>
+                                <span dir="ltr" style="font-family: 'Vazir', Tahoma, Arial, sans-serif;">
+                                    @ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(Model.CreatedAt, false)
+                                </span>
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>ایجاد کننده:</strong></td>
@@ -122,7 +215,11 @@
                         {
                             <tr>
                                 <td><strong>آخرین ویرایش:</strong></td>
-                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                <td>
+                                    <span dir="ltr" style="font-family: 'Vazir', Tahoma, Arial, sans-serif;">
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(Model.UpdatedAt.Value, false)
+                                    </span>
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>ویرایش کننده:</strong></td>

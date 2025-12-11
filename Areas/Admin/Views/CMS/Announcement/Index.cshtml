@@ -1,4 +1,5 @@
 @model List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "مدیریت اطلاعیه‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -80,7 +81,7 @@
                                         @if (!string.IsNullOrEmpty(item.Content))
                                         {
                                             <br />
-                                            <small class="text-muted">@(item.Content.Length > 100 ? item.Content.Substring(0, 100) + "..." : item.Content)</small>
+                                            <small class="text-muted">@StringHelper.StripHtmlAndTruncate(item.Content, 100)</small>
                                         }
                                     </td>
                                     <td>
@@ -110,8 +111,8 @@
                                         }
                                     </td>
                                     <td>@item.DisplayOrder</td>
-                                    <td>@(item.StartDate?.ToString("yyyy/MM/dd") ?? "-")</td>
-                                    <td>@(item.EndDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                    <td>@(item.StartDate.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.StartDate.Value) : "-")</td>
+                                    <td>@(item.EndDate.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.EndDate.Value) : "-")</td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="@Url.Action("Details", new { id = item.AnnouncementId })" class="btn btn-sm btn-info" title="جزئیات">

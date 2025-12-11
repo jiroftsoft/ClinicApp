@@ -155,10 +155,19 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
+            // CMS Routes - مسیرهای CMS
+            context.MapRoute(
+                name: "Admin_CMS_Default",
+                url: "Admin/CMS/{controller}/{action}/{id}",
+                defaults: new { action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.CMS" }
+            );
+
             context.MapRoute(
                 "Admin_default",
                 "Admin/{controller}/{action}/{id}",
-                new { action = "Index", id = UrlParameter.Optional }
+                new { action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers", "ClinicApp.Areas.Admin.Controllers.CMS" }
             );
         }
     }

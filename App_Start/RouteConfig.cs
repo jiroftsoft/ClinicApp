@@ -42,6 +42,15 @@ namespace ClinicApp
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
 
+            // Redirect route for incorrect View URLs to correct Controller URLs
+            // مثال: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml -> /Admin/CMS/ClinicWorkingHours
+            routes.MapRoute(
+                name: "Redirect_ViewToController",
+                url: "Areas/{area}/Views/{*path}",
+                defaults: new { controller = "Redirect", action = "ViewToController" },
+                constraints: new { area = @"Admin|Patient" }
+            );
+
             // Specific routes for dashed paths that don't map to action names directly
             routes.MapRoute(
                 name: "ReceptionApiV1_DraftCreate",

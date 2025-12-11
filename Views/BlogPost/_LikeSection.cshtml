@@ -1,0 +1,101 @@
+@model int
+@{
+    var blogPostId = Model;
+}
+
+<div class="blog-like-section mb-4">
+    <div class="d-flex align-items-center">
+        <button id="likeButton" class="btn btn-outline-danger like-btn" onclick="toggleLike(@blogPostId)">
+            <i id="likeIcon" class="far fa-heart"></i>
+            <span id="likeText">لایک</span>
+        </button>
+        <span id="likeCount" class="mr-3 font-weight-bold">0</span>
+        <small class="text-muted">لایک</small>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        var blogPostId = @blogPostId;
+        var guestIdentifier = getOrCreateGuestIdentifier();
+
+        // Load like count and status
+        function loadLikeStatus() {
+            $.ajax({
+                url: '@Url.Action("GetLikeCount", "BlogPostCommentApi")',
+                type: 'GET',
+                data: { blogPostId: blogPostId },
+                success: function(response) {
+                    if (response.success) {
+                        $('#likeCount').text(response.likeCount);
+                    }
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("HasLiked", "BlogPostCommentApi")',
+                type: 'GET',
+                data: { blogPostId: blogPostId, guestIdentifier: guestIdentifier },
+                success: function(response) {
+                    if (response.success) {
+                        updateLikeButton(response.hasLiked);
+                    }
+                }
+            });
+        }
+
+        // Update like button UI
+        function updateLikeButton(isLiked) {
+            if (isLiked) {
+                $('#likeIcon').removeClass('far fa-heart').addClass('fas fa-heart');
+                $('#likeButton').removeClass('btn-outline-danger').addClass('btn-danger');
+                $('#likeText').text('لایک شده');
+            } else {
+                $('#likeIcon').removeClass('fas fa-heart').addClass('far fa-heart');
+                $('#likeButton').removeClass('btn-danger').addClass('btn-outline-danger');
+                $('#likeText').text('لایک');
+            }
+        }
+
+        // Get or create guest identifier
+        function getOrCreateGuestIdentifier() {
+            var identifier = localStorage.getItem('guestIdentifier');
+            if (!identifier) {
+                identifier = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('guestIdentifier', identifier);
+            }
+            return identifier;
+        }
+
+        // Toggle like
+        window.toggleLike = function(blogPostId) {
+            var guestIdentifier = getOrCreateGuestIdentifier();
+
+            $.ajax({
+                url: '@Url.Action("ToggleLike", "BlogPostCommentApi")',
+                type: 'POST',
+                data: {
+                    blogPostId: blogPostId,
+                    guestIdentifier: guestIdentifier,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        updateLikeButton(response.isLiked);
+                        $('#likeCount').text(response.likeCount);
+                        AdminNotification.info(response.message || (response.isLiked ? 'لایک شد' : 'لایک حذف شد'));
+                    } else {
+                        AdminNotification.error(response.message || 'خطا در لایک/آنلایک');
+                    }
+                },
+                error: function() {
+                    AdminNotification.error('خطا در لایک/آنلایک');
+                }
+            });
+        };
+
+        // Load like status on page load
+        loadLikeStatus();
+    });
+</script>
+

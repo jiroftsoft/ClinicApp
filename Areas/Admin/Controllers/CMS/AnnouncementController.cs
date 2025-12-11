@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class AnnouncementController : Controller
+    public class AnnouncementController : BaseCMSController
     {
         private readonly IAnnouncementService _announcementService;
         private readonly ICurrentUserService _currentUserService;
@@ -39,17 +39,17 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     TempData["Error"] = result.Message;
-                    return View(new System.Collections.Generic.List<AnnouncementIndexViewModel>());
+                    return View(GetViewPath("Index"), new System.Collections.Generic.List<AnnouncementIndexViewModel>());
                 }
 
                 ViewBag.IncludeInactive = includeInactive;
-                return View(result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست اطلاعیه‌ها");
                 TempData["Error"] = "خطا در بارگذاری لیست اطلاعیه‌ها";
-                return View(new System.Collections.Generic.List<AnnouncementIndexViewModel>());
+                return View(GetViewPath("Index"), new System.Collections.Generic.List<AnnouncementIndexViewModel>());
             }
         }
 
@@ -65,7 +65,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
@@ -89,7 +89,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     TargetAudience = "all"
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
@@ -101,20 +101,35 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ValidateInput(false)] // Allow HTML in Content field (CKEditor)
         public async Task<ActionResult> Create(AnnouncementCreateEditViewModel model)
         {
             try
             {
+                // لاگ تمام Form values برای دیباگ
+                _logger.Debug("Form values - StartDate: {StartDate}, StartDate_Hidden: {StartDateHidden}, EndDate: {EndDate}, EndDate_Hidden: {EndDateHidden}",
+                    Request.Form["StartDate"], Request.Form["StartDate_Hidden"], Request.Form["EndDate"], Request.Form["EndDate_Hidden"]);
+                
+                // تبدیل تاریخ‌های شمسی به میلادی از hidden inputs (استفاده از Extension Method)
+                model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+                model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
+                
+                _logger.Information("📊 مدل قبل از ذخیره - StartDate: {StartDate}, EndDate: {EndDate}", model.StartDate, model.EndDate);
+
+                // حذف خطاهای validation برای تاریخ‌ها (چون به صورت دستی تبدیل می‌کنیم)
+                ModelState.Remove("StartDate");
+                ModelState.Remove("EndDate");
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _announcementService.CreateAnnouncementAsync(model);
                 if (!result.Success)
                 {
                     TempData["Error"] = result.Message;
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 TempData["Success"] = "اطلاعیه با موفقیت ایجاد شد";
@@ -124,7 +139,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در ایجاد اطلاعیه");
                 TempData["Error"] = "خطا در ایجاد اطلاعیه";
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -140,7 +155,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
@@ -152,20 +167,126 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ValidateInput(false)] // Allow HTML in Content field (CKEditor)
         public async Task<ActionResult> Edit(AnnouncementCreateEditViewModel model)
         {
             try
             {
+                // لاگ تمام Form values برای دیباگ
+                _logger.Debug("Form values - StartDate: {StartDate}, StartDate_Hidden: {StartDateHidden}, EndDate: {EndDate}, EndDate_Hidden: {EndDateHidden}",
+                    Request.Form["StartDate"], Request.Form["StartDate_Hidden"], Request.Form["EndDate"], Request.Form["EndDate_Hidden"]);
+                
+                // تبدیل تاریخ‌های شمسی به میلادی از hidden inputs
+                var startDateHidden = Request.Form["StartDate_Hidden"];
+                if (!string.IsNullOrEmpty(startDateHidden))
+                {
+                    // TryParse با CultureInfo.InvariantCulture برای ISO format
+                    // تاریخ از JavaScript به صورت local date ارسال شده (بدون timezone)
+                    if (DateTime.TryParse(startDateHidden, System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out DateTime startDate))
+                    {
+                        // تاریخ به صورت Unspecified است، به عنوان local در نظر می‌گیریم
+                        startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Local);
+                        
+                        // فقط تاریخ را نگه دار (بدون زمان)
+                        model.StartDate = startDate.Date;
+                        _logger.Information("✅ تاریخ شروع از hidden input: {StartDate}", model.StartDate);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ خطا در parse کردن تاریخ شروع از hidden input: {StartDateHidden}", startDateHidden);
+                        var startDatePersian = Request.Form["StartDate"];
+                        if (!string.IsNullOrEmpty(startDatePersian))
+                        {
+                            model.StartDate = Helpers.PersianDateHelper.ParsePersianDate(startDatePersian);
+                            _logger.Information("✅ تاریخ شروع از PersianDateHelper: {StartDate}", model.StartDate);
+                        }
+                        else
+                        {
+                            model.StartDate = null;
+                            _logger.Debug("⚠️ تاریخ شروع null تنظیم شد");
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.Debug("⚠️ Hidden input برای تاریخ شروع خالی است");
+                    var startDatePersian = Request.Form["StartDate"];
+                    if (!string.IsNullOrEmpty(startDatePersian))
+                    {
+                        model.StartDate = Helpers.PersianDateHelper.ParsePersianDate(startDatePersian);
+                        _logger.Information("✅ تاریخ شروع از input شمسی: {StartDate}", model.StartDate);
+                    }
+                    else
+                    {
+                        model.StartDate = null;
+                        _logger.Debug("⚠️ تاریخ شروع null تنظیم شد");
+                    }
+                }
+
+                var endDateHidden = Request.Form["EndDate_Hidden"];
+                if (!string.IsNullOrEmpty(endDateHidden))
+                {
+                    // TryParse با CultureInfo.InvariantCulture برای ISO format
+                    // تاریخ از JavaScript به صورت local date ارسال شده (بدون timezone)
+                    if (DateTime.TryParse(endDateHidden, System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out DateTime endDate))
+                    {
+                        // تاریخ به صورت Unspecified است، به عنوان local در نظر می‌گیریم
+                        endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Local);
+                        
+                        // فقط تاریخ را نگه دار (بدون زمان)
+                        model.EndDate = endDate.Date;
+                        _logger.Information("✅ تاریخ پایان از hidden input: {EndDate}", model.EndDate);
+                    }
+                    else
+                    {
+                        _logger.Warning("⚠️ خطا در parse کردن تاریخ پایان از hidden input: {EndDateHidden}", endDateHidden);
+                        var endDatePersian = Request.Form["EndDate"];
+                        if (!string.IsNullOrEmpty(endDatePersian))
+                        {
+                            model.EndDate = Helpers.PersianDateHelper.ParsePersianDate(endDatePersian);
+                            _logger.Information("✅ تاریخ پایان از PersianDateHelper: {EndDate}", model.EndDate);
+                        }
+                        else
+                        {
+                            model.EndDate = null;
+                            _logger.Debug("⚠️ تاریخ پایان null تنظیم شد");
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.Debug("⚠️ Hidden input برای تاریخ پایان خالی است");
+                    var endDatePersian = Request.Form["EndDate"];
+                    if (!string.IsNullOrEmpty(endDatePersian))
+                    {
+                        model.EndDate = Helpers.PersianDateHelper.ParsePersianDate(endDatePersian);
+                        _logger.Information("✅ تاریخ پایان از input شمسی: {EndDate}", model.EndDate);
+                    }
+                    else
+                    {
+                        model.EndDate = null;
+                        _logger.Debug("⚠️ تاریخ پایان null تنظیم شد");
+                    }
+                }
+                
+                _logger.Information("📊 مدل قبل از ذخیره - StartDate: {StartDate}, EndDate: {EndDate}", model.StartDate, model.EndDate);
+
+                // حذف خطاهای validation برای تاریخ‌ها
+                ModelState.Remove("StartDate");
+                ModelState.Remove("EndDate");
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _announcementService.UpdateAnnouncementAsync(model);
                 if (!result.Success)
                 {
                     TempData["Error"] = result.Message;
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 TempData["Success"] = "اطلاعیه با موفقیت به‌روزرسانی شد";
@@ -175,7 +296,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی اطلاعیه - AnnouncementId: {AnnouncementId}", model.AnnouncementId);
                 TempData["Error"] = "خطا در به‌روزرسانی اطلاعیه";
-                return View(model);
+                return View(GetViewPath("Edit"), model);
             }
         }
 

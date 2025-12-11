@@ -7,7 +7,6 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
-    <link href="~/Content/plugins/tinymce/tinymce.min.css" rel="stylesheet" />
     <style>
         .form-container {
             background: #ffffff;
@@ -82,20 +81,14 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         @Html.LabelFor(m => m.Category)
-                        @Html.DropDownListFor(m => m.Category, new SelectList(new[] { 
-                            new SelectListItem { Text = "عمومی", Value = "general" },
-                            new SelectListItem { Text = "نوبت‌دهی", Value = "appointment" },
-                            new SelectListItem { Text = "بیمه", Value = "insurance" },
-                            new SelectListItem { Text = "خدمات", Value = "services" },
-                            new SelectListItem { Text = "هزینه‌ها", Value = "costs" }
-                        }, "Value", "Text", Model.Category), new { @class = "form-control" })
+                        @Html.DropDownListFor(m => m.Category, new SelectList(Model.Categories, "Value", "Text", Model.Category), new { @class = "form-control" })
                         @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
-                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number" })
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0" })
                         @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
                     </div>
                 </div>
@@ -123,8 +116,9 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         @Html.LabelFor(m => m.Slug)
-                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", placeholder = "آدرس URL" })
+                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", placeholder = "آدرس URL (اختیاری)" })
                         @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">اگر خالی باشد، به صورت خودکار از سوال تولید می‌شود</small>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -181,26 +175,10 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/tinymce/tinymce.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize TinyMCE
-            tinymce.init({
-                selector: '#answerEditor',
-                directionality: 'rtl',
-                language: 'fa_IR',
-                height: 300,
-                plugins: [
-                    'advlist autolink lists link charmap print preview anchor',
-                    'searchreplace visualblocks code fullscreen',
-                    'insertdatetime media table paste code help wordcount'
-                ],
-                toolbar: 'undo redo | formatselect | bold italic backcolor | \
-                    alignleft aligncenter alignright alignjustify | \
-                    bullist numlist outdent indent | removeformat | help',
-                content_style: 'body { font-family: Tahoma, Arial, sans-serif; font-size: 14px; }'
-            });
-        });
-    </script>
+    @Html.Partial("_CKEditorScript")
+    @{
+        ViewBag.CKEditorSelector = "#answerEditor";
+        ViewBag.CKEditorHeight = 300;
+    }
+    @Html.Partial("_CKEditorInit")
 }
-

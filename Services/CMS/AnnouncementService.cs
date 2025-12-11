@@ -152,7 +152,8 @@ namespace ClinicApp.Services.CMS
         {
             try
             {
-                _logger.Information("ایجاد اطلاعیه جدید - Title: {Title}", model.Title);
+                _logger.Information("ایجاد اطلاعیه جدید - Title: {Title}, StartDate: {StartDate}, EndDate: {EndDate}", 
+                    model.Title, model.StartDate, model.EndDate);
 
                 var announcement = new Announcement
                 {
@@ -170,15 +171,20 @@ namespace ClinicApp.Services.CMS
                     CreatedByUserId = _currentUserService.UserId
                 };
 
+                _logger.Debug("Announcement entity created - StartDate: {StartDate}, EndDate: {EndDate}", 
+                    announcement.StartDate, announcement.EndDate);
+
                 _announcementRepository.Add(announcement);
                 await _context.SaveChangesAsync();
 
-                _logger.Information("اطلاعیه با موفقیت ایجاد شد - AnnouncementId: {AnnouncementId}", announcement.AnnouncementId);
+                _logger.Information("اطلاعیه با موفقیت ایجاد شد - AnnouncementId: {AnnouncementId}, StartDate: {StartDate}, EndDate: {EndDate}", 
+                    announcement.AnnouncementId, announcement.StartDate, announcement.EndDate);
                 return ServiceResult<Announcement>.Successful(announcement, "اطلاعیه با موفقیت ایجاد شد");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در ایجاد اطلاعیه");
+                _logger.Error(ex, "خطا در ایجاد اطلاعیه - StartDate: {StartDate}, EndDate: {EndDate}", 
+                    model.StartDate, model.EndDate);
                 return ServiceResult<Announcement>.Failed("خطا در ایجاد اطلاعیه");
             }
         }
@@ -187,13 +193,17 @@ namespace ClinicApp.Services.CMS
         {
             try
             {
-                _logger.Information("به‌روزرسانی اطلاعیه - AnnouncementId: {AnnouncementId}", model.AnnouncementId);
+                _logger.Information("به‌روزرسانی اطلاعیه - AnnouncementId: {AnnouncementId}, StartDate: {StartDate}, EndDate: {EndDate}", 
+                    model.AnnouncementId, model.StartDate, model.EndDate);
 
                 var announcement = await _announcementRepository.GetByIdAsync(model.AnnouncementId);
                 if (announcement == null)
                 {
                     return ServiceResult<Announcement>.Failed("اطلاعیه یافت نشد");
                 }
+
+                _logger.Debug("قبل از به‌روزرسانی - StartDate: {StartDate}, EndDate: {EndDate}", 
+                    announcement.StartDate, announcement.EndDate);
 
                 announcement.Title = model.Title;
                 announcement.Content = model.Content;
@@ -208,15 +218,20 @@ namespace ClinicApp.Services.CMS
                 announcement.TargetAudience = model.TargetAudience ?? announcement.TargetAudience ?? "all";
                 announcement.UpdatedByUserId = _currentUserService.UserId;
 
+                _logger.Debug("بعد از به‌روزرسانی - StartDate: {StartDate}, EndDate: {EndDate}", 
+                    announcement.StartDate, announcement.EndDate);
+
                 _announcementRepository.Update(announcement);
                 await _context.SaveChangesAsync();
 
-                _logger.Information("اطلاعیه با موفقیت به‌روزرسانی شد - AnnouncementId: {AnnouncementId}", announcement.AnnouncementId);
+                _logger.Information("اطلاعیه با موفقیت به‌روزرسانی شد - AnnouncementId: {AnnouncementId}, StartDate: {StartDate}, EndDate: {EndDate}", 
+                    announcement.AnnouncementId, announcement.StartDate, announcement.EndDate);
                 return ServiceResult<Announcement>.Successful(announcement, "اطلاعیه با موفقیت به‌روزرسانی شد");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در به‌روزرسانی اطلاعیه - AnnouncementId: {AnnouncementId}", model.AnnouncementId);
+                _logger.Error(ex, "خطا در به‌روزرسانی اطلاعیه - AnnouncementId: {AnnouncementId}, StartDate: {StartDate}, EndDate: {EndDate}", 
+                    model.AnnouncementId, model.StartDate, model.EndDate);
                 return ServiceResult<Announcement>.Failed("خطا در به‌روزرسانی اطلاعیه");
             }
         }

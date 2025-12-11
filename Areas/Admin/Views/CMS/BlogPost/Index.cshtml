@@ -1,4 +1,4 @@
-@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.BlogPostIndexViewModel>
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.BlogPostIndexViewModel>
 @{
     ViewBag.Title = "مدیریت مقالات";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -39,25 +39,7 @@
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toaster نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
     <!-- Search Panel -->
     <div class="card shadow mb-4">
@@ -196,7 +178,7 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.TotalPages > 1)
                 {
                     <nav aria-label="صفحه‌بندی">
                         <ul class="pagination justify-content-center">

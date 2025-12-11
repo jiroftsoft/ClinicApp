@@ -340,6 +340,9 @@ namespace ClinicApp
                 
                 // Register HomePage Service
                 container.RegisterType<IHomePageService, HomePageService>(new PerRequestLifetimeManager());
+                
+                // Image Upload Service
+                container.RegisterType<IImageUploadService, ImageUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
 
                 // ثبت سرویس‌های تریاژ
@@ -398,6 +401,12 @@ namespace ClinicApp
                 
                 // ========== ثبت Service های CMS ==========
                 container.RegisterType<IBlogPostService, BlogPostService>(new PerRequestLifetimeManager());
+                
+                // BlogPost Comment & Like Services
+                container.RegisterType<IBlogPostCommentRepository, BlogPostCommentRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IBlogPostCommentService, BlogPostCommentService>(new PerRequestLifetimeManager());
+                container.RegisterType<IBlogPostLikeRepository, BlogPostLikeRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IBlogPostLikeService, BlogPostLikeService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISliderService, SliderService>(new PerRequestLifetimeManager());
                 container.RegisterType<IAnnouncementService, AnnouncementService>(new PerRequestLifetimeManager());
                 container.RegisterType<ITestimonialService, TestimonialService>(new PerRequestLifetimeManager());

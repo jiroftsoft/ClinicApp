@@ -6,6 +6,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.ViewModels.CMS;
 using Serilog;
+using System.Collections.Generic;
 
 namespace ClinicApp.Areas.Admin.Controllers.CMS
 {
@@ -14,18 +15,32 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class BlogPostController : Controller
+    public class BlogPostController : BaseCMSController
     {
         private readonly IBlogPostService _blogPostService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IImageUploadService _imageUploadService;
+        private readonly IBlogPostCommentService _commentService;
         private readonly ILogger _logger;
+
+        // Production Configuration
+        private const string BlogImageUploadPath = "~/Content/Images/blog";
+        private const string BlogThumbnailUploadPath = "~/Content/Images/blog/thumbnails";
+        private const int ThumbnailWidth = 300;
+        private const int ThumbnailHeight = 300;
+        private const int MaxImageWidth = 1920; // Full HD
+        private const int MaxImageHeight = 1080; // Full HD
 
         public BlogPostController(
             IBlogPostService blogPostService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IImageUploadService imageUploadService,
+            IBlogPostCommentService commentService)
         {
             _blogPostService = blogPostService ?? throw new ArgumentNullException(nameof(blogPostService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _imageUploadService = imageUploadService ?? throw new ArgumentNullException(nameof(imageUploadService));
+            _commentService = commentService ?? throw new ArgumentNullException(nameof(commentService));
             _logger = Log.ForContext<BlogPostController>();
         }
 
@@ -57,17 +72,17 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست مقالات: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
-                    return View(new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Index"), new PagedResult<BlogPostIndexViewModel>(new List<BlogPostIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست مقالات");
-                TempData["Error"] = "خطا در بارگذاری لیست مقالات";
-                return View(new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, 1, 10));
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری لیست مقالات");
+                return View(GetViewPath("Index"), new PagedResult<BlogPostIndexViewModel>(new List<BlogPostIndexViewModel>(), 0, 1, 10));
             }
         }
 
@@ -87,16 +102,32 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                // Load comments for this blog post
+                var commentsResult = await _commentService.GetCommentsByBlogPostIdAsync(id, 1, 10);
+                var comments = commentsResult.Success 
+                    ? commentsResult.Data 
+                    : new PagedResult<BlogPostCommentViewModel>(new System.Collections.Generic.List<BlogPostCommentViewModel>(), 0, 1, 10);
+
+                // Create strongly-typed ViewModel
+                var viewModel = new BlogPostDetailsWithCommentsViewModel
+                {
+                    BlogPost = result.Data,
+                    Comments = comments
+                };
+
+                // Set ViewBag for Partial View compatibility
+                ViewBag.BlogPostId = id;
+
+                return View(GetViewPath("Details"), viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش جزئیات مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در بارگذاری جزئیات مقاله";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری جزئیات مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -120,12 +151,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     DisplayOrder = 0
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ایجاد مقاله");
-                TempData["Error"] = "خطا در بارگذاری فرم ایجاد مقاله";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ایجاد مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -142,9 +173,15 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست ایجاد مقاله جدید توسط کاربر {UserId}", _currentUserService.UserId);
 
+                // Parse تاریخ انتشار از hidden input
+                model.PublishedAt = this.ParseDateFromHiddenInput("PublishedAt", _logger);
+
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model);
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _blogPostService.CreateBlogPostAsync(model);
@@ -152,19 +189,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در ایجاد مقاله: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
-                    return View(model);
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 _logger.Information("مقاله با موفقیت ایجاد شد - BlogPostId: {BlogPostId}", result.Data.BlogPostId);
-                TempData["Success"] = "مقاله با موفقیت ایجاد شد";
+                NotificationHelper.SetSuccess(TempData, "مقاله با موفقیت ایجاد شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ایجاد مقاله");
-                TempData["Error"] = "خطا در ایجاد مقاله";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در ایجاد مقاله");
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -184,16 +221,16 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ویرایش مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در بارگذاری فرم ویرایش مقاله";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ویرایش مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -210,9 +247,15 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Information("درخواست به‌روزرسانی مقاله - BlogPostId: {BlogPostId}", model.BlogPostId);
 
+                // Parse تاریخ انتشار از hidden input
+                model.PublishedAt = this.ParseDateFromHiddenInput("PublishedAt", _logger);
+
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model);
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _blogPostService.UpdateBlogPostAsync(model);
@@ -220,19 +263,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در به‌روزرسانی مقاله: {ErrorMessage}", result.Message);
-                    TempData["Error"] = result.Message;
-                    return View(model);
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 _logger.Information("مقاله با موفقیت به‌روزرسانی شد - BlogPostId: {BlogPostId}", model.BlogPostId);
-                TempData["Success"] = "مقاله با موفقیت به‌روزرسانی شد";
+                NotificationHelper.SetSuccess(TempData, "مقاله با موفقیت به‌روزرسانی شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی مقاله - BlogPostId: {BlogPostId}", model.BlogPostId);
-                TempData["Error"] = "خطا در به‌روزرسانی مقاله";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی مقاله");
+                return View(GetViewPath("Edit"), model);
             }
         }
 
@@ -255,11 +298,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "مقاله با موفقیت حذف شد";
+                    NotificationHelper.SetSuccess(TempData, "مقاله با موفقیت حذف شد");
                 }
 
                 return RedirectToAction("Index");
@@ -267,7 +310,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در حذف مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در حذف مقاله";
+                NotificationHelper.SetError(TempData, "خطا در حذف مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -289,11 +332,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "مقاله با موفقیت منتشر شد";
+                    NotificationHelper.SetSuccess(TempData, "مقاله با موفقیت منتشر شد");
                 }
 
                 return RedirectToAction("Index");
@@ -301,7 +344,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در انتشار مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در انتشار مقاله";
+                NotificationHelper.SetError(TempData, "خطا در انتشار مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -319,11 +362,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "مقاله از حالت انتشار خارج شد";
+                    NotificationHelper.SetSuccess(TempData, "مقاله از حالت انتشار خارج شد");
                 }
 
                 return RedirectToAction("Index");
@@ -331,7 +374,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در لغو انتشار مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در لغو انتشار مقاله";
+                NotificationHelper.SetError(TempData, "خطا در لغو انتشار مقاله");
                 return RedirectToAction("Index");
             }
         }
@@ -353,11 +396,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = isFeatured ? "مقاله به عنوان ویژه تنظیم شد" : "مقاله از حالت ویژه خارج شد";
+                    NotificationHelper.SetSuccess(TempData, isFeatured ? "مقاله به عنوان ویژه تنظیم شد" : "مقاله از حالت ویژه خارج شد");
                 }
 
                 return RedirectToAction("Index");
@@ -365,8 +408,87 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در تنظیم وضعیت ویژه مقاله - BlogPostId: {BlogPostId}", id);
-                TempData["Error"] = "خطا در تنظیم وضعیت ویژه مقاله";
+                NotificationHelper.SetError(TempData, "خطا در تنظیم وضعیت ویژه مقاله");
                 return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region Image Upload
+
+        /// <summary>
+        /// پردازش آپلود تصویر مقاله
+        /// </summary>
+        private async Task ProcessImageUpload(BlogPostCreateEditViewModel model)
+        {
+            try
+            {
+                var imageFile = Request.Files["ImageFile"];
+                var thumbnailFile = Request.Files["ThumbnailFile"];
+
+                // اگر تصویر اصلی آپلود شده
+                if (imageFile != null && imageFile.ContentLength > 0)
+                {
+                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
+                        imageFile,
+                        BlogImageUploadPath,
+                        BlogThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        MaxImageWidth,
+                        MaxImageHeight);
+
+                    if (!uploadResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود تصویر: {ErrorMessage}", uploadResult.Message);
+                        NotificationHelper.SetError(TempData, uploadResult.Message);
+                        ModelState.AddModelError("ImageFile", uploadResult.Message);
+                        return;
+                    }
+
+                    // تنظیم مسیر تصویر اصلی
+                    model.ImageUrl = uploadResult.Data.ImageUrl;
+
+                    // اگر thumbnail جداگانه آپلود نشده، از thumbnail خودکار استفاده کن
+                    if (thumbnailFile == null || thumbnailFile.ContentLength == 0)
+                    {
+                        model.ThumbnailUrl = uploadResult.Data.ThumbnailUrl;
+                    }
+
+                    _logger.Information("تصویر با موفقیت آپلود شد: {ImageUrl}, Thumbnail: {ThumbnailUrl}",
+                        model.ImageUrl, model.ThumbnailUrl);
+                }
+
+                // اگر thumbnail جداگانه آپلود شده
+                if (thumbnailFile != null && thumbnailFile.ContentLength > 0)
+                {
+                    var thumbnailResult = _imageUploadService.UploadImageWithThumbnail(
+                        thumbnailFile,
+                        BlogThumbnailUploadPath,
+                        BlogThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        ThumbnailWidth,
+                        ThumbnailHeight);
+
+                    if (!thumbnailResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود thumbnail: {ErrorMessage}", thumbnailResult.Message);
+                        NotificationHelper.SetError(TempData, thumbnailResult.Message);
+                        ModelState.AddModelError("ThumbnailFile", thumbnailResult.Message);
+                        return;
+                    }
+
+                    model.ThumbnailUrl = thumbnailResult.Data.ImageUrl;
+                    _logger.Information("Thumbnail جداگانه با موفقیت آپلود شد: {ThumbnailUrl}", model.ThumbnailUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پردازش آپلود تصویر");
+                NotificationHelper.SetError(TempData, "خطا در آپلود تصویر");
+                ModelState.AddModelError("", "خطا در آپلود تصویر");
             }
         }
 

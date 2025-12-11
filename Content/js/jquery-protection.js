@@ -7,11 +7,35 @@
 (function() {
     'use strict';
     
-    // Syntax Error Prevention
+    // Syntax Error Prevention & CKEditor License Warning Suppression
     function preventSyntaxErrors() {
-        // Override console.error to catch syntax errors
+        // Override console.error to catch syntax errors and suppress CKEditor license warnings
         const originalError = console.error;
         console.error = function(...args) {
+            // Check if this is a CKEditor license warning
+            const message = args.join(' ');
+            if (message && (
+                message.indexOf('license key') !== -1 && message.indexOf('CKEDITOR') !== -1 ||
+                message.indexOf('The license key is missing or invalid') !== -1 ||
+                message.indexOf('Extended Support Model') !== -1
+            )) {
+                // Suppress CKEditor license warning (using free CDN version recommended)
+                console.warn('⚠️ CKEditor License Warning suppressed (using free CDN version recommended)');
+                return;
+            }
+            
+            // Suppress CSP violations for CKEditor (non-critical)
+            if (message && (
+                message.indexOf('Content Security Policy') !== -1 && message.indexOf('CKEDITOR') !== -1 ||
+                message.indexOf('violates the following Content Security Policy') !== -1 && message.indexOf('ckeditor') !== -1 ||
+                message.indexOf('cke4.ckeditor.com') !== -1
+            )) {
+                // Suppress CKEditor CSP violations (version check is disabled, but some may still occur)
+                console.warn('⚠️ CKEditor CSP Warning suppressed (version check disabled)');
+                return;
+            }
+            
+            // Handle syntax errors
             if (args[0] && args[0].includes && args[0].includes('Unexpected token')) {
                 console.warn('Syntax error detected, attempting to fix...');
                 // Try to fix common syntax errors

@@ -1,0 +1,82 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.BlogPostCommentViewModel>
+@{
+    var blogPostId = ViewBag.BlogPostId as int? ?? 0;
+}
+
+@if (Model.Items != null && Model.Items.Any())
+{
+    <div class="comments-list">
+        @foreach (var comment in Model.Items)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>@comment.AuthorName</strong>
+                            @if (!string.IsNullOrEmpty(comment.AuthorUserName))
+                            {
+                                <small class="text-muted">(@comment.AuthorUserName)</small>
+                            }
+                        </div>
+                        <div>
+                            <small class="text-muted">@ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(comment.CreatedAt, false)</small>
+                            @if (comment.IsApproved)
+                            {
+                                <span class="badge badge-success mr-2">تأیید شده</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning mr-2">در انتظار تأیید</span>
+                            }
+                        </div>
+                    </div>
+                    <p class="mb-2">@comment.CommentText</p>
+                    <div class="comment-actions">
+                        @if (!comment.IsApproved)
+                        {
+                            using (Html.BeginForm("Approve", "BlogPostComment", FormMethod.Post, new { style = "display: inline;" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                @Html.Hidden("id", comment.BlogPostCommentId)
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> تأیید
+                                </button>
+                            }
+                        }
+                        @using (Html.BeginForm("Delete", "BlogPostComment", FormMethod.Post, new { style = "display: inline;", onsubmit = "return confirm('آیا مطمئن هستید؟');" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("id", comment.BlogPostCommentId)
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        }
+                    </div>
+                    @if (comment.Replies != null && comment.Replies.Any())
+                    {
+                        <div class="replies mt-3 mr-4">
+                            <h6>پاسخ‌ها:</h6>
+                            @foreach (var reply in comment.Replies)
+                            {
+                                <div class="card mb-2">
+                                    <div class="card-body">
+                                        <strong>@reply.AuthorName</strong>
+                                        <small class="text-muted">@ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(reply.CreatedAt, false)</small>
+                                        <p class="mb-0 mt-1">@reply.CommentText</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> هنوز کامنتی ثبت نشده است.
+    </div>
+}
+

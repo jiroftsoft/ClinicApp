@@ -12,6 +12,8 @@ using Serilog.Sinks.MSSqlServer;
 using Serilog.Sinks.SystemConsole.Themes; // ممکن است این using دیگر لازم نباشد
 using System;
 using System.Configuration;
+using System.Linq;
+using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
@@ -21,6 +23,162 @@ namespace ClinicApp
 {
     public class MvcApplication : System.Web.HttpApplication
     {
+        protected void Application_BeginRequest(object sender, EventArgs e)
+        {
+            // Redirect کردن URL های اشتباه View به Controller Action
+            // مثال: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml -> /Admin/CMS/ClinicWorkingHours
+            string path = Request.Path; // استفاده از path اصلی برای حفظ حروف صحیح
+            
+            if (path.StartsWith("/Areas/Admin/Views/", StringComparison.OrdinalIgnoreCase))
+            {
+                // Parse کردن path: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml
+                var pathAfterViews = path.Substring("/Areas/Admin/Views/".Length);
+                var pathParts = pathAfterViews.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                if (pathParts.Length >= 2 && pathParts[0].Equals("CMS", StringComparison.OrdinalIgnoreCase))
+                {
+                    // استفاده از حروف اصلی برای controller name (PascalCase)
+                    var controllerName = ToPascalCase(pathParts[1]);
+                    var actionName = pathParts.Length > 2 ? pathParts[2].Replace(".cshtml", "") : "Index";
+                    
+                    // حذف پسوند .cshtml
+                    if (actionName.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionName = actionName.Replace(".cshtml", "");
+                    }
+                    
+                    // تبدیل action name به PascalCase
+                    actionName = ToPascalCase(actionName);
+                    
+                    var redirectUrl = $"/Admin/CMS/{controllerName}";
+                    if (!actionName.Equals("Index", StringComparison.OrdinalIgnoreCase))
+                    {
+                        redirectUrl += $"/{actionName}";
+                    }
+                    
+                    Response.RedirectPermanent(redirectUrl, true);
+                    return;
+                }
+                else if (pathParts.Length >= 1)
+                {
+                    // برای سایر Controllers در Admin (بدون CMS)
+                    var controllerName = ToPascalCase(pathParts[0]);
+                    var actionName = pathParts.Length > 1 ? pathParts[1].Replace(".cshtml", "") : "Index";
+                    
+                    if (actionName.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionName = actionName.Replace(".cshtml", "");
+                    }
+                    
+                    // تبدیل action name به PascalCase
+                    actionName = ToPascalCase(actionName);
+                    
+                    var redirectUrl = $"/Admin/{controllerName}";
+                    if (!actionName.Equals("Index", StringComparison.OrdinalIgnoreCase))
+                    {
+                        redirectUrl += $"/{actionName}";
+                    }
+                    
+                    Response.RedirectPermanent(redirectUrl, true);
+                    return;
+                }
+            }
+            else if (path.StartsWith("/Areas/Patient/Views/", StringComparison.OrdinalIgnoreCase))
+            {
+                // برای Patient Area
+                var pathAfterViews = path.Substring("/Areas/Patient/Views/".Length);
+                var pathParts = pathAfterViews.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                if (pathParts.Length >= 1)
+                {
+                    var controllerName = ToPascalCase(pathParts[0]);
+                    var actionName = pathParts.Length > 1 ? pathParts[1].Replace(".cshtml", "") : "Index";
+                    
+                    if (actionName.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionName = actionName.Replace(".cshtml", "");
+                    }
+                    
+                    // تبدیل action name به PascalCase
+                    actionName = ToPascalCase(actionName);
+                    
+                    var redirectUrl = $"/Patient/{controllerName}";
+                    if (!actionName.Equals("Index", StringComparison.OrdinalIgnoreCase))
+                    {
+                        redirectUrl += $"/{actionName}";
+                    }
+                    
+                    Response.RedirectPermanent(redirectUrl, true);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// تبدیل string به PascalCase
+        /// مثال: "clinicworkinghours" -> "ClinicWorkingHours"
+        /// مثال: "ClinicWorkingHours" -> "ClinicWorkingHours" (بدون تغییر)
+        /// </summary>
+        private string ToPascalCase(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // اگر قبلاً PascalCase است (شروع با حرف بزرگ و بعد حرف کوچک)، برگردان
+            if (char.IsUpper(input[0]) && input.Length > 1 && char.IsLower(input[1]))
+            {
+                return input;
+            }
+
+            // اگر همه حروف کوچک است، تبدیل به PascalCase
+            if (input.All(c => char.IsLower(c) || char.IsDigit(c)))
+            {
+                // پیدا کردن کلمات بر اساس حروف بزرگ یا جداکننده‌ها
+                var result = new System.Text.StringBuilder();
+                bool isNewWord = true;
+                
+                foreach (char c in input)
+                {
+                    if (char.IsLetterOrDigit(c))
+                    {
+                        if (isNewWord)
+                        {
+                            result.Append(char.ToUpper(c));
+                            isNewWord = false;
+                        }
+                        else
+                        {
+                            result.Append(char.ToLower(c));
+                        }
+                    }
+                    else
+                    {
+                        isNewWord = true;
+                    }
+                }
+                
+                return result.ToString();
+            }
+
+            // اگر مخلوط است، سعی کن کلمات را پیدا کن
+            var words = System.Text.RegularExpressions.Regex.Split(input, @"(?<!^)(?=[A-Z])|(?<=[a-z])(?=[A-Z])|_|-|\s");
+            var result2 = new System.Text.StringBuilder();
+            
+            foreach (var word in words)
+            {
+                if (!string.IsNullOrEmpty(word) && char.IsLetterOrDigit(word[0]))
+                {
+                    result2.Append(char.ToUpper(word[0]));
+                    if (word.Length > 1)
+                    {
+                        result2.Append(word.Substring(1).ToLower());
+                    }
+                }
+            }
+            
+            return result2.Length > 0 ? result2.ToString() : input;
+        }
+
         protected void Application_Start()
         {
             // تنظیمات Culture برای پشتیبانی بهتر از فارسی
@@ -33,6 +191,10 @@ namespace ClinicApp
             System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             
             AreaRegistration.RegisterAllAreas();
+            
+            // ✅ ثبت Web API Configuration
+            GlobalConfiguration.Configure(WebApiConfig.Register);
+            
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             
             // Medical Environment: Global No-Cache Filter

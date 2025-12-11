@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class TestimonialController : Controller
+    public class TestimonialController : BaseCMSController
     {
         private readonly ITestimonialService _testimonialService;
         private readonly ICurrentUserService _currentUserService;

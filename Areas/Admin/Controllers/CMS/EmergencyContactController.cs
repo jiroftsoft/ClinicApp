@@ -18,7 +18,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class EmergencyContactController : Controller
+    public class EmergencyContactController : BaseCMSController
     {
         private readonly IEmergencyContactService _emergencyContactService;
         private readonly ICurrentUserService _currentUserService;
@@ -35,6 +35,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = Log.ForContext<EmergencyContactController>();
         }
+
 
         #region Index & Listing
 
@@ -62,7 +63,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 {
                     _logger.Warning("خطا در دریافت لیست تماس‌های اضطراری: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(new PagedResult<EmergencyContactIndexViewModel>(new System.Collections.Generic.List<EmergencyContactIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
+                    return View(GetViewPath("Index"), new PagedResult<EmergencyContactIndexViewModel>(new System.Collections.Generic.List<EmergencyContactIndexViewModel>(), 0, searchModel.PageNumber, searchModel.PageSize));
                 }
 
                 // بارگذاری انواع تماس برای فیلتر
@@ -79,13 +80,13 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     Text = GetTypeDisplayName(t)
                 }).ToList();
 
-                return View(result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست تماس‌های اضطراری");
                 TempData["Error"] = "خطا در بارگذاری لیست تماس‌های اضطراری";
-                return View(new PagedResult<EmergencyContactIndexViewModel>(new System.Collections.Generic.List<EmergencyContactIndexViewModel>(), 0, 1, 10));
+                return View(GetViewPath("Index"), new PagedResult<EmergencyContactIndexViewModel>(new System.Collections.Generic.List<EmergencyContactIndexViewModel>(), 0, 1, 10));
             }
         }
 
@@ -106,7 +107,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
@@ -142,7 +143,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     DisplayOrder = 0
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
@@ -171,7 +172,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "بیمارستان", Value = "Hospital" },
                         new SelectListItem { Text = "کلینیک", Value = "Clinic" }
                     }, "Value", "Text", model.ContactType);
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _emergencyContactService.CreateEmergencyContactAsync(model);
@@ -190,7 +191,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "بیمارستان", Value = "Hospital" },
                         new SelectListItem { Text = "کلینیک", Value = "Clinic" }
                     }, "Value", "Text", model.ContactType);
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 _logger.Information("تماس اضطراری با موفقیت ایجاد شد - EmergencyContactId: {EmergencyContactId}", result.Data.EmergencyContactId);
@@ -201,7 +202,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در ایجاد تماس اضطراری");
                 TempData["Error"] = "خطا در ایجاد تماس اضطراری";
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -232,7 +233,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     new SelectListItem { Text = "کلینیک", Value = "Clinic" }
                 }, "Value", "Text", result.Data.ContactType);
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
@@ -261,7 +262,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "بیمارستان", Value = "Hospital" },
                         new SelectListItem { Text = "کلینیک", Value = "Clinic" }
                     }, "Value", "Text", model.ContactType);
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _emergencyContactService.UpdateEmergencyContactAsync(model);
@@ -280,7 +281,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                         new SelectListItem { Text = "بیمارستان", Value = "Hospital" },
                         new SelectListItem { Text = "کلینیک", Value = "Clinic" }
                     }, "Value", "Text", model.ContactType);
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 _logger.Information("تماس اضطراری با موفقیت به‌روزرسانی شد - EmergencyContactId: {EmergencyContactId}", model.EmergencyContactId);
@@ -291,7 +292,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی تماس اضطراری - EmergencyContactId: {EmergencyContactId}", model.EmergencyContactId);
                 TempData["Error"] = "خطا در به‌روزرسانی تماس اضطراری";
-                return View(model);
+                return View(GetViewPath("Edit"), model);
             }
         }
 

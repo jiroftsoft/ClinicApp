@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class GalleryController : Controller
+    public class GalleryController : BaseCMSController
     {
         private readonly IGalleryService _galleryService;
         private readonly ICurrentUserService _currentUserService;

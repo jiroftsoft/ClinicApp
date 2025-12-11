@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    public class HealthTipController : Controller
+    public class HealthTipController : BaseCMSController
     {
         private readonly IHealthTipService _healthTipService;
         private readonly ICurrentUserService _currentUserService;

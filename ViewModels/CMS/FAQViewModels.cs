@@ -15,6 +15,15 @@ namespace ClinicApp.ViewModels.CMS
         public bool? IsFeatured { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+        
+        // Strongly-Typed: لیست دسته‌بندی‌ها برای فیلتر
+        public List<System.Web.Mvc.SelectListItem> Categories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+    }
+
+    public class FAQIndexPageViewModel
+    {
+        public Interfaces.PagedResult<FAQIndexViewModel> PagedResult { get; set; }
+        public List<System.Web.Mvc.SelectListItem> Categories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
     }
 
     public class FAQIndexViewModel
@@ -51,6 +60,9 @@ namespace ClinicApp.ViewModels.CMS
         [MaxLength(100, ErrorMessage = "دسته‌بندی نمی‌تواند بیش از 100 کاراکتر باشد.")]
         [Display(Name = "دسته‌بندی")]
         public string Category { get; set; } // "appointment", "insurance", "services", "costs", "general"
+
+        // Strongly-Typed: لیست دسته‌بندی‌ها برای DropDown
+        public List<System.Web.Mvc.SelectListItem> Categories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
 
         [MaxLength(500, ErrorMessage = "برچسب‌ها نمی‌توانند بیش از 500 کاراکتر باشند.")]
         [Display(Name = "برچسب‌ها (با کاما جدا کنید)")]

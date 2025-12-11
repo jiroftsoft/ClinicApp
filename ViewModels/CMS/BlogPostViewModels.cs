@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 
 namespace ClinicApp.ViewModels.CMS
 {
@@ -118,6 +119,16 @@ namespace ClinicApp.ViewModels.CMS
         public string CreatedByUserName { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedByUserName { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای نمایش جزئیات مقاله همراه با کامنت‌ها
+    /// طراحی شده برای محیط Production درمانی با Strongly-Typed
+    /// </summary>
+    public class BlogPostDetailsWithCommentsViewModel
+    {
+        public BlogPostDetailsViewModel BlogPost { get; set; }
+        public PagedResult<BlogPostCommentViewModel> Comments { get; set; }
     }
 
     #endregion

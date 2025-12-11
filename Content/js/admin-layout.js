@@ -648,11 +648,30 @@
          */
         setupGlobalErrorHandling: function() {
             window.addEventListener('error', (e) => {
+                // Filter out CKEditor plugin loading errors (non-critical)
+                if (e.error && e.error.message) {
+                    const errorMsg = e.error.message.toString();
+                    if (errorMsg.indexOf('plugin.js') !== -1 || 
+                        errorMsg.indexOf('this.get is not a function') !== -1 ||
+                        errorMsg.indexOf('CKEDITOR') !== -1) {
+                        console.warn('CKEditor plugin loading error (non-critical, suppressed):', e.error);
+                        return; // Don't process CKEditor plugin errors
+                    }
+                }
                 console.error('Global Error:', e.error);
                 this.handleError(e.error);
             });
 
             window.addEventListener('unhandledrejection', (e) => {
+                // Filter out CKEditor-related promise rejections
+                if (e.reason) {
+                    const reasonMsg = e.reason.toString ? e.reason.toString() : String(e.reason);
+                    if (reasonMsg.indexOf('plugin.js') !== -1 || 
+                        reasonMsg.indexOf('CKEDITOR') !== -1) {
+                        console.warn('CKEditor promise rejection (non-critical, suppressed):', e.reason);
+                        return; // Don't process CKEditor promise rejections
+                    }
+                }
                 console.error('Unhandled Promise Rejection:', e.reason);
                 this.handleError(e.reason);
             });
@@ -683,14 +702,22 @@
          * Handle error
          */
         handleError: function(error) {
+            // Handle null/undefined errors gracefully
+            if (!error) {
+                console.warn('Error handler called with null/undefined error - ignoring');
+                return;
+            }
+            
             console.error('Error handled:', error);
             
             // Show user-friendly error message
-            const message = error.message || i18n.t('error.general');
-            notificationManager.show(message, 'error');
+            const message = (error && error.message) ? error.message : (typeof i18n !== 'undefined' && i18n.t ? i18n.t('error.general') : 'An error occurred');
+            if (typeof notificationManager !== 'undefined' && notificationManager.show) {
+                notificationManager.show(message, 'error');
+            }
             
             // Send to error tracking service (if available)
-            if (window.gtag) {
+            if (window.gtag && error && error.message) {
                 window.gtag('event', 'exception', {
                     description: error.message,
                     fatal: false

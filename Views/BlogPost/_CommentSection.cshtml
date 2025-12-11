@@ -1,0 +1,208 @@
+@model int
+@{
+    var blogPostId = Model;
+}
+
+<div class="blog-comment-section mt-5" id="commentSection">
+    <h4 class="mb-4">
+        <i class="fas fa-comments"></i> کامنت‌ها
+        <span id="commentCount" class="badge badge-primary"></span>
+    </h4>
+
+    <!-- Comment Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">نظر خود را بنویسید</h5>
+            @using (Html.BeginForm("CreateComment", "BlogPostCommentApi", FormMethod.Post, new { id = "commentForm", @class = "mt-3" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("BlogPostId", blogPostId)
+
+                <div class="form-group">
+                    <label for="CommentText">متن کامنت <span class="text-danger">*</span></label>
+                    <textarea id="CommentText" name="CommentText" class="form-control" rows="4" required maxlength="2000" placeholder="نظر خود را اینجا بنویسید..."></textarea>
+                    <small class="form-text text-muted">حداکثر 2000 کاراکتر</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="AuthorName">نام</label>
+                            <input type="text" id="AuthorName" name="AuthorName" class="form-control" maxlength="200" placeholder="نام شما">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="AuthorEmail">ایمیل</label>
+                            <input type="email" id="AuthorEmail" name="AuthorEmail" class="form-control" maxlength="500" placeholder="email@example.com">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="AuthorPhone">شماره تماس</label>
+                            <input type="text" id="AuthorPhone" name="AuthorPhone" class="form-control" maxlength="50" placeholder="09123456789">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> ارسال کامنت
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Comments List -->
+    <div id="commentsList" class="comments-list">
+        <!-- کامنت‌ها با AJAX لود می‌شوند -->
+    </div>
+
+    <!-- Pagination -->
+    <div id="commentsPagination" class="mt-4">
+        <!-- Pagination با AJAX لود می‌شود -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var blogPostId = @blogPostId;
+            var currentPage = 1;
+
+            // Load comments
+            function loadComments(page) {
+                $.ajax({
+                    url: '@Url.Action("GetComments", "BlogPostCommentApi")',
+                    type: 'GET',
+                    data: { blogPostId: blogPostId, pageNumber: page, pageSize: 10 },
+                    success: function(response) {
+                        if (response.success) {
+                            displayComments(response.data.items);
+                            displayPagination(response.data);
+                            $('#commentCount').text(response.data.totalItems);
+                        } else {
+                            AdminNotification.error(response.message || 'خطا در بارگذاری کامنت‌ها');
+                        }
+                    },
+                    error: function() {
+                        AdminNotification.error('خطا در بارگذاری کامنت‌ها');
+                    }
+                });
+            }
+
+            // Display comments
+            function displayComments(comments) {
+                var html = '';
+                if (comments && comments.length > 0) {
+                    comments.forEach(function(comment) {
+                        html += '<div class="card mb-3 comment-item">';
+                        html += '<div class="card-body">';
+                        html += '<div class="d-flex justify-content-between align-items-start mb-2">';
+                        html += '<div>';
+                        html += '<strong>' + (comment.authorName || 'ناشناس') + '</strong>';
+                        if (comment.authorUserName) {
+                            html += ' <small class="text-muted">(@' + comment.authorUserName + ')</small>';
+                        }
+                        html += '</div>';
+                        html += '<small class="text-muted">' + comment.createdAt + '</small>';
+                        html += '</div>';
+                        html += '<p class="mb-2">' + comment.commentText + '</p>';
+                        html += '<div class="comment-actions">';
+                        html += '<button class="btn btn-sm btn-link text-danger" onclick="reportComment(' + comment.blogPostCommentId + ')">';
+                        html += '<i class="fas fa-flag"></i> گزارش';
+                        html += '</button>';
+                        html += '</div>';
+                        // Replies
+                        if (comment.replies && comment.replies.length > 0) {
+                            html += '<div class="replies mt-3 mr-4">';
+                            comment.replies.forEach(function(reply) {
+                                html += '<div class="card mb-2 reply-item">';
+                                html += '<div class="card-body">';
+                                html += '<strong>' + (reply.authorName || 'ناشناس') + '</strong>';
+                                html += ' <small class="text-muted">' + reply.createdAt + '</small>';
+                                html += '<p class="mb-0 mt-1">' + reply.commentText + '</p>';
+                                html += '</div></div>';
+                            });
+                            html += '</div>';
+                        }
+                        html += '</div></div>';
+                    });
+                } else {
+                    html = '<div class="alert alert-info">هنوز کامنتی ثبت نشده است.</div>';
+                }
+                $('#commentsList').html(html);
+            }
+
+            // Display pagination
+            function displayPagination(data) {
+                if (data.totalPages <= 1) {
+                    $('#commentsPagination').html('');
+                    return;
+                }
+
+                var html = '<nav><ul class="pagination justify-content-center">';
+                for (var i = 1; i <= data.totalPages; i++) {
+                    html += '<li class="page-item ' + (i === data.pageNumber ? 'active' : '') + '">';
+                    html += '<a class="page-link" href="javascript:void(0)" onclick="loadComments(' + i + ')">' + i + '</a>';
+                    html += '</li>';
+                }
+                html += '</ul></nav>';
+                $('#commentsPagination').html(html);
+            }
+
+            // Submit comment form
+            $('#commentForm').on('submit', function(e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    url: '@Url.Action("CreateComment", "BlogPostCommentApi")',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            AdminNotification.success(response.message || 'کامنت شما با موفقیت ثبت شد و پس از تأیید نمایش داده می‌شود.');
+                            $('#commentForm')[0].reset();
+                            loadComments(1);
+                        } else {
+                            AdminNotification.error(response.message || 'خطا در ثبت کامنت');
+                        }
+                    },
+                    error: function() {
+                        AdminNotification.error('خطا در ثبت کامنت');
+                    }
+                });
+            });
+
+            // Report comment
+            window.reportComment = function(commentId) {
+                if (!confirm('آیا مطمئن هستید که می‌خواهید این کامنت را گزارش کنید؟')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("ReportComment", "BlogPostCommentApi")',
+                    type: 'POST',
+                    data: {
+                        commentId: commentId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            AdminNotification.success(response.message || 'کامنت گزارش شد');
+                        } else {
+                            AdminNotification.error(response.message || 'خطا در گزارش کامنت');
+                        }
+                    },
+                    error: function() {
+                        AdminNotification.error('خطا در گزارش کامنت');
+                    }
+                });
+            };
+
+            // Load comments on page load
+            loadComments(1);
+        });
+    </script>
+}
+

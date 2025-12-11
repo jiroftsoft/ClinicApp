@@ -7,7 +7,7 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
-    <link href="~/Content/plugins/tinymce/tinymce.min.css" rel="stylesheet" />
+    @* CKEditor 5 CSS is included in the main JS file - no separate CSS needed *@
     <style>
         .form-container {
             background: #ffffff;
@@ -221,26 +221,11 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/tinymce/tinymce.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize TinyMCE
-            tinymce.init({
-                selector: '#contentEditor',
-                directionality: 'rtl',
-                language: 'fa_IR',
-                height: 400,
-                plugins: [
-                    'advlist autolink lists link image charmap print preview anchor',
-                    'searchreplace visualblocks code fullscreen',
-                    'insertdatetime media table paste code help wordcount'
-                ],
-                toolbar: 'undo redo | formatselect | bold italic backcolor | \
-                    alignleft aligncenter alignright alignjustify | \
-                    bullist numlist outdent indent | removeformat | help',
-                content_style: 'body { font-family: Tahoma, Arial, sans-serif; font-size: 14px; }'
-            });
-        });
-    </script>
+    @Html.Partial("_CKEditorScript")
+    @{
+        ViewBag.CKEditorSelector = "#contentEditor";
+        ViewBag.CKEditorHeight = 400;
+    }
+    @Html.Partial("_CKEditorInit")
 }
 

@@ -1,0 +1,208 @@
+@using Org.BouncyCastle.Asn1.Ocsp
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.BlogPostCommentViewModel>
+@{
+    ViewBag.Title = "مدیریت کامنت‌های مقالات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت کامنت‌های مقالات</h1>
+        <div>
+            <a href="@Url.Action("Index", "BlogPost")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به مقالات
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link @(Request.QueryString["IsApproved"] != "false" && Request.QueryString["IsSpam"] != "true" && Request.QueryString["IsReported"] != "true" ? "active" : "")" 
+               href="@Url.Action("Index", new { IsApproved = true })">
+                <i class="fas fa-check-circle"></i> تأیید شده‌ها
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Request.QueryString["IsApproved"] == "false" ? "active" : "")" 
+               href="@Url.Action("Index", new { IsApproved = false })">
+                <i class="fas fa-clock"></i> در انتظار تأیید
+                @if (ViewBag.PendingCount != null && ViewBag.PendingCount > 0)
+                {
+                    <span class="badge badge-warning">@ViewBag.PendingCount</span>
+                }
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Request.QueryString["IsReported"] == "true" ? "active" : "")" 
+               href="@Url.Action("Index", new { IsReported = true })">
+                <i class="fas fa-flag"></i> گزارش شده‌ها
+                @if (ViewBag.ReportedCount != null && ViewBag.ReportedCount > 0)
+                {
+                    <span class="badge badge-danger">@ViewBag.ReportedCount</span>
+                }
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Request.QueryString["IsSpam"] == "true" ? "active" : "")" 
+               href="@Url.Action("Index", new { IsSpam = true })">
+                <i class="fas fa-ban"></i> اسپم
+            </a>
+        </li>
+    </ul>
+
+    <!-- Comments List -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>کامنت</th>
+                                <th>نویسنده</th>
+                                <th>مقاله</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var comment in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                            @(comment.CommentText.Length > 100 ? comment.CommentText.Substring(0, 100) + "..." : comment.CommentText)
+                                        </div>
+                                        @if (comment.ParentCommentId.HasValue)
+                                        {
+                                            <small class="text-muted">
+                                                <i class="fas fa-reply"></i> پاسخ به: @comment.ParentCommentAuthorName
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@comment.AuthorName</strong>
+                                        @if (!string.IsNullOrEmpty(comment.AuthorEmail))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@comment.AuthorEmail</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Details", "BlogPost", new { id = comment.BlogPostId })" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> مشاهده مقاله
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <small>@ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(comment.CreatedAt, false)</small>
+                                    </td>
+                                    <td>
+                                        @if (comment.IsApproved)
+                                        {
+                                            <span class="badge badge-success">تأیید شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">در انتظار</span>
+                                        }
+                                        @if (comment.IsSpam)
+                                        {
+                                            <span class="badge badge-danger">اسپم</span>
+                                        }
+                                        @if (comment.IsReported)
+                                        {
+                                            <span class="badge badge-danger">گزارش شده</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            @if (!comment.IsApproved)
+                                            {
+                                                using (Html.BeginForm("Approve", "BlogPostComment", FormMethod.Post, new { style = "display: inline;" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", comment.BlogPostCommentId)
+                                                    <button type="submit" class="btn btn-sm btn-success" title="تأیید">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (comment.IsApproved)
+                                            {
+                                                using (Html.BeginForm("Reject", "BlogPostComment", FormMethod.Post, new { style = "display: inline;" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", comment.BlogPostCommentId)
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="رد">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (!comment.IsSpam)
+                                            {
+                                                using (Html.BeginForm("MarkAsSpam", "BlogPostComment", FormMethod.Post, new { style = "display: inline;" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", comment.BlogPostCommentId)
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="اسپم">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (comment.IsReported)
+                                            {
+                                                using (Html.BeginForm("UnmarkAsReported", "BlogPostComment", FormMethod.Post, new { style = "display: inline;" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", comment.BlogPostCommentId)
+                                                    <button type="submit" class="btn btn-sm btn-info" title="لغو گزارش">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "BlogPostComment", FormMethod.Post, new { style = "display: inline;", onsubmit = "return confirm('آیا مطمئن هستید که می‌خواهید این کامنت را حذف کنید؟');" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", comment.BlogPostCommentId)
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { pageNumber = i, IsApproved = Request.QueryString["IsApproved"], IsSpam = Request.QueryString["IsSpam"], IsReported = Request.QueryString["IsReported"] })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ کامنتی یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

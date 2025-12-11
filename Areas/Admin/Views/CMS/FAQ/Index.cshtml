@@ -1,4 +1,4 @@
-@model ClinicApp.Helpers.PagedResult<ClinicApp.ViewModels.CMS.FAQIndexViewModel>
+@model ClinicApp.ViewModels.CMS.FAQIndexPageViewModel
 @{
     ViewBag.Title = "مدیریت سوالات متداول (FAQ)";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -84,11 +84,11 @@
                 <div class="form-group mb-2 mr-2">
                     <select name="Category" class="form-control">
                         <option value="">همه دسته‌بندی‌ها</option>
-                        @if (ViewBag.Categories != null)
+                        @if (Model.Categories != null)
                         {
-                            foreach (var cat in ViewBag.Categories)
+                            foreach (var cat in Model.Categories)
                             {
-                                <option value="@cat.Category" @(Request.QueryString["Category"] == cat.Category ? "selected" : "")>@cat.DisplayName (@cat.Count)</option>
+                                <option value="@cat.Value" @(Request.QueryString["Category"] == cat.Value ? "selected" : "")>@cat.Text</option>
                             }
                         }
                     </select>
@@ -120,10 +120,10 @@
     <!-- FAQs List -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست سوالات متداول (@Model.TotalCount مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">لیست سوالات متداول (@Model.PagedResult.TotalCount مورد)</h6>
         </div>
         <div class="card-body">
-            @if (Model.Items != null && Model.Items.Any())
+            @if (Model.PagedResult.Items != null && Model.PagedResult.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
@@ -139,15 +139,19 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.Items)
+                            @foreach (var item in Model.PagedResult.Items)
                             {
                                 <tr>
                                     <td>
-                                        <div class="question-text">@item.Question</div>
+                                        <div class="question-text">@StripHtml(item.Question)</div>
                                         @if (!string.IsNullOrEmpty(item.Answer))
                                         {
                                             <div class="answer-preview mt-1">
-                                                @(item.Answer.Length > 100 ? item.Answer.Substring(0, 100) + "..." : item.Answer)
+                                                @{
+                                                    var answerText = StripHtml(item.Answer);
+                                                    var preview = answerText.Length > 100 ? answerText.Substring(0, 100) + "..." : answerText;
+                                                }
+                                                @preview
                                             </div>
                                         }
                                     </td>
@@ -220,26 +224,26 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                if (Model.PagedResult.TotalPages > 1)
                 {
                     <nav aria-label="صفحه‌بندی">
                         <ul class="pagination justify-content-center">
-                            @if (Model.PageNumber > 1)
+                            @if (Model.PagedResult.PageNumber > 1)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">قبلی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PagedResult.PageNumber - 1 })">قبلی</a>
                                 </li>
                             }
-                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            @for (int i = 1; i <= Model.PagedResult.TotalPages; i++)
                             {
-                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <li class="page-item @(i == Model.PagedResult.PageNumber ? "active" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
                                 </li>
                             }
-                            @if (Model.PageNumber < Model.TotalPages)
+                            @if (Model.PagedResult.PageNumber < Model.PagedResult.TotalPages)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">بعدی</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PagedResult.PageNumber + 1 })">بعدی</a>
                                 </li>
                             }
                         </ul>
@@ -268,6 +272,27 @@
             "general" => "عمومی",
             _ => category ?? "عمومی"
         };
+    }
+
+    /// <summary>
+    /// حذف تگ‌های HTML از متن برای نمایش در لیست
+    /// </summary>
+    private string StripHtml(string html)
+    {
+        if (string.IsNullOrEmpty(html))
+            return string.Empty;
+
+        // حذف تگ‌های HTML با استفاده از Regex
+        var stripped = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", string.Empty);
+        
+        // تبدیل entity های HTML به کاراکترهای عادی
+        stripped = System.Web.HttpUtility.HtmlDecode(stripped);
+        
+        // حذف فضاهای اضافی و خطوط خالی
+        stripped = System.Text.RegularExpressions.Regex.Replace(stripped, @"\s+", " ");
+        stripped = stripped.Trim();
+
+        return stripped;
     }
 }
 

@@ -132,56 +132,49 @@ namespace ClinicApp.Helpers
                 _log.Information("🔍 DateTime.Kind: {Kind}", dateTime.Kind);
                 _log.Information("🔍 DateTime.Ticks: {Ticks}", dateTime.Ticks);
                 
-                // بررسی محدوده تاریخ برای تقویم شمسی
-                if (!IsDateTimeInPersianCalendarRange(dateTime))
+                // تبدیل به Local اگر UTC است (برای جلوگیری از مشکل timezone)
+                DateTime localDateTime = dateTime;
+                if (dateTime.Kind == DateTimeKind.Utc)
                 {
-                    _log.Warning("تاریخ میلادی خارج از محدوده معتبر تقویم شمسی است: {DateTime}", dateTime);
-                    return dateTime.ToString(DATE_FORMAT);
+                    localDateTime = dateTime.ToLocalTime();
+                    _log.Information("🔍 Converted UTC to Local: {LocalDateTime}", localDateTime);
+                }
+                else if (dateTime.Kind == DateTimeKind.Unspecified)
+                {
+                    // اگر Unspecified است، به عنوان Local در نظر می‌گیریم
+                    localDateTime = DateTime.SpecifyKind(dateTime, DateTimeKind.Local);
+                    _log.Information("🔍 Specified Unspecified as Local: {LocalDateTime}", localDateTime);
+                }
+                
+                // فقط تاریخ را در نظر می‌گیریم (بدون زمان)
+                localDateTime = localDateTime.Date;
+                
+                // بررسی محدوده تاریخ برای تقویم شمسی
+                if (!IsDateTimeInPersianCalendarRange(localDateTime))
+                {
+                    _log.Warning("تاریخ میلادی خارج از محدوده معتبر تقویم شمسی است: {DateTime}", localDateTime);
+                    return localDateTime.ToString(DATE_FORMAT);
                 }
 
-                // تست مستقیم PersianCalendar
-                var testCalendar = new PersianCalendar();
-                int year = testCalendar.GetYear(dateTime);
-                int month = testCalendar.GetMonth(dateTime);
-                int day = testCalendar.GetDayOfMonth(dateTime);
+                // استفاده از Calendar instance برای تبدیل
+                int year = Calendar.GetYear(localDateTime);
+                int month = Calendar.GetMonth(localDateTime);
+                int day = Calendar.GetDayOfMonth(localDateTime);
 
                 _log.Information("🔍 Persian calendar parts: Year={Year}, Month={Month}, Day={Day}", year, month, day);
-                
-                // تست با Calendar instance
-                int year2 = Calendar.GetYear(dateTime);
-                int month2 = Calendar.GetMonth(dateTime);
-                int day2 = Calendar.GetDayOfMonth(dateTime);
-                
-                _log.Information("🔍 Calendar instance parts: Year={Year}, Month={Month}, Day={Day}", year2, month2, day2);
 
                 // بررسی مقادیر
                 if (year < 1 || year > 9999)
                 {
-                    _log.Error("🔍 Invalid Persian year: {Year}", year);
-                    return dateTime.ToString(DATE_FORMAT);
+                    _log.Error("🔍 Invalid Persian year: {Year} for DateTime: {DateTime}", year, localDateTime);
+                    return localDateTime.ToString(DATE_FORMAT);
                 }
 
                 var result = string.Format(CultureInfo.InvariantCulture,
                     "{0:0000}/{1:00}/{2:00}",
                     year, month, day);
                 
-                _log.Information("🔍 Final Persian date: {Result}", result);
-                
-                // تست خاص برای تاریخ 2025-09-15
-                if (dateTime.Year == 2025 && dateTime.Month == 9 && dateTime.Day == 15)
-                {
-                    _log.Warning("🔍 Special case: 2025-09-15 converted to: {Result}", result);
-                    
-                    // این تاریخ احتمالاً اشتباه است - باید ۱۴۰۴/۰۶/۲۴ باشد
-                    if (result == "1404/06/24")
-                    {
-                        _log.Information("✅ 2025-09-15 correctly converted to 1404/06/24");
-                    }
-                    else
-                    {
-                        _log.Error("❌ 2025-09-15 incorrectly converted to: {Result}", result);
-                    }
-                }
+                _log.Information("🔍 Final Persian date: {Result} (from {DateTime})", result, localDateTime);
                 
                 return result;
             }
@@ -194,6 +187,73 @@ namespace ClinicApp.Helpers
             {
                 _log.Error(ex, "خطای غیرمنتظره در تبدیل تاریخ میلادی به شمسی: {DateTime}", dateTime);
                 return dateTime.ToString(DATE_FORMAT);
+            }
+        }
+
+        /// <summary>
+        /// تبدیل رشته تاریخ شمسی به تاریخ میلادی (Nullable)
+        /// برای استفاده در فرم‌ها و Model Binding
+        /// </summary>
+        /// <param name="persianDate">تاریخ شمسی به فرمت yyyy/MM/dd</param>
+        /// <returns>تاریخ میلادی یا null اگر تاریخ معتبر نباشد</returns>
+        public static DateTime? ParsePersianDate(string persianDate)
+        {
+            if (string.IsNullOrWhiteSpace(persianDate))
+                return null;
+
+            try
+            {
+                return ToGregorianDate(persianDate);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// تبدیل Unix timestamp به DateTime میلادی
+        /// برای استفاده با Persian DatePicker که timestamp برمی‌گرداند
+        /// </summary>
+        /// <param name="timestamp">Unix timestamp</param>
+        /// <returns>DateTime میلادی یا null</returns>
+        public static DateTime? ParseUnixTimestamp(long timestamp)
+        {
+            if (timestamp <= 0)
+                return null;
+
+            try
+            {
+                var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                return epoch.AddSeconds(timestamp).ToLocalTime();
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تبدیل Unix timestamp: {Timestamp}", timestamp);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// تبدیل DateTime میلادی به Unix timestamp
+        /// برای استفاده با Persian DatePicker
+        /// </summary>
+        /// <param name="dateTime">تاریخ میلادی</param>
+        /// <returns>Unix timestamp</returns>
+        public static long ToUnixTimestamp(DateTime? dateTime)
+        {
+            if (!dateTime.HasValue)
+                return 0;
+
+            try
+            {
+                var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                return (long)(dateTime.Value.ToUniversalTime() - epoch).TotalSeconds;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تبدیل DateTime به Unix timestamp: {DateTime}", dateTime);
+                return 0;
             }
         }
 
@@ -556,7 +616,6 @@ namespace ClinicApp.Helpers
                    cyclePosition == 12 || cyclePosition == 16 || cyclePosition == 20 ||
                    cyclePosition == 25 || cyclePosition == 29;
         }
-
         #endregion
     }
 }

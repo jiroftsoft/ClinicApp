@@ -7,7 +7,7 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
-    <link href="~/Content/plugins/tinymce/tinymce.min.css" rel="stylesheet" />
+    @* CKEditor 5 CSS is included in the main JS file - no separate CSS needed *@
     <style>
         .form-container {
             background: #ffffff;
@@ -33,18 +33,10 @@
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toaster نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
     <div class="form-container">
-        @using (Html.BeginForm("Create", "BlogPost", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        @using (Html.BeginForm("Create", "BlogPost", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -99,16 +91,42 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ImageUrl)
-                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/blog/..." })
+                        @Html.LabelFor(m => m.ImageUrl, "تصویر اصلی")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">انتخاب تصویر اصلی...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
+                        @Html.HiddenFor(m => m.ImageUrl)
                         @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Model.ImageUrl" alt="تصویر فعلی" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                            </div>
+                        }
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        @Html.LabelFor(m => m.ThumbnailUrl)
-                        @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/blog/thumbnails/..." })
+                        @Html.LabelFor(m => m.ThumbnailUrl, "تصویر کوچک (Thumbnail)")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک (اختیاری)...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> اگر انتخاب نشود، به صورت خودکار از تصویر اصلی ایجاد می‌شود (300x300)
+                        </small>
+                        @Html.HiddenFor(m => m.ThumbnailUrl)
                         @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Model.ThumbnailUrl" alt="Thumbnail فعلی" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -123,11 +141,16 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group">
-                        @Html.LabelFor(m => m.PublishedAt)
-                        @Html.TextBoxFor(m => m.PublishedAt, new { @class = "form-control", type = "datetime-local" })
-                        @Html.ValidationMessageFor(m => m.PublishedAt, "", new { @class = "text-danger" })
-                    </div>
+                    @{
+                        ViewBag.PersianDatePickerId = "publishedAtPicker";
+                        ViewBag.PersianDatePickerName = "PublishedAt";
+                        ViewBag.PersianDatePickerValue = Model.PublishedAt;
+                        ViewBag.PersianDatePickerLabel = "تاریخ انتشار";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ انتشار (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، تاریخ فعلی استفاده می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
@@ -193,26 +216,12 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/tinymce/tinymce.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize TinyMCE
-            tinymce.init({
-                selector: '#contentEditor',
-                directionality: 'rtl',
-                language: 'fa_IR',
-                height: 400,
-                plugins: [
-                    'advlist autolink lists link image charmap print preview anchor',
-                    'searchreplace visualblocks code fullscreen',
-                    'insertdatetime media table paste code help wordcount'
-                ],
-                toolbar: 'undo redo | formatselect | bold italic backcolor | \
-                    alignleft aligncenter alignright alignjustify | \
-                    bullist numlist outdent indent | removeformat | help',
-                content_style: 'body { font-family: Tahoma, Arial, sans-serif; font-size: 14px; }'
-            });
-        });
-    </script>
+    @Html.Partial("_CKEditorScript")
+    @{
+        ViewBag.CKEditorSelector = "#contentEditor";
+        ViewBag.CKEditorHeight = 400;
+    }
+    @Html.Partial("_CKEditorInit")
+    @Html.Partial("_PersianDatePickerScript")
 }
 
