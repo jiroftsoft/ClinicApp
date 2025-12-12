@@ -141,12 +141,15 @@ else
                          role="group" 
                          aria-roledescription="slide" 
                          aria-label="اسلاید @(i + 1) از @validSlides.Count"
+                         aria-hidden="@(i == 0 ? "false" : "true")"
                          data-slide-index="@i"
                          data-slide-id="@slide.SliderId">
                         <div class="hero-slide" 
                              style="background-image: url('@imageUrl'); background-size: cover; background-position: center; background-repeat: no-repeat;" 
                              data-image-url="@imageUrl"
-                             data-slide-index="@i">
+                             data-slide-index="@i"
+                             role="img"
+                             aria-label="@(string.IsNullOrEmpty(slide.Title) ? "تصویر اسلاید " + (i + 1) : slide.Title)">
                             <div class="hero-slide-content">
                                 @if (!string.IsNullOrEmpty(slide.Title))
                                 {
@@ -161,8 +164,9 @@ else
                                     <div class="hero-slide-buttons">
                                         <a href="@slide.LinkUrl" 
                                            class="hero-slide-button hero-slide-button-primary"
-                                           aria-label="مشاهده بیشتر درباره @slide.Title">
-                                            <i class="fas fa-arrow-left"></i>
+                                           aria-label="مشاهده بیشتر درباره @slide.Title"
+                                           tabindex="@(i == 0 ? "0" : "-1")">
+                                            <i class="fas fa-arrow-left" aria-hidden="true"></i>
                                             <span>@(slide.ButtonText ?? "مشاهده بیشتر")</span>
                                         </a>
                                     </div>
@@ -200,32 +204,42 @@ else
                 }
             </div>
             
-            @* Carousel Controls *@
+            @* Carousel Controls - Touch targets >= 44px *@
             <button class="hero-carousel-controls prev" 
                     type="button" 
                     aria-label="اسلاید قبلی"
                     aria-controls="heroCarousel"
-                    data-action="prev">
+                    data-action="prev"
+                    tabindex="0">
                 <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                <span class="sr-only">اسلاید قبلی</span>
             </button>
             <button class="hero-carousel-controls next" 
                     type="button" 
                     aria-label="اسلاید بعدی"
                     aria-controls="heroCarousel"
-                    data-action="next">
+                    data-action="next"
+                    tabindex="0">
                 <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                <span class="sr-only">اسلاید بعدی</span>
             </button>
             
-            @* Carousel Indicators *@
-            <ol class="hero-carousel-indicators" role="tablist">
-                @for (int i = 0; i < validSlides.Count; i++)
+            @* Carousel Indicators - Touch targets >= 44px *@
+            <ol class="hero-carousel-indicators" role="tablist" aria-label="انتخاب اسلاید">
+                @for (int j = 0; j < validSlides.Count; j++)
                 {
-                    <li class="hero-carousel-indicator @(i == 0 ? "active" : "")" 
-                        role="tab" 
-                        aria-label="اسلاید @(i + 1)"
-                        data-slide-to="@i"
-                        aria-selected="@(i == 0 ? "true" : "false")"
-                        tabindex="@(i == 0 ? "0" : "-1")"></li>
+                    <li>
+                        <button type="button" 
+                                class="hero-carousel-indicator @(j == 0 ? "active" : "")" 
+                                data-slide-to="@j"
+                                role="tab"
+                                aria-label="اسلاید @(j + 1)"
+                                aria-selected="@(j == 0 ? "true" : "false")"
+                                aria-controls="heroCarousel"
+                                tabindex="@(j == 0 ? "0" : "-1")">
+                            <span class="sr-only">اسلاید @(j + 1)</span>
+                        </button>
+                    </li>
                 }
             </ol>
         </div>

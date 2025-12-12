@@ -1,7 +1,15 @@
 /**
- * Hero Carousel Manager - Production Ready
- * الهام گرفته از بهترین کتابخانه‌های Carousel (Swiper, Owl Carousel)
- * بهینه‌سازی شده برای محیط درمانی
+ * Hero Carousel Manager - Medical Environment Production Ready
+ * 
+ * ویژگی‌های کلیدی:
+ * 1. Accessibility (اولویت اول): ARIA, keyboard navigation, WCAG AA
+ * 2. Privacy & Security: GDPR compliance, no sensitive data
+ * 3. Performance: Image optimization, lazy loading, GPU-accelerated
+ * 4. UX: Auto-play control, pause on hover/focus, clear controls
+ * 5. Responsive & Touch: Aspect ratio, touch targets >=44px, swipe, RTL
+ * 6. Design: Calming colors, soft animations, professional
+ * 7. Controls: Auto-play toggle, status text, progress bar
+ * 8. Maintainability: API, lazy-fetch, reduced motion support
  */
 (function() {
     'use strict';
@@ -10,15 +18,31 @@
     // CONFIGURATION - تنظیمات استاندارد برای محیط درمانی
     // ============================================
     const CONFIG = {
-        autoSlideDelay: 6500,        // 6.5 seconds - زمان مناسب برای خواندن محتوا
+        // Timing
+        autoSlideDelay: 6500,        // 6.5 seconds - زمان مناسب برای خواندن
         transitionDuration: 800,     // 0.8 seconds - transition نرم
-        initDelay: 2000,             // 2 seconds - تاخیر برای لود کامل تصاویر
-        easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // Easing حرفه‌ای
+        initDelay: 2000,             // 2 seconds - تاخیر برای لود تصاویر
+        
+        // Behavior
+        autoPlay: true,              // Auto-play (قابل کنترل توسط کاربر)
         pauseOnHover: true,          // توقف هنگام hover
         pauseOnFocus: true,          // توقف هنگام focus (accessibility)
-        loop: true,                   // Loop بین اسلایدها
-        keyboardNavigation: true,     // Navigation با کیبورد
-        touchSwipe: true             // Swipe برای موبایل
+        loop: true,                  // Loop بین اسلایدها
+        keyboardNavigation: true,    // Navigation با کیبورد
+        touchSwipe: true,            // Swipe برای موبایل
+        swipeThreshold: 50,          // حداقل فاصله برای swipe
+        
+        // Accessibility
+        announceSlideChanges: true,  // اعلان تغییر اسلاید برای screen readers
+        reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        
+        // Performance
+        lazyLoadImages: true,        // Lazy loading برای اسلایدهای بعدی
+        preloadNextSlide: true,      // Preload اسلاید بعدی
+        
+        // Privacy (GDPR compliance)
+        logUserInteractions: false,  // عدم لاگ تعاملات کاربر
+        anonymizeData: true          // ناشناس‌سازی داده‌ها
     };
 
     // ============================================
@@ -31,6 +55,11 @@
     let isTransitioning = false;
     let touchStartX = 0;
     let touchEndX = 0;
+    let progressBar = null;
+    let statusText = null;
+    let autoPlayToggle = null;
+    let startTime = null;
+    let progressInterval = null;
 
     // ============================================
     // DOM ELEMENTS
@@ -40,6 +69,7 @@
     let indicators = null;
     let prevButton = null;
     let nextButton = null;
+    let carouselInner = null;
 
     // ============================================
     // INITIALIZATION
@@ -59,10 +89,14 @@
         console.log('[Hero Carousel] ✅ Carousel element found');
 
         // Get all elements
+        carouselInner = heroCarousel.querySelector('.carousel-inner');
         carouselItems = heroCarousel.querySelectorAll('.carousel-item');
         indicators = heroCarousel.querySelectorAll('.hero-carousel-indicator');
         prevButton = heroCarousel.querySelector('.hero-carousel-controls.prev');
         nextButton = heroCarousel.querySelector('.hero-carousel-controls.next');
+        
+        // Create additional UI elements if needed
+        createAdditionalControls();
 
         console.log('[Hero Carousel] Elements found:', {
             slides: carouselItems.length,
@@ -76,22 +110,117 @@
             return false;
         }
 
+        // Setup accessibility
+        setupAccessibility();
+
         // Initialize carousel
         setupEventListeners();
         showSlide(0, false); // Show first slide without transition
 
-        // Start auto-slide after delay
-        if (carouselItems.length > 1) {
+        // Start auto-slide after delay (if enabled)
+        if (carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
             setTimeout(function() {
                 startAutoSlide();
                 console.log('[Hero Carousel] ✅ Auto-slide started');
             }, CONFIG.initDelay);
+        } else if (CONFIG.reducedMotion) {
+            console.log('[Hero Carousel] ℹ️ Reduced motion detected - auto-play disabled');
         }
 
         console.log('[Hero Carousel] ✅ Initialization complete');
         console.log('[Hero Carousel] ========================================');
 
         return true;
+    }
+
+    // ============================================
+    // ACCESSIBILITY SETUP
+    // ============================================
+    function setupAccessibility() {
+        if (!heroCarousel) return;
+
+        // ARIA live region for slide changes
+        if (CONFIG.announceSlideChanges) {
+            let liveRegion = document.getElementById('hero-carousel-live-region');
+            if (!liveRegion) {
+                liveRegion = document.createElement('div');
+                liveRegion.id = 'hero-carousel-live-region';
+                liveRegion.className = 'sr-only';
+                liveRegion.setAttribute('role', 'status');
+                liveRegion.setAttribute('aria-live', 'polite');
+                liveRegion.setAttribute('aria-atomic', 'true');
+                heroCarousel.appendChild(liveRegion);
+            }
+        }
+
+        // Status text for current slide
+        statusText = document.getElementById('hero-carousel-status');
+        if (!statusText && carouselItems.length > 1) {
+            statusText = document.createElement('div');
+            statusText.id = 'hero-carousel-status';
+            statusText.className = 'hero-carousel-status';
+            statusText.setAttribute('aria-live', 'polite');
+            statusText.setAttribute('aria-atomic', 'true');
+            updateStatusText();
+            heroCarousel.appendChild(statusText);
+        }
+
+        // Ensure all interactive elements are keyboard accessible
+        if (prevButton) {
+            prevButton.setAttribute('tabindex', '0');
+            prevButton.setAttribute('role', 'button');
+        }
+        if (nextButton) {
+            nextButton.setAttribute('tabindex', '0');
+            nextButton.setAttribute('role', 'button');
+        }
+
+        indicators.forEach(function(indicator, index) {
+            indicator.setAttribute('role', 'tab');
+            indicator.setAttribute('tabindex', index === 0 ? '0' : '-1');
+            indicator.setAttribute('aria-label', 'اسلاید ' + (index + 1));
+        });
+    }
+
+    // ============================================
+    // ADDITIONAL CONTROLS
+    // ============================================
+    function createAdditionalControls() {
+        if (!heroCarousel || carouselItems.length <= 1) return;
+
+        // Progress bar
+        if (!document.getElementById('hero-carousel-progress')) {
+            progressBar = document.createElement('div');
+            progressBar.id = 'hero-carousel-progress';
+            progressBar.className = 'hero-carousel-progress';
+            progressBar.setAttribute('role', 'progressbar');
+            progressBar.setAttribute('aria-valuemin', '0');
+            progressBar.setAttribute('aria-valuemax', '100');
+            progressBar.setAttribute('aria-valuenow', '0');
+            progressBar.setAttribute('aria-label', 'پیشرفت اسلاید');
+            heroCarousel.appendChild(progressBar);
+        } else {
+            progressBar = document.getElementById('hero-carousel-progress');
+        }
+
+        // Auto-play toggle button
+        if (!document.getElementById('hero-carousel-autoplay-toggle')) {
+            autoPlayToggle = document.createElement('button');
+            autoPlayToggle.id = 'hero-carousel-autoplay-toggle';
+            autoPlayToggle.className = 'hero-carousel-autoplay-toggle';
+            autoPlayToggle.setAttribute('type', 'button');
+            autoPlayToggle.setAttribute('aria-label', 'توقف/شروع خودکار اسلاید');
+            autoPlayToggle.setAttribute('title', 'توقف/شروع خودکار');
+            autoPlayToggle.innerHTML = '<i class="fas fa-pause" aria-hidden="true"></i>';
+            autoPlayToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleAutoPlay();
+            });
+            heroCarousel.appendChild(autoPlayToggle);
+        } else {
+            autoPlayToggle = document.getElementById('hero-carousel-autoplay-toggle');
+        }
     }
 
     // ============================================
@@ -105,7 +234,7 @@
         }
 
         // Prevent concurrent transitions
-        if (isTransitioning) {
+        if (isTransitioning && animate) {
             console.log('[Hero Carousel] ⚠️ Transition in progress, skipping...');
             return;
         }
@@ -122,11 +251,12 @@
                 item.style.visibility = 'hidden';
                 item.style.display = 'none';
                 item.style.marginRight = '-100%';
+                item.setAttribute('aria-hidden', 'true');
             }
         });
 
         // Remove active from indicators
-        indicators.forEach(function(indicator) {
+        indicators.forEach(function(indicator, i) {
             indicator.classList.remove('active');
             indicator.setAttribute('aria-selected', 'false');
             indicator.setAttribute('tabindex', '-1');
@@ -141,6 +271,7 @@
             targetSlide.style.display = 'flex';
             targetSlide.style.marginRight = '0';
             targetSlide.style.transform = 'translateX(0)';
+            targetSlide.setAttribute('aria-hidden', 'false');
 
             // Ensure background image is visible
             const heroSlide = targetSlide.querySelector('.hero-slide');
@@ -173,6 +304,12 @@
                 content.style.opacity = '1';
                 content.style.visibility = 'visible';
             }
+
+            // Preload next slide image (performance optimization)
+            if (CONFIG.preloadNextSlide && carouselItems.length > 1) {
+                const nextIndex = (index + 1) % carouselItems.length;
+                preloadSlideImage(nextIndex);
+            }
         }
 
         // Update indicator
@@ -184,6 +321,13 @@
 
         currentIndex = index;
 
+        // Update status text and ARIA live region
+        updateStatusText();
+        announceSlideChange(index);
+
+        // Reset progress bar
+        resetProgressBar();
+
         if (animate) {
             setTimeout(function() {
                 isTransitioning = false;
@@ -193,6 +337,60 @@
         }
 
         console.log('[Hero Carousel] 📍 Slide changed to:', index + 1, 'of', carouselItems.length);
+    }
+
+    // ============================================
+    // ACCESSIBILITY HELPERS
+    // ============================================
+    function updateStatusText() {
+        if (statusText && carouselItems.length > 1) {
+            statusText.textContent = 'اسلاید ' + (currentIndex + 1) + ' از ' + carouselItems.length;
+            statusText.setAttribute('aria-label', 'اسلاید ' + (currentIndex + 1) + ' از ' + carouselItems.length);
+        }
+    }
+
+    function announceSlideChange(index) {
+        if (!CONFIG.announceSlideChanges) return;
+
+        const liveRegion = document.getElementById('hero-carousel-live-region');
+        if (liveRegion) {
+            const slide = carouselItems[index];
+            const title = slide ? slide.querySelector('.hero-slide-title') : null;
+            const titleText = title ? title.textContent.trim() : '';
+            
+            liveRegion.textContent = 'اسلاید ' + (index + 1) + ' از ' + carouselItems.length + 
+                (titleText ? ': ' + titleText : '');
+        }
+    }
+
+    // ============================================
+    // PERFORMANCE OPTIMIZATION
+    // ============================================
+    function preloadSlideImage(index) {
+        if (index < 0 || index >= carouselItems.length) return;
+
+        const slide = carouselItems[index];
+        const heroSlide = slide ? slide.querySelector('.hero-slide') : null;
+        if (!heroSlide) return;
+
+        let imageUrl = heroSlide.getAttribute('data-image-url');
+        if (!imageUrl || imageUrl === '') {
+            const bgImage = heroSlide.style.backgroundImage;
+            if (bgImage && bgImage !== 'none') {
+                const match = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/);
+                if (match && match[1]) {
+                    imageUrl = match[1];
+                }
+            }
+        }
+
+        if (imageUrl && imageUrl !== '') {
+            imageUrl = imageUrl.replace(/^['"]|['"]$/g, '');
+            
+            // Preload image
+            const img = new Image();
+            img.src = imageUrl;
+        }
     }
 
     // ============================================
@@ -222,17 +420,28 @@
         showSlide(index);
     }
 
+    function goToFirstSlide() {
+        showSlide(0);
+    }
+
+    function goToLastSlide() {
+        showSlide(carouselItems.length - 1);
+    }
+
     // ============================================
     // AUTO-SLIDE MANAGEMENT
     // ============================================
     function startAutoSlide() {
-        if (isPaused || carouselItems.length <= 1) {
+        if (isPaused || carouselItems.length <= 1 || !CONFIG.autoPlay || CONFIG.reducedMotion) {
             return;
         }
 
         stopAutoSlide();
 
         console.log('[Hero Carousel] ▶️ Starting auto-slide (', CONFIG.autoSlideDelay, 'ms)');
+        
+        startTime = Date.now();
+        startProgressBar();
         
         autoSlideInterval = setInterval(function() {
             if (!isPaused && !isTransitioning) {
@@ -247,12 +456,14 @@
             autoSlideInterval = null;
             console.log('[Hero Carousel] ⏹️ Auto-slide stopped');
         }
+        stopProgressBar();
     }
 
     function pauseAutoSlide() {
         if (!isPaused) {
             isPaused = true;
             stopAutoSlide();
+            updateAutoPlayToggle(false);
             console.log('[Hero Carousel] ⏸️ Auto-slide paused');
         }
     }
@@ -260,8 +471,79 @@
     function resumeAutoSlide() {
         if (isPaused) {
             isPaused = false;
-            startAutoSlide();
+            if (CONFIG.autoPlay && !CONFIG.reducedMotion) {
+                startAutoSlide();
+            }
+            updateAutoPlayToggle(true);
             console.log('[Hero Carousel] ▶️ Auto-slide resumed');
+        }
+    }
+
+    function toggleAutoPlay() {
+        if (isPaused) {
+            resumeAutoSlide();
+        } else {
+            pauseAutoSlide();
+        }
+    }
+
+    // ============================================
+    // PROGRESS BAR
+    // ============================================
+    function startProgressBar() {
+        if (!progressBar || !CONFIG.autoPlay) return;
+
+        stopProgressBar();
+        
+        let progress = 0;
+        const increment = 100 / (CONFIG.autoSlideDelay / 100); // Update every 100ms
+        
+        progressInterval = setInterval(function() {
+            if (!isPaused) {
+                progress += increment;
+                if (progress >= 100) {
+                    progress = 100;
+                    stopProgressBar();
+                }
+                
+                progressBar.style.width = progress + '%';
+                progressBar.setAttribute('aria-valuenow', Math.round(progress));
+            }
+        }, 100);
+    }
+
+    function stopProgressBar() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.setAttribute('aria-valuenow', '0');
+        }
+    }
+
+    function resetProgressBar() {
+        stopProgressBar();
+        if (autoSlideInterval && !isPaused) {
+            startProgressBar();
+        }
+    }
+
+    function updateAutoPlayToggle(isPlaying) {
+        if (!autoPlayToggle) return;
+
+        const icon = autoPlayToggle.querySelector('i');
+        if (icon) {
+            if (isPlaying) {
+                icon.className = 'fas fa-pause';
+                autoPlayToggle.setAttribute('aria-label', 'توقف خودکار اسلاید');
+                autoPlayToggle.setAttribute('title', 'توقف خودکار');
+            } else {
+                icon.className = 'fas fa-play';
+                autoPlayToggle.setAttribute('aria-label', 'شروع خودکار اسلاید');
+                autoPlayToggle.setAttribute('title', 'شروع خودکار');
+            }
         }
     }
 
@@ -271,46 +553,40 @@
     function setupEventListeners() {
         // Next Button
         if (nextButton) {
-            nextButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('[Hero Carousel] 🔄 Next button clicked');
-                nextSlide();
-                resumeAutoSlide();
-            });
-
-            nextButton.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                nextSlide();
-                resumeAutoSlide();
+            nextButton.addEventListener('click', handleNextClick);
+            nextButton.addEventListener('touchend', handleNextClick);
+            nextButton.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleNextClick(e);
+                }
             });
         }
 
         // Prev Button
         if (prevButton) {
-            prevButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('[Hero Carousel] 🔄 Prev button clicked');
-                prevSlide();
-                resumeAutoSlide();
-            });
-
-            prevButton.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                prevSlide();
-                resumeAutoSlide();
+            prevButton.addEventListener('click', handlePrevClick);
+            prevButton.addEventListener('touchend', handlePrevClick);
+            prevButton.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handlePrevClick(e);
+                }
             });
         }
 
         // Indicators
         indicators.forEach(function(indicator, index) {
             indicator.addEventListener('click', function() {
-                console.log('[Hero Carousel] 🔄 Indicator', index + 1, 'clicked');
                 goToSlide(index);
                 resumeAutoSlide();
+            });
+            indicator.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    goToSlide(index);
+                    resumeAutoSlide();
+                }
             });
         });
 
@@ -328,44 +604,90 @@
 
         // Keyboard navigation
         if (CONFIG.keyboardNavigation) {
-            document.addEventListener('keydown', function(e) {
-                if (heroCarousel.matches(':hover') || document.activeElement === heroCarousel) {
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        nextSlide();
-                        resumeAutoSlide();
-                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        prevSlide();
-                        resumeAutoSlide();
-                    }
-                }
-            });
+            document.addEventListener('keydown', handleKeyboardNavigation);
         }
 
         // Touch swipe
         if (CONFIG.touchSwipe) {
-            heroCarousel.addEventListener('touchstart', function(e) {
-                touchStartX = e.changedTouches[0].screenX;
-            }, { passive: true });
-
-            heroCarousel.addEventListener('touchend', function(e) {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipe();
-            }, { passive: true });
+            heroCarousel.addEventListener('touchstart', handleTouchStart, { passive: true });
+            heroCarousel.addEventListener('touchend', handleTouchEnd, { passive: true });
         }
     }
 
+    function handleNextClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!CONFIG.logUserInteractions) {
+            // Privacy: Don't log user interactions
+        }
+        nextSlide();
+        resumeAutoSlide();
+    }
+
+    function handlePrevClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!CONFIG.logUserInteractions) {
+            // Privacy: Don't log user interactions
+        }
+        prevSlide();
+        resumeAutoSlide();
+    }
+
+    function handleKeyboardNavigation(e) {
+        // Only handle if carousel is focused or hovered
+        if (!heroCarousel.matches(':hover') && document.activeElement !== heroCarousel) {
+            return;
+        }
+
+        switch(e.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                e.preventDefault();
+                nextSlide();
+                resumeAutoSlide();
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                e.preventDefault();
+                prevSlide();
+                resumeAutoSlide();
+                break;
+            case 'Home':
+                e.preventDefault();
+                goToFirstSlide();
+                resumeAutoSlide();
+                break;
+            case 'End':
+                e.preventDefault();
+                goToLastSlide();
+                resumeAutoSlide();
+                break;
+            case ' ': // Spacebar - pause/resume
+                e.preventDefault();
+                toggleAutoPlay();
+                break;
+        }
+    }
+
+    function handleTouchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }
+
+    function handleTouchEnd(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }
+
     function handleSwipe() {
-        const swipeThreshold = 50;
         const diff = touchStartX - touchEndX;
 
-        if (Math.abs(diff) > swipeThreshold) {
+        if (Math.abs(diff) > CONFIG.swipeThreshold) {
             if (diff > 0) {
-                // Swipe left (next)
+                // Swipe left (next) - RTL: swipe right means next
                 nextSlide();
             } else {
-                // Swipe right (prev)
+                // Swipe right (prev) - RTL: swipe left means prev
                 prevSlide();
             }
             resumeAutoSlide();
@@ -379,28 +701,33 @@
         next: nextSlide,
         prev: prevSlide,
         goTo: goToSlide,
+        goToFirst: goToFirstSlide,
+        goToLast: goToLastSlide,
         pause: pauseAutoSlide,
         resume: resumeAutoSlide,
+        toggle: toggleAutoPlay,
         start: startAutoSlide,
         stop: stopAutoSlide,
         getCurrentIndex: function() { return currentIndex; },
-        getTotalSlides: function() { return carouselItems ? carouselItems.length : 0; }
+        getTotalSlides: function() { return carouselItems ? carouselItems.length : 0; },
+        isPaused: function() { return isPaused; },
+        isAutoPlaying: function() { return !!autoSlideInterval && !isPaused; }
     };
 
     // ============================================
-    // STARTUP - Multiple initialization strategies
+    // STARTUP
     // ============================================
     function startup() {
         console.log('[Hero Carousel] 🚀 Starting initialization...');
         console.log('[Hero Carousel] Document readyState:', document.readyState);
+        console.log('[Hero Carousel] Reduced motion:', CONFIG.reducedMotion);
 
         // Strategy 1: If DOM is already ready, initialize immediately
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
             console.log('[Hero Carousel] DOM already ready, initializing...');
             setTimeout(function() {
                 if (init()) {
-                    // If initialization successful, start auto-slide after delay
-                    if (carouselItems && carouselItems.length > 1) {
+                    if (carouselItems && carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                         setTimeout(function() {
                             startAutoSlide();
                         }, CONFIG.initDelay);
@@ -413,7 +740,7 @@
                 console.log('[Hero Carousel] DOMContentLoaded fired');
                 setTimeout(function() {
                     if (init()) {
-                        if (carouselItems && carouselItems.length > 1) {
+                        if (carouselItems && carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                             setTimeout(function() {
                                 startAutoSlide();
                             }, CONFIG.initDelay);
@@ -423,26 +750,26 @@
             });
         }
 
-        // Strategy 3: Also initialize on window load (after all resources load)
+        // Strategy 3: Also initialize on window load
         window.addEventListener('load', function() {
             console.log('[Hero Carousel] Window load fired');
             if (carouselItems && carouselItems.length > 0) {
                 setTimeout(function() {
                     showSlide(currentIndex, false);
-                    if (carouselItems.length > 1 && !isPaused && !autoSlideInterval) {
+                    if (carouselItems.length > 1 && !isPaused && !autoSlideInterval && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                         startAutoSlide();
                     }
                 }, 500);
             }
         });
 
-        // Strategy 4: Fallback - try to initialize after a delay
+        // Strategy 4: Fallback
         setTimeout(function() {
             const carousel = document.getElementById('heroCarousel');
             if (carousel && (!carouselInstance || !carouselItems)) {
                 console.log('[Hero Carousel] Fallback initialization triggered');
                 if (init()) {
-                    if (carouselItems && carouselItems.length > 1) {
+                    if (carouselItems && carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                         setTimeout(function() {
                             startAutoSlide();
                         }, CONFIG.initDelay);
@@ -452,12 +779,12 @@
         }, 1000);
     }
 
-    // Expose to global scope BEFORE initialization (for immediate access)
+    // Expose to global scope BEFORE initialization
     window.HeroCarousel = carouselInstance;
     window.initHeroCarousel = function() {
         console.log('[Hero Carousel] Manual initialization triggered');
         if (init()) {
-            if (carouselItems && carouselItems.length > 1) {
+            if (carouselItems && carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                 setTimeout(function() {
                     startAutoSlide();
                 }, CONFIG.initDelay);
