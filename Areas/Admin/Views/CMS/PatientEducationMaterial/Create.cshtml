@@ -1,0 +1,385 @@
+@model ClinicApp.ViewModels.CMS.PatientEducationMaterialCreateEditViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Extensions
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "ایجاد مطلب آموزشی جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-danger: #dc3545;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-light: #f8f9fa;
+        }
+
+        .form-container {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: var(--medical-danger);
+            font-weight: bold;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+            }
+            .row {
+                margin-left: -0.5rem;
+                margin-right: -0.5rem;
+            }
+            .col-md-6,
+            .col-md-12 {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+
+        /* Accessibility */
+        .form-control:focus,
+        .custom-file-input:focus ~ .custom-file-label {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+            border-color: var(--medical-primary);
+        }
+
+        /* File Upload Preview */
+        #documentPreview,
+        #imagePreview,
+        #thumbnailPreview {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: var(--medical-light);
+            border: 1px solid var(--medical-border);
+            border-radius: 4px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-book-medical text-primary"></i>
+            ایجاد مطلب آموزشی جدید
+        </h1>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+        </a>
+    </div>
+
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
+
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "PatientEducationMaterial", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Title, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "مثال: راهنمای مراقبت بعد از عمل قلب" })
+                        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Description, new { @class = "required" })
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه (حداکثر 1000 کاراکتر)" })
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Content, new { @class = "required" })
+                        @Html.TextAreaFor(m => m.Content, new { @class = "form-control", id = "contentEditor", rows = "15" })
+                        @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Category, new { @class = "required" })
+                        @{
+                            var categoryList = Enum.GetValues(typeof(PatientEducationCategory))
+                                .Cast<PatientEducationCategory>()
+                                .Select(c => new SelectListItem
+                                {
+                                    Value = ((int)c).ToString(),
+                                    Text = c.GetDisplayName(),
+                                    Selected = c == Model.Category
+                                }).ToList();
+                        }
+                        @Html.DropDownListFor(m => m.Category, categoryList, "انتخاب دسته‌بندی", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder)
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Tags)
+                        @Html.TextBoxFor(m => m.Tags, new { @class = "form-control", placeholder = "مثال: قلب, عمل جراحی, مراقبت" })
+                        @Html.ValidationMessageFor(m => m.Tags, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">برچسب‌ها را با کاما جدا کنید</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="DocumentFile" class="required">فایل مستندات</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="DocumentFile" name="DocumentFile" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                            <label class="custom-file-label" for="DocumentFile">انتخاب فایل (PDF, Word, Excel)...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: PDF, Word, Excel | حداکثر حجم: 10 مگابایت
+                        </small>
+                        @Html.HiddenFor(m => m.FileUrl)
+                        @Html.HiddenFor(m => m.FileName)
+                        <div id="documentPreview" class="mt-2" style="display: none;">
+                            <i class="fas fa-file-pdf text-danger" id="documentIcon"></i>
+                            <span id="documentName"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.VideoUrl)
+                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "آدرس ویدیو (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">لینک ویدیو آموزشی (اختیاری)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ImageUrl, "تصویر اصلی")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">انتخاب تصویر اصلی...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
+                        @Html.HiddenFor(m => m.ImageUrl)
+                        @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ThumbnailUrl, "تصویر کوچک (Thumbnail)")
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک (اختیاری)...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> اگر انتخاب نشود، به صورت خودکار از تصویر اصلی ایجاد می‌شود (300x300)
+                        </small>
+                        @Html.HiddenFor(m => m.ThumbnailUrl)
+                        @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
+                        <div id="thumbnailPreview" class="mt-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش Thumbnail" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "publishedAtPicker";
+                        ViewBag.PersianDatePickerName = "PublishedAt";
+                        ViewBag.PersianDatePickerValue = Model.PublishedAt;
+                        ViewBag.PersianDatePickerLabel = "تاریخ انتشار";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ انتشار (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، تاریخ فعلی استفاده می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Slug)
+                        @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", placeholder = "آدرس URL (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">اگر خالی باشد، به صورت خودکار از عنوان تولید می‌شود</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.MetaTitle)
+                        @Html.TextBoxFor(m => m.MetaTitle, new { @class = "form-control", placeholder = "عنوان متا (SEO)" })
+                        @Html.ValidationMessageFor(m => m.MetaTitle, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.MetaDescription)
+                        @Html.TextAreaFor(m => m.MetaDescription, new { @class = "form-control", rows = "2", placeholder = "توضیحات متا (SEO)" })
+                        @Html.ValidationMessageFor(m => m.MetaDescription, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        @Html.CheckBoxFor(m => m.IsPublished, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.IsPublished, new { @class = "form-check-label" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_CKEditorScript")
+    @Html.Partial("_PersianDatePickerScript")
+    
+    <script>
+        $(document).ready(function() {
+            // CKEditor Initialization
+            if (typeof ClassicEditor !== 'undefined') {
+                ClassicEditor
+                    .create(document.querySelector('#contentEditor'), {
+                        language: 'fa',
+                        toolbar: {
+                            items: [
+                                'heading', '|',
+                                'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
+                                'outdent', 'indent', '|',
+                                'blockQuote', 'insertTable', '|',
+                                'undo', 'redo'
+                            ]
+                        }
+                    })
+                    .catch(error => {
+                        console.error('خطا در بارگذاری CKEditor:', error);
+                    });
+            }
+
+            // Document File Preview
+            $('#DocumentFile').on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var fileName = file.name;
+                    var fileExtension = fileName.split('.').pop().toLowerCase();
+                    var iconClass = 'fa-file';
+                    var iconColor = 'text-secondary';
+                    
+                    if (fileExtension === 'pdf') {
+                        iconClass = 'fa-file-pdf';
+                        iconColor = 'text-danger';
+                    } else if (fileExtension === 'doc' || fileExtension === 'docx') {
+                        iconClass = 'fa-file-word';
+                        iconColor = 'text-primary';
+                    } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+                        iconClass = 'fa-file-excel';
+                        iconColor = 'text-success';
+                    }
+                    
+                    $('#documentIcon').removeClass().addClass('fas ' + iconClass + ' ' + iconColor);
+                    $('#documentName').text(fileName);
+                    $('#documentPreview').show();
+                    
+                    // Update custom file label
+                    $(this).next('.custom-file-label').text(fileName);
+                } else {
+                    $('#documentPreview').hide();
+                }
+            });
+
+            // Image Preview
+            $('#ImageFile').on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagePreviewImg').attr('src', e.target.result);
+                        $('#imagePreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                    $(this).next('.custom-file-label').text(file.name);
+                } else {
+                    $('#imagePreview').hide();
+                }
+            });
+
+            // Thumbnail Preview
+            $('#ThumbnailFile').on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#thumbnailPreviewImg').attr('src', e.target.result);
+                        $('#thumbnailPreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                    $(this).next('.custom-file-label').text(file.name);
+                } else {
+                    $('#thumbnailPreview').hide();
+                }
+            });
+        });
+    </script>
+}
+

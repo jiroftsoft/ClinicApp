@@ -1,0 +1,439 @@
+/**
+ * Professional Insurance Logo Carousel Styles
+ * 
+ * طراحی حرفه‌ای کروسل لوگوهای بیمه برای محیط درمانی
+ * سبک، سریع، بهینه و Production-Ready
+ */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+.insurance-carousel-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.insurance-carousel-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   SECTION HEADER
+   ============================================ */
+.carousel-section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.header-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 100%);
+    border-radius: 50%;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 6px 20px rgba(91, 163, 199, 0.25);
+}
+
+.header-icon-wrapper i {
+    font-size: 2rem;
+    color: #ffffff;
+}
+
+.carousel-section-title {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1a4a54;
+    margin: 0 0 0.75rem;
+    line-height: 1.3;
+}
+
+.carousel-section-title span {
+    position: relative;
+    display: inline-block;
+}
+
+.carousel-section-title span::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #FFD700, transparent);
+    border-radius: 2px;
+}
+
+.carousel-section-desc {
+    font-size: 1.0625rem;
+    color: #6c757d;
+    line-height: 1.7;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   SWIPER CAROUSEL WRAPPER
+   ============================================ */
+.insurance-carousel-wrapper {
+    position: relative;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    min-height: 200px; /* Prevent layout shift */
+}
+
+.insurance-logo-carousel {
+    width: 100%;
+    padding: 1.5rem 0;
+    overflow: hidden;
+}
+
+.insurance-logo-carousel .swiper-wrapper {
+    align-items: center;
+    display: flex;
+}
+
+/* Fix for Swiper not initialized */
+.insurance-logo-carousel:not(.swiper-initialized) .swiper-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.insurance-logo-carousel:not(.swiper-initialized) .swiper-slide {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* ============================================
+   SWIPER SLIDE
+   ============================================ */
+.insurance-logo-carousel .swiper-slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.insurance-logo-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1.5rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    background: transparent;
+}
+
+.insurance-logo-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   LOGO IMAGE WRAPPER
+   ============================================ */
+.logo-image-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 80px;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.insurance-logo-item:hover .logo-image-wrapper {
+    border-color: rgba(91, 163, 199, 0.3);
+    box-shadow: 0 4px 15px rgba(91, 163, 199, 0.15);
+}
+
+/* ============================================
+   LOGO IMAGE
+   ============================================ */
+.insurance-logo-image {
+    max-width: 100%;
+    max-height: 70px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: all 0.4s ease;
+}
+
+.insurance-logo-item:hover .insurance-logo-image {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* ============================================
+   LOGO FALLBACK
+   ============================================ */
+.logo-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 100%;
+    color: #5BA3C7;
+}
+
+.logo-fallback i {
+    font-size: 2rem;
+    opacity: 0.6;
+}
+
+.fallback-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================
+   LOGO NAME
+   ============================================ */
+.logo-name {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: center;
+    line-height: 1.4;
+    margin-top: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.insurance-logo-item:hover .logo-name {
+    color: #5BA3C7;
+}
+
+/* ============================================
+   NAVIGATION ARROWS (Hidden by default)
+   ============================================ */
+.insurance-carousel-next,
+.insurance-carousel-prev {
+    display: none; /* Hidden for clean look, can be enabled if needed */
+    width: 44px;
+    height: 44px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    color: #5BA3C7;
+    transition: all 0.3s ease;
+}
+
+.insurance-carousel-next::after,
+.insurance-carousel-prev::after {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.insurance-carousel-next:hover,
+.insurance-carousel-prev:hover {
+    background: #5BA3C7;
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(91, 163, 199, 0.3);
+}
+
+/* ============================================
+   PAGINATION (Hidden by default)
+   ============================================ */
+.insurance-carousel-pagination {
+    display: none; /* Hidden for clean look */
+    bottom: -10px !important;
+}
+
+.insurance-carousel-pagination .swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+    background: #5BA3C7;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+}
+
+.insurance-carousel-pagination .swiper-pagination-bullet-active {
+    opacity: 1;
+    background: #5BA3C7;
+    transform: scale(1.2);
+}
+
+/* ============================================
+   SECTION FOOTER
+   ============================================ */
+.carousel-section-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.view-all-insurances-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: linear-gradient(135deg, #FFD700 0%, #ffed4e 100%);
+    color: #1a4a54;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.view-all-insurances-link:hover,
+.view-all-insurances-link:focus {
+    background: linear-gradient(135deg, #ffed4e 0%, #FFD700 100%);
+    color: #1a4a54;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    outline: none;
+}
+
+.view-all-insurances-link i {
+    font-size: 1rem;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1199.98px) {
+    .insurance-carousel-section {
+        padding: 3.5rem 0;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .insurance-carousel-section {
+        padding: 3rem 0;
+    }
+
+    .carousel-section-title {
+        font-size: 2rem;
+    }
+
+    .logo-image-wrapper {
+        height: 70px;
+    }
+
+    .insurance-logo-image {
+        max-height: 60px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .insurance-carousel-section {
+        padding: 2.5rem 0;
+    }
+
+    .carousel-section-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+
+    .header-icon-wrapper i {
+        font-size: 1.75rem;
+    }
+
+    .carousel-section-title {
+        font-size: 1.75rem;
+    }
+
+    .carousel-section-desc {
+        font-size: 1rem;
+    }
+
+    .insurance-carousel-wrapper {
+        padding: 1.5rem 0;
+    }
+
+    .insurance-logo-item {
+        padding: 1.25rem;
+    }
+
+    .logo-image-wrapper {
+        height: 65px;
+        padding: 0.5rem;
+    }
+
+    .insurance-logo-image {
+        max-height: 55px;
+    }
+
+    .view-all-insurances-link {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9375rem;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .insurance-logo-item,
+    .insurance-logo-image,
+    .logo-image-wrapper {
+        transition: none !important;
+    }
+
+    .insurance-logo-item:hover {
+        transform: none;
+    }
+}
+
+.insurance-logo-item:focus-visible {
+    outline: 3px solid #5BA3C7;
+    outline-offset: 4px;
+    border-radius: 12px;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    .insurance-carousel-section {
+        background: #ffffff;
+        padding: 1.5rem 0;
+    }
+
+    .insurance-logo-image {
+        filter: grayscale(0%);
+        opacity: 1;
+    }
+
+    .view-all-insurances-link {
+        display: none;
+    }
+}
+

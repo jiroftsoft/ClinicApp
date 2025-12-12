@@ -287,6 +287,11 @@
 
                     <hr class="nav-divider">
 
+                    <!-- CMS Menu Section -->
+                    @Html.Partial("_CMSMenu")
+
+                    <hr class="nav-divider">
+
                     <div class="nav-section">
                         <h3 class="nav-section-title" aria-label="عملیات سریع">عملیات سریع</h3>
 
@@ -322,6 +327,9 @@
 
             <!-- Main Content -->
             <main id="main-content" class="main-content" role="main" aria-label="محتوای اصلی">
+                <!-- Breadcrumb Navigation -->
+                @Html.Partial("_Breadcrumb")
+                
                 @RenderBody()
             </main>
         </div>

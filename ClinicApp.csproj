@@ -477,6 +477,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostCommentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\ClinicWorkingHoursController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\ContactFormController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\EmergencyContactController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\FAQController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\GalleryController.cs" />
@@ -484,6 +485,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\InsuranceInfoController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalEquipmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalServiceInfoController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\PatientEducationMaterialController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\SliderController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\TestimonialController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\VideoController.cs" />
@@ -540,6 +542,7 @@
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicBankAccountController.cs" />
     <Compile Include="Controllers\BlogPostCommentApiController.cs" />
+    <Compile Include="Controllers\ContactController.cs" />
     <Compile Include="Controllers\FAQController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\HealthTipController.cs" />
@@ -547,6 +550,7 @@
     <Compile Include="Controllers\LogController.cs" />
     <Compile Include="Controllers\MedicalEquipmentController.cs" />
     <Compile Include="Controllers\MedicalServiceInfoController.cs" />
+    <Compile Include="Controllers\PatientEducationController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
@@ -686,6 +690,8 @@
     <Compile Include="Interfaces\CMS\IBlogPostService.cs" />
     <Compile Include="Interfaces\CMS\IClinicWorkingHoursRepository.cs" />
     <Compile Include="Interfaces\CMS\IClinicWorkingHoursService.cs" />
+    <Compile Include="Interfaces\CMS\IContactFormRepository.cs" />
+    <Compile Include="Interfaces\CMS\IContactFormService.cs" />
     <Compile Include="Interfaces\CMS\IEmergencyContactRepository.cs" />
     <Compile Include="Interfaces\CMS\IEmergencyContactService.cs" />
     <Compile Include="Interfaces\CMS\IFAQRepository.cs" />
@@ -700,6 +706,8 @@
     <Compile Include="Interfaces\CMS\IMedicalEquipmentService.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoRepository.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoService.cs" />
+    <Compile Include="Interfaces\CMS\IPatientEducationMaterialRepository.cs" />
+    <Compile Include="Interfaces\CMS\IPatientEducationMaterialService.cs" />
     <Compile Include="Interfaces\CMS\ISliderRepository.cs" />
     <Compile Include="Interfaces\CMS\ISliderService.cs" />
     <Compile Include="Interfaces\CMS\ITestimonialRepository.cs" />
@@ -709,6 +717,7 @@
     <Compile Include="Interfaces\Finance\IFinancialYearService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IBusinessRule.cs" />
+    <Compile Include="Interfaces\IDocumentUploadService.cs" />
     <Compile Include="Interfaces\IExternalInquiryService.cs" />
     <Compile Include="Interfaces\IFactorSettingService.cs" />
     <Compile Include="Interfaces\IHomePageService.cs" />
@@ -836,6 +845,14 @@
     <Compile Include="Migrations\202512110838012_Whatewvedio.Designer.cs">
       <DependentUpon>202512110838012_Whatewvedio.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512121829190_AddContactForms.cs" />
+    <Compile Include="Migrations\202512121829190_AddContactForms.Designer.cs">
+      <DependentUpon>202512121829190_AddContactForms.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202512121953274_addPatientEducationMaterial.cs" />
+    <Compile Include="Migrations\202512121953274_addPatientEducationMaterial.Designer.cs">
+      <DependentUpon>202512121953274_addPatientEducationMaterial.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -848,6 +865,7 @@
     <Compile Include="Models\Entities\CMS\BlogPostComment.cs" />
     <Compile Include="Models\Entities\CMS\BlogPostLike.cs" />
     <Compile Include="Models\Entities\CMS\ClinicWorkingHours.cs" />
+    <Compile Include="Models\Entities\CMS\ContactForm.cs" />
     <Compile Include="Models\Entities\CMS\EmergencyContact.cs" />
     <Compile Include="Models\Entities\CMS\FAQ.cs" />
     <Compile Include="Models\Entities\CMS\GalleryItem.cs" />
@@ -855,9 +873,13 @@
     <Compile Include="Models\Entities\CMS\InsuranceInfo.cs" />
     <Compile Include="Models\Entities\CMS\MedicalEquipment.cs" />
     <Compile Include="Models\Entities\CMS\MedicalServiceInfo.cs" />
+    <Compile Include="Models\Entities\CMS\PatientEducationMaterial.cs" />
     <Compile Include="Models\Entities\CMS\Slider.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
     <Compile Include="Models\Entities\CMS\Video.cs" />
+    <Compile Include="Models\Enums\ContactFormCategory.cs" />
+    <Compile Include="Models\Enums\ContactFormStatus.cs" />
+    <Compile Include="Models\Enums\PatientEducationCategory.cs" />
     <Compile Include="Models\Enums\VideoType.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
@@ -866,6 +888,7 @@
     <Compile Include="Repositories\CMS\BlogPostLikeRepository.cs" />
     <Compile Include="Repositories\CMS\BlogPostRepository.cs" />
     <Compile Include="Repositories\CMS\ClinicWorkingHoursRepository.cs" />
+    <Compile Include="Repositories\CMS\ContactFormRepository.cs" />
     <Compile Include="Repositories\CMS\EmergencyContactRepository.cs" />
     <Compile Include="Repositories\CMS\FAQRepository.cs" />
     <Compile Include="Repositories\CMS\GalleryItemRepository.cs" />
@@ -873,6 +896,7 @@
     <Compile Include="Repositories\CMS\InsuranceInfoRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalEquipmentRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalServiceInfoRepository.cs" />
+    <Compile Include="Repositories\CMS\PatientEducationMaterialRepository.cs" />
     <Compile Include="Repositories\CMS\SliderRepository.cs" />
     <Compile Include="Repositories\CMS\TestimonialRepository.cs" />
     <Compile Include="Repositories\CMS\VideoRepository.cs" />
@@ -1217,6 +1241,7 @@
     <Compile Include="Services\CMS\BlogPostLikeService.cs" />
     <Compile Include="Services\CMS\BlogPostService.cs" />
     <Compile Include="Services\CMS\ClinicWorkingHoursService.cs" />
+    <Compile Include="Services\CMS\ContactFormService.cs" />
     <Compile Include="Services\CMS\EmergencyContactService.cs" />
     <Compile Include="Services\CMS\FAQService.cs" />
     <Compile Include="Services\CMS\GalleryService.cs" />
@@ -1224,9 +1249,11 @@
     <Compile Include="Services\CMS\InsuranceInfoService.cs" />
     <Compile Include="Services\CMS\MedicalEquipmentService.cs" />
     <Compile Include="Services\CMS\MedicalServiceInfoService.cs" />
+    <Compile Include="Services\CMS\PatientEducationMaterialService.cs" />
     <Compile Include="Services\CMS\SliderService.cs" />
     <Compile Include="Services\CMS\TestimonialService.cs" />
     <Compile Include="Services\CMS\VideoService.cs" />
+    <Compile Include="Services\DocumentUploadService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\HomePageService.cs" />
     <Compile Include="Services\ImageUploadService.cs" />
@@ -1412,6 +1439,7 @@
     <Compile Include="ViewModels\CMS\BlogPostCommentViewModels.cs" />
     <Compile Include="ViewModels\CMS\BlogPostViewModels.cs" />
     <Compile Include="ViewModels\CMS\ClinicWorkingHoursViewModels.cs" />
+    <Compile Include="ViewModels\CMS\ContactFormViewModels.cs" />
     <Compile Include="ViewModels\CMS\EmergencyContactViewModels.cs" />
     <Compile Include="ViewModels\CMS\FAQViewModels.cs" />
     <Compile Include="ViewModels\CMS\GalleryItemViewModels.cs" />
@@ -1419,6 +1447,7 @@
     <Compile Include="ViewModels\CMS\InsuranceInfoViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalEquipmentViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalServiceInfoViewModels.cs" />
+    <Compile Include="ViewModels\CMS\PatientEducationMaterialViewModels.cs" />
     <Compile Include="ViewModels\CMS\SliderViewModels.cs" />
     <Compile Include="ViewModels\CMS\TestimonialViewModels.cs" />
     <Compile Include="ViewModels\CMS\VideoViewModels.cs" />
@@ -1458,6 +1487,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationDashboardViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
     <Compile Include="ViewModels\FactorSettingViewModel.cs" />
+    <Compile Include="ViewModels\FooterViewModel.cs" />
     <Compile Include="ViewModels\HomePageViewModel.cs" />
     <Compile Include="ViewModels\InsuranceTypeUpdate\InsuranceTypeUpdateIndexViewModel.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
@@ -1673,6 +1703,7 @@
     <Compile Include="ViewModels\PatientViewModel.cs" />
     <Compile Include="ViewModels\ServiceViewModels.cs" />
     <Compile Include="ViewModels\Shared\PaginationViewModel.cs" />
+    <Compile Include="ViewModels\SidebarViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationCreateEditViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationDetailsViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexPageViewModel.cs" />
@@ -1747,6 +1778,8 @@
     <Content Include="Content\css\hero-carousel.css" />
     <Content Include="Content\css\hero-section.css" />
     <Content Include="Content\css\homepage-layout.css" />
+    <Content Include="Content\css\insurance-carousel.css" />
+    <Content Include="Content\css\insurance-info-section.css" />
     <Content Include="Content\css\insurance-plan-index.css" />
     <Content Include="Content\css\insurance-plan.css" />
     <Content Include="Content\css\insurance\supplementary-tariff-index.css" />
@@ -1755,8 +1788,10 @@
     <Content Include="Content\css\medical-environment-styles.css" />
     <Content Include="Content\css\medical-environment.css" />
     <Content Include="Content\css\medical-equipment-section.css" />
+    <Content Include="Content\css\medical-footer.css" />
     <Content Include="Content\css\medical-select2.css" />
     <Content Include="Content\css\medical-services-section.css" />
+    <Content Include="Content\css\medical-sidebar.css" />
     <Content Include="Content\css\modern-navigation.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
@@ -1764,7 +1799,6 @@
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\quick-appointment-section.css" />
     <Content Include="Content\css\reception-standards.css" />
-    <Content Include="Content\css\reception\advanced-department-styles.css" />
     <Content Include="Content\css\reception\patient-accordion.css" />
     <Content Include="Content\css\reception\realtime-insurance-binding.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />
@@ -1858,19 +1892,26 @@
     <Content Include="Content\Images\insurance\download_14040920_194916_7c5feabb34104b56933f4075950e4362.png" />
     <Content Include="Content\Images\insurance\thumbnails\thumb_asia_14040920_195247_643fda99379340f284df1726b14a661a.png" />
     <Content Include="Content\Images\insurance\thumbnails\thumb_download_14040920_194916_7c5feabb34104b56933f4075950e4362.png" />
+    <Content Include="Content\Images\logo\logoshafa.png" />
     <Content Include="Content\Images\services\4_14040920_220933_6901d9eaf26345a59261a110db0b5564.jpeg" />
     <Content Include="Content\Images\services\thumbnails\thumb_4_14040920_220933_6901d9eaf26345a59261a110db0b5564.jpeg" />
     <Content Include="Content\Images\shafa-logo.png" />
+    <Content Include="Content\Images\sliders\19785e65-fc4b-4134-a449-75b1d4bba5d0_14040921_123523_91d5c5d8dda549f287191ecdbc283c68.jpg" />
     <Content Include="Content\Images\sliders\1_14040921_104356_277b55aa8e8f45c4ba0a851fa46c9a41.png" />
     <Content Include="Content\Images\sliders\1_14040921_104922_9d68ba3b3b3d4d22aeb7864831bfcda2.png" />
     <Content Include="Content\Images\sliders\2_14040921_105522_e91ab6dd553d4a209fef22e9dd484172.png" />
     <Content Include="Content\Images\sliders\Gemini_Generated_Image_bw19hkbw19hkbw19_14040921_105401_f4a89c16916a4421a52a67357feffc1c.png" />
     <Content Include="Content\Images\sliders\Gemini_Generated_Image_bw19hkbw19hkbw19_14040921_105649_ccd4331f423f45b4942e018fd6767672.png" />
+    <Content Include="Content\Images\sliders\logoshafa_14040921_194518_3debc13c1a0b4506a4828d4e0fbc5f14.png" />
+    <Content Include="Content\Images\sliders\thumbnails\thumb_19785e65-fc4b-4134-a449-75b1d4bba5d0_14040921_123523_91d5c5d8dda549f287191ecdbc283c68.jpg" />
     <Content Include="Content\Images\sliders\thumbnails\thumb_1_14040921_104356_277b55aa8e8f45c4ba0a851fa46c9a41.png" />
     <Content Include="Content\Images\sliders\thumbnails\thumb_1_14040921_104922_9d68ba3b3b3d4d22aeb7864831bfcda2.png" />
     <Content Include="Content\Images\sliders\thumbnails\thumb_2_14040921_105522_e91ab6dd553d4a209fef22e9dd484172.png" />
     <Content Include="Content\Images\sliders\thumbnails\thumb_Gemini_Generated_Image_bw19hkbw19hkbw19_14040921_105401_f4a89c16916a4421a52a67357feffc1c.png" />
     <Content Include="Content\Images\sliders\thumbnails\thumb_Gemini_Generated_Image_bw19hkbw19hkbw19_14040921_105649_ccd4331f423f45b4942e018fd6767672.png" />
+    <Content Include="Content\Images\sliders\thumbnails\thumb_logoshafa_14040921_194518_3debc13c1a0b4506a4828d4e0fbc5f14.png" />
+    <Content Include="Content\Images\testimonials\download_%281%29_14040921_211446_3ae798f1fef445e8be29bcb2665aeb40.jpg" />
+    <Content Include="Content\Images\testimonials\thumbnails\thumb_download_%281%29_14040921_211446_3ae798f1fef445e8be29bcb2665aeb40.jpg" />
     <Content Include="Content\Insurance\supplementary-insurance.css" />
     <Content Include="Content\Insurance\supplementary-tariff.css" />
     <Content Include="Content\js\admin-layout.js" />
@@ -1879,8 +1920,10 @@
     <Content Include="Content\js\gallery-lightbox.js" />
     <Content Include="Content\js\hero-carousel.js" />
     <Content Include="Content\js\image-optimization.js" />
+    <Content Include="Content\js\insurance-carousel.js" />
     <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
+    <Content Include="Content\js\medical-sidebar.js" />
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\js\modern-navigation.js" />
     <Content Include="Content\js\performance-optimizer.js" />
@@ -4174,10 +4217,13 @@
     <Content Include="Content\plugins\select2\js\select2.min.js" />
     <Content Include="Content\plugins\SweetAlert2\sweetalert2%4011.js" />
     <Content Include="Content\plugins\SweetAlert2\sweetalert2.min.css" />
+    <Content Include="Content\plugins\Swiper\swiper-bundle.min.css" />
+    <Content Include="Content\plugins\Swiper\swiper-bundle.min.js" />
     <Content Include="Content\plugins\toastr\toastr.min.css" />
     <Content Include="Content\plugins\toastr\toastr.min.js" />
     <Content Include="Content\reception-v2.css" />
     <Content Include="Content\reception.v2.css" />
+    <Content Include="Content\swiper-bundle.min.css" />
     <Content Include="Content\toastr.css" />
     <Content Include="Content\toastr.min.css" />
     <Content Include="favicon.ico" />
@@ -4373,6 +4419,16 @@
     <Content Include="Docs\WEB_CONFIG_CSP_PORT_5000_FIX.md" />
     <Content Include="Docs\PROTOCOL_ERROR_FIX.md" />
     <Content Include="Docs\PROTOCOL_MISMATCH_FIX.md" />
+    <Content Include="Areas\Admin\Views\CMS\ContactForm\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\ContactForm\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\ContactForm\Reply.cshtml" />
+    <Content Include="Docs\ACCESSIBILITY_GUIDE.md" />
+    <Content Include="Areas\Admin\Views\Shared\_Breadcrumb.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_CMSMenu.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Edit.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5788,6 +5844,9 @@
     <Content Include="Views\Home\Sections\_FooterSliderSection.cshtml" />
     <Content Include="Views\Home\Sections\_SidebarSliderSection.cshtml" />
     <Content Include="Views\Home\Sections\_HeroSection.cshtml" />
+    <Content Include="Views\Home\Sections\_SidebarSection.cshtml" />
+    <Content Include="Views\Shared\_Footer.cshtml" />
+    <Content Include="Views\Contact\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6008,6 +6067,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512110838012_Whatewvedio.resx">
       <DependentUpon>202512110838012_Whatewvedio.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512121829190_AddContactForms.resx">
+      <DependentUpon>202512121829190_AddContactForms.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512121953274_addPatientEducationMaterial.resx">
+      <DependentUpon>202512121953274_addPatientEducationMaterial.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

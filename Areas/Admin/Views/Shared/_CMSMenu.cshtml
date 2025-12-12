@@ -1,0 +1,292 @@
+@using System.Web.Mvc
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var areaName = ViewContext.RouteData.DataTokens["area"]?.ToString() ?? "";
+    
+    // تعیین اینکه آیا در بخش CMS هستیم
+    var isCMSArea = areaName == "Admin" && ViewContext.RouteData.Values.ContainsKey("controller") 
+        && ViewContext.RouteData.Values["controller"].ToString().Contains("CMS");
+    
+    // لیست ماژول‌های CMS
+    var cmsModules = new[]
+    {
+        new { Name = "Slider", Title = "اسلایدر", Icon = "fa-images", Controller = "Slider", Category = "محتوای بصری" },
+        new { Name = "Gallery", Title = "گالری تصاویر", Icon = "fa-photo-video", Controller = "Gallery", Category = "محتوای بصری" },
+        new { Name = "Video", Title = "ویدیوها", Icon = "fa-video", Controller = "Video", Category = "محتوای بصری" },
+        new { Name = "BlogPost", Title = "مقالات", Icon = "fa-newspaper", Controller = "BlogPost", Category = "محتوای متنی" },
+        new { Name = "HealthTip", Title = "نکات سلامتی", Icon = "fa-heartbeat", Controller = "HealthTip", Category = "محتوای متنی" },
+        new { Name = "Announcement", Title = "اطلاعیه‌ها", Icon = "fa-bullhorn", Controller = "Announcement", Category = "محتوای متنی" },
+        new { Name = "FAQ", Title = "سوالات متداول", Icon = "fa-question-circle", Controller = "FAQ", Category = "اطلاعات" },
+        new { Name = "Testimonial", Title = "نظرات بیماران", Icon = "fa-comments", Controller = "Testimonial", Category = "تعاملات" },
+        new { Name = "ContactForm", Title = "فرم تماس", Icon = "fa-envelope", Controller = "ContactForm", Category = "تعاملات" },
+        new { Name = "InsuranceInfo", Title = "اطلاعات بیمه", Icon = "fa-shield-alt", Controller = "InsuranceInfo", Category = "اطلاعات" },
+        new { Name = "MedicalServiceInfo", Title = "خدمات پزشکی", Icon = "fa-stethoscope", Controller = "MedicalServiceInfo", Category = "اطلاعات" },
+        new { Name = "MedicalEquipment", Title = "تجهیزات پزشکی", Icon = "fa-x-ray", Controller = "MedicalEquipment", Category = "اطلاعات" },
+        new { Name = "EmergencyContact", Title = "تماس اضطراری", Icon = "fa-phone-alt", Controller = "EmergencyContact", Category = "اطلاعات" },
+        new { Name = "ClinicWorkingHours", Title = "ساعات کاری", Icon = "fa-clock", Controller = "ClinicWorkingHours", Category = "تنظیمات" }
+    };
+    
+    // دسته‌بندی ماژول‌ها
+    var categories = cmsModules.GroupBy(m => m.Category).OrderBy(g => g.Key);
+}
+
+@* ============================================
+   CMS Menu - Professional Admin Menu
+   ============================================
+   - ساختار درختی حرفه‌ای
+   - Active State Detection
+   - Responsive Design
+   - Medical Environment Colors
+   ============================================ *@
+
+<div class="cms-menu-section">
+    <div class="cms-menu-header">
+        <h3 class="cms-menu-title">
+            <i class="fas fa-sitemap"></i>
+            مدیریت محتوا (CMS)
+        </h3>
+        <button class="cms-menu-toggle" type="button" aria-label="باز/بسته کردن منوی CMS" aria-expanded="true">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+    
+    <nav class="cms-menu-nav" role="navigation" aria-label="منوی مدیریت محتوا">
+        @foreach (var category in categories)
+        {
+            <div class="cms-menu-category">
+                <div class="cms-menu-category-header">
+                    <i class="fas fa-folder"></i>
+                    <span class="cms-menu-category-title">@category.Key</span>
+                    <span class="cms-menu-category-count">(@category.Count())</span>
+                </div>
+                
+                <ul class="cms-menu-list">
+                    @foreach (var module in category.OrderBy(m => m.Title))
+                    {
+                        var isActive = controllerName.Equals(module.Controller, StringComparison.OrdinalIgnoreCase);
+                        var moduleUrl = Url.Action("Index", module.Controller, new { area = "Admin" });
+                        
+                        <li class="cms-menu-item @(isActive ? "active" : "")">
+                            <a href="@moduleUrl" 
+                               class="cms-menu-link @(isActive ? "active" : "")" 
+                               aria-label="@module.Title"
+                               title="@module.Title">
+                                <i class="fas @module.Icon cms-menu-icon"></i>
+                                <span class="cms-menu-text">@module.Title</span>
+                                @if (isActive)
+                                {
+                                    <i class="fas fa-chevron-left cms-menu-active-indicator" aria-hidden="true"></i>
+                                }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </nav>
+</div>
+
+<style>
+    /* CMS Menu Styles - Production Ready */
+    .cms-menu-section {
+        background-color: var(--medical-bg, #ffffff);
+        border: 1px solid var(--medical-border, #dee2e6);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .cms-menu-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background-color: var(--medical-primary, #2c5aa0);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .cms-menu-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .cms-menu-toggle {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 0.875rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .cms-menu-toggle[aria-expanded="false"] {
+        transform: rotate(-90deg);
+    }
+    
+    .cms-menu-nav {
+        padding: 0.5rem 0;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .cms-menu-nav[aria-hidden="true"] {
+        display: none;
+    }
+    
+    .cms-menu-category {
+        margin-bottom: 0.5rem;
+    }
+    
+    .cms-menu-category-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background-color: var(--medical-light, #f8f9fa);
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--medical-text, #212529);
+        border-bottom: 1px solid var(--medical-border, #dee2e6);
+    }
+    
+    .cms-menu-category-title {
+        flex: 1;
+    }
+    
+    .cms-menu-category-count {
+        font-size: 0.75rem;
+        color: var(--medical-text-muted, #6c757d);
+        background-color: var(--medical-bg, #ffffff);
+        padding: 0.125rem 0.5rem;
+        border-radius: 12px;
+    }
+    
+    .cms-menu-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .cms-menu-item {
+        margin: 0;
+    }
+    
+    .cms-menu-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem 0.75rem 2rem;
+        color: var(--medical-text, #212529);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-right: 3px solid transparent;
+        position: relative;
+    }
+    
+    .cms-menu-link:hover {
+        background-color: var(--medical-light, #f8f9fa);
+        color: var(--medical-primary, #2c5aa0);
+        text-decoration: none;
+    }
+    
+    .cms-menu-link.active {
+        background-color: rgba(44, 90, 160, 0.1);
+        color: var(--medical-primary, #2c5aa0);
+        border-right-color: var(--medical-primary, #2c5aa0);
+        font-weight: 600;
+    }
+    
+    .cms-menu-icon {
+        width: 20px;
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .cms-menu-text {
+        flex: 1;
+    }
+    
+    .cms-menu-active-indicator {
+        color: var(--medical-primary, #2c5aa0);
+        font-size: 0.75rem;
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .cms-menu-section {
+            margin-bottom: 0.5rem;
+        }
+        
+        .cms-menu-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .cms-menu-link {
+            padding: 0.625rem 1rem 0.625rem 1.5rem;
+        }
+    }
+    
+    /* Scrollbar Styling */
+    .cms-menu-nav::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .cms-menu-nav::-webkit-scrollbar-track {
+        background: var(--medical-light, #f8f9fa);
+    }
+    
+    .cms-menu-nav::-webkit-scrollbar-thumb {
+        background: var(--medical-border, #dee2e6);
+        border-radius: 3px;
+    }
+    
+    .cms-menu-nav::-webkit-scrollbar-thumb:hover {
+        background: var(--medical-text-muted, #6c757d);
+    }
+</style>
+
+<script>
+    (function() {
+        'use strict';
+        
+        // Toggle CMS Menu
+        var menuToggle = document.querySelector('.cms-menu-toggle');
+        var menuNav = document.querySelector('.cms-menu-nav');
+        
+        if (menuToggle && menuNav) {
+            // Check localStorage for saved state
+            var savedState = localStorage.getItem('cmsMenuExpanded');
+            var isExpanded = savedState !== null ? savedState === 'true' : true;
+            
+            menuToggle.setAttribute('aria-expanded', isExpanded);
+            if (!isExpanded) {
+                menuNav.setAttribute('aria-hidden', 'true');
+            }
+            
+            menuToggle.addEventListener('click', function() {
+                var currentState = menuToggle.getAttribute('aria-expanded') === 'true';
+                var newState = !currentState;
+                
+                menuToggle.setAttribute('aria-expanded', newState);
+                if (newState) {
+                    menuNav.removeAttribute('aria-hidden');
+                } else {
+                    menuNav.setAttribute('aria-hidden', 'true');
+                }
+                
+                // Save state to localStorage
+                localStorage.setItem('cmsMenuExpanded', newState);
+            });
+        }
+    })();
+</script>
+

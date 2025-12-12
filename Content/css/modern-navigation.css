@@ -54,6 +54,31 @@
     font-size: var(--font-size-2xl);
 }
 
+/* لوگوی تصویری در Header (در صورت استفاده) */
+.navbar-brand-modern img {
+    /* استاندارد Header برای محیط درمانی: ارتفاع 50px */
+    height: 50px;
+    max-height: 50px;
+    width: auto;
+    max-width: 200px; /* برای لوگوی افقی 3:1 یا 4:1 */
+    object-fit: contain;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand-modern:hover img {
+    transform: scale(1.05);
+}
+
+@media (max-width: 767.98px) {
+    .navbar-brand-modern img {
+        /* استاندارد موبایل: کمی کوچک‌تر */
+        height: 40px;
+        max-height: 40px;
+        max-width: 160px;
+    }
+}
+
 /* Navbar Toggler (Mobile) */
 .navbar-toggler-modern {
     background-color: transparent;

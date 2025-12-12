@@ -119,6 +119,13 @@ namespace ClinicApp.Services
                 // لود Slider Sections
                 var sidebarSlidersTask = GetSidebarSlidersAsync();
                 var footerSlidersTask = GetFooterSlidersAsync();
+                
+                // لود Sidebar Data
+                var sidebarTask = GetSidebarDataAsync(effectiveClinicId, quickAppointmentTask, contactTask, 
+                    emergencyContactsTask, healthTipsTask, announcementsTask, sidebarSlidersTask);
+                
+                // لود Footer Data
+                var footerTask = GetFooterDataAsync(effectiveClinicId, contactTask, emergencyContactsTask);
 
                 // انتظار برای تمام Task ها
                 await Task.WhenAll(
@@ -126,7 +133,7 @@ namespace ClinicApp.Services
                     testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
                     medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
                     insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask,
-                    sidebarSlidersTask, footerSlidersTask);
+                    sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
 
                 var viewModel = new HomePageViewModel
                 {
@@ -148,7 +155,9 @@ namespace ClinicApp.Services
                     MedicalServiceInfos = await medicalServiceInfosTask,
                     EmergencyContacts = await emergencyContactsTask,
                     SidebarSliders = await sidebarSlidersTask,
-                    FooterSliders = await footerSlidersTask
+                    FooterSliders = await footerSlidersTask,
+                    Sidebar = await sidebarTask,
+                    Footer = await footerTask
                 };
 
                 _logger.Information("✅ داده‌های صفحه اصلی با موفقیت دریافت شد");
@@ -858,6 +867,348 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در دریافت داده‌های Footer Sliders");
                 return new List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های Sidebar برای صفحه اصلی
+        /// </summary>
+        private async Task<SidebarViewModel> GetSidebarDataAsync(
+            int clinicId,
+            Task<QuickAppointmentViewModel> quickAppointmentTask,
+            Task<ContactSectionViewModel> contactTask,
+            Task<List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>> emergencyContactsTask,
+            Task<List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel>> healthTipsTask,
+            Task<List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>> announcementsTask,
+            Task<List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>> sidebarSlidersTask)
+        {
+            try
+            {
+                // انتظار برای تمام Task ها
+                var quickAppointment = await quickAppointmentTask;
+                var contact = await contactTask;
+                var emergencyContacts = await emergencyContactsTask;
+                var healthTips = await healthTipsTask;
+                var announcements = await announcementsTask;
+                var sidebarSliders = await sidebarSlidersTask;
+
+                // دریافت ساعات کاری
+                var workingHoursResult = await _clinicWorkingHoursService.GetActiveWorkingHoursAsync(clinicId);
+                var workingDays = new List<WorkingDayViewModel>();
+                bool isOpenNow = false;
+                string currentStatus = "بسته";
+
+                if (workingHoursResult.Success && workingHoursResult.Data != null && workingHoursResult.Data.Any())
+                {
+                    workingDays = workingHoursResult.Data
+                        .OrderBy(w => w.DayOfWeek)
+                        .Select(w => new WorkingDayViewModel
+                        {
+                            DayName = w.DayName,
+                            Hours = w.TimeRange,
+                            IsOpen = w.IsOpen
+                        }).ToList();
+
+                    // بررسی وضعیت فعلی (باز/بسته)
+                    var now = DateTime.Now;
+                    // تبدیل DayOfWeek: Sunday=0 در C# به شنبه=0 در سیستم ما
+                    var currentDayOfWeek = (int)now.DayOfWeek;
+                    // تبدیل: Sunday(0) -> شنبه(0), Monday(1) -> یکشنبه(1), ..., Saturday(6) -> جمعه(6)
+                    // در سیستم ما: شنبه=0, یکشنبه=1, ..., جمعه=6
+                    // در C#: Sunday=0, Monday=1, ..., Saturday=6
+                    // پس باید یک روز جابجا کنیم: currentDayOfWeek + 1 و سپس mod 7
+                    var persianDayOfWeek = (currentDayOfWeek + 1) % 7;
+                    var currentWorkingDay = workingHoursResult.Data.FirstOrDefault(w => w.DayOfWeek == persianDayOfWeek);
+                    
+                    if (currentWorkingDay != null && currentWorkingDay.IsOpen)
+                    {
+                        var currentTime = now.TimeOfDay;
+                        if (currentWorkingDay.StartTime <= currentTime && currentTime <= currentWorkingDay.EndTime)
+                        {
+                            isOpenNow = true;
+                            currentStatus = "باز";
+                        }
+                    }
+                }
+
+                // ساخت Quick Links
+                var quickLinks = new List<QuickLinkViewModel>
+                {
+                    new QuickLinkViewModel
+                    {
+                        Title = "پزشکان",
+                        Icon = "fas fa-user-md",
+                        Url = "/Doctors",
+                        Description = "لیست پزشکان کلینیک",
+                        Order = 1
+                    },
+                    new QuickLinkViewModel
+                    {
+                        Title = "خدمات",
+                        Icon = "fas fa-stethoscope",
+                        Url = "/MedicalServiceInfo",
+                        Description = "خدمات درمانی کلینیک",
+                        Order = 2
+                    },
+                    new QuickLinkViewModel
+                    {
+                        Title = "مقالات",
+                        Icon = "fas fa-newspaper",
+                        Url = "/Blog",
+                        Description = "مقالات و مطالب پزشکی",
+                        Order = 3
+                    },
+                    new QuickLinkViewModel
+                    {
+                        Title = "گالری",
+                        Icon = "fas fa-images",
+                        Url = "/Gallery",
+                        Description = "گالری تصاویر کلینیک",
+                        Order = 4
+                    },
+                    new QuickLinkViewModel
+                    {
+                        Title = "سوالات متداول",
+                        Icon = "fas fa-question-circle",
+                        Url = "/FAQ",
+                        Description = "پاسخ به سوالات متداول",
+                        Order = 5
+                    }
+                };
+
+                // ساخت Contact Info
+                var contactInfo = new ContactInfoSidebarViewModel
+                {
+                    PhoneNumber = contact?.ClinicInfo?.PhoneNumber ?? "034-3222-1234",
+                    PhoneLink = $"tel:{(contact?.ClinicInfo?.PhoneNumber ?? "03432221234").Replace("-", "").Replace(" ", "")}",
+                    Email = contact?.ClinicInfo?.Email ?? "info@clinic.com",
+                    EmailLink = $"mailto:{contact?.ClinicInfo?.Email ?? "info@clinic.com"}",
+                    Address = contact?.ClinicInfo?.Address ?? "آدرس کلینیک",
+                    WhatsAppNumber = contact?.WhatsAppNumber ?? "09022487373",
+                    WhatsAppLink = contact?.WhatsAppLink ?? "https://wa.me/989123456789",
+                    GoogleMapsLink = contact?.GoogleMapsLink ?? "https://www.google.com/maps"
+                };
+
+                // ساخت Quick Appointment
+                var quickAppointmentSidebar = new QuickAppointmentSidebarViewModel
+                {
+                    Title = "رزرو سریع نوبت",
+                    Subtitle = "نوبت خود را آنلاین رزرو کنید",
+                    ButtonText = "رزرو نوبت",
+                    AppointmentUrl = quickAppointment?.AppointmentUrl ?? "/Appointment",
+                    Specializations = quickAppointment?.Specializations ?? new List<SpecializationLookupViewModel>()
+                };
+
+                // ساخت Working Hours
+                var workingHoursSidebar = new WorkingHoursSidebarViewModel
+                {
+                    Title = "ساعات کاری",
+                    WorkingDays = workingDays,
+                    IsOpenNow = isOpenNow,
+                    CurrentStatus = currentStatus
+                };
+
+                return new SidebarViewModel
+                {
+                    QuickAppointment = quickAppointmentSidebar,
+                    QuickLinks = quickLinks,
+                    ContactInfo = contactInfo,
+                    EmergencyContacts = emergencyContacts?.Take(3).ToList() ?? new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>(),
+                    HealthTips = healthTips?.Take(3).ToList() ?? new List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel>(),
+                    Announcements = announcements?.Take(3).ToList() ?? new List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel>(),
+                    Sliders = sidebarSliders ?? new List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>(),
+                    WorkingHours = workingHoursSidebar
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Sidebar");
+                return new SidebarViewModel();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های Footer برای صفحه اصلی
+        /// </summary>
+        private async Task<FooterViewModel> GetFooterDataAsync(
+            int clinicId,
+            Task<ContactSectionViewModel> contactTask,
+            Task<List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>> emergencyContactsTask)
+        {
+            try
+            {
+                // انتظار برای Task ها
+                var contact = await contactTask;
+                var emergencyContacts = await emergencyContactsTask;
+
+                // دریافت اطلاعات کلینیک
+                var clinic = await _clinicRepository.GetByIdAsync(clinicId);
+
+                // دریافت ساعات کاری
+                var workingHoursResult = await _clinicWorkingHoursService.GetActiveWorkingHoursAsync(clinicId);
+                var workingDays = new List<WorkingDayViewModel>();
+                bool isOpenNow = false;
+                string currentStatus = "بسته";
+
+                if (workingHoursResult.Success && workingHoursResult.Data != null && workingHoursResult.Data.Any())
+                {
+                    workingDays = workingHoursResult.Data
+                        .OrderBy(w => w.DayOfWeek)
+                        .Select(w => new WorkingDayViewModel
+                        {
+                            DayName = w.DayName,
+                            Hours = w.TimeRange,
+                            IsOpen = w.IsOpen
+                        }).ToList();
+
+                    // بررسی وضعیت فعلی (باز/بسته)
+                    var now = DateTime.Now;
+                    var currentDayOfWeek = (int)now.DayOfWeek;
+                    var persianDayOfWeek = (currentDayOfWeek + 1) % 7;
+                    var currentWorkingDay = workingHoursResult.Data.FirstOrDefault(w => w.DayOfWeek == persianDayOfWeek);
+                    
+                    if (currentWorkingDay != null && currentWorkingDay.IsOpen)
+                    {
+                        var currentTime = now.TimeOfDay;
+                        if (currentWorkingDay.StartTime <= currentTime && currentTime <= currentWorkingDay.EndTime)
+                        {
+                            isOpenNow = true;
+                            currentStatus = "باز";
+                        }
+                    }
+                }
+
+                // ساخت Brand Info
+                var brandInfo = new BrandInfoFooterViewModel
+                {
+                    ClinicName = clinic?.Name ?? "کلینیک شفا جیرفت",
+                    LogoUrl = "/Content/Images/logo/logoshafa.png",
+                    Tagline = "مرکز تخصصی درمان و سلامت — مراقبت معتبر و مبتنی بر شواهد",
+                    Description = "ارائه خدمات درمانی تخصصی با استفاده از پیشرفته‌ترین تجهیزات پزشکی و تیم متخصص برای سلامت شما.",
+                    HomeUrl = "/"
+                };
+
+                // ساخت Contact Info
+                var contactInfo = new ContactInfoFooterViewModel
+                {
+                    PhoneNumber = contact?.ClinicInfo?.PhoneNumber ?? "034-3222-1234",
+                    PhoneLink = $"tel:{(contact?.ClinicInfo?.PhoneNumber ?? "03432221234").Replace("-", "").Replace(" ", "")}",
+                    EmergencyPhone = emergencyContacts?.FirstOrDefault()?.PhoneNumber ?? "115",
+                    EmergencyPhoneLink = emergencyContacts?.FirstOrDefault() != null 
+                        ? $"tel:{emergencyContacts.First().PhoneNumber?.Replace("-", "").Replace(" ", "")}" 
+                        : "tel:115",
+                    Email = contact?.ClinicInfo?.Email ?? "info@clinic.com",
+                    EmailLink = $"mailto:{contact?.ClinicInfo?.Email ?? "info@clinic.com"}",
+                    Address = contact?.ClinicInfo?.Address ?? "جیرفت، خیابان اصلی، کوچه شفا، پلاک 10",
+                    GoogleMapsLink = contact?.GoogleMapsLink ?? "https://www.google.com/maps",
+                    WhatsAppNumber = contact?.WhatsAppNumber ?? "09022487373",
+                    WhatsAppLink = contact?.WhatsAppLink ?? "https://wa.me/989123456789"
+                };
+
+                // ساخت Quick Links
+                var quickLinks = new List<FooterLinkViewModel>
+                {
+                    new FooterLinkViewModel { Title = "خانه", Url = "/", Icon = "fas fa-home", Order = 1 },
+                    new FooterLinkViewModel { Title = "درباره ما", Url = "/About", Icon = "fas fa-info-circle", Order = 2 },
+                    new FooterLinkViewModel { Title = "پزشکان", Url = "/Doctors", Icon = "fas fa-user-md", Order = 3 },
+                    new FooterLinkViewModel { Title = "مقالات", Url = "/Blog", Icon = "fas fa-newspaper", Order = 4 },
+                    new FooterLinkViewModel { Title = "تماس با ما", Url = "/Home/Contact", Icon = "fas fa-envelope", Order = 5 },
+                    new FooterLinkViewModel { Title = "سوالات متداول", Url = "/FAQ", Icon = "fas fa-question-circle", Order = 6 }
+                };
+
+                // ساخت Service Links
+                var serviceLinks = new List<FooterLinkViewModel>
+                {
+                    new FooterLinkViewModel { Title = "خدمات درمانی", Url = "/MedicalServiceInfo", Icon = "fas fa-stethoscope", Order = 1 },
+                    new FooterLinkViewModel { Title = "نوبت‌دهی", Url = "/Appointment", Icon = "fas fa-calendar-check", Order = 2 },
+                    new FooterLinkViewModel { Title = "آزمایشگاه", Url = "/MedicalServiceInfo", Icon = "fas fa-flask", Order = 3 },
+                    new FooterLinkViewModel { Title = "رادیولوژی", Url = "/MedicalServiceInfo", Icon = "fas fa-x-ray", Order = 4 }
+                };
+
+                // ساخت Legal Info
+                var currentYear = DateTime.Now.Year;
+                var legalInfo = new LegalInfoFooterViewModel
+                {
+                    CopyrightText = $"© {currentYear} کلینیک شفا جیرفت. تمامی حقوق محفوظ است.",
+                    CurrentYear = currentYear,
+                    PrivacyPolicyUrl = "/Privacy",
+                    TermsOfServiceUrl = "/Terms",
+                    ComplaintsUrl = "/Complaints",
+                    MedicalPrivacyNotice = "اطلاعات پزشکی بیماران به صورت محرمانه نگهداری می‌شود و طبق قوانین حریم خصوصی و امنیت اطلاعات درمانی محافظت می‌گردد."
+                };
+
+                // ساخت Certifications
+                var certifications = new List<CertificationViewModel>
+                {
+                    new CertificationViewModel
+                    {
+                        Title = "مجوز وزارت بهداشت",
+                        Description = "دارای مجوز رسمی از وزارت بهداشت، درمان و آموزش پزشکی",
+                        LicenseNumber = "12345",
+                        Order = 1
+                    },
+                    new CertificationViewModel
+                    {
+                        Title = "نماد اعتماد",
+                        Description = "دارای نماد اعتماد الکترونیکی",
+                        Order = 2
+                    }
+                };
+
+                // ساخت Social Media
+                var socialMedia = new List<SocialMediaViewModel>
+                {
+                    new SocialMediaViewModel
+                    {
+                        Platform = "Instagram",
+                        Url = "https://www.instagram.com/shafa_jiroft",
+                        Icon = "fab fa-instagram",
+                        AriaLabel = "اینستاگرام کلینیک شفا",
+                        Order = 1
+                    },
+                    new SocialMediaViewModel
+                    {
+                        Platform = "Telegram",
+                        Url = "https://www.telegram.me/shafa_jiroft",
+                        Icon = "fab fa-telegram",
+                        AriaLabel = "تلگرام کلینیک شفا",
+                        Order = 2
+                    },
+                    new SocialMediaViewModel
+                    {
+                        Platform = "WhatsApp",
+                        Url = contact?.WhatsAppLink ?? "https://wa.me/989123456789",
+                        Icon = "fab fa-whatsapp",
+                        AriaLabel = "واتساپ کلینیک شفا",
+                        Order = 3
+                    }
+                };
+
+                // ساخت Working Hours
+                var workingHours = new WorkingHoursFooterViewModel
+                {
+                    Title = "ساعات کاری",
+                    WorkingDays = workingDays,
+                    IsOpenNow = isOpenNow,
+                    CurrentStatus = currentStatus
+                };
+
+                return new FooterViewModel
+                {
+                    BrandInfo = brandInfo,
+                    ContactInfo = contactInfo,
+                    QuickLinks = quickLinks,
+                    ServiceLinks = serviceLinks,
+                    LegalInfo = legalInfo,
+                    Certifications = certifications,
+                    SocialMedia = socialMedia,
+                    WorkingHours = workingHours
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Footer");
+                return new FooterViewModel();
             }
         }
 

@@ -33,6 +33,12 @@ namespace ClinicApp.ViewModels
         // Slider Sections
         public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> SidebarSliders { get; set; }
         public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> FooterSliders { get; set; }
+        
+        // Sidebar (Professional Medical Sidebar)
+        public SidebarViewModel Sidebar { get; set; }
+        
+        // Footer (Professional Medical Footer)
+        public FooterViewModel Footer { get; set; }
     }
 
     #region Hero Section

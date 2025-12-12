@@ -4,46 +4,99 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@* ============================================
+   Testimonial Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست نظرات
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
 @Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .testimonial-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .patient-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .rating-stars {
+            color: #ffc107;
+        }
+        .rating-stars .fa-star:not(.text-warning) {
+            color: #dee2e6;
+        }
+        .comment-preview {
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+    </style>
+}
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">مدیریت نظرات بیماران</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-comments text-primary"></i>
+            مدیریت نظرات بیماران
+        </h1>
         <div>
-            <a href="@Url.Action("Pending")" class="btn btn-warning mr-2">
-                <i class="fas fa-clock"></i> نظرات در انتظار تایید (@(Model?.Count(t => !t.IsApproved) ?? 0))
-            </a>
+            @{
+                var pendingCount = Model?.Count(t => !t.IsApproved) ?? 0;
+            }
+            @if (pendingCount > 0)
+            {
+                <a href="@Url.Action("Pending")" class="btn btn-warning mr-2">
+                    <i class="fas fa-clock"></i> نظرات در انتظار تایید (@pendingCount)
+                </a>
+            }
             <a href="@Url.Action("Create")" class="btn btn-primary">
                 <i class="fas fa-plus"></i> نظر جدید
             </a>
         </div>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    <!-- Filter -->
+    <!-- Filter Panel -->
     <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> فیلتر و جستجو
+            </h6>
+        </div>
         <div class="card-body">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includePending" @(ViewBag.IncludePending == true ? "checked" : "") onchange="togglePending()">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       id="includePending" 
+                       @(ViewBag.IncludePending == true ? "checked" : "") 
+                       onchange="togglePending()"
+                       aria-label="نمایش نظرات در انتظار تایید">
                 <label class="form-check-label" for="includePending">
                     نمایش نظرات در انتظار تایید
                 </label>
@@ -54,23 +107,26 @@
     <!-- Testimonials List -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست نظرات (@Model.Count مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> لیست نظرات 
+                <span class="badge badge-primary">@(Model?.Count ?? 0) مورد</span>
+            </h6>
         </div>
         <div class="card-body">
             @if (Model != null && Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
-                        <thead>
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="thead-light">
                             <tr>
-                                <th>بیمار</th>
-                                <th>نظر</th>
-                                <th>پزشک</th>
-                                <th>امتیاز</th>
-                                <th>وضعیت</th>
-                                <th>ویژه</th>
-                                <th>تاریخ</th>
-                                <th>عملیات</th>
+                                <th style="width: 10%;">بیمار</th>
+                                <th style="width: 30%;">نظر</th>
+                                <th style="width: 15%;">پزشک</th>
+                                <th style="width: 10%;">امتیاز</th>
+                                <th style="width: 10%;">وضعیت</th>
+                                <th style="width: 8%;">ویژه</th>
+                                <th style="width: 10%;">تاریخ</th>
+                                <th style="width: 7%;">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -81,7 +137,9 @@
                                         <div class="d-flex align-items-center">
                                             @if (!string.IsNullOrEmpty(item.PatientInitials))
                                             {
-                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mr-2" style="width: 40px; height: 40px; font-weight: bold;">
+                                                <div class="patient-avatar bg-primary text-white mr-2" 
+                                                     title="@item.PatientName"
+                                                     aria-label="آواتار @item.PatientName">
                                                     @item.PatientInitials
                                                 </div>
                                             }
@@ -93,68 +151,121 @@
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Comment))
                                         {
-                                            <span>@(item.Comment.Length > 100 ? item.Comment.Substring(0, 100) + "..." : item.Comment)</span>
+                                            <div class="comment-preview" title="@item.Comment">
+                                                @item.Comment
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
                                         }
                                     </td>
-                                    <td>@(item.DoctorName ?? "-")</td>
                                     <td>
-                                        @for (int i = 1; i <= 5; i++)
+                                        @if (!string.IsNullOrEmpty(item.DoctorName))
                                         {
-                                            <i class="fas fa-star @(i <= item.Rating ? "text-warning" : "text-muted")"></i>
+                                            <span>@item.DoctorName</span>
                                         }
-                                        <span class="ml-1">(@item.Rating)</span>
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="rating-stars d-inline-block" role="img" aria-label="امتیاز @item.Rating از 5">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fas fa-star @(i <= item.Rating ? "text-warning" : "")" 
+                                                   aria-hidden="true"></i>
+                                            }
+                                        </div>
+                                        <span class="ml-1 small">(@item.Rating)</span>
                                     </td>
                                     <td>
                                         @if (item.IsApproved)
                                         {
-                                            <span class="badge badge-success">تایید شده</span>
+                                            <span class="badge badge-success status-badge">
+                                                <i class="fas fa-check-circle"></i> تایید شده
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge badge-warning">در انتظار تایید</span>
+                                            <span class="badge badge-warning status-badge">
+                                                <i class="fas fa-clock"></i> در انتظار تایید
+                                            </span>
                                         }
                                     </td>
                                     <td>
                                         @if (item.IsFeatured)
                                         {
-                                            <span class="badge badge-info">ویژه</span>
+                                            <span class="badge badge-info status-badge">
+                                                <i class="fas fa-star"></i> ویژه
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge badge-secondary">عادی</span>
+                                            <span class="badge badge-secondary status-badge">عادی</span>
                                         }
                                     </td>
-                                    <td>@item.CreatedAt.ToString("yyyy/MM/dd")</td>
                                     <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="@Url.Action("Details", new { id = item.TestimonialId })" class="btn btn-sm btn-info" title="جزئیات">
-                                                <i class="fas fa-eye"></i>
+                                        @if (item.CreatedAt != null)
+                                        {
+                                            <span title="@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")">
+                                                @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.CreatedAt)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group" aria-label="عملیات">
+                                            <a href="@Url.Action("Details", new { id = item.TestimonialId })" 
+                                               class="btn btn-sm btn-info" 
+                                               title="جزئیات"
+                                               aria-label="مشاهده جزئیات نظر @item.PatientName">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
                                             </a>
-                                            <a href="@Url.Action("Edit", new { id = item.TestimonialId })" class="btn btn-sm btn-primary" title="ویرایش">
-                                                <i class="fas fa-edit"></i>
+                                            <a href="@Url.Action("Edit", new { id = item.TestimonialId })" 
+                                               class="btn btn-sm btn-primary" 
+                                               title="ویرایش"
+                                               aria-label="ویرایش نظر @item.PatientName">
+                                                <i class="fas fa-edit" aria-hidden="true"></i>
                                             </a>
                                             @if (!item.IsApproved)
                                             {
                                                 using (Html.BeginForm("Approve", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-success" title="تایید">
-                                                        <i class="fas fa-check"></i>
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-success" 
+                                                            title="تایید"
+                                                            aria-label="تایید نظر @item.PatientName"
+                                                            onclick="return confirm('آیا از تایید این نظر اطمینان دارید؟')">
+                                                        <i class="fas fa-check" aria-hidden="true"></i>
                                                     </button>
                                                 }
                                                 using (Html.BeginForm("Reject", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="رد" onclick="return confirm('آیا از رد این نظر اطمینان دارید؟')">
-                                                        <i class="fas fa-times"></i>
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-danger" 
+                                                            title="رد"
+                                                            aria-label="رد نظر @item.PatientName"
+                                                            onclick="return confirm('آیا از رد این نظر اطمینان دارید؟')">
+                                                        <i class="fas fa-times" aria-hidden="true"></i>
                                                     </button>
                                                 }
                                             }
                                             @using (Html.BeginForm("Delete", "Testimonial", new { id = item.TestimonialId }, FormMethod.Post, new { @class = "d-inline" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این نظر اطمینان دارید؟')">
-                                                    <i class="fas fa-trash"></i>
+                                                <button type="submit" 
+                                                        class="btn btn-sm btn-danger" 
+                                                        title="حذف"
+                                                        aria-label="حذف نظر @item.PatientName"
+                                                        onclick="return confirm('آیا از حذف این نظر اطمینان دارید؟')">
+                                                    <i class="fas fa-trash" aria-hidden="true"></i>
                                                 </button>
                                             }
                                         </div>
@@ -167,18 +278,23 @@
             }
             else
             {
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> هیچ نظری یافت نشد.
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <p class="mb-0">هیچ نظری یافت نشد.</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus"></i> ایجاد نظر جدید
+                    </a>
                 </div>
             }
         </div>
     </div>
 </div>
 
-<script>
-    function togglePending() {
-        var includePending = document.getElementById('includePending').checked;
-        window.location.href = '@Url.Action("Index")?includePending=' + includePending;
-    }
-</script>
-
+@section Scripts {
+    <script>
+        function togglePending() {
+            var includePending = document.getElementById('includePending').checked;
+            window.location.href = '@Url.Action("Index")?includePending=' + includePending;
+        }
+    </script>
+}

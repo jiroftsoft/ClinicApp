@@ -1,0 +1,331 @@
+@model ClinicApp.ViewModels.FooterViewModel
+@using System.Globalization
+@using System.Threading
+
+@* ============================================
+   Professional Medical Footer - Production Ready
+   ============================================
+   - Design: Formal, calming, medical-friendly
+   - Structure: Brand, Contact, Links, Legal, Certifications
+   - RTL: Complete Persian support
+   - Accessibility: WCAG AA compliance
+   - Security: No sensitive data, GDPR compliance
+   - Performance: Optimized, minimal DOM
+   ============================================ *@
+
+@if (Model != null)
+{
+    <footer class="medical-footer" role="contentinfo" aria-label="فوتر کلینیک">
+        <div class="container">
+            <div class="footer-main">
+                @* ============================================
+                   BRAND & IDENTITY SECTION
+                   ============================================ *@
+                <div class="footer-section footer-brand">
+                    <div class="footer-brand-header">
+                        @if (!string.IsNullOrEmpty(Model.BrandInfo?.LogoUrl))
+                        {
+                            <a href="@(Model.BrandInfo?.HomeUrl ?? "/")" 
+                               class="footer-logo-link"
+                               aria-label="@(Model.BrandInfo?.ClinicName ?? "کلینیک شفا") - صفحه اصلی">
+                                <img src="@Model.BrandInfo.LogoUrl" 
+                                     alt="@(Model.BrandInfo?.ClinicName ?? "لوگوی کلینیک")"
+                                     class="footer-logo"
+                                     loading="lazy">
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@(Model.BrandInfo?.HomeUrl ?? "/")" 
+                               class="footer-logo-link footer-logo-text"
+                               aria-label="@(Model.BrandInfo?.ClinicName ?? "کلینیک شفا") - صفحه اصلی">
+                                <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                                <span>@(Model.BrandInfo?.ClinicName ?? "کلینیک شفا جیرفت")</span>
+                            </a>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.BrandInfo?.Tagline))
+                    {
+                        <p class="footer-tagline">@Model.BrandInfo.Tagline</p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.BrandInfo?.Description))
+                    {
+                        <p class="footer-description">@Model.BrandInfo.Description</p>
+                    }
+                    
+                    @* Social Media *@
+                    @if (Model.SocialMedia != null && Model.SocialMedia.Any())
+                    {
+                        <div class="footer-social" role="list" aria-label="شبکه‌های اجتماعی">
+                            @foreach (var social in Model.SocialMedia.OrderBy(s => s.Order))
+                            {
+                                <a href="@social.Url" 
+                                   class="social-link"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   aria-label="@social.AriaLabel"
+                                   role="listitem"
+                                   tabindex="0">
+                                    <i class="@social.Icon" aria-hidden="true"></i>
+                                    <span class="sr-only">@social.Platform</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+
+                @* ============================================
+                   QUICK LINKS SECTION
+                   ============================================ *@
+                @if (Model.QuickLinks != null && Model.QuickLinks.Any())
+                {
+                    <div class="footer-section footer-links">
+                        <h3 class="footer-section-title">
+                            <i class="fas fa-link" aria-hidden="true"></i>
+                            <span>لینک‌های سریع</span>
+                        </h3>
+                        <nav role="navigation" aria-label="لینک‌های سریع">
+                            <ul class="footer-links-list" role="list">
+                                @foreach (var link in Model.QuickLinks.OrderBy(l => l.Order))
+                                {
+                                    <li role="listitem">
+                                        <a href="@link.Url" 
+                                           class="footer-link"
+                                           @(link.IsExternal ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "")
+                                           aria-label="@link.Title"
+                                           tabindex="0">
+                                            <i class="@link.Icon" aria-hidden="true"></i>
+                                            <span>@link.Title</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+
+                @* ============================================
+                   SERVICES SECTION
+                   ============================================ *@
+                @if (Model.ServiceLinks != null && Model.ServiceLinks.Any())
+                {
+                    <div class="footer-section footer-services">
+                        <h3 class="footer-section-title">
+                            <i class="fas fa-hospital" aria-hidden="true"></i>
+                            <span>خدمات ما</span>
+                        </h3>
+                        <nav role="navigation" aria-label="خدمات درمانی">
+                            <ul class="footer-links-list" role="list">
+                                @foreach (var service in Model.ServiceLinks.OrderBy(s => s.Order))
+                                {
+                                    <li role="listitem">
+                                        <a href="@service.Url" 
+                                           class="footer-link"
+                                           aria-label="@service.Title"
+                                           tabindex="0">
+                                            <i class="@service.Icon" aria-hidden="true"></i>
+                                            <span>@service.Title</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+
+                @* ============================================
+                   CONTACT INFO SECTION
+                   ============================================ *@
+                @if (Model.ContactInfo != null)
+                {
+                    <div class="footer-section footer-contact">
+                        <h3 class="footer-section-title">
+                            <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                            <span>اطلاعات تماس</span>
+                        </h3>
+                        <div class="footer-contact-list">
+                            @if (!string.IsNullOrEmpty(Model.ContactInfo.PhoneNumber))
+                            {
+                                <div class="footer-contact-item">
+                                    <i class="fas fa-phone" aria-hidden="true"></i>
+                                    <a href="@Model.ContactInfo.PhoneLink" 
+                                       class="contact-link"
+                                       aria-label="تماس تلفنی: @Model.ContactInfo.PhoneNumber"
+                                       tabindex="0">
+                                        @Model.ContactInfo.PhoneNumber
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ContactInfo.EmergencyPhone))
+                            {
+                                <div class="footer-contact-item footer-emergency">
+                                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                                    <a href="@Model.ContactInfo.EmergencyPhoneLink" 
+                                       class="contact-link contact-emergency"
+                                       aria-label="تماس اضطراری: @Model.ContactInfo.EmergencyPhone"
+                                       tabindex="0">
+                                        اورژانس: @Model.ContactInfo.EmergencyPhone
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ContactInfo.Email))
+                            {
+                                <div class="footer-contact-item">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                    <a href="@Model.ContactInfo.EmailLink" 
+                                       class="contact-link"
+                                       aria-label="ایمیل: @Model.ContactInfo.Email"
+                                       tabindex="0">
+                                        @Model.ContactInfo.Email
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ContactInfo.Address))
+                            {
+                                <div class="footer-contact-item">
+                                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                    <span class="contact-text">@Model.ContactInfo.Address</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ContactInfo.WhatsAppNumber))
+                            {
+                                <div class="footer-contact-item">
+                                    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                                    <a href="@Model.ContactInfo.WhatsAppLink" 
+                                       class="contact-link"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-label="واتساپ: @Model.ContactInfo.WhatsAppNumber"
+                                       tabindex="0">
+                                        @Model.ContactInfo.WhatsAppNumber
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ============================================
+                   WORKING HOURS SECTION
+                   ============================================ *@
+                @if (Model.WorkingHours != null)
+                {
+                    <div class="footer-section footer-hours">
+                        <h3 class="footer-section-title">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                            <span>@Model.WorkingHours.Title</span>
+                        </h3>
+                        <div class="footer-status @(Model.WorkingHours.IsOpenNow ? "status-open" : "status-closed")" 
+                             role="status"
+                             aria-live="polite">
+                            <span class="status-indicator" aria-hidden="true"></span>
+                            <span class="status-text">@Model.WorkingHours.CurrentStatus</span>
+                        </div>
+                        @if (Model.WorkingHours.WorkingDays != null && Model.WorkingHours.WorkingDays.Any())
+                        {
+                            <ul class="footer-hours-list" role="list">
+                                @foreach (var day in Model.WorkingHours.WorkingDays)
+                                {
+                                    <li class="footer-hour-item @(day.IsOpen ? "" : "day-closed")" role="listitem">
+                                        <span class="hour-day">@day.DayName</span>
+                                        <span class="hour-time">@day.Hours</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            </div>
+
+            @* ============================================
+               CERTIFICATIONS SECTION
+               ============================================ *@
+            @if (Model.Certifications != null && Model.Certifications.Any())
+            {
+                <div class="footer-certifications" role="region" aria-label="مجوزها و اعتبارسنجی‌ها">
+                    <div class="certifications-list">
+                        @foreach (var cert in Model.Certifications.OrderBy(c => c.Order))
+                        {
+                            <div class="certification-item">
+                                @if (!string.IsNullOrEmpty(cert.ImageUrl))
+                                {
+                                    <img src="@cert.ImageUrl" 
+                                         alt="@cert.Title"
+                                         class="certification-image"
+                                         loading="lazy"
+                                         aria-hidden="true">
+                                }
+                                <div class="certification-content">
+                                    <h4 class="certification-title">@cert.Title</h4>
+                                    @if (!string.IsNullOrEmpty(cert.Description))
+                                    {
+                                        <p class="certification-description">@cert.Description</p>
+                                    }
+                                    @if (!string.IsNullOrEmpty(cert.LicenseNumber))
+                                    {
+                                        <span class="certification-license">شماره مجوز: @cert.LicenseNumber</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* ============================================
+               LEGAL & COPYRIGHT SECTION
+               ============================================ *@
+            <div class="footer-legal">
+                <div class="footer-copyright">
+                    <p>@(Model.LegalInfo?.CopyrightText ?? $"© {DateTime.Now.Year} کلینیک شفا جیرفت. تمامی حقوق محفوظ است.")</p>
+                    @if (!string.IsNullOrEmpty(Model.LegalInfo?.MedicalPrivacyNotice))
+                    {
+                        <p class="footer-privacy-notice">@Model.LegalInfo.MedicalPrivacyNotice</p>
+                    }
+                </div>
+                <nav class="footer-legal-links" role="navigation" aria-label="لینک‌های حقوقی">
+                    <ul class="legal-links-list" role="list">
+                        @if (!string.IsNullOrEmpty(Model.LegalInfo?.PrivacyPolicyUrl))
+                        {
+                            <li role="listitem">
+                                <a href="@Model.LegalInfo.PrivacyPolicyUrl" 
+                                   class="legal-link"
+                                   aria-label="سیاست حریم خصوصی"
+                                   tabindex="0">
+                                    حریم خصوصی
+                                </a>
+                            </li>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LegalInfo?.TermsOfServiceUrl))
+                        {
+                            <li role="listitem">
+                                <a href="@Model.LegalInfo.TermsOfServiceUrl" 
+                                   class="legal-link"
+                                   aria-label="قوانین و مقررات"
+                                   tabindex="0">
+                                    قوانین و مقررات
+                                </a>
+                            </li>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LegalInfo?.ComplaintsUrl))
+                        {
+                            <li role="listitem">
+                                <a href="@Model.LegalInfo.ComplaintsUrl" 
+                                   class="legal-link"
+                                   aria-label="شکایات و رسیدگی"
+                                   tabindex="0">
+                                    شکایات و رسیدگی
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </footer>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@DateTime.Now.Ticks" />
+}
+

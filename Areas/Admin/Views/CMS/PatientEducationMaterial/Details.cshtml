@@ -1,0 +1,397 @@
+@model ClinicApp.ViewModels.CMS.PatientEducationMaterialDetailsViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Extensions
+@{
+    ViewBag.Title = "جزئیات مطلب آموزشی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-light: #f8f9fa;
+        }
+
+        .card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .border-left-primary {
+            border-left: 4px solid var(--medical-primary) !important;
+        }
+
+        .border-left-info {
+            border-left: 4px solid var(--medical-info) !important;
+        }
+
+        .border-left-secondary {
+            border-left: 4px solid var(--medical-border) !important;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .card-body {
+                padding: 1rem;
+            }
+            .table-sm {
+                font-size: 0.875rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+
+        /* Accessibility */
+        .btn:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-book-medical text-primary"></i>
+            جزئیات مطلب آموزشی
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.PatientEducationMaterialId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            @if (Model.IsPublished)
+            {
+                using (Html.BeginForm("Unpublish", "PatientEducationMaterial", FormMethod.Post, new { @style = "display: inline;" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", Model.PatientEducationMaterialId)
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-eye-slash"></i> لغو انتشار
+                    </button>
+                }
+            }
+            else
+            {
+                using (Html.BeginForm("Publish", "PatientEducationMaterial", FormMethod.Post, new { @style = "display: inline;" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", Model.PatientEducationMaterialId)
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-eye"></i> انتشار
+                    </button>
+                }
+            }
+            @using (Html.BeginForm("SetFeatured", "PatientEducationMaterial", FormMethod.Post, new { @style = "display: inline;" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("id", Model.PatientEducationMaterialId)
+                @Html.Hidden("isFeatured", !Model.IsFeatured)
+                <button type="submit" class="btn @(Model.IsFeatured ? "btn-secondary" : "btn-info")">
+                    <i class="fas fa-star"></i> @(Model.IsFeatured ? "حذف از ویژه" : "افزودن به ویژه")
+                </button>
+            }
+            <button type="button" class="btn btn-danger" onclick="deleteMaterial(@Model.PatientEducationMaterialId, '@Model.Title')">
+                <i class="fas fa-trash"></i> حذف
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4 @(Model.IsFeatured ? "border-info" : "")">
+                <div class="card-header py-3 @(Model.IsFeatured ? "bg-info text-white" : "")">
+                    <h6 class="m-0 font-weight-bold">
+                        @Model.Title
+                        @if (Model.IsFeatured)
+                        {
+                            <span class="badge badge-light mr-2">ویژه</span>
+                        }
+                        @if (Model.IsPublished)
+                        {
+                            <span class="badge badge-success mr-2">منتشر شده</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning mr-2">منتشر نشده</span>
+                        }
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-4 text-center">
+                            <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded" style="max-height: 400px; width: 100%; object-fit: cover;">
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-3">
+                            <h5>توضیحات</h5>
+                            <p class="text-muted">@Model.Description</p>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <h5>محتوا</h5>
+                        <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                            @Html.Raw(Model.Content)
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.FileUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>فایل مستندات</h5>
+                            <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                                <i class="fas @GetFileIconClass(Model.FileName) fa-2x mb-2"></i>
+                                <br />
+                                <strong>@Model.FileName</strong>
+                                @if (Model.FileSizeInBytes.HasValue)
+                                {
+                                    <br />
+                                    <small class="text-muted">حجم: @FormatFileSize(Model.FileSizeInBytes.Value)</small>
+                                }
+                                <br />
+                                <a href="@Model.FileUrl" target="_blank" class="btn btn-primary btn-sm mt-2">
+                                    <i class="fas fa-download"></i> دانلود فایل
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>ویدیو آموزشی</h5>
+                            <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                                <a href="@Model.VideoUrl" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-video"></i> مشاهده ویدیو
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Tags))
+                    {
+                        <div class="mb-3">
+                            <h5>برچسب‌ها</h5>
+                            <div>
+                                @foreach (var tag in Model.Tags.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <span class="badge badge-secondary mr-1">@tag.Trim()</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات مطلب آموزشی</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.PatientEducationMaterialId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>دسته‌بندی:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.CategoryDisplay</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsPublished)
+                                {
+                                    <span class="badge badge-success">منتشر شده</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">منتشر نشده</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ویژه:</strong></td>
+                            <td>
+                                @if (Model.IsFeatured)
+                                {
+                                    <span class="badge badge-info">ویژه</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">عادی</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>تاریخ انتشار:</strong></td>
+                            <td>@(Model.PublishedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تعداد دانلود:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.DownloadCount</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>تعداد مشاهده:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.ViewCount</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Slug:</strong></td>
+                            <td>@(Model.Slug ?? "-")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-info shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-info mb-3">اطلاعات SEO</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>عنوان متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaTitle) ? "-" : Model.MetaTitle)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>توضیحات متا:</strong></td>
+                            <td>@(string.IsNullOrEmpty(Model.MetaDescription) ? "-" : Model.MetaDescription)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-left-secondary shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedByUserName</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین ویرایش:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ویرایش کننده:</strong></td>
+                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetFileIconClass(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return "fa-file text-secondary";
+        
+        var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
+        switch (extension)
+        {
+            case ".pdf":
+                return "fa-file-pdf text-danger";
+            case ".doc":
+            case ".docx":
+                return "fa-file-word text-primary";
+            case ".xls":
+            case ".xlsx":
+                return "fa-file-excel text-success";
+            default:
+                return "fa-file text-secondary";
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return string.Format("{0:0.##} {1}", len, sizes[order]);
+    }
+}
+
+@section Scripts {
+    <script>
+        function deleteMaterial(id, title) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'آیا می‌خواهید مطلب آموزشی "' + title + '" را حذف کنید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Delete")';
+                    
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    var tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    
+                    var idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'id';
+                    idInput.value = id;
+                    form.appendChild(idInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

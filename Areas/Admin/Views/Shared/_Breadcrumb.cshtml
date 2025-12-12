@@ -1,0 +1,238 @@
+@using System.Web.Mvc
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var areaName = ViewContext.RouteData.DataTokens["area"]?.ToString() ?? "";
+    
+    // تعریف نام‌های فارسی برای Controller ها
+    var controllerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Slider", "اسلایدر" },
+        { "Gallery", "گالری تصاویر" },
+        { "Video", "ویدیوها" },
+        { "BlogPost", "مقالات" },
+        { "HealthTip", "نکات سلامتی" },
+        { "Announcement", "اطلاعیه‌ها" },
+        { "FAQ", "سوالات متداول" },
+        { "Testimonial", "نظرات بیماران" },
+        { "ContactForm", "فرم تماس" },
+        { "InsuranceInfo", "اطلاعات بیمه" },
+        { "MedicalServiceInfo", "خدمات پزشکی" },
+        { "MedicalEquipment", "تجهیزات پزشکی" },
+        { "EmergencyContact", "تماس اضطراری" },
+        { "ClinicWorkingHours", "ساعات کاری" },
+        { "Dashboard", "داشبورد" },
+        { "Home", "صفحه اصلی" }
+    };
+    
+    // تعریف نام‌های فارسی برای Action ها
+    var actionNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Index", "لیست" },
+        { "Create", "ایجاد" },
+        { "Edit", "ویرایش" },
+        { "Details", "جزئیات" },
+        { "Delete", "حذف" },
+        { "Reply", "پاسخ" },
+        { "Pending", "در انتظار تایید" }
+    };
+    
+    // ساخت Breadcrumb
+    var breadcrumbItems = new List<BreadcrumbItem>();
+    
+    // Home
+    breadcrumbItems.Add(new BreadcrumbItem
+    {
+        Text = "خانه",
+        Url = Url.Action("Index", "Home", new { area = "" }),
+        Icon = "fa-home"
+    });
+    
+    // Admin
+    breadcrumbItems.Add(new BreadcrumbItem
+    {
+        Text = "پنل مدیریت",
+        Url = Url.Action("Index", "Dashboard", new { area = "Admin" }),
+        Icon = "fa-tachometer-alt"
+    });
+    
+    // CMS Area
+    if (areaName == "Admin" && controllerName != "Dashboard")
+    {
+        breadcrumbItems.Add(new BreadcrumbItem
+        {
+            Text = "مدیریت محتوا",
+            Url = "#",
+            Icon = "fa-sitemap",
+            IsActive = false
+        });
+    }
+    
+    // Controller
+    if (controllerNames.ContainsKey(controllerName))
+    {
+        var controllerText = controllerNames[controllerName];
+        var controllerUrl = actionName.Equals("Index", StringComparison.OrdinalIgnoreCase) 
+            ? "#" 
+            : Url.Action("Index", controllerName, new { area = "Admin" });
+        
+        breadcrumbItems.Add(new BreadcrumbItem
+        {
+            Text = controllerText,
+            Url = controllerUrl,
+            Icon = "fa-folder",
+            IsActive = actionName.Equals("Index", StringComparison.OrdinalIgnoreCase)
+        });
+    }
+    
+    // Action (اگر Index نباشد)
+    if (!actionName.Equals("Index", StringComparison.OrdinalIgnoreCase) && actionNames.ContainsKey(actionName))
+    {
+        breadcrumbItems.Add(new BreadcrumbItem
+        {
+            Text = actionNames[actionName],
+            Url = "#",
+            Icon = "fa-file",
+            IsActive = true
+        });
+    }
+}
+
+@* ============================================
+   Breadcrumb Component - Professional
+   ============================================
+   - نمایش مسیر درختی
+   - Navigation Support
+   - Medical Environment Design
+   ============================================ *@
+
+@if (breadcrumbItems.Any())
+{
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <ol class="breadcrumb-list">
+            @foreach (var item in breadcrumbItems)
+            {
+                <li class="breadcrumb-item @(item.IsActive ? "active" : "")">
+                    @if (!string.IsNullOrEmpty(item.Url) && item.Url != "#" && !item.IsActive)
+                    {
+                        <a href="@item.Url" class="breadcrumb-link">
+                            @if (!string.IsNullOrEmpty(item.Icon))
+                            {
+                                <i class="fas @item.Icon breadcrumb-icon" aria-hidden="true"></i>
+                            }
+                            <span class="breadcrumb-text">@item.Text</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="breadcrumb-current">
+                            @if (!string.IsNullOrEmpty(item.Icon))
+                            {
+                                <i class="fas @item.Icon breadcrumb-icon" aria-hidden="true"></i>
+                            }
+                            <span class="breadcrumb-text">@item.Text</span>
+                        </span>
+                    }
+                </li>
+            }
+        </ol>
+    </nav>
+}
+
+@functions {
+    public class BreadcrumbItem
+    {
+        public string Text { get; set; }
+        public string Url { get; set; }
+        public string Icon { get; set; }
+        public bool IsActive { get; set; } = false;
+    }
+}
+
+<style>
+    /* Breadcrumb Styles - Production Ready */
+    .breadcrumb-nav {
+        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+        background-color: var(--medical-light, #f8f9fa);
+        border-radius: 8px;
+        border: 1px solid var(--medical-border, #dee2e6);
+    }
+    
+    .breadcrumb-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: 0.5rem;
+    }
+    
+    .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+    
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin: 0 0.5rem;
+        color: var(--medical-text-muted, #6c757d);
+        font-weight: normal;
+    }
+    
+    .breadcrumb-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--medical-primary, #2c5aa0);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    
+    .breadcrumb-link:hover {
+        color: var(--medical-primary, #2c5aa0);
+        text-decoration: underline;
+    }
+    
+    .breadcrumb-current {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--medical-text, #212529);
+        font-weight: 600;
+    }
+    
+    .breadcrumb-icon {
+        font-size: 0.875rem;
+    }
+    
+    .breadcrumb-text {
+        font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    }
+    
+    .breadcrumb-item.active .breadcrumb-current {
+        color: var(--medical-primary, #2c5aa0);
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .breadcrumb-nav {
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .breadcrumb-list {
+            gap: 0.25rem;
+        }
+        
+        .breadcrumb-item {
+            font-size: 0.75rem;
+        }
+        
+        .breadcrumb-item:not(:last-child)::after {
+            margin: 0 0.25rem;
+        }
+    }
+</style>
+

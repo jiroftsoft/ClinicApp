@@ -51,6 +51,13 @@ namespace ClinicApp.Controllers
             try
             {
                 var viewModel = await _homePageService.GetHomePageDataAsync();
+                
+                // ارسال Footer به ViewBag برای استفاده در Layout
+                if (viewModel.Footer != null)
+                {
+                    ViewBag.Footer = viewModel.Footer;
+                }
+                
                 return View(viewModel);
             }
             catch (Exception ex)

@@ -18,14 +18,25 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     {
         private readonly ITestimonialService _testimonialService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IImageUploadService _imageUploadService;
         private readonly ILogger _logger;
+
+        // Production Configuration
+        private const string TestimonialImageUploadPath = "~/Content/Images/testimonials";
+        private const string TestimonialThumbnailUploadPath = "~/Content/Images/testimonials/thumbnails";
+        private const int ThumbnailWidth = 300;
+        private const int ThumbnailHeight = 300;
+        private const int MaxImageWidth = 1920; // Full HD
+        private const int MaxImageHeight = 1080; // Full HD
 
         public TestimonialController(
             ITestimonialService testimonialService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IImageUploadService imageUploadService)
         {
             _testimonialService = testimonialService ?? throw new ArgumentNullException(nameof(testimonialService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _imageUploadService = imageUploadService ?? throw new ArgumentNullException(nameof(imageUploadService));
             _logger = Log.ForContext<TestimonialController>();
         }
 
@@ -38,18 +49,18 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.GetTestimonialsAsync(includePending);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
-                    return View(new System.Collections.Generic.List<TestimonialIndexViewModel>());
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Index"), new System.Collections.Generic.List<TestimonialIndexViewModel>());
                 }
 
                 ViewBag.IncludePending = includePending;
-                return View(result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست نظرات");
-                TempData["Error"] = "خطا در بارگذاری لیست نظرات";
-                return View(new System.Collections.Generic.List<TestimonialIndexViewModel>());
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری لیست نظرات");
+                return View(GetViewPath("Index"), new System.Collections.Generic.List<TestimonialIndexViewModel>());
             }
         }
 
@@ -61,19 +72,19 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.GetPendingApprovalAsync();
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
-                    return View("Index", new System.Collections.Generic.List<TestimonialIndexViewModel>());
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Index"), new System.Collections.Generic.List<TestimonialIndexViewModel>());
                 }
 
                 ViewBag.IncludePending = true;
                 ViewBag.IsPendingPage = true;
-                return View("Index", result.Data);
+                return View(GetViewPath("Index"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش نظرات در انتظار تایید");
-                TempData["Error"] = "خطا در بارگذاری نظرات در انتظار تایید";
-                return View("Index", new System.Collections.Generic.List<TestimonialIndexViewModel>());
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری نظرات در انتظار تایید");
+                return View(GetViewPath("Index"), new System.Collections.Generic.List<TestimonialIndexViewModel>());
             }
         }
 
@@ -85,16 +96,16 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.GetTestimonialDetailsAsync(id);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Details"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش جزئیات نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در بارگذاری جزئیات نظر";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری جزئیات نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -112,12 +123,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     Rating = 5
                 };
 
-                return View(model);
+                return View(GetViewPath("Create"), model);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ایجاد نظر");
-                TempData["Error"] = "خطا در بارگذاری فرم ایجاد نظر";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ایجاد نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -128,26 +139,33 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
+                _logger.Information("درخواست ایجاد نظر جدید");
+
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model, isEdit: false);
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Create"), model);
                 }
 
                 var result = await _testimonialService.CreateTestimonialAsync(model);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
-                    return View(model);
+                    _logger.Warning("خطا در ایجاد نظر: {ErrorMessage}", result.Message);
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Create"), model);
                 }
 
-                TempData["Success"] = "نظر با موفقیت ایجاد شد";
+                _logger.Information("نظر با موفقیت ایجاد شد - TestimonialId: {TestimonialId}", result.Data?.TestimonialId ?? 0);
+                NotificationHelper.SetSuccess(TempData, "نظر با موفقیت ایجاد شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ایجاد نظر");
-                TempData["Error"] = "خطا در ایجاد نظر";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در ایجاد نظر");
+                return View(GetViewPath("Create"), model);
             }
         }
 
@@ -159,16 +177,16 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.GetTestimonialForEditAsync(id);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                     return RedirectToAction("Index");
                 }
 
-                return View(result.Data);
+                return View(GetViewPath("Edit"), result.Data);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم ویرایش نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در بارگذاری فرم ویرایش نظر";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم ویرایش نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -179,26 +197,33 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
+                _logger.Information("درخواست به‌روزرسانی نظر - TestimonialId: {TestimonialId}", model.TestimonialId);
+
+                // پردازش آپلود تصویر
+                await ProcessImageUpload(model, isEdit: true);
+
                 if (!ModelState.IsValid)
                 {
-                    return View(model);
+                    return View(GetViewPath("Edit"), model);
                 }
 
                 var result = await _testimonialService.UpdateTestimonialAsync(model);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
-                    return View(model);
+                    _logger.Warning("خطا در به‌روزرسانی نظر: {ErrorMessage}", result.Message);
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return View(GetViewPath("Edit"), model);
                 }
 
-                TempData["Success"] = "نظر با موفقیت به‌روزرسانی شد";
+                _logger.Information("نظر با موفقیت به‌روزرسانی شد - TestimonialId: {TestimonialId}", model.TestimonialId);
+                NotificationHelper.SetSuccess(TempData, "نظر با موفقیت به‌روزرسانی شد");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی نظر - TestimonialId: {TestimonialId}", model.TestimonialId);
-                TempData["Error"] = "خطا در به‌روزرسانی نظر";
-                return View(model);
+                NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی نظر");
+                return View(GetViewPath("Edit"), model);
             }
         }
 
@@ -211,11 +236,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.DeleteTestimonialAsync(id);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "نظر با موفقیت حذف شد";
+                    NotificationHelper.SetSuccess(TempData, "نظر با موفقیت حذف شد");
                 }
 
                 return RedirectToAction("Index");
@@ -223,7 +248,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در حذف نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در حذف نظر";
+                NotificationHelper.SetError(TempData, "خطا در حذف نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -237,11 +262,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.ApproveTestimonialAsync(id);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "نظر با موفقیت تایید شد";
+                    NotificationHelper.SetSuccess(TempData, "نظر با موفقیت تایید شد");
                 }
 
                 return RedirectToAction("Index");
@@ -249,7 +274,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در تایید نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در تایید نظر";
+                NotificationHelper.SetError(TempData, "خطا در تایید نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -263,11 +288,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.RejectTestimonialAsync(id);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = "نظر با موفقیت رد شد";
+                    NotificationHelper.SetSuccess(TempData, "نظر با موفقیت رد شد");
                 }
 
                 return RedirectToAction("Index");
@@ -275,7 +300,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در رد نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در رد نظر";
+                NotificationHelper.SetError(TempData, "خطا در رد نظر");
                 return RedirectToAction("Index");
             }
         }
@@ -289,11 +314,11 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 var result = await _testimonialService.SetFeaturedAsync(id, isFeatured);
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    NotificationHelper.SetError(TempData, result.Message);
                 }
                 else
                 {
-                    TempData["Success"] = isFeatured ? "نظر به عنوان ویژه تنظیم شد" : "نظر از حالت ویژه خارج شد";
+                    NotificationHelper.SetSuccess(TempData, isFeatured ? "نظر به عنوان ویژه تنظیم شد" : "نظر از حالت ویژه خارج شد");
                 }
 
                 return RedirectToAction("Index");
@@ -301,10 +326,67 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در تنظیم وضعیت ویژه نظر - TestimonialId: {TestimonialId}", id);
-                TempData["Error"] = "خطا در تنظیم وضعیت ویژه نظر";
+                NotificationHelper.SetError(TempData, "خطا در تنظیم وضعیت ویژه نظر");
                 return RedirectToAction("Index");
             }
         }
+
+        #region Image Upload
+
+        /// <summary>
+        /// پردازش آپلود تصویر نظر
+        /// </summary>
+        private async Task ProcessImageUpload(TestimonialCreateEditViewModel model, bool isEdit = false)
+        {
+            try
+            {
+                var photoFile = Request.Files["PhotoFile"];
+
+                // اگر تصویر آپلود شده
+                if (photoFile != null && photoFile.ContentLength > 0)
+                {
+                    // حذف تصویر قبلی در صورت ویرایش
+                    if (isEdit && !string.IsNullOrEmpty(model.PhotoUrl))
+                    {
+                        var deleteResult = _imageUploadService.DeleteImage(model.PhotoUrl);
+                        if (deleteResult.Success)
+                        {
+                            _logger.Information("تصویر قبلی حذف شد: {PhotoUrl}", model.PhotoUrl);
+                        }
+                    }
+
+                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
+                        photoFile,
+                        TestimonialImageUploadPath,
+                        TestimonialThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        MaxImageWidth,
+                        MaxImageHeight);
+
+                    if (!uploadResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود تصویر: {ErrorMessage}", uploadResult.Message);
+                        NotificationHelper.SetError(TempData, uploadResult.Message);
+                        ModelState.AddModelError("PhotoFile", uploadResult.Message);
+                        return;
+                    }
+
+                    // تنظیم مسیر تصویر
+                    model.PhotoUrl = uploadResult.Data.ImageUrl;
+
+                    _logger.Information("تصویر با موفقیت آپلود شد: {PhotoUrl}", model.PhotoUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پردازش آپلود تصویر");
+                NotificationHelper.SetError(TempData, "خطا در آپلود تصویر");
+                ModelState.AddModelError("", "خطا در آپلود تصویر");
+            }
+        }
+
+        #endregion
     }
 }
 

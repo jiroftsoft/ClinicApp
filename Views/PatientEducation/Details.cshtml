@@ -1,0 +1,346 @@
+@model ClinicApp.ViewModels.CMS.PatientEducationMaterialDetailsViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Extensions
+@{
+    ViewBag.Title = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* ============================================
+   Public Patient Education Material Details - Production Ready
+   ============================================
+   - SRP: نمایش جزئیات مطلب آموزشی
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای برای بیماران
+   ============================================ *@
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-light: #f8f9fa;
+        }
+
+        .education-detail-section {
+            background-color: var(--medical-bg);
+            padding: 3rem 0;
+        }
+
+        .detail-card {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-header {
+            border-bottom: 2px solid var(--medical-primary);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--medical-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-meta {
+            color: var(--medical-text-muted);
+            font-size: 0.9rem;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .detail-content {
+            line-height: 1.8;
+            color: var(--medical-text);
+            font-size: 1.1rem;
+        }
+
+        .detail-content h1,
+        .detail-content h2,
+        .detail-content h3 {
+            color: var(--medical-primary);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-content p {
+            margin-bottom: 1rem;
+        }
+
+        .detail-content ul,
+        .detail-content ol {
+            margin-bottom: 1rem;
+            padding-right: 2rem;
+        }
+
+        .file-download-card {
+            background-color: var(--medical-light);
+            border: 2px dashed var(--medical-border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .file-icon-large {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .video-card {
+            background-color: var(--medical-light);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .sidebar-card {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--medical-primary);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--medical-primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--medical-border);
+        }
+
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag-badge {
+            background-color: var(--medical-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .education-detail-section {
+                padding: 2rem 0;
+            }
+            .detail-card {
+                padding: 1rem;
+            }
+            .detail-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+}
+
+<section class="education-detail-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h1 class="detail-title">@Model.Title</h1>
+                        <div class="detail-meta">
+                            <span class="badge badge-primary">@Model.CategoryDisplay</span>
+                            <span class="mr-3">
+                                <i class="fas fa-calendar"></i> 
+                                @(Model.PublishedAt?.ToString("yyyy/MM/dd") ?? Model.CreatedAt.ToString("yyyy/MM/dd"))
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-eye"></i> @Model.ViewCount مشاهده
+                            </span>
+                            <span>
+                                <i class="fas fa-download"></i> @Model.DownloadCount دانلود
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" alt="@Model.Title" class="detail-image">
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="alert alert-info">
+                            <strong>توضیحات:</strong> @Model.Description
+                        </div>
+                    }
+
+                    <div class="detail-content">
+                        @Html.Raw(Model.Content)
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.FileUrl))
+                    {
+                        <div class="file-download-card">
+                            <i class="fas @GetFileIconClass(Model.FileName) file-icon-large"></i>
+                            <h4>فایل مستندات</h4>
+                            <p class="text-muted">@Model.FileName</p>
+                            @if (Model.FileSizeInBytes.HasValue)
+                            {
+                                <p class="text-muted">حجم: @FormatFileSize(Model.FileSizeInBytes.Value)</p>
+                            }
+                            @using (Html.BeginForm("Download", "PatientEducation", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                @Html.Hidden("id", Model.PatientEducationMaterialId)
+                                <button type="submit" class="btn btn-primary btn-lg mt-3">
+                                    <i class="fas fa-download"></i> دانلود فایل
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                    {
+                        <div class="video-card">
+                            <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                            <h4>ویدیو آموزشی</h4>
+                            <a href="@Model.VideoUrl" target="_blank" class="btn btn-primary btn-lg mt-3">
+                                <i class="fas fa-play"></i> مشاهده ویدیو
+                            </a>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Tags))
+                    {
+                        <div class="mt-4">
+                            <h5>برچسب‌ها:</h5>
+                            <div class="tags-list">
+                                @foreach (var tag in Model.Tags.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <span class="tag-badge">@tag.Trim()</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="sidebar-card">
+                    <h5 class="sidebar-title">اطلاعات مطلب</h5>
+                    <div class="stats-item">
+                        <span><i class="fas fa-folder"></i> دسته‌بندی:</span>
+                        <span class="badge badge-primary">@Model.CategoryDisplay</span>
+                    </div>
+                    <div class="stats-item">
+                        <span><i class="fas fa-eye"></i> تعداد مشاهده:</span>
+                        <strong>@Model.ViewCount</strong>
+                    </div>
+                    <div class="stats-item">
+                        <span><i class="fas fa-download"></i> تعداد دانلود:</span>
+                        <strong>@Model.DownloadCount</strong>
+                    </div>
+                    <div class="stats-item">
+                        <span><i class="fas fa-calendar"></i> تاریخ انتشار:</span>
+                        <span>@(Model.PublishedAt?.ToString("yyyy/MM/dd") ?? "-")</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.FileUrl))
+                {
+                    <div class="sidebar-card">
+                        <h5 class="sidebar-title">دانلود فایل</h5>
+                        <p class="text-muted">@Model.FileName</p>
+                        @using (Html.BeginForm("Download", "PatientEducation", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("id", Model.PatientEducationMaterialId)
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-download"></i> دانلود فایل
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@functions {
+    private string GetFileIconClass(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return "fa-file text-secondary";
+        
+        var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
+        switch (extension)
+        {
+            case ".pdf":
+                return "fa-file-pdf text-danger";
+            case ".doc":
+            case ".docx":
+                return "fa-file-word text-primary";
+            case ".xls":
+            case ".xlsx":
+                return "fa-file-excel text-success";
+            default:
+                return "fa-file text-secondary";
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return string.Format("{0:0.##} {1}", len, sizes[order]);
+    }
+}
+

@@ -1,0 +1,657 @@
+/**
+ * Medical Footer Styles - Production Ready
+ * 
+ * ویژگی‌های کلیدی:
+ * - Design: Formal, calming, medical-friendly colors
+ * - RTL: Complete Persian support
+ * - Accessibility: WCAG AA compliance
+ * - Security: No sensitive data
+ * - Performance: Optimized, minimal DOM
+ * - Responsive: Mobile-first design
+ */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+.medical-footer {
+    /* رنگ‌های آرامش‌بخش و جذاب: آبی روشن + زرد طلایی */
+    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 50%, #3A8DB8 100%);
+    color: #ffffff;
+    padding: var(--spacing-xxxl, 3rem) 0 var(--spacing-lg, 1.5rem);
+    margin-top: var(--spacing-xxxl, 3rem);
+    border-top: 4px solid #FFD700; /* زرد طلایی */
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    line-height: 1.8;
+    position: relative;
+    overflow: hidden;
+}
+
+/* افکت پس‌زمینه آرامش‌بخش */
+.medical-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 215, 0, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.medical-footer > .container {
+    position: relative;
+    z-index: 1;
+}
+
+.medical-footer .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md, 1rem);
+}
+
+/* ============================================
+   MAIN FOOTER CONTENT - چند ستونی زیبا
+   ============================================ */
+.footer-main {
+    display: grid !important;
+    /* 4 ستون در دسکتاپ بزرگ، 3 ستون در تبلت، 2 ستون در موبایل بزرگ، 1 ستون در موبایل کوچک */
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: var(--spacing-xl, 2rem) !important;
+    margin-bottom: var(--spacing-xxl, 2.5rem);
+    padding-bottom: var(--spacing-xxl, 2.5rem);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.2); /* زرد طلایی ملایم */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ============================================
+   FOOTER SECTIONS
+   ============================================ */
+.footer-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+}
+
+.footer-section-title {
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: var(--spacing-md, 1rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    line-height: 1.5;
+}
+
+.footer-section-title i {
+    font-size: 1.25rem;
+    color: #FFD700; /* زرد طلایی */
+    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+}
+
+/* ============================================
+   BRAND SECTION
+   ============================================ */
+.footer-brand {
+    max-width: 350px;
+}
+
+.footer-brand-header {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.footer-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    text-decoration: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.footer-logo-link:hover,
+.footer-logo-link:focus {
+    color: #FFD700; /* زرد طلایی */
+    transform: translateY(-2px);
+    outline: 2px solid #FFD700;
+    outline-offset: 2px;
+}
+
+.footer-logo-link:hover .footer-logo,
+.footer-logo-link:focus .footer-logo {
+    transform: scale(1.05);
+    filter: brightness(1.1) contrast(1.05);
+}
+
+.footer-logo {
+    /* استاندارد Footer برای محیط درمانی: ارتفاع 40-50px */
+    height: 50px;
+    max-height: 50px;
+    width: auto;
+    max-width: 200px; /* برای لوگوی افقی 3:1 یا 4:1 */
+    object-fit: contain;
+    display: block;
+    /* بهینه‌سازی برای محیط درمانی */
+    filter: brightness(1.05) contrast(1.02);
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.footer-logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.footer-logo-text i {
+    font-size: 1.5rem;
+    color: var(--accent-color, #c5a47e);
+}
+
+.footer-tagline {
+    font-size: var(--font-size-base, 1rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    line-height: 1.6;
+}
+
+.footer-description {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.8;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+/* ============================================
+   SOCIAL MEDIA
+   ============================================ */
+.footer-social {
+    display: flex;
+    gap: var(--spacing-sm, 0.5rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md, 1rem);
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full, 9999px);
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.social-link:hover,
+.social-link:focus {
+    background: #FFD700; /* زرد طلایی */
+    border-color: #FFD700;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    outline: 2px solid #FFD700;
+    outline-offset: 2px;
+    color: #1a4a54; /* متن تیره روی پس‌زمینه طلایی */
+}
+
+.social-link i {
+    font-size: 1.25rem;
+}
+
+/* ============================================
+   FOOTER LINKS
+   ============================================ */
+.footer-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.footer-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    padding: var(--spacing-xs, 0.25rem) 0;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: var(--font-size-sm, 0.875rem);
+    transition: all 0.2s ease;
+    /* Touch target >= 44px */
+    min-height: 44px;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.footer-link:hover,
+.footer-link:focus {
+    color: #FFD700; /* زرد طلایی */
+    transform: translateX(-5px);
+    outline: 2px solid #FFD700;
+    outline-offset: 2px;
+    border-radius: 4px;
+    background: rgba(255, 215, 0, 0.1); /* پس‌زمینه طلایی ملایم */
+}
+
+.footer-link i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    color: #FFD700; /* زرد طلایی */
+    flex-shrink: 0;
+}
+
+/* ============================================
+   CONTACT INFO
+   ============================================ */
+.footer-contact-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.footer-contact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm, 0.5rem);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.8;
+}
+
+.footer-contact-item i {
+    font-size: 1.125rem;
+    color: #FFD700; /* زرد طلایی */
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+.contact-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    /* Touch target >= 44px */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.contact-link:hover,
+.contact-link:focus {
+    color: #FFD700; /* زرد طلایی */
+    outline: 2px solid #FFD700;
+    outline-offset: 2px;
+    border-radius: 4px;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.contact-text {
+    flex: 1;
+    line-height: 1.8;
+}
+
+.footer-emergency {
+    background: rgba(220, 53, 69, 0.1);
+    padding: var(--spacing-sm, 0.5rem);
+    border-radius: var(--radius-md, 8px);
+    border-right: 3px solid #dc3545;
+}
+
+.contact-emergency {
+    color: #ffc107 !important;
+    font-weight: 600;
+}
+
+/* ============================================
+   WORKING HOURS
+   ============================================ */
+.footer-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+    border-radius: var(--radius-md, 8px);
+    margin-bottom: var(--spacing-md, 1rem);
+    font-weight: 600;
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+.footer-status.status-open {
+    background: rgba(40, 167, 69, 0.2);
+    color: #90ee90;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.footer-status.status-closed {
+    background: rgba(220, 53, 69, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full, 9999px);
+    background: currentColor;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.footer-hours-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.footer-hour-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs, 0.25rem) 0;
+    font-size: var(--font-size-sm, 0.875rem);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-hour-item:last-child {
+    border-bottom: none;
+}
+
+.footer-hour-item.day-closed {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.hour-day {
+    font-weight: 600;
+}
+
+.hour-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================
+   CERTIFICATIONS
+   ============================================ */
+.footer-certifications {
+    padding: var(--spacing-lg, 1.5rem) 0;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.certifications-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg, 1.5rem);
+    justify-content: center;
+    align-items: center;
+}
+
+.certification-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 300px;
+}
+
+.certification-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.certification-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.certification-title {
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.certification-description {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.certification-license {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: #FFD700; /* زرد طلایی */
+    font-weight: 600;
+}
+
+/* ============================================
+   LEGAL & COPYRIGHT
+   ============================================ */
+.footer-legal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+    padding-top: var(--spacing-lg, 1.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-copyright {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.8;
+}
+
+.footer-copyright p {
+    margin: 0.5rem 0;
+}
+
+.footer-privacy-notice {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    margin-top: var(--spacing-sm, 0.5rem);
+}
+
+.footer-legal-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.legal-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md, 1rem);
+    justify-content: center;
+}
+
+.legal-link {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: var(--font-size-sm, 0.875rem);
+    transition: color 0.2s ease;
+    /* Touch target >= 44px */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.legal-link:hover,
+.legal-link:focus {
+    color: #FFD700; /* زرد طلایی */
+    outline: 2px solid #FFD700;
+    outline-offset: 2px;
+    border-radius: 4px;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1199.98px) {
+    /* تبلت بزرگ: 3 ستون */
+    .footer-main {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: var(--spacing-lg, 1.5rem) !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    /* تبلت: 2 ستون */
+    .footer-main {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: var(--spacing-lg, 1.5rem) !important;
+    }
+    
+    .footer-brand {
+        max-width: 100%;
+    }
+    
+    .certifications-list {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .certification-item {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .medical-footer {
+        padding: var(--spacing-xxl, 2rem) 0 var(--spacing-md, 1rem);
+    }
+    
+    .footer-main {
+        grid-template-columns: 1fr !important;
+        gap: var(--spacing-lg, 1.5rem) !important;
+    }
+    
+    .footer-section-title {
+        font-size: var(--font-size-base, 1rem);
+    }
+    
+    .footer-social {
+        justify-content: center;
+    }
+    
+    .legal-links-list {
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.5rem);
+    }
+    
+    .footer-logo {
+        /* استاندارد موبایل: کمی کوچک‌تر از دسکتاپ */
+        height: 40px;
+        max-height: 40px;
+        max-width: 160px;
+    }
+    
+    .footer-logo-text {
+        font-size: 1.125rem;
+    }
+    
+    .footer-logo-text i {
+        font-size: 1.25rem;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION - Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .footer-link,
+    .social-link,
+    .contact-link,
+    .legal-link,
+    .footer-logo-link {
+        transition: none !important;
+    }
+    
+    .status-indicator {
+        animation: none !important;
+    }
+}
+
+/* ============================================
+   FOCUS VISIBLE - Keyboard Navigation
+   ============================================ */
+.footer-link:focus-visible,
+.social-link:focus-visible,
+.contact-link:focus-visible,
+.legal-link:focus-visible,
+.footer-logo-link:focus-visible {
+    outline: 3px solid #FFD700;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    .medical-footer {
+        background: #ffffff;
+        color: #000000;
+        border-top: 2px solid #000000;
+    }
+    
+    .footer-social,
+    .footer-certifications {
+        display: none;
+    }
+}
+
+/* ============================================
+   SCREEN READER ONLY
+   ============================================ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+

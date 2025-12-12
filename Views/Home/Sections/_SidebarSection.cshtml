@@ -1,0 +1,335 @@
+@model ClinicApp.ViewModels.SidebarViewModel
+@using System.Web
+
+@* ============================================
+   Professional Medical Sidebar - Production Ready
+   ============================================
+   - Accessibility: WCAG AA compliance, keyboard navigation, ARIA
+   - Security: No sensitive data, GDPR compliance
+   - Performance: Optimized, lazy loading
+   - UX: Medical-friendly, calming colors, clear controls
+   - Responsive: Mobile-first, touch targets >=44px, RTL support
+   ============================================ *@
+
+@if (Model != null)
+{
+    <aside class="medical-sidebar" 
+           role="complementary" 
+           aria-label="منوی کناری کلینیک"
+           id="medicalSidebar">
+        
+        @* Quick Appointment Section *@
+        @if (Model.QuickAppointment != null)
+        {
+            <section class="sidebar-section sidebar-quick-appointment" 
+                     aria-labelledby="quickAppointmentTitle">
+                <h3 id="quickAppointmentTitle" class="sidebar-section-title">
+                    <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                    <span>@Model.QuickAppointment.Title</span>
+                </h3>
+                <p class="sidebar-section-subtitle">@Model.QuickAppointment.Subtitle</p>
+                <a href="@Model.QuickAppointment.AppointmentUrl" 
+                   class="sidebar-btn sidebar-btn-primary"
+                   aria-label="@Model.QuickAppointment.ButtonText"
+                   tabindex="0">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                    <span>@Model.QuickAppointment.ButtonText</span>
+                </a>
+            </section>
+        }
+
+        @* Quick Links Section *@
+        @if (Model.QuickLinks != null && Model.QuickLinks.Any())
+        {
+            <section class="sidebar-section sidebar-quick-links" 
+                     aria-labelledby="quickLinksTitle">
+                <h3 id="quickLinksTitle" class="sidebar-section-title">
+                    <i class="fas fa-link" aria-hidden="true"></i>
+                    <span>لینک‌های سریع</span>
+                </h3>
+                <nav role="navigation" aria-label="لینک‌های سریع">
+                    <ul class="sidebar-links-list" role="list">
+                        @foreach (var link in Model.QuickLinks.OrderBy(l => l.Order))
+                        {
+                            <li role="listitem">
+                                <a href="@link.Url" 
+                                   class="sidebar-link"
+                                   @(link.IsExternal ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "")
+                                   aria-label="@link.Title - @link.Description"
+                                   tabindex="0">
+                                    <i class="@link.Icon" aria-hidden="true"></i>
+                                    <span>@link.Title</span>
+                                    @if (!string.IsNullOrEmpty(link.BadgeText))
+                                    {
+                                        <span class="sidebar-badge @link.BadgeClass" aria-label="@link.BadgeText">@link.BadgeText</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </section>
+        }
+
+        @* Contact Info Section *@
+        @if (Model.ContactInfo != null)
+        {
+            <section class="sidebar-section sidebar-contact-info" 
+                     aria-labelledby="contactInfoTitle">
+                <h3 id="contactInfoTitle" class="sidebar-section-title">
+                    <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                    <span>تماس با ما</span>
+                </h3>
+                <div class="sidebar-contact-list">
+                    @if (!string.IsNullOrEmpty(Model.ContactInfo.PhoneNumber))
+                    {
+                        <a href="@Model.ContactInfo.PhoneLink" 
+                           class="sidebar-contact-item"
+                           aria-label="تماس تلفنی: @Model.ContactInfo.PhoneNumber"
+                           tabindex="0">
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            <span>@Model.ContactInfo.PhoneNumber</span>
+                        </a>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ContactInfo.WhatsAppNumber))
+                    {
+                        <a href="@Model.ContactInfo.WhatsAppLink" 
+                           class="sidebar-contact-item"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           aria-label="واتساپ: @Model.ContactInfo.WhatsAppNumber"
+                           tabindex="0">
+                            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                            <span>واتساپ: @Model.ContactInfo.WhatsAppNumber</span>
+                        </a>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ContactInfo.Email))
+                    {
+                        <a href="@Model.ContactInfo.EmailLink" 
+                           class="sidebar-contact-item"
+                           aria-label="ایمیل: @Model.ContactInfo.Email"
+                           tabindex="0">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <span>@Model.ContactInfo.Email</span>
+                        </a>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ContactInfo.Address))
+                    {
+                        <div class="sidebar-contact-item sidebar-contact-address">
+                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            <span>@Model.ContactInfo.Address</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ContactInfo.GoogleMapsLink))
+                    {
+                        <a href="@Model.ContactInfo.GoogleMapsLink" 
+                           class="sidebar-contact-item sidebar-contact-map"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           aria-label="مشاهده نقشه در Google Maps"
+                           tabindex="0">
+                            <i class="fas fa-map" aria-hidden="true"></i>
+                            <span>مشاهده نقشه</span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
+        @* Working Hours Section *@
+        @if (Model.WorkingHours != null)
+        {
+            <section class="sidebar-section sidebar-working-hours" 
+                     aria-labelledby="workingHoursTitle">
+                <h3 id="workingHoursTitle" class="sidebar-section-title">
+                    <i class="fas fa-clock" aria-hidden="true"></i>
+                    <span>@Model.WorkingHours.Title</span>
+                </h3>
+                <div class="sidebar-status @(Model.WorkingHours.IsOpenNow ? "status-open" : "status-closed")" 
+                     role="status"
+                     aria-live="polite">
+                    <span class="status-indicator" aria-hidden="true"></span>
+                    <span class="status-text">@Model.WorkingHours.CurrentStatus</span>
+                </div>
+                @if (Model.WorkingHours.WorkingDays != null && Model.WorkingHours.WorkingDays.Any())
+                {
+                    <ul class="sidebar-working-days" role="list">
+                        @foreach (var day in Model.WorkingHours.WorkingDays)
+                        {
+                            <li class="working-day @(day.IsOpen ? "" : "day-closed")" role="listitem">
+                                <span class="day-name">@day.DayName</span>
+                                <span class="day-hours">@day.Hours</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        }
+
+        @* Emergency Contacts Section *@
+        @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
+        {
+            <section class="sidebar-section sidebar-emergency" 
+                     aria-labelledby="emergencyTitle">
+                <h3 id="emergencyTitle" class="sidebar-section-title sidebar-section-title-emergency">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <span>تماس‌های اضطراری</span>
+                </h3>
+                <ul class="sidebar-emergency-list" role="list">
+                    @foreach (var contact in Model.EmergencyContacts)
+                    {
+                        <li role="listitem">
+                            <a href="tel:@(contact.PhoneNumber?.Replace("-", "").Replace(" ", ""))" 
+                               class="sidebar-emergency-item"
+                               aria-label="تماس اضطراری: @contact.Title - @contact.PhoneNumber"
+                               tabindex="0">
+                                <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                                <div class="emergency-item-content">
+                                    <span class="emergency-item-title">@contact.Title</span>
+                                    <span class="emergency-item-phone">@contact.PhoneNumber</span>
+                                </div>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @* Health Tips Section *@
+        @if (Model.HealthTips != null && Model.HealthTips.Any())
+        {
+            <section class="sidebar-section sidebar-health-tips" 
+                     aria-labelledby="healthTipsTitle">
+                <h3 id="healthTipsTitle" class="sidebar-section-title">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    <span>نکات سلامت</span>
+                </h3>
+                <ul class="sidebar-tips-list" role="list">
+                    @foreach (var tip in Model.HealthTips)
+                    {
+                        <li role="listitem">
+                            <article class="sidebar-tip-item">
+                                @if (!string.IsNullOrEmpty(tip.ImageUrl))
+                                {
+                                    <img src="@tip.ImageUrl" 
+                                         alt="@tip.Title"
+                                         class="sidebar-tip-image"
+                                         loading="lazy"
+                                         aria-hidden="true">
+                                }
+                                <div class="sidebar-tip-content">
+                                    <h4 class="sidebar-tip-title">
+                                        <a href="@Url.Action("Details", "HealthTip", new { id = tip.HealthTipId })" 
+                                           aria-label="مشاهده نکته سلامت: @tip.Title"
+                                           tabindex="0">
+                                            @tip.Title
+                                        </a>
+                                    </h4>
+                                    @if (!string.IsNullOrEmpty(tip.Summary))
+                                    {
+                                        <p class="sidebar-tip-summary">@tip.Summary</p>
+                                    }
+                                </div>
+                            </article>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @* Announcements Section *@
+        @if (Model.Announcements != null && Model.Announcements.Any())
+        {
+            <section class="sidebar-section sidebar-announcements" 
+                     aria-labelledby="announcementsTitle">
+                <h3 id="announcementsTitle" class="sidebar-section-title">
+                    <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                    <span>اعلانات</span>
+                </h3>
+                <ul class="sidebar-announcements-list" role="list">
+                    @foreach (var announcement in Model.Announcements)
+                    {
+                        <li role="listitem">
+                            <article class="sidebar-announcement-item">
+                                <h4 class="sidebar-announcement-title">
+                                    <a href="@Url.Action("Details", "Announcement", new { id = announcement.AnnouncementId })" 
+                                       aria-label="مشاهده اعلان: @announcement.Title"
+                                       tabindex="0">
+                                        @announcement.Title
+                                    </a>
+                                </h4>
+                                @if (announcement.StartDate.HasValue)
+                                {
+                                    <time class="sidebar-announcement-date" 
+                                          datetime="@announcement.StartDate.Value.ToString("yyyy-MM-dd")"
+                                          aria-label="تاریخ شروع: @announcement.StartDate.Value.ToString("yyyy/MM/dd")">
+                                        @announcement.StartDate.Value.ToString("yyyy/MM/dd")
+                                    </time>
+                                }
+                            </article>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @* Sidebar Sliders Section *@
+        @if (Model.Sliders != null && Model.Sliders.Any())
+        {
+            <section class="sidebar-section sidebar-sliders" 
+                     aria-labelledby="slidersTitle">
+                <h3 id="slidersTitle" class="sidebar-section-title">
+                    <i class="fas fa-images" aria-hidden="true"></i>
+                    <span>تصاویر ویژه</span>
+                </h3>
+                <div class="sidebar-sliders-container">
+                    @foreach (var slider in Model.Sliders)
+                    {
+                        <article class="sidebar-slider-card">
+                            @if (!string.IsNullOrEmpty(slider.ImageUrl))
+                            {
+                                <div class="sidebar-slider-image-wrapper">
+                                    <img src="@slider.ImageUrl" 
+                                         alt="@slider.Title"
+                                         class="sidebar-slider-image"
+                                         loading="lazy"
+                                         aria-hidden="true">
+                                </div>
+                            }
+                            <div class="sidebar-slider-content">
+                                @if (!string.IsNullOrEmpty(slider.Title))
+                                {
+                                    <h4 class="sidebar-slider-title">@slider.Title</h4>
+                                }
+                                @if (!string.IsNullOrEmpty(slider.Description))
+                                {
+                                    <p class="sidebar-slider-description">@slider.Description</p>
+                                }
+                                @if (!string.IsNullOrEmpty(slider.LinkUrl))
+                                {
+                                    <a href="@slider.LinkUrl" 
+                                       class="sidebar-slider-link"
+                                       aria-label="مشاهده بیشتر درباره @slider.Title"
+                                       tabindex="0">
+                                        @(slider.ButtonText ?? "مشاهده بیشتر")
+                                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                    </a>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+
+    </aside>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-sidebar.css")" />
+}
+
+@section Scripts {
+    <script src="@Url.Content("~/Content/js/medical-sidebar.js")"></script>
+}
+

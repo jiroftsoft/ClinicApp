@@ -1,0 +1,421 @@
+@model ClinicApp.ViewModels.CMS.PatientEducationMaterialIndexPageViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Extensions
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "مدیریت مطالب آموزشی بیماران";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Patient Education Material Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست مطالب آموزشی
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-light: #f8f9fa;
+        }
+
+        .material-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            font-weight: 500;
+        }
+        .file-icon {
+            font-size: 1.5rem;
+            color: var(--medical-primary);
+        }
+        .material-image {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--medical-border);
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .material-image {
+                width: 60px;
+                height: 45px;
+            }
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+
+        /* Accessibility */
+        .btn:focus,
+        .form-control:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-book-medical text-primary"></i>
+            مدیریت مطالب آموزشی بیماران
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> مطلب جدید
+        </a>
+    </div>
+
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "PatientEducationMaterial", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در عنوان، توضیحات..." value="@(Model.SearchModel?.SearchTerm ?? "")">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="Category" class="form-control">
+                        <option value="">همه دسته‌بندی‌ها</option>
+                        @foreach (PatientEducationCategory category in Enum.GetValues(typeof(PatientEducationCategory)))
+                        {
+                            var selected = Model.SearchModel?.Category == category ? "selected" : "";
+                            <option value="@((int)category)" @selected>@category.GetDisplayName()</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsPublished" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Model.SearchModel?.IsPublished == true ? "selected" : "")>منتشر شده</option>
+                        <option value="false" @(Model.SearchModel?.IsPublished == false ? "selected" : "")>منتشر نشده</option>
+                    </select>
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsFeatured" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Model.SearchModel?.IsFeatured == true ? "selected" : "")>ویژه</option>
+                        <option value="false" @(Model.SearchModel?.IsFeatured == false ? "selected" : "")>عادی</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> بازنشانی
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Materials List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست مطالب آموزشی (@Model.Materials.TotalCount مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Materials.Items != null && Model.Materials.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>تصویر</th>
+                                <th>عنوان</th>
+                                <th>دسته‌بندی</th>
+                                <th>فایل</th>
+                                <th>وضعیت</th>
+                                <th>ویژه</th>
+                                <th>دانلود</th>
+                                <th>مشاهده</th>
+                                <th>تاریخ انتشار</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Materials.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@item.ThumbnailUrl" alt="@item.Title" class="material-image">
+                                        }
+                                        else if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.Title" class="material-image">
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">بدون تصویر</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@item.Title</strong>
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(item.Description.Length > 80 ? item.Description.Substring(0, 80) + "..." : item.Description)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@item.CategoryDisplay</span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.FileUrl))
+                                        {
+                                            <i class="fas fa-file @GetFileIconClass(item.FileType) file-icon" title="@item.FileName"></i>
+                                            <small class="d-block">@item.FileType</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">بدون فایل</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsPublished)
+                                        {
+                                            <span class="badge badge-success status-badge">منتشر شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning status-badge">منتشر نشده</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.IsFeatured)
+                                        {
+                                            <span class="badge badge-danger status-badge">ویژه</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">عادی</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@item.DownloadCount</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@item.ViewCount</span>
+                                    </td>
+                                    <td>
+                                        @if (item.PublishedAt.HasValue)
+                                        {
+                                            @item.PublishedAt.Value.ToString("yyyy/MM/dd")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.PatientEducationMaterialId })" 
+                                               class="btn btn-sm btn-info" 
+                                               title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.PatientEducationMaterialId })" 
+                                               class="btn btn-sm btn-warning" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger" 
+                                                    onclick="deleteMaterial(@item.PatientEducationMaterialId, '@item.Title')" 
+                                                    title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.Materials.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.Materials.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Materials.PageNumber - 1, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, IsPublished = Model.SearchModel?.IsPublished, IsFeatured = Model.SearchModel?.IsFeatured })">
+                                        <i class="fas fa-chevron-right"></i> قبلی
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-chevron-right"></i> قبلی</span>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.Materials.TotalPages; i++)
+                            {
+                                if (i == Model.Materials.PageNumber)
+                                {
+                                    <li class="page-item active">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else if (i == 1 || i == Model.Materials.TotalPages || (i >= Model.Materials.PageNumber - 2 && i <= Model.Materials.PageNumber + 2))
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, IsPublished = Model.SearchModel?.IsPublished, IsFeatured = Model.SearchModel?.IsFeatured })">@i</a>
+                                    </li>
+                                }
+                                else if (i == Model.Materials.PageNumber - 3 || i == Model.Materials.PageNumber + 3)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                            }
+
+                            @if (Model.Materials.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Materials.PageNumber + 1, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, IsPublished = Model.SearchModel?.IsPublished, IsFeatured = Model.SearchModel?.IsFeatured })">
+                                        بعدی <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">بعدی <i class="fas fa-chevron-left"></i></span>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    هیچ مطلب آموزشی یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetFileIconClass(string fileType)
+    {
+        switch (fileType?.ToUpper())
+        {
+            case "PDF":
+                return "fa-file-pdf text-danger";
+            case "DOC":
+            case "DOCX":
+                return "fa-file-word text-primary";
+            case "XLS":
+            case "XLSX":
+                return "fa-file-excel text-success";
+            default:
+                return "fa-file text-secondary";
+        }
+    }
+}
+
+@section Scripts {
+    <script>
+        function deleteMaterial(id, title) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'آیا می‌خواهید مطلب آموزشی "' + title + '" را حذف کنید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Delete")';
+                    
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    var tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    
+                    var idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'id';
+                    idInput.value = id;
+                    form.appendChild(idInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

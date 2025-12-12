@@ -4,128 +4,300 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@* ============================================
+   Testimonial Create - Production Ready
+   ============================================
+   - SRP: ایجاد نظر جدید
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   - Image Upload: سیستم آپلود تصویر
+   ============================================ *@
+
 @Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .image-preview-container {
+            margin-top: 1rem;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .rating-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rating-display {
+            font-size: 1.5rem;
+            color: #ffc107;
+        }
+    </style>
+}
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">ایجاد نظر جدید</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-comments text-primary"></i>
+            ایجاد نظر جدید
+        </h1>
         <a href="@Url.Action("Index")" class="btn btn-secondary">
             <i class="fas fa-arrow-right"></i> بازگشت به لیست
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            @using (Html.BeginForm("Create", "Testimonial", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-            {
-                @Html.AntiForgeryToken()
-                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "Testimonial", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger", role = "alert" })
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.PatientName, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.PatientName, new { @class = "form-control", placeholder = "نام بیمار" })
-                            @Html.ValidationMessageFor(m => m.PatientName, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.PatientInitials)
-                            @Html.TextBoxFor(m => m.PatientInitials, new { @class = "form-control", placeholder = "حروف اول (خودکار تولید می‌شود)" })
-                            @Html.ValidationMessageFor(m => m.PatientInitials, "", new { @class = "text-danger" })
-                            <small class="form-text text-muted">اگر خالی باشد، به صورت خودکار از نام تولید می‌شود</small>
-                        </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.PatientName, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.PatientName, new { @class = "form-control", placeholder = "نام بیمار" })
+                        @Html.ValidationMessageFor(m => m.PatientName, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> نام کامل بیمار را وارد کنید
+                        </small>
                     </div>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Comment, new { @class = "required" })
-                            @Html.TextAreaFor(m => m.Comment, new { @class = "form-control", rows = "5", placeholder = "نظر بیمار" })
-                            @Html.ValidationMessageFor(m => m.Comment, "", new { @class = "text-danger" })
-                        </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.PatientInitials)
+                        @Html.TextBoxFor(m => m.PatientInitials, new { @class = "form-control", placeholder = "حروف اول (خودکار تولید می‌شود)", maxlength = "10" })
+                        @Html.ValidationMessageFor(m => m.PatientInitials, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> اگر خالی باشد، به صورت خودکار از نام تولید می‌شود
+                        </small>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Rating, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.Rating, new { @class = "form-control", type = "number", min = "0", max = "5", step = "0.5", @Value = "5" })
-                            @Html.ValidationMessageFor(m => m.Rating, "", new { @class = "text-danger" })
-                            <small class="form-text text-muted">امتیاز از 0 تا 5</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.DoctorName)
-                            @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", placeholder = "نام پزشک (اختیاری)" })
-                            @Html.ValidationMessageFor(m => m.DoctorName, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.DisplayOrder)
-                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
-                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
-                        </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Comment, new { @class = "required" })
+                        @Html.TextAreaFor(m => m.Comment, new { @class = "form-control", rows = "5", placeholder = "نظر بیمار", maxlength = "2000" })
+                        @Html.ValidationMessageFor(m => m.Comment, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> حداکثر 2000 کاراکتر | <span id="commentCharCount">0</span> / 2000
+                        </small>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.PhotoUrl)
-                            @Html.TextBoxFor(m => m.PhotoUrl, new { @class = "form-control", placeholder = "/Content/Images/testimonials/..." })
-                            @Html.ValidationMessageFor(m => m.PhotoUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.VideoUrl)
-                            @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "آدرس ویدیو (اختیاری)" })
-                            @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <div class="form-check">
-                                @Html.CheckBoxFor(m => m.IsApproved, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.IsApproved, new { @class = "form-check-label" })
-                            </div>
-                            <div class="form-check">
-                                @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Rating, new { @class = "required" })
+                        <div class="rating-input-group">
+                            @Html.TextBoxFor(m => m.Rating, new { @class = "form-control", type = "number", min = "0", max = "5", step = "0.5", @Value = "5", id = "ratingInput" })
+                            <div class="rating-display" id="ratingDisplay">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star text-warning"></i>
+                                }
                             </div>
                         </div>
+                        @Html.ValidationMessageFor(m => m.Rating, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> امتیاز از 0 تا 5
+                        </small>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> ذخیره
-                    </button>
-                    <a href="@Url.Action("Index")" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> انصراف
-                    </a>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DoctorName)
+                        @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", placeholder = "نام پزشک (اختیاری)", maxlength = "200" })
+                        @Html.ValidationMessageFor(m => m.DoctorName, "", new { @class = "text-danger" })
+                    </div>
                 </div>
-            }
-        </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder)
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0", min = "0" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> برای ترتیب نمایش (عدد کمتر = اولویت بیشتر)
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.PhotoUrl, "تصویر بیمار")
+                        <div class="custom-file">
+                            <input type="file" 
+                                   class="custom-file-input" 
+                                   id="PhotoFile" 
+                                   name="PhotoFile" 
+                                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                   aria-label="انتخاب تصویر بیمار">
+                            <label class="custom-file-label" for="PhotoFile">انتخاب تصویر...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت
+                        </small>
+                        @Html.HiddenFor(m => m.PhotoUrl)
+                        @Html.ValidationMessageFor(m => m.PhotoUrl, "", new { @class = "text-danger" })
+                        <div id="photoPreview" class="image-preview-container" style="display: none;">
+                            <img id="photoPreviewImg" src="" alt="پیش‌نمایش تصویر" class="image-preview">
+                            <br />
+                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removePhotoPreview()">
+                                <i class="fas fa-times"></i> حذف تصویر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.VideoUrl)
+                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "آدرس ویدیو (اختیاری)", maxlength = "500" })
+                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> آدرس کامل ویدیو (YouTube, Vimeo, etc.)
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsApproved, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsApproved, new { @class = "form-check-label" })
+                        </div>
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        // Character counter for comment
+        $(document).ready(function() {
+            var commentTextarea = $('#Comment');
+            var charCount = $('#commentCharCount');
+            
+            commentTextarea.on('input', function() {
+                var length = $(this).val().length;
+                charCount.text(length);
+                if (length > 2000) {
+                    charCount.addClass('text-danger');
+                } else {
+                    charCount.removeClass('text-danger');
+                }
+            });
+            
+            // Initialize count
+            charCount.text(commentTextarea.val().length);
+        });
+
+        // Rating display update
+        $(document).ready(function() {
+            var ratingInput = $('#ratingInput');
+            var ratingDisplay = $('#ratingDisplay');
+            
+            ratingInput.on('input change', function() {
+                var rating = parseFloat($(this).val()) || 0;
+                rating = Math.max(0, Math.min(5, rating));
+                
+                ratingDisplay.empty();
+                for (var i = 1; i <= 5; i++) {
+                    var starClass = i <= rating ? 'text-warning' : 'text-muted';
+                    ratingDisplay.append('<i class="fas fa-star ' + starClass + '"></i>');
+                }
+            });
+            
+            // Initialize display
+            ratingInput.trigger('change');
+        });
+
+        // Photo file preview
+        $(document).ready(function() {
+            $('#PhotoFile').on('change', function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    // Validate file size (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('حجم فایل نباید بیشتر از 5 مگابایت باشد.');
+                        $(this).val('');
+                        return;
+                    }
+                    
+                    // Validate file type
+                    var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                    if (allowedTypes.indexOf(file.type) === -1) {
+                        alert('فرمت فایل مجاز نیست. لطفاً تصویر انتخاب کنید.');
+                        $(this).val('');
+                        return;
+                    }
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#photoPreviewImg').attr('src', e.target.result);
+                        $('#photoPreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Update label
+                    $('.custom-file-label').text(file.name);
+                }
+            });
+        });
+
+        function removePhotoPreview() {
+            $('#PhotoFile').val('');
+            $('.custom-file-label').text('انتخاب تصویر...');
+            $('#photoPreview').hide();
+            $('#photoPreviewImg').attr('src', '');
+        }
+
+        // Custom file input label update
+        $(document).ready(function() {
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).siblings('.custom-file-label').text(fileName || 'انتخاب تصویر...');
+            });
+        });
+    </script>
+}

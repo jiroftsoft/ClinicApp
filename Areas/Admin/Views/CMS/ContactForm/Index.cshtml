@@ -1,0 +1,373 @@
+@model ClinicApp.ViewModels.CMS.ContactFormIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت فرم تماس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Contact Form Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست فرم‌های تماس
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .contact-form-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .contact-form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .unread-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--medical-danger);
+            display: inline-block;
+            margin-left: 5px;
+        }
+        .message-preview {
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .stats-card {
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--medical-primary);
+        }
+        .stats-label {
+            font-size: 0.875rem;
+            color: var(--medical-text-muted);
+            margin-top: 0.5rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-envelope text-primary"></i>
+            مدیریت فرم تماس
+        </h1>
+    </div>
+
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.UnreadCount</div>
+                <div class="stats-label">خوانده نشده</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.NewCount</div>
+                <div class="stats-label">جدید</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.InProgressCount</div>
+                <div class="stats-label">در حال بررسی</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.RepliedCount</div>
+                <div class="stats-label">پاسخ داده شده</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3" style="background-color: var(--medical-primary); color: white;">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fas fa-filter"></i> فیلتر و جستجو
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "ContactForm", FormMethod.Get, new { @class = "form-horizontal" }))
+            {
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>جستجو</label>
+                            <input type="text" name="SearchTerm" class="form-control" placeholder="نام، ایمیل، موضوع، پیام..." value="@(Model.SearchModel?.SearchTerm ?? "")">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>دسته‌بندی</label>
+                            <select name="Category" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" @(Model.SearchModel?.Category == ClinicApp.Models.Enums.ContactFormCategory.Question ? "selected" : "")>سوال</option>
+                                <option value="2" @(Model.SearchModel?.Category == ClinicApp.Models.Enums.ContactFormCategory.Suggestion ? "selected" : "")>پیشنهاد</option>
+                                <option value="3" @(Model.SearchModel?.Category == ClinicApp.Models.Enums.ContactFormCategory.Complaint ? "selected" : "")>شکایت</option>
+                                <option value="4" @(Model.SearchModel?.Category == ClinicApp.Models.Enums.ContactFormCategory.Appointment ? "selected" : "")>نوبت‌دهی</option>
+                                <option value="5" @(Model.SearchModel?.Category == ClinicApp.Models.Enums.ContactFormCategory.Other ? "selected" : "")>سایر</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>وضعیت</label>
+                            <select name="Status" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" @(Model.SearchModel?.Status == ClinicApp.Models.Enums.ContactFormStatus.New ? "selected" : "")>جدید</option>
+                                <option value="2" @(Model.SearchModel?.Status == ClinicApp.Models.Enums.ContactFormStatus.InProgress ? "selected" : "")>در حال بررسی</option>
+                                <option value="3" @(Model.SearchModel?.Status == ClinicApp.Models.Enums.ContactFormStatus.Replied ? "selected" : "")>پاسخ داده شده</option>
+                                <option value="4" @(Model.SearchModel?.Status == ClinicApp.Models.Enums.ContactFormStatus.Closed ? "selected" : "")>بسته شده</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>خوانده شده</label>
+                            <select name="IsRead" class="form-control">
+                                <option value="">همه</option>
+                                <option value="true" @(Model.SearchModel?.IsRead == true ? "selected" : "")>خوانده شده</option>
+                                <option value="false" @(Model.SearchModel?.IsRead == false ? "selected" : "")>خوانده نشده</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> جستجو
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-redo"></i> پاک کردن
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Contact Forms List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3" style="background-color: var(--medical-primary); color: white;">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fas fa-list"></i> لیست فرم‌های تماس 
+                <span class="badge badge-light">@(Model.ContactForms?.Items?.Count ?? 0) مورد</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (Model.ContactForms != null && Model.ContactForms.Items != null && Model.ContactForms.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 15%;">فرستنده</th>
+                                <th style="width: 20%;">موضوع</th>
+                                <th style="width: 15%;">دسته‌بندی</th>
+                                <th style="width: 12%;">وضعیت</th>
+                                <th style="width: 10%;">خوانده شده</th>
+                                <th style="width: 10%;">تاریخ</th>
+                                <th style="width: 13%;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ContactForms.Items)
+                            {
+                                <tr class="@(!item.IsRead ? "table-warning" : item.Status == ClinicApp.Models.Enums.ContactFormStatus.Replied ? "table-success" : "")">
+                                    <td>@item.ContactFormId</td>
+                                    <td>
+                                        <div>
+                                            <strong>@item.FullName</strong>
+                                            @if (!item.IsRead)
+                                            {
+                                                <span class="unread-indicator" title="خوانده نشده" aria-label="خوانده نشده"></span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@item.Email</small><br />
+                                        <small class="text-muted">@item.PhoneNumber</small>
+                                    </td>
+                                    <td>
+                                        <div class="message-preview" title="@item.Subject">
+                                            @item.Subject
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info status-badge">@item.CategoryDisplay</span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var statusClass = "badge-secondary";
+                                            if (item.Status == ClinicApp.Models.Enums.ContactFormStatus.New)
+                                            {
+                                                statusClass = "badge-danger";
+                                            }
+                                            else if (item.Status == ClinicApp.Models.Enums.ContactFormStatus.InProgress)
+                                            {
+                                                statusClass = "badge-warning";
+                                            }
+                                            else if (item.Status == ClinicApp.Models.Enums.ContactFormStatus.Replied)
+                                            {
+                                                statusClass = "badge-success";
+                                            }
+                                            else if (item.Status == ClinicApp.Models.Enums.ContactFormStatus.Closed)
+                                            {
+                                                statusClass = "badge-secondary";
+                                            }
+                                        }
+                                        <span class="badge @statusClass status-badge">@item.StatusDisplay</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsRead)
+                                        {
+                                            <span class="badge badge-success status-badge">
+                                                <i class="fas fa-check"></i> خوانده شده
+                                            </span>
+                                            if (item.ReadAt.HasValue)
+                                            {
+                                                <br />
+                                                <small class="text-muted">@ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.ReadAt.Value)</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger status-badge">
+                                                <i class="fas fa-times"></i> خوانده نشده
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.CreatedAt)
+                                        @if (item.RepliedAt.HasValue)
+                                        {
+                                            <br />
+                                            <small class="text-success">
+                                                <i class="fas fa-reply"></i> پاسخ: @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.RepliedAt.Value)
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.ContactFormId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (item.RepliedAt.HasValue)
+                                            {
+                                                <a href="@Url.Action("Reply", new { id = item.ContactFormId })" class="btn btn-sm btn-warning" title="ویرایش پاسخ">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@Url.Action("Reply", new { id = item.ContactFormId })" class="btn btn-sm btn-primary" title="پاسخ">
+                                                    <i class="fas fa-reply"></i>
+                                                </a>
+                                            }
+                                            @using (Html.BeginForm("Delete", "ContactForm", new { id = item.ContactFormId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirmDelete()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.ContactForms.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.ContactForms.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.ContactForms.PageNumber - 1, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, Status = Model.SearchModel?.Status, IsRead = Model.SearchModel?.IsRead })">
+                                        <i class="fas fa-chevron-right"></i> قبلی
+                                    </a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.ContactForms.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.ContactForms.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, Status = Model.SearchModel?.Status, IsRead = Model.SearchModel?.IsRead })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+                            @if (Model.ContactForms.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.ContactForms.PageNumber + 1, SearchTerm = Model.SearchModel?.SearchTerm, Category = Model.SearchModel?.Category, Status = Model.SearchModel?.Status, IsRead = Model.SearchModel?.IsRead })">
+                                        بعدی <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <p class="mb-0">هیچ فرم تماسی یافت نشد.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete() {
+            return Swal.fire({
+                title: 'آیا از حذف این فرم تماس اطمینان دارید؟',
+                text: 'این عملیات قابل بازگشت نیست',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'خیر، انصراف',
+                reverseButtons: true
+            }).then(function(result) {
+                return result.isConfirmed;
+            });
+        }
+    </script>
+}
+

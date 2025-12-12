@@ -343,6 +343,7 @@ namespace ClinicApp
                 
                 // Image Upload Service
                 container.RegisterType<IImageUploadService, ImageUploadService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDocumentUploadService, DocumentUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
 
                 // ثبت سرویس‌های تریاژ
@@ -399,6 +400,8 @@ namespace ClinicApp
                 container.RegisterType<IEmergencyContactRepository, EmergencyContactRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IClinicWorkingHoursRepository, ClinicWorkingHoursRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IMedicalEquipmentRepository, MedicalEquipmentRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IContactFormRepository, ContactFormRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientEducationMaterialRepository, PatientEducationMaterialRepository>(new PerRequestLifetimeManager());
                 
                 // ========== ثبت Service های CMS ==========
                 container.RegisterType<IBlogPostService, BlogPostService>(new PerRequestLifetimeManager());
@@ -414,6 +417,7 @@ namespace ClinicApp
                 container.RegisterType<IGalleryService, GalleryService>(new PerRequestLifetimeManager());
                 container.RegisterType<IVideoService, VideoService>(new PerRequestLifetimeManager());
                 container.RegisterType<IVideoUploadService, VideoUploadService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDocumentUploadService, DocumentUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<IFAQService, FAQService>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipService, HealthTipService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoService, InsuranceInfoService>(new PerRequestLifetimeManager());
@@ -421,6 +425,8 @@ namespace ClinicApp
                 container.RegisterType<IEmergencyContactService, EmergencyContactService>(new PerRequestLifetimeManager());
                 container.RegisterType<IClinicWorkingHoursService, ClinicWorkingHoursService>(new PerRequestLifetimeManager());
                 container.RegisterType<IMedicalEquipmentService, MedicalEquipmentService>(new PerRequestLifetimeManager());
+                container.RegisterType<IContactFormService, ContactFormService>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientEducationMaterialService, PatientEducationMaterialService>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Repositories
                 container.RegisterType<IDoctorCrudRepository, DoctorCrudRepository>(new PerRequestLifetimeManager());

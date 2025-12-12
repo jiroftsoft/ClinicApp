@@ -293,6 +293,7 @@
             right: auto !important;
         }
     </style>
+    @* Swiper.js moved to section-specific loading to avoid cache issues *@
 </head>
     <body>
         <!-- Reception Sidebar (Hamburger) - Professional Medical Navigation -->
@@ -416,158 +417,37 @@
         @RenderBody()
     </main>
 
-    <footer class="animate-fade-in" role="contentinfo">
-        <div class="container">
-            <div class="footer-content">
-                <!-- Column 1: About -->
-                <div class="footer-column">
-                    <a href="@Url.Action("Index", "Home")" class="footer-logo" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
-                        <i class="fas fa-heartbeat"></i>
-                        <span>کلینیک شفا جیرفت</span>
-                    </a>
-                    <p class="footer-description">
-                        ارائه خدمات درمانی تخصصی با استفاده از پیشرفته‌ترین تجهیزات پزشکی و تیم متخصص برای سلامت شما.
-                    </p>
-                    <div class="footer-social">
-                        <a href="#" class="social-icon" aria-label="اینستاگرام کلینیک شفا" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-instagram"></i>
+    @* Professional Medical Footer *@
+    @{
+        var footerModel = ViewBag.Footer as ClinicApp.ViewModels.FooterViewModel;
+    }
+    @if (footerModel != null)
+    {
+        @Html.Partial("~/Views/Shared/_Footer.cshtml", footerModel)
+    }
+    else
+    {
+        @* Fallback to old footer if new footer is not available *@
+        <footer class="animate-fade-in" role="contentinfo">
+            <div class="container">
+                <div class="footer-content">
+                    <!-- Column 1: About -->
+                    <div class="footer-column">
+                        <a href="@Url.Action("Index", "Home")" class="footer-logo" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>کلینیک شفا جیرفت</span>
                         </a>
-                        <a href="#" class="social-icon" aria-label="تلگرام کلینیک شفا" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-telegram"></i>
-                        </a>
-                        <a href="#" class="social-icon" aria-label="واتساپ کلینیک شفا" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                        <a href="#" class="social-icon" aria-label="فیسبوک کلینیک شفا" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-facebook"></i>
-                        </a>
+                        <p class="footer-description">
+                            ارائه خدمات درمانی تخصصی با استفاده از پیشرفته‌ترین تجهیزات پزشکی و تیم متخصص برای سلامت شما.
+                        </p>
                     </div>
                 </div>
-
-                <!-- Column 2: Quick Links -->
-                <div class="footer-column">
-                    <h5>
-                        <i class="fas fa-link"></i>
-                        لینک‌های سریع
-                    </h5>
-                    <ul class="footer-links">
-                        <li>
-                            <a href="@Url.Action("Index", "Home")">
-                                <i class="fas fa-home"></i>
-                                خانه
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
-                                <i class="fas fa-stethoscope"></i>
-                                خدمات پزشکی
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "Doctors")">
-                                <i class="fas fa-user-md"></i>
-                                پزشکان
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "Blog")">
-                                <i class="fas fa-newspaper"></i>
-                                مقالات
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "FAQ")">
-                                <i class="fas fa-question-circle"></i>
-                                سوالات متداول
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Contact", "Home")">
-                                <i class="fas fa-envelope"></i>
-                                تماس با ما
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Column 3: Services -->
-                <div class="footer-column">
-                    <h5>
-                        <i class="fas fa-hospital"></i>
-                        خدمات ما
-                    </h5>
-                    <ul class="footer-links">
-                        <li>
-                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
-                                <i class="fas fa-user-md"></i>
-                                معاینه عمومی
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
-                                <i class="fas fa-flask"></i>
-                                آزمایشگاه
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
-                                <i class="fas fa-x-ray"></i>
-                                تصویربرداری
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "MedicalEquipment")">
-                                <i class="fas fa-cog"></i>
-                                تجهیزات پزشکی
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("Index", "HealthTip")">
-                                <i class="fas fa-heartbeat"></i>
-                                نکات سلامت
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Column 4: Contact Info -->
-                <div class="footer-column">
-                    <h5>
-                        <i class="fas fa-phone-alt"></i>
-                        اطلاعات تماس
-                    </h5>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-map-marker-alt contact-icon"></i>
-                        <div class="contact-text">
-                            جیرفت، خیابان اصلی، کوچه شفا، پلاک 10
-                        </div>
-                    </div>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-phone contact-icon"></i>
-                        <div class="contact-text">
-                            <a href="tel:+983432221234">034-3222-1234</a>
-                        </div>
-                    </div>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-envelope contact-icon"></i>
-                        <div class="contact-text">
-                            <a href="mailto:info@shafa-jiroft.com">info@shafa-jiroft.com</a>
-                        </div>
-                    </div>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-clock contact-icon"></i>
-                        <div class="contact-text">
-                            شنبه تا پنج‌شنبه: 8:00 - 20:00<br />
-                            جمعه: 8:00 - 16:00
-                        </div>
-                    </div>
+                <div class="copyright">
+                    &copy; @DateTime.Now.Year - کلینیک شفا جیرفت. تمامی حقوق محفوظ است.
                 </div>
             </div>
-            <div class="copyright">
-                &copy; @DateTime.Now.Year - کلینیک شفا جیرفت. تمامی حقوق محفوظ است.
-            </div>
-        </div>
-    </footer>
+        </footer>
+    }
 
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

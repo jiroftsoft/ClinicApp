@@ -1,0 +1,148 @@
+@model ClinicApp.ViewModels.CMS.ContactFormReplyViewModel
+@{
+    ViewBag.Title = "پاسخ به فرم تماس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Contact Form Reply - Production Ready
+   ============================================
+   - SRP: پاسخ به فرم تماس
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-reply text-primary"></i>
+            پاسخ به فرم تماس
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.ContactFormId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    @* پیام‌ها با استفاده از Toastr نمایش داده می‌شوند - در _AdminLayout.cshtml *@
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Original Message -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3" style="background-color: var(--medical-primary); color: white;">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-envelope"></i> پیام اصلی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>فرستنده:</strong>
+                            <p>@Model.FullName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ایمیل:</strong>
+                            <p><a href="mailto:@Model.Email">@Model.Email</a></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>شماره تماس:</strong>
+                            <p><a href="tel:@Model.PhoneNumber">@Model.PhoneNumber</a></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>دسته‌بندی:</strong>
+                            <p><span class="badge badge-info">@Model.Category</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <strong>موضوع:</strong>
+                            <p>@Model.Subject</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <strong>پیام:</strong>
+                            <div class="border p-3 rounded" style="background-color: var(--medical-light); min-height: 100px;">
+                                @Model.Message
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reply Form -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3" style="background-color: var(--medical-success); color: white;">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-reply"></i> پاسخ
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Reply", "ContactForm", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ContactFormId)
+                        @Html.HiddenFor(m => m.FullName)
+                        @Html.HiddenFor(m => m.Email)
+                        @Html.HiddenFor(m => m.PhoneNumber)
+                        @Html.HiddenFor(m => m.Subject)
+                        @Html.HiddenFor(m => m.Message)
+                        @Html.HiddenFor(m => m.Category)
+
+                        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger", role = "alert" })
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ReplyMessage, new { @class = "control-label" })
+                            @Html.TextAreaFor(m => m.ReplyMessage, new { @class = "form-control", rows = "10", placeholder = "پاسخ خود را وارد کنید..." })
+                            @Html.ValidationMessageFor(m => m.ReplyMessage, "", new { @class = "text-danger" })
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> پاسخ شما به کاربر ارسال خواهد شد.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.SendEmail, new { @class = "form-check-input" })
+                                @Html.LabelFor(m => m.SendEmail, new { @class = "form-check-label" })
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> در صورت انتخاب، پاسخ به ایمیل کاربر ارسال می‌شود.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.SendSms, new { @class = "form-check-input" })
+                                @Html.LabelFor(m => m.SendSms, new { @class = "form-check-label" })
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> در صورت انتخاب، پاسخ به شماره تماس کاربر ارسال می‌شود.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> ارسال پاسخ
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.ContactFormId })" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+

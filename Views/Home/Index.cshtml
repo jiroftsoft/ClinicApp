@@ -110,9 +110,16 @@
     
     </main>
     
-    <!-- Sidebar Slider Section -->
-    @if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
+    <!-- Professional Medical Sidebar -->
+    @if (Model.Sidebar != null)
     {
+        <aside class="homepage-sidebar" role="complementary" aria-label="منوی کناری کلینیک">
+            @Html.Partial("~/Views/Home/Sections/_SidebarSection.cshtml", Model.Sidebar)
+        </aside>
+    }
+    else if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
+    {
+        @* Fallback to old sidebar sliders if new sidebar is not available *@
         <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
             @Html.Partial("~/Views/Home/Sections/_SidebarSliderSection.cshtml", Model.SidebarSliders)
         </aside>
