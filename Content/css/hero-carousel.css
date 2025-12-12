@@ -19,12 +19,16 @@
     width: 100%;
     margin-right: -100%;
     backface-visibility: hidden;
-    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+    /* Transition نرم و حرفه‌ای برای محیط درمانی - 0.8s */
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.8s ease-in-out;
     min-height: 500px;
     display: none; /* مخفی به صورت پیش‌فرض */
     align-items: center;
     opacity: 0;
     visibility: hidden;
+    will-change: transform, opacity; /* بهینه‌سازی Performance */
 }
 
 .hero-carousel .carousel-item.active {
@@ -32,6 +36,8 @@
     opacity: 1 !important;
     visibility: visible !important;
     margin-right: 0 !important; /* اطمینان از نمایش صحیح */
+    transform: translateX(0) !important; /* اطمینان از موقعیت صحیح */
+    z-index: 2; /* بالای سایر اسلایدها */
 }
 
 .hero-carousel .carousel-item-next,
@@ -60,10 +66,11 @@
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    background-color: var(--medical-primary); /* Fallback color اگر تصویر لود نشود */
     background-attachment: scroll; /* اطمینان از نمایش صحیح تصویر */
     opacity: 1 !important;
     visibility: visible !important;
+    /* background-color فقط به عنوان fallback - نباید تصویر را بپوشاند */
+    background-color: transparent !important;
 }
 
 /* اطمینان از نمایش تصویر پس‌زمینه در اسلاید فعال */
@@ -77,8 +84,8 @@
 }
 
 /* اطمینان از نمایش تصویر حتی اگر inline style وجود نداشته باشد */
-.hero-carousel .carousel-item.active .hero-slide[data-image-url] {
-    background-image: var(--hero-slide-image, url('/Content/Images/clinic-hero.jpg')) !important;
+.hero-carousel .carousel-item.active .hero-slide[data-image-url]:not([style*="background-image"]) {
+    background-image: var(--hero-slide-image) !important;
 }
 
 .hero-slide::before {
@@ -92,7 +99,7 @@
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
     z-index: 1;
     pointer-events: none; /* اجازه می‌دهد کلیک‌ها از overlay عبور کنند */
-    opacity: 0.3; /* کاهش بیشتر opacity برای نمایش بهتر تصویر */
+    opacity: 0.2 !important; /* کاهش بیشتر opacity برای نمایش بهتر تصویر */
 }
 
 /* اطمینان از نمایش overlay در اسلاید فعال */
@@ -201,7 +208,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 10;
+    z-index: 15 !important; /* اطمینان از اینکه دکمه‌ها بالای overlay هستند */
     background-color: rgba(255, 255, 255, 0.2);
     border: none;
     width: 50px;
@@ -212,9 +219,14 @@
     justify-content: center;
     color: white;
     font-size: 1.5rem;
-    cursor: pointer;
+    cursor: pointer !important;
+    pointer-events: auto !important; /* اطمینان از اینکه دکمه‌ها قابل کلیک هستند */
     transition: all var(--transition-normal) var(--ease-out);
     backdrop-filter: blur(10px);
+    user-select: none; /* جلوگیری از select شدن متن */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .hero-carousel-controls:hover {
@@ -309,6 +321,27 @@
     }
 }
 
+/* Support for Reduced Motion - Accessibility برای محیط درمانی */
+@media (prefers-reduced-motion: reduce) {
+    .hero-carousel .carousel-item {
+        transition: none !important;
+    }
+    
+    .hero-slide-title,
+    .hero-slide-description,
+    .hero-slide-buttons {
+        animation: none !important;
+    }
+    
+    .hero-carousel-controls {
+        transition: none !important;
+    }
+    
+    .hero-carousel-controls:hover {
+        transform: translateY(-50%) !important;
+    }
+}
+
 /* Keyframes برای Animation ها */
 @keyframes slideDown {
     from {
@@ -392,8 +425,6 @@
     border: 3px solid red !important;
 } */
 
-/* اطمینان از نمایش background-image حتی اگر CSS override شود */
-.hero-carousel .carousel-item.active .hero-slide[style*="background-image"] {
-    background-image: inherit !important;
-}
+/* اطمینان از نمایش background-image از inline style - اولویت با inline style */
+/* Inline style اولویت دارد - هیچ override نمی‌کنیم */
 

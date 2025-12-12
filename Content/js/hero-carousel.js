@@ -1,87 +1,152 @@
 /**
- * Hero Carousel Manager
- * Handles hero carousel interactions and animations
+ * Hero Carousel Manager - Production Ready
+ * الهام گرفته از بهترین کتابخانه‌های Carousel (Swiper, Owl Carousel)
+ * بهینه‌سازی شده برای محیط درمانی
  */
 (function() {
     'use strict';
 
-    const heroCarousel = document.getElementById('heroCarousel');
-    if (!heroCarousel) {
-        console.warn('[Hero Carousel] Carousel element not found');
-        return;
-    }
-    
-    console.log('[Hero Carousel] Carousel element found');
+    // ============================================
+    // CONFIGURATION - تنظیمات استاندارد برای محیط درمانی
+    // ============================================
+    const CONFIG = {
+        autoSlideDelay: 6500,        // 6.5 seconds - زمان مناسب برای خواندن محتوا
+        transitionDuration: 800,     // 0.8 seconds - transition نرم
+        initDelay: 2000,             // 2 seconds - تاخیر برای لود کامل تصاویر
+        easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // Easing حرفه‌ای
+        pauseOnHover: true,          // توقف هنگام hover
+        pauseOnFocus: true,          // توقف هنگام focus (accessibility)
+        loop: true,                   // Loop بین اسلایدها
+        keyboardNavigation: true,     // Navigation با کیبورد
+        touchSwipe: true             // Swipe برای موبایل
+    };
 
-    const carouselItems = heroCarousel.querySelectorAll('.carousel-item');
-    const indicators = heroCarousel.querySelectorAll('.hero-carousel-indicator');
-    const prevButton = heroCarousel.querySelector('.hero-carousel-controls.prev');
-    const nextButton = heroCarousel.querySelector('.hero-carousel-controls.next');
-    
-    console.log('[Hero Carousel] Found', carouselItems.length, 'carousel items');
-    
-    // Debug: Log all image URLs and verify they exist
-    carouselItems.forEach(function(item, index) {
-        const slide = item.querySelector('.hero-slide');
-        if (slide) {
-            const imageUrl = slide.getAttribute('data-image-url') || 'not set';
-            const inlineBg = slide.style.backgroundImage || 'not set';
-            console.log('[Hero Carousel] Slide', index, ':', {
-                'data-image-url': imageUrl,
-                'inline-background': inlineBg,
-                'has-active-class': item.classList.contains('active')
-            });
-            
-            // Try to verify image exists
-            if (imageUrl && imageUrl !== 'not set' && !imageUrl.includes('clinic-hero.jpg')) {
-                const img = new Image();
-                img.onload = function() {
-                    console.log('[Hero Carousel] ✓ Slide', index, 'image verified:', imageUrl);
-                };
-                img.onerror = function() {
-                    console.error('[Hero Carousel] ✗ Slide', index, 'image NOT FOUND:', imageUrl);
-                };
-                img.src = imageUrl;
-            }
-        }
-    });
-
+    // ============================================
+    // STATE MANAGEMENT
+    // ============================================
+    let carouselInstance = null;
     let currentIndex = 0;
     let autoSlideInterval = null;
-    const autoSlideDelay = 5000; // 5 seconds
+    let isPaused = false;
+    let isTransitioning = false;
+    let touchStartX = 0;
+    let touchEndX = 0;
 
-    /**
-     * Show specific slide
-     */
-    function showSlide(index) {
-        // Remove active class from all items and indicators
-        carouselItems.forEach(item => {
-            item.classList.remove('active');
-            item.style.opacity = '0';
-            item.style.visibility = 'hidden';
-            item.style.display = 'none';
-            item.style.marginRight = '-100%';
+    // ============================================
+    // DOM ELEMENTS
+    // ============================================
+    let heroCarousel = null;
+    let carouselItems = null;
+    let indicators = null;
+    let prevButton = null;
+    let nextButton = null;
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    function init() {
+        console.log('[Hero Carousel] ========================================');
+        console.log('[Hero Carousel] 🏥 Medical Carousel - Production Ready');
+        console.log('[Hero Carousel] ========================================');
+
+        // Find carousel element
+        heroCarousel = document.getElementById('heroCarousel');
+        if (!heroCarousel) {
+            console.warn('[Hero Carousel] ⚠️ Carousel element not found');
+            return false;
+        }
+
+        console.log('[Hero Carousel] ✅ Carousel element found');
+
+        // Get all elements
+        carouselItems = heroCarousel.querySelectorAll('.carousel-item');
+        indicators = heroCarousel.querySelectorAll('.hero-carousel-indicator');
+        prevButton = heroCarousel.querySelector('.hero-carousel-controls.prev');
+        nextButton = heroCarousel.querySelector('.hero-carousel-controls.next');
+
+        console.log('[Hero Carousel] Elements found:', {
+            slides: carouselItems.length,
+            indicators: indicators.length,
+            prevButton: prevButton ? '✅' : '❌',
+            nextButton: nextButton ? '✅' : '❌'
         });
-        indicators.forEach(indicator => indicator.classList.remove('active'));
 
-        // Add active class to current item and indicator
-        if (carouselItems[index]) {
-            const activeItem = carouselItems[index];
-            activeItem.classList.add('active');
-            
-            // Force visibility with important styles
-            activeItem.style.opacity = '1';
-            activeItem.style.visibility = 'visible';
-            activeItem.style.display = 'flex';
-            activeItem.style.marginRight = '0';
-            
-            // Ensure background image is loaded and displayed
-            const heroSlide = activeItem.querySelector('.hero-slide');
+        if (carouselItems.length === 0) {
+            console.warn('[Hero Carousel] ⚠️ No slides found');
+            return false;
+        }
+
+        // Initialize carousel
+        setupEventListeners();
+        showSlide(0, false); // Show first slide without transition
+
+        // Start auto-slide after delay
+        if (carouselItems.length > 1) {
+            setTimeout(function() {
+                startAutoSlide();
+                console.log('[Hero Carousel] ✅ Auto-slide started');
+            }, CONFIG.initDelay);
+        }
+
+        console.log('[Hero Carousel] ✅ Initialization complete');
+        console.log('[Hero Carousel] ========================================');
+
+        return true;
+    }
+
+    // ============================================
+    // SLIDE MANAGEMENT
+    // ============================================
+    function showSlide(index, animate = true) {
+        // Validate index
+        if (index < 0 || index >= carouselItems.length) {
+            console.warn('[Hero Carousel] ⚠️ Invalid slide index:', index);
+            return;
+        }
+
+        // Prevent concurrent transitions
+        if (isTransitioning) {
+            console.log('[Hero Carousel] ⚠️ Transition in progress, skipping...');
+            return;
+        }
+
+        if (animate) {
+            isTransitioning = true;
+        }
+
+        // Remove active class from all items
+        carouselItems.forEach(function(item, i) {
+            item.classList.remove('active');
+            if (i !== index) {
+                item.style.opacity = '0';
+                item.style.visibility = 'hidden';
+                item.style.display = 'none';
+                item.style.marginRight = '-100%';
+            }
+        });
+
+        // Remove active from indicators
+        indicators.forEach(function(indicator) {
+            indicator.classList.remove('active');
+            indicator.setAttribute('aria-selected', 'false');
+            indicator.setAttribute('tabindex', '-1');
+        });
+
+        // Show target slide
+        const targetSlide = carouselItems[index];
+        if (targetSlide) {
+            targetSlide.classList.add('active');
+            targetSlide.style.opacity = '1';
+            targetSlide.style.visibility = 'visible';
+            targetSlide.style.display = 'flex';
+            targetSlide.style.marginRight = '0';
+            targetSlide.style.transform = 'translateX(0)';
+
+            // Ensure background image is visible
+            const heroSlide = targetSlide.querySelector('.hero-slide');
             if (heroSlide) {
-                // Get image URL from data attribute or inline style
                 let imageUrl = heroSlide.getAttribute('data-image-url');
                 
-                // If not in data attribute, try to extract from inline style
                 if (!imageUrl || imageUrl === '') {
                     const bgImage = heroSlide.style.backgroundImage;
                     if (bgImage && bgImage !== 'none') {
@@ -91,181 +156,205 @@
                         }
                     }
                 }
-                
-                // Fallback to default if no URL found
-                if (!imageUrl || imageUrl === '') {
-                    imageUrl = '/Content/Images/clinic-hero.jpg';
+
+                if (imageUrl && imageUrl !== '') {
+                    imageUrl = imageUrl.replace(/^['"]|['"]$/g, '');
+                    heroSlide.style.backgroundImage = 'url(\'' + imageUrl + '\')';
+                    heroSlide.style.backgroundSize = 'cover';
+                    heroSlide.style.backgroundPosition = 'center';
+                    heroSlide.style.backgroundRepeat = 'no-repeat';
+                    heroSlide.style.backgroundColor = 'transparent';
                 }
-                
-                // Clean up URL (remove quotes if present)
-                imageUrl = imageUrl.replace(/^['"]|['"]$/g, '');
-                
-                // Preload image to ensure it's ready
-                const img = new Image();
-                img.onload = function() {
-                    // Set background image with proper URL encoding
-                    heroSlide.style.backgroundImage = 'url("' + imageUrl + '")';
-                    heroSlide.style.backgroundSize = 'cover';
-                    heroSlide.style.backgroundPosition = 'center';
-                    heroSlide.style.backgroundRepeat = 'no-repeat';
-                    heroSlide.style.opacity = '1';
-                    heroSlide.style.visibility = 'visible';
-                    heroSlide.style.display = 'flex';
-                    
-                    // Set CSS variable for fallback
-                    heroSlide.style.setProperty('--hero-slide-image', 'url("' + imageUrl + '")');
-                    
-                    console.log('[Hero Carousel] Image loaded successfully:', imageUrl);
-                };
-                img.onerror = function() {
-                    // Fallback to default image
-                    const fallbackUrl = '/Content/Images/clinic-hero.jpg';
-                    heroSlide.style.backgroundImage = 'url("' + fallbackUrl + '")';
-                    heroSlide.style.backgroundSize = 'cover';
-                    heroSlide.style.backgroundPosition = 'center';
-                    heroSlide.style.backgroundRepeat = 'no-repeat';
-                    heroSlide.style.opacity = '1';
-                    heroSlide.style.visibility = 'visible';
-                    heroSlide.style.display = 'flex';
-                    
-                    console.warn('[Hero Carousel] Image failed to load, using fallback:', imageUrl);
-                };
-                
-                // Set background image immediately (browser will use cached version if available)
-                heroSlide.style.backgroundImage = 'url("' + imageUrl + '")';
-                heroSlide.style.backgroundSize = 'cover';
-                heroSlide.style.backgroundPosition = 'center';
-                heroSlide.style.backgroundRepeat = 'no-repeat';
-                heroSlide.style.opacity = '1';
-                heroSlide.style.visibility = 'visible';
-                heroSlide.style.display = 'flex';
-                
-                // Start loading image for verification
-                img.src = imageUrl;
             }
-            
-            // Force content visibility
-            const content = activeItem.querySelector('.hero-slide-content');
+
+            // Show content
+            const content = targetSlide.querySelector('.hero-slide-content');
             if (content) {
                 content.style.opacity = '1';
                 content.style.visibility = 'visible';
             }
-            
-            // Force title, description, buttons visibility
-            const title = activeItem.querySelector('.hero-slide-title');
-            const description = activeItem.querySelector('.hero-slide-description');
-            const buttons = activeItem.querySelector('.hero-slide-buttons');
-            
-            if (title) {
-                title.style.opacity = '1';
-                title.style.visibility = 'visible';
-            }
-            if (description) {
-                description.style.opacity = '1';
-                description.style.visibility = 'visible';
-            }
-            if (buttons) {
-                buttons.style.opacity = '1';
-                buttons.style.visibility = 'visible';
-            }
         }
+
+        // Update indicator
         if (indicators[index]) {
             indicators[index].classList.add('active');
+            indicators[index].setAttribute('aria-selected', 'true');
+            indicators[index].setAttribute('tabindex', '0');
         }
 
         currentIndex = index;
+
+        if (animate) {
+            setTimeout(function() {
+                isTransitioning = false;
+            }, CONFIG.transitionDuration);
+        } else {
+            isTransitioning = false;
+        }
+
+        console.log('[Hero Carousel] 📍 Slide changed to:', index + 1, 'of', carouselItems.length);
     }
 
-    /**
-     * Go to next slide
-     */
+    // ============================================
+    // NAVIGATION
+    // ============================================
     function nextSlide() {
-        const nextIndex = (currentIndex + 1) % carouselItems.length;
+        if (carouselItems.length === 0) return;
+        
+        const nextIndex = CONFIG.loop 
+            ? (currentIndex + 1) % carouselItems.length
+            : Math.min(currentIndex + 1, carouselItems.length - 1);
+        
         showSlide(nextIndex);
     }
 
-    /**
-     * Go to previous slide
-     */
     function prevSlide() {
-        const prevIndex = (currentIndex - 1 + carouselItems.length) % carouselItems.length;
+        if (carouselItems.length === 0) return;
+        
+        const prevIndex = CONFIG.loop
+            ? (currentIndex - 1 + carouselItems.length) % carouselItems.length
+            : Math.max(currentIndex - 1, 0);
+        
         showSlide(prevIndex);
     }
 
-    /**
-     * Start auto slide
-     */
-    function startAutoSlide() {
-        stopAutoSlide();
-        autoSlideInterval = setInterval(nextSlide, autoSlideDelay);
+    function goToSlide(index) {
+        showSlide(index);
     }
 
-    /**
-     * Stop auto slide
-     */
+    // ============================================
+    // AUTO-SLIDE MANAGEMENT
+    // ============================================
+    function startAutoSlide() {
+        if (isPaused || carouselItems.length <= 1) {
+            return;
+        }
+
+        stopAutoSlide();
+
+        console.log('[Hero Carousel] ▶️ Starting auto-slide (', CONFIG.autoSlideDelay, 'ms)');
+        
+        autoSlideInterval = setInterval(function() {
+            if (!isPaused && !isTransitioning) {
+                nextSlide();
+            }
+        }, CONFIG.autoSlideDelay);
+    }
+
     function stopAutoSlide() {
         if (autoSlideInterval) {
             clearInterval(autoSlideInterval);
             autoSlideInterval = null;
+            console.log('[Hero Carousel] ⏹️ Auto-slide stopped');
         }
     }
 
-    // Event Listeners
-    if (nextButton) {
-        nextButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            nextSlide();
-            startAutoSlide(); // Restart auto slide after manual navigation
-        });
+    function pauseAutoSlide() {
+        if (!isPaused) {
+            isPaused = true;
+            stopAutoSlide();
+            console.log('[Hero Carousel] ⏸️ Auto-slide paused');
+        }
     }
 
-    if (prevButton) {
-        prevButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            prevSlide();
-            startAutoSlide(); // Restart auto slide after manual navigation
-        });
+    function resumeAutoSlide() {
+        if (isPaused) {
+            isPaused = false;
+            startAutoSlide();
+            console.log('[Hero Carousel] ▶️ Auto-slide resumed');
+        }
     }
 
-    // Indicator clicks
-    indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', function() {
-            showSlide(index);
-            startAutoSlide(); // Restart auto slide after manual navigation
-        });
-    });
-
-    // Pause on hover
-    heroCarousel.addEventListener('mouseenter', stopAutoSlide);
-    heroCarousel.addEventListener('mouseleave', startAutoSlide);
-
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-        if (heroCarousel.matches(':hover') || document.activeElement === heroCarousel) {
-            if (e.key === 'ArrowRight') {
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    function setupEventListeners() {
+        // Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                console.log('[Hero Carousel] 🔄 Next button clicked');
                 nextSlide();
-                startAutoSlide();
-            } else if (e.key === 'ArrowLeft') {
+                resumeAutoSlide();
+            });
+
+            nextButton.addEventListener('touchend', function(e) {
                 e.preventDefault();
-                prevSlide();
-                startAutoSlide();
-            }
+                e.stopPropagation();
+                nextSlide();
+                resumeAutoSlide();
+            });
         }
-    });
 
-    // Touch swipe support
-    let touchStartX = 0;
-    let touchEndX = 0;
+        // Prev Button
+        if (prevButton) {
+            prevButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Hero Carousel] 🔄 Prev button clicked');
+                prevSlide();
+                resumeAutoSlide();
+            });
 
-    heroCarousel.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-    });
+            prevButton.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                prevSlide();
+                resumeAutoSlide();
+            });
+        }
 
-    heroCarousel.addEventListener('touchend', function(e) {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    });
+        // Indicators
+        indicators.forEach(function(indicator, index) {
+            indicator.addEventListener('click', function() {
+                console.log('[Hero Carousel] 🔄 Indicator', index + 1, 'clicked');
+                goToSlide(index);
+                resumeAutoSlide();
+            });
+        });
+
+        // Pause on hover
+        if (CONFIG.pauseOnHover) {
+            heroCarousel.addEventListener('mouseenter', pauseAutoSlide);
+            heroCarousel.addEventListener('mouseleave', resumeAutoSlide);
+        }
+
+        // Pause on focus (accessibility)
+        if (CONFIG.pauseOnFocus) {
+            heroCarousel.addEventListener('focusin', pauseAutoSlide);
+            heroCarousel.addEventListener('focusout', resumeAutoSlide);
+        }
+
+        // Keyboard navigation
+        if (CONFIG.keyboardNavigation) {
+            document.addEventListener('keydown', function(e) {
+                if (heroCarousel.matches(':hover') || document.activeElement === heroCarousel) {
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        nextSlide();
+                        resumeAutoSlide();
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        prevSlide();
+                        resumeAutoSlide();
+                    }
+                }
+            });
+        }
+
+        // Touch swipe
+        if (CONFIG.touchSwipe) {
+            heroCarousel.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            heroCarousel.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+        }
+    }
 
     function handleSwipe() {
         const swipeThreshold = 50;
@@ -279,54 +368,105 @@
                 // Swipe right (prev)
                 prevSlide();
             }
-            startAutoSlide();
+            resumeAutoSlide();
         }
     }
 
-    // Initialize
-    function initializeCarousel() {
-        if (carouselItems.length > 0) {
-            console.log('[Hero Carousel] ========================================');
-            console.log('[Hero Carousel] Initializing with', carouselItems.length, 'slides');
-            console.log('[Hero Carousel] ========================================');
-            
-            // Show first slide immediately
-            showSlide(0);
-            
-            // Start auto slide if multiple slides
-            if (carouselItems.length > 1) {
-                startAutoSlide();
-            }
-            
-            // Force re-render after a short delay to ensure images load
+    // ============================================
+    // PUBLIC API
+    // ============================================
+    carouselInstance = {
+        next: nextSlide,
+        prev: prevSlide,
+        goTo: goToSlide,
+        pause: pauseAutoSlide,
+        resume: resumeAutoSlide,
+        start: startAutoSlide,
+        stop: stopAutoSlide,
+        getCurrentIndex: function() { return currentIndex; },
+        getTotalSlides: function() { return carouselItems ? carouselItems.length : 0; }
+    };
+
+    // ============================================
+    // STARTUP - Multiple initialization strategies
+    // ============================================
+    function startup() {
+        console.log('[Hero Carousel] 🚀 Starting initialization...');
+        console.log('[Hero Carousel] Document readyState:', document.readyState);
+
+        // Strategy 1: If DOM is already ready, initialize immediately
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            console.log('[Hero Carousel] DOM already ready, initializing...');
             setTimeout(function() {
-                showSlide(0);
-                console.log('[Hero Carousel] ========================================');
-                console.log('[Hero Carousel] Initialization complete');
-                console.log('[Hero Carousel] Current slide:', currentIndex);
-                console.log('[Hero Carousel] ========================================');
-            }, 300);
+                if (init()) {
+                    // If initialization successful, start auto-slide after delay
+                    if (carouselItems && carouselItems.length > 1) {
+                        setTimeout(function() {
+                            startAutoSlide();
+                        }, CONFIG.initDelay);
+                    }
+                }
+            }, 100);
         } else {
-            console.warn('[Hero Carousel] ⚠️ No slides found');
+            // Strategy 2: Wait for DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('[Hero Carousel] DOMContentLoaded fired');
+                setTimeout(function() {
+                    if (init()) {
+                        if (carouselItems && carouselItems.length > 1) {
+                            setTimeout(function() {
+                                startAutoSlide();
+                            }, CONFIG.initDelay);
+                        }
+                    }
+                }, 100);
+            });
         }
-    }
-    
-    // Wait for DOM to be fully ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeCarousel, 100);
-        });
-    } else {
-        setTimeout(initializeCarousel, 100);
-    }
-    
-    // Also initialize on window load (after all images are loaded)
-    window.addEventListener('load', function() {
-        if (carouselItems.length > 0) {
-            setTimeout(function() {
-                showSlide(currentIndex);
-            }, 200);
-        }
-    });
-})();
 
+        // Strategy 3: Also initialize on window load (after all resources load)
+        window.addEventListener('load', function() {
+            console.log('[Hero Carousel] Window load fired');
+            if (carouselItems && carouselItems.length > 0) {
+                setTimeout(function() {
+                    showSlide(currentIndex, false);
+                    if (carouselItems.length > 1 && !isPaused && !autoSlideInterval) {
+                        startAutoSlide();
+                    }
+                }, 500);
+            }
+        });
+
+        // Strategy 4: Fallback - try to initialize after a delay
+        setTimeout(function() {
+            const carousel = document.getElementById('heroCarousel');
+            if (carousel && (!carouselInstance || !carouselItems)) {
+                console.log('[Hero Carousel] Fallback initialization triggered');
+                if (init()) {
+                    if (carouselItems && carouselItems.length > 1) {
+                        setTimeout(function() {
+                            startAutoSlide();
+                        }, CONFIG.initDelay);
+                    }
+                }
+            }
+        }, 1000);
+    }
+
+    // Expose to global scope BEFORE initialization (for immediate access)
+    window.HeroCarousel = carouselInstance;
+    window.initHeroCarousel = function() {
+        console.log('[Hero Carousel] Manual initialization triggered');
+        if (init()) {
+            if (carouselItems && carouselItems.length > 1) {
+                setTimeout(function() {
+                    startAutoSlide();
+                }, CONFIG.initDelay);
+            }
+        }
+    };
+
+    // Start initialization immediately
+    console.log('[Hero Carousel] Script loaded, starting initialization...');
+    startup();
+
+})();

@@ -176,8 +176,26 @@ else
                             id: @slide.SliderId,
                             title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.Title ?? ""))',
                             imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))',
-                            isActive: @(i == 0 ? "true" : "false")
+                            isActive: @(i == 0 ? "true" : "false"),
+                            computedStyle: 'url(\'@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))\')'
                         });
+                        
+                        // Verify image exists
+                        @if (!string.IsNullOrWhiteSpace(imageUrl))
+                        {
+                            <text>
+                            (function() {
+                                var img = new Image();
+                                img.onload = function() {
+                                    console.log('✅ Image @(i + 1) loaded successfully:', '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))');
+                                };
+                                img.onerror = function() {
+                                    console.error('❌ Image @(i + 1) FAILED to load:', '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))');
+                                };
+                                img.src = '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))';
+                            })();
+                            </text>
+                        }
                     </script>
                 }
             </div>
@@ -215,6 +233,50 @@ else
         <script>
             console.log('✅ Hero Carousel: HTML structure rendered');
             console.log('✅ Hero Carousel: Controls and indicators added');
+        </script>
+        
+        @* Load Carousel Script Immediately - Inline for immediate execution *@
+        <script>
+            console.log('📜 Hero Section: Loading carousel script immediately');
+        </script>
+        <script src="@Url.Content("~/Content/js/hero-carousel.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+        <script>
+            console.log('✅ Hero Section: Carousel script loaded');
+            
+            // Immediate verification and manual init if needed
+            (function() {
+                var checkCount = 0;
+                var maxChecks = 10;
+                
+                function checkCarousel() {
+                    checkCount++;
+                    console.log('[Hero Carousel] Check attempt', checkCount);
+                    
+                    if (typeof window.HeroCarousel !== 'undefined') {
+                        console.log('✅ Hero Carousel API available');
+                        console.log('Current slide:', window.HeroCarousel.getCurrentIndex() + 1, 'of', window.HeroCarousel.getTotalSlides());
+                        return;
+                    }
+                    
+                    if (typeof window.initHeroCarousel === 'function') {
+                        console.log('[Hero Carousel] Manual initialization available');
+                        // Try manual init after a short delay
+                        setTimeout(function() {
+                            window.initHeroCarousel();
+                        }, 500);
+                        return;
+                    }
+                    
+                    if (checkCount < maxChecks) {
+                        setTimeout(checkCarousel, 200);
+                    } else {
+                        console.error('❌ Hero Carousel: Failed to initialize after', maxChecks, 'attempts');
+                    }
+                }
+                
+                // Start checking
+                setTimeout(checkCarousel, 100);
+            })();
         </script>
     }
     else
@@ -334,39 +396,28 @@ else
 }
 
 @* ============================================
-   SCRIPTS LOADING
+   SCRIPTS LOADING - Additional verification
    ============================================ *@
-@section Scripts {
+@section scripts {
+    @* Additional debug scripts if needed *@
     @if (validSlides.Count > 1)
     {
         <script>
-            console.log('📜 Hero Section: Loading carousel script');
-        </script>
-        <script src="~/Content/js/hero-carousel.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
-        <script>
-            console.log('✅ Hero Section: Carousel script loaded');
-            
-            // Wait for DOM to be ready
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 Hero Section: DOM ready, initializing carousel');
-                
-                var carousel = document.getElementById('heroCarousel');
-                if (carousel) {
-                    console.log('✅ Hero Carousel: Element found in DOM');
-                    console.log('Carousel Data:', {
-                        slidesCount: carousel.getAttribute('data-slides-count'),
-                        activeSlide: carousel.querySelector('.carousel-item.active') ? 'found' : 'not found'
-                    });
+            // Verify carousel is initialized after a delay
+            setTimeout(function() {
+                console.log('[Hero Carousel] 🔍 Verification check...');
+                if (typeof window.HeroCarousel !== 'undefined') {
+                    console.log('✅ Hero Carousel: Verified initialized');
+                    console.log('Current slide:', window.HeroCarousel.getCurrentIndex() + 1, 'of', window.HeroCarousel.getTotalSlides());
                 } else {
-                    console.error('❌ Hero Carousel: Element not found in DOM');
+                    console.warn('⚠️ Hero Carousel: Not initialized - attempting manual init');
+                    if (typeof window.initHeroCarousel === 'function') {
+                        window.initHeroCarousel();
+                    } else {
+                        console.error('❌ Hero Carousel: initHeroCarousel function not found');
+                    }
                 }
-            });
-        </script>
-    }
-    else
-    {
-        <script>
-            console.log('ℹ️ Hero Section: Single slide mode - No carousel script needed');
+            }, 3000);
         </script>
     }
 }
