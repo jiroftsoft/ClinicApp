@@ -2,57 +2,116 @@
 
 @if (Model.Posts != null && Model.Posts.Any())
 {
-    <section class="blog-section mb-5">
+    <section class="blog-section" aria-label="مقالات و بلاگ">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">@Model.SectionTitle</h2>
-                <p class="lead text-muted" style="max-width: 700px; margin: 1rem auto;">
-                    @Model.SectionSubtitle
-                </p>
+            <div class="blog-header">
+                <h2 class="blog-title">@Model.SectionTitle</h2>
+                <p class="blog-subtitle">@Model.SectionSubtitle</p>
             </div>
 
-            <div class="row">
+            <div class="blog-grid">
                 @foreach (var post in Model.Posts)
                 {
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100" style="border-radius: 16px; overflow: hidden;">
+                    <article class="blog-card animate-slide-up" tabindex="0" role="article" aria-label="@post.Title">
+                        <div class="blog-image-wrapper">
                             @if (!string.IsNullOrEmpty(post.ImageUrl))
                             {
                                 <img src="@post.ImageUrl" 
-                                     class="card-img-top" 
+                                     class="blog-image" 
                                      alt="@post.Title"
-                                     style="height: 200px; object-fit: cover;"
-                                     onerror="this.src='/Content/Images/default-blog.jpg'">
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-blog.jpg'">
                             }
-                            <div class="card-body p-4">
-                                <h3 class="h5 mb-3" style="color: var(--primary-color);">@post.Title</h3>
-                                <p class="text-muted mb-3">@post.Summary</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">
-                                        @if (post.PublishedAt.HasValue)
-                                        {
-                                            @post.PublishedAt.Value.ToString("yyyy/MM/dd")
-                                        }
-                                    </small>
-                                    <a href="@post.PostUrl" class="btn btn-sm btn-outline-primary">
-                                        ادامه مطلب <i class="fas fa-arrow-left me-2"></i>
-                                    </a>
+                            else
+                            {
+                                <div class="blog-image-placeholder">
+                                    <i class="fas fa-newspaper" aria-hidden="true"></i>
                                 </div>
-                            </div>
+                            }
+                            @if (!string.IsNullOrEmpty(post.CategoryName))
+                            {
+                                <span class="blog-category-badge">
+                                    <i class="fas fa-tag" aria-hidden="true"></i>
+                                    @post.CategoryName
+                                </span>
+                            }
                         </div>
-                    </div>
+                        
+                        <div class="blog-content">
+                            <h3 class="blog-post-title">@post.Title</h3>
+                            
+                            @if (!string.IsNullOrEmpty(post.Summary))
+                            {
+                                <p class="blog-post-summary">@post.Summary</p>
+                            }
+                            
+                            <div class="blog-meta">
+                                @if (!string.IsNullOrEmpty(post.AuthorName))
+                                {
+                                    <div class="blog-meta-item blog-author">
+                                        <i class="fas fa-user" aria-hidden="true"></i>
+                                        <span>@post.AuthorName</span>
+                                    </div>
+                                }
+                                @if (post.PublishedAt.HasValue)
+                                {
+                                    <div class="blog-meta-item blog-date">
+                                        <i class="fas fa-calendar" aria-hidden="true"></i>
+                                        <span>@ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)</span>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <a href="@post.PostUrl" class="blog-button" aria-label="خواندن مقاله @post.Title">
+                                <span>ادامه مطلب</span>
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </article>
                 }
             </div>
 
             @if (!string.IsNullOrEmpty(Model.ViewAllPostsUrl))
             {
-                <div class="text-center mt-4">
-                    <a href="@Model.ViewAllPostsUrl" class="btn btn-primary btn-lg px-5 py-3">
-                        <i class="fas fa-book me-2"></i> مشاهده همه مقالات
+                <div class="blog-view-all">
+                    <a href="@Model.ViewAllPostsUrl" class="blog-view-all-button" aria-label="مشاهده همه مقالات">
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                        <span>مشاهده همه مقالات</span>
                     </a>
                 </div>
             }
         </div>
     </section>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")" />
+}
+
+@section Scripts {
+    <script>
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.blog-card');
+            
+            if (cards.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
 }
 

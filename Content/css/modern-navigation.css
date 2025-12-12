@@ -1,0 +1,432 @@
+/**
+ * 🧭 Modern Navigation Styles
+ * 
+ * استایل‌های حرفه‌ای برای Navigation و MegaMenu
+ * استفاده از Design System Variables
+ */
+
+/* ============================================
+   📍 NAVBAR - Navigation Bar
+   ============================================ */
+
+.modern-navbar {
+    background-color: var(--medical-primary);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-sm) 0;
+    transition: all var(--transition-normal) var(--ease-out);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.modern-navbar.scrolled {
+    background-color: var(--medical-primary-dark);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-xs) 0;
+}
+
+.modern-navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Navbar Brand */
+.navbar-brand-modern {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: white !important;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.navbar-brand-modern:hover {
+    color: var(--medical-primary-lighter) !important;
+    transform: scale(1.05);
+}
+
+.navbar-brand-modern i {
+    color: var(--medical-warning);
+    font-size: var(--font-size-2xl);
+}
+
+/* Navbar Toggler (Mobile) */
+.navbar-toggler-modern {
+    background-color: transparent;
+    border: 2px solid white;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: white;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.navbar-toggler-modern:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-toggler-modern:focus {
+    outline: 2px solid var(--medical-warning);
+    outline-offset: 2px;
+}
+
+.navbar-toggler-modern .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background-color: white;
+    border-radius: 1px;
+    transition: all var(--transition-normal) var(--ease-out);
+    margin: 4px 0;
+}
+
+.navbar-toggler-modern.active .icon-bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.navbar-toggler-modern.active .icon-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-toggler-modern.active .icon-bar:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Navbar Nav */
+.navbar-nav-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item-modern {
+    position: relative;
+}
+
+.nav-link-modern {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-decoration: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal) var(--ease-out);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    position: relative;
+}
+
+.nav-link-modern:hover,
+.nav-link-modern.active {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.nav-link-modern:focus {
+    outline: 2px solid var(--medical-warning);
+    outline-offset: 2px;
+}
+
+.nav-link-modern i {
+    font-size: var(--font-size-sm);
+}
+
+/* Dropdown Toggle */
+.dropdown-toggle-modern::after {
+    content: '\f107';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    border: none;
+    margin-right: var(--spacing-xs);
+    transition: transform var(--transition-normal) var(--ease-out);
+}
+
+.dropdown-modern.show .dropdown-toggle-modern::after {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   🎯 MEGAMENU - Mega Menu
+   ============================================ */
+
+.megamenu-modern {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xl);
+    min-width: 700px;
+    max-width: 900px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-normal) var(--ease-out);
+    z-index: 1000;
+}
+
+.dropdown-modern:hover .megamenu-modern,
+.dropdown-modern.show .megamenu-modern {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.megamenu-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.megamenu-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.megamenu-header-modern {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-primary);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--medical-border);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.megamenu-header-modern i {
+    color: var(--medical-primary);
+    font-size: var(--font-size-xl);
+}
+
+.megamenu-link-modern {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    color: var(--medical-text);
+    text-decoration: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal) var(--ease-out);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.megamenu-link-modern:hover {
+    background-color: var(--medical-primary-lighter);
+    color: var(--medical-primary);
+    transform: translateX(-5px);
+    padding-right: var(--spacing-lg);
+}
+
+.megamenu-link-modern i {
+    color: var(--medical-primary);
+    font-size: var(--font-size-sm);
+    width: 20px;
+    text-align: center;
+}
+
+.megamenu-featured-modern {
+    background: var(--medical-gradient-light);
+    border: 2px solid var(--medical-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}
+
+.megamenu-featured-modern h5 {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-primary);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.megamenu-featured-modern p {
+    font-size: var(--font-size-base);
+    color: var(--medical-text);
+    margin-bottom: var(--spacing-md);
+}
+
+.megamenu-featured-modern .btn {
+    background-color: var(--medical-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.megamenu-featured-modern .btn:hover {
+    background-color: var(--medical-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+   📱 MOBILE MENU - منوی موبایل
+   ============================================ */
+
+@media (max-width: 991.98px) {
+    .navbar-toggler-modern {
+        display: flex;
+    }
+    
+    .navbar-nav-modern {
+        position: fixed;
+        top: 60px;
+        right: -100%;
+        width: 280px;
+        height: calc(100vh - 60px);
+        background-color: var(--medical-primary-dark);
+        flex-direction: column;
+        align-items: stretch;
+        padding: var(--spacing-lg);
+        gap: var(--spacing-sm);
+        transition: right var(--transition-normal) var(--ease-out);
+        overflow-y: auto;
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .navbar-nav-modern.active {
+        right: 0;
+    }
+    
+    .nav-link-modern {
+        width: 100%;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-md);
+    }
+    
+    .dropdown-modern {
+        width: 100%;
+    }
+    
+    .megamenu-modern {
+        position: static;
+        min-width: 100%;
+        max-width: 100%;
+        margin-top: var(--spacing-sm);
+        margin-right: var(--spacing-md);
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        box-shadow: none;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .megamenu-content {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .megamenu-header-modern {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .megamenu-link-modern {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .megamenu-link-modern:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+    
+    .megamenu-featured-modern {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .megamenu-featured-modern h5 {
+        color: white;
+    }
+    
+    .megamenu-featured-modern p {
+        color: rgba(255, 255, 255, 0.9);
+    }
+}
+
+/* ============================================
+   🎨 USER MENU - منوی کاربر
+   ============================================ */
+
+.user-menu-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+/* ============================================
+   ⚡ ANIMATIONS - انیمیشن‌ها
+   ============================================ */
+
+@keyframes slideDownMenu {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.megamenu-modern {
+    animation: slideDownMenu var(--transition-normal) var(--ease-out);
+}
+
+/* ============================================
+   ♿ ACCESSIBILITY - دسترسی‌پذیری
+   ============================================ */
+
+.nav-link-modern:focus-visible,
+.megamenu-link-modern:focus-visible {
+    outline: 2px solid var(--medical-warning);
+    outline-offset: 2px;
+}
+
+/* Skip Link */
+.skip-to-main {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background-color: var(--medical-primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-decoration: none;
+    z-index: 10000;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.skip-to-main:focus {
+    top: 0;
+}
+

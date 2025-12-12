@@ -1,0 +1,86 @@
+/* Homepage Layout Styles */
+.homepage-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xxl);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+}
+
+.homepage-main-content {
+    width: 100%;
+}
+
+.homepage-sidebar {
+    width: 100%;
+}
+
+/* Desktop Layout: Sidebar + Main Content */
+@media (min-width: 1200px) {
+    .homepage-layout {
+        grid-template-columns: 1fr 320px;
+        gap: var(--space-xxl);
+    }
+    
+    .homepage-main-content {
+        order: 1;
+    }
+    
+    .homepage-sidebar {
+        order: 2;
+        position: sticky;
+        top: 100px;
+        align-self: start;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* Tablet Layout */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .homepage-layout {
+        grid-template-columns: 1fr 280px;
+        gap: var(--space-xl);
+    }
+    
+    .homepage-sidebar {
+        position: sticky;
+        top: 100px;
+        align-self: start;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* Mobile Layout: Stack vertically */
+@media (max-width: 991.98px) {
+    .homepage-layout {
+        grid-template-columns: 1fr;
+        gap: var(--space-xl);
+    }
+    
+    .homepage-sidebar {
+        order: -1; /* Show sidebar first on mobile */
+    }
+}
+
+/* Scrollbar Styling for Sidebar */
+.homepage-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.homepage-sidebar::-webkit-scrollbar-track {
+    background: var(--background-light);
+    border-radius: var(--border-radius-full);
+}
+
+.homepage-sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--border-radius-full);
+}
+
+.homepage-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-color);
+}
+

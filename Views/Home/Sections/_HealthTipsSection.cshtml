@@ -6,67 +6,76 @@
     }
 }
 
-<section class="health-tips-section py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")" />
+
+<section class="health-tips-section animate-fade-in">
     <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="section-title text-white mb-3">
-                    <i class="fas fa-heartbeat"></i>
-                    نکات سلامت
-                </h2>
-                <p class="section-subtitle text-white-50">راهنمایی‌های مفید برای حفظ سلامت شما</p>
-            </div>
+        <div class="text-center mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-heartbeat"></i>
+                نکات سلامت
+            </h2>
+            <p class="section-subtitle">راهنمایی‌های مفید برای حفظ سلامت شما</p>
         </div>
 
         <div class="row">
-            @foreach (var tip in Model)
+            @for (int i = 0; i < Model.Count; i++)
             {
+                var tip = Model[i];
                 <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="card health-tip-card h-100 shadow-lg border-0">
+                    <div class="health-tip-card animate-in" style="animation-delay: @(0.1 * i)s;">
                         @if (!string.IsNullOrEmpty(tip.ThumbnailUrl))
                         {
-                            <img src="@tip.ThumbnailUrl" class="card-img-top" alt="@tip.Title" style="height: 200px; object-fit: cover;">
+                            <img src="@tip.ThumbnailUrl" 
+                                 class="card-img-top" 
+                                 alt="@tip.Title"
+                                 loading="lazy"
+                                 onerror="this.src='/Content/Images/default-health-tip.jpg'">
                         }
                         else if (!string.IsNullOrEmpty(tip.ImageUrl))
                         {
-                            <img src="@tip.ImageUrl" class="card-img-top" alt="@tip.Title" style="height: 200px; object-fit: cover;">
+                            <img src="@tip.ImageUrl" 
+                                 class="card-img-top" 
+                                 alt="@tip.Title"
+                                 loading="lazy"
+                                 onerror="this.src='/Content/Images/default-health-tip.jpg'">
                         }
                         else
                         {
-                            <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <i class="fas fa-heartbeat fa-3x text-white"></i>
+                            <div class="default-image-placeholder">
+                                <i class="fas fa-heartbeat"></i>
                             </div>
                         }
                         
-                        <div class="card-body d-flex flex-column">
+                        <div class="card-body">
                             <div class="mb-2">
-                                <span class="badge badge-primary">
+                                <span class="badge-category category-@tip.Category?.ToLower()">
                                     <i class="@GetCategoryIcon(tip.Category)"></i>
                                     @tip.CategoryDisplayName
                                 </span>
                             </div>
                             
-                            <h5 class="card-title font-weight-bold">@tip.Title</h5>
+                            <h5 class="card-title">@tip.Title</h5>
                             
                             @if (!string.IsNullOrEmpty(tip.Summary))
                             {
-                                <p class="card-text text-muted flex-grow-1">@(tip.Summary.Length > 120 ? tip.Summary.Substring(0, 120) + "..." : tip.Summary)</p>
+                                <p class="card-text">@(tip.Summary.Length > 120 ? tip.Summary.Substring(0, 120) + "..." : tip.Summary)</p>
                             }
                             
-                            <div class="mt-auto pt-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <small class="text-muted">
-                                        <i class="fas fa-eye"></i> @tip.ViewCount بازدید
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="fas fa-share-alt"></i> @tip.ShareCount اشتراک
-                                    </small>
-                                </div>
-                                
-                                <a href="@Url.Action("Details", "HealthTip", new { slug = tip.Slug })" class="btn btn-primary btn-block">
-                                    <i class="fas fa-arrow-left"></i> مطالعه بیشتر
-                                </a>
+                            <div class="tip-meta">
+                                <small class="meta-item">
+                                    <i class="fas fa-eye"></i> @tip.ViewCount بازدید
+                                </small>
+                                <small class="meta-item">
+                                    <i class="fas fa-share-alt"></i> @tip.ShareCount اشتراک
+                                </small>
                             </div>
+                            
+                            <a href="@Url.Action("Details", "HealthTip", new { slug = tip.Slug })" 
+                               class="btn btn-medical-primary btn-read-more w-100"
+                               aria-label="مطالعه بیشتر درباره @tip.Title">
+                                <i class="fas fa-arrow-left me-2"></i> مطالعه بیشتر
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -75,8 +84,10 @@
 
         <div class="row mt-4">
             <div class="col-12 text-center">
-                <a href="@Url.Action("Index", "HealthTip")" class="btn btn-light btn-lg">
-                    <i class="fas fa-list"></i> مشاهده همه نکات سلامت
+                <a href="@Url.Action("Index", "HealthTip")" 
+                   class="btn btn-medical-primary btn-lg btn-view-all animate-scale-in" 
+                   style="animation-delay: @(0.1 * Model.Count)s;">
+                    <i class="fas fa-list me-2"></i> مشاهده همه نکات سلامت
                 </a>
             </div>
         </div>
@@ -97,49 +108,4 @@
         };
     }
 }
-
-<style>
-    .health-tips-section {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .health-tip-card {
-        border-radius: 15px;
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-
-    .health-tip-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
-    }
-
-    .health-tip-card .card-img-top {
-        transition: transform 0.3s ease;
-    }
-
-    .health-tip-card:hover .card-img-top {
-        transform: scale(1.1);
-    }
-
-    .section-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
-
-    .section-subtitle {
-        font-size: 1.1rem;
-    }
-
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    @@media (max-width: 768px) {
-        .section-title {
-            font-size: 2rem;
-        }
-    }
-</style>
 

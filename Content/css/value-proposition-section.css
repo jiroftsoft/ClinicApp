@@ -1,0 +1,168 @@
+/**
+ * 🎯 Value Proposition Section Styles
+ * 
+ * استایل‌های حرفه‌ای برای بخش Value Proposition
+ * استفاده از Design System Variables
+ */
+
+.value-proposition-section {
+    padding: var(--spacing-xxxl) 0;
+    background-color: var(--medical-bg);
+}
+
+.value-proposition-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.value-proposition-card {
+    background-color: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    transition: all var(--transition-normal) var(--ease-out);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.value-proposition-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--medical-primary);
+}
+
+.value-proposition-icon-wrapper {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--medical-primary-lighter);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--spacing-lg);
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.value-proposition-card:hover .value-proposition-icon-wrapper {
+    background-color: var(--medical-primary);
+    transform: scale(1.1);
+}
+
+.value-proposition-icon {
+    font-size: var(--font-size-4xl);
+    color: var(--medical-primary);
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.value-proposition-card:hover .value-proposition-icon {
+    color: white;
+    transform: scale(1.1);
+}
+
+.value-proposition-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-primary);
+    margin-bottom: var(--spacing-md);
+    line-height: var(--line-height-tight);
+}
+
+.value-proposition-description {
+    font-size: var(--font-size-base);
+    color: var(--medical-text-muted);
+    line-height: var(--line-height-relaxed);
+    flex: 1;
+}
+
+/* Animation Classes */
+.value-proposition-card.animate-in {
+    animation: fadeIn var(--transition-slow) var(--ease-out) both;
+}
+
+.value-proposition-card.animate-slide-up {
+    animation: slideUp var(--transition-slow) var(--ease-out) both;
+}
+
+.value-proposition-card.animate-scale-in {
+    animation: scaleIn var(--transition-slow) var(--ease-out) both;
+}
+
+/* Stagger Animation */
+.value-proposition-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.value-proposition-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.value-proposition-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.value-proposition-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.value-proposition-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.value-proposition-card:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+/* Responsive Design */
+@media (max-width: 767.98px) {
+    .value-proposition-section {
+        padding: var(--spacing-xxl) 0;
+    }
+    
+    .value-proposition-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .value-proposition-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .value-proposition-icon-wrapper {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .value-proposition-icon {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .value-proposition-title {
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .value-proposition-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (min-width: 992px) {
+    .value-proposition-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Accessibility */
+.value-proposition-card:focus-within {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 4px;
+}
+

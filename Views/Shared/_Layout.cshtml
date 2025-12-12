@@ -20,7 +20,7 @@
     <!-- Only apply default CSP if not already set in MetaTags section -->
     @if (!IsSectionDefined("MetaTags"))
     {
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://cdn.ckeditor.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://cdn.ckeditor.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.ckeditor.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:5000 ws://localhost:5000; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://cdn.ckeditor.com https://maps.googleapis.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://cdn.ckeditor.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.ckeditor.com https://maps.googleapis.com; img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:5000 ws://localhost:5000 https://maps.googleapis.com; frame-src 'self' https://www.google.com https://maps.google.com https://maps.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     }
     
     <meta name="description" content="کلینیک شفا جیرفت با ارائه خدمات درمانی تخصصی، پزشکان باتجربه و تجهیزات پیشرفته. رزرو آنلاین نوبت، مشاوره پزشکی و خدمات درمانی با کیفیت در شهر جیرفت." />
@@ -159,6 +159,12 @@
     </style>
     <!-- Font Awesome Local (Better Performance & Security) -->
     <link rel="stylesheet" href="@Url.Content("~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css")" />
+    <!-- Design System - باید قبل از سایر CSS ها لود شود -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/design-system.css")" />
+    <!-- Modern Navigation - باید بعد از Design System لود شود -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/modern-navigation.css")" />
+    <!-- Footer Styles -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/footer.css")" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
     @RenderSection("styles", required: false)
@@ -279,62 +285,7 @@
             margin-top: 1rem;
         }
         /* --- End Megamenu --- */
-        footer {
-            background: linear-gradient(to top, #1A202C, #2D3748);
-            color: white;
-            padding-top: 3rem;
-            border-top: 4px solid;
-            border-image: var(--golden-accent) 1;
-        }
-
-        .footer-column h5 {
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links a {
-            color: #e0f0ff;
-            text-decoration: none;
-            transition: var(--transition);
-            display: inline-block;
-        }
-
-        .footer-links a:hover,
-        .footer-links a:focus-visible {
-            color: var(--accent-color);
-            transform: translateX(5px);
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        .social-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            color: white;
-            transition: var(--transition);
-        }
-
-        .social-icon:hover,
-        .social-icon:focus-visible {
-            background: var(--accent-color);
-            transform: translateY(-4px);
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        .copyright {
-            text-align: center;
-            padding: 1.5rem 0;
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: #cbd5e0;
-            font-size: 0.9rem;
-        }
+        /* Footer styles moved to Content/css/footer.css */
         /* --- Toastr Position --- */
         .toast-top-left {
             top: 80px !important;
@@ -370,61 +321,247 @@
             </div>
         </div>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark main-navbar">
+        <a href="#mainContent" class="skip-to-main">پرش به محتوای اصلی</a>
+        <nav class="modern-navbar" role="navigation" aria-label="منوی اصلی">
             <div class="container">
-                <a class="navbar-brand" href="@Url.Action("Index", "Home")" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
-                    <i class="fas fa-heartbeat" aria-hidden="true"></i> کلینیک شفا جیرفت
+                <a class="navbar-brand-modern" href="@Url.Action("Index", "Home")" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    <span>کلینیک شفا جیرفت</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav-collapse" aria-controls="main-nav-collapse" aria-expanded="false" aria-label="باز کردن منوی اصلی">
-                    <span class="navbar-toggler-icon" aria-hidden="true"></span>
+                <button class="navbar-toggler-modern" type="button" aria-label="باز کردن منوی اصلی" aria-expanded="false">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
                 </button>
-                <div class="collapse navbar-collapse" id="main-nav-collapse">
-                    <ul class="navbar-nav mx-auto">
-                        <li class="nav-item">@Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })</li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="servicesDropdown">خدمات</a>
-                            <div class="dropdown-menu megamenu" aria-labelledby="servicesDropdown">
-                                <div class="row">
-                                    <div class="col-lg-4">
-                                        <h6 class="megamenu-header"><i class="fas fa-stethoscope" aria-hidden="true"></i> خدمات عمومی</h6>
-                                        <a href="#" class="megamenu-link">معاینه عمومی</a>
-                                        <a href="#" class="megamenu-link">آزمایشگاه</a>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <h6 class="megamenu-header"><i class="fas fa-user-md" aria-hidden="true"></i> خدمات تخصصی</h6>
-                                        <a href="#" class="megamenu-link">دندانپزشکی</a>
-                                        <a href="#" class="megamenu-link">قلب و عروق</a>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <div class="megamenu-featured">
-                                            <h5><i class="fas fa-bolt" aria-hidden="true"></i> ویژه امروز</h5>
-                                            <p>مشاوره آنلاین با 30% تخفیف.</p>
-                                            <a href="#" class="btn btn-light btn-sm" aria-label="دریافت تخفیف مشاوره آنلاین">دریافت تخفیف</a>
-                                        </div>
+                <ul class="navbar-nav-modern">
+                    <li class="nav-item-modern">
+                        @Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link-modern" })
+                    </li>
+                    <li class="nav-item-modern dropdown-modern">
+                        <a class="nav-link-modern dropdown-toggle-modern" href="#" aria-expanded="false" aria-haspopup="true" id="servicesDropdown">
+                            <i class="fas fa-stethoscope"></i>
+                            <span>خدمات</span>
+                        </a>
+                        <div class="megamenu-modern" aria-labelledby="servicesDropdown">
+                            <div class="megamenu-content">
+                                <div class="megamenu-column">
+                                    <h6 class="megamenu-header-modern">
+                                        <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                                        <span>خدمات عمومی</span>
+                                    </h6>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-user-md"></i>
+                                        <span>معاینه عمومی</span>
+                                    </a>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-flask"></i>
+                                        <span>آزمایشگاه</span>
+                                    </a>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-x-ray"></i>
+                                        <span>تصویربرداری</span>
+                                    </a>
+                                </div>
+                                <div class="megamenu-column">
+                                    <h6 class="megamenu-header-modern">
+                                        <i class="fas fa-user-md" aria-hidden="true"></i>
+                                        <span>خدمات تخصصی</span>
+                                    </h6>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-tooth"></i>
+                                        <span>دندانپزشکی</span>
+                                    </a>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-heartbeat"></i>
+                                        <span>قلب و عروق</span>
+                                    </a>
+                                    <a href="@Url.Action("Index", "MedicalServiceInfo")" class="megamenu-link-modern">
+                                        <i class="fas fa-eye"></i>
+                                        <span>چشم‌پزشکی</span>
+                                    </a>
+                                </div>
+                                <div class="megamenu-column">
+                                    <div class="megamenu-featured-modern">
+                                        <h5>
+                                            <i class="fas fa-bolt" aria-hidden="true"></i>
+                                            <span>ویژه امروز</span>
+                                        </h5>
+                                        <p>مشاوره آنلاین با 30% تخفیف</p>
+                                        <a href="@Url.Action("Index", "MedicalServiceInfo")" class="btn btn-medical-primary" aria-label="دریافت تخفیف مشاوره آنلاین">
+                                            دریافت تخفیف
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        </li>
-                        <li class="nav-item">@Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link" })</li>
-                        <li class="nav-item">@Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link" })</li>
-                    </ul>
-                    <div class="d-flex align-items-center">
-                        @Html.Partial("_LoginPartial")
-                    </div>
+                        </div>
+                    </li>
+                    <li class="nav-item-modern">
+                        @Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link-modern" })
+                    </li>
+                    <li class="nav-item-modern">
+                        @Html.ActionLink("مقالات", "Index", "Blog", null, new { @class = "nav-link-modern" })
+                    </li>
+                    <li class="nav-item-modern">
+                        @Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link-modern" })
+                    </li>
+                </ul>
+                <div class="user-menu-modern">
+                    @Html.Partial("_LoginPartial")
                 </div>
             </div>
         </nav>
     </header>
 
     <main role="main">
-        <div class="container body-content py-5">
-            @RenderBody()
-        </div>
+        @RenderBody()
     </main>
 
-    <footer>
+    <footer class="animate-fade-in" role="contentinfo">
         <div class="container">
             <div class="footer-content">
+                <!-- Column 1: About -->
+                <div class="footer-column">
+                    <a href="@Url.Action("Index", "Home")" class="footer-logo" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>کلینیک شفا جیرفت</span>
+                    </a>
+                    <p class="footer-description">
+                        ارائه خدمات درمانی تخصصی با استفاده از پیشرفته‌ترین تجهیزات پزشکی و تیم متخصص برای سلامت شما.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" class="social-icon" aria-label="اینستاگرام کلینیک شفا" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="تلگرام کلینیک شفا" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="واتساپ کلینیک شفا" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="فیسبوک کلینیک شفا" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Column 2: Quick Links -->
+                <div class="footer-column">
+                    <h5>
+                        <i class="fas fa-link"></i>
+                        لینک‌های سریع
+                    </h5>
+                    <ul class="footer-links">
+                        <li>
+                            <a href="@Url.Action("Index", "Home")">
+                                <i class="fas fa-home"></i>
+                                خانه
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
+                                <i class="fas fa-stethoscope"></i>
+                                خدمات پزشکی
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "Doctors")">
+                                <i class="fas fa-user-md"></i>
+                                پزشکان
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "Blog")">
+                                <i class="fas fa-newspaper"></i>
+                                مقالات
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "FAQ")">
+                                <i class="fas fa-question-circle"></i>
+                                سوالات متداول
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Contact", "Home")">
+                                <i class="fas fa-envelope"></i>
+                                تماس با ما
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Services -->
+                <div class="footer-column">
+                    <h5>
+                        <i class="fas fa-hospital"></i>
+                        خدمات ما
+                    </h5>
+                    <ul class="footer-links">
+                        <li>
+                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
+                                <i class="fas fa-user-md"></i>
+                                معاینه عمومی
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
+                                <i class="fas fa-flask"></i>
+                                آزمایشگاه
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "MedicalServiceInfo")">
+                                <i class="fas fa-x-ray"></i>
+                                تصویربرداری
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "MedicalEquipment")">
+                                <i class="fas fa-cog"></i>
+                                تجهیزات پزشکی
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "HealthTip")">
+                                <i class="fas fa-heartbeat"></i>
+                                نکات سلامت
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Contact Info -->
+                <div class="footer-column">
+                    <h5>
+                        <i class="fas fa-phone-alt"></i>
+                        اطلاعات تماس
+                    </h5>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-map-marker-alt contact-icon"></i>
+                        <div class="contact-text">
+                            جیرفت، خیابان اصلی، کوچه شفا، پلاک 10
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-phone contact-icon"></i>
+                        <div class="contact-text">
+                            <a href="tel:+983432221234">034-3222-1234</a>
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-envelope contact-icon"></i>
+                        <div class="contact-text">
+                            <a href="mailto:info@shafa-jiroft.com">info@shafa-jiroft.com</a>
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-clock contact-icon"></i>
+                        <div class="contact-text">
+                            شنبه تا پنج‌شنبه: 8:00 - 20:00<br />
+                            جمعه: 8:00 - 16:00
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="copyright">
                 &copy; @DateTime.Now.Year - کلینیک شفا جیرفت. تمامی حقوق محفوظ است.
@@ -658,6 +795,14 @@
     <!-- Other Scripts -->
     @Scripts.Render("~/bundles/modernizr")
     @Scripts.Render("~/bundles/plugins")
+    
+    <!-- Modern Navigation JavaScript -->
+    <script src="@Url.Content("~/Content/js/modern-navigation.js")"></script>
+    
+    <!-- Performance Optimization Scripts -->
+    <!-- این اسکریپت‌ها به صورت خودکار با IIFE اجرا می‌شوند -->
+    <script src="@Url.Content("~/Content/js/image-optimization.js")" defer></script>
+    <script src="@Url.Content("~/Content/js/performance-optimizer.js")" defer></script>
     
     <!-- jQuery Verification -->
     <script>

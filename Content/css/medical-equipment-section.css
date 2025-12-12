@@ -1,0 +1,225 @@
+/* Medical Equipment Section Styles */
+.medical-equipment-section {
+    background-color: var(--background-gray); /* Light gray background */
+    padding: var(--space-xxxl) 0;
+    margin-bottom: var(--space-xxxl);
+    position: relative;
+    overflow: hidden;
+}
+
+.medical-equipment-section .section-title {
+    color: var(--heading-color);
+}
+
+.medical-equipment-section .section-subtitle {
+    color: var(--text-color);
+}
+
+.equipment-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    overflow: hidden;
+    transition: var(--transition-ease);
+    display: flex;
+    flex-direction: column;
+}
+
+.equipment-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.equipment-image-wrapper {
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+    background-color: var(--background-gray);
+}
+
+.equipment-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.equipment-card:hover .equipment-image {
+    transform: scale(1.05);
+}
+
+.equipment-card .default-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.equipment-card .default-image-placeholder .fas {
+    font-size: 3.5rem;
+    color: white;
+}
+
+.equipment-category {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    background-color: var(--primary-color);
+    color: white;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+}
+
+.equipment-content {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.equipment-content h4 {
+    font-weight: 700;
+    color: var(--heading-color);
+    font-size: 1.3rem;
+    margin-bottom: var(--space-sm);
+    line-height: 1.4;
+}
+
+.equipment-content .equipment-model {
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-xs);
+    display: flex;
+    align-items: center;
+}
+.equipment-content .equipment-model .fas {
+    margin-left: var(--space-xs);
+    color: var(--primary-color);
+}
+
+.equipment-content .equipment-description {
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    flex-grow: 1;
+    margin-bottom: var(--space-md);
+}
+
+.equipment-features {
+    margin-bottom: var(--space-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.equipment-features .feature-badge {
+    background-color: var(--background-light);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+.equipment-features .feature-badge .fas {
+    margin-left: var(--space-xs);
+    color: var(--success-color);
+}
+
+.equipment-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.equipment-footer .view-count {
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    display: inline-flex;
+    align-items: center;
+}
+.equipment-footer .view-count .fas {
+    margin-left: var(--space-xs);
+    color: var(--primary-color);
+}
+
+.equipment-footer .btn-details {
+    border-radius: var(--border-radius-full);
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--font-size-sm);
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    transition: var(--transition-ease);
+}
+.equipment-footer .btn-details:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.medical-equipment-section .btn-view-all {
+    margin-top: var(--space-xxl);
+    border-radius: var(--border-radius-full);
+    padding: var(--space-md) var(--space-xxl);
+    font-size: var(--font-size-lg);
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+.medical-equipment-section .btn-view-all:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* Animations */
+.equipment-card.animate-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 0.6s ease-out forwards;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .equipment-image-wrapper {
+        height: 220px;
+    }
+    .equipment-content h4 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .equipment-image-wrapper {
+        height: 200px;
+    }
+    .equipment-content {
+        padding: var(--space-md);
+    }
+    .equipment-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+    .medical-equipment-section .btn-view-all {
+        padding: var(--space-sm) var(--space-xl);
+        font-size: var(--font-size-base);
+    }
+}
+

@@ -1,0 +1,48 @@
+@model List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <aside class="sidebar-slider-section" role="complementary" aria-label="اسلایدر سایدبار">
+        <div class="sidebar-slider-container">
+            @foreach (var slider in Model)
+            {
+                <div class="sidebar-slider-card medical-card animate-fade-in">
+                    @if (!string.IsNullOrEmpty(slider.ImageUrl))
+                    {
+                        <div class="sidebar-slider-image-wrapper">
+                            <img src="@slider.ImageUrl" 
+                                 alt="@slider.Title"
+                                 class="sidebar-slider-image"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='/Content/Images/default-slider.jpg'">
+                        </div>
+                    }
+                    <div class="sidebar-slider-content">
+                        @if (!string.IsNullOrEmpty(slider.Title))
+                        {
+                            <h4 class="sidebar-slider-title">@slider.Title</h4>
+                        }
+                        @if (!string.IsNullOrEmpty(slider.Description))
+                        {
+                            <p class="sidebar-slider-description">@slider.Description</p>
+                        }
+                        @if (!string.IsNullOrEmpty(slider.LinkUrl))
+                        {
+                            <a href="@slider.LinkUrl" 
+                               class="btn btn-medical-outline-primary btn-sm sidebar-slider-link"
+                               aria-label="مشاهده بیشتر درباره @slider.Title">
+                                @(slider.ButtonText ?? "مشاهده بیشتر")
+                                <i class="fas fa-arrow-left ms-2"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </aside>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/sidebar-slider-section.css")" />
+}
+

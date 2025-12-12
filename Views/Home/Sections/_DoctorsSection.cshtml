@@ -1,72 +1,123 @@
 @model ClinicApp.ViewModels.DoctorsSectionViewModel
 
-<section class="doctors-section mb-5">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">@Model.SectionTitle</h2>
-            <p class="lead text-muted" style="max-width: 700px; margin: 1rem auto;">
-                @Model.SectionSubtitle
-            </p>
-        </div>
+@if (Model.Doctors != null && Model.Doctors.Any())
+{
+    <section class="doctors-section" aria-label="پزشکان کلینیک">
+        <div class="container">
+            <div class="doctors-header">
+                <h2 class="doctors-title">@Model.SectionTitle</h2>
+                <p class="doctors-subtitle">@Model.SectionSubtitle</p>
+            </div>
 
-        <div class="row">
-            @if (Model.Doctors != null && Model.Doctors.Any())
-            {
-                foreach (var doctor in Model.Doctors)
+            <div class="doctors-grid">
+                @foreach (var doctor in Model.Doctors)
                 {
-                    <div class="col-md-6 col-lg-3 mb-4">
-                        <div class="card hover-scale h-100" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">
-                            <div style="height: 220px; overflow: hidden;">
+                    <article class="doctor-card animate-slide-up" tabindex="0" role="article" aria-label="@doctor.FullName - @doctor.Specialization">
+                        <div class="doctor-image-wrapper">
+                            @if (!string.IsNullOrEmpty(doctor.PhotoUrl))
+                            {
                                 <img src="@doctor.PhotoUrl" 
-                                     class="card-img-top w-100 h-100" 
+                                     class="doctor-image" 
                                      alt="@doctor.FullName - @doctor.Specialization"
-                                     style="object-fit: cover; transition: transform 0.5s ease;"
-                                     onerror="this.src='/Content/Images/default-doctor.jpg'">
-                            </div>
-                            <div class="card-body text-center p-4">
-                                <h3 class="h5 mb-1" style="color: var(--primary-color);">@doctor.FullName</h3>
-                                <p class="text-muted mb-3">@doctor.Specialization</p>
-                                @if (doctor.Rating.HasValue)
-                                {
-                                    <div class="d-flex justify-content-center mb-3">
-                                        @for (int i = 1; i <= 5; i++)
-                                        {
-                                            if (i <= Math.Floor(doctor.Rating.Value))
-                                            {
-                                                <i class="fas fa-star text-warning"></i>
-                                            }
-                                            else if (i - 0.5 <= (double)doctor.Rating.Value)
-                                            {
-                                                <i class="fas fa-star-half-alt text-warning"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="far fa-star text-warning"></i>
-                                            }
-                                        }
-                                    </div>
-                                }
-                                <p class="text-muted mb-4" style="min-height: 60px; display: flex; align-items: center; justify-content: center;">
-                                    @doctor.Bio
-                                </p>
-                                <a href="@doctor.ProfileUrl" class="btn btn-outline-primary w-100 py-2">
-                                    مشاهده پروفایل <i class="fas fa-arrow-left me-2"></i>
-                                </a>
-                            </div>
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-doctor.jpg'">
+                            }
+                            else
+                            {
+                                <div class="doctor-image-placeholder">
+                                    <i class="fas fa-user-md" aria-hidden="true"></i>
+                                </div>
+                            }
                         </div>
-                    </div>
+                        
+                        <div class="doctor-content">
+                            <h3 class="doctor-name">@doctor.FullName</h3>
+                            <p class="doctor-specialization">@doctor.Specialization</p>
+                            
+                            @if (doctor.Rating.HasValue)
+                            {
+                                <div class="doctor-rating" role="img" aria-label="امتیاز @doctor.Rating.Value از 5">
+                                    @if (doctor.ReviewCount.HasValue && doctor.ReviewCount.Value > 0)
+                                    {
+                                        <span class="doctor-rating-text">@doctor.Rating.Value.ToString("F1")</span>
+                                    }
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= Math.Floor(doctor.Rating.Value))
+                                        {
+                                            <i class="fas fa-star doctor-rating-star filled" aria-hidden="true"></i>
+                                        }
+                                        else if (i - 0.5 <= (double)doctor.Rating.Value)
+                                        {
+                                            <i class="fas fa-star-half-alt doctor-rating-star half" aria-hidden="true"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="far fa-star doctor-rating-star empty" aria-hidden="true"></i>
+                                        }
+                                    }
+                                    @if (doctor.ReviewCount.HasValue && doctor.ReviewCount.Value > 0)
+                                    {
+                                        <span class="doctor-rating-text">(@doctor.ReviewCount.Value نظر)</span>
+                                    }
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(doctor.Bio))
+                            {
+                                <p class="doctor-bio">@doctor.Bio</p>
+                            }
+                            
+                            <a href="@doctor.ProfileUrl" class="doctor-button" aria-label="مشاهده پروفایل @doctor.FullName">
+                                <span>مشاهده پروفایل</span>
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </article>
                 }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ViewAllDoctorsUrl))
+            {
+                <div class="doctors-view-all">
+                    <a href="@Model.ViewAllDoctorsUrl" class="doctors-view-all-button" aria-label="مشاهده تمامی پزشکان">
+                        <i class="fas fa-user-md" aria-hidden="true"></i>
+                        <span>مشاهده تمامی پزشکان</span>
+                    </a>
+                </div>
             }
         </div>
+    </section>
+}
 
-        @if (!string.IsNullOrEmpty(Model.ViewAllDoctorsUrl))
-        {
-            <div class="text-center mt-4">
-                <a href="@Model.ViewAllDoctorsUrl" class="btn btn-primary btn-lg px-5 py-3">
-                    <i class="fas fa-user-md me-2"></i> مشاهده تمامی پزشکان
-                </a>
-            </div>
-        }
-    </div>
-</section>
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/doctors-section.css")" />
+}
+
+@section Scripts {
+    <script>
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.doctor-card');
+            
+            if (cards.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+}
 

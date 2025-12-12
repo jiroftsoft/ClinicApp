@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
@@ -154,17 +155,30 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
+                _logger.Information("شروع ایجاد اسلایدر - Title: {Title}, Position: {Position}", model.Title, model.Position);
+                
                 // پردازش آپلود تصویر
                 await ProcessImageUpload(model);
 
                 if (!ModelState.IsValid)
                 {
+                    var errorCount = ModelState.Values.SelectMany(v => v.Errors).Count();
+                    _logger.Warning("ModelState نامعتبر است. تعداد خطاها: {ErrorCount}", errorCount);
+                    foreach (var error in ModelState)
+                    {
+                        foreach (var err in error.Value.Errors)
+                        {
+                            _logger.Warning("خطای ModelState - Key: {Key}, Error: {Error}", error.Key, err.ErrorMessage);
+                        }
+                    }
+                    
                     var positions = GetPositions();
                     var pageViewModel = new SliderCreateEditPageViewModel
                     {
                         Model = model,
                         Positions = positions
                     };
+                    NotificationHelper.SetError(TempData, "لطفاً خطاهای فرم را برطرف کنید.");
                     return View(GetViewPath("Create"), pageViewModel);
                 }
 

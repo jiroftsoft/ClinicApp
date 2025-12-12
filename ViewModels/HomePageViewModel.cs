@@ -29,6 +29,10 @@ namespace ClinicApp.ViewModels
         public List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel> InsuranceInfos { get; set; }
         public List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel> MedicalServiceInfos { get; set; }
         public List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel> EmergencyContacts { get; set; }
+        
+        // Slider Sections
+        public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> SidebarSliders { get; set; }
+        public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> FooterSliders { get; set; }
     }
 
     #region Hero Section
@@ -47,6 +51,24 @@ namespace ClinicApp.ViewModels
         public string SecondaryButtonText { get; set; }
         public string SecondaryButtonUrl { get; set; }
         public List<StatisticItemViewModel> Statistics { get; set; } = new List<StatisticItemViewModel>();
+        
+        // برای Carousel: لیست اسلایدها
+        public List<HeroSlideViewModel> Slides { get; set; } = new List<HeroSlideViewModel>();
+    }
+
+    /// <summary>
+    /// ViewModel برای هر اسلاید Hero
+    /// </summary>
+    public class HeroSlideViewModel
+    {
+        public int SliderId { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string ImageUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
+        public string LinkUrl { get; set; }
+        public string ButtonText { get; set; }
+        public int DisplayOrder { get; set; }
     }
 
     public class StatisticItemViewModel

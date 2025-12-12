@@ -1,9 +1,11 @@
 @model ClinicApp.ViewModels.ContactSectionViewModel
 
-<section class="contact-section mb-5">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/contact-section.css")" />
+
+<section class="contact-section animate-fade-in" aria-label="اطلاعات تماس">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">@Model.SectionTitle</h2>
+            <h2 class="section-title">@Model.SectionTitle</h2>
         </div>
 
         <!-- Emergency Contacts (Strongly-Typed) -->
@@ -11,9 +13,9 @@
         {
             <div class="row mb-5">
                 <div class="col-12">
-                    <div class="card border-danger shadow-sm">
-                        <div class="card-header bg-danger text-white">
-                            <h5 class="mb-0">
+                    <div class="emergency-contacts-card">
+                        <div class="card-header">
+                            <h5>
                                 <i class="fas fa-exclamation-triangle"></i>
                                 تماس‌های اضطراری
                             </h5>
@@ -23,19 +25,29 @@
                                 @foreach (var contact in Model.EmergencyContacts)
                                 {
                                     <div class="col-md-4 mb-3">
-                                        <div class="d-flex align-items-center">
+                                        <div class="emergency-contact-item">
                                             @if (!string.IsNullOrEmpty(contact.IconUrl))
                                             {
-                                                <img src="@contact.IconUrl" alt="@contact.Title" class="mr-3" style="max-height: 40px;">
+                                                <img src="@contact.IconUrl" 
+                                                     alt="@contact.Title" 
+                                                     class="contact-icon"
+                                                     loading="lazy"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="default-icon" style="display: none;">
+                                                    <i class="fas fa-phone-alt"></i>
+                                                </div>
                                             }
                                             else
                                             {
-                                                <i class="fas fa-phone-alt fa-2x text-danger mr-3"></i>
+                                                <div class="default-icon">
+                                                    <i class="fas fa-phone-alt"></i>
+                                                </div>
                                             }
-                                            <div>
-                                                <strong>@contact.Title</strong>
-                                                <br />
-                                                <a href="tel:@contact.PhoneNumber" class="btn btn-sm btn-danger">
+                                            <div class="contact-info">
+                                                <div class="contact-title">@contact.Title</div>
+                                                <a href="tel:@contact.PhoneNumber" 
+                                                   class="btn btn-phone"
+                                                   aria-label="تماس با @contact.Title - @contact.PhoneNumber">
                                                     <i class="fas fa-phone"></i> @contact.PhoneNumber
                                                 </a>
                                             </div>
@@ -53,47 +65,55 @@
             <div class="col-lg-6 mb-4">
                 @if (Model.ClinicInfo != null)
                 {
-                    <div class="card h-100 p-4" style="border-radius: 16px;">
-                        <h3 class="h4 mb-4" style="color: var(--primary-color);">@Model.ClinicInfo.Name</h3>
+                    <div class="clinic-info-card animate-in" style="animation-delay: 0.1s;">
+                        <h3>@Model.ClinicInfo.Name</h3>
                         
-                        <div class="mb-3">
-                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
-                            <strong>آدرس:</strong> @Model.ClinicInfo.Address
+                        <div class="clinic-info-item">
+                            <i class="fas fa-map-marker-alt info-icon"></i>
+                            <div class="info-content">
+                                <strong>آدرس:</strong> @Model.ClinicInfo.Address
+                            </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <i class="fas fa-phone text-primary me-2"></i>
-                            <strong>تلفن:</strong> 
-                            <a href="tel:@Model.ClinicInfo.PhoneNumber">@Model.ClinicInfo.PhoneNumber</a>
+                        <div class="clinic-info-item">
+                            <i class="fas fa-phone info-icon"></i>
+                            <div class="info-content">
+                                <strong>تلفن:</strong> 
+                                <a href="tel:@Model.ClinicInfo.PhoneNumber">@Model.ClinicInfo.PhoneNumber</a>
+                            </div>
                         </div>
                         
                         @if (!string.IsNullOrEmpty(Model.ClinicInfo.Email))
                         {
-                            <div class="mb-3">
-                                <i class="fas fa-envelope text-primary me-2"></i>
-                                <strong>ایمیل:</strong> 
-                                <a href="mailto:@Model.ClinicInfo.Email">@Model.ClinicInfo.Email</a>
+                            <div class="clinic-info-item">
+                                <i class="fas fa-envelope info-icon"></i>
+                                <div class="info-content">
+                                    <strong>ایمیل:</strong> 
+                                    <a href="mailto:@Model.ClinicInfo.Email">@Model.ClinicInfo.Email</a>
+                                </div>
                             </div>
                         }
                         
                         @if (!string.IsNullOrEmpty(Model.ClinicInfo.WorkingHours))
                         {
-                            <div class="mb-3">
-                                <i class="fas fa-clock text-primary me-2"></i>
-                                <strong>ساعات کاری:</strong> @Model.ClinicInfo.WorkingHours
+                            <div class="clinic-info-item">
+                                <i class="fas fa-clock info-icon"></i>
+                                <div class="info-content">
+                                    <strong>ساعات کاری:</strong> @Model.ClinicInfo.WorkingHours
+                                </div>
                             </div>
                         }
                         
                         @if (Model.ClinicInfo.WorkingDays != null && Model.ClinicInfo.WorkingDays.Any())
                         {
                             <div class="mt-4">
-                                <h5 class="mb-3">ساعات کاری هفتگی:</h5>
-                                <ul class="list-unstyled">
+                                <h5 class="mb-3" style="color: var(--heading-color); font-weight: 700;">ساعات کاری هفتگی:</h5>
+                                <ul class="working-days-list">
                                     @foreach (var day in Model.ClinicInfo.WorkingDays)
                                     {
-                                        <li class="mb-2">
-                                            <strong>@day.DayName:</strong> 
-                                            <span class="@(day.IsOpen ? "text-success" : "text-muted")">
+                                        <li>
+                                            <span class="day-name">@day.DayName:</span>
+                                            <span class="day-hours @(day.IsOpen ? "open" : "closed")">
                                                 @day.Hours
                                             </span>
                                         </li>
@@ -105,8 +125,12 @@
                         @if (!string.IsNullOrEmpty(Model.WhatsAppLink))
                         {
                             <div class="mt-4">
-                                <a href="@Model.WhatsAppLink" target="_blank" class="btn btn-success">
-                                    <i class="fab fa-whatsapp me-2"></i> تماس از طریق واتساپ
+                                <a href="@Model.WhatsAppLink" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="btn btn-whatsapp"
+                                   aria-label="تماس از طریق واتساپ">
+                                    <i class="fab fa-whatsapp"></i> تماس از طریق واتساپ
                                 </a>
                             </div>
                         }
@@ -117,14 +141,15 @@
             <div class="col-lg-6 mb-4">
                 @if (!string.IsNullOrEmpty(Model.GoogleMapsEmbedUrl))
                 {
-                    <div class="card h-100" style="border-radius: 16px; overflow: hidden;">
+                    <div class="maps-card animate-in" style="animation-delay: 0.2s;">
                         <iframe src="@Model.GoogleMapsEmbedUrl" 
                                 width="100%" 
                                 height="450" 
-                                style="border:0;" 
                                 allowfullscreen="" 
                                 loading="lazy" 
-                                referrerpolicy="no-referrer-when-downgrade">
+                                referrerpolicy="no-referrer-when-downgrade"
+                                title="نقشه موقعیت کلینیک"
+                                aria-label="نقشه موقعیت کلینیک">
                         </iframe>
                     </div>
                 }

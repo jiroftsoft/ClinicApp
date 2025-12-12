@@ -3,7 +3,9 @@
     ViewBag.Title = "خانه";
 }
 
-<main class="animate-section" id="mainContent">
+<div class="container body-content py-5">
+    <div class="homepage-layout">
+        <main class="animate-section homepage-main-content" id="mainContent">
     <!-- Announcements Section (Important Announcements) -->
     @if (Model.Announcements != null && Model.Announcements.Any())
     {
@@ -105,7 +107,27 @@
     {
         @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
     }
-</main>
+    
+    </main>
+    
+    <!-- Sidebar Slider Section -->
+    @if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
+    {
+        <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
+            @Html.Partial("~/Views/Home/Sections/_SidebarSliderSection.cshtml", Model.SidebarSliders)
+        </aside>
+    }
+</div>
+
+<!-- Footer Slider Section (Outside Homepage Layout) -->
+@if (Model.FooterSliders != null && Model.FooterSliders.Any())
+{
+    @Html.Partial("~/Views/Home/Sections/_FooterSliderSection.cshtml", Model.FooterSliders)
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-layout.css")" />
+}
 
 @section Scripts {
     <script>
@@ -137,3 +159,5 @@
         });
     </script>
 }
+
+</div>

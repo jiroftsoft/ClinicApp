@@ -1,0 +1,313 @@
+/**
+ * 🏥 Medical Services Section Styles
+ * 
+ * استایل‌های حرفه‌ای برای بخش Medical Services
+ * استفاده از Design System Variables
+ */
+
+.medical-services-section {
+    padding: var(--spacing-xxxl) 0;
+    background-color: var(--medical-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.medical-services-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--medical-gradient-primary);
+    opacity: 0.95;
+    z-index: 1;
+}
+
+.medical-services-container {
+    position: relative;
+    z-index: 2;
+}
+
+.medical-services-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xxl);
+}
+
+.medical-services-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: white;
+    margin-bottom: var(--spacing-md);
+    line-height: var(--line-height-tight);
+}
+
+.medical-services-subtitle {
+    font-size: var(--font-size-lg);
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: var(--line-height-relaxed);
+}
+
+.medical-services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.medical-service-card {
+    background-color: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-normal) var(--ease-out);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.medical-service-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--medical-primary);
+}
+
+.medical-service-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background-color: var(--medical-primary-lighter);
+}
+
+.medical-service-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow) var(--ease-out);
+}
+
+.medical-service-card:hover .medical-service-image {
+    transform: scale(1.1);
+}
+
+.medical-service-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--medical-primary);
+}
+
+.medical-service-image-placeholder i {
+    font-size: var(--font-size-5xl);
+    color: white;
+}
+
+.medical-service-category-badge {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background-color: var(--medical-primary);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--shadow-md);
+    z-index: 2;
+}
+
+.medical-service-content {
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.medical-service-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-text);
+    margin-bottom: var(--spacing-sm);
+    line-height: var(--line-height-tight);
+}
+
+.medical-service-description {
+    font-size: var(--font-size-base);
+    color: var(--medical-text-muted);
+    line-height: var(--line-height-relaxed);
+    margin-bottom: var(--spacing-md);
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.medical-service-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+}
+
+.medical-service-feature {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--medical-primary-lighter);
+    color: var(--medical-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.medical-service-feature i {
+    font-size: var(--font-size-xs);
+    color: var(--medical-success);
+}
+
+.medical-service-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--medical-border-light);
+}
+
+.medical-service-price {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-success);
+}
+
+.medical-service-duration {
+    font-size: var(--font-size-sm);
+    color: var(--medical-text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.medical-service-button {
+    margin-top: var(--spacing-md);
+    width: 100%;
+    background-color: var(--medical-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    transition: all var(--transition-normal) var(--ease-out);
+    cursor: pointer;
+}
+
+.medical-service-button:hover {
+    background-color: var(--medical-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.medical-services-view-all {
+    text-align: center;
+    margin-top: var(--spacing-xl);
+}
+
+.medical-services-view-all-button {
+    background-color: white;
+    color: var(--medical-primary);
+    border: 2px solid white;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-xxl);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    transition: all var(--transition-normal) var(--ease-out);
+    box-shadow: var(--shadow-md);
+}
+
+.medical-services-view-all-button:hover {
+    background-color: var(--medical-primary-lighter);
+    color: var(--medical-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Animation Classes */
+.medical-service-card.animate-in {
+    animation: fadeIn var(--transition-slow) var(--ease-out) both;
+}
+
+.medical-service-card.animate-slide-up {
+    animation: slideUp var(--transition-slow) var(--ease-out) both;
+}
+
+/* Stagger Animation */
+.medical-service-card:nth-child(1) { animation-delay: 0.1s; }
+.medical-service-card:nth-child(2) { animation-delay: 0.2s; }
+.medical-service-card:nth-child(3) { animation-delay: 0.3s; }
+.medical-service-card:nth-child(4) { animation-delay: 0.4s; }
+.medical-service-card:nth-child(5) { animation-delay: 0.5s; }
+.medical-service-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Responsive Design */
+@media (max-width: 767.98px) {
+    .medical-services-section {
+        padding: var(--spacing-xxl) 0;
+    }
+    
+    .medical-services-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .medical-services-subtitle {
+        font-size: var(--font-size-base);
+    }
+    
+    .medical-services-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .medical-service-image-wrapper {
+        height: 180px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .medical-services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .medical-services-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Accessibility */
+.medical-service-card:focus-within {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 4px;
+}
+

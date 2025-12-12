@@ -67,7 +67,7 @@
         @using (Html.BeginForm("Create", "Slider", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
-            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger", role = "alert" })
 
             <!-- اطلاعات اصلی -->
             <div class="section-header">
@@ -225,7 +225,7 @@
             </div>
 
             <div class="form-group mt-4">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="submitButton">
                     <i class="fas fa-save"></i> ذخیره
                 </button>
                 <a href="@Url.Action("Index", new { position = Model.Model.Position })" class="btn btn-secondary">
@@ -276,6 +276,21 @@
         $('.custom-file-input').on('change', function() {
             var fileName = $(this).val().split('\\').pop();
             $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+        });
+        
+        // Debug: Log form submission
+        $('form').on('submit', function(e) {
+            console.log('Form submitting...');
+            console.log('ImageFile:', document.getElementById('ImageFile').files.length > 0 ? 'Selected' : 'Not selected');
+            console.log('Title:', document.querySelector('[name="Model.Title"]').value);
+            console.log('Position:', document.querySelector('[name="Model.Position"]').value);
+            
+            // Check if form is valid
+            if (!$(this).valid()) {
+                console.error('Form validation failed!');
+                e.preventDefault();
+                return false;
+            }
         });
     </script>
 }

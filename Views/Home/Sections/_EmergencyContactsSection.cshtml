@@ -6,69 +6,87 @@
     }
 }
 
-<section class="emergency-contacts-section py-5" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/emergency-contacts-section.css")" />
+
+<section class="emergency-contacts-section animate-fade-in" aria-label="تماس‌های اضطراری">
     <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="section-title text-white mb-3">
-                    <i class="fas fa-phone-alt"></i>
-                    تماس‌های اضطراری
-                </h2>
-                <p class="section-subtitle text-white-50">در مواقع اضطراری با ما تماس بگیرید</p>
-            </div>
+        <div class="text-center mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-phone-alt"></i>
+                تماس‌های اضطراری
+            </h2>
+            <p class="section-subtitle">در مواقع اضطراری با ما تماس بگیرید</p>
         </div>
 
         <div class="row">
-            @foreach (var contact in Model)
+            @for (int i = 0; i < Model.Count; i++)
             {
+                var contact = Model[i];
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                    <div class="card emergency-contact-card h-100 shadow-lg border-0 text-center">
-                        <div class="card-body p-4">
+                    <div class="emergency-contact-card animate-in" style="animation-delay: @(0.1 * i)s;">
+                        <div class="contact-icon-wrapper">
                             @if (!string.IsNullOrEmpty(contact.IconUrl))
                             {
-                                <img src="@contact.IconUrl" alt="@contact.Title" class="mb-3" style="max-height: 60px; max-width: 100%; object-fit: contain;">
+                                <img src="@contact.IconUrl" 
+                                     alt="@contact.Title" 
+                                     class="contact-icon"
+                                     loading="lazy"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="default-icon" style="display: none;">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
                             }
                             else
                             {
-                                <div class="mb-3">
-                                    <i class="fas fa-phone-alt fa-3x text-white"></i>
+                                <div class="default-icon">
+                                    <i class="fas fa-phone-alt"></i>
                                 </div>
                             }
+                        </div>
+                        
+                        <h5 class="card-title">@contact.Title</h5>
+                        
+                        <div class="mb-3">
+                            <span class="type-badge">
+                                @contact.TypeDisplayName
+                            </span>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(contact.ShortDescription))
+                        {
+                            <p class="card-text">
+                                @(contact.ShortDescription.Length > 80 ? contact.ShortDescription.Substring(0, 80) + "..." : contact.ShortDescription)
+                            </p>
+                        }
+                        
+                        <div class="contact-actions">
+                            <a href="tel:@contact.PhoneNumber" 
+                               class="btn btn-phone"
+                               aria-label="تماس با @contact.Title - @contact.PhoneNumber">
+                                <i class="fas fa-phone"></i> @contact.PhoneNumber
+                            </a>
                             
-                            <h5 class="card-title font-weight-bold text-white mb-2">@contact.Title</h5>
-                            
-                            <div class="mb-3">
-                                <span class="badge badge-light">
-                                    @contact.TypeDisplayName
-                                </span>
-                            </div>
-                            
-                            @if (!string.IsNullOrEmpty(contact.ShortDescription))
+                            @if (!string.IsNullOrEmpty(contact.WhatsAppUrl))
                             {
-                                <p class="card-text text-white-50 small mb-3">
-                                    @(contact.ShortDescription.Length > 80 ? contact.ShortDescription.Substring(0, 80) + "..." : contact.ShortDescription)
-                                </p>
+                                <a href="@contact.WhatsAppUrl" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="btn btn-whatsapp"
+                                   aria-label="ارسال پیام واتساپ به @contact.Title">
+                                    <i class="fab fa-whatsapp"></i> واتساپ
+                                </a>
                             }
                             
-                            <div class="mt-auto">
-                                <a href="tel:@contact.PhoneNumber" class="btn btn-light btn-block mb-2">
-                                    <i class="fas fa-phone"></i> @contact.PhoneNumber
+                            @if (!string.IsNullOrEmpty(contact.TelegramUrl))
+                            {
+                                <a href="@contact.TelegramUrl" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="btn btn-telegram"
+                                   aria-label="ارسال پیام تلگرام به @contact.Title">
+                                    <i class="fab fa-telegram"></i> تلگرام
                                 </a>
-                                
-                                @if (!string.IsNullOrEmpty(contact.WhatsAppUrl))
-                                {
-                                    <a href="@contact.WhatsAppUrl" target="_blank" class="btn btn-success btn-sm btn-block mb-2">
-                                        <i class="fab fa-whatsapp"></i> واتساپ
-                                    </a>
-                                }
-                                
-                                @if (!string.IsNullOrEmpty(contact.TelegramUrl))
-                                {
-                                    <a href="@contact.TelegramUrl" target="_blank" class="btn btn-info btn-sm btn-block">
-                                        <i class="fab fa-telegram"></i> تلگرام
-                                    </a>
-                                }
-                            </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -76,39 +94,4 @@
         </div>
     </div>
 </section>
-
-<style>
-    .emergency-contacts-section {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .emergency-contact-card {
-        border-radius: 15px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-    }
-
-    .emergency-contact-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    .section-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
-
-    .section-subtitle {
-        font-size: 1.1rem;
-    }
-
-    @@media (max-width: 768px) {
-        .section-title {
-            font-size: 2rem;
-        }
-    }
-</style>
 

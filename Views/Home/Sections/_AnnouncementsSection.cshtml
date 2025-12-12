@@ -6,62 +6,80 @@
     }
 }
 
-<section class="announcements-section py-4" style="background-color: #f8f9fa;">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/announcements-section.css")" />
+
+<section class="announcements-section animate-fade-in" aria-label="اطلاعیه‌های مهم">
     <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div id="announcementsCarousel" class="carousel slide" data-ride="carousel" data-interval="5000">
-                    <div class="carousel-inner">
-                        @for (int i = 0; i < Model.Count; i++)
-                        {
-                            var announcement = Model[i];
-                            var alertClass = announcement.Type == "warning" ? "alert-warning" :
-                                           announcement.Type == "error" ? "alert-danger" :
-                                           announcement.Type == "success" ? "alert-success" :
-                                           "alert-info";
-                            
-                            <div class="carousel-item @(i == 0 ? "active" : "")">
-                                <div class="alert @alertClass alert-dismissible fade show mb-0" role="alert">
-                                    <div class="container">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-10">
-                                                @if (announcement.IsImportant)
-                                                {
-                                                    <strong><i class="fas fa-exclamation-triangle"></i> مهم: </strong>
-                                                }
-                                                <strong>@announcement.Title</strong>
-                                                @if (!string.IsNullOrEmpty(announcement.Content))
-                                                {
-                                                    <span> - @ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(announcement.Content, 100)</span>
-                                                }
-                                                @if (!string.IsNullOrEmpty(announcement.LinkUrl))
-                                                {
-                                                    <a href="@announcement.LinkUrl" class="alert-link mr-2">ادامه مطلب</a>
-                                                }
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                        </div>
+        <div class="announcements-carousel">
+            <div id="announcementsCarousel" class="carousel slide" data-ride="carousel" data-interval="5000" role="region" aria-label="اسلایدر اطلاعیه‌ها">
+                <div class="carousel-inner">
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        var announcement = Model[i];
+                        var alertClass = announcement.Type == "warning" ? "alert-warning" :
+                                       announcement.Type == "error" ? "alert-danger" :
+                                       announcement.Type == "success" ? "alert-success" :
+                                       "alert-info";
+                        
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <div class="announcement-item @alertClass alert-dismissible fade show animate-in" 
+                                 role="alert" 
+                                 aria-live="polite"
+                                 style="animation-delay: @(0.1 * i)s;">
+                                <div class="announcement-content">
+                                    <div class="announcement-text">
+                                        @if (announcement.IsImportant)
+                                        {
+                                            <span class="important-badge">
+                                                <i class="fas fa-exclamation-triangle"></i> مهم:
+                                            </span>
+                                        }
+                                        <strong class="announcement-title">@announcement.Title</strong>
+                                        @if (!string.IsNullOrEmpty(announcement.Content))
+                                        {
+                                            <span class="announcement-summary">
+                                                - @ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(announcement.Content, 100)
+                                            </span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(announcement.LinkUrl))
+                                        {
+                                            <a href="@announcement.LinkUrl" 
+                                               class="announcement-link"
+                                               aria-label="ادامه مطلب درباره @announcement.Title">
+                                                ادامه مطلب
+                                            </a>
+                                        }
                                     </div>
+                                    <button type="button" 
+                                            class="announcement-close" 
+                                            data-dismiss="alert" 
+                                            aria-label="بستن اطلاعیه">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                             </div>
-                        }
-                    </div>
-                    @if (Model.Count > 1)
-                    {
-                        <a class="carousel-control-prev" href="#announcementsCarousel" role="button" data-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="sr-only">قبلی</span>
-                        </a>
-                        <a class="carousel-control-next" href="#announcementsCarousel" role="button" data-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="sr-only">بعدی</span>
-                        </a>
+                        </div>
                     }
                 </div>
+                @if (Model.Count > 1)
+                {
+                    <a class="carousel-control-prev" 
+                       href="#announcementsCarousel" 
+                       role="button" 
+                       data-slide="prev"
+                       aria-label="اطلاعیه قبلی">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">قبلی</span>
+                    </a>
+                    <a class="carousel-control-next" 
+                       href="#announcementsCarousel" 
+                       role="button" 
+                       data-slide="next"
+                       aria-label="اطلاعیه بعدی">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">بعدی</span>
+                    </a>
+                }
             </div>
         </div>
     </div>

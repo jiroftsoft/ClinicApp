@@ -1,0 +1,525 @@
+/**
+ * 🏥 Design System - سیستم طراحی حرفه‌ای برای محیط Production درمانی
+ * 
+ * این فایل شامل تمام CSS Variables، Typography، Animation و Component Styles
+ * برای استفاده در تمام بخش‌های سایت است.
+ * 
+ * اصول:
+ * - رنگ‌های رسمی و اداری (نه جیق و جلف)
+ * - فونت Vazir
+ * - انیمیشن‌های نرم و جذاب
+ * - Responsive Design
+ * - Accessibility
+ * 
+ * @version 1.0.0
+ * @date 2024
+ */
+
+/* ============================================
+   🎨 COLOR SYSTEM - سیستم رنگ‌بندی
+   ============================================ */
+
+:root {
+    /* رنگ‌های اصلی (Primary Colors) */
+    --medical-primary: #2c5aa0;
+    --medical-primary-dark: #1e3d6f;
+    --medical-primary-light: #4a7bc8;
+    --medical-primary-lighter: #e8f0f8;
+    
+    /* رنگ‌های ثانویه (Secondary Colors) */
+    --medical-secondary: #6c757d;
+    --medical-secondary-dark: #495057;
+    --medical-secondary-light: #adb5bd;
+    --medical-secondary-lighter: #f8f9fa;
+    
+    /* رنگ‌های وضعیت (Status Colors) */
+    --medical-success: #28a745;
+    --medical-success-dark: #1e7e34;
+    --medical-success-light: #5cb85c;
+    --medical-success-lighter: #d4edda;
+    
+    --medical-danger: #dc3545;
+    --medical-danger-dark: #c82333;
+    --medical-danger-light: #e4606d;
+    --medical-danger-lighter: #f8d7da;
+    
+    --medical-warning: #ffc107;
+    --medical-warning-dark: #e0a800;
+    --medical-warning-light: #ffcd39;
+    --medical-warning-lighter: #fff3cd;
+    
+    --medical-info: #17a2b8;
+    --medical-info-dark: #138496;
+    --medical-info-light: #3fc1d8;
+    --medical-info-lighter: #d1ecf1;
+    
+    /* رنگ‌های خنثی (Neutral Colors) */
+    --medical-light: #f8f9fa;
+    --medical-bg: #ffffff;
+    --medical-dark: #212529;
+    --medical-text: #212529;
+    --medical-text-muted: #6c757d;
+    --medical-border: #dee2e6;
+    --medical-border-light: #e9ecef;
+    
+    /* Gradient های رسمی (ساده و حرفه‌ای) */
+    --medical-gradient-primary: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%);
+    --medical-gradient-light: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    --medical-gradient-overlay: linear-gradient(to bottom, rgba(44, 90, 160, 0.8), rgba(30, 61, 111, 0.9));
+    
+    /* ============================================
+       📏 SPACING SYSTEM - سیستم فاصله‌گذاری
+       ============================================ */
+    
+    --spacing-xs: 0.25rem;    /* 4px */
+    --spacing-sm: 0.5rem;     /* 8px */
+    --spacing-md: 1rem;      /* 16px */
+    --spacing-lg: 1.5rem;    /* 24px */
+    --spacing-xl: 2rem;      /* 32px */
+    --spacing-xxl: 3rem;     /* 48px */
+    --spacing-xxxl: 4rem;    /* 64px */
+    
+    /* ============================================
+       🔲 BORDER RADIUS - سیستم گوشه‌های گرد
+       ============================================ */
+    
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-full: 9999px;
+    
+    /* ============================================
+       🌑 SHADOW SYSTEM - سیستم سایه‌ها
+       ============================================ */
+    
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.2);
+    --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    /* ============================================
+       📝 TYPOGRAPHY SYSTEM - سیستم تایپوگرافی
+       ============================================ */
+    
+    /* Font Family */
+    --font-family-base: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    --font-family-heading: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    
+    /* Font Sizes */
+    --font-size-xs: 0.75rem;      /* 12px */
+    --font-size-sm: 0.875rem;     /* 14px */
+    --font-size-base: 1rem;       /* 16px */
+    --font-size-lg: 1.125rem;     /* 18px */
+    --font-size-xl: 1.25rem;      /* 20px */
+    --font-size-2xl: 1.5rem;       /* 24px */
+    --font-size-3xl: 2rem;        /* 32px */
+    --font-size-4xl: 2.5rem;       /* 40px */
+    --font-size-5xl: 3rem;         /* 48px */
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* Line Heights */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+    --line-height-loose: 2;
+    
+    /* ============================================
+       ⚡ ANIMATION SYSTEM - سیستم انیمیشن
+       ============================================ */
+    
+    /* Transition Durations */
+    --transition-fast: 0.15s;
+    --transition-normal: 0.3s;
+    --transition-slow: 0.5s;
+    --transition-slower: 0.75s;
+    
+    /* Easing Functions */
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* ============================================
+       📱 BREAKPOINTS (برای استفاده در JavaScript)
+       ============================================ */
+    
+    --breakpoint-xs: 0;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --breakpoint-xxl: 1400px;
+}
+
+/* ============================================
+   🎬 KEYFRAMES - انیمیشن‌های پایه
+   ============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideRight {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   🎨 UTILITY CLASSES - کلاس‌های کمکی
+   ============================================ */
+
+/* Animation Utilities */
+.animate-fade-in {
+    animation: fadeIn var(--transition-normal) var(--ease-out);
+}
+
+.animate-slide-up {
+    animation: slideUp var(--transition-normal) var(--ease-out);
+}
+
+.animate-slide-down {
+    animation: slideDown var(--transition-normal) var(--ease-out);
+}
+
+.animate-scale-in {
+    animation: scaleIn var(--transition-normal) var(--ease-out);
+}
+
+/* Transition Utilities */
+.transition-fast {
+    transition: all var(--transition-fast) var(--ease-in-out);
+}
+
+.transition-normal {
+    transition: all var(--transition-normal) var(--ease-in-out);
+}
+
+.transition-slow {
+    transition: all var(--transition-slow) var(--ease-in-out);
+}
+
+/* Hover Effects */
+.hover-lift {
+    transition: transform var(--transition-normal) var(--ease-out), box-shadow var(--transition-normal) var(--ease-out);
+}
+
+.hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+}
+
+.hover-scale {
+    transition: transform var(--transition-normal) var(--ease-out);
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+/* ============================================
+   🎯 COMPONENT STYLES - استایل‌های کامپوننت
+   ============================================ */
+
+/* Section Styles */
+.section-container {
+    padding: var(--spacing-xxl) 0;
+}
+
+.section-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--medical-text);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.section-subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--medical-text-muted);
+    text-align: center;
+    margin-bottom: var(--spacing-xxl);
+}
+
+/* Card Styles */
+.medical-card {
+    background: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.medical-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    border-color: var(--medical-primary);
+}
+
+/* Button Styles */
+.btn-medical-primary {
+    background-color: var(--medical-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-normal) var(--ease-out);
+    cursor: pointer;
+}
+
+.btn-medical-primary:hover {
+    background-color: var(--medical-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-medical-primary:active {
+    transform: translateY(0);
+}
+
+.btn-medical-outline {
+    background-color: transparent;
+    color: var(--medical-primary);
+    border: 2px solid var(--medical-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-normal) var(--ease-out);
+    cursor: pointer;
+}
+
+.btn-medical-outline:hover {
+    background-color: var(--medical-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Badge Styles */
+.medical-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    background-color: var(--medical-primary-lighter);
+    color: var(--medical-primary);
+}
+
+.medical-badge-success {
+    background-color: var(--medical-success-lighter);
+    color: var(--medical-success-dark);
+}
+
+.medical-badge-danger {
+    background-color: var(--medical-danger-lighter);
+    color: var(--medical-danger-dark);
+}
+
+.medical-badge-warning {
+    background-color: var(--medical-warning-lighter);
+    color: var(--medical-warning-dark);
+}
+
+.medical-badge-info {
+    background-color: var(--medical-info-lighter);
+    color: var(--medical-info-dark);
+}
+
+/* ============================================
+   📱 RESPONSIVE UTILITIES - ابزارهای Responsive
+   ============================================ */
+
+/* Mobile First Approach */
+@media (max-width: 767.98px) {
+    .section-title {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .section-subtitle {
+        font-size: var(--font-size-base);
+    }
+    
+    .section-container {
+        padding: var(--spacing-xl) 0;
+    }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .section-title {
+        font-size: var(--font-size-3xl);
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .section-title {
+        font-size: var(--font-size-4xl);
+    }
+}
+
+/* ============================================
+   ♿ ACCESSIBILITY - دسترسی‌پذیری
+   ============================================ */
+
+/* Focus States */
+*:focus {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Skip Link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: var(--medical-primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   🎨 PRINT STYLES - استایل‌های چاپ
+   ============================================ */
+
+@media print {
+    * {
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}
+

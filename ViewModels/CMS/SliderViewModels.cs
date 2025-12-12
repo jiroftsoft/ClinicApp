@@ -13,6 +13,7 @@ namespace ClinicApp.ViewModels.CMS
         public string Title { get; set; }
         public string Description { get; set; }
         public string ImageUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
         public string LinkUrl { get; set; }
         public string ButtonText { get; set; }
         public bool IsActive { get; set; }

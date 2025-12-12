@@ -1,24 +1,53 @@
 @model ClinicApp.ViewModels.ValuePropositionViewModel
 
-<section class="value-proposition-section py-5 mb-5">
-    <div class="container">
-        <div class="row">
-            @if (Model.Items != null && Model.Items.Any())
-            {
-                foreach (var item in Model.Items)
+@if (Model.Items != null && Model.Items.Any())
+{
+    <section class="value-proposition-section" aria-label="ویژگی‌های کلینیک">
+        <div class="container">
+            <div class="value-proposition-container">
+                @foreach (var item in Model.Items)
                 {
-                    <div class="col-md-6 col-lg-3 mb-4">
-                        <div class="card h-100 text-center p-4 border-0 shadow-sm">
-                            <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;">
-                                <i class="@item.Icon" style="font-size: 3.5rem; color: var(--primary-color);"></i>
-                            </div>
-                            <h3 class="h5 mb-3" style="color: var(--primary-color);">@item.Title</h3>
-                            <p class="text-muted">@item.Description</p>
+                    <div class="value-proposition-card animate-slide-up" tabindex="0" role="article" aria-label="@item.Title">
+                        <div class="value-proposition-icon-wrapper">
+                            <i class="@item.Icon value-proposition-icon" aria-hidden="true"></i>
                         </div>
+                        <h3 class="value-proposition-title">@item.Title</h3>
+                        <p class="value-proposition-description">@item.Description</p>
                     </div>
                 }
-            }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/value-proposition-section.css")" />
+}
+
+@section Scripts {
+    <script>
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.value-proposition-card');
+            
+            if (cards.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+}
 

@@ -3,78 +3,77 @@
     var equipments = Model?.MedicalEquipments ?? new List<ClinicApp.ViewModels.CMS.MedicalEquipmentPublicViewModel>();
 }
 
+<link rel="stylesheet" href="@Url.Content("~/Content/css/medical-equipment-section.css")" />
+
 @if (equipments != null && equipments.Any())
 {
-    <section class="medical-equipment-section py-5" style="background-color: #f8f9fa;">
+    <section class="medical-equipment-section animate-fade-in">
         <div class="container">
-            <div class="row mb-5">
-                <div class="col-12 text-center">
-                    <h2 class="display-4 font-weight-bold mb-3" style="color: #212529;">
-                        <i class="fas fa-x-ray" style="color: #2c5aa0;"></i>
-                        تجهیزات پزشکی مدرن
-                    </h2>
-                    <p class="lead" style="color: #6c757d; font-size: 1.1rem;">
-                        با استفاده از پیشرفته‌ترین تجهیزات پزشکی، بهترین خدمات را به شما ارائه می‌دهیم
-                    </p>
-                </div>
+            <div class="text-center mb-5">
+                <h2 class="section-title">
+                    <i class="fas fa-x-ray"></i>
+                    تجهیزات پزشکی مدرن
+                </h2>
+                <p class="section-subtitle">با استفاده از پیشرفته‌ترین تجهیزات پزشکی، بهترین خدمات را به شما ارائه می‌دهیم</p>
             </div>
 
             <div class="row">
-                @foreach (var equipment in equipments.Take(6))
+                @for (int i = 0; i < equipments.Take(6).Count(); i++)
                 {
+                    var equipment = equipments.ElementAt(i);
                     <div class="col-md-4 col-lg-4 mb-4">
-                        <div class="equipment-card h-100" style="border: 1px solid #dee2e6; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                            <div class="equipment-image-wrapper position-relative" style="height: 250px; overflow: hidden; background-color: #f8f9fa;">
+                        <div class="equipment-card animate-in" style="animation-delay: @(0.1 * i)s;">
+                            <div class="equipment-image-wrapper">
                                 @if (!string.IsNullOrEmpty(equipment.ImageUrl))
                                 {
-                                    <img src="@equipment.ImageUrl" alt="@equipment.EquipmentName" 
-                                         class="w-100 h-100" style="object-fit: cover; transition: transform 0.3s ease;">
+                                    <img src="@equipment.ImageUrl" 
+                                         alt="@equipment.EquipmentName"
+                                         class="equipment-image"
+                                         loading="lazy"
+                                         onerror="this.src='/Content/Images/default-equipment.jpg'">
                                 }
                                 else
                                 {
-                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center" 
-                                         style="background-color: #2c5aa0;">
-                                        <i class="fas fa-x-ray fa-4x text-white"></i>
+                                    <div class="default-image-placeholder">
+                                        <i class="fas fa-x-ray"></i>
                                     </div>
                                 }
-                                <div class="equipment-category position-absolute" 
-                                     style="top: 15px; right: 15px; background-color: #2c5aa0; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                <div class="equipment-category">
                                     @equipment.CategoryDisplayName
                                 </div>
                             </div>
-                            <div class="equipment-content p-4" style="display: flex; flex-direction: column; height: calc(100% - 250px);">
-                                <h4 class="font-weight-bold mb-2" style="color: #212529; font-size: 1.25rem; line-height: 1.4;">
-                                    @equipment.EquipmentName
-                                </h4>
+                            <div class="equipment-content">
+                                <h4>@equipment.EquipmentName</h4>
                                 @if (!string.IsNullOrEmpty(equipment.Model))
                                 {
-                                    <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                                        <i class="fas fa-tag" style="color: #2c5aa0;"></i> <strong>مدل:</strong> @equipment.Model
+                                    <p class="equipment-model">
+                                        <i class="fas fa-tag"></i> <strong>مدل:</strong> @equipment.Model
                                     </p>
                                 }
                                 @if (!string.IsNullOrEmpty(equipment.ShortDescription))
                                 {
-                                    <p style="color: #6c757d; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.6; flex: 1;">
+                                    <p class="equipment-description">
                                         @(equipment.ShortDescription.Length > 100 ? equipment.ShortDescription.Substring(0, 100) + "..." : equipment.ShortDescription)
                                     </p>
                                 }
                                 @if (equipment.Features != null && equipment.Features.Any())
                                 {
-                                    <div class="equipment-features mb-3">
+                                    <div class="equipment-features">
                                         @foreach (var feature in equipment.Features.Take(3))
                                         {
-                                            <span class="badge" style="background-color: #f8f9fa; color: #212529; border: 1px solid #dee2e6; padding: 0.4rem 0.8rem; margin: 0.25rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
-                                                <i class="fas fa-check-circle" style="color: #28a745;"></i> @feature
+                                            <span class="feature-badge">
+                                                <i class="fas fa-check-circle"></i> @feature
                                             </span>
                                         }
                                     </div>
                                 }
-                                <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <div class="equipment-footer">
                                     <a href="@Url.Action("Details", "MedicalEquipment", new { slug = equipment.Slug })" 
-                                       class="btn btn-primary btn-sm" style="border-radius: 6px; padding: 0.5rem 1rem; background-color: #2c5aa0; border-color: #2c5aa0;">
-                                        <i class="fas fa-arrow-left"></i> مشاهده جزئیات
+                                       class="btn btn-medical-primary btn-details"
+                                       aria-label="مشاهده جزئیات @equipment.EquipmentName">
+                                        <i class="fas fa-arrow-left me-2"></i> مشاهده جزئیات
                                     </a>
-                                    <small style="color: #6c757d; font-size: 0.85rem;">
+                                    <small class="view-count">
                                         <i class="fas fa-eye"></i> @equipment.ViewCount
                                     </small>
                                 </div>
@@ -89,39 +88,14 @@
                 <div class="row mt-4">
                     <div class="col-12 text-center">
                         <a href="@Url.Action("Index", "MedicalEquipment")" 
-                           class="btn btn-lg btn-outline-primary shadow-sm" style="border-radius: 30px; padding: 0.75rem 2rem;">
-                            <i class="fas fa-list"></i> مشاهده همه تجهیزات
+                           class="btn btn-medical-primary btn-lg btn-view-all animate-scale-in" 
+                           style="animation-delay: @(0.1 * Math.Min(6, equipments.Count))s;">
+                            <i class="fas fa-list me-2"></i> مشاهده همه تجهیزات
                         </a>
                     </div>
                 </div>
             }
         </div>
     </section>
-}
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Professional hover effect for equipment cards
-            $('.equipment-card').hover(
-                function() {
-                    $(this).find('img').css('transform', 'scale(1.05)');
-                    $(this).css({
-                        'transform': 'translateY(-6px)',
-                        'box-shadow': '0 8px 20px rgba(0,0,0,0.15)',
-                        'border-color': '#2c5aa0'
-                    });
-                },
-                function() {
-                    $(this).find('img').css('transform', 'scale(1)');
-                    $(this).css({
-                        'transform': 'translateY(0)',
-                        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-                        'border-color': '#dee2e6'
-                    });
-                }
-            );
-        });
-    </script>
 }
 

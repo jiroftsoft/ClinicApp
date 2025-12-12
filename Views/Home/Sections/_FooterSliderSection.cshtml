@@ -1,0 +1,50 @@
+@model List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <section class="footer-slider-section" role="region" aria-label="اسلایدر فوتر">
+        <div class="container">
+            <div class="footer-slider-container">
+                @foreach (var slider in Model)
+                {
+                    <div class="footer-slider-item animate-fade-in">
+                        @if (!string.IsNullOrEmpty(slider.ImageUrl))
+                        {
+                            <div class="footer-slider-image-wrapper">
+                                <img src="@slider.ImageUrl" 
+                                     alt="@slider.Title"
+                                     class="footer-slider-image"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-slider.jpg'">
+                            </div>
+                        }
+                        <div class="footer-slider-content">
+                            @if (!string.IsNullOrEmpty(slider.Title))
+                            {
+                                <h5 class="footer-slider-title">@slider.Title</h5>
+                            }
+                            @if (!string.IsNullOrEmpty(slider.Description))
+                            {
+                                <p class="footer-slider-description">@slider.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(slider.LinkUrl))
+                            {
+                                <a href="@slider.LinkUrl" 
+                                   class="footer-slider-link"
+                                   aria-label="مشاهده بیشتر درباره @slider.Title">
+                                    @(slider.ButtonText ?? "مشاهده بیشتر")
+                                    <i class="fas fa-arrow-left ms-2"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/footer-slider-section.css")" />
+}
+

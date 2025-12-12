@@ -1,57 +1,114 @@
 @model ClinicApp.ViewModels.TestimonialsSectionViewModel
 
-<section class="testimonials-section mb-5" style="background: #f8fafc; border-radius: 20px; padding: 3rem 0;">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">@Model.SectionTitle</h2>
-            <p class="lead text-muted" style="max-width: 700px; margin: 1rem auto;">
-                @Model.SectionSubtitle
-            </p>
-        </div>
+@if (Model.Testimonials != null && Model.Testimonials.Any())
+{
+    <section class="testimonials-section" aria-label="نظرات بیماران">
+        <div class="container">
+            <div class="testimonials-header">
+                <h2 class="testimonials-title">@Model.SectionTitle</h2>
+                <p class="testimonials-subtitle">@Model.SectionSubtitle</p>
+            </div>
 
-        <div class="row justify-content-center">
-            @if (Model.Testimonials != null && Model.Testimonials.Any())
-            {
-                foreach (var testimonial in Model.Testimonials)
+            <div class="testimonials-grid">
+                @foreach (var testimonial in Model.Testimonials)
                 {
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 p-4" style="border-radius: 16px; border: none; box-shadow: var(--shadow-sm);">
-                            <div class="mb-3">
-                                <i class="fas fa-quote-left" style="color: var(--primary-color); font-size: 1.8rem;"></i>
-                            </div>
-                            <p class="text-muted mb-4" style="line-height: 1.8; min-height: 120px; display: flex; align-items: center;">
-                                "@testimonial.Comment"
-                            </p>
-                            <div class="d-flex align-items-center mt-auto">
-                                <div class="me-3" style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <article class="testimonial-card animate-slide-up" tabindex="0" role="article" aria-label="نظر @testimonial.PatientName">
+                        <i class="fas fa-quote-left testimonial-quote-icon" aria-hidden="true"></i>
+                        
+                        <p class="testimonial-comment">@testimonial.Comment</p>
+                        
+                        <div class="testimonial-footer">
+                            @if (!string.IsNullOrEmpty(testimonial.PhotoUrl))
+                            {
+                                <img src="@testimonial.PhotoUrl" 
+                                     alt="@testimonial.PatientName" 
+                                     class="testimonial-avatar-image"
+                                     loading="lazy"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="testimonial-avatar" style="display: none;">
                                     @testimonial.PatientInitials
                                 </div>
-                                <div>
-                                    <h4 class="h6 mb-0" style="color: var(--primary-color);">@testimonial.PatientName</h4>
-                                    <div class="text-warning">
-                                        @for (int i = 1; i <= 5; i++)
-                                        {
-                                            if (i <= Math.Floor(testimonial.Rating))
-                                            {
-                                                <i class="fas fa-star"></i>
-                                            }
-                                            else if (i - 0.5 <= (double)testimonial.Rating)
-                                            {
-                                                <i class="fas fa-star-half-alt"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="far fa-star"></i>
-                                            }
-                                        }
-                                    </div>
+                            }
+                            else
+                            {
+                                <div class="testimonial-avatar">
+                                    @testimonial.PatientInitials
                                 </div>
+                            }
+                            
+                            <div class="testimonial-info">
+                                <h3 class="testimonial-patient-name">@testimonial.PatientName</h3>
+                                
+                                @if (!string.IsNullOrEmpty(testimonial.DoctorName))
+                                {
+                                    <p class="testimonial-doctor-name">
+                                        <i class="fas fa-user-md" aria-hidden="true"></i>
+                                        @testimonial.DoctorName
+                                    </p>
+                                }
+                                
+                                <div class="testimonial-rating" role="img" aria-label="امتیاز @testimonial.Rating از 5">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= Math.Floor(testimonial.Rating))
+                                        {
+                                            <i class="fas fa-star testimonial-rating-star filled" aria-hidden="true"></i>
+                                        }
+                                        else if (i - 0.5 <= (double)testimonial.Rating)
+                                        {
+                                            <i class="fas fa-star-half-alt testimonial-rating-star half" aria-hidden="true"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="far fa-star testimonial-rating-star empty" aria-hidden="true"></i>
+                                        }
+                                    }
+                                </div>
+                                
+                                @if (testimonial.CreatedAt.HasValue)
+                                {
+                                    <p class="testimonial-date">
+                                        <i class="fas fa-calendar" aria-hidden="true"></i>
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(testimonial.CreatedAt.Value)
+                                    </p>
+                                }
                             </div>
                         </div>
-                    </div>
+                    </article>
                 }
-            }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")" />
+}
+
+@section Scripts {
+    <script>
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.testimonial-card');
+            
+            if (cards.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+}
 

@@ -1,0 +1,192 @@
+/* Health Tips Section Styles */
+.health-tips-section {
+    background-color: var(--background-gray); /* Light gray background */
+    padding: var(--space-xxxl) 0;
+    margin-bottom: var(--space-xxxl);
+    position: relative;
+    overflow: hidden;
+}
+
+.health-tips-section .section-title {
+    color: var(--heading-color);
+}
+
+.health-tips-section .section-subtitle {
+    color: var(--text-color);
+}
+
+.health-tip-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    overflow: hidden;
+    transition: var(--transition-ease);
+    display: flex;
+    flex-direction: column;
+}
+
+.health-tip-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+}
+
+.health-tip-card .card-img-top {
+    height: 220px;
+    object-fit: cover;
+    width: 100%;
+    transition: transform 0.4s ease;
+}
+
+.health-tip-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.health-tip-card .default-image-placeholder {
+    height: 220px;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.health-tip-card .default-image-placeholder .fas {
+    font-size: 3.5rem;
+    color: white;
+}
+
+.health-tip-card .card-body {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.health-tip-card .badge-category {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+    display: inline-flex;
+    align-items: center;
+}
+.health-tip-card .badge-category .fas {
+    margin-left: var(--space-xs);
+}
+
+.health-tip-card .card-title {
+    font-weight: 700;
+    color: var(--heading-color);
+    font-size: 1.3rem;
+    margin-bottom: var(--space-sm);
+}
+
+.health-tip-card .card-text {
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    flex-grow: 1;
+    margin-bottom: var(--space-md);
+}
+
+.health-tip-card .tip-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.health-tip-card .meta-item {
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    display: inline-flex;
+    align-items: center;
+}
+.health-tip-card .meta-item .fas {
+    margin-left: var(--space-xs);
+    color: var(--primary-color);
+}
+
+.health-tip-card .btn-read-more {
+    margin-top: var(--space-md);
+    border-radius: var(--border-radius-full);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--font-size-base);
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    transition: var(--transition-ease);
+}
+.health-tip-card .btn-read-more:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.health-tips-section .btn-view-all {
+    margin-top: var(--space-xxl);
+    border-radius: var(--border-radius-full);
+    padding: var(--space-md) var(--space-xxl);
+    font-size: var(--font-size-lg);
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+.health-tips-section .btn-view-all:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* Category-specific badge colors */
+.health-tip-card .badge-category.category-prevention {
+    background-color: var(--success-color);
+}
+.health-tip-card .badge-category.category-nutrition {
+    background-color: var(--warning-color);
+}
+.health-tip-card .badge-category.category-exercise {
+    background-color: var(--info-color);
+}
+.health-tip-card .badge-category.category-diseases {
+    background-color: var(--danger-color);
+}
+.health-tip-card .badge-category.category-general {
+    background-color: var(--secondary-color);
+}
+
+/* Animations */
+.health-tip-card.animate-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 0.6s ease-out forwards;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .health-tip-card .card-img-top,
+    .health-tip-card .default-image-placeholder {
+        height: 180px;
+    }
+    .health-tip-card .card-title {
+        font-size: 1.2rem;
+    }
+    .health-tips-section .btn-view-all {
+        padding: var(--space-sm) var(--space-xl);
+        font-size: var(--font-size-base);
+    }
+    .health-tip-card .tip-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+    }
+}
+

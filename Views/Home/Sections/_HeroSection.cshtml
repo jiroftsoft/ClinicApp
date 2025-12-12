@@ -1,47 +1,373 @@
 @model ClinicApp.ViewModels.HeroSectionViewModel
+@using System.Web
 
-<section class="hero-section text-center py-5 mb-5" style="background: linear-gradient(135deg, #f0f7ff, #e6f3ff); border-radius: 20px; overflow: hidden; position: relative; margin-bottom: 3.5rem !important;">
-    @if (!string.IsNullOrEmpty(Model.BackgroundImageUrl))
+@* ============================================
+   Hero Section - Production Ready
+   ============================================
+   - SRP: هر بخش مسئولیت مشخص دارد
+   - Error Handling: مدیریت خطاها
+   - Logging: لاگ‌های کامل برای Debug
+   - Performance: بهینه‌سازی برای Production
+   ============================================ *@
+
+@{
+    // ============================================
+    // INITIALIZATION & VALIDATION
+    // ============================================
+    var hasModel = Model != null;
+    var hasSlides = hasModel && Model.Slides != null && Model.Slides.Any();
+    var validSlides = new List<ClinicApp.ViewModels.HeroSlideViewModel>();
+    
+    // Console Logging برای Debug
+    <script>
+        console.group('🔍 Hero Section - Initialization');
+        console.log('Model is null:', @(hasModel ? "false" : "true"));
+        console.log('Has Slides:', @(hasSlides ? "true" : "false"));
+        
+        @if (hasModel)
+        {
+            <text>
+            console.log('Model.Slides count:', @(Model.Slides?.Count ?? 0));
+            </text>
+        }
+    </script>
+    
+    if (hasSlides)
     {
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('@Model.BackgroundImageUrl') center/cover; opacity: 0.1;"></div>
+        // فیلتر کردن اسلایدهای معتبر (فقط اسلایدهایی که تصویر دارند)
+        validSlides = Model.Slides
+            .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl) || !string.IsNullOrWhiteSpace(s.ThumbnailUrl))
+            .ToList();
+            
+        <script>
+            console.log('Valid Slides Count:', @validSlides.Count);
+            @for (int i = 0; i < validSlides.Count && i < 5; i++)
+            {
+                var slide = validSlides[i];
+                <text>
+                console.log('Slide @(i + 1):', {
+                    id: @slide.SliderId,
+                    title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.Title ?? ""))',
+                    imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.ImageUrl ?? ""))',
+                    thumbnailUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.ThumbnailUrl ?? ""))'
+                });
+                </text>
+            }
+        </script>
     }
-    <div class="container" style="position: relative; z-index: 2;">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <h1 class="hero-title" style="color: var(--primary-color); font-weight: 700; font-size: 2.8rem; margin-bottom: 1.2rem;">
-                    @Model.Title
-                </h1>
-                <p class="lead hero-subtitle" style="font-size: 1.35rem; color: var(--dark-color); max-width: 800px; margin: 0 auto 1.8rem; line-height: 1.7;">
-                    @Model.Subtitle
-                </p>
-                <div class="d-flex flex-wrap justify-content-center gap-3 hero-buttons">
-                    @if (!string.IsNullOrEmpty(Model.PrimaryButtonUrl))
-                    {
-                        <a href="@Model.PrimaryButtonUrl" class="btn btn-primary btn-lg px-5 py-3">
-                            <i class="fas fa-calendar-check me-2"></i> @Model.PrimaryButtonText
-                        </a>
-                    }
-                    @if (!string.IsNullOrEmpty(Model.SecondaryButtonUrl))
-                    {
-                        <a href="@Model.SecondaryButtonUrl" class="btn btn-outline-primary btn-lg px-5 py-3">
-                            <i class="fas fa-video me-2"></i> @Model.SecondaryButtonText
-                        </a>
-                    }
-                </div>
-                @if (Model.Statistics != null && Model.Statistics.Any())
+    
+    <script>
+        console.log('Will Render Hero Section:', @(validSlides.Any() ? "true" : "false"));
+        console.groupEnd();
+    </script>
+}
+
+@* ============================================
+   RENDERING LOGIC
+   ============================================ *@
+@if (!hasModel)
+{
+    @* Model null است - چیزی نمایش نمی‌دهیم *@
+    <script>
+        console.warn('⚠️ Hero Section: Model is null - Skipping render');
+    </script>
+}
+else if (!validSlides.Any())
+{
+    @* هیچ اسلاید معتبری وجود ندارد *@
+    <script>
+        console.warn('⚠️ Hero Section: No valid slides found - Skipping render');
+        @if (hasSlides)
+        {
+            <text>
+            console.warn('⚠️ Hero Section: Total slides:', @Model.Slides.Count, 'but none have valid images');
+            </text>
+        }
+    </script>
+}
+else
+{
+    @* ============================================
+       STYLES LOADING
+       ============================================ *@
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/hero-section.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/hero-carousel.css")" />
+    
+    <script>
+        console.log('✅ Hero Section: Loading stylesheets');
+    </script>
+    
+    @* ============================================
+       CAROUSEL vs SINGLE SLIDE
+       ============================================ *@
+    if (validSlides.Count > 1)
+    {
+        @* ============================================
+           MULTIPLE SLIDES - CAROUSEL
+           ============================================ *@
+        <script>
+            console.log('🎠 Hero Section: Rendering Carousel with', @validSlides.Count, 'slides');
+        </script>
+        
+        <div id="heroCarousel" 
+             class="hero-carousel" 
+             role="region" 
+             aria-label="اسلایدر صفحه اصلی"
+             data-slides-count="@validSlides.Count">
+            <div class="carousel-inner">
+                @for (int i = 0; i < validSlides.Count; i++)
                 {
-                    <div class="mt-4 hero-stats" style="display: flex; justify-content: center; gap: 25px; flex-wrap: wrap;">
-                        @foreach (var stat in Model.Statistics)
+                    var slide = validSlides[i];
+                    var imageUrl = !string.IsNullOrWhiteSpace(slide.ImageUrl) 
+                        ? slide.ImageUrl 
+                        : slide.ThumbnailUrl;
+                    
+                    // نرمال‌سازی مسیر تصویر
+                    if (!string.IsNullOrWhiteSpace(imageUrl))
+                    {
+                        if (imageUrl.StartsWith("~/", StringComparison.OrdinalIgnoreCase))
                         {
-                            <div class="d-flex align-items-center">
-                                <i class="@stat.Icon text-success me-2" style="font-size: 1.4rem;"></i>
-                                <span style="font-weight: 500;">@stat.Value @stat.Label</span>
-                            </div>
+                            imageUrl = imageUrl.Substring(1);
                         }
+                        if (!imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && 
+                            !imageUrl.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            imageUrl = "/" + imageUrl.TrimStart('/', '\\');
+                        }
+                        imageUrl = imageUrl.Trim();
+                    }
+                    
+                    <div class="carousel-item @(i == 0 ? "active" : "")" 
+                         role="group" 
+                         aria-roledescription="slide" 
+                         aria-label="اسلاید @(i + 1) از @validSlides.Count"
+                         data-slide-index="@i"
+                         data-slide-id="@slide.SliderId">
+                        <div class="hero-slide" 
+                             style="background-image: url('@imageUrl'); background-size: cover; background-position: center; background-repeat: no-repeat;" 
+                             data-image-url="@imageUrl"
+                             data-slide-index="@i">
+                            <div class="hero-slide-content">
+                                @if (!string.IsNullOrEmpty(slide.Title))
+                                {
+                                    <h1 class="hero-slide-title">@slide.Title</h1>
+                                }
+                                @if (!string.IsNullOrEmpty(slide.Description))
+                                {
+                                    <p class="hero-slide-description">@slide.Description</p>
+                                }
+                                @if (!string.IsNullOrEmpty(slide.LinkUrl))
+                                {
+                                    <div class="hero-slide-buttons">
+                                        <a href="@slide.LinkUrl" 
+                                           class="hero-slide-button hero-slide-button-primary"
+                                           aria-label="مشاهده بیشتر درباره @slide.Title">
+                                            <i class="fas fa-arrow-left"></i>
+                                            <span>@(slide.ButtonText ?? "مشاهده بیشتر")</span>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
                     </div>
+                    
+                    <script>
+                        console.log('✅ Slide @(i + 1) rendered:', {
+                            id: @slide.SliderId,
+                            title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.Title ?? ""))',
+                            imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))',
+                            isActive: @(i == 0 ? "true" : "false")
+                        });
+                    </script>
                 }
             </div>
+            
+            @* Carousel Controls *@
+            <button class="hero-carousel-controls prev" 
+                    type="button" 
+                    aria-label="اسلاید قبلی"
+                    aria-controls="heroCarousel"
+                    data-action="prev">
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+            </button>
+            <button class="hero-carousel-controls next" 
+                    type="button" 
+                    aria-label="اسلاید بعدی"
+                    aria-controls="heroCarousel"
+                    data-action="next">
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            
+            @* Carousel Indicators *@
+            <ol class="hero-carousel-indicators" role="tablist">
+                @for (int i = 0; i < validSlides.Count; i++)
+                {
+                    <li class="hero-carousel-indicator @(i == 0 ? "active" : "")" 
+                        role="tab" 
+                        aria-label="اسلاید @(i + 1)"
+                        data-slide-to="@i"
+                        aria-selected="@(i == 0 ? "true" : "false")"
+                        tabindex="@(i == 0 ? "0" : "-1")"></li>
+                }
+            </ol>
         </div>
-    </div>
-</section>
+        
+        <script>
+            console.log('✅ Hero Carousel: HTML structure rendered');
+            console.log('✅ Hero Carousel: Controls and indicators added');
+        </script>
+    }
+    else
+    {
+        @* ============================================
+           SINGLE SLIDE
+           ============================================ *@
+        var slide = validSlides.FirstOrDefault();
+        var singleImageUrl = slide?.ImageUrl;
+        
+        if (string.IsNullOrWhiteSpace(singleImageUrl))
+        {
+            singleImageUrl = slide?.ThumbnailUrl;
+        }
+        
+        // نرمال‌سازی مسیر تصویر
+        if (!string.IsNullOrWhiteSpace(singleImageUrl))
+        {
+            if (singleImageUrl.StartsWith("~/", StringComparison.OrdinalIgnoreCase))
+            {
+                singleImageUrl = singleImageUrl.Substring(1);
+            }
+            if (!singleImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && 
+                !singleImageUrl.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+            {
+                singleImageUrl = "/" + singleImageUrl.TrimStart('/', '\\');
+            }
+            singleImageUrl = singleImageUrl.Trim();
+        }
+        
+        <script>
+            console.log('📄 Hero Section: Rendering Single Slide');
+            console.log('Single Slide Data:', {
+                id: @(slide?.SliderId ?? 0),
+                title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide?.Title ?? ""))',
+                imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(singleImageUrl ?? ""))'
+            });
+        </script>
+        
+        if (slide != null && !string.IsNullOrWhiteSpace(singleImageUrl))
+        {
+            <section class="hero-section animate-fade-in" 
+                     role="banner" 
+                     aria-label="بخش اصلی صفحه">
+                @if (!string.IsNullOrWhiteSpace(singleImageUrl))
+                {
+                    <div class="background-overlay" 
+                         style="background-image: url('@singleImageUrl');"
+                         data-image-url="@singleImageUrl"></div>
+                }
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-10">
+                            @if (!string.IsNullOrEmpty(slide.Title))
+                            {
+                                <h1 class="hero-title">@slide.Title</h1>
+                            }
+                            @if (!string.IsNullOrEmpty(slide.Description))
+                            {
+                                <p class="hero-subtitle">@slide.Description</p>
+                            }
+                            <div class="d-flex flex-wrap justify-content-center gap-3 hero-buttons">
+                                @if (!string.IsNullOrEmpty(slide.LinkUrl))
+                                {
+                                    <a href="@slide.LinkUrl" 
+                                       class="btn btn-medical-primary animate-scale-in"
+                                       aria-label="مشاهده بیشتر درباره @slide.Title">
+                                        <i class="fas fa-calendar-check me-2"></i> 
+                                        @(slide.ButtonText ?? "مشاهده بیشتر")
+                                    </a>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.SecondaryButtonUrl))
+                                {
+                                    <a href="@Model.SecondaryButtonUrl" 
+                                       class="btn btn-medical-outline-primary animate-scale-in"
+                                       aria-label="@Model.SecondaryButtonText">
+                                        <i class="fas fa-video me-2"></i> 
+                                        @Model.SecondaryButtonText
+                                    </a>
+                                }
+                            </div>
+                            @if (Model.Statistics != null && Model.Statistics.Any())
+                            {
+                                <div class="mt-4 hero-stats" role="list" aria-label="آمار کلینیک">
+                                    @foreach (var stat in Model.Statistics)
+                                    {
+                                        <div class="d-flex align-items-center stat-item" role="listitem">
+                                            <i class="@stat.Icon me-2" aria-hidden="true"></i>
+                                            <span>@stat.Value @stat.Label</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <script>
+                console.log('✅ Hero Section: Single slide rendered successfully');
+            </script>
+        }
+        else
+        {
+            <script>
+                console.error('❌ Hero Section: Single slide data is invalid', {
+                    slide: @(slide != null ? "exists" : "null"),
+                    imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(singleImageUrl ?? ""))'
+                });
+            </script>
+        }
+    }
+    
+    <script>
+        console.log('✅ Hero Section: Rendering completed');
+    </script>
+}
+
+@* ============================================
+   SCRIPTS LOADING
+   ============================================ *@
+@section Scripts {
+    @if (validSlides.Count > 1)
+    {
+        <script>
+            console.log('📜 Hero Section: Loading carousel script');
+        </script>
+        <script src="~/Content/js/hero-carousel.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+        <script>
+            console.log('✅ Hero Section: Carousel script loaded');
+            
+            // Wait for DOM to be ready
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Hero Section: DOM ready, initializing carousel');
+                
+                var carousel = document.getElementById('heroCarousel');
+                if (carousel) {
+                    console.log('✅ Hero Carousel: Element found in DOM');
+                    console.log('Carousel Data:', {
+                        slidesCount: carousel.getAttribute('data-slides-count'),
+                        activeSlide: carousel.querySelector('.carousel-item.active') ? 'found' : 'not found'
+                    });
+                } else {
+                    console.error('❌ Hero Carousel: Element not found in DOM');
+                }
+            });
+        </script>
+    }
+    else
+    {
+        <script>
+            console.log('ℹ️ Hero Section: Single slide mode - No carousel script needed');
+        </script>
+    }
+}
 

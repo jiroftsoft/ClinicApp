@@ -2,102 +2,123 @@
 
 @if (Model.Videos != null && Model.Videos.Any())
 {
-    <section class="video-section mb-5 py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="h1 text-white" style="font-weight: 700; margin-bottom: 1rem;">@Model.SectionTitle</h2>
-                <p class="lead text-white" style="max-width: 700px; margin: 0 auto; opacity: 0.9;">
-                    @Model.SectionSubtitle
-                </p>
-            </div>
+    <section class="video-section" aria-label="ویدیوهای کلینیک">
+        <div class="video-container">
+            <div class="container">
+                <div class="video-header">
+                    <h2 class="video-title">@Model.SectionTitle</h2>
+                    <p class="video-subtitle">@Model.SectionSubtitle</p>
+                </div>
 
-            <div class="row">
-                @foreach (var video in Model.Videos)
-                {
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card video-card h-100" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
-                            <div class="video-thumbnail-container position-relative" style="cursor: pointer;" data-video-id="@video.VideoId" data-embed-url="@video.EmbedUrl" data-video-type="@video.VideoType">
+                <div class="video-grid">
+                    @foreach (var video in Model.Videos)
+                    {
+                        <article class="video-card animate-slide-up" 
+                                 tabindex="0" 
+                                 role="button" 
+                                 aria-label="پخش ویدیو @video.Title">
+                            <div class="video-thumbnail-wrapper" 
+                                 data-video-id="@video.VideoId" 
+                                 data-embed-url="@video.EmbedUrl" 
+                                 data-video-type="@video.VideoType">
                                 @if (!string.IsNullOrEmpty(video.ThumbnailUrl))
                                 {
                                     <img src="@video.ThumbnailUrl" 
-                                         class="card-img-top w-100" 
+                                         class="video-thumbnail" 
                                          alt="@video.Title"
-                                         style="height: 250px; object-fit: cover; transition: transform 0.3s ease;"
-                                         onerror="this.src='/Content/Images/default-video.jpg'">
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='/Content/Images/default-video.jpg'">
                                 }
                                 else
                                 {
-                                    <div class="card-img-top w-100 d-flex align-items-center justify-content-center bg-dark" style="height: 250px;">
-                                        <i class="fas fa-video fa-3x text-white"></i>
+                                    <div class="video-thumbnail-placeholder">
+                                        <i class="fas fa-video" aria-hidden="true"></i>
                                     </div>
                                 }
                                 
-                                <!-- Play Button Overlay -->
-                                <div class="play-button-overlay position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                                    <div class="play-button-circle" style="width: 70px; height: 70px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
-                                        <i class="fas fa-play text-primary" style="font-size: 24px; margin-left: 5px;"></i>
+                                <div class="video-play-overlay">
+                                    <div class="video-play-button" aria-label="پخش ویدیو">
+                                        <i class="fas fa-play" aria-hidden="true"></i>
                                     </div>
                                 </div>
                                 
-                                @if (video.DurationFormatted != null)
+                                @if (!string.IsNullOrEmpty(video.DurationFormatted))
                                 {
-                                    <div class="position-absolute" style="bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px;">
-                                        <i class="fas fa-clock"></i> @video.DurationFormatted
+                                    <div class="video-duration">
+                                        <i class="fas fa-clock" aria-hidden="true"></i>
+                                        <span>@video.DurationFormatted</span>
                                     </div>
                                 }
                             </div>
                             
-                            <div class="card-body">
-                                <h5 class="card-title mb-2" style="font-weight: 600; color: #333;">
-                                    @video.Title
-                                </h5>
+                            <div class="video-content">
+                                <h3 class="video-title-text">@video.Title</h3>
+                                
                                 @if (!string.IsNullOrEmpty(video.Description))
                                 {
-                                    <p class="card-text text-muted" style="font-size: 14px; line-height: 1.6;">
-                                        @(video.Description.Length > 100 ? video.Description.Substring(0, 100) + "..." : video.Description)
-                                    </p>
+                                    <p class="video-description">@(video.Description.Length > 100 ? video.Description.Substring(0, 100) + "..." : video.Description)</p>
                                 }
-                                <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <div>
-                                        <span class="badge badge-info">@video.VideoTypeName</span>
+                                
+                                <div class="video-meta">
+                                    <div class="video-badges">
+                                        @if (!string.IsNullOrEmpty(video.VideoTypeName))
+                                        {
+                                            <span class="video-badge">
+                                                <i class="fas fa-tag" aria-hidden="true"></i>
+                                                @video.VideoTypeName
+                                            </span>
+                                        }
                                         @if (!string.IsNullOrEmpty(video.Category))
                                         {
-                                            <span class="badge badge-secondary">@video.Category</span>
+                                            <span class="video-badge video-badge-secondary">
+                                                @video.Category
+                                            </span>
                                         }
                                     </div>
-                                    <small class="text-muted">
-                                        <i class="fas fa-eye"></i> @video.ViewCount
-                                    </small>
+                                    <div class="video-view-count">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                        <span>@video.ViewCount</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                }
+                        </article>
+                    }
+                </div>
             </div>
         </div>
     </section>
+}
 
-    <!-- Video Modal -->
-    <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-labelledby="videoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content" style="background: #000; border: none;">
-                <div class="modal-header" style="border: none; padding: 10px;">
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1;">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-0">
-                    <div id="videoModalContent" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-                        <iframe id="videoModalIframe" 
-                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
-                                allowfullscreen 
-                                allow="autoplay; encrypted-media">
-                        </iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/video-section.css")" />
+}
+
+@section Scripts {
+    <script src="@Url.Content("~/Content/js/video-modal.js")"></script>
+    <script>
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.video-card');
+            
+            if (cards.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
 }
 
 <style>

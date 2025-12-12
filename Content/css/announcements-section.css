@@ -1,0 +1,199 @@
+/* Announcements Section Styles */
+.announcements-section {
+    background-color: var(--background-gray); /* Light gray background */
+    padding: var(--space-md) 0;
+    margin-bottom: var(--space-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.announcements-carousel {
+    position: relative;
+}
+
+.announcement-item {
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0;
+    padding: var(--space-md) var(--space-lg);
+    transition: var(--transition-ease);
+}
+
+.announcement-item:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Alert Type Colors */
+.announcement-item.alert-info {
+    background-color: var(--info-color);
+    color: white;
+    border-color: var(--info-color);
+}
+
+.announcement-item.alert-success {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.announcement-item.alert-warning {
+    background-color: var(--warning-color);
+    color: var(--dark-color);
+    border-color: var(--warning-color);
+}
+
+.announcement-item.alert-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border-color: var(--danger-color);
+}
+
+.announcement-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.announcement-text {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.announcement-text .important-badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
+    margin-left: var(--space-sm);
+}
+.announcement-text .important-badge .fas {
+    margin-left: var(--space-xs);
+}
+
+.announcement-text .announcement-title {
+    font-weight: 700;
+    margin: 0;
+}
+
+.announcement-text .announcement-summary {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.announcement-link {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 600;
+    transition: var(--transition-ease);
+    margin-right: var(--space-sm);
+}
+.announcement-link:hover {
+    opacity: 0.8;
+    text-decoration: none;
+}
+
+.announcement-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: var(--transition-ease);
+    padding: var(--space-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.announcement-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Carousel Controls */
+.announcements-carousel .carousel-control-prev,
+.announcements-carousel .carousel-control-next {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-full);
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.7;
+    transition: var(--transition-ease);
+}
+.announcements-carousel .carousel-control-prev:hover,
+.announcements-carousel .carousel-control-next:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.announcements-carousel .carousel-control-prev {
+    right: var(--space-md);
+}
+
+.announcements-carousel .carousel-control-next {
+    left: var(--space-md);
+}
+
+.announcements-carousel .carousel-control-prev-icon,
+.announcements-carousel .carousel-control-next-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Animations */
+.announcement-item.animate-in {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .announcements-section {
+        padding: var(--space-sm) 0;
+    }
+    
+    .announcement-item {
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    .announcement-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .announcement-text {
+        width: 100%;
+    }
+    
+    .announcement-close {
+        position: absolute;
+        top: var(--space-xs);
+        left: var(--space-xs);
+    }
+    
+    .announcements-carousel .carousel-control-prev,
+    .announcements-carousel .carousel-control-next {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .announcements-carousel .carousel-control-prev {
+        right: var(--space-xs);
+    }
+    
+    .announcements-carousel .carousel-control-next {
+        left: var(--space-xs);
+    }
+}
+

@@ -1,0 +1,399 @@
+/* Hero Carousel Styles */
+.hero-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--spacing-xxxl);
+}
+
+.hero-carousel .carousel-inner {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.hero-carousel .carousel-item {
+    position: relative;
+    float: right;
+    width: 100%;
+    margin-right: -100%;
+    backface-visibility: hidden;
+    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+    min-height: 500px;
+    display: none; /* مخفی به صورت پیش‌فرض */
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.hero-carousel .carousel-item.active {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin-right: 0 !important; /* اطمینان از نمایش صحیح */
+}
+
+.hero-carousel .carousel-item-next,
+.hero-carousel .carousel-item-prev {
+    position: absolute;
+    top: 0;
+}
+
+.hero-carousel .carousel-item-next:not(.carousel-item-start),
+.hero-carousel .active.carousel-item-end {
+    transform: translateX(-100%);
+}
+
+.hero-carousel .carousel-item-prev:not(.carousel-item-end),
+.hero-carousel .active.carousel-item-start {
+    transform: translateX(100%);
+}
+
+.hero-slide {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-color: var(--medical-primary); /* Fallback color اگر تصویر لود نشود */
+    background-attachment: scroll; /* اطمینان از نمایش صحیح تصویر */
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* اطمینان از نمایش تصویر پس‌زمینه در اسلاید فعال */
+.hero-carousel .carousel-item.active .hero-slide {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+}
+
+/* اطمینان از نمایش تصویر حتی اگر inline style وجود نداشته باشد */
+.hero-carousel .carousel-item.active .hero-slide[data-image-url] {
+    background-image: var(--hero-slide-image, url('/Content/Images/clinic-hero.jpg')) !important;
+}
+
+.hero-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Overlay بسیار سبک برای بهبود خوانایی متن - فقط در صورت نیاز */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+    z-index: 1;
+    pointer-events: none; /* اجازه می‌دهد کلیک‌ها از overlay عبور کنند */
+    opacity: 0.3; /* کاهش بیشتر opacity برای نمایش بهتر تصویر */
+}
+
+/* اطمینان از نمایش overlay در اسلاید فعال */
+.hero-carousel .carousel-item.active .hero-slide::before {
+    opacity: 0.3 !important;
+    visibility: visible !important;
+}
+
+.hero-slide-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    padding: var(--spacing-xxl) var(--spacing-md);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.hero-slide-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: var(--spacing-lg);
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.5);
+    animation: slideDown 0.8s ease-out forwards;
+    animation-delay: 0.2s;
+    opacity: 1; /* Fallback: اگر animation اجرا نشد، متن قابل مشاهده باشد */
+}
+
+.hero-carousel .carousel-item.active .hero-slide-title {
+    opacity: 1; /* اطمینان از نمایش در اسلاید فعال */
+    animation: slideDown 0.8s ease-out forwards;
+}
+
+.hero-slide-description {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-xxl);
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 0, 0, 0.5);
+    line-height: 1.8;
+    animation: slideUp 0.8s ease-out forwards;
+    animation-delay: 0.4s;
+    opacity: 1; /* Fallback: اگر animation اجرا نشد، متن قابل مشاهده باشد */
+}
+
+.hero-carousel .carousel-item.active .hero-slide-description {
+    opacity: 1; /* اطمینان از نمایش در اسلاید فعال */
+    animation: slideUp 0.8s ease-out forwards;
+}
+
+.hero-slide-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-md);
+    animation: fadeIn 0.8s ease-out forwards;
+    animation-delay: 0.6s;
+    opacity: 1; /* Fallback: اگر animation اجرا نشد، دکمه‌ها قابل مشاهده باشند */
+}
+
+.hero-carousel .carousel-item.active .hero-slide-buttons {
+    opacity: 1; /* اطمینان از نمایش در اسلاید فعال */
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.hero-slide-button {
+    padding: var(--spacing-md) var(--spacing-xxl);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    transition: all var(--transition-normal) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.hero-slide-button-primary {
+    background-color: white;
+    color: var(--medical-primary);
+    border: 2px solid white;
+}
+
+.hero-slide-button-primary:hover {
+    background-color: var(--medical-primary);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.hero-slide-button-secondary {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.hero-slide-button-secondary:hover {
+    background-color: white;
+    color: var(--medical-primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Carousel Controls */
+.hero-carousel-controls {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all var(--transition-normal) var(--ease-out);
+    backdrop-filter: blur(10px);
+}
+
+.hero-carousel-controls:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.hero-carousel-controls.prev {
+    right: var(--space-lg);
+}
+
+.hero-carousel-controls.next {
+    left: var(--space-lg);
+}
+
+/* Carousel Indicators */
+.hero-carousel-indicators {
+    position: absolute;
+    bottom: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: var(--spacing-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hero-carousel-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 2px solid white;
+    cursor: pointer;
+    transition: all var(--transition-normal) var(--ease-out);
+}
+
+.hero-carousel-indicator.active {
+    background-color: white;
+    width: 30px;
+    border-radius: var(--radius-md);
+}
+
+.hero-carousel-indicator:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .hero-slide-title {
+        font-size: 2.5rem;
+    }
+    .hero-slide-description {
+        font-size: 1.2rem;
+    }
+    .hero-carousel-controls {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    .hero-carousel-controls.prev {
+        right: var(--spacing-md);
+    }
+    .hero-carousel-controls.next {
+        left: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .hero-carousel .carousel-item {
+        min-height: 400px;
+    }
+    .hero-slide {
+        min-height: 400px;
+    }
+    .hero-slide-title {
+        font-size: 2rem;
+    }
+    .hero-slide-description {
+        font-size: 1rem;
+    }
+    .hero-slide-button {
+        padding: var(--spacing-sm) var(--spacing-xl);
+        font-size: var(--font-size-base);
+    }
+    .hero-carousel-controls {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}
+
+/* Keyframes برای Animation ها */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* بهبود Visibility برای اسلایدهای فعال */
+.hero-carousel .carousel-item.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+}
+
+.hero-carousel .carousel-item.active .hero-slide {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.hero-carousel .carousel-item.active .hero-slide-content {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.hero-carousel .carousel-item.active .hero-slide-title,
+.hero-carousel .carousel-item.active .hero-slide-description,
+.hero-carousel .carousel-item.active .hero-slide-buttons {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* اطمینان از نمایش تصویر پس‌زمینه */
+.hero-carousel .carousel-item.active .hero-slide::before {
+    opacity: 0.3 !important;
+    visibility: visible !important;
+}
+
+/* اطمینان از نمایش تصویر حتی قبل از لود شدن */
+.hero-carousel .carousel-item.active .hero-slide {
+    background-color: transparent !important; /* حذف background-color برای نمایش تصویر */
+}
+
+/* Debug: نمایش تصویر حتی اگر inline style وجود نداشته باشد */
+.hero-carousel .carousel-item.active .hero-slide[data-image-url]:not([style*="background-image"]) {
+    background-image: url('/Content/Images/clinic-hero.jpg') !important;
+}
+
+/* اطمینان از عدم مخفی شدن تصویر */
+.hero-carousel .carousel-item.active .hero-slide * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Debug: نمایش border برای troubleshooting (فقط در Development) */
+/* .hero-carousel .carousel-item.active .hero-slide {
+    border: 3px solid red !important;
+} */
+
+/* اطمینان از نمایش background-image حتی اگر CSS override شود */
+.hero-carousel .carousel-item.active .hero-slide[style*="background-image"] {
+    background-image: inherit !important;
+}
+

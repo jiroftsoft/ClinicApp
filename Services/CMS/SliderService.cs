@@ -53,6 +53,7 @@ namespace ClinicApp.Services.CMS
                     Title = s.Title,
                     Description = s.Description,
                     ImageUrl = s.ImageUrl,
+                    ThumbnailUrl = s.ThumbnailUrl,
                     LinkUrl = s.LinkUrl,
                     ButtonText = s.ButtonText,
                     IsActive = s.IsActive,

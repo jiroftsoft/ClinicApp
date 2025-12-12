@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.CMS;
@@ -114,13 +115,18 @@ namespace ClinicApp.Services
                 var insuranceInfosTask = GetInsuranceInfosSectionAsync(8);
                 var medicalServiceInfosTask = GetMedicalServiceInfosSectionAsync(6);
                 var emergencyContactsTask = GetEmergencyContactsSectionAsync();
+                
+                // لود Slider Sections
+                var sidebarSlidersTask = GetSidebarSlidersAsync();
+                var footerSlidersTask = GetFooterSlidersAsync();
 
                 // انتظار برای تمام Task ها
                 await Task.WhenAll(
                     heroTask, valuePropTask, servicesTask, doctorsTask, quickAppointmentTask,
                     testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
                     medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
-                    insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask);
+                    insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask,
+                    sidebarSlidersTask, footerSlidersTask);
 
                 var viewModel = new HomePageViewModel
                 {
@@ -140,7 +146,9 @@ namespace ClinicApp.Services
                     HealthTips = await healthTipsTask,
                     InsuranceInfos = await insuranceInfosTask,
                     MedicalServiceInfos = await medicalServiceInfosTask,
-                    EmergencyContacts = await emergencyContactsTask
+                    EmergencyContacts = await emergencyContactsTask,
+                    SidebarSliders = await sidebarSlidersTask,
+                    FooterSliders = await footerSlidersTask
                 };
 
                 _logger.Information("✅ داده‌های صفحه اصلی با موفقیت دریافت شد");
@@ -163,18 +171,57 @@ namespace ClinicApp.Services
                 var effectiveClinicId = clinicId ?? 1;
                 var clinic = await _clinicRepository.GetByIdAsync(effectiveClinicId);
 
-                // دریافت اسلایدرهای فعال برای Hero
+                // دریافت اسلایدرهای فعال برای Hero از دیتابیس
                 var heroSliders = await _sliderRepository.GetActiveSlidersAsync("hero");
-                var heroSlider = heroSliders.FirstOrDefault();
+                
+                _logger.Information("Hero Sliders - تعداد اسلایدرهای فعال از دیتابیس: {Count}, ClinicId: {ClinicId}", 
+                    heroSliders?.Count ?? 0, effectiveClinicId);
+                
+                // تبدیل به ViewModel و اصلاح مسیر تصاویر - فقط از دیتابیس
+                var slides = heroSliders
+                    .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl) || !string.IsNullOrWhiteSpace(s.ThumbnailUrl)) // فقط اسلایدرهایی که تصویر یا Thumbnail دارند
+                    .Select(s => {
+                        // استفاده از ImagePathHelper برای نرمال‌سازی مسیرها
+                        var imageUrl = ImagePathHelper.NormalizeImagePath(s.ImageUrl);
+                        var thumbnailUrl = ImagePathHelper.NormalizeImagePath(s.ThumbnailUrl);
+                        
+                        // Logging برای Debug
+                        _logger.Information("Hero Slider - SliderId: {SliderId}, Title: {Title}, ImageUrl: {ImageUrl}, ThumbnailUrl: {ThumbnailUrl}",
+                            s.SliderId, s.Title, imageUrl, thumbnailUrl);
+                        
+                        return new HeroSlideViewModel
+                        {
+                            SliderId = s.SliderId,
+                            Title = s.Title,
+                            Description = s.Description,
+                            ImageUrl = imageUrl, // فقط از دیتابیس
+                            ThumbnailUrl = thumbnailUrl, // فقط از دیتابیس
+                            LinkUrl = s.LinkUrl,
+                            ButtonText = s.ButtonText,
+                            DisplayOrder = s.DisplayOrder
+                        };
+                    })
+                    .OrderBy(s => s.DisplayOrder) // مرتب‌سازی بر اساس DisplayOrder
+                    .ToList();
 
+                // اگر اسلایدری وجود نداشت، null برمی‌گردانیم (بدون hard code)
+                if (!slides.Any())
+                {
+                    _logger.Warning("هیچ اسلایدر فعالی برای Hero Section یافت نشد. Hero Section نمایش داده نمی‌شود.");
+                    return null; // بدون hard code - اگر اسلایدری وجود نداشت، null برمی‌گردانیم
+                }
+
+                var firstSlide = slides.FirstOrDefault();
+
+                // فقط از داده‌های دیتابیس استفاده می‌کنیم - بدون hard code
                 return new HeroSectionViewModel
                 {
-                    Title = heroSlider?.Title ?? (clinic?.Name ?? "کلینیک درمانی مدرن"),
-                    Subtitle = heroSlider?.Description ?? "همراه شما در مسیر سلامت",
-                    BackgroundImageUrl = heroSlider?.ImageUrl ?? "/Content/Images/clinic-hero.jpg",
-                    BackgroundVideoUrl = null, // TODO: اضافه کردن ویدیو در صورت نیاز
-                    PrimaryButtonText = heroSlider?.ButtonText ?? "رزرو نوبت آنلاین",
-                    PrimaryButtonUrl = heroSlider?.LinkUrl ?? "/Patient/Appointment/Index",
+                    Title = firstSlide?.Title ?? string.Empty,
+                    Subtitle = firstSlide?.Description ?? string.Empty,
+                    BackgroundImageUrl = firstSlide?.ImageUrl, // فقط از دیتابیس
+                    BackgroundVideoUrl = null,
+                    PrimaryButtonText = firstSlide?.ButtonText ?? string.Empty,
+                    PrimaryButtonUrl = firstSlide?.LinkUrl ?? string.Empty,
                     SecondaryButtonText = "مشاوره آنلاین",
                     SecondaryButtonUrl = "/Patient/Appointment/Consultation",
                     Statistics = new List<StatisticItemViewModel>
@@ -182,20 +229,15 @@ namespace ClinicApp.Services
                         new StatisticItemViewModel { Icon = "fas fa-user-md", Label = "پزشک متخصص", Value = "45+" },
                         new StatisticItemViewModel { Icon = "fas fa-users", Label = "بیمار راضی", Value = "15,000+" },
                         new StatisticItemViewModel { Icon = "fas fa-headset", Label = "پشتیبانی", Value = "24/7" }
-                    }
+                    },
+                    Slides = slides // فقط از دیتابیس
                 };
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت داده‌های Hero Section");
-                // بازگرداندن داده‌های پیش‌فرض در صورت خطا
-                return new HeroSectionViewModel
-                {
-                    Title = "کلینیک درمانی مدرن",
-                    Subtitle = "همراه شما در مسیر سلامت",
-                    PrimaryButtonText = "رزرو نوبت آنلاین",
-                    PrimaryButtonUrl = "/Patient/Appointment/Index"
-                };
+                _logger.Error(ex, "خطا در دریافت داده‌های Hero Section از دیتابیس");
+                // در صورت خطا، null برمی‌گردانیم - بدون hard code
+                return null;
             }
         }
 
@@ -754,6 +796,68 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در دریافت داده‌های Emergency Contacts Section");
                 return new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت اسلایدرهای Sidebar
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>> GetSidebarSlidersAsync()
+        {
+            try
+            {
+                var sliders = await _sliderRepository.GetActiveSlidersAsync("sidebar");
+                return sliders.Select(s => new ClinicApp.ViewModels.CMS.SliderIndexViewModel
+                {
+                    SliderId = s.SliderId,
+                    Title = s.Title,
+                    Description = s.Description,
+                    ImageUrl = s.ImageUrl,
+                    ThumbnailUrl = s.ThumbnailUrl,
+                    LinkUrl = s.LinkUrl,
+                    ButtonText = s.ButtonText,
+                    IsActive = s.IsActive,
+                    DisplayOrder = s.DisplayOrder,
+                    Position = s.Position,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Sidebar Sliders");
+                return new List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت اسلایدرهای Footer
+        /// </summary>
+        private async Task<List<SliderIndexViewModel>> GetFooterSlidersAsync()
+        {
+            try
+            {
+                var sliders = await _sliderRepository.GetActiveSlidersAsync("footer");
+                return sliders.Select(s => new SliderIndexViewModel
+                {
+                    SliderId = s.SliderId,
+                    Title = s.Title,
+                    Description = s.Description,
+                    ImageUrl = s.ImageUrl,
+                    ThumbnailUrl = s.ThumbnailUrl,
+                    LinkUrl = s.LinkUrl,
+                    ButtonText = s.ButtonText,
+                    IsActive = s.IsActive,
+                    DisplayOrder = s.DisplayOrder,
+                    Position = s.Position,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Footer Sliders");
+                return new List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>();
             }
         }
 
