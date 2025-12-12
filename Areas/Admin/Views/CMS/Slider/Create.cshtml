@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.CMS.SliderCreateEditViewModel
+@model ClinicApp.ViewModels.CMS.SliderCreateEditPageViewModel
 @{
     ViewBag.Title = "ایجاد اسلایدر جدید";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -6,141 +6,276 @@
 
 @Html.AntiForgeryToken()
 
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #e3e6f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #e74a3b;
+            font-weight: bold;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .section-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .image-preview {
+            max-width: 300px;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+            margin-top: 10px;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">ایجاد اسلایدر جدید</h1>
-        <a href="@Url.Action("Index", new { position = Model.Position })" class="btn btn-secondary">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-images text-primary"></i>
+            ایجاد اسلایدر جدید
+        </h1>
+        <a href="@Url.Action("Index", new { position = Model.Model.Position })" class="btn btn-secondary shadow-sm" style="border-radius: 8px;">
             <i class="fas fa-arrow-right"></i> بازگشت به لیست
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "Slider", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            @using (Html.BeginForm("Create", "Slider", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-            {
-                @Html.AntiForgeryToken()
-                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            <!-- اطلاعات اصلی -->
+            <div class="section-header">
+                <h5><i class="fas fa-info-circle"></i> اطلاعات اصلی</h5>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Title, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "عنوان اسلایدر" })
-                            @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.Title, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Model.Title, new { @class = "form-control", placeholder = "عنوان اسلایدر" })
+                        @Html.ValidationMessageFor(m => m.Model.Title, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.Description)
+                        @Html.TextAreaFor(m => m.Model.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات اسلایدر (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Model.Description, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تصاویر -->
+            <div class="section-header">
+                <h5><i class="fas fa-image"></i> تصاویر</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.ImageUrl, "تصویر اصلی", new { @class = "required" })
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ImageFile" name="ImageFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ImageFile">انتخاب تصویر اصلی...</label>
+                        </div>
+                        <div id="imagePreview" class="mb-2" style="display: none;">
+                            <img id="imagePreviewImg" src="" alt="پیش‌نمایش تصویر" class="image-preview">
+                            <br />
+                            <small class="text-muted">پیش‌نمایش تصویر</small>
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ImageUrl)
+                        @Html.ValidationMessageFor(m => m.Model.ImageUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 1920x1080
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.ThumbnailUrl, "تصویر کوچک")
+                        <div class="custom-file mb-2">
+                            <input type="file" class="custom-file-input" id="ThumbnailFile" name="ThumbnailFile" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                            <label class="custom-file-label" for="ThumbnailFile">انتخاب تصویر کوچک...</label>
+                        </div>
+                        <div id="thumbnailPreview" class="mb-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="پیش‌نمایش تصویر کوچک" class="image-preview">
+                            <br />
+                            <small class="text-muted">پیش‌نمایش تصویر کوچک</small>
+                        </div>
+                        @Html.HiddenFor(m => m.Model.ThumbnailUrl)
+                        @Html.ValidationMessageFor(m => m.Model.ThumbnailUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> فرمت‌های مجاز: JPG, PNG, GIF, WEBP | حداکثر حجم: 5 مگابایت | ابعاد توصیه شده: 400x250
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- لینک و دکمه -->
+            <div class="section-header">
+                <h5><i class="fas fa-link"></i> لینک و دکمه</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.LinkUrl)
+                        @Html.TextBoxFor(m => m.Model.LinkUrl, new { @class = "form-control", placeholder = "لینک مقصد (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Model.LinkUrl, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.ButtonText)
+                        @Html.TextBoxFor(m => m.Model.ButtonText, new { @class = "form-control", placeholder = "متن دکمه (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Model.ButtonText, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- تنظیمات -->
+            <div class="section-header">
+                <h5><i class="fas fa-cog"></i> تنظیمات</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.Position)
+                        @Html.DropDownListFor(m => m.Model.Position, new SelectList(Model.Positions, "Value", "DisplayName", Model.Model.Position), "لطفاً موقعیت را انتخاب کنید", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Model.Position, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Model.DisplayOrder, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Model.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
+                        @Html.ValidationMessageFor(m => m.Model.DisplayOrder, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <div class="form-check mt-4">
+                            @Html.CheckBoxFor(m => m.Model.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.Model.IsActive, new { @class = "form-check-label" })
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Description)
-                            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات اسلایدر" })
-                            @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
+            <!-- تاریخ‌ها -->
+            <div class="section-header">
+                <h5><i class="fas fa-calendar-alt"></i> تاریخ‌ها</h5>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.ImageUrl, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Content/Images/sliders/..." })
-                            @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.ThumbnailUrl)
-                            @Html.TextBoxFor(m => m.ThumbnailUrl, new { @class = "form-control", placeholder = "/Content/Images/sliders/thumbnails/..." })
-                            @Html.ValidationMessageFor(m => m.ThumbnailUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "startDatePicker";
+                        ViewBag.PersianDatePickerName = "StartDate";
+                        ViewBag.PersianDatePickerValue = Model.Model.StartDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اسلایدر از همین الان فعال می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
                 </div>
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "endDatePicker";
+                        ViewBag.PersianDatePickerName = "EndDate";
+                        ViewBag.PersianDatePickerValue = Model.Model.EndDate;
+                        ViewBag.PersianDatePickerLabel = "تاریخ پایان";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ پایان (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اسلایدر تا زمان غیرفعال شدن نمایش داده می‌شود";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
+                </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.LinkUrl)
-                            @Html.TextBoxFor(m => m.LinkUrl, new { @class = "form-control", placeholder = "لینک مقصد (اختیاری)" })
-                            @Html.ValidationMessageFor(m => m.LinkUrl, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.ButtonText)
-                            @Html.TextBoxFor(m => m.ButtonText, new { @class = "form-control", placeholder = "متن دکمه (اختیاری)" })
-                            @Html.ValidationMessageFor(m => m.ButtonText, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Position)
-                            @Html.DropDownListFor(m => m.Position, new SelectList(new[] { 
-                                new SelectListItem { Text = "Hero (صفحه اصلی)", Value = "hero" },
-                                new SelectListItem { Text = "Sidebar", Value = "sidebar" },
-                                new SelectListItem { Text = "Footer", Value = "footer" }
-                            }, "Value", "Text", Model.Position), new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.Position, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.DisplayOrder, new { @class = "required" })
-                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", @Value = "0" })
-                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <div class="form-check mt-4">
-                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.StartDate)
-                            @Html.TextBoxFor(m => m.StartDate, new { @class = "form-control", type = "datetime-local" })
-                            @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.EndDate)
-                            @Html.TextBoxFor(m => m.EndDate, new { @class = "form-control", type = "datetime-local" })
-                            @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> ذخیره
-                    </button>
-                    <a href="@Url.Action("Index", new { position = Model.Position })" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> انصراف
-                    </a>
-                </div>
-            }
-        </div>
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="@Url.Action("Index", new { position = Model.Model.Position })" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        // Preview Image
+        document.getElementById('ImageFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreviewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Preview Thumbnail
+        document.getElementById('ThumbnailFile').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('thumbnailPreviewImg').src = e.target.result;
+                    document.getElementById('thumbnailPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Update custom file label
+                var label = e.target.nextElementSibling;
+                label.textContent = file.name;
+            }
+        });
+        
+        // Bootstrap custom file input
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+        });
+    </script>
+}

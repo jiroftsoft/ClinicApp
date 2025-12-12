@@ -1,17 +1,80 @@
+@using ClinicApp.Helpers
 @model ClinicApp.ViewModels.CMS.SliderDetailsViewModel
 @{
     ViewBag.Title = "جزئیات اسلایدر";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@section Styles {
+    <style>
+        body {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+        }
+        .slider-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .slider-image-large {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 4px solid white;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .info-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .info-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+        }
+        .info-card-body {
+            padding: 1.5rem;
+        }
+        .badge {
+            font-size: 0.875rem;
+            padding: 0.4rem 0.7rem;
+            font-weight: 600;
+        }
+        .badge-info {
+            background-color: #17a2b8 !important;
+            color: #ffffff !important;
+        }
+        .badge-success {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+        }
+        .badge-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">جزئیات اسلایدر</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-images text-primary"></i>
+            جزئیات اسلایدر
+        </h1>
         <div>
-            <a href="@Url.Action("Edit", new { id = Model.SliderId })" class="btn btn-primary">
+            <a href="@Url.Action("Edit", new { id = Model.SliderId })" class="btn btn-primary shadow-sm" style="border-radius: 8px;">
                 <i class="fas fa-edit"></i> ویرایش
             </a>
-            <a href="@Url.Action("Index", new { position = Model.Position })" class="btn btn-secondary">
+            <a href="@Url.Action("Index", new { position = Model.Position })" class="btn btn-secondary shadow-sm" style="border-radius: 8px;">
                 <i class="fas fa-arrow-right"></i> بازگشت به لیست
             </a>
         </div>
@@ -19,39 +82,53 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">@Model.Title</h6>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> @Model.Title
+                    </h5>
                 </div>
-                <div class="card-body">
+                <div class="info-card-body">
                     @if (!string.IsNullOrEmpty(Model.ImageUrl))
                     {
                         <div class="mb-4 text-center">
-                            <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded" style="max-height: 500px; width: 100%; object-fit: cover;">
+                            <img src="@Model.ImageUrl" alt="@Model.Title" class="slider-image-large">
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                    {
+                        <div class="mb-4 text-center">
+                            <img src="@Model.ThumbnailUrl" alt="@Model.Title" class="slider-image-large">
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(Model.Description))
                     {
                         <div class="mb-3">
-                            <h5>توضیحات</h5>
-                            <p class="text-muted">@Model.Description</p>
+                            <h5><i class="fas fa-align-right"></i> توضیحات</h5>
+                            <p class="text-muted" style="line-height: 1.8;">@Model.Description</p>
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(Model.LinkUrl))
                     {
                         <div class="mb-3">
-                            <h5>لینک</h5>
-                            <p><a href="@Model.LinkUrl" target="_blank">@Model.LinkUrl</a></p>
+                            <h5><i class="fas fa-link"></i> لینک</h5>
+                            <p>
+                                <a href="@Model.LinkUrl" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> @Model.LinkUrl
+                                </a>
+                            </p>
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(Model.ButtonText))
                     {
                         <div class="mb-3">
-                            <h5>متن دکمه</h5>
-                            <p>@Model.ButtonText</p>
+                            <h5><i class="fas fa-mouse-pointer"></i> متن دکمه</h5>
+                            <p>
+                                <span class="badge badge-primary" style="font-size: 1rem; padding: 0.5rem 1rem;">@Model.ButtonText</span>
+                            </p>
                         </div>
                     }
                 </div>
@@ -59,13 +136,17 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card border-left-primary shadow mb-3">
-                <div class="card-body">
-                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات اسلایدر</h6>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> اطلاعات اسلایدر
+                    </h6>
+                </div>
+                <div class="info-card-body">
                     <table class="table table-sm">
                         <tr>
                             <td><strong>شناسه:</strong></td>
-                            <td>@Model.SliderId</td>
+                            <td><span style="font-weight: 600; color: #495057;">@Model.SliderId</span></td>
                         </tr>
                         <tr>
                             <td><strong>موقعیت:</strong></td>
@@ -86,41 +167,75 @@
                         </tr>
                         <tr>
                             <td><strong>ترتیب نمایش:</strong></td>
-                            <td>@Model.DisplayOrder</td>
+                            <td><span style="font-weight: 600; color: #495057;">@Model.DisplayOrder</span></td>
                         </tr>
                         <tr>
                             <td><strong>تاریخ شروع:</strong></td>
-                            <td>@(Model.StartDate?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                            <td>
+                                @if (Model.StartDate.HasValue)
+                                {
+                                    <span style="font-weight: 600; color: #495057;">
+                                        @PersianDateHelper.ToPersianDateTime(Model.StartDate.Value, false)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">-</span>
+                                }
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>تاریخ پایان:</strong></td>
-                            <td>@(Model.EndDate?.ToString("yyyy/MM/dd HH:mm") ?? "-")</td>
+                            <td>
+                                @if (Model.EndDate.HasValue)
+                                {
+                                    <span style="font-weight: 600; color: #495057;">
+                                        @PersianDateHelper.ToPersianDateTime(Model.EndDate.Value, false)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">-</span>
+                                }
+                            </td>
                         </tr>
                     </table>
                 </div>
             </div>
 
-            <div class="card border-left-secondary shadow">
-                <div class="card-body">
-                    <h6 class="font-weight-bold text-secondary mb-3">اطلاعات سیستم</h6>
+            <div class="info-card">
+                <div class="info-card-header" style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cog"></i> اطلاعات سیستم
+                    </h6>
+                </div>
+                <div class="info-card-body">
                     <table class="table table-sm">
                         <tr>
                             <td><strong>تاریخ ایجاد:</strong></td>
-                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                            <td>
+                                <span style="font-weight: 600; color: #495057;">
+                                    @PersianDateHelper.ToPersianDateTime(Model.CreatedAt, false)
+                                </span>
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>ایجاد کننده:</strong></td>
-                            <td>@Model.CreatedByUserName</td>
+                            <td><span style="font-weight: 600; color: #495057;">@Model.CreatedByUserName</span></td>
                         </tr>
                         @if (Model.UpdatedAt.HasValue)
                         {
                             <tr>
                                 <td><strong>آخرین ویرایش:</strong></td>
-                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                <td>
+                                    <span style="font-weight: 600; color: #495057;">
+                                        @PersianDateHelper.ToPersianDateTime(Model.UpdatedAt.Value, false)
+                                    </span>
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>ویرایش کننده:</strong></td>
-                                <td>@(Model.UpdatedByUserName ?? "-")</td>
+                                <td><span style="font-weight: 600; color: #495057;">@(Model.UpdatedByUserName ?? "-")</span></td>
                             </tr>
                         }
                     </table>
@@ -129,4 +244,3 @@
         </div>
     </div>
 </div>
-

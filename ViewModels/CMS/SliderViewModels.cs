@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
 
@@ -38,7 +39,8 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "توضیحات")]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "تصویر الزامی است.")]
+        // Note: ImageUrl validation is handled in ProcessImageUpload method in Controller
+        // [Required] attribute is removed to allow file upload validation to work correctly
         [MaxLength(500, ErrorMessage = "آدرس تصویر نمی‌تواند بیش از 500 کاراکتر باشد.")]
         [Display(Name = "آدرس تصویر")]
         public string ImageUrl { get; set; }
@@ -95,6 +97,33 @@ namespace ClinicApp.ViewModels.CMS
         public string CreatedByUserName { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedByUserName { get; set; }
+    }
+
+    #endregion
+
+    #region Slider Admin Index Page
+
+    public class SliderAdminIndexViewModel
+    {
+        public List<SliderIndexViewModel> Sliders { get; set; }
+        public string SelectedPosition { get; set; }
+        public List<SliderPositionViewModel> Positions { get; set; }
+    }
+
+    public class SliderPositionViewModel
+    {
+        public string Value { get; set; }
+        public string DisplayName { get; set; }
+    }
+
+    #endregion
+
+    #region Slider Create/Edit Page
+
+    public class SliderCreateEditPageViewModel
+    {
+        public SliderCreateEditViewModel Model { get; set; }
+        public List<SliderPositionViewModel> Positions { get; set; }
     }
 
     #endregion

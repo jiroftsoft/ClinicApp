@@ -1,4 +1,4 @@
-@model List<ClinicApp.ViewModels.CMS.SliderIndexViewModel>
+@model ClinicApp.ViewModels.CMS.SliderAdminIndexViewModel
 @{
     ViewBag.Title = "مدیریت اسلایدرها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -6,44 +6,99 @@
 
 @Html.AntiForgeryToken()
 
+@section Styles {
+    <style>
+        /* Medical Production Environment - Professional & Clean */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            background-color: var(--medical-bg);
+            color: var(--medical-text);
+        }
+
+        .slider-image {
+            width: 120px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid var(--medical-border);
+        }
+
+        .badge {
+            font-size: 0.875rem;
+            padding: 0.4rem 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-info {
+            background-color: #17a2b8 !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-success {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .badge-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+            opacity: 1 !important;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">مدیریت اسلایدرها</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-images"></i> مدیریت اسلایدرها
+        </h1>
         <div>
-            <a href="@Url.Action("Create", new { position = ViewBag.Position })" class="btn btn-primary">
+            <a href="@Url.Action("Create", new { position = Model.SelectedPosition })" class="btn btn-primary">
                 <i class="fas fa-plus"></i> اسلایدر جدید
             </a>
         </div>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
     <!-- Filter by Position -->
     <div class="card shadow mb-4">
         <div class="card-body">
             <div class="btn-group" role="group">
-                <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.Position == null ? "primary" : "secondary")">همه</a>
-                <a href="@Url.Action("Index", new { position = "hero" })" class="btn btn-@(ViewBag.Position == "hero" ? "primary" : "secondary")">Hero</a>
-                <a href="@Url.Action("Index", new { position = "sidebar" })" class="btn btn-@(ViewBag.Position == "sidebar" ? "primary" : "secondary")">Sidebar</a>
-                <a href="@Url.Action("Index", new { position = "footer" })" class="btn btn-@(ViewBag.Position == "footer" ? "primary" : "secondary")">Footer</a>
+                <a href="@Url.Action("Index")" class="btn btn-@(Model.SelectedPosition == null ? "primary" : "secondary")">
+                    <i class="fas fa-list"></i> همه
+                </a>
+                @foreach (var position in Model.Positions)
+                {
+                    <a href="@Url.Action("Index", new { position = position.Value })" class="btn btn-@(Model.SelectedPosition == position.Value ? "primary" : "secondary")">
+                        @position.DisplayName
+                    </a>
+                }
             </div>
         </div>
     </div>
@@ -51,10 +106,12 @@
     <!-- Sliders List -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">لیست اسلایدرها (@Model.Count مورد)</h6>
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> لیست اسلایدرها (@Model.Sliders.Count مورد)
+            </h6>
         </div>
         <div class="card-body">
-            @if (Model != null && Model.Any())
+            @if (Model.Sliders != null && Model.Sliders.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-bordered" width="100%" cellspacing="0">
@@ -71,18 +128,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.OrderBy(s => s.DisplayOrder))
+                            @foreach (var item in Model.Sliders.OrderBy(s => s.DisplayOrder))
                             {
                                 <tr>
-                                    <td>@item.DisplayOrder</td>
+                                    <td>
+                                        <span style="font-weight: 600; color: #495057;">@item.DisplayOrder</span>
+                                    </td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.ImageUrl))
                                         {
-                                            <img src="@item.ImageUrl" alt="@item.Title" style="width: 100px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                            <img src="@item.ImageUrl" alt="@item.Title" class="slider-image">
                                         }
                                         else
                                         {
-                                            <span class="text-muted">بدون تصویر</span>
+                                            <span class="badge badge-secondary">بدون تصویر</span>
                                         }
                                     </td>
                                     <td>
@@ -106,8 +165,26 @@
                                             <span class="badge badge-warning">غیرفعال</span>
                                         }
                                     </td>
-                                    <td>@(item.StartDate?.ToString("yyyy/MM/dd") ?? "-")</td>
-                                    <td>@(item.EndDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                    <td>
+                                        @if (item.StartDate.HasValue)
+                                        {
+                                            <span style="font-weight: 600; color: #495057;">@item.StartDate.Value.ToString("yyyy/MM/dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.EndDate.HasValue)
+                                        {
+                                            <span style="font-weight: 600; color: #495057;">@item.EndDate.Value.ToString("yyyy/MM/dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">-</span>
+                                        }
+                                    </td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="@Url.Action("Details", new { id = item.SliderId })" class="btn btn-sm btn-info" title="جزئیات">
@@ -118,28 +195,28 @@
                                             </a>
                                             @if (item.IsActive)
                                             {
-                                                using (Html.BeginForm("Deactivate", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                using (Html.BeginForm("Deactivate", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline deactivate-form" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال">
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="غیرفعال" data-id="@item.SliderId" data-title="@item.Title">
                                                         <i class="fas fa-pause"></i>
                                                     </button>
                                                 }
                                             }
                                             else
                                             {
-                                                using (Html.BeginForm("Activate", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline" }))
+                                                using (Html.BeginForm("Activate", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline activate-form" }))
                                                 {
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال" data-id="@item.SliderId" data-title="@item.Title">
                                                         <i class="fas fa-play"></i>
                                                     </button>
                                                 }
                                             }
-                                            @using (Html.BeginForm("Delete", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline" }))
+                                            @using (Html.BeginForm("Delete", "Slider", new { id = item.SliderId }, FormMethod.Post, new { @class = "d-inline delete-form" }))
                                             {
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('آیا از حذف این اسلایدر اطمینان دارید؟')">
+                                                <button type="submit" class="btn btn-sm btn-danger delete-btn" title="حذف" data-id="@item.SliderId" data-title="@item.Title">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -153,11 +230,91 @@
             }
             else
             {
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> هیچ اسلایدری یافت نشد.
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h4>هیچ اسلایدری یافت نشد</h4>
+                    <p class="mb-0">برای ایجاد اسلایدر جدید، روی دکمه "اسلایدر جدید" کلیک کنید.</p>
                 </div>
             }
         </div>
     </div>
 </div>
 
+@section Scripts {
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script>
+        $(document).ready(function() {
+            // حذف با SweetAlert2
+            $('.delete-form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var sliderId = form.find('.delete-btn').data('id');
+                var sliderTitle = form.find('.delete-btn').data('title');
+
+                Swal.fire({
+                    title: 'آیا مطمئن هستید؟',
+                    text: 'آیا از حذف اسلایدر "' + sliderTitle + '" اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، حذف کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+
+            // فعال‌سازی با SweetAlert2
+            $('.activate-form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var sliderId = form.find('button').data('id');
+                var sliderTitle = form.find('button').data('title');
+
+                Swal.fire({
+                    title: 'فعال‌سازی اسلایدر',
+                    text: 'آیا می‌خواهید اسلایدر "' + sliderTitle + '" را فعال کنید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، فعال کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+
+            // غیرفعال‌سازی با SweetAlert2
+            $('.deactivate-form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var sliderId = form.find('button').data('id');
+                var sliderTitle = form.find('button').data('title');
+
+                Swal.fire({
+                    title: 'غیرفعال‌سازی اسلایدر',
+                    text: 'آیا می‌خواهید اسلایدر "' + sliderTitle + '" را غیرفعال کنید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، غیرفعال کن',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}
