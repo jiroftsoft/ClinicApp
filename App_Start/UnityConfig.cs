@@ -402,6 +402,10 @@ namespace ClinicApp
                 container.RegisterType<IMedicalEquipmentRepository, MedicalEquipmentRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IContactFormRepository, ContactFormRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IPatientEducationMaterialRepository, PatientEducationMaterialRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterSubscriptionRepository, NewsletterSubscriptionRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterTemplateRepository, NewsletterTemplateRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterCampaignRepository, NewsletterCampaignRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterCampaignRecipientRepository, NewsletterCampaignRecipientRepository>(new PerRequestLifetimeManager());
                 
                 // ========== ثبت Service های CMS ==========
                 container.RegisterType<IBlogPostService, BlogPostService>(new PerRequestLifetimeManager());
@@ -427,6 +431,11 @@ namespace ClinicApp
                 container.RegisterType<IMedicalEquipmentService, MedicalEquipmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IContactFormService, ContactFormService>(new PerRequestLifetimeManager());
                 container.RegisterType<IPatientEducationMaterialService, PatientEducationMaterialService>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterSubscriptionService, NewsletterSubscriptionService>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterTemplateService, NewsletterTemplateService>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterCampaignService, NewsletterCampaignService>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterEmailService, NewsletterEmailService>(new PerRequestLifetimeManager());
+                container.RegisterType<INewsletterSmsService, NewsletterSmsService>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Repositories
                 container.RegisterType<IDoctorCrudRepository, DoctorCrudRepository>(new PerRequestLifetimeManager());

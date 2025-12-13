@@ -163,6 +163,12 @@ namespace ClinicApp.Models
         public DbSet<ClinicWorkingHours> ClinicWorkingHours { get; set; }
         public DbSet<MedicalEquipment> MedicalEquipments { get; set; }
         public DbSet<Video> Videos { get; set; }
+        public DbSet<ContactForm> ContactForms { get; set; }
+        public DbSet<PatientEducationMaterial> PatientEducationMaterials { get; set; }
+        public DbSet<NewsletterSubscription> NewsletterSubscriptions { get; set; }
+        public DbSet<NewsletterTemplate> NewsletterTemplates { get; set; }
+        public DbSet<NewsletterCampaign> NewsletterCampaigns { get; set; }
+        public DbSet<NewsletterCampaignRecipient> NewsletterCampaignRecipients { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

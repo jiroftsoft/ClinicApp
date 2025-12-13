@@ -1,0 +1,91 @@
+@{
+    ViewBag.Title = "لغو اشتراک خبرنامه";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var token = ViewBag.Token as string;
+}
+
+@* ============================================
+   Newsletter Unsubscribe - Production Ready
+   ============================================
+   - SRP: صفحه لغو اشتراک خبرنامه
+   - UI/UX: طراحی کاربرپسند و حرفه‌ای
+   - RTL Support: پشتیبانی کامل از راست‌به‌چپ
+   ============================================ *@
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-times fa-4x text-warning mb-3"></i>
+                        <h2 class="card-title mb-3">لغو اشتراک خبرنامه</h2>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(token))
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>توجه:</strong> آیا مطمئن هستید که می‌خواهید اشتراک خود را لغو کنید؟
+                            <br>
+                            <small>با لغو اشتراک، دیگر خبرنامه‌ای از ما دریافت نخواهید کرد.</small>
+                        </div>
+
+                        @using (Html.BeginForm("Unsubscribe", "Newsletter", FormMethod.Post, new { @class = "mt-4" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="token" value="@token" />
+                            <input type="hidden" name="confirm" value="true" />
+
+                            <div class="form-group text-center">
+                                <button type="submit" class="btn btn-danger btn-lg mr-2">
+                                    <i class="fas fa-ban"></i> بله، لغو اشتراک
+                                </button>
+                                <a href="@Url.Action("Index", "Home")" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-times"></i> انصراف
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>خطا:</strong> لینک لغو اشتراک نامعتبر است.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg">
+                                <i class="fas fa-home"></i> بازگشت به صفحه اصلی
+                            </a>
+                        </div>
+                    }
+
+                    <div class="mt-4 pt-4 border-top">
+                        <p class="text-muted text-center small">
+                            اگر شما این درخواست را نکرده‌اید، لطفاً این صفحه را نادیده بگیرید.
+                            <br>
+                            برای هرگونه سوال، با ما تماس بگیرید.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+        }
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .card-body {
+            background: #ffffff;
+        }
+    </style>
+}
+

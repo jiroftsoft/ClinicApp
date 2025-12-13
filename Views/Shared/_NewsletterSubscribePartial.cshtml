@@ -1,0 +1,98 @@
+@model ClinicApp.ViewModels.CMS.PublicNewsletterSubscriptionViewModel
+
+@* ============================================
+   Newsletter Subscribe Partial - Production Ready
+   ============================================
+   - SRP: فرم اشتراک خبرنامه برای استفاده در Footer یا Home
+   - UI/UX: طراحی کاربرپسند و حرفه‌ای
+   - RTL Support: پشتیبانی کامل از راست‌به‌چپ
+   ============================================ *@
+
+<div class="newsletter-subscribe-widget">
+    <h5 class="mb-3">
+        <i class="fas fa-envelope"></i> اشتراک در خبرنامه
+    </h5>
+    <p class="text-muted small mb-3">
+        با اشتراک در خبرنامه، از آخرین اخبار و رویدادهای کلینیک مطلع شوید.
+    </p>
+
+    @using (Html.BeginForm("Subscribe", "Newsletter", FormMethod.Post, new { @class = "newsletter-form", id = "newsletterSubscribeForm" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger small" })
+
+        <div class="form-group mb-2">
+            @Html.TextBoxFor(m => m.Email, new { 
+                @class = "form-control", 
+                placeholder = "آدرس ایمیل شما",
+                type = "email",
+                dir = "ltr",
+                required = "required"
+            })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+        </div>
+
+        <div class="form-group mb-2">
+            @Html.TextBoxFor(m => m.FullName, new { 
+                @class = "form-control", 
+                placeholder = "نام و نام خانوادگی (اختیاری)"
+            })
+            @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="newsletterSubscribeBtn">
+            <i class="fas fa-paper-plane"></i> اشتراک
+        </button>
+
+        <small class="text-muted d-block mt-2 text-center">
+            <i class="fas fa-shield-alt"></i> اطلاعات شما محفوظ است
+        </small>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .newsletter-subscribe-widget {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .newsletter-form .form-control {
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s ease;
+        }
+        .newsletter-form .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .newsletter-form .btn {
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .newsletter-form .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#newsletterSubscribeForm').on('submit', function(e) {
+                var $btn = $('#newsletterSubscribeBtn');
+                var originalText = $btn.html();
+                
+                // Disable button and show loading
+                $btn.prop('disabled', true);
+                $btn.html('<i class="fas fa-spinner fa-spin"></i> در حال ارسال...');
+                
+                // Form will submit normally, button will be re-enabled on page reload
+                // If there's an error, the page will reload and button will be enabled again
+            });
+        });
+    </script>
+}
+

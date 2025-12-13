@@ -1,0 +1,238 @@
+@model ClinicApp.ViewModels.CMS.NewsletterCampaignDetailsViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "جزئیات Campaign";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Campaign Details - Production Ready
+   ============================================
+   - SRP: نمایش جزئیات Campaign
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-paper-plane text-primary"></i> جزئیات Campaign
+        </h1>
+        <div>
+            @if (Model.Status == NewsletterCampaignStatus.Draft || Model.Status == NewsletterCampaignStatus.Scheduled)
+            {
+                <a href="@Url.Action("Send", new { id = Model.NewsletterCampaignId })" class="btn btn-success">
+                    <i class="fas fa-paper-plane"></i> ارسال
+                </a>
+                <a href="@Url.Action("Edit", new { id = Model.NewsletterCampaignId })" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> ویرایش
+                </a>
+            }
+            <a href="@Url.Action("Statistics", new { id = Model.NewsletterCampaignId })" class="btn btn-info">
+                <i class="fas fa-chart-bar"></i> آمار
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Campaign Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> اطلاعات Campaign
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">عنوان:</dt>
+                        <dd class="col-sm-8"><strong>@Model.Title</strong></dd>
+
+                        <dt class="col-sm-4">موضوع ایمیل:</dt>
+                        <dd class="col-sm-8">@Model.Subject</dd>
+
+                        @if (Model.NewsletterTemplateId.HasValue)
+                        {
+                            <dt class="col-sm-4">Template:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge badge-info">@Model.TemplateName</span>
+                            </dd>
+                        }
+
+                        <dt class="col-sm-4">ارسال به:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.SendToAll)
+                            {
+                                <span class="badge badge-success">تمام مشترکین فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-info">@Model.CategoriesDisplay</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">وضعیت:</dt>
+                        <dd class="col-sm-8">
+                            @{
+                                var statusClass = "badge-secondary";
+                                var statusIcon = "fa-circle";
+                                if (Model.Status == NewsletterCampaignStatus.Draft)
+                                {
+                                    statusClass = "badge-secondary";
+                                    statusIcon = "fa-file-alt";
+                                }
+                                else if (Model.Status == NewsletterCampaignStatus.Scheduled)
+                                {
+                                    statusClass = "badge-info";
+                                    statusIcon = "fa-clock";
+                                }
+                                else if (Model.Status == NewsletterCampaignStatus.Sending)
+                                {
+                                    statusClass = "badge-warning";
+                                    statusIcon = "fa-paper-plane";
+                                }
+                                else if (Model.Status == NewsletterCampaignStatus.Sent)
+                                {
+                                    statusClass = "badge-success";
+                                    statusIcon = "fa-check-circle";
+                                }
+                                else if (Model.Status == NewsletterCampaignStatus.Failed)
+                                {
+                                    statusClass = "badge-danger";
+                                    statusIcon = "fa-exclamation-circle";
+                                }
+                            }
+                            <span class="badge @statusClass">
+                                <i class="fas @statusIcon"></i> @Model.StatusDisplay
+                            </span>
+                        </dd>
+
+                        @if (Model.ScheduledAt.HasValue)
+                        {
+                            <dt class="col-sm-4">زمان‌بندی شده برای:</dt>
+                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.ScheduledAt.Value)</dd>
+                        }
+
+                        @if (Model.SentAt.HasValue)
+                        {
+                            <dt class="col-sm-4">ارسال شده در:</dt>
+                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.SentAt.Value)</dd>
+                        }
+
+                        <dt class="col-sm-4">تاریخ ایجاد:</dt>
+                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.CreatedAt)</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Campaign Content -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-code"></i> محتوای Campaign
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Content))
+                    {
+                        <div class="campaign-content-preview" style="border: 1px solid #dee2e6; padding: 1rem; border-radius: 4px; background: #f8f9fa; direction: rtl; text-align: right;">
+                            @Html.Raw(Model.Content)
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">بدون محتوا</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3f73 100%); color: white;">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-chart-bar"></i> آمار Campaign
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-3">
+                        <div class="stat-value">@Model.TotalRecipients</div>
+                        <div class="stat-label">کل گیرندگان</div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="stat-value text-success">@Model.SentCount</div>
+                        <div class="stat-label">ارسال شده</div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="stat-value text-danger">@Model.FailedCount</div>
+                        <div class="stat-label">ناموفق</div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="stat-value text-info">@Model.OpenedCount</div>
+                        <div class="stat-label">باز شده</div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="stat-value text-warning">@Model.ClickedCount</div>
+                        <div class="stat-label">کلیک شده</div>
+                    </div>
+                    <hr>
+                    <div class="stat-item mb-3">
+                        <div class="stat-value">@Model.OpenRate.ToString("F2")%</div>
+                        <div class="stat-label">نرخ باز شدن</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@Model.ClickRate.ToString("F2")%</div>
+                        <div class="stat-label">نرخ کلیک</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog"></i> اطلاعات سیستم
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>ایجاد شده توسط:</dt>
+                        <dd>@(Model.CreatedByUserName ?? "سیستم")</dd>
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <dt>آخرین به‌روزرسانی:</dt>
+                            <dd>@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</dd>
+                            <dt>به‌روزرسانی شده توسط:</dt>
+                            <dd>@(Model.UpdatedByUserName ?? "-")</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--medical-primary);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--medical-text-muted);
+        }
+    </style>
+}
+

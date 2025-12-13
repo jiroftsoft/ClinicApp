@@ -75,6 +75,13 @@
                 </div>
 
                 @* ============================================
+                   NEWSLETTER SUBSCRIPTION SECTION
+                   ============================================ *@
+                <div class="footer-section footer-newsletter">
+                    @Html.Partial("_NewsletterSubscribePartial", new ClinicApp.ViewModels.CMS.PublicNewsletterSubscriptionViewModel())
+                </div>
+
+                @* ============================================
                    QUICK LINKS SECTION
                    ============================================ *@
                 @if (Model.QuickLinks != null && Model.QuickLinks.Any())

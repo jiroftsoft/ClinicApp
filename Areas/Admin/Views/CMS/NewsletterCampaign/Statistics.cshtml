@@ -1,0 +1,272 @@
+@model ClinicApp.ViewModels.CMS.NewsletterCampaignStatisticsViewModel
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "آمار Campaign";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Campaign Statistics - Production Ready
+   ============================================
+   - SRP: نمایش آمار Campaign
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   - Charts: نمایش نمودارهای آماری
+   ============================================ *@
+
+@section Styles {
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-light: #f8f9fa;
+        }
+        .stat-card {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--medical-text-muted);
+        }
+        .progress-ring {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        @@media (max-width: 768px) {
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-chart-bar text-primary"></i> آمار Campaign: @Model.Title
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.NewsletterCampaignId })" class="btn btn-info">
+                <i class="fas fa-info-circle"></i> جزئیات
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="border-top: 4px solid var(--medical-primary);">
+                <div class="stat-value" style="color: var(--medical-primary);">@Model.TotalRecipients</div>
+                <div class="stat-label">
+                    <i class="fas fa-users"></i> کل گیرندگان
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-top: 4px solid var(--medical-success);">
+                <div class="stat-value" style="color: var(--medical-success);">@Model.SentCount</div>
+                <div class="stat-label">
+                    <i class="fas fa-paper-plane"></i> ارسال شده
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-top: 4px solid var(--medical-info);">
+                <div class="stat-value" style="color: var(--medical-info);">@Model.OpenedCount</div>
+                <div class="stat-label">
+                    <i class="fas fa-envelope-open"></i> باز شده
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-top: 4px solid var(--medical-warning);">
+                <div class="stat-value" style="color: var(--medical-warning);">@Model.ClickedCount</div>
+                <div class="stat-label">
+                    <i class="fas fa-mouse-pointer"></i> کلیک شده
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie"></i> نرخ باز شدن (Open Rate)
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="progress-ring position-relative">
+                        <svg width="150" height="150">
+                            <circle cx="75" cy="75" r="70" stroke="#e0e0e0" stroke-width="10" fill="none"></circle>
+                            <circle cx="75" cy="75" r="70" 
+                                    stroke="@(Model.OpenRate >= 20 ? "#28a745" : Model.OpenRate >= 10 ? "#ffc107" : "#dc3545")" 
+                                    stroke-width="10" 
+                                    fill="none"
+                                    stroke-dasharray="@(2 * Math.PI * 70)"
+                                    stroke-dashoffset="@(2 * Math.PI * 70 * (1 - Model.OpenRate / 100))"
+                                    transform="rotate(-90 75 75)"
+                                    stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            @Model.OpenRate.ToString("F1")%
+                        </div>
+                    </div>
+                    <p class="mt-3">
+                        <strong>@Model.OpenedCount</strong> از <strong>@Model.TotalRecipients</strong> ایمیل باز شده است
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie"></i> نرخ کلیک (Click Rate)
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="progress-ring position-relative">
+                        <svg width="150" height="150">
+                            <circle cx="75" cy="75" r="70" stroke="#e0e0e0" stroke-width="10" fill="none"></circle>
+                            <circle cx="75" cy="75" r="70" 
+                                    stroke="@(Model.ClickRate >= 5 ? "#28a745" : Model.ClickRate >= 2 ? "#ffc107" : "#dc3545")" 
+                                    stroke-width="10" 
+                                    fill="none"
+                                    stroke-dasharray="@(2 * Math.PI * 70)"
+                                    stroke-dashoffset="@(2 * Math.PI * 70 * (1 - Model.ClickRate / 100))"
+                                    transform="rotate(-90 75 75)"
+                                    stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            @Model.ClickRate.ToString("F1")%
+                        </div>
+                    </div>
+                    <p class="mt-3">
+                        <strong>@Model.ClickedCount</strong> از <strong>@Model.TotalRecipients</strong> ایمیل کلیک شده است
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-table"></i> آمار تفصیلی
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>شاخص</th>
+                            <th>مقدار</th>
+                            <th>درصد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>کل گیرندگان</strong></td>
+                            <td>@Model.TotalRecipients</td>
+                            <td>100%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ارسال شده</strong></td>
+                            <td>@Model.SentCount</td>
+                            <td>@(Model.TotalRecipients > 0 ? ((double)Model.SentCount / Model.TotalRecipients * 100).ToString("F2") : "0")%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>باز شده</strong></td>
+                            <td>@Model.OpenedCount</td>
+                            <td>@Model.OpenRate.ToString("F2")%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>کلیک شده</strong></td>
+                            <td>@Model.ClickedCount</td>
+                            <td>@Model.ClickRate.ToString("F2")%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>باز نشده</strong></td>
+                            <td>@(Model.TotalRecipients - Model.OpenedCount)</td>
+                            <td>@((100 - Model.OpenRate).ToString("F2"))%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.SentAt.HasValue)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clock"></i> اطلاعات زمانی
+                </h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">تاریخ ارسال:</dt>
+                    <dd class="col-sm-9">@PersianDateHelper.ToPersianDate(Model.SentAt.Value)</dd>
+                </dl>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Animate progress rings on page load
+        $(document).ready(function() {
+            $('.progress-ring circle').each(function() {
+                var circle = $(this);
+                var length = circle[0].getTotalLength();
+                circle.css('stroke-dasharray', length);
+                circle.css('stroke-dashoffset', length);
+                
+                setTimeout(function() {
+                    circle.css('transition', 'stroke-dashoffset 2s ease-in-out');
+                    var offset = circle.attr('stroke-dashoffset');
+                    circle.css('stroke-dashoffset', offset);
+                }, 100);
+            });
+        });
+    </script>
+}
+

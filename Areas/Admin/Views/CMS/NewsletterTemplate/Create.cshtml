@@ -1,0 +1,196 @@
+@model ClinicApp.ViewModels.CMS.NewsletterTemplateCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد Template جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Template Create - Production Ready
+   ============================================
+   - SRP: فرم ایجاد Template جدید
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   - CKEditor: برای ویرایش محتوای HTML
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-danger: #dc3545;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-light: #f8f9fa;
+        }
+
+        .form-container {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: var(--medical-danger);
+            font-weight: bold;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+            }
+        }
+
+        /* Accessibility */
+        .form-control:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+            border-color: var(--medical-primary);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-plus text-primary"></i>
+            ایجاد Template جدید
+        </h1>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "NewsletterTemplate", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Name, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "مثال: Template خبرنامه هفتگی" })
+                        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">نام Template برای شناسایی و مدیریت</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Description, new { @class = "control-label" })
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه درباره Template" })
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">توضیحات اختیاری برای Template</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Content, new { @class = "required" })
+                        <div id="contentEditor"></div>
+                        @Html.HiddenFor(m => m.Content)
+                        @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> می‌توانید از متغیرهای زیر استفاده کنید:
+                            <code>{{FullName}}</code>, <code>{{Email}}</code>, <code>{{UnsubscribeUrl}}</code>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="form-check mt-4">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                        </div>
+                        <small class="form-text text-muted">Template های غیرفعال در لیست Campaign ها نمایش داده نمی‌شوند</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> لغو
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_CKEditorScript")
+    @Scripts.Render("~/bundles/jqueryval")
+    
+    <script>
+        $(document).ready(function() {
+            // CKEditor Initialization
+            if (typeof ClassicEditor !== 'undefined') {
+                ClassicEditor
+                    .create(document.querySelector('#contentEditor'), {
+                        language: 'fa',
+                        direction: 'rtl',
+                        toolbar: {
+                            items: [
+                                'heading', '|',
+                                'bold', 'italic', 'link', '|',
+                                'bulletedList', 'numberedList', '|',
+                                'blockQuote', 'insertTable', '|',
+                                'undo', 'redo'
+                            ]
+                        },
+                        heading: {
+                            options: [
+                                { model: 'paragraph', title: 'پاراگراف', class: 'ck-heading_paragraph' },
+                                { model: 'heading1', view: 'h1', title: 'عنوان 1', class: 'ck-heading_heading1' },
+                                { model: 'heading2', view: 'h2', title: 'عنوان 2', class: 'ck-heading_heading2' },
+                                { model: 'heading3', view: 'h3', title: 'عنوان 3', class: 'ck-heading_heading3' }
+                            ]
+                        }
+                    })
+                    .then(editor => {
+                        window.contentEditor = editor;
+                        
+                        // Sync با Hidden Field
+                        editor.model.document.on('change:data', () => {
+                            $('#Content').val(editor.getData());
+                        });
+                        
+                        // Set Initial Value
+                        if ($('#Content').val()) {
+                            editor.setData($('#Content').val());
+                        }
+                    })
+                    .catch(error => {
+                        console.error('خطا در بارگذاری CKEditor:', error);
+                    });
+            }
+
+            // Form Submit Handler
+            $('form').on('submit', function(e) {
+                if (window.contentEditor) {
+                    $('#Content').val(window.contentEditor.getData());
+                }
+            });
+        });
+    </script>
+}
+

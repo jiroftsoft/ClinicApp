@@ -1,0 +1,382 @@
+@model ClinicApp.ViewModels.CMS.NewsletterCampaignIndexPageViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "مدیریت Campaign های خبرنامه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Campaign Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست Campaign های خبرنامه
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-light: #f8f9fa;
+        }
+
+        .campaign-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .campaign-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--medical-primary);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--medical-text-muted);
+        }
+
+        @@media (max-width: 768px) {
+            .table-responsive { font-size: 0.875rem; }
+            .btn-group { flex-direction: column; }
+            .btn-group .btn { margin-bottom: 0.25rem; }
+        }
+
+        .btn:focus, .form-control:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-paper-plane text-primary"></i> مدیریت Campaign های خبرنامه
+        </h1>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus"></i> ایجاد Campaign جدید
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3" style="background-color: var(--medical-primary); color: white;">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fas fa-filter"></i> فیلتر و جستجو
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "NewsletterCampaign", FormMethod.Get, new { @class = "form-horizontal" }))
+            {
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>جستجو</label>
+                            <input type="text" name="SearchTerm" class="form-control" placeholder="عنوان، موضوع..." value="@(Model.SearchModel?.SearchTerm ?? "")">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>وضعیت</label>
+                            <select name="Status" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" @(Model.SearchModel?.Status == NewsletterCampaignStatus.Draft ? "selected" : "")>پیش‌نویس</option>
+                                <option value="2" @(Model.SearchModel?.Status == NewsletterCampaignStatus.Scheduled ? "selected" : "")>زمان‌بندی شده</option>
+                                <option value="3" @(Model.SearchModel?.Status == NewsletterCampaignStatus.Sending ? "selected" : "")>در حال ارسال</option>
+                                <option value="4" @(Model.SearchModel?.Status == NewsletterCampaignStatus.Sent ? "selected" : "")>ارسال شده</option>
+                                <option value="5" @(Model.SearchModel?.Status == NewsletterCampaignStatus.Failed ? "selected" : "")>ناموفق</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>از تاریخ</label>
+                            <input type="date" name="FromDate" class="form-control" value="@(Model.SearchModel?.FromDate?.ToString("yyyy-MM-dd") ?? "")">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>تا تاریخ</label>
+                            <input type="date" name="ToDate" class="form-control" value="@(Model.SearchModel?.ToDate?.ToString("yyyy-MM-dd") ?? "")">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> جستجو
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @Html.HiddenFor(m => m.SearchModel.PageNumber)
+                @Html.HiddenFor(m => m.SearchModel.PageSize)
+            }
+        </div>
+    </div>
+
+    <!-- Campaigns Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> لیست Campaign ها
+                <span class="badge badge-primary">@Model.Campaigns.TotalCount</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Campaigns.Items != null && Model.Campaigns.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="campaignsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>عنوان</th>
+                                <th>موضوع</th>
+                                <th>وضعیت</th>
+                                <th>گیرندگان</th>
+                                <th>ارسال شده</th>
+                                <th>باز شده</th>
+                                <th>کلیک شده</th>
+                                <th>نرخ باز</th>
+                                <th>نرخ کلیک</th>
+                                <th>تاریخ ایجاد</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Campaigns.Items)
+                            {
+                                <tr>
+                                    <td><strong>@item.Title</strong></td>
+                                    <td>@item.Subject</td>
+                                    <td>
+                                        @{
+                                            var statusClass = "badge-secondary";
+                                            var statusIcon = "fa-circle";
+                                            if (item.Status == NewsletterCampaignStatus.Draft)
+                                            {
+                                                statusClass = "badge-secondary";
+                                                statusIcon = "fa-file-alt";
+                                            }
+                                            else if (item.Status == NewsletterCampaignStatus.Scheduled)
+                                            {
+                                                statusClass = "badge-info";
+                                                statusIcon = "fa-clock";
+                                            }
+                                            else if (item.Status == NewsletterCampaignStatus.Sending)
+                                            {
+                                                statusClass = "badge-warning";
+                                                statusIcon = "fa-paper-plane";
+                                            }
+                                            else if (item.Status == NewsletterCampaignStatus.Sent)
+                                            {
+                                                statusClass = "badge-success";
+                                                statusIcon = "fa-check-circle";
+                                            }
+                                            else if (item.Status == NewsletterCampaignStatus.Failed)
+                                            {
+                                                statusClass = "badge-danger";
+                                                statusIcon = "fa-exclamation-circle";
+                                            }
+                                        }
+                                        <span class="badge @statusClass status-badge">
+                                            <i class="fas @statusIcon"></i> @item.StatusDisplay
+                                        </span>
+                                    </td>
+                                    <td>@item.TotalRecipients</td>
+                                    <td>@item.SentCount</td>
+                                    <td>@item.OpenedCount</td>
+                                    <td>@item.ClickedCount</td>
+                                    <td>@item.OpenRate.ToString("F2")%</td>
+                                    <td>@item.ClickRate.ToString("F2")%</td>
+                                    <td>@PersianDateHelper.ToPersianDate(item.CreatedAt)</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.NewsletterCampaignId })" 
+                                               class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (item.Status == NewsletterCampaignStatus.Draft || item.Status == NewsletterCampaignStatus.Scheduled)
+                                            {
+                                                <a href="@Url.Action("Edit", new { id = item.NewsletterCampaignId })" 
+                                                   class="btn btn-sm btn-warning" title="ویرایش">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="@Url.Action("Send", new { id = item.NewsletterCampaignId })" 
+                                                   class="btn btn-sm btn-success" title="ارسال">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </a>
+                                            }
+                                            @if (item.Status == NewsletterCampaignStatus.Scheduled)
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-secondary" 
+                                                        onclick="cancelSchedule(@item.NewsletterCampaignId)" 
+                                                        title="لغو زمان‌بندی">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            }
+                                            <a href="@Url.Action("Statistics", new { id = item.NewsletterCampaignId })" 
+                                               class="btn btn-sm btn-primary" title="آمار">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </a>
+                                            @if (item.Status != NewsletterCampaignStatus.Sending)
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-danger" 
+                                                        onclick="deleteCampaign(@item.NewsletterCampaignId)" 
+                                                        title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.Campaigns.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.Campaigns.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Campaigns.PageNumber - 1, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">
+                                        <i class="fas fa-chevron-right"></i> قبلی
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-chevron-right"></i> قبلی</span>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.Campaigns.TotalPages; i++)
+                            {
+                                if (i == Model.Campaigns.PageNumber)
+                                {
+                                    <li class="page-item active">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            @if (Model.Campaigns.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Campaigns.PageNumber + 1, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">
+                                        بعدی <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">بعدی <i class="fas fa-chevron-left"></i></span>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i> هیچ Campaign ای یافت نشد
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function cancelSchedule(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'زمان‌بندی این Campaign لغو خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، لغو کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("CancelSchedule")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+
+        function deleteCampaign(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این Campaign حذف خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'لغو'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("Delete")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

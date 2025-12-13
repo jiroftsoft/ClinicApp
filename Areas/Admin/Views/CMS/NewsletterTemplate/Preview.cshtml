@@ -1,0 +1,66 @@
+@model ClinicApp.ViewModels.CMS.NewsletterTemplateDetailsViewModel
+@{
+    ViewBag.Title = "پیش‌نمایش Template";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Template Preview - Production Ready
+   ============================================
+   - SRP: نمایش پیش‌نمایش Template با Sample Data
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-eye text-primary"></i> پیش‌نمایش Template: @Model.Name
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.NewsletterTemplateId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-envelope"></i> پیش‌نمایش ایمیل
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> این پیش‌نمایش با داده‌های نمونه نمایش داده می‌شود.
+                متغیرها: <code>{{FullName}}</code> = "کاربر نمونه", <code>{{Email}}</code> = "sample@example.com"
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Content))
+            {
+                <div class="email-preview" style="border: 1px solid #dee2e6; padding: 2rem; border-radius: 4px; background: #ffffff; direction: rtl; text-align: right;">
+                    @Html.Raw(Model.Content.Replace("{{FullName}}", "کاربر نمونه").Replace("{{Email}}", "sample@example.com").Replace("{{UnsubscribeUrl}}", "#"))
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> این Template محتوایی ندارد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .email-preview {
+            font-family: 'Vazir', Arial, sans-serif;
+        }
+        .email-preview img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+}
+

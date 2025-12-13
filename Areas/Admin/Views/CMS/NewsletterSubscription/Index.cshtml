@@ -1,0 +1,494 @@
+@model ClinicApp.ViewModels.CMS.NewsletterSubscriptionIndexPageViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "مدیریت اشتراک‌های خبرنامه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Subscription Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست اشتراک‌های خبرنامه
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-light: #f8f9fa;
+        }
+
+        .subscription-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .subscription-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3f73 100%);
+            color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stats-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        .email-cell {
+            direction: ltr;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .category-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            margin: 0.1rem;
+            background-color: var(--medical-light);
+            border: 1px solid var(--medical-border);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+            .stats-card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Accessibility */
+        .btn:focus,
+        .form-control:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-users text-primary"></i>
+            مدیریت اشتراک‌های خبرنامه
+        </h1>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus"></i> افزودن اشتراک جدید
+            </a>
+            <a href="@Url.Action("Import")" class="btn btn-info">
+                <i class="fas fa-file-import"></i> Import از Excel
+            </a>
+            <a href="@Url.Action("Export", Model.SearchModel)" class="btn btn-success">
+                <i class="fas fa-file-export"></i> Export به Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.TotalCount</div>
+                <div class="stats-label">
+                    <i class="fas fa-users"></i> کل اشتراک‌ها
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--medical-success) 0%, #1e7e34 100%);">
+                <div class="stats-number">@Model.ActiveCount</div>
+                <div class="stats-label">
+                    <i class="fas fa-check-circle"></i> فعال
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--medical-info) 0%, #117a8b 100%);">
+                <div class="stats-number">@Model.VerifiedCount</div>
+                <div class="stats-label">
+                    <i class="fas fa-check-double"></i> تایید شده
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--medical-warning) 0%, #e0a800 100%);">
+                <div class="stats-number">@Model.UnsubscribedCount</div>
+                <div class="stats-label">
+                    <i class="fas fa-ban"></i> لغو شده
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3" style="background-color: var(--medical-primary); color: white;">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fas fa-filter"></i> فیلتر و جستجو
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "NewsletterSubscription", FormMethod.Get, new { @class = "form-horizontal" }))
+            {
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>جستجو</label>
+                            <input type="text" name="SearchTerm" class="form-control" placeholder="ایمیل، نام، شماره تماس..." value="@(Model.SearchModel?.SearchTerm ?? "")">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>وضعیت</label>
+                            <select name="IsActive" class="form-control">
+                                <option value="">همه</option>
+                                <option value="true" @(Model.SearchModel?.IsActive == true ? "selected" : "")>فعال</option>
+                                <option value="false" @(Model.SearchModel?.IsActive == false ? "selected" : "")>غیرفعال</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>تایید شده</label>
+                            <select name="IsVerified" class="form-control">
+                                <option value="">همه</option>
+                                <option value="true" @(Model.SearchModel?.IsVerified == true ? "selected" : "")>بله</option>
+                                <option value="false" @(Model.SearchModel?.IsVerified == false ? "selected" : "")>خیر</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>منبع</label>
+                            <select name="Source" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" @(Model.SearchModel?.Source == NewsletterSubscriptionSource.Website ? "selected" : "")>سایت</option>
+                                <option value="2" @(Model.SearchModel?.Source == NewsletterSubscriptionSource.Admin ? "selected" : "")>ادمین</option>
+                                <option value="3" @(Model.SearchModel?.Source == NewsletterSubscriptionSource.Import ? "selected" : "")>Import</option>
+                                <option value="4" @(Model.SearchModel?.Source == NewsletterSubscriptionSource.Api ? "selected" : "")>API</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>دسته‌بندی</label>
+                            <select name="Category" class="form-control">
+                                <option value="">همه</option>
+                                <option value="1" @(Model.SearchModel?.Category == NewsletterCategory.Articles ? "selected" : "")>مقالات</option>
+                                <option value="2" @(Model.SearchModel?.Category == NewsletterCategory.Announcements ? "selected" : "")>اطلاعیه‌ها</option>
+                                <option value="3" @(Model.SearchModel?.Category == NewsletterCategory.NewServices ? "selected" : "")>خدمات جدید</option>
+                                <option value="4" @(Model.SearchModel?.Category == NewsletterCategory.HealthTips ? "selected" : "")>نکات سلامتی</option>
+                                <option value="5" @(Model.SearchModel?.Category == NewsletterCategory.Events ? "selected" : "")>رویدادها</option>
+                                <option value="6" @(Model.SearchModel?.Category == NewsletterCategory.Promotions ? "selected" : "")>تخفیف‌ها</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> جستجو
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @Html.HiddenFor(m => m.SearchModel.PageNumber)
+                @Html.HiddenFor(m => m.SearchModel.PageSize)
+            }
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> لیست اشتراک‌ها
+                <span class="badge badge-primary">@Model.Subscriptions.TotalCount</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Subscriptions.Items != null && Model.Subscriptions.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="subscriptionsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>ایمیل</th>
+                                <th>نام</th>
+                                <th>شماره تماس</th>
+                                <th>دسته‌بندی‌ها</th>
+                                <th>منبع</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ ثبت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Subscriptions.Items)
+                            {
+                                <tr>
+                                    <td class="email-cell">@item.Email</td>
+                                    <td>@(item.FullName ?? "-")</td>
+                                    <td>@(item.PhoneNumber ?? "-")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.CategoriesDisplay))
+                                        {
+                                            <span class="category-badge">@item.CategoriesDisplay</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">بدون دسته‌بندی</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@item.SourceDisplay</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive && item.IsVerified)
+                                        {
+                                            <span class="badge badge-success status-badge">
+                                                <i class="fas fa-check-circle"></i> فعال و تایید شده
+                                            </span>
+                                        }
+                                        else if (item.IsActive && !item.IsVerified)
+                                        {
+                                            <span class="badge badge-warning status-badge">
+                                                <i class="fas fa-clock"></i> در انتظار تایید
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">
+                                                <i class="fas fa-ban"></i> غیرفعال
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>@item.SubscriptionDate.ToString("yyyy/MM/dd HH:mm")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.NewsletterSubscriptionId })" 
+                                               class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.NewsletterSubscriptionId })" 
+                                               class="btn btn-sm btn-warning" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (item.IsActive)
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-secondary" 
+                                                        onclick="deactivateSubscription(@item.NewsletterSubscriptionId)" 
+                                                        title="غیرفعال کردن">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-success" 
+                                                        onclick="activateSubscription(@item.NewsletterSubscriptionId)" 
+                                                        title="فعال کردن">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            }
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger" 
+                                                    onclick="deleteSubscription(@item.NewsletterSubscriptionId)" 
+                                                    title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.Subscriptions.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.Subscriptions.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Subscriptions.PageNumber - 1, PageSize = Model.Subscriptions.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, IsActive = Model.SearchModel?.IsActive, IsVerified = Model.SearchModel?.IsVerified, Source = Model.SearchModel?.Source, Category = Model.SearchModel?.Category })">
+                                        <i class="fas fa-chevron-right"></i> قبلی
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-chevron-right"></i> قبلی</span>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.Subscriptions.TotalPages; i++)
+                            {
+                                if (i == Model.Subscriptions.PageNumber)
+                                {
+                                    <li class="page-item active">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, PageSize = Model.Subscriptions.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, IsActive = Model.SearchModel?.IsActive, IsVerified = Model.SearchModel?.IsVerified, Source = Model.SearchModel?.Source, Category = Model.SearchModel?.Category })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            @if (Model.Subscriptions.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Subscriptions.PageNumber + 1, PageSize = Model.Subscriptions.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, IsActive = Model.SearchModel?.IsActive, IsVerified = Model.SearchModel?.IsVerified, Source = Model.SearchModel?.Source, Category = Model.SearchModel?.Category })">
+                                        بعدی <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">بعدی <i class="fas fa-chevron-left"></i></span>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i> هیچ اشتراکی یافت نشد
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Activate Subscription
+        function activateSubscription(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این اشتراک فعال خواهد شد',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، فعال کن',
+                cancelButtonText: 'لغو'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("Activate")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+
+        // Deactivate Subscription
+        function deactivateSubscription(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این اشتراک غیرفعال خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، غیرفعال کن',
+                cancelButtonText: 'لغو'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("Deactivate")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+
+        // Delete Subscription
+        function deleteSubscription(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این اشتراک حذف خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'لغو'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("Delete")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

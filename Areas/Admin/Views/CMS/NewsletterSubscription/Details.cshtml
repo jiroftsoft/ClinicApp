@@ -1,0 +1,231 @@
+@model ClinicApp.ViewModels.CMS.NewsletterSubscriptionDetailsViewModel
+@using ClinicApp.Models.Enums
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "جزئیات اشتراک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Subscription Details - Production Ready
+   ============================================
+   - SRP: نمایش جزئیات اشتراک
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user text-primary"></i>
+            جزئیات اشتراک
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.NewsletterSubscriptionId })" class="btn btn-warning">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> اطلاعات اصلی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ایمیل:</dt>
+                        <dd class="col-sm-8">
+                            <span dir="ltr" style="font-family: 'Courier New', monospace;">@Model.Email</span>
+                        </dd>
+
+                        <dt class="col-sm-4">نام و نام خانوادگی:</dt>
+                        <dd class="col-sm-8">@(Model.FullName ?? "-")</dd>
+
+                        <dt class="col-sm-4">شماره تماس:</dt>
+                        <dd class="col-sm-8">@(Model.PhoneNumber ?? "-")</dd>
+
+                        <dt class="col-sm-4">منبع ثبت‌نام:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge badge-info">@Model.SourceDisplay</span>
+                        </dd>
+
+                        <dt class="col-sm-4">وضعیت:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.IsActive && Model.IsVerified)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle"></i> فعال و تایید شده
+                                </span>
+                            }
+                            else if (Model.IsActive && !Model.IsVerified)
+                            {
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-clock"></i> در انتظار تایید
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">
+                                    <i class="fas fa-ban"></i> غیرفعال
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">دسته‌بندی‌ها:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Categories != null && Model.Categories.Any())
+                            {
+                                foreach (var category in Model.Categories)
+                                {
+                                    <span class="badge badge-light" style="margin: 0.1rem;">@category.GetDisplayName()</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">بدون دسته‌بندی</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">تاریخ ثبت:</dt>
+                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.CreatedAt)</dd>
+
+                        @if (Model.VerifiedAt.HasValue)
+                        {
+                            <dt class="col-sm-4">تاریخ تایید:</dt>
+                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.VerifiedAt.Value)</dd>
+                        }
+
+                        @if (Model.UnsubscribedAt.HasValue)
+                        {
+                            <dt class="col-sm-4">تاریخ لغو:</dt>
+                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.UnsubscribedAt.Value)</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Campaign History -->
+            @if (Model.CampaignHistory != null && Model.CampaignHistory.Any())
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-history"></i> تاریخچه Campaign ها
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Campaign</th>
+                                        <th>وضعیت</th>
+                                        <th>تاریخ ارسال</th>
+                                        <th>باز شده</th>
+                                        <th>کلیک شده</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var campaign in Model.CampaignHistory)
+                                    {
+                                        <tr>
+                                            <td>@campaign.CampaignTitle</td>
+                                            <td>
+                                                <span class="badge badge-@(campaign.Status == NewsletterRecipientStatus.Sent ? "success" : campaign.Status == NewsletterRecipientStatus.Failed ? "danger" : "warning")">
+                                                    @campaign.StatusDisplay
+                                                </span>
+                                            </td>
+                                            <td>@(campaign.SentAt.HasValue ? PersianDateHelper.ToPersianDate(campaign.SentAt.Value) : "-")</td>
+                                            <td>@(campaign.OpenedAt.HasValue ? PersianDateHelper.ToPersianDate(campaign.OpenedAt.Value) : "-")</td>
+                                            <td>@(campaign.ClickedAt.HasValue ? PersianDateHelper.ToPersianDate(campaign.ClickedAt.Value) : "-")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="col-md-4">
+            <!-- System Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog"></i> اطلاعات سیستم
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>ایجاد شده توسط:</dt>
+                        <dd>@(Model.CreatedByUserName ?? "سیستم")</dd>
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <dt>آخرین به‌روزرسانی:</dt>
+                            <dd>@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</dd>
+                            <dt>به‌روزرسانی شده توسط:</dt>
+                            <dd>@(Model.UpdatedByUserName ?? "-")</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.IpAddress))
+                        {
+                            <dt>IP Address:</dt>
+                            <dd><code>@Model.IpAddress</code></dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> عملیات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsActive)
+                    {
+                        using (Html.BeginForm("Deactivate", "NewsletterSubscription", new { id = Model.NewsletterSubscriptionId }, FormMethod.Post, new { @class = "mb-2" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('آیا مطمئن هستید؟')">
+                                <i class="fas fa-ban"></i> غیرفعال کردن
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        using (Html.BeginForm("Activate", "NewsletterSubscription", new { id = Model.NewsletterSubscriptionId }, FormMethod.Post, new { @class = "mb-2" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-block" onclick="return confirm('آیا مطمئن هستید؟')">
+                                <i class="fas fa-check"></i> فعال کردن
+                            </button>
+                        }
+                    }
+
+                    @using (Html.BeginForm("Delete", "NewsletterSubscription", new { id = Model.NewsletterSubscriptionId }, FormMethod.Post, new { @class = "mb-0" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-block" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این اشتراک را حذف کنید؟')">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

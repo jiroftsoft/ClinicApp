@@ -1,0 +1,191 @@
+@model ClinicApp.ViewModels.CMS.NewsletterCampaignSendViewModel
+@{
+    ViewBag.Title = "ارسال Campaign";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Campaign Send - Production Ready
+   ============================================
+   - SRP: فرم ارسال Campaign
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-light: #f8f9fa;
+        }
+        .send-container {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .campaign-preview {
+            border: 1px solid var(--medical-border);
+            border-radius: 4px;
+            padding: 1rem;
+            background: var(--medical-light);
+            margin-bottom: 1rem;
+        }
+        .recipient-count {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--medical-primary);
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3f73 100%);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        @@media (max-width: 768px) {
+            .send-container { padding: 1rem; }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-paper-plane text-primary"></i> ارسال Campaign
+        </h1>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="send-container">
+        <!-- Campaign Preview -->
+        <div class="campaign-preview">
+            <h5><i class="fas fa-info-circle"></i> اطلاعات Campaign</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">عنوان:</dt>
+                <dd class="col-sm-9"><strong>@Model.Title</strong></dd>
+                <dt class="col-sm-3">موضوع:</dt>
+                <dd class="col-sm-9">@Model.Subject</dd>
+            </dl>
+        </div>
+
+        <!-- Recipient Count -->
+        <div class="recipient-count">
+            <div>@Model.EstimatedRecipients</div>
+            <small style="opacity: 0.9;">مشترک فعال</small>
+        </div>
+
+        @using (Html.BeginForm("Send", "NewsletterCampaign", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.NewsletterCampaignId)
+            @Html.HiddenFor(m => m.Title)
+            @Html.HiddenFor(m => m.Subject)
+            @Html.HiddenFor(m => m.Content)
+            @Html.HiddenFor(m => m.EstimatedRecipients)
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>توجه:</strong> این Campaign به <strong>@Model.EstimatedRecipients</strong> مشترک فعال ارسال خواهد شد.
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.SendEmail, new { @class = "form-check-input", id = "sendEmail", @checked = "checked" })
+                            @Html.LabelFor(m => m.SendEmail, new { @class = "form-check-label", @for = "sendEmail" })
+                        </div>
+                        <small class="form-text text-muted">ارسال از طریق ایمیل</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.SendSms, new { @class = "form-check-input", id = "sendSms" })
+                            @Html.LabelFor(m => m.SendSms, new { @class = "form-check-label", @for = "sendSms" })
+                        </div>
+                        <small class="form-text text-muted">ارسال از طریق SMS (فقط برای مشترکینی که شماره تماس دارند)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    @{
+                        ViewBag.PersianDatePickerId = "scheduledAtPicker";
+                        ViewBag.PersianDatePickerName = "ScheduledAt";
+                        ViewBag.PersianDatePickerValue = Model.ScheduledAt;
+                        ViewBag.PersianDatePickerLabel = "زمان‌بندی ارسال";
+                        ViewBag.PersianDatePickerPlaceholder = "تاریخ و زمان ارسال (اختیاری)";
+                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، Campaign فوراً ارسال می‌شود. در غیر این صورت، در زمان مشخص شده ارسال خواهد شد.";
+                        ViewBag.PersianDatePickerRequired = false;
+                    }
+                    @Html.Partial("_PersianDatePicker")
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-paper-plane"></i> ارسال Campaign
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> لغو
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_PersianDatePickerScript")
+    @Scripts.Render("~/bundles/jqueryval")
+    
+    <script>
+        $(document).ready(function() {
+            // Validation
+            $('form').on('submit', function(e) {
+                if (!$('#sendEmail').is(':checked') && !$('#sendSms').is(':checked')) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'هشدار',
+                        text: 'لطفاً حداقل یکی از روش‌های ارسال (ایمیل یا SMS) را انتخاب کنید.'
+                    });
+                    return false;
+                }
+
+                // بررسی تاریخ زمان‌بندی از hidden input
+                var scheduledAtHidden = $('input[name="ScheduledAt_Hidden"]').val();
+                if (scheduledAtHidden) {
+                    var scheduledDate = new Date(scheduledAtHidden);
+                    var now = new Date();
+                    if (scheduledDate <= now) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'هشدار',
+                            text: 'تاریخ زمان‌بندی باید در آینده باشد.'
+                        });
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}
+

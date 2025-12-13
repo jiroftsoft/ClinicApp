@@ -1,0 +1,237 @@
+@model List<ClinicApp.ViewModels.CMS.NewsletterTemplateIndexViewModel>
+@using ClinicApp.Models.Enums
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "مدیریت Template های خبرنامه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Newsletter Template Index - Production Ready
+   ============================================
+   - SRP: نمایش لیست Template های خبرنامه
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   - Notification: استفاده از Toastr
+   ============================================ *@
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* UI/UX Optimization - Production Ready */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-border: #dee2e6;
+            --medical-bg: #ffffff;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
+            --medical-light: #f8f9fa;
+        }
+
+        .template-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .template-card.active {
+            border-color: var(--medical-success);
+            border-width: 2px;
+        }
+        .template-preview {
+            max-height: 200px;
+            overflow: hidden;
+            background: var(--medical-light);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        .template-preview img {
+            max-width: 100%;
+            height: auto;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .template-card {
+                margin-bottom: 1rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+
+        /* Accessibility */
+        .btn:focus,
+        .form-control:focus {
+            outline: 2px solid var(--medical-primary);
+            outline-offset: 2px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-file-alt text-primary"></i>
+            مدیریت Template های خبرنامه
+        </h1>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus"></i> افزودن Template جدید
+            </a>
+        </div>
+    </div>
+
+    <!-- Templates Grid -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var template in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="template-card @(template.IsActive ? "active" : "")">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">
+                                    @template.Name
+                                    @if (template.IsActive)
+                                    {
+                                        <span class="badge badge-success status-badge">
+                                            <i class="fas fa-check-circle"></i> فعال
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary status-badge">
+                                            <i class="fas fa-ban"></i> غیرفعال
+                                        </span>
+                                    }
+                                </h5>
+                                <div class="btn-group" role="group">
+                                    <a href="@Url.Action("Preview", new { id = template.NewsletterTemplateId })" 
+                                       class="btn btn-sm btn-info" 
+                                       title="پیش‌نمایش"
+                                       target="_blank">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Details", new { id = template.NewsletterTemplateId })" 
+                                       class="btn btn-sm btn-primary" 
+                                       title="جزئیات">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = template.NewsletterTemplateId })" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="ویرایش">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="deleteTemplate(@template.NewsletterTemplateId)" 
+                                            title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(template.Description))
+                            {
+                                <p class="card-text text-muted small">
+                                    @(template.Description.Length > 100 ? template.Description.Substring(0, 100) + "..." : template.Description)
+                                </p>
+                            }
+
+                            <div class="template-preview">
+                                @if (!string.IsNullOrEmpty(template.Content))
+                                {
+                                    @Html.Raw(template.Content.Length > 500 ? template.Content.Substring(0, 500) + "..." : template.Content)
+                                }
+                                else
+                                {
+                                    <p class="text-muted text-center">بدون محتوا</p>
+                                }
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> 
+                                    ایجاد شده: @PersianDateHelper.ToPersianDate(template.CreatedAt)
+                                </small>
+                                @if (template.UpdatedAt.HasValue)
+                                {
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-edit"></i> 
+                                        به‌روزرسانی: @PersianDateHelper.ToPersianDate(template.UpdatedAt.Value)
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card shadow mb-4">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">هیچ Template ای یافت نشد</h5>
+                <p class="text-muted">برای شروع، اولین Template را ایجاد کنید</p>
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> افزودن Template جدید
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Delete Template
+        function deleteTemplate(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این Template حذف خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'لغو'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form></form>');
+                    form.attr('method', 'POST');
+                    form.attr('action', '@Url.Action("Delete")');
+                    form.append($('<input>').attr('type', 'hidden').attr('name', 'id').val(id));
+                    form.append($('@Html.AntiForgeryToken()'));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}
+

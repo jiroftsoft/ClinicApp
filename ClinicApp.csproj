@@ -485,6 +485,9 @@
     <Compile Include="Areas\Admin\Controllers\CMS\InsuranceInfoController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalEquipmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalServiceInfoController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\NewsletterCampaignController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\NewsletterSubscriptionController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\NewsletterTemplateController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\PatientEducationMaterialController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\SliderController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\TestimonialController.cs" />
@@ -550,6 +553,7 @@
     <Compile Include="Controllers\LogController.cs" />
     <Compile Include="Controllers\MedicalEquipmentController.cs" />
     <Compile Include="Controllers\MedicalServiceInfoController.cs" />
+    <Compile Include="Controllers\NewsletterController.cs" />
     <Compile Include="Controllers\PatientEducationController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
@@ -706,6 +710,13 @@
     <Compile Include="Interfaces\CMS\IMedicalEquipmentService.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoRepository.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoService.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterCampaignRecipientRepository.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterCampaignRepository.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterCampaignService.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterSubscriptionRepository.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterSubscriptionService.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterTemplateRepository.cs" />
+    <Compile Include="Interfaces\CMS\INewsletterTemplateService.cs" />
     <Compile Include="Interfaces\CMS\IPatientEducationMaterialRepository.cs" />
     <Compile Include="Interfaces\CMS\IPatientEducationMaterialService.cs" />
     <Compile Include="Interfaces\CMS\ISliderRepository.cs" />
@@ -723,6 +734,8 @@
     <Compile Include="Interfaces\IHomePageService.cs" />
     <Compile Include="Interfaces\IImageUploadService.cs" />
     <Compile Include="Interfaces\IInsuranceTariffCalculationService.cs" />
+    <Compile Include="Interfaces\INewsletterEmailService.cs" />
+    <Compile Include="Interfaces\INewsletterSmsService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
@@ -853,6 +866,10 @@
     <Compile Include="Migrations\202512121953274_addPatientEducationMaterial.Designer.cs">
       <DependentUpon>202512121953274_addPatientEducationMaterial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512131400196_addNewsletter.cs" />
+    <Compile Include="Migrations\202512131400196_addNewsletter.Designer.cs">
+      <DependentUpon>202512131400196_addNewsletter.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -873,12 +890,20 @@
     <Compile Include="Models\Entities\CMS\InsuranceInfo.cs" />
     <Compile Include="Models\Entities\CMS\MedicalEquipment.cs" />
     <Compile Include="Models\Entities\CMS\MedicalServiceInfo.cs" />
+    <Compile Include="Models\Entities\CMS\NewsletterCampaign.cs" />
+    <Compile Include="Models\Entities\CMS\NewsletterCampaignRecipient.cs" />
+    <Compile Include="Models\Entities\CMS\NewsletterSubscription.cs" />
+    <Compile Include="Models\Entities\CMS\NewsletterTemplate.cs" />
     <Compile Include="Models\Entities\CMS\PatientEducationMaterial.cs" />
     <Compile Include="Models\Entities\CMS\Slider.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
     <Compile Include="Models\Entities\CMS\Video.cs" />
     <Compile Include="Models\Enums\ContactFormCategory.cs" />
     <Compile Include="Models\Enums\ContactFormStatus.cs" />
+    <Compile Include="Models\Enums\NewsletterCampaignStatus.cs" />
+    <Compile Include="Models\Enums\NewsletterCategory.cs" />
+    <Compile Include="Models\Enums\NewsletterRecipientStatus.cs" />
+    <Compile Include="Models\Enums\NewsletterSubscriptionSource.cs" />
     <Compile Include="Models\Enums\PatientEducationCategory.cs" />
     <Compile Include="Models\Enums\VideoType.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
@@ -896,6 +921,10 @@
     <Compile Include="Repositories\CMS\InsuranceInfoRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalEquipmentRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalServiceInfoRepository.cs" />
+    <Compile Include="Repositories\CMS\NewsletterCampaignRecipientRepository.cs" />
+    <Compile Include="Repositories\CMS\NewsletterCampaignRepository.cs" />
+    <Compile Include="Repositories\CMS\NewsletterSubscriptionRepository.cs" />
+    <Compile Include="Repositories\CMS\NewsletterTemplateRepository.cs" />
     <Compile Include="Repositories\CMS\PatientEducationMaterialRepository.cs" />
     <Compile Include="Repositories\CMS\SliderRepository.cs" />
     <Compile Include="Repositories\CMS\TestimonialRepository.cs" />
@@ -1249,6 +1278,9 @@
     <Compile Include="Services\CMS\InsuranceInfoService.cs" />
     <Compile Include="Services\CMS\MedicalEquipmentService.cs" />
     <Compile Include="Services\CMS\MedicalServiceInfoService.cs" />
+    <Compile Include="Services\CMS\NewsletterCampaignService.cs" />
+    <Compile Include="Services\CMS\NewsletterSubscriptionService.cs" />
+    <Compile Include="Services\CMS\NewsletterTemplateService.cs" />
     <Compile Include="Services\CMS\PatientEducationMaterialService.cs" />
     <Compile Include="Services\CMS\SliderService.cs" />
     <Compile Include="Services\CMS\TestimonialService.cs" />
@@ -1259,6 +1291,8 @@
     <Compile Include="Services\ImageUploadService.cs" />
     <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
+    <Compile Include="Services\NewsletterEmailService.cs" />
+    <Compile Include="Services\NewsletterSmsService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishSignalRDriver.cs" />
@@ -1447,6 +1481,7 @@
     <Compile Include="ViewModels\CMS\InsuranceInfoViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalEquipmentViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalServiceInfoViewModels.cs" />
+    <Compile Include="ViewModels\CMS\NewsletterViewModels.cs" />
     <Compile Include="ViewModels\CMS\PatientEducationMaterialViewModels.cs" />
     <Compile Include="ViewModels\CMS\SliderViewModels.cs" />
     <Compile Include="ViewModels\CMS\TestimonialViewModels.cs" />
@@ -4429,6 +4464,21 @@
     <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Index.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Details.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\PatientEducationMaterial\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterSubscription\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterSubscription\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterSubscription\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterSubscription\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterTemplate\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterTemplate\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterTemplate\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterTemplate\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterTemplate\Preview.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Send.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Statistics.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5847,6 +5897,11 @@
     <Content Include="Views\Home\Sections\_SidebarSection.cshtml" />
     <Content Include="Views\Shared\_Footer.cshtml" />
     <Content Include="Views\Contact\Index.cshtml" />
+    <Content Include="Views\PatientEducation\Details.cshtml" />
+    <Content Include="Views\PatientEducation\Index.cshtml" />
+    <Content Include="Views\Newsletter\Unsubscribe.cshtml" />
+    <Content Include="Views\Newsletter\Verify.cshtml" />
+    <Content Include="Views\Shared\_NewsletterSubscribePartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6073,6 +6128,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512121953274_addPatientEducationMaterial.resx">
       <DependentUpon>202512121953274_addPatientEducationMaterial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512131400196_addNewsletter.resx">
+      <DependentUpon>202512131400196_addNewsletter.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

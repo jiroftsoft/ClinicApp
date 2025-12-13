@@ -1,0 +1,70 @@
+@{
+    ViewBag.Title = "تایید اشتراک خبرنامه";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* ============================================
+   Newsletter Verify - Production Ready
+   ============================================
+   - SRP: صفحه تایید اشتراک خبرنامه
+   - UI/UX: طراحی کاربرپسند و حرفه‌ای
+   - RTL Support: پشتیبانی کامل از راست‌به‌چپ
+   ============================================ *@
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-envelope-check fa-4x text-success mb-3"></i>
+                        <h2 class="card-title mb-3">تایید اشتراک خبرنامه</h2>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>پیام‌های سیستم:</strong>
+                        <div id="notificationMessages" class="mt-2">
+                            @* پیام‌ها از طریق TempData و NotificationHelper نمایش داده می‌شوند *@
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-muted">
+                            اگر اشتراک شما با موفقیت تایید شد، از این پس خبرنامه‌های ما را دریافت خواهید کرد.
+                        </p>
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg mt-3">
+                            <i class="fas fa-home"></i> بازگشت به صفحه اصلی
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .card-body {
+            background: #ffffff;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // نمایش پیام‌های TempData از طریق NotificationHelper
+            // این پیام‌ها در _Layout.cshtml نمایش داده می‌شوند
+        });
+    </script>
+}
+
