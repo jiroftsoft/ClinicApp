@@ -1,606 +1,693 @@
 /**
- * Medical Sidebar Styles - Production Ready
+ * 📋 Medical Sidebar - Production-Grade Professional Design
  * 
- * ویژگی‌های کلیدی:
- * - Accessibility: WCAG AA compliance, keyboard navigation, ARIA
- * - Security: No sensitive data, GDPR compliance
- * - Performance: Optimized, lazy loading
- * - UX: Medical-friendly, calming colors, clear controls
- * - Responsive: Mobile-first, touch targets >=44px, RTL support
+ * طراحی حرفه‌ای و Production-Ready برای Sidebar کلینیک درمانی
+ * مطابق با استانداردهای UI/UX و اصول Medical Sidebar Design
+ * 
+ * ویژگی‌ها:
+ * - Card-based Layout
+ * - رنگ‌های درمانی (سبز/آبی)
+ * - Sticky Position
+ * - Responsive و Accessible
+ * - Production-Ready
  */
 
 /* ============================================
-   BASE STYLES
+   BASE SIDEBAR STYLES
    ============================================ */
-.medical-sidebar {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg, 1.5rem);
-    padding: 0;
+.medical-sidebar-modern {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    padding: 0 !important;
 }
 
 /* ============================================
-   SECTION STYLES
+   SIDEBAR CARD (Base)
    ============================================ */
-.sidebar-section {
-    background: #ffffff;
-    border-radius: var(--radius-lg, 12px);
-    padding: var(--spacing-lg, 1.5rem);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.3s ease;
+.sidebar-card {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    overflow: hidden !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.sidebar-section:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+.sidebar-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    border-color: #2c5aa0 !important; /* آبی درمانی */
 }
 
-.sidebar-section-title {
-    font-size: var(--font-size-lg, 1.125rem);
-    font-weight: 700;
-    color: var(--medical-primary, #2c6e7d);
-    margin-bottom: var(--spacing-md, 1rem);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    line-height: 1.5;
+.sidebar-card-header {
+    padding: 1rem 1.25rem !important;
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e9ecef !important;
 }
 
-.sidebar-section-title i {
-    font-size: 1.25rem;
-    color: var(--medical-primary, #2c6e7d);
+.sidebar-card-content {
+    padding: 1.25rem !important;
 }
 
-.sidebar-section-title-emergency {
-    color: #dc3545;
+.sidebar-card-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 700 !important;
+    color: #212529 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    line-height: 1.5 !important;
 }
 
-.sidebar-section-title-emergency i {
-    color: #dc3545;
+.sidebar-card-title i {
+    font-size: 1.25rem !important;
+    color: #2c5aa0 !important; /* آبی درمانی */
 }
 
-.sidebar-section-subtitle {
-    font-size: var(--font-size-sm, 0.875rem);
-    color: var(--text-color, #666);
-    margin-bottom: var(--spacing-md, 1rem);
-    line-height: 1.6;
+.sidebar-card-subtitle {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 0.875rem !important; /* 14px */
+    color: #6c757d !important;
+    margin: 0 0 1rem 0 !important;
+    line-height: 1.6 !important;
 }
 
 /* ============================================
-   QUICK APPOINTMENT
+   QUICK APPOINTMENT CARD
    ============================================ */
-.sidebar-quick-appointment {
-    background: linear-gradient(135deg, #2c6e7d 0%, #4a9da9 100%);
-    color: white;
+.sidebar-appointment-card {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
 }
 
-.sidebar-quick-appointment .sidebar-section-title {
-    color: white;
+.sidebar-appointment-card:hover {
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.3) !important;
+    border: none !important;
 }
 
-.sidebar-quick-appointment .sidebar-section-title i {
-    color: white;
+.sidebar-appointment-card .sidebar-card-header {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-.sidebar-quick-appointment .sidebar-section-subtitle {
-    color: rgba(255, 255, 255, 0.9);
+.sidebar-appointment-card .sidebar-card-title {
+    color: #ffffff !important;
 }
 
-.sidebar-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-md, 1rem) var(--spacing-xl, 2rem);
-    font-size: var(--font-size-base, 1rem);
-    font-weight: 600;
-    border-radius: var(--radius-md, 8px);
-    text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid transparent;
-    /* Touch target >= 44px */
-    min-height: 44px;
-    min-width: 120px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+.sidebar-appointment-card .sidebar-card-title i {
+    color: #ffffff !important;
 }
 
-.sidebar-btn-primary {
-    background: white;
-    color: var(--medical-primary, #2c6e7d);
-    border-color: white;
+.sidebar-appointment-card .sidebar-card-subtitle {
+    color: rgba(255, 255, 255, 0.9) !important;
 }
 
-.sidebar-btn-primary:hover,
-.sidebar-btn-primary:focus {
-    background: rgba(255, 255, 255, 0.9);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    outline: 2px solid white;
-    outline-offset: 2px;
+.sidebar-appointment-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    padding: 0.875rem 1.5rem !important;
+    background: #ffffff !important;
+    color: #2c5aa0 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    min-height: 44px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
-.sidebar-btn-primary:active {
-    transform: translateY(0);
+.sidebar-appointment-button:hover {
+    background: #f8f9fa !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.sidebar-appointment-button:active {
+    transform: translateY(0) !important;
+}
+
+.sidebar-appointment-button:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
+.sidebar-appointment-button i {
+    font-size: 1rem !important;
 }
 
 /* ============================================
    QUICK LINKS
    ============================================ */
 .sidebar-links-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs, 0.25rem);
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-    color: var(--text-color, #333);
-    text-decoration: none;
-    border-radius: var(--radius-md, 8px);
-    transition: all 0.2s ease;
-    /* Touch target >= 44px */
-    min-height: 44px;
-    -webkit-tap-highlight-color: transparent;
+.sidebar-link-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    color: #495057 !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    min-height: 44px !important;
 }
 
-.sidebar-link:hover,
-.sidebar-link:focus {
-    background: var(--gray-100, #f5f5f5);
-    color: var(--medical-primary, #2c6e7d);
-    outline: 2px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 2px;
+.sidebar-link-item:hover,
+.sidebar-link-item:focus {
+    background: #f0f4f8 !important; /* آبی خیلی روشن */
+    color: #2c5aa0 !important;
+    outline: 2px solid #2c5aa0 !important;
+    outline-offset: 2px !important;
 }
 
-.sidebar-link i {
-    font-size: 1.125rem;
-    width: 20px;
-    text-align: center;
-    color: var(--medical-primary, #2c6e7d);
+.sidebar-link-item i {
+    font-size: 1.125rem !important;
+    width: 24px !important;
+    text-align: center !important;
+    color: #2c5aa0 !important;
+    flex-shrink: 0 !important;
 }
 
-.sidebar-badge {
-    margin-right: auto;
-    padding: 0.125rem 0.5rem;
-    font-size: var(--font-size-xs, 0.75rem);
-    border-radius: var(--radius-full, 9999px);
-    font-weight: 600;
+.sidebar-link-badge {
+    margin-right: auto !important;
+    padding: 0.125rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+    background: #28a745 !important;
+    color: #ffffff !important;
 }
 
 /* ============================================
    CONTACT INFO
    ============================================ */
 .sidebar-contact-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 0.5rem);
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
 }
 
 .sidebar-contact-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-sm, 0.5rem);
-    color: var(--text-color, #333);
-    text-decoration: none;
-    border-radius: var(--radius-md, 8px);
-    transition: all 0.2s ease;
-    /* Touch target >= 44px */
-    min-height: 44px;
-    -webkit-tap-highlight-color: transparent;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    color: #495057 !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    min-height: 44px !important;
 }
 
 .sidebar-contact-item:hover,
 .sidebar-contact-item:focus {
-    background: var(--gray-100, #f5f5f5);
-    color: var(--medical-primary, #2c6e7d);
-    outline: 2px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 2px;
+    background: #f0f4f8 !important;
+    color: #2c5aa0 !important;
+    outline: 2px solid #2c5aa0 !important;
+    outline-offset: 2px !important;
 }
 
 .sidebar-contact-item i {
-    font-size: 1.125rem;
-    width: 20px;
-    text-align: center;
-    color: var(--medical-primary, #2c6e7d);
+    font-size: 1.125rem !important;
+    width: 24px !important;
+    text-align: center !important;
+    color: #2c5aa0 !important;
+    flex-shrink: 0 !important;
+}
+
+.sidebar-contact-whatsapp {
+    background: rgba(37, 211, 102, 0.1) !important;
+}
+
+.sidebar-contact-whatsapp:hover {
+    background: rgba(37, 211, 102, 0.15) !important;
+}
+
+.sidebar-contact-whatsapp i {
+    color: #25D366 !important;
 }
 
 .sidebar-contact-address {
-    color: var(--text-color, #666);
-    font-size: var(--font-size-sm, 0.875rem);
-    line-height: 1.6;
+    color: #6c757d !important;
+    font-size: 0.875rem !important;
+    line-height: 1.6 !important;
+    cursor: default !important;
+}
+
+.sidebar-contact-address:hover {
+    background: transparent !important;
+    outline: none !important;
 }
 
 .sidebar-contact-map {
-    margin-top: var(--spacing-xs, 0.25rem);
+    margin-top: 0.5rem !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+}
+
+.sidebar-contact-map:hover {
+    background: #e9ecef !important;
+    border-color: #2c5aa0 !important;
 }
 
 /* ============================================
    WORKING HOURS
    ============================================ */
-.sidebar-status {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-    border-radius: var(--radius-md, 8px);
-    margin-bottom: var(--spacing-md, 1rem);
-    font-weight: 600;
+.sidebar-status-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
 }
 
-.status-open {
-    background: #d4edda;
-    color: #155724;
+.sidebar-status-badge.status-open {
+    background: rgba(40, 167, 69, 0.15) !important;
+    color: #28a745 !important;
+    border: 1px solid rgba(40, 167, 69, 0.3) !important;
 }
 
-.status-closed {
-    background: #f8d7da;
-    color: #721c24;
+.sidebar-status-badge.status-closed {
+    background: rgba(220, 53, 69, 0.15) !important;
+    color: #dc3545 !important;
+    border: 1px solid rgba(220, 53, 69, 0.3) !important;
 }
 
 .status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: var(--radius-full, 9999px);
-    background: currentColor;
-    animation: pulse 2s infinite;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: currentColor !important;
+    animation: pulse 2s infinite !important;
 }
 
 @keyframes pulse {
     0%, 100% {
-        opacity: 1;
+        opacity: 1 !important;
     }
     50% {
-        opacity: 0.5;
+        opacity: 0.5 !important;
     }
 }
 
-.sidebar-working-days {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs, 0.25rem);
+.sidebar-working-days-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
-.working-day {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-xs, 0.25rem) 0;
-    font-size: var(--font-size-sm, 0.875rem);
-    border-bottom: 1px solid var(--gray-200, #e5e5e5);
+.sidebar-working-day {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    font-size: 0.875rem !important;
+    border-bottom: 1px solid #e9ecef !important;
 }
 
-.working-day:last-child {
-    border-bottom: none;
+.sidebar-working-day:last-child {
+    border-bottom: none !important;
 }
 
-.working-day.day-closed {
-    color: var(--text-color, #999);
+.sidebar-working-day.day-closed {
+    color: #adb5bd !important;
 }
 
-.day-name {
-    font-weight: 600;
+.working-day-name {
+    font-weight: 600 !important;
+    color: #212529 !important;
 }
 
-.day-hours {
-    color: var(--text-color, #666);
+.working-day-hours {
+    color: #6c757d !important;
 }
 
 /* ============================================
    EMERGENCY CONTACTS
    ============================================ */
+.sidebar-emergency-card {
+    border: 2px solid #dc3545 !important;
+    background: #ffffff !important;
+}
+
+.sidebar-emergency-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border-bottom: none !important;
+}
+
+.sidebar-emergency-title {
+    color: #ffffff !important;
+}
+
+.sidebar-emergency-title i {
+    color: #ffffff !important;
+}
+
 .sidebar-emergency-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 0.5rem);
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
 }
 
 .sidebar-emergency-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-md, 1rem);
-    background: #fff3cd;
-    border: 2px solid #ffc107;
-    border-radius: var(--radius-md, 8px);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    /* Touch target >= 44px */
-    min-height: 44px;
-    -webkit-tap-highlight-color: transparent;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 1rem !important;
+    background: #fff5f5 !important; /* قرمز خیلی روشن */
+    border: 1px solid rgba(220, 53, 69, 0.2) !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    min-height: 44px !important;
 }
 
 .sidebar-emergency-item:hover,
 .sidebar-emergency-item:focus {
-    background: #ffe69c;
-    border-color: #ff9800;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
-    outline: 2px solid #ffc107;
-    outline-offset: 2px;
+    background: #ffe0e0 !important;
+    border-color: #dc3545 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2) !important;
+    outline: 2px solid #dc3545 !important;
+    outline-offset: 2px !important;
 }
 
-.sidebar-emergency-item i {
-    font-size: 1.25rem;
-    color: #dc3545;
-    flex-shrink: 0;
+.emergency-item-icon {
+    width: 40px !important;
+    height: 40px !important;
+    background: #dc3545 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.emergency-item-icon i {
+    font-size: 1.125rem !important;
+    color: #ffffff !important;
 }
 
 .emergency-item-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    flex: 1;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
 }
 
 .emergency-item-title {
-    font-weight: 700;
-    color: #721c24;
-    font-size: var(--font-size-base, 1rem);
+    font-weight: 700 !important;
+    color: #212529 !important;
+    font-size: 0.875rem !important;
 }
 
 .emergency-item-phone {
-    font-size: var(--font-size-sm, 0.875rem);
-    color: #856404;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #dc3545 !important;
 }
 
 /* ============================================
    HEALTH TIPS
    ============================================ */
 .sidebar-tips-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md, 1rem);
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
 }
 
-.sidebar-tip-item {
-    display: flex;
-    gap: var(--spacing-sm, 0.5rem);
-    padding-bottom: var(--spacing-md, 1rem);
-    border-bottom: 1px solid var(--gray-200, #e5e5e5);
+.sidebar-tip-card {
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid #e9ecef !important;
 }
 
-.sidebar-tip-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.sidebar-tip-image {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: var(--radius-md, 8px);
-    flex-shrink: 0;
+.sidebar-tip-card:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
 }
 
 .sidebar-tip-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs, 0.25rem);
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
 .sidebar-tip-title {
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.4;
+    font-size: 0.9375rem !important; /* 15px */
+    font-weight: 600 !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
 }
 
 .sidebar-tip-title a {
-    color: var(--text-color, #333);
-    text-decoration: none;
-    transition: color 0.2s ease;
+    color: #212529 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
 }
 
 .sidebar-tip-title a:hover,
 .sidebar-tip-title a:focus {
-    color: var(--medical-primary, #2c6e7d);
-    outline: 2px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 2px;
-    border-radius: 2px;
+    color: #2c5aa0 !important;
+    outline: 2px solid #2c5aa0 !important;
+    outline-offset: 2px !important;
+    border-radius: 4px !important;
 }
 
 .sidebar-tip-summary {
-    font-size: var(--font-size-xs, 0.75rem);
-    color: var(--text-color, #666);
-    line-height: 1.5;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.8125rem !important; /* 13px */
+    color: #6c757d !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 /* ============================================
    ANNOUNCEMENTS
    ============================================ */
 .sidebar-announcements-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm, 0.5rem);
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
 }
 
-.sidebar-announcement-item {
-    padding-bottom: var(--spacing-sm, 0.5rem);
-    border-bottom: 1px solid var(--gray-200, #e5e5e5);
+.sidebar-announcement-card {
+    padding-bottom: 0.75rem !important;
+    border-bottom: 1px solid #e9ecef !important;
 }
 
-.sidebar-announcement-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+.sidebar-announcement-card:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
 }
 
 .sidebar-announcement-title {
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 600;
-    margin: 0 0 var(--spacing-xs, 0.25rem) 0;
-    line-height: 1.4;
+    font-size: 0.9375rem !important; /* 15px */
+    font-weight: 600 !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.4 !important;
 }
 
 .sidebar-announcement-title a {
-    color: var(--text-color, #333);
-    text-decoration: none;
-    transition: color 0.2s ease;
+    color: #212529 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
 }
 
 .sidebar-announcement-title a:hover,
 .sidebar-announcement-title a:focus {
-    color: var(--medical-primary, #2c6e7d);
-    outline: 2px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 2px;
-    border-radius: 2px;
+    color: #2c5aa0 !important;
+    outline: 2px solid #2c5aa0 !important;
+    outline-offset: 2px !important;
+    border-radius: 4px !important;
 }
 
 .sidebar-announcement-date {
-    font-size: var(--font-size-xs, 0.75rem);
-    color: var(--text-color, #999);
+    font-size: 0.75rem !important; /* 12px */
+    color: #adb5bd !important;
 }
 
 /* ============================================
    SIDEBAR SLIDERS
    ============================================ */
 .sidebar-sliders-container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md, 1rem);
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
 }
 
 .sidebar-slider-card {
-    border-radius: var(--radius-md, 8px);
-    overflow: hidden;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.3s ease;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
 }
 
 .sidebar-slider-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    border-color: #2c5aa0 !important;
+    transform: translateY(-2px) !important;
 }
 
 .sidebar-slider-image-wrapper {
-    width: 100%;
-    height: 150px;
-    overflow: hidden;
-    position: relative;
+    width: 100% !important;
+    height: 160px !important;
+    overflow: hidden !important;
+    position: relative !important;
 }
 
 .sidebar-slider-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.3s ease !important;
 }
 
 .sidebar-slider-card:hover .sidebar-slider-image {
-    transform: scale(1.05);
+    transform: scale(1.05) !important;
 }
 
 .sidebar-slider-content {
-    padding: var(--spacing-md, 1rem);
+    padding: 1rem !important;
 }
 
 .sidebar-slider-title {
-    font-size: var(--font-size-base, 1rem);
-    font-weight: 700;
-    color: var(--heading-color, #333);
-    margin-bottom: var(--spacing-xs, 0.25rem);
-    line-height: 1.4;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #212529 !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.4 !important;
 }
 
 .sidebar-slider-description {
-    font-size: var(--font-size-sm, 0.875rem);
-    color: var(--text-color, #666);
-    line-height: 1.6;
-    margin-bottom: var(--spacing-sm, 0.5rem);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.875rem !important;
+    color: #6c757d !important;
+    line-height: 1.6 !important;
+    margin-bottom: 0.75rem !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 .sidebar-slider-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs, 0.25rem);
-    color: var(--medical-primary, #2c6e7d);
-    text-decoration: none;
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 600;
-    transition: color 0.2s ease;
-    /* Touch target >= 44px */
-    min-height: 44px;
-    padding: var(--spacing-xs, 0.25rem) 0;
-    -webkit-tap-highlight-color: transparent;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    color: #2c5aa0 !important;
+    text-decoration: none !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    transition: color 0.2s ease !important;
+    min-height: 44px !important;
+    padding: 0.5rem 0 !important;
 }
 
 .sidebar-slider-link:hover,
 .sidebar-slider-link:focus {
-    color: var(--medical-secondary, #4a9da9);
-    outline: 2px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 2px;
-    border-radius: 2px;
+    color: #1e3d6f !important;
+    outline: 2px solid #2c5aa0 !important;
+    outline-offset: 2px !important;
+    border-radius: 4px !important;
+}
+
+.sidebar-slider-link i {
+    font-size: 0.75rem !important;
 }
 
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 991.98px) {
-    .medical-sidebar {
-        gap: var(--spacing-md, 1rem);
+    .medical-sidebar-modern {
+        gap: 1rem !important;
     }
     
-    .sidebar-section {
-        padding: var(--spacing-md, 1rem);
+    .sidebar-card {
+        border-radius: 8px !important;
+    }
+    
+    .sidebar-card-header {
+        padding: 0.875rem 1rem !important;
+    }
+    
+    .sidebar-card-content {
+        padding: 1rem !important;
+    }
+    
+    .sidebar-card-title {
+        font-size: 1rem !important;
     }
 }
 
 @media (max-width: 767.98px) {
-    .medical-sidebar {
-        gap: var(--spacing-sm, 0.5rem);
+    .medical-sidebar-modern {
+        gap: 0.75rem !important;
     }
     
-    .sidebar-section {
-        padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-        border-radius: var(--radius-md, 8px);
+    .sidebar-card-header {
+        padding: 0.75rem !important;
     }
     
-    .sidebar-section-title {
-        font-size: var(--font-size-base, 1rem);
+    .sidebar-card-content {
+        padding: 0.875rem !important;
     }
     
-    .sidebar-btn {
-        width: 100%;
+    .sidebar-appointment-button {
+        width: 100% !important;
+    }
+    
+    .sidebar-slider-image-wrapper {
+        height: 140px !important;
     }
 }
 
 /* ============================================
-   REDUCED MOTION - Accessibility
+   ACCESSIBILITY
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
-    .sidebar-section,
-    .sidebar-link,
+    .sidebar-card,
+    .sidebar-link-item,
     .sidebar-contact-item,
     .sidebar-emergency-item,
-    .sidebar-btn,
+    .sidebar-appointment-button,
     .sidebar-slider-card,
     .sidebar-slider-image {
         transition: none !important;
@@ -612,27 +699,23 @@
     }
 }
 
-/* ============================================
-   FOCUS VISIBLE - Keyboard Navigation
-   ============================================ */
-.sidebar-link:focus-visible,
+.sidebar-link-item:focus-visible,
 .sidebar-contact-item:focus-visible,
 .sidebar-emergency-item:focus-visible,
-.sidebar-btn:focus-visible,
+.sidebar-appointment-button:focus-visible,
 .sidebar-slider-link:focus-visible,
 .sidebar-tip-title a:focus-visible,
 .sidebar-announcement-title a:focus-visible {
-    outline: 3px solid var(--medical-primary, #2c6e7d);
-    outline-offset: 3px;
-    box-shadow: 0 0 0 3px rgba(44, 110, 125, 0.3);
+    outline: 3px solid #2c5aa0 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.3) !important;
 }
 
 /* ============================================
    PRINT STYLES
    ============================================ */
 @media print {
-    .medical-sidebar {
+    .medical-sidebar-modern {
         display: none !important;
     }
 }
-

@@ -170,6 +170,11 @@
         {
             <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
         }
+        @* CSS برای Sidebar Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.Sidebar != null)
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-sidebar.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
     }
 
     @section Scripts {
