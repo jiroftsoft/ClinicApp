@@ -4,168 +4,221 @@
     {
         return;
     }
+    
+    // Service خودش فقط Featured و Active را برمی‌گرداند
+    // مرتب‌سازی بر اساس InsuranceInfoId
+    var insurances = Model.OrderBy(i => i.InsuranceInfoId).ToList();
 }
 
-@* ============================================
-   Professional Insurance Logo Carousel - Production Ready
-   ============================================
-   - Design: Clean, professional, medical-friendly
-   - Technology: Swiper.js (Lightweight, Fast, RTL Support)
-   - Features: Autoplay, Loop, Responsive, Touch Support
-   - Performance: Optimized, Lazy Loading
-   ============================================ *@
+@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+<link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-<section class="insurance-carousel-section" role="region" aria-label="بیمه‌های طرف قرارداد">
-    <div class="insurance-carousel-container">
-        @* Section Header *@
-        <div class="carousel-section-header">
-            <div class="header-icon-wrapper">
+<section class="insurance-info-section" aria-label="بیمه‌های طرف قرارداد">
+    <div class="container">
+        @* Header *@
+        <div class="insurance-info-header">
+            <h2 class="insurance-info-title">
                 <i class="fas fa-shield-alt" aria-hidden="true"></i>
-            </div>
-            <h2 class="carousel-section-title">
-                <span>بیمه‌های طرف قرارداد</span>
+                بیمه‌های طرف قرارداد
             </h2>
-            <p class="carousel-section-desc">
-                مراکز درمانی ما با معتبرترین بیمه‌های کشور همکاری دارند
-            </p>
+            <p class="insurance-info-subtitle">همکاری رسمی با بیمه‌های معتبر کشور</p>
         </div>
 
-        @* Swiper Carousel *@
-        <div class="insurance-carousel-wrapper">
-            <div class="swiper insurance-logo-carousel" id="insuranceCarousel">
+        @* Linear Logo Slider *@
+        <div class="insurance-logo-slider-wrapper">
+            <div class="swiper insurance-logo-slider" id="insuranceLogoSlider">
                 <div class="swiper-wrapper">
-                    @foreach (var insurance in Model.OrderBy(i => i.InsuranceInfoId))
+                    @foreach (var insurance in insurances)
                     {
                         <div class="swiper-slide">
-                            <a href="@Url.Action("Details", "InsuranceInfo", new { slug = insurance.Slug })" 
-                               class="insurance-logo-item"
-                               aria-label="مشاهده جزئیات @insurance.InsuranceName"
-                               title="@insurance.InsuranceName">
-                                <div class="logo-image-wrapper">
-                                    @if (!string.IsNullOrEmpty(insurance.LogoUrl))
-                                    {
-                                        <img src="@insurance.LogoUrl" 
-                                             alt="@insurance.InsuranceName"
-                                             class="insurance-logo-image"
-                                             loading="lazy"
-                                             decoding="async"
-                                             onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
-                                    }
-                                    else if (!string.IsNullOrEmpty(insurance.ThumbnailUrl))
-                                    {
-                                        <img src="@insurance.ThumbnailUrl" 
-                                             alt="@insurance.InsuranceName"
-                                             class="insurance-logo-image"
-                                             loading="lazy"
-                                             decoding="async"
-                                             onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
-                                    }
-                                    else
-                                    {
-                                        <div class="logo-fallback">
-                                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
-                                            <span class="fallback-text">@insurance.InsuranceName</span>
-                                        </div>
-                                    }
+                            @if (!string.IsNullOrEmpty(insurance.Slug))
+                            {
+                                <a href="@Url.Action("Details", "InsuranceInfo", new { slug = insurance.Slug })" 
+                                   class="insurance-logo-item" 
+                                   aria-label="مشاهده جزئیات @insurance.InsuranceName"
+                                   title="@insurance.InsuranceName">
+                                    <div class="insurance-logo-circle">
+                                        @if (!string.IsNullOrEmpty(insurance.LogoUrl))
+                                        {
+                                            <img src="@insurance.LogoUrl" 
+                                                 alt="@insurance.InsuranceName"
+                                                 class="insurance-logo-image"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'insurance-logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
+                                        }
+                                        else if (!string.IsNullOrEmpty(insurance.ThumbnailUrl))
+                                        {
+                                            <img src="@insurance.ThumbnailUrl" 
+                                                 alt="@insurance.InsuranceName"
+                                                 class="insurance-logo-image"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'insurance-logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
+                                        }
+                                        else
+                                        {
+                                            <div class="insurance-logo-fallback">
+                                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="insurance-logo-item" 
+                                     aria-label="@insurance.InsuranceName"
+                                     title="@insurance.InsuranceName">
+                                    <div class="insurance-logo-circle">
+                                        @if (!string.IsNullOrEmpty(insurance.LogoUrl))
+                                        {
+                                            <img src="@insurance.LogoUrl" 
+                                                 alt="@insurance.InsuranceName"
+                                                 class="insurance-logo-image"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'insurance-logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
+                                        }
+                                        else if (!string.IsNullOrEmpty(insurance.ThumbnailUrl))
+                                        {
+                                            <img src="@insurance.ThumbnailUrl" 
+                                                 alt="@insurance.InsuranceName"
+                                                 class="insurance-logo-image"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'insurance-logo-fallback\'><i class=\'fas fa-shield-alt\'></i></div>';">
+                                        }
+                                        else
+                                        {
+                                            <div class="insurance-logo-fallback">
+                                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
-                                @if (!string.IsNullOrEmpty(insurance.InsuranceName))
-                                {
-                                    <div class="logo-name" aria-hidden="true">@insurance.InsuranceName</div>
-                                }
-                            </a>
+                            }
                         </div>
                     }
                 </div>
-                
-                @* Navigation Arrows (Optional - Hidden by default for clean look) *@
-                <div class="swiper-button-next insurance-carousel-next" aria-label="بعدی"></div>
-                <div class="swiper-button-prev insurance-carousel-prev" aria-label="قبلی"></div>
-                
-                @* Pagination (Optional - Hidden by default) *@
-                <div class="swiper-pagination insurance-carousel-pagination"></div>
             </div>
         </div>
 
-        @* View All Link *@
-        <div class="carousel-section-footer">
-            <a href="@Url.Action("Index", "InsuranceInfo")" 
-               class="view-all-insurances-link"
-               aria-label="مشاهده تمام بیمه‌های طرف قرارداد">
-                <i class="fas fa-list" aria-hidden="true"></i>
-                <span>مشاهده همه بیمه‌ها</span>
-            </a>
+        @* Legal Notice *@
+        <div class="insurance-legal-notice">
+            <p class="insurance-legal-text">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                همکاری‌ها بر اساس قراردادهای رسمی و معتبر انجام می‌شود.
+            </p>
         </div>
     </div>
 </section>
 
-@functions {
-    private string GetTypeIcon(string insuranceType)
-    {
-        return insuranceType?.ToLower() switch
-        {
-            "basic" => "fas fa-shield-alt",
-            "supplementary" => "fas fa-plus-circle",
-            "private" => "fas fa-building",
-            "government" => "fas fa-landmark",
-            _ => "fas fa-info-circle"
-        };
-    }
-}
-
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.css")?v=@DateTime.Now.Ticks" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-carousel.css")?v=@DateTime.Now.Ticks" />
-}
-
-@section scripts {
-    <script>
-        // Dynamic loading with proper order and cache busting
-        (function() {
-            'use strict';
-            
-            // Check if already loaded
-            if (window.insuranceCarouselLoaded) {
+<script>
+    (function() {
+        'use strict';
+        
+        // Dynamic loading of Swiper.js
+        function loadSwiperScript(callback) {
+            if (typeof Swiper !== 'undefined') {
+                if (callback) callback();
+                return;
+            }
+            var script = document.createElement('script');
+            script.src = '@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks';
+            script.async = false;
+            script.defer = false;
+            script.onload = function() {
+                console.log('✅ Swiper.js loaded successfully for Insurance Info');
+                if (callback) callback();
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load Swiper.js for Insurance Info');
+            };
+            document.head.appendChild(script);
+        }
+        
+        function initInsuranceSlider() {
+            const sliderElement = document.getElementById('insuranceLogoSlider');
+            if (!sliderElement) {
+                console.warn('Insurance logo slider element not found.');
                 return;
             }
             
-            function loadSwiperScript(callback) {
-                // Check if Swiper is already loaded
-                if (typeof Swiper !== 'undefined') {
-                    if (callback) callback();
-                    return;
-                }
-                
-                var script = document.createElement('script');
-                script.src = '@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.js")?v=@DateTime.Now.Ticks&nocache=' + new Date().getTime();
-                script.async = false;
-                script.defer = false;
-                script.onload = function() {
-                    console.log('✅ Swiper.js loaded successfully');
-                    if (callback) callback();
-                };
-                script.onerror = function() {
-                    console.error('❌ Failed to load Swiper.js');
-                };
-                document.head.appendChild(script);
+            if (typeof Swiper === 'undefined') {
+                console.warn('Swiper.js is not loaded. Retrying in 500ms...');
+                setTimeout(initInsuranceSlider, 500);
+                return;
             }
             
-            function loadCarouselScript() {
-                var script = document.createElement('script');
-                script.src = '@Url.Content("~/Content/js/insurance-carousel.js")?v=@DateTime.Now.Ticks&nocache=' + new Date().getTime();
-                script.async = false;
-                script.defer = false;
-                document.body.appendChild(script);
-                window.insuranceCarouselLoaded = true;
+            if (sliderElement.swiper) {
+                console.log('Insurance logo slider already initialized.');
+                return;
             }
             
-            // Load Swiper first, then carousel script
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                    loadSwiperScript(loadCarouselScript);
+            try {
+                const insuranceSlider = new Swiper('#insuranceLogoSlider', {
+                    direction: 'horizontal',
+                    loop: true,
+                    rtl: true,
+                    freeMode: true,
+                    autoplay: {
+                        delay: 4000, // 4 ثانیه - حرکت آهسته
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: true
+                    },
+                    speed: 3000, // سرعت حرکت آهسته (3 ثانیه)
+                    slidesPerView: 'auto',
+                    spaceBetween: 32,
+                    grabCursor: false,
+                    allowTouchMove: true,
+                    breakpoints: {
+                        320: {
+                            slidesPerView: 3,
+                            spaceBetween: 20
+                        },
+                        576: {
+                            slidesPerView: 4,
+                            spaceBetween: 24
+                        },
+                        768: {
+                            slidesPerView: 5,
+                            spaceBetween: 28
+                        },
+                        992: {
+                            slidesPerView: 6,
+                            spaceBetween: 32
+                        },
+                        1200: {
+                            slidesPerView: 8,
+                            spaceBetween: 40
+                        }
+                    },
+                    // بدون Navigation و Pagination
+                    navigation: false,
+                    pagination: false,
+                    // Accessibility
+                    a11y: {
+                        enabled: true,
+                        prevSlideMessage: 'اسلاید قبلی',
+                        nextSlideMessage: 'اسلاید بعدی'
+                    }
                 });
-            } else {
-                loadSwiperScript(loadCarouselScript);
+                
+                console.log('✅ Insurance logo slider initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing insurance logo slider:', error);
             }
-        })();
-    </script>
-}
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                loadSwiperScript(initInsuranceSlider);
+            });
+        } else {
+            loadSwiperScript(initInsuranceSlider);
+        }
+    })();
+</script>

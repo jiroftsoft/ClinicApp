@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -498,6 +498,21 @@ namespace ClinicApp
 
             // 🏥 Patient Controller Route - برای جلوگیری از تداخل با Api.PatientController
             // این route باید قبل از route پیش‌فرض قرار بگیرد تا اولویت داشته باشد
+            // 📚 Blog Routes - برای نمایش عمومی مقالات
+            routes.MapRoute(
+                name: "BlogPost",
+                url: "Blog/Post/{slug}",
+                defaults: new { controller = "Blog", action = "Post", slug = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers" }
+            );
+
+            routes.MapRoute(
+                name: "Blog",
+                url: "Blog/{action}/{id}",
+                defaults: new { controller = "Blog", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers" }
+            );
+
             routes.MapRoute(
                 name: "Patient",
                 url: "Patient/{action}/{id}",

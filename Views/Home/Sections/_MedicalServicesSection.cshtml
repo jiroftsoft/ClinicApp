@@ -38,9 +38,9 @@
                             }
                             @if (!string.IsNullOrEmpty(service.ServiceCategoryName))
                             {
-                                <span class="medical-service-category-badge">
+                                <span class="medical-service-category-badge" aria-label="دسته‌بندی: @service.ServiceCategoryName">
                                     <i class="fas fa-tag" aria-hidden="true"></i>
-                                    @service.ServiceCategoryName
+                                    <span>@service.ServiceCategoryName</span>
                                 </span>
                             }
                         </div>
@@ -58,7 +58,7 @@
                                 <div class="medical-service-features">
                                     @foreach (var feature in service.Features.Take(3))
                                     {
-                                        <span class="medical-service-feature">
+                                        <span class="medical-service-feature" aria-label="ویژگی: @feature">
                                             <i class="fas fa-check-circle" aria-hidden="true"></i>
                                             <span>@feature</span>
                                         </span>
@@ -69,23 +69,24 @@
                             <div class="medical-service-footer">
                                 @if (service.Price.HasValue)
                                 {
-                                    <span class="medical-service-price">
+                                    <span class="medical-service-price" aria-label="@(service.Price.Value.ToString("N0")) ریال">
                                         <i class="fas fa-money-bill-wave" aria-hidden="true"></i>
-                                        @(service.Price.Value.ToString("N0")) ریال
+                                        <span>@(service.Price.Value.ToString("N0"))</span>
+                                        <span>ریال</span>
                                     </span>
                                 }
                                 @if (!string.IsNullOrEmpty(service.EstimatedDuration))
                                 {
-                                    <span class="medical-service-duration">
+                                    <span class="medical-service-duration" aria-label="مدت زمان: @service.EstimatedDuration">
                                         <i class="fas fa-clock" aria-hidden="true"></i>
-                                        @service.EstimatedDuration
+                                        <span>@service.EstimatedDuration</span>
                                     </span>
                                 }
                             </div>
                             
                             <a href="@Url.Action("Details", "MedicalServiceInfo", new { slug = service.Slug })" class="medical-service-button" aria-label="مشاهده جزئیات @service.ServiceTitle">
-                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
                                 <span>اطلاعات بیشتر</span>
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
                             </a>
                         </div>
                     </article>
@@ -102,34 +103,31 @@
     </div>
 </section>
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-services-section.css")" />
-}
+@* CSS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/css/medical-services-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-@section Scripts {
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.medical-service-card');
-            
-            if (cards.length === 0) return;
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
+<script>
+    // Intersection Observer for animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.medical-service-card');
+        
+        if (cards.length === 0) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    observer.unobserve(entry.target);
+                }
             });
-            
-            cards.forEach(card => {
-                observer.observe(card);
-            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
         });
-    </script>
-}
+        
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
 

@@ -1,0 +1,227 @@
+/**
+ * 🏠 Homepage Sections Spacing & Layout
+ * 
+ * فاصله‌گذاری حرفه‌ای و یکپارچه بین تمام بخش‌های صفحه اصلی
+ * استفاده از Design System Variables
+ */
+
+/* ============================================
+   SECTION SPACING - فاصله‌گذاری بین بخش‌ها
+   ============================================ */
+
+/* فاصله استاندارد بین تمام بخش‌ها */
+.homepage-main-content > section {
+    margin-bottom: var(--spacing-xxxl, 4rem) !important;
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+.homepage-main-content > section:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* اطمینان از نمایش تمام sections */
+.homepage-main-content > section {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* فاصله اضافی برای بخش‌های مهم */
+.homepage-main-content > section.hero-section,
+.homepage-main-content > section.value-proposition-section {
+    margin-bottom: var(--spacing-xxxl, 4rem);
+}
+
+/* ============================================
+   CONTAINER CONSISTENCY - یکسان‌سازی Container
+   ============================================ */
+
+/* تمام Container ها باید یکسان باشند */
+.homepage-main-content section .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 var(--spacing-lg, 1.5rem) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 767.98px) {
+    .homepage-main-content section .container {
+        padding: 0 var(--spacing-md, 1rem) !important;
+    }
+}
+
+/* Override container های خاص */
+.homepage-main-content section .modern-services-container,
+.homepage-main-content section .quick-appointment-container,
+.homepage-main-content section .insurance-carousel-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 var(--spacing-lg, 1.5rem) !important;
+}
+
+/* ============================================
+   SECTION PADDING - Padding داخلی بخش‌ها
+   ============================================ */
+
+/* Padding استاندارد برای بخش‌ها - Override هر padding داخلی */
+.homepage-main-content > section {
+    padding: var(--spacing-xxxl, 4rem) 0 !important;
+}
+
+/* بخش‌های خاص با Padding کمتر */
+.homepage-main-content > section.quick-appointment-section,
+.homepage-main-content > section.hero-section {
+    padding: var(--spacing-xxl, 3rem) 0 !important;
+}
+
+/* Override padding داخلی sections */
+.homepage-main-content > section.hero-section,
+.homepage-main-content > section.value-proposition-section,
+.homepage-main-content > section.doctors-section,
+.homepage-main-content > section.blog-section,
+.homepage-main-content > section.gallery-section,
+.homepage-main-content > section.testimonials-section,
+.homepage-main-content > section.modern-services-section,
+.homepage-main-content > section.medical-services-section,
+.homepage-main-content > section.contact-section,
+.homepage-main-content > section.health-tips-section,
+.homepage-main-content > section.insurance-carousel-section,
+.homepage-main-content > section.announcements-section,
+.homepage-main-content > section.faq-section,
+.homepage-main-content > section.emergency-contacts-section,
+.homepage-main-content > section.medical-equipment-section {
+    padding: var(--spacing-xxxl, 4rem) 0 !important;
+}
+
+/* ============================================
+   RESPONSIVE SPACING - فاصله‌گذاری Responsive
+   ============================================ */
+
+@media (max-width: 991.98px) {
+    .homepage-main-content > section {
+        margin-bottom: var(--spacing-xxl, 3rem);
+        padding: var(--spacing-xxl, 3rem) 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .homepage-main-content > section {
+        margin-bottom: var(--spacing-xl, 2rem);
+        padding: var(--spacing-xl, 2rem) 0;
+    }
+}
+
+/* ============================================
+   VISUAL SEPARATION - جداسازی بصری
+   ============================================ */
+
+/* خط جداکننده ملایم بین بخش‌ها (غیرفعال - برای طراحی ساده‌تر) */
+/*
+.homepage-main-content > section:not(:last-child)::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+        to left,
+        transparent,
+        var(--medical-border-light, #e9ecef) 20%,
+        var(--medical-border-light, #e9ecef) 80%,
+        transparent
+    );
+    margin-top: var(--spacing-xxxl, 4rem);
+    opacity: 0.5;
+}
+*/
+
+/* ============================================
+   BACKGROUND ALTERNATION - پس‌زمینه متناوب
+   ============================================ */
+
+/* پس‌زمینه متناوب برای بخش‌ها (غیرفعال - برای طراحی ساده‌تر) */
+/* 
+.homepage-main-content > section:nth-child(even) {
+    background-color: var(--medical-light, #f8f9fa);
+}
+
+.homepage-main-content > section:nth-child(odd) {
+    background-color: var(--medical-bg, #ffffff);
+}
+*/
+
+/* استثنا برای بخش‌های خاص - پس‌زمینه شفاف */
+.homepage-main-content > section.hero-section,
+.homepage-main-content > section.value-proposition-section,
+.homepage-main-content > section.quick-appointment-section {
+    background-color: transparent;
+}
+
+/* ============================================
+   SECTION HEADERS - استایل Header بخش‌ها
+   ============================================ */
+
+/* یکسان‌سازی Header های بخش‌ها */
+.homepage-main-content section .section-header,
+.homepage-main-content section h2.section-title {
+    text-align: center;
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.homepage-main-content section .section-subtitle {
+    text-align: center;
+    margin-bottom: var(--spacing-xl, 2rem);
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ============================================
+   ANIMATION CONSISTENCY - یکسان‌سازی انیمیشن
+   ============================================ */
+
+/* انیمیشن یکسان برای تمام بخش‌ها */
+.homepage-main-content > section {
+    animation: fadeInUp 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)) both;
+}
+
+/* Stagger Animation */
+.homepage-main-content > section:nth-child(1) { animation-delay: 0.1s; }
+.homepage-main-content > section:nth-child(2) { animation-delay: 0.2s; }
+.homepage-main-content > section:nth-child(3) { animation-delay: 0.3s; }
+.homepage-main-content > section:nth-child(4) { animation-delay: 0.4s; }
+.homepage-main-content > section:nth-child(5) { animation-delay: 0.5s; }
+.homepage-main-content > section:nth-child(6) { animation-delay: 0.6s; }
+.homepage-main-content > section:nth-child(7) { animation-delay: 0.7s; }
+.homepage-main-content > section:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY - دسترسی‌پذیری
+   ============================================ */
+
+/* Focus States */
+.homepage-main-content > section:focus-within {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 4px;
+    border-radius: var(--radius-md, 8px);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .homepage-main-content > section {
+        animation: none;
+    }
+}

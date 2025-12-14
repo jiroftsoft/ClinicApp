@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ClinicApp.Helpers;
 using ClinicApp.Infrastructure;
 using ClinicApp.Interfaces;
@@ -421,7 +421,7 @@ namespace ClinicApp
                 container.RegisterType<IGalleryService, GalleryService>(new PerRequestLifetimeManager());
                 container.RegisterType<IVideoService, VideoService>(new PerRequestLifetimeManager());
                 container.RegisterType<IVideoUploadService, VideoUploadService>(new PerRequestLifetimeManager());
-                container.RegisterType<IDocumentUploadService, DocumentUploadService>(new PerRequestLifetimeManager());
+                // IDocumentUploadService already registered in Image Upload Service section (line 346)
                 container.RegisterType<IFAQService, FAQService>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipService, HealthTipService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoService, InsuranceInfoService>(new PerRequestLifetimeManager());

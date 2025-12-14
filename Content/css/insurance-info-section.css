@@ -1,649 +1,292 @@
 /**
- * Ultra Modern Insurance Info Section Styles
+ * 🛡️ Insurance Info Section - Trusted Partners Linear Slider
  * 
- * طراحی فوق‌العاده مدرن با کارت‌های زیبا و فضای بهینه
- * Glassmorphism + Gradient + Modern Animations
+ * طراحی حرفه‌ای و اعتمادساز برای بخش "بیمه‌های طرف قرارداد"
+ * مطابق با اصول Trust Building و Professional Medical Design
+ * 
+ * ویژگی‌ها:
+ * - Linear Auto Scroll (حرکت خطی آرام)
+ * - لوگوهای دایره‌ای یکدست
+ * - بدون نویز اطلاعاتی (بدون دکمه، pagination)
+ * - کاملاً رسمی و اعتمادساز
+ * - Swiper.js freeMode + autoplay آهسته
  */
 
 /* ============================================
-   BASE STYLES
+   BASE SECTION STYLES
    ============================================ */
-.modern-insurance-section {
-    padding: 5rem 0;
-    background: 
-        linear-gradient(135deg, #f0f4f8 0%, #e8f0f6 50%, #f0f4f8 100%),
-        radial-gradient(circle at 20% 30%, rgba(91, 163, 199, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.06) 0%, transparent 50%);
-    position: relative;
-    overflow: hidden;
+.insurance-info-section {
+    padding: var(--spacing-xxxl, 4rem) 0 !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
-.modern-insurance-section::before {
+.insurance-info-section::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: 
-        radial-gradient(circle, rgba(91, 163, 199, 0.1) 0%, transparent 70%);
-    animation: float 20s ease-in-out infinite;
-    pointer-events: none;
-}
-
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    50% { transform: translate(30px, 30px) rotate(180deg); }
-}
-
-.insurance-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-/* ============================================
-   MODERN SECTION HEADER
-   ============================================ */
-.modern-section-header {
-    text-align: center;
-    margin-bottom: 4rem;
-}
-
-.header-icon {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 1.5rem;
-}
-
-.icon-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100px;
-    height: 100px;
-    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 50%, #FFD700 100%);
-    border-radius: 50%;
-    opacity: 0.2;
-    animation: pulse 3s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
-    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
-}
-
-.header-icon i {
-    position: relative;
-    font-size: 3rem;
-    color: #5BA3C7;
-    z-index: 1;
-}
-
-.modern-section-title {
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    font-size: 2.75rem;
-    font-weight: 800;
-    color: #1a4a54;
-    margin: 0 0 1rem;
-    line-height: 1.2;
-    position: relative;
-    display: inline-block;
-}
-
-.title-main {
-    position: relative;
-    z-index: 1;
-}
-
-.title-accent {
-    position: absolute;
-    bottom: 8px;
-    right: 0;
+    top: 0;
     left: 0;
-    height: 12px;
-    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.4), transparent);
-    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(44, 110, 125, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(40, 167, 69, 0.02) 0%, transparent 50%);
+    pointer-events: none;
     z-index: 0;
 }
 
-.modern-section-desc {
-    font-size: 1.125rem;
-    color: #6c757d;
-    line-height: 1.8;
-    max-width: 600px;
-    margin: 0 auto;
+.insurance-info-section .container {
+    position: relative;
+    z-index: 1;
 }
 
 /* ============================================
-   MODERN INSURANCE GRID
+   HEADER SECTION
    ============================================ */
-.modern-insurance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-bottom: 4rem;
+.insurance-info-header {
+    text-align: center !important;
+    margin-bottom: var(--spacing-xxl, 3rem) !important;
 }
 
-@media (min-width: 1400px) {
-    .modern-insurance-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
+.insurance-info-title {
+    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
+    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
+    font-weight: var(--font-weight-bold, 700) !important;
+    color: #212529 !important;
+    margin-bottom: var(--spacing-md, 1rem) !important;
+    line-height: var(--line-height-tight, 1.2) !important;
+    position: relative !important;
+    display: inline-block !important;
 }
 
-/* ============================================
-   MODERN INSURANCE CARD
-   ============================================ */
-.modern-insurance-card {
-    position: relative;
-    height: 100%;
-    min-height: 380px;
-    border-radius: 24px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-gradient-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.95) 0%,
-        rgba(255, 255, 255, 0.9) 50%,
-        rgba(240, 247, 255, 0.95) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    transition: all 0.4s ease;
-}
-
-.modern-insurance-card:hover .card-gradient-bg {
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 1) 0%,
-        rgba(240, 247, 255, 1) 50%,
-        rgba(255, 255, 255, 1) 100%);
-    box-shadow: 
-        0 20px 60px rgba(91, 163, 199, 0.25),
-        0 8px 24px rgba(255, 215, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 1);
-    transform: scale(1.02);
-}
-
-.card-hover-effect {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(91, 163, 199, 0.05) 0%,
-        rgba(255, 215, 0, 0.05) 100%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-}
-
-.modern-insurance-card:hover .card-hover-effect {
-    opacity: 1;
-}
-
-.card-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 2rem;
-}
-
-/* ============================================
-   CARD LOGO AREA
-   ============================================ */
-.card-logo-area {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 140px;
-    margin-bottom: 1.5rem;
-}
-
-.logo-container {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.9) 0%,
-        rgba(240, 247, 255, 0.9) 100%);
-    border-radius: 16px;
-    border: 2px solid rgba(91, 163, 199, 0.15);
-    transition: all 0.4s ease;
-}
-
-.modern-insurance-card:hover .logo-container {
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 1) 0%,
-        rgba(240, 247, 255, 1) 100%);
-    border-color: rgba(91, 163, 199, 0.3);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(91, 163, 199, 0.2);
-}
-
-.insurance-logo-img {
-    max-width: 100%;
-    max-height: 100px;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-    transition: all 0.4s ease;
-}
-
-.modern-insurance-card:hover .insurance-logo-img {
-    transform: scale(1.1);
-    filter: drop-shadow(0 8px 16px rgba(91, 163, 199, 0.3));
-}
-
-.logo-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 100%);
-    border-radius: 16px;
-    color: #ffffff;
-    font-size: 2.5rem;
-    box-shadow: 0 8px 20px rgba(91, 163, 199, 0.3);
-}
-
-.logo-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 120%;
-    height: 120%;
-    background: radial-gradient(circle, 
-        rgba(91, 163, 199, 0.1) 0%,
-        transparent 70%);
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-}
-
-.modern-insurance-card:hover .logo-glow {
-    opacity: 1;
-}
-
-/* ============================================
-   CARD INFO
-   ============================================ */
-.card-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.card-title {
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #1a4a54;
-    margin: 0;
-    line-height: 1.4;
-    text-align: center;
-    transition: color 0.3s ease;
-}
-
-.modern-insurance-card:hover .card-title {
-    color: #5BA3C7;
-}
-
-.card-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: center;
-    align-items: center;
-}
-
-.modern-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-.type-badge {
-    background: linear-gradient(135deg, 
-        rgba(91, 163, 199, 0.15) 0%,
-        rgba(74, 158, 196, 0.15) 100%);
-    color: #5BA3C7;
-    border: 1.5px solid rgba(91, 163, 199, 0.3);
-    box-shadow: 0 2px 8px rgba(91, 163, 199, 0.15);
-}
-
-.coverage-badge {
-    background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0.2) 0%,
-        rgba(255, 215, 0, 0.15) 100%);
-    color: #b8860b;
-    border: 1.5px solid rgba(255, 215, 0, 0.4);
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
-}
-
-.modern-insurance-card:hover .type-badge {
-    background: linear-gradient(135deg, 
-        rgba(91, 163, 199, 0.25) 0%,
-        rgba(74, 158, 196, 0.25) 100%);
-    border-color: rgba(91, 163, 199, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(91, 163, 199, 0.25);
-}
-
-.modern-insurance-card:hover .coverage-badge {
-    background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0.3) 0%,
-        rgba(255, 215, 0, 0.2) 100%);
-    border-color: rgba(255, 215, 0, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-}
-
-.modern-badge i {
-    font-size: 0.875rem;
-}
-
-.card-description {
-    font-size: 0.9375rem;
-    color: #6c757d;
-    line-height: 1.7;
-    margin: 0;
-    text-align: center;
-    flex: 1;
-}
-
-/* ============================================
-   CARD ACTION BUTTON
-   ============================================ */
-.card-action {
-    margin-top: auto;
-    padding-top: 1.5rem;
-}
-
-.modern-card-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 100%);
-    color: #ffffff;
-    text-decoration: none;
-    border-radius: 12px;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid transparent;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(91, 163, 199, 0.3);
-}
-
-.modern-card-btn::before {
+.insurance-info-title::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.3), 
-        transparent);
-    transition: left 0.5s ease;
+    bottom: -0.5rem;
+    right: 50%;
+    transform: translateX(50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--medical-primary, #2c6e7d), transparent);
+    border-radius: var(--radius-full, 9999px);
 }
 
-.modern-card-btn:hover::before {
-    left: 100%;
+.insurance-info-title i {
+    color: var(--medical-primary, #2c6e7d) !important;
+    margin-left: var(--spacing-sm, 0.5rem) !important;
 }
 
-.modern-card-btn:hover,
-.modern-card-btn:focus {
-    background: linear-gradient(135deg, #4A9EC4 0%, #3A8DB8 100%);
-    color: #ffffff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(91, 163, 199, 0.4);
-    border-color: #FFD700;
-    outline: none;
-}
-
-.modern-card-btn:active {
-    transform: translateY(-1px);
-}
-
-.modern-card-btn i {
-    font-size: 0.875rem;
-    transition: transform 0.3s ease;
-}
-
-.modern-card-btn:hover i {
-    transform: translateX(-5px);
+.insurance-info-subtitle {
+    font-size: clamp(1rem, 2vw, 1.125rem) !important;
+    color: #6c757d !important;
+    max-width: 700px !important;
+    margin: var(--spacing-md, 1rem) auto 0 !important;
+    line-height: var(--line-height-relaxed, 1.75) !important;
+    font-weight: var(--font-weight-normal, 400) !important;
 }
 
 /* ============================================
-   VIEW ALL BUTTON
+   LINEAR SLIDER WRAPPER
    ============================================ */
-.modern-section-footer {
-    text-align: center;
-    margin-top: 3rem;
+.insurance-logo-slider-wrapper {
+    width: 100% !important;
+    padding: var(--spacing-lg, 1.5rem) 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
 }
 
-.modern-view-all-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 1.25rem 2.5rem;
-    background: linear-gradient(135deg, #FFD700 0%, #ffed4e 100%);
-    color: #1a4a54;
-    text-decoration: none;
-    border-radius: 50px;
-    font-size: 1.125rem;
-    font-weight: 700;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-    border: 2px solid transparent;
+.insurance-logo-slider {
+    width: 100% !important;
+    overflow: visible !important;
 }
 
-.btn-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.insurance-logo-slider .swiper-wrapper {
+    align-items: center !important;
+    transition-timing-function: linear !important; /* حرکت خطی یکنواخت */
 }
 
-.btn-ripple {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s ease, height 0.6s ease;
+.insurance-logo-slider .swiper-slide {
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-.modern-view-all-btn:hover .btn-ripple {
-    width: 300px;
-    height: 300px;
+/* ============================================
+   LOGO ITEM - CIRCLE DESIGN
+   ============================================ */
+.insurance-logo-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 96px !important;
+    height: 96px !important;
+    padding: var(--spacing-sm, 0.5rem) !important;
+    cursor: pointer !important;
+    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-decoration: none !important;
+    color: inherit !important;
 }
 
-.modern-view-all-btn:hover,
-.modern-view-all-btn:focus {
-    background: linear-gradient(135deg, #ffed4e 0%, #FFD700 100%);
-    color: #1a4a54;
-    transform: translateY(-4px);
-    box-shadow: 0 12px 35px rgba(255, 215, 0, 0.5);
-    border-color: #5BA3C7;
-    outline: none;
+.insurance-logo-circle {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: var(--radius-full, 9999px) !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: var(--spacing-sm, 0.5rem) !important;
+    transition: all var(--transition-normal, 0.3s) !important;
+    overflow: hidden !important;
 }
 
-.modern-view-all-btn:active {
-    transform: translateY(-2px);
+.insurance-logo-item:hover .insurance-logo-circle {
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    border-color: rgba(44, 110, 125, 0.15) !important;
 }
 
-.modern-view-all-btn i {
-    font-size: 1.25rem;
+/* ============================================
+   LOGO IMAGE
+   ============================================ */
+.insurance-logo-image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    border-radius: var(--radius-full, 9999px) !important;
+    transition: filter var(--transition-normal, 0.3s) !important;
+    filter: grayscale(0%) brightness(1) !important;
+}
+
+.insurance-logo-item:hover .insurance-logo-image {
+    filter: grayscale(0%) brightness(1.05) saturate(1.1) !important; /* Saturation 100% + Scale ملایم */
+}
+
+/* ============================================
+   LOGO FALLBACK (در صورت عدم وجود تصویر)
+   ============================================ */
+.insurance-logo-fallback {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, rgba(44, 110, 125, 0.8) 100%) !important;
+    color: #ffffff !important;
+    border-radius: var(--radius-full, 9999px) !important;
+}
+
+.insurance-logo-fallback i {
+    font-size: var(--font-size-xl, 1.5rem) !important;
+}
+
+/* ============================================
+   LEGAL NOTICE
+   ============================================ */
+.insurance-legal-notice {
+    text-align: center !important;
+    margin-top: var(--spacing-xl, 2rem) !important;
+    padding: var(--spacing-md, 1rem) !important;
+    background: rgba(44, 110, 125, 0.05) !important;
+    border-radius: var(--radius-md, 12px) !important;
+    border: 1px solid rgba(44, 110, 125, 0.1) !important;
+}
+
+.insurance-legal-text {
+    font-size: var(--font-size-sm, 0.875rem) !important;
+    color: #6c757d !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--spacing-xs, 0.5rem) !important;
+    font-weight: var(--font-weight-normal, 400) !important;
+}
+
+.insurance-legal-text i {
+    color: var(--medical-primary, #2c6e7d) !important;
+    font-size: var(--font-size-base, 1rem) !important;
 }
 
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */
-@media (max-width: 1199.98px) {
-    .modern-insurance-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
+@media (max-width: 575.98px) {
+    .insurance-info-section {
+        padding: var(--spacing-xxl, 2.5rem) 0 !important;
+    }
+    
+    .insurance-info-header {
+        margin-bottom: var(--spacing-xl, 2rem) !important;
+    }
+    
+    .insurance-logo-item {
+        width: 64px !important;
+        height: 64px !important;
+    }
+    
+    .insurance-logo-slider-wrapper {
+        padding: var(--spacing-md, 1rem) 0 !important;
     }
 }
 
-@media (max-width: 991.98px) {
-    .modern-insurance-section {
-        padding: 3.5rem 0;
-    }
-
-    .modern-section-title {
-        font-size: 2.25rem;
-    }
-
-    .modern-insurance-grid {
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .modern-insurance-card {
-        min-height: 360px;
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .insurance-logo-item {
+        width: 80px !important;
+        height: 80px !important;
     }
 }
 
-@media (max-width: 767.98px) {
-    .modern-insurance-section {
-        padding: 2.5rem 0;
-    }
-
-    .modern-section-header {
-        margin-bottom: 2.5rem;
-    }
-
-    .icon-bg {
-        width: 80px;
-        height: 80px;
-    }
-
-    .header-icon i {
-        font-size: 2.5rem;
-    }
-
-    .modern-section-title {
-        font-size: 1.875rem;
-    }
-
-    .modern-section-desc {
-        font-size: 1rem;
-    }
-
-    .modern-insurance-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .modern-insurance-card {
-        min-height: 340px;
-    }
-
-    .card-content {
-        padding: 1.5rem;
-    }
-
-    .card-logo-area {
-        min-height: 120px;
-        margin-bottom: 1.25rem;
-    }
-
-    .modern-view-all-btn {
-        padding: 1rem 2rem;
-        font-size: 1rem;
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .insurance-logo-item {
+        width: 88px !important;
+        height: 88px !important;
     }
 }
 
 /* ============================================
    ACCESSIBILITY
    ============================================ */
+.insurance-logo-item:focus {
+    outline: 3px solid var(--medical-primary, #2c6e7d) !important;
+    outline-offset: 4px !important;
+    border-radius: var(--radius-full, 9999px) !important;
+}
+
+/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+    .insurance-logo-item,
+    .insurance-logo-circle,
+    .insurance-logo-image {
+        transition: none !important;
+    }
+    
+    .insurance-logo-item:hover .insurance-logo-circle {
+        transform: none !important;
+    }
+    
+    .insurance-logo-slider .swiper-wrapper {
+        transition-timing-function: ease !important;
     }
 }
 
-.modern-insurance-card:focus-within {
-    outline: 3px solid #5BA3C7;
-    outline-offset: 4px;
-}
-
-.modern-card-btn:focus-visible,
-.modern-view-all-btn:focus-visible {
-    outline: 3px solid #5BA3C7;
-    outline-offset: 3px;
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .insurance-logo-circle {
+        border: 2px solid #000000 !important;
+    }
 }
 
 /* ============================================
-   PRINT STYLES
+   SWIPER OVERRIDES (برای حذف Navigation و Pagination)
    ============================================ */
-@media print {
-    .modern-insurance-section {
-        background: #ffffff;
-        padding: 1.5rem 0;
-    }
-
-    .modern-insurance-card {
-        break-inside: avoid;
-        box-shadow: none;
-        border: 1px solid #dee2e6;
-    }
-
-    .modern-card-btn,
-    .modern-view-all-btn {
-        display: none;
-    }
+.insurance-logo-slider .swiper-button-next,
+.insurance-logo-slider .swiper-button-prev,
+.insurance-logo-slider .swiper-pagination {
+    display: none !important;
 }

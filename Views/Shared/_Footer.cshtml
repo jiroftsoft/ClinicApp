@@ -78,7 +78,7 @@
                    NEWSLETTER SUBSCRIPTION SECTION
                    ============================================ *@
                 <div class="footer-section footer-newsletter">
-                    @Html.Partial("_NewsletterSubscribePartial", new ClinicApp.ViewModels.CMS.PublicNewsletterSubscriptionViewModel())
+                    @{ Html.RenderPartial("_NewsletterSubscribePartial", new ClinicApp.ViewModels.CMS.PublicNewsletterSubscriptionViewModel()); }
                 </div>
 
                 @* ============================================
@@ -333,6 +333,6 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@DateTime.Now.Ticks" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 }
 

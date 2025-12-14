@@ -1,0 +1,149 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.BlogPostIndexViewModel>
+@{
+    ViewBag.Title = "مقالات و آموزش سلامت";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="blog-index-page py-5" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-book-medical text-primary"></i>
+                    مقالات و آموزش سلامت
+                </h1>
+                <p class="lead text-muted">پنجره دانش پزشکی معتبر کلینیک</p>
+            </div>
+        </div>
+
+        @* Blog Posts Grid *@
+        <div class="row" id="blogPostsContainer">
+            @if (Model != null && Model.Items != null && Model.Items.Any())
+            {
+                foreach (var post in Model.Items)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <article class="card blog-index-card h-100 shadow-lg border-0">
+                            <div class="blog-index-image-wrapper">
+                                @if (!string.IsNullOrEmpty(post.ImageUrl))
+                                {
+                                    <img src="@post.ImageUrl" class="card-img-top" alt="@post.Title" style="height: 240px; object-fit: cover;" loading="lazy">
+                                }
+                                else if (!string.IsNullOrEmpty(post.ThumbnailUrl))
+                                {
+                                    <img src="@post.ThumbnailUrl" class="card-img-top" alt="@post.Title" style="height: 240px; object-fit: cover;" loading="lazy">
+                                }
+                                else
+                                {
+                                    <div class="blog-index-image-placeholder d-flex align-items-center justify-content-center" style="height: 240px;">
+                                        <i class="fas fa-stethoscope fa-3x text-white"></i>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <div class="card-body d-flex flex-column">
+                                @if (!string.IsNullOrEmpty(post.CategoryName))
+                                {
+                                    <div class="mb-2">
+                                        <span class="badge badge-primary">
+                                            <i class="fas fa-tag"></i>
+                                            @post.CategoryName
+                                        </span>
+                                    </div>
+                                }
+                                
+                                <h5 class="card-title font-weight-bold">@post.Title</h5>
+                                
+                                @if (!string.IsNullOrEmpty(post.Summary))
+                                {
+                                    <p class="card-text text-muted flex-grow-1">
+                                        @{
+                                            var summary = post.Summary;
+                                            var maxLength = 150;
+                                            if (summary.Length > maxLength)
+                                            {
+                                                summary = summary.Substring(0, maxLength) + "...";
+                                            }
+                                        }
+                                        @summary
+                                    </p>
+                                }
+                                
+                                <div class="mt-auto pt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        @if (post.PublishedAt.HasValue)
+                                        {
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar-alt"></i>
+                                                @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)
+                                            </small>
+                                        }
+                                        <small class="text-muted">
+                                            <i class="fas fa-eye"></i> @post.ViewCount
+                                        </small>
+                                    </div>
+                                    
+                                    <a href="@Url.Action("Post", "Blog", new { slug = !string.IsNullOrEmpty(post.Slug) ? post.Slug : post.BlogPostId.ToString() })" class="btn btn-primary btn-block">
+                                        <i class="fas fa-arrow-left"></i> مطالعه مقاله
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h4>هیچ مقاله‌ای یافت نشد</h4>
+                        <p class="mb-0">در حال حاضر مقاله‌ای برای نمایش وجود ندارد.</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Pagination *@
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    @Html.Partial("_PaginationPartial", Model)
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@section Styles {
+    <style>
+        .blog-index-page {
+            position: relative;
+        }
+
+        .blog-index-card {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .blog-index-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
+        }
+
+        .blog-index-image-wrapper {
+            overflow: hidden;
+        }
+
+        .blog-index-card:hover .blog-index-image-wrapper img {
+            transform: scale(1.1);
+            transition: transform 0.3s ease;
+        }
+
+        .blog-index-image-placeholder {
+            background: linear-gradient(135deg, #2c6e7d 0%, #28a745 100%);
+        }
+    </style>
+}

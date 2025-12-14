@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props" Condition="Exists('packages\Microsoft.TypeScript.MSBuild.5.9.3\build\Microsoft.TypeScript.MSBuild.props')" />
   <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
@@ -544,6 +544,7 @@
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicBankAccountController.cs" />
+    <Compile Include="Controllers\BlogController.cs" />
     <Compile Include="Controllers\BlogPostCommentApiController.cs" />
     <Compile Include="Controllers\ContactController.cs" />
     <Compile Include="Controllers\FAQController.cs" />
@@ -603,6 +604,8 @@
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
     <Compile Include="Filters\AppointmentRateLimitAttribute.cs" />
     <Compile Include="Filters\CorrelationIdFilter.cs" />
+    <Compile Include="Filters\LoadFooterAttribute.cs" />
+    <Compile Include="Filters\LoadEmergencyContactsAttribute.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\GlobalExceptionFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
@@ -1823,6 +1826,7 @@
     <Content Include="Content\css\hero-carousel.css" />
     <Content Include="Content\css\hero-section.css" />
     <Content Include="Content\css\homepage-layout.css" />
+    <Content Include="Content\css\homepage-sections-spacing.css" />
     <Content Include="Content\css\insurance-carousel.css" />
     <Content Include="Content\css\insurance-info-section.css" />
     <Content Include="Content\css\insurance-plan-index.css" />
@@ -1838,6 +1842,7 @@
     <Content Include="Content\css\medical-services-section.css" />
     <Content Include="Content\css\medical-sidebar.css" />
     <Content Include="Content\css\modern-navigation.css" />
+    <Content Include="Content\css\modern-services-section.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\css\patient-insurance-enhanced.css" />
@@ -5912,6 +5917,8 @@
     <Content Include="Views\Newsletter\Unsubscribe.cshtml" />
     <Content Include="Views\Newsletter\Verify.cshtml" />
     <Content Include="Views\Shared\_NewsletterSubscribePartial.cshtml" />
+    <Content Include="Views\Blog\Index.cshtml" />
+    <Content Include="Views\Blog\Post.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

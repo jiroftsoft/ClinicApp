@@ -2,25 +2,44 @@
 .homepage-layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-xxl);
+    gap: var(--spacing-xxl, 3rem);
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 var(--space-md);
+    padding: var(--spacing-lg, 1.5rem) var(--spacing-md, 1rem);
 }
 
 .homepage-main-content {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xxxl, 4rem);
 }
 
 .homepage-sidebar {
     width: 100%;
 }
 
+/* Section Spacing - فاصله‌گذاری حرفه‌ای بین بخش‌ها */
+.homepage-main-content > section {
+    margin-bottom: var(--spacing-xxxl, 4rem);
+}
+
+.homepage-main-content > section:last-child {
+    margin-bottom: 0;
+}
+
+/* Container Consistency - یکسان‌سازی Container ها */
+.homepage-main-content section .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md, 1rem);
+}
+
 /* Desktop Layout: Sidebar + Main Content */
 @media (min-width: 1200px) {
     .homepage-layout {
         grid-template-columns: 1fr 320px;
-        gap: var(--space-xxl);
+        gap: var(--spacing-xxl, 3rem);
     }
     
     .homepage-main-content {
@@ -41,7 +60,7 @@
 @media (min-width: 992px) and (max-width: 1199.98px) {
     .homepage-layout {
         grid-template-columns: 1fr 280px;
-        gap: var(--space-xl);
+        gap: var(--spacing-xl, 2rem);
     }
     
     .homepage-sidebar {
@@ -57,7 +76,7 @@
 @media (max-width: 991.98px) {
     .homepage-layout {
         grid-template-columns: 1fr;
-        gap: var(--space-xl);
+        gap: var(--spacing-xl, 2rem);
     }
     
     .homepage-sidebar {
@@ -71,16 +90,16 @@
 }
 
 .homepage-sidebar::-webkit-scrollbar-track {
-    background: var(--background-light);
-    border-radius: var(--border-radius-full);
+    background: var(--medical-secondary-lighter, #f8f9fa);
+    border-radius: var(--radius-full, 9999px);
 }
 
 .homepage-sidebar::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: var(--border-radius-full);
+    background: var(--medical-border, #dee2e6);
+    border-radius: var(--radius-full, 9999px);
 }
 
 .homepage-sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--text-color);
+    background: var(--medical-text, #212529);
 }
 

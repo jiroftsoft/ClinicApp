@@ -32,7 +32,10 @@
                         
                         <div class="doctor-content">
                             <h3 class="doctor-name">@doctor.FullName</h3>
-                            <p class="doctor-specialization">@doctor.Specialization</p>
+                            @if (!string.IsNullOrEmpty(doctor.Specialization))
+                            {
+                                <p class="doctor-specialization" aria-label="تخصص: @doctor.Specialization">@doctor.Specialization</p>
+                            }
                             
                             @if (doctor.Rating.HasValue)
                             {
@@ -90,34 +93,31 @@
     </section>
 }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/doctors-section.css")" />
-}
+@* CSS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/css/doctors-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-@section Scripts {
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.doctor-card');
-            
-            if (cards.length === 0) return;
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
+<script>
+    // Intersection Observer for animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.doctor-card');
+        
+        if (cards.length === 0) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    observer.unobserve(entry.target);
+                }
             });
-            
-            cards.forEach(card => {
-                observer.observe(card);
-            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
         });
-    </script>
-}
+        
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
 

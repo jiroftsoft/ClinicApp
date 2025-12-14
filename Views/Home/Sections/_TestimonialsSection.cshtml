@@ -2,113 +2,241 @@
 
 @if (Model.Testimonials != null && Model.Testimonials.Any())
 {
-    <section class="testimonials-section" aria-label="نظرات بیماران">
+    <section class="testimonials-section" aria-label="تجربه بیماران از کلینیک">
         <div class="container">
             <div class="testimonials-header">
                 <h2 class="testimonials-title">@Model.SectionTitle</h2>
                 <p class="testimonials-subtitle">@Model.SectionSubtitle</p>
             </div>
 
-            <div class="testimonials-grid">
-                @foreach (var testimonial in Model.Testimonials)
-                {
-                    <article class="testimonial-card animate-slide-up" tabindex="0" role="article" aria-label="نظر @testimonial.PatientName">
-                        <i class="fas fa-quote-left testimonial-quote-icon" aria-hidden="true"></i>
-                        
-                        <p class="testimonial-comment">@testimonial.Comment</p>
-                        
-                        <div class="testimonial-footer">
-                            @if (!string.IsNullOrEmpty(testimonial.PhotoUrl))
-                            {
-                                <img src="@testimonial.PhotoUrl" 
-                                     alt="@testimonial.PatientName" 
-                                     class="testimonial-avatar-image"
-                                     loading="lazy"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="testimonial-avatar" style="display: none;">
-                                    @testimonial.PatientInitials
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="testimonial-avatar">
-                                    @testimonial.PatientInitials
-                                </div>
-                            }
-                            
-                            <div class="testimonial-info">
-                                <h3 class="testimonial-patient-name">@testimonial.PatientName</h3>
-                                
-                                @if (!string.IsNullOrEmpty(testimonial.DoctorName))
+            @* Swiper Carousel - کنترل دستی (AutoPlay خاموش) *@
+            <div class="swiper testimonials-carousel" id="testimonialsCarousel">
+                <div class="swiper-wrapper">
+                    @foreach (var testimonial in Model.Testimonials)
+                    {
+                        <div class="swiper-slide">
+                            <article class="testimonial-card" tabindex="0" role="article" aria-label="نظر بیمار">
+                                @* 1. Rating (اختیاری) *@
+                                @if (testimonial.Rating > 0)
                                 {
-                                    <p class="testimonial-doctor-name">
-                                        <i class="fas fa-user-md" aria-hidden="true"></i>
-                                        @testimonial.DoctorName
+                                    <div class="testimonial-rating" role="img" aria-label="امتیاز @testimonial.Rating از 5">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= Math.Floor(testimonial.Rating))
+                                            {
+                                                <i class="fas fa-star testimonial-rating-star filled" aria-hidden="true"></i>
+                                            }
+                                            else if (i - 0.5 <= (double)testimonial.Rating)
+                                            {
+                                                <i class="fas fa-star-half-alt testimonial-rating-star half" aria-hidden="true"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="far fa-star testimonial-rating-star empty" aria-hidden="true"></i>
+                                            }
+                                        }
+                                    </div>
+                                }
+
+                                @* 2. Comment (متن کوتاه - حداکثر 2-3 خط) *@
+                                @if (!string.IsNullOrEmpty(testimonial.Comment))
+                                {
+                                    <p class="testimonial-comment">
+                                        @{
+                                            var comment = testimonial.Comment;
+                                            var maxLength = 150; // حداکثر 2-3 خط
+                                            if (comment.Length > maxLength)
+                                            {
+                                                comment = comment.Substring(0, maxLength) + "...";
+                                            }
+                                        }
+                                        @comment
                                     </p>
                                 }
-                                
-                                <div class="testimonial-rating" role="img" aria-label="امتیاز @testimonial.Rating از 5">
-                                    @for (int i = 1; i <= 5; i++)
-                                    {
-                                        if (i <= Math.Floor(testimonial.Rating))
+
+                                @* 3. Patient Info (Privacy Friendly: نام کوچک + شهر/سن) *@
+                                <div class="testimonial-patient-info">
+                                    @{
+                                        // استخراج نام کوچک از نام کامل (اولین کلمه)
+                                        var patientName = testimonial.PatientName ?? "";
+                                        var firstName = patientName.Split(' ').FirstOrDefault() ?? patientName;
+                                        
+                                        // نوع خدمت (DoctorName)
+                                        var serviceType = !string.IsNullOrEmpty(testimonial.DoctorName) 
+                                            ? testimonial.DoctorName 
+                                            : "خدمات کلینیک";
+                                    }
+                                    
+                                    <div class="testimonial-avatar">
+                                        @if (!string.IsNullOrEmpty(testimonial.PhotoUrl))
                                         {
-                                            <i class="fas fa-star testimonial-rating-star filled" aria-hidden="true"></i>
-                                        }
-                                        else if (i - 0.5 <= (double)testimonial.Rating)
-                                        {
-                                            <i class="fas fa-star-half-alt testimonial-rating-star half" aria-hidden="true"></i>
+                                            <img src="@testimonial.PhotoUrl" 
+                                                 alt="@firstName" 
+                                                 class="testimonial-avatar-image"
+                                                 loading="lazy"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="testimonial-avatar-fallback" style="display: none;">
+                                                @testimonial.PatientInitials
+                                            </div>
                                         }
                                         else
                                         {
-                                            <i class="far fa-star testimonial-rating-star empty" aria-hidden="true"></i>
+                                            <div class="testimonial-avatar-fallback">
+                                                @testimonial.PatientInitials
+                                            </div>
                                         }
-                                    }
+                                    </div>
+                                    
+                                    <div class="testimonial-patient-details">
+                                        <h3 class="testimonial-patient-name">@firstName</h3>
+                                        <p class="testimonial-service-type" aria-label="نوع خدمت: @serviceType">
+                                            @serviceType
+                                        </p>
+                                    </div>
                                 </div>
-                                
-                                @if (testimonial.CreatedAt.HasValue)
-                                {
-                                    <p class="testimonial-date">
-                                        <i class="fas fa-calendar" aria-hidden="true"></i>
-                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(testimonial.CreatedAt.Value)
-                                    </p>
-                                }
-                            </div>
+                            </article>
                         </div>
-                    </article>
-                }
+                    }
+                </div>
+
+                @* Navigation Arrows *@
+                <div class="swiper-button-next testimonials-carousel-next" aria-label="بعدی"></div>
+                <div class="swiper-button-prev testimonials-carousel-prev" aria-label="قبلی"></div>
+
+                @* Pagination *@
+                <div class="swiper-pagination testimonials-carousel-pagination"></div>
+            </div>
+
+            @* Legal Notice *@
+            <div class="testimonials-legal-notice">
+                <p class="testimonials-legal-text">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    نظرات منتشرشده پس از بررسی و بدون ذکر اطلاعات هویتی نمایش داده می‌شوند.
+                </p>
             </div>
         </div>
     </section>
 }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")" />
-}
+@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+<link rel="stylesheet" href="@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-@section Scripts {
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.testimonial-card');
+<script>
+    (function() {
+        'use strict';
+        
+        // Dynamic loading of Swiper.js
+        function loadSwiperScript(callback) {
+            if (typeof Swiper !== 'undefined') {
+                if (callback) callback();
+                return;
+            }
             
-            if (cards.length === 0) return;
+            var script = document.createElement('script');
+            script.src = '@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks';
+            script.async = false;
+            script.defer = false;
+            script.onload = function() {
+                console.log('✅ Swiper.js loaded successfully for Testimonials');
+                if (callback) callback();
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load Swiper.js for Testimonials');
+            };
+            document.head.appendChild(script);
+        }
+        
+        function initTestimonialsCarousel() {
+            const carouselElement = document.getElementById('testimonialsCarousel');
+            if (!carouselElement) {
+                console.warn('Testimonials carousel element not found.');
+                return;
+            }
             
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        observer.unobserve(entry.target);
+            if (typeof Swiper === 'undefined') {
+                console.warn('Swiper.js is not loaded. Retrying in 500ms...');
+                setTimeout(initTestimonialsCarousel, 500);
+                return;
+            }
+            
+            // Check if already initialized
+            if (carouselElement.swiper) {
+                console.log('Testimonials carousel already initialized.');
+                return;
+            }
+            
+            try {
+                const testimonialsCarousel = new Swiper('#testimonialsCarousel', {
+                    direction: 'horizontal',
+                    loop: false, // بدون Loop برای رسمی بودن
+                    rtl: true, // Right-to-Left for Persian
+                    
+                    // Autoplay خاموش (طبق درخواست کاربر)
+                    autoplay: false,
+                    
+                    speed: 600,
+                    
+                    // Slides per view (Responsive)
+                    slidesPerView: 1,
+                    spaceBetween: 24,
+                    
+                    breakpoints: {
+                        320: {
+                            slidesPerView: 1,
+                            spaceBetween: 16,
+                        },
+                        768: {
+                            slidesPerView: 2,
+                            spaceBetween: 20,
+                        },
+                        992: {
+                            slidesPerView: 3,
+                            spaceBetween: 24,
+                        }
+                    },
+                    
+                    // Navigation
+                    navigation: {
+                        nextEl: '.testimonials-carousel-next',
+                        prevEl: '.testimonials-carousel-prev',
+                    },
+                    
+                    // Pagination
+                    pagination: {
+                        el: '.testimonials-carousel-pagination',
+                        clickable: true,
+                        dynamicBullets: true,
+                    },
+                    
+                    // Keyboard Control
+                    keyboard: {
+                        enabled: true,
+                        onlyInViewport: true,
+                    },
+                    
+                    // Accessibility
+                    a11y: {
+                        enabled: true,
+                        prevSlideMessage: 'اسلاید قبلی',
+                        nextSlideMessage: 'اسلاید بعدی',
+                        paginationBulletMessage: 'برو به اسلاید {{index}}',
                     }
                 });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
+                
+                console.log('✅ Testimonials carousel initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing testimonials carousel:', error);
+            }
+        }
+        
+        // Load Swiper first, then initialize carousel
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                loadSwiperScript(initTestimonialsCarousel);
             });
-            
-            cards.forEach(card => {
-                observer.observe(card);
-            });
-        });
-    </script>
-}
-
+        } else {
+            loadSwiperScript(initTestimonialsCarousel);
+        }
+    })();
+</script>

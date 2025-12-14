@@ -1,192 +1,303 @@
-/* Health Tips Section Styles */
+/**
+ * 🩺 Health Tips Section - Compact Medical Cards
+ * 
+ * طراحی کامپکت و حرفه‌ای برای بخش "نکات سلامت" در هوم‌پیج
+ * مطابق با اصول Micro-Education و Trust Building
+ * 
+ * ویژگی‌ها:
+ * - Compact Cards (بدون تصویر، بدون نویز)
+ * - فقط 4 جزء: Badge، عنوان، توضیح، CTA
+ * - بدون بازدید، اشتراک، تاریخ، دسته‌بندی عمومی
+ * - رنگ‌بندی رسمی (سفید/خاکستری، سبز/آبی ملایم)
+ * - Typography رسمی (Vazirmatn/IRANSansX)
+ */
+
+/* ============================================
+   BASE SECTION STYLES
+   ============================================ */
 .health-tips-section {
-    background-color: var(--background-gray); /* Light gray background */
-    padding: var(--space-xxxl) 0;
-    margin-bottom: var(--space-xxxl);
-    position: relative;
-    overflow: hidden;
+    padding: var(--spacing-xxxl, 4rem) 0 !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
-.health-tips-section .section-title {
-    color: var(--heading-color);
-}
-
-.health-tips-section .section-subtitle {
-    color: var(--text-color);
-}
-
-.health-tip-card {
-    background-color: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-    overflow: hidden;
-    transition: var(--transition-ease);
-    display: flex;
-    flex-direction: column;
-}
-
-.health-tip-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-md);
-}
-
-.health-tip-card .card-img-top {
-    height: 220px;
-    object-fit: cover;
+.health-tips-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    transition: transform 0.4s ease;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(40, 167, 69, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(44, 110, 125, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.health-tip-card:hover .card-img-top {
-    transform: scale(1.05);
+.health-tips-section .container {
+    position: relative;
+    z-index: 1;
 }
 
-.health-tip-card .default-image-placeholder {
-    height: 220px;
-    background-color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* ============================================
+   HEADER SECTION
+   ============================================ */
+.health-tips-header {
+    text-align: center !important;
+    margin-bottom: var(--spacing-xxl, 3rem) !important;
 }
 
-.health-tip-card .default-image-placeholder .fas {
-    font-size: 3.5rem;
-    color: white;
+.health-tips-title {
+    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
+    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
+    font-weight: var(--font-weight-bold, 700) !important;
+    color: #212529 !important;
+    margin-bottom: var(--spacing-md, 1rem) !important;
+    line-height: var(--line-height-tight, 1.2) !important;
+    position: relative !important;
+    display: inline-block !important;
 }
 
-.health-tip-card .card-body {
-    padding: var(--space-lg);
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+.health-tips-title::after {
+    content: '';
+    position: absolute;
+    bottom: -0.5rem;
+    right: 50%;
+    transform: translateX(50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--medical-success, #28a745), transparent);
+    border-radius: var(--radius-full, 9999px);
 }
 
-.health-tip-card .badge-category {
-    background-color: var(--secondary-color);
-    color: white;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--border-radius-sm);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    margin-bottom: var(--space-md);
-    display: inline-flex;
-    align-items: center;
-}
-.health-tip-card .badge-category .fas {
-    margin-left: var(--space-xs);
+.health-tips-title i {
+    color: var(--medical-success, #28a745) !important;
+    margin-left: var(--spacing-sm, 0.5rem) !important;
 }
 
-.health-tip-card .card-title {
-    font-weight: 700;
-    color: var(--heading-color);
-    font-size: 1.3rem;
-    margin-bottom: var(--space-sm);
+.health-tips-subtitle {
+    font-size: clamp(1rem, 2vw, 1.125rem) !important;
+    color: #6c757d !important;
+    max-width: 700px !important;
+    margin: var(--spacing-md, 1rem) auto 0 !important;
+    line-height: var(--line-height-relaxed, 1.75) !important;
+    font-weight: var(--font-weight-normal, 400) !important;
 }
 
-.health-tip-card .card-text {
-    color: var(--text-color);
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
-    flex-grow: 1;
-    margin-bottom: var(--space-md);
+/* ============================================
+   GRID LAYOUT
+   ============================================ */
+.health-tips-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: var(--spacing-lg, 1.5rem) !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
 }
 
-.health-tip-card .tip-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: var(--space-md);
-    border-top: 1px solid var(--border-color);
+@media (min-width: 768px) {
+    .health-tips-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
 }
 
-.health-tip-card .meta-item {
-    color: var(--text-color);
-    font-size: var(--font-size-sm);
-    display: inline-flex;
-    align-items: center;
-}
-.health-tip-card .meta-item .fas {
-    margin-left: var(--space-xs);
-    color: var(--primary-color);
+@media (min-width: 992px) {
+    .health-tips-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
 }
 
-.health-tip-card .btn-read-more {
-    margin-top: var(--space-md);
-    border-radius: var(--border-radius-full);
-    padding: var(--space-sm) var(--space-lg);
-    font-size: var(--font-size-base);
-    background-color: var(--primary-color);
-    color: white;
-    border: 1px solid var(--primary-color);
-    transition: var(--transition-ease);
-}
-.health-tip-card .btn-read-more:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
+@media (min-width: 1200px) {
+    .health-tips-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
 }
 
-.health-tips-section .btn-view-all {
-    margin-top: var(--space-xxl);
-    border-radius: var(--border-radius-full);
-    padding: var(--space-md) var(--space-xxl);
-    font-size: var(--font-size-lg);
-    background-color: var(--primary-color);
-    color: white;
-    border: 1px solid var(--primary-color);
-}
-.health-tips-section .btn-view-all:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-    color: white;
-}
-
-/* Category-specific badge colors */
-.health-tip-card .badge-category.category-prevention {
-    background-color: var(--success-color);
-}
-.health-tip-card .badge-category.category-nutrition {
-    background-color: var(--warning-color);
-}
-.health-tip-card .badge-category.category-exercise {
-    background-color: var(--info-color);
-}
-.health-tip-card .badge-category.category-diseases {
-    background-color: var(--danger-color);
-}
-.health-tip-card .badge-category.category-general {
-    background-color: var(--secondary-color);
+/* ============================================
+   COMPACT CARD - Professional Design
+   ============================================ */
+.health-tip-compact-card {
+    background: #ffffff !important;
+    border-radius: var(--radius-lg, 16px) !important;
+    padding: var(--spacing-lg, 1.5rem) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    min-height: 200px !important;
 }
 
-/* Animations */
-.health-tip-card.animate-in {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: slideUp 0.6s ease-out forwards;
+.health-tip-compact-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    border-color: rgba(40, 167, 69, 0.15) !important;
 }
 
-/* Responsive Adjustments */
+/* ============================================
+   1. BADGE (کوچک)
+   ============================================ */
+.health-tip-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: var(--spacing-xs, 0.5rem) !important;
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.08) 0%, rgba(44, 110, 125, 0.08) 100%) !important;
+    border-radius: var(--radius-full, 9999px) !important;
+    border: 1px solid rgba(40, 167, 69, 0.15) !important;
+    margin-bottom: var(--spacing-md, 1rem) !important;
+    font-size: var(--font-size-xs, 0.75rem) !important;
+    color: var(--medical-success, #28a745) !important;
+    font-weight: var(--font-weight-medium, 500) !important;
+    width: fit-content !important;
+}
+
+.health-tip-badge i {
+    font-size: var(--font-size-xs, 0.75rem) !important;
+}
+
+/* ============================================
+   2. TITLE (حداکثر 1 خط)
+   ============================================ */
+.health-tip-title {
+    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
+    font-size: clamp(1rem, 2vw, 1.125rem) !important;
+    font-weight: var(--font-weight-medium, 500) !important;
+    color: #212529 !important;
+    margin: 0 0 var(--spacing-md, 1rem) 0 !important;
+    line-height: var(--line-height-tight, 1.3) !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-height: 1.5em !important;
+}
+
+/* ============================================
+   3. DESCRIPTION (2 خط، 200-250 کاراکتر)
+   ============================================ */
+.health-tip-description {
+    font-size: var(--font-size-base, 1rem) !important;
+    color: #495057 !important;
+    line-height: var(--line-height-relaxed, 1.75) !important;
+    margin: 0 0 var(--spacing-lg, 1.5rem) 0 !important;
+    flex: 1 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-height: 3.5em !important;
+    font-weight: var(--font-weight-normal, 400) !important;
+    text-align: justify !important;
+}
+
+/* ============================================
+   4. CTA (راهنمای بیشتر)
+   ============================================ */
+.health-tip-cta {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--spacing-xs, 0.5rem) !important;
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem) !important;
+    background: linear-gradient(135deg, var(--medical-success, #28a745) 0%, rgba(40, 167, 69, 0.9) 100%) !important;
+    color: #ffffff !important;
+    border-radius: var(--radius-md, 8px) !important;
+    font-size: var(--font-size-sm, 0.875rem) !important;
+    font-weight: var(--font-weight-medium, 500) !important;
+    text-decoration: none !important;
+    transition: all var(--transition-normal, 0.3s) !important;
+    border: none !important;
+    cursor: pointer !important;
+    margin-top: auto !important;
+    width: 100% !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2) !important;
+}
+
+.health-tip-cta:hover {
+    background: linear-gradient(135deg, var(--medical-success-dark, #1e7e34) 0%, var(--medical-success, #28a745) 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+
+.health-tip-cta:focus {
+    outline: 3px solid rgba(40, 167, 69, 0.3) !important;
+    outline-offset: 2px !important;
+}
+
+.health-tip-cta i {
+    font-size: var(--font-size-xs, 0.75rem) !important;
+    transition: transform var(--transition-fast, 0.2s) !important;
+}
+
+.health-tip-cta:hover i {
+    transform: translateX(-4px) !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
 @media (max-width: 767.98px) {
-    .health-tip-card .card-img-top,
-    .health-tip-card .default-image-placeholder {
-        height: 180px;
+    .health-tips-section {
+        padding: var(--spacing-xxl, 2.5rem) 0 !important;
     }
-    .health-tip-card .card-title {
-        font-size: 1.2rem;
+    
+    .health-tips-header {
+        margin-bottom: var(--spacing-xl, 2rem) !important;
     }
-    .health-tips-section .btn-view-all {
-        padding: var(--space-sm) var(--space-xl);
-        font-size: var(--font-size-base);
+    
+    .health-tips-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--spacing-md, 1rem) !important;
     }
-    .health-tip-card .tip-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-xs);
+    
+    .health-tip-compact-card {
+        padding: var(--spacing-md, 1rem) !important;
+        min-height: 180px !important;
     }
 }
 
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .health-tips-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.health-tip-compact-card:focus-within {
+    outline: 3px solid var(--medical-success, #28a745) !important;
+    outline-offset: 4px !important;
+    border-radius: var(--radius-lg, 16px) !important;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .health-tip-compact-card,
+    .health-tip-cta {
+        transition: none !important;
+    }
+    
+    .health-tip-compact-card:hover {
+        transform: none !important;
+    }
+    
+    .health-tip-cta:hover i {
+        transform: none !important;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .health-tip-compact-card {
+        border: 2px solid #000000 !important;
+    }
+}

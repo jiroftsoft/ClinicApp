@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,7 +45,7 @@ namespace ClinicApp.Controllers
         /// <summary>
         /// صفحه اصلی کلینیک
         /// </summary>
-        [OutputCache(Duration = 600, VaryByParam = "none")]
+        [OutputCache(Duration = 0, VaryByParam = "none", Location = System.Web.UI.OutputCacheLocation.None, NoStore = true)]
         public async Task<ActionResult> Index()
         {
             try
@@ -62,8 +62,16 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
+                // لاگ خطا با جزئیات کامل
+                System.Diagnostics.Debug.WriteLine($"❌ ERROR in HomeController.Index: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                
                 // در صورت خطا، صفحه خالی با پیام خطا نمایش داده می‌شود
-                // TODO: لاگ خطا
+                ViewBag.ErrorMessage = "خطا در بارگذاری داده‌های صفحه اصلی. لطفاً دوباره تلاش کنید.";
                 return View(new HomePageViewModel());
             }
         }

@@ -53,46 +53,97 @@
 @section Styles {
     <style>
         .newsletter-subscribe-widget {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-lg, 1.5rem);
+            border-radius: var(--radius-md, 8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .newsletter-subscribe-widget h5 {
+            color: #ffffff;
+            font-weight: var(--font-weight-semibold, 600);
+            margin-bottom: var(--spacing-md, 1rem);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 0.5rem);
+        }
+        .newsletter-subscribe-widget h5 i {
+            color: var(--medical-success, #28a745);
+        }
+        .newsletter-subscribe-widget p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: var(--font-size-sm, 0.875rem);
+            line-height: var(--line-height-normal, 1.5);
+            margin-bottom: var(--spacing-md, 1rem);
         }
         .newsletter-form .form-control {
-            border-radius: 5px;
-            border: 1px solid #ced4da;
-            transition: all 0.3s ease;
+            border-radius: var(--radius-sm, 5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--medical-text, #212529);
+            transition: all var(--transition-normal, 0.3s) ease;
         }
         .newsletter-form .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            border-color: var(--medical-success, #28a745);
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            background: #ffffff;
+        }
+        .newsletter-form .form-control::placeholder {
+            color: var(--medical-text-muted, #6c757d);
         }
         .newsletter-form .btn {
-            border-radius: 5px;
-            font-weight: 500;
+            border-radius: var(--radius-sm, 5px);
+            font-weight: var(--font-weight-medium, 500);
+            background: var(--medical-success, #28a745);
+            border-color: var(--medical-success, #28a745);
+            transition: all var(--transition-normal, 0.3s) ease;
         }
         .newsletter-form .btn:hover {
+            background: var(--medical-success-dark, #1e7e34);
+            border-color: var(--medical-success-dark, #1e7e34);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+        .newsletter-subscribe-widget small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: var(--font-size-xs, 0.75rem);
+        }
+        .newsletter-subscribe-widget small i {
+            color: var(--medical-success, #28a745);
         }
     </style>
 }
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            $('#newsletterSubscribeForm').on('submit', function(e) {
-                var $btn = $('#newsletterSubscribeBtn');
-                var originalText = $btn.html();
+        // Vanilla JavaScript - بدون وابستگی به jQuery
+        (function() {
+            'use strict';
+            
+            function initNewsletterForm() {
+                const form = document.getElementById('newsletterSubscribeForm');
+                if (!form) return;
                 
-                // Disable button and show loading
-                $btn.prop('disabled', true);
-                $btn.html('<i class="fas fa-spinner fa-spin"></i> در حال ارسال...');
+                const btn = document.getElementById('newsletterSubscribeBtn');
+                if (!btn) return;
                 
-                // Form will submit normally, button will be re-enabled on page reload
-                // If there's an error, the page will reload and button will be enabled again
-            });
-        });
+                form.addEventListener('submit', function(e) {
+                    // Disable button and show loading
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ارسال...';
+                    
+                    // Form will submit normally, button will be re-enabled on page reload
+                    // If there's an error, the page will reload and button will be enabled again
+                });
+            }
+            
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initNewsletterForm);
+            } else {
+                initNewsletterForm();
+            }
+        })();
     </script>
 }
 

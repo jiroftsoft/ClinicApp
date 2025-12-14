@@ -11,22 +11,23 @@
  */
 
 /* ============================================
-   BASE STYLES
+   BASE STYLES - طبق Design System
    ============================================ */
 .medical-footer {
-    /* رنگ‌های آرامش‌بخش و جذاب: آبی روشن + زرد طلایی */
-    background: linear-gradient(135deg, #5BA3C7 0%, #4A9EC4 50%, #3A8DB8 100%);
-    color: #ffffff;
+    /* رنگ اصلی محیط درمانی - روشن و آرام برای محیط درمانی */
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #212529;
     padding: var(--spacing-xxxl, 3rem) 0 var(--spacing-lg, 1.5rem);
     margin-top: var(--spacing-xxxl, 3rem);
-    border-top: 4px solid #FFD700; /* زرد طلایی */
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    line-height: 1.8;
+    border-top: 4px solid var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    font-family: var(--font-family-base, 'Vazir', 'Tahoma', sans-serif);
+    line-height: var(--line-height-relaxed, 1.75);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* افکت پس‌زمینه آرامش‌بخش */
+/* افکت پس‌زمینه ملایم و حرفه‌ای - برای پس‌زمینه روشن */
 .medical-footer::before {
     content: '';
     position: absolute;
@@ -35,8 +36,8 @@
     right: 0;
     bottom: 0;
     background: 
-        radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(255, 215, 0, 0.06) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(40, 167, 69, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(40, 167, 69, 0.02) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
 }
@@ -53,18 +54,19 @@
 }
 
 /* ============================================
-   MAIN FOOTER CONTENT - چند ستونی زیبا
+   MAIN FOOTER CONTENT - چند ستونی بهینه
    ============================================ */
 .footer-main {
     display: grid !important;
-    /* 4 ستون در دسکتاپ بزرگ، 3 ستون در تبلت، 2 ستون در موبایل بزرگ، 1 ستون در موبایل کوچک */
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: var(--spacing-xl, 2rem) !important;
+    /* 5 ستون در دسکتاپ بزرگ (>= 1400px) برای نمایش بهتر */
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: var(--spacing-xl, 2rem) var(--spacing-lg, 1.5rem) !important;
     margin-bottom: var(--spacing-xxl, 2.5rem);
     padding-bottom: var(--spacing-xxl, 2.5rem);
-    border-bottom: 2px solid rgba(255, 215, 0, 0.2); /* زرد طلایی ملایم */
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1); /* خط ملایم برای پس‌زمینه روشن */
     width: 100%;
     box-sizing: border-box;
+    align-items: start; /* تراز بالا برای ستون‌ها */
 }
 
 /* ============================================
@@ -74,12 +76,14 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md, 1rem);
+    min-width: 0; /* جلوگیری از overflow در Grid */
+    word-wrap: break-word; /* شکستن کلمات طولانی */
 }
 
 .footer-section-title {
     font-size: var(--font-size-lg, 1.125rem);
     font-weight: 700;
-    color: #ffffff;
+    color: #212529;
     margin-bottom: var(--spacing-md, 1rem);
     display: flex;
     align-items: center;
@@ -89,8 +93,8 @@
 
 .footer-section-title i {
     font-size: 1.25rem;
-    color: #FFD700; /* زرد طلایی */
-    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    filter: drop-shadow(0 2px 4px rgba(40, 167, 69, 0.3));
 }
 
 /* ============================================
@@ -109,16 +113,16 @@
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
     text-decoration: none;
-    color: #ffffff;
+    color: #212529;
     transition: all 0.3s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
 .footer-logo-link:hover,
 .footer-logo-link:focus {
-    color: #FFD700; /* زرد طلایی */
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
     transform: translateY(-2px);
-    outline: 2px solid #FFD700;
+    outline: 2px solid var(--medical-success, #28a745);
     outline-offset: 2px;
 }
 
@@ -148,22 +152,24 @@
 
 .footer-logo-text i {
     font-size: 1.5rem;
-    color: var(--accent-color, #c5a47e);
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
 }
 
 .footer-tagline {
     font-size: var(--font-size-base, 1rem);
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    font-weight: var(--font-weight-semibold, 600);
+    color: #212529;
     margin-bottom: var(--spacing-sm, 0.5rem);
-    line-height: 1.6;
+    line-height: var(--line-height-normal, 1.5);
+    text-align: right; /* RTL Support */
 }
 
 .footer-description {
     font-size: var(--font-size-sm, 0.875rem);
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.8;
+    color: #495057;
+    line-height: var(--line-height-relaxed, 1.75);
     margin-bottom: var(--spacing-md, 1rem);
+    text-align: right; /* RTL Support */
 }
 
 /* ============================================
@@ -184,10 +190,10 @@
     height: 44px;
     min-width: 44px;
     min-height: 44px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(40, 167, 69, 0.1);
+    border: 2px solid rgba(40, 167, 69, 0.3);
     border-radius: var(--radius-full, 9999px);
-    color: #ffffff;
+    color: var(--medical-success, #28a745);
     text-decoration: none;
     transition: all 0.3s ease;
     -webkit-tap-highlight-color: transparent;
@@ -195,13 +201,13 @@
 
 .social-link:hover,
 .social-link:focus {
-    background: #FFD700; /* زرد طلایی */
-    border-color: #FFD700;
+    background: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    border-color: var(--medical-success, #28a745);
     transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-    outline: 2px solid #FFD700;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    outline: 2px solid var(--medical-success, #28a745);
     outline-offset: 2px;
-    color: #1a4a54; /* متن تیره روی پس‌زمینه طلایی */
+    color: #ffffff;
 }
 
 .social-link i {
@@ -225,7 +231,7 @@
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
     padding: var(--spacing-xs, 0.25rem) 0;
-    color: rgba(255, 255, 255, 0.8);
+    color: #495057;
     text-decoration: none;
     font-size: var(--font-size-sm, 0.875rem);
     transition: all 0.2s ease;
@@ -237,19 +243,19 @@
 
 .footer-link:hover,
 .footer-link:focus {
-    color: #FFD700; /* زرد طلایی */
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
     transform: translateX(-5px);
-    outline: 2px solid #FFD700;
+    outline: 2px solid var(--medical-success, #28a745);
     outline-offset: 2px;
-    border-radius: 4px;
-    background: rgba(255, 215, 0, 0.1); /* پس‌زمینه طلایی ملایم */
+    border-radius: var(--radius-sm, 4px);
+    background: rgba(40, 167, 69, 0.15); /* پس‌زمینه سبز ملایم */
 }
 
 .footer-link i {
     font-size: 1rem;
     width: 20px;
     text-align: center;
-    color: #FFD700; /* زرد طلایی */
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
     flex-shrink: 0;
 }
 
@@ -266,14 +272,16 @@
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-sm, 0.5rem);
-    color: rgba(255, 255, 255, 0.8);
+    color: #495057;
     font-size: var(--font-size-sm, 0.875rem);
-    line-height: 1.8;
+    line-height: var(--line-height-relaxed, 1.75);
+    text-align: right; /* RTL Support */
+    word-wrap: break-word; /* شکستن کلمات طولانی */
 }
 
 .footer-contact-item i {
     font-size: 1.125rem;
-    color: #FFD700; /* زرد طلایی */
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
     margin-top: 0.25rem;
     flex-shrink: 0;
     width: 20px;
@@ -281,7 +289,7 @@
 }
 
 .contact-link {
-    color: rgba(255, 255, 255, 0.8);
+    color: #495057;
     text-decoration: none;
     transition: color 0.2s ease;
     /* Touch target >= 44px */
@@ -293,16 +301,18 @@
 
 .contact-link:hover,
 .contact-link:focus {
-    color: #FFD700; /* زرد طلایی */
-    outline: 2px solid #FFD700;
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    outline: 2px solid var(--medical-success, #28a745);
     outline-offset: 2px;
-    border-radius: 4px;
-    background: rgba(255, 215, 0, 0.1);
+    border-radius: var(--radius-sm, 4px);
+    background: rgba(40, 167, 69, 0.15);
 }
 
 .contact-text {
     flex: 1;
-    line-height: 1.8;
+    line-height: var(--line-height-relaxed, 1.75);
+    text-align: right; /* RTL Support */
+    word-wrap: break-word; /* شکستن کلمات طولانی */
 }
 
 .footer-emergency {
@@ -313,8 +323,8 @@
 }
 
 .contact-emergency {
-    color: #ffc107 !important;
-    font-weight: 600;
+    color: var(--medical-warning, #ffc107) !important;
+    font-weight: var(--font-weight-semibold, 600);
 }
 
 /* ============================================
@@ -375,7 +385,10 @@
     align-items: center;
     padding: var(--spacing-xs, 0.25rem) 0;
     font-size: var(--font-size-sm, 0.875rem);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    line-height: var(--line-height-normal, 1.5);
+    text-align: right; /* RTL Support */
+    color: #495057;
 }
 
 .footer-hour-item:last-child {
@@ -383,7 +396,7 @@
 }
 
 .footer-hour-item.day-closed {
-    color: rgba(255, 255, 255, 0.5);
+    color: #adb5bd;
 }
 
 .hour-day {
@@ -391,7 +404,7 @@
 }
 
 .hour-time {
-    color: rgba(255, 255, 255, 0.8);
+    color: #6c757d;
 }
 
 /* ============================================
@@ -400,8 +413,8 @@
 .footer-certifications {
     padding: var(--spacing-lg, 1.5rem) 0;
     margin-bottom: var(--spacing-lg, 1.5rem);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .certifications-list {
@@ -417,9 +430,9 @@
     align-items: center;
     gap: var(--spacing-md, 1rem);
     padding: var(--spacing-md, 1rem);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(40, 167, 69, 0.05);
     border-radius: var(--radius-md, 8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.2);
     max-width: 300px;
 }
 
@@ -439,21 +452,21 @@
 .certification-title {
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: 700;
-    color: #ffffff;
+    color: #212529;
     margin: 0;
 }
 
 .certification-description {
     font-size: var(--font-size-xs, 0.75rem);
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
     margin: 0;
     line-height: 1.6;
 }
 
 .certification-license {
     font-size: var(--font-size-xs, 0.75rem);
-    color: #FFD700; /* زرد طلایی */
-    font-weight: 600;
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    font-weight: var(--font-weight-semibold, 600);
 }
 
 /* ============================================
@@ -464,14 +477,14 @@
     flex-direction: column;
     gap: var(--spacing-md, 1rem);
     padding-top: var(--spacing-lg, 1.5rem);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .footer-copyright {
     text-align: center;
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
     font-size: var(--font-size-sm, 0.875rem);
-    line-height: 1.8;
+    line-height: var(--line-height-relaxed, 1.75);
 }
 
 .footer-copyright p {
@@ -480,7 +493,7 @@
 
 .footer-privacy-notice {
     font-size: var(--font-size-xs, 0.75rem);
-    color: rgba(255, 255, 255, 0.6);
+    color: #6c757d;
     font-style: italic;
     margin-top: var(--spacing-sm, 0.5rem);
 }
@@ -502,7 +515,7 @@
 }
 
 .legal-link {
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
     text-decoration: none;
     font-size: var(--font-size-sm, 0.875rem);
     transition: color 0.2s ease;
@@ -516,21 +529,29 @@
 
 .legal-link:hover,
 .legal-link:focus {
-    color: #FFD700; /* زرد طلایی */
-    outline: 2px solid #FFD700;
+    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    outline: 2px solid var(--medical-success, #28a745);
     outline-offset: 2px;
-    border-radius: 4px;
-    background: rgba(255, 215, 0, 0.1);
+    border-radius: var(--radius-sm, 4px);
+    background: rgba(40, 167, 69, 0.15);
 }
 
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */
+@media (max-width: 1399.98px) {
+    /* دسکتاپ متوسط: 4 ستون */
+    .footer-main {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: var(--spacing-lg, 1.5rem) var(--spacing-md, 1rem) !important;
+    }
+}
+
 @media (max-width: 1199.98px) {
     /* تبلت بزرگ: 3 ستون */
     .footer-main {
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: var(--spacing-lg, 1.5rem) !important;
+        gap: var(--spacing-lg, 1.5rem) var(--spacing-md, 1rem) !important;
     }
 }
 
@@ -538,11 +559,16 @@
     /* تبلت: 2 ستون */
     .footer-main {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: var(--spacing-lg, 1.5rem) !important;
+        gap: var(--spacing-lg, 1.5rem) var(--spacing-md, 1rem) !important;
     }
     
     .footer-brand {
         max-width: 100%;
+        grid-column: 1 / -1; /* Brand در تمام عرض */
+    }
+    
+    .footer-newsletter {
+        grid-column: 1 / -1; /* Newsletter در تمام عرض */
     }
     
     .certifications-list {
@@ -619,9 +645,9 @@
 .contact-link:focus-visible,
 .legal-link:focus-visible,
 .footer-logo-link:focus-visible {
-    outline: 3px solid #FFD700;
+    outline: 3px solid var(--medical-success, #28a745);
     outline-offset: 3px;
-    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
 }
 
 /* ============================================

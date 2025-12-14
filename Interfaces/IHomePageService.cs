@@ -72,6 +72,13 @@ namespace ClinicApp.Interfaces
         /// دریافت داده‌های بخش Contact
         /// </summary>
         Task<ContactSectionViewModel> GetContactSectionAsync(int? clinicId = null);
+
+        /// <summary>
+        /// دریافت داده‌های Footer برای استفاده در تمام صفحات
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک (اختیاری - اگر null باشد، کلینیک پیش‌فرض استفاده می‌شود)</param>
+        /// <returns>ViewModel Footer</returns>
+        Task<FooterViewModel> GetFooterDataAsync(int? clinicId = null);
     }
 }
 

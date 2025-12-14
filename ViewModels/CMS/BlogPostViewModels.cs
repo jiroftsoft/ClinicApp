@@ -29,6 +29,9 @@ namespace ClinicApp.ViewModels.CMS
         public DateTime? PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public int ViewCount { get; set; }
+        public string ImageUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
+        public string Slug { get; set; }
     }
 
     #endregion

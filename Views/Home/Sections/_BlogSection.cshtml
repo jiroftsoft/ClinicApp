@@ -2,17 +2,19 @@
 
 @if (Model.Posts != null && Model.Posts.Any())
 {
-    <section class="blog-section" aria-label="مقالات و بلاگ">
+    <section class="blog-section" aria-label="مقالات و آموزش سلامت">
         <div class="container">
             <div class="blog-header">
                 <h2 class="blog-title">@Model.SectionTitle</h2>
                 <p class="blog-subtitle">@Model.SectionSubtitle</p>
             </div>
 
+            @* Grid سه‌ستونه - حداکثر 3-4 مقاله *@
             <div class="blog-grid">
-                @foreach (var post in Model.Posts)
+                @foreach (var post in Model.Posts.Take(3))
                 {
-                    <article class="blog-card animate-slide-up" tabindex="0" role="article" aria-label="@post.Title">
+                    <article class="blog-card" tabindex="0" role="article" aria-label="@post.Title">
+                        @* تصویر شاخص (ملایم، درمانی) *@
                         <div class="blog-image-wrapper">
                             @if (!string.IsNullOrEmpty(post.ImageUrl))
                             {
@@ -25,45 +27,52 @@
                             else
                             {
                                 <div class="blog-image-placeholder">
-                                    <i class="fas fa-newspaper" aria-hidden="true"></i>
+                                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
                                 </div>
-                            }
-                            @if (!string.IsNullOrEmpty(post.CategoryName))
-                            {
-                                <span class="blog-category-badge">
-                                    <i class="fas fa-tag" aria-hidden="true"></i>
-                                    @post.CategoryName
-                                </span>
                             }
                         </div>
                         
                         <div class="blog-content">
+                            @* عنوان مقاله (حداکثر 2 خط) *@
                             <h3 class="blog-post-title">@post.Title</h3>
                             
+                            @* خلاصه علمی کوتاه (2-3 خط، 300-400 کاراکتر) *@
                             @if (!string.IsNullOrEmpty(post.Summary))
                             {
-                                <p class="blog-post-summary">@post.Summary</p>
+                                <p class="blog-post-summary">
+                                    @{
+                                        var summary = post.Summary;
+                                        var maxLength = 350; // 300-400 کاراکتر
+                                        if (summary.Length > maxLength)
+                                        {
+                                            summary = summary.Substring(0, maxLength) + "...";
+                                        }
+                                    }
+                                    @summary
+                                </p>
                             }
                             
+                            @* دسته‌بندی | تاریخ شمسی *@
                             <div class="blog-meta">
-                                @if (!string.IsNullOrEmpty(post.AuthorName))
+                                @if (!string.IsNullOrEmpty(post.CategoryName))
                                 {
-                                    <div class="blog-meta-item blog-author">
-                                        <i class="fas fa-user" aria-hidden="true"></i>
-                                        <span>@post.AuthorName</span>
-                                    </div>
+                                    <span class="blog-category" aria-label="دسته‌بندی: @post.CategoryName">
+                                        <i class="fas fa-tag" aria-hidden="true"></i>
+                                        @post.CategoryName
+                                    </span>
                                 }
                                 @if (post.PublishedAt.HasValue)
                                 {
-                                    <div class="blog-meta-item blog-date">
-                                        <i class="fas fa-calendar" aria-hidden="true"></i>
-                                        <span>@ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)</span>
-                                    </div>
+                                    <span class="blog-date" aria-label="تاریخ انتشار: @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)">
+                                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)
+                                    </span>
                                 }
                             </div>
                             
-                            <a href="@post.PostUrl" class="blog-button" aria-label="خواندن مقاله @post.Title">
-                                <span>ادامه مطلب</span>
+                            @* CTA حرفه‌ای: "مطالعه مقاله" *@
+                            <a href="@post.PostUrl" class="blog-button" aria-label="مطالعه مقاله @post.Title">
+                                <span>مطالعه مقاله</span>
                                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
                             </a>
                         </div>
@@ -71,47 +80,52 @@
                 }
             </div>
 
+            @* View All Button *@
             @if (!string.IsNullOrEmpty(Model.ViewAllPostsUrl))
             {
                 <div class="blog-view-all">
                     <a href="@Model.ViewAllPostsUrl" class="blog-view-all-button" aria-label="مشاهده همه مقالات">
-                        <i class="fas fa-book" aria-hidden="true"></i>
+                        <i class="fas fa-book-medical" aria-hidden="true"></i>
                         <span>مشاهده همه مقالات</span>
                     </a>
                 </div>
             }
+
+            @* Legal Notice - ملاحظات حقوقی و پزشکی *@
+            <div class="blog-legal-notice">
+                <p class="blog-legal-text">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <strong>توجه:</strong> محتوای آموزشی است و جایگزین نظر پزشک نیست. این مقالات صرفاً جهت آگاهی عمومی ارائه شده و برای تشخیص یا درمان بیماری استفاده نشود.
+                </p>
+            </div>
         </div>
     </section>
 }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")" />
-}
+@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-@section Scripts {
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.blog-card');
-            
-            if (cards.length === 0) return;
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
+<script>
+    // Intersection Observer for animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.blog-card');
+        
+        if (cards.length === 0) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    observer.unobserve(entry.target);
+                }
             });
-            
-            cards.forEach(card => {
-                observer.observe(card);
-            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
         });
-    </script>
-}
-
+        
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>

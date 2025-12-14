@@ -111,7 +111,7 @@ namespace ClinicApp.Services
                 // لود بخش‌های اضافی
                 var announcementsTask = GetAnnouncementsSectionAsync(5);
                 var faqsTask = GetFAQsSectionAsync(5);
-                var healthTipsTask = GetHealthTipsSectionAsync(6);
+                var healthTipsTask = GetHealthTipsSectionAsync(4); // 3-4 نکته برای هوم‌پیج
                 var insuranceInfosTask = GetInsuranceInfosSectionAsync(8);
                 var medicalServiceInfosTask = GetMedicalServiceInfosSectionAsync(6);
                 var emergencyContactsTask = GetEmergencyContactsSectionAsync();
@@ -125,7 +125,7 @@ namespace ClinicApp.Services
                     emergencyContactsTask, healthTipsTask, announcementsTask, sidebarSlidersTask);
                 
                 // لود Footer Data
-                var footerTask = GetFooterDataAsync(effectiveClinicId, contactTask, emergencyContactsTask);
+                var footerTask = GetFooterDataInternalAsync(effectiveClinicId, contactTask, emergencyContactsTask);
 
                 // انتظار برای تمام Task ها
                 await Task.WhenAll(
@@ -1028,9 +1028,32 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
-        /// دریافت داده‌های Footer برای صفحه اصلی
+        /// دریافت داده‌های Footer برای صفحه اصلی و تمام صفحات
         /// </summary>
-        private async Task<FooterViewModel> GetFooterDataAsync(
+        public async Task<FooterViewModel> GetFooterDataAsync(int? clinicId = null)
+        {
+            try
+            {
+                var effectiveClinicId = clinicId ?? 1;
+                
+                // لود Contact و Emergency Contacts به صورت موازی
+                var contactTask = GetContactSectionAsync(effectiveClinicId);
+                var emergencyContactsTask = GetEmergencyContactsSectionAsync();
+                
+                // استفاده از Task ها برای GetFooterDataInternalAsync
+                return await GetFooterDataInternalAsync(effectiveClinicId, contactTask, emergencyContactsTask);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Footer");
+                return new FooterViewModel();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های Footer برای صفحه اصلی (Internal)
+        /// </summary>
+        private async Task<FooterViewModel> GetFooterDataInternalAsync(
             int clinicId,
             Task<ContactSectionViewModel> contactTask,
             Task<List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>> emergencyContactsTask)

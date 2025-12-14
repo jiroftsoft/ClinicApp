@@ -4,108 +4,64 @@
     {
         return;
     }
+    
+    // محدود کردن به 3-4 نکته
+    var tipsToShow = Model.Take(4).ToList();
 }
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")" />
+@* CSS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
+<link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
-<section class="health-tips-section animate-fade-in">
+<section class="health-tips-section" aria-label="نکات سلامت">
     <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">
-                <i class="fas fa-heartbeat"></i>
+        <div class="health-tips-header">
+            <h2 class="health-tips-title">
+                <i class="fas fa-heartbeat" aria-hidden="true"></i>
                 نکات سلامت
             </h2>
-            <p class="section-subtitle">راهنمایی‌های مفید برای حفظ سلامت شما</p>
+            <p class="health-tips-subtitle">راهنمایی‌های کوتاه و کاربردی برای حفظ سلامت شما</p>
         </div>
 
-        <div class="row">
-            @for (int i = 0; i < Model.Count; i++)
+        @* Compact Cards Grid *@
+        <div class="health-tips-grid">
+            @for (int i = 0; i < tipsToShow.Count; i++)
             {
-                var tip = Model[i];
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="health-tip-card animate-in" style="animation-delay: @(0.1 * i)s;">
-                        @if (!string.IsNullOrEmpty(tip.ThumbnailUrl))
-                        {
-                            <img src="@tip.ThumbnailUrl" 
-                                 class="card-img-top" 
-                                 alt="@tip.Title"
-                                 loading="lazy"
-                                 onerror="this.src='/Content/Images/default-health-tip.jpg'">
-                        }
-                        else if (!string.IsNullOrEmpty(tip.ImageUrl))
-                        {
-                            <img src="@tip.ImageUrl" 
-                                 class="card-img-top" 
-                                 alt="@tip.Title"
-                                 loading="lazy"
-                                 onerror="this.src='/Content/Images/default-health-tip.jpg'">
-                        }
-                        else
-                        {
-                            <div class="default-image-placeholder">
-                                <i class="fas fa-heartbeat"></i>
-                            </div>
-                        }
-                        
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <span class="badge-category category-@tip.Category?.ToLower()">
-                                    <i class="@GetCategoryIcon(tip.Category)"></i>
-                                    @tip.CategoryDisplayName
-                                </span>
-                            </div>
-                            
-                            <h5 class="card-title">@tip.Title</h5>
-                            
-                            @if (!string.IsNullOrEmpty(tip.Summary))
-                            {
-                                <p class="card-text">@(tip.Summary.Length > 120 ? tip.Summary.Substring(0, 120) + "..." : tip.Summary)</p>
-                            }
-                            
-                            <div class="tip-meta">
-                                <small class="meta-item">
-                                    <i class="fas fa-eye"></i> @tip.ViewCount بازدید
-                                </small>
-                                <small class="meta-item">
-                                    <i class="fas fa-share-alt"></i> @tip.ShareCount اشتراک
-                                </small>
-                            </div>
-                            
-                            <a href="@Url.Action("Details", "HealthTip", new { slug = tip.Slug })" 
-                               class="btn btn-medical-primary btn-read-more w-100"
-                               aria-label="مطالعه بیشتر درباره @tip.Title">
-                                <i class="fas fa-arrow-left me-2"></i> مطالعه بیشتر
-                            </a>
-                        </div>
+                var tip = tipsToShow[i];
+                <article class="health-tip-compact-card" tabindex="0" role="article" aria-label="@tip.Title">
+                    @* Badge کوچک *@
+                    <div class="health-tip-badge">
+                        <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                        <span>نکته سلامت</span>
                     </div>
-                </div>
+                    
+                    @* عنوان کوتاه (حداکثر 1 خط) *@
+                    <h3 class="health-tip-title">@tip.Title</h3>
+                    
+                    @* توضیح خیلی کوتاه (2 خط، 200-250 کاراکتر) *@
+                    @if (!string.IsNullOrEmpty(tip.Summary))
+                    {
+                        <p class="health-tip-description">
+                            @{
+                                var description = tip.Summary;
+                                var maxLength = 250;
+                                if (description.Length > maxLength)
+                                {
+                                    description = description.Substring(0, maxLength).Trim() + "...";
+                                }
+                            }
+                            @description
+                        </p>
+                    }
+                    
+                    @* CTA: "راهنمای بیشتر" *@
+                    <a href="@Url.Action("Details", "HealthTip", new { slug = tip.Slug })" 
+                       class="health-tip-cta" 
+                       aria-label="راهنمای بیشتر درباره @tip.Title">
+                        <span>راهنمای بیشتر</span>
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    </a>
+                </article>
             }
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-12 text-center">
-                <a href="@Url.Action("Index", "HealthTip")" 
-                   class="btn btn-medical-primary btn-lg btn-view-all animate-scale-in" 
-                   style="animation-delay: @(0.1 * Model.Count)s;">
-                    <i class="fas fa-list me-2"></i> مشاهده همه نکات سلامت
-                </a>
-            </div>
         </div>
     </div>
 </section>
-
-@functions {
-    private string GetCategoryIcon(string category)
-    {
-        return category switch
-        {
-            "prevention" => "fas fa-shield-alt",
-            "nutrition" => "fas fa-apple-alt",
-            "exercise" => "fas fa-running",
-            "diseases" => "fas fa-stethoscope",
-            "general" => "fas fa-heart",
-            _ => "fas fa-info-circle"
-        };
-    }
-}
-

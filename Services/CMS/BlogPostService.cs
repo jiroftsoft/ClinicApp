@@ -87,7 +87,10 @@ namespace ClinicApp.Services.CMS
                     IsFeatured = b.IsFeatured,
                     PublishedAt = b.PublishedAt,
                     CreatedAt = b.CreatedAt,
-                    ViewCount = b.ViewCount
+                    ViewCount = b.ViewCount,
+                    ImageUrl = b.ImageUrl ?? b.ThumbnailUrl,
+                    ThumbnailUrl = b.ThumbnailUrl,
+                    Slug = b.Slug
                 }).ToList();
 
                 var pagedResult = new PagedResult<BlogPostIndexViewModel>
@@ -467,11 +470,30 @@ namespace ClinicApp.Services.CMS
                 .Replace("ه", "h")
                 .Replace("ی", "y");
 
-            // حذف کاراکترهای غیرمجاز
+            // حذف کاراکترهای خاص (علامت سوال، تعجب، و غیره)
+            var specialChars = new[] { '؟', '?', '!', '،', ',', '؛', ';', ':', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '*', '"', '\'', '`', '~', '@', '#', '$', '%', '^', '&', '+', '=' };
+            foreach (var c in specialChars)
+            {
+                slug = slug.Replace(c.ToString(), "");
+            }
+
+            // حذف کاراکترهای غیرمجاز Path
             var invalidChars = System.IO.Path.GetInvalidFileNameChars();
             foreach (var c in invalidChars)
             {
                 slug = slug.Replace(c.ToString(), "");
+            }
+
+            // حذف فاصله‌های اضافی و خط تیره‌های تکراری
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
+            slug = slug.Trim('-');
+
+            // محدود کردن طول Slug
+            if (slug.Length > 200)
+            {
+                slug = slug.Substring(0, 200);
+                slug = slug.TrimEnd('-');
             }
 
             return slug;

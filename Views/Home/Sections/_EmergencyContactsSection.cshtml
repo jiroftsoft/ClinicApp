@@ -4,94 +4,40 @@
     {
         return;
     }
+    
+    // فقط اولین شماره اضطراری (معمولاً 115)
+    var primaryContact = Model.FirstOrDefault();
+    if (primaryContact == null || string.IsNullOrEmpty(primaryContact.PhoneNumber))
+    {
+        return;
+    }
+    
+    // پاک کردن شماره از کاراکترهای غیرضروری برای tel: link
+    var cleanPhoneNumber = primaryContact.PhoneNumber.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
 }
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/emergency-contacts-section.css")" />
-
-<section class="emergency-contacts-section animate-fade-in" aria-label="تماس‌های اضطراری">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">
-                <i class="fas fa-phone-alt"></i>
-                تماس‌های اضطراری
-            </h2>
-            <p class="section-subtitle">در مواقع اضطراری با ما تماس بگیرید</p>
-        </div>
-
-        <div class="row">
-            @for (int i = 0; i < Model.Count; i++)
-            {
-                var contact = Model[i];
-                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                    <div class="emergency-contact-card animate-in" style="animation-delay: @(0.1 * i)s;">
-                        <div class="contact-icon-wrapper">
-                            @if (!string.IsNullOrEmpty(contact.IconUrl))
-                            {
-                                <img src="@contact.IconUrl" 
-                                     alt="@contact.Title" 
-                                     class="contact-icon"
-                                     loading="lazy"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="default-icon" style="display: none;">
-                                    <i class="fas fa-phone-alt"></i>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="default-icon">
-                                    <i class="fas fa-phone-alt"></i>
-                                </div>
-                            }
-                        </div>
-                        
-                        <h5 class="card-title">@contact.Title</h5>
-                        
-                        <div class="mb-3">
-                            <span class="type-badge">
-                                @contact.TypeDisplayName
-                            </span>
-                        </div>
-                        
-                        @if (!string.IsNullOrEmpty(contact.ShortDescription))
-                        {
-                            <p class="card-text">
-                                @(contact.ShortDescription.Length > 80 ? contact.ShortDescription.Substring(0, 80) + "..." : contact.ShortDescription)
-                            </p>
-                        }
-                        
-                        <div class="contact-actions">
-                            <a href="tel:@contact.PhoneNumber" 
-                               class="btn btn-phone"
-                               aria-label="تماس با @contact.Title - @contact.PhoneNumber">
-                                <i class="fas fa-phone"></i> @contact.PhoneNumber
-                            </a>
-                            
-                            @if (!string.IsNullOrEmpty(contact.WhatsAppUrl))
-                            {
-                                <a href="@contact.WhatsAppUrl" 
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="btn btn-whatsapp"
-                                   aria-label="ارسال پیام واتساپ به @contact.Title">
-                                    <i class="fab fa-whatsapp"></i> واتساپ
-                                </a>
-                            }
-                            
-                            @if (!string.IsNullOrEmpty(contact.TelegramUrl))
-                            {
-                                <a href="@contact.TelegramUrl" 
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="btn btn-telegram"
-                                   aria-label="ارسال پیام تلگرام به @contact.Title">
-                                    <i class="fab fa-telegram"></i> تلگرام
-                                </a>
-                            }
-                        </div>
-                    </div>
-                </div>
-            }
+@* CSS در Layout لود می‌شود *@
+<section class="emergency-contact-sticky-bar" role="alert" aria-live="polite" aria-label="تماس اضطراری">
+    <div class="emergency-sticky-container">
+        <div class="emergency-sticky-content">
+            <div class="emergency-sticky-icon">
+                <i class="fas fa-phone-alt" aria-hidden="true"></i>
+            </div>
+            <div class="emergency-sticky-text">
+                <span class="emergency-sticky-label">تماس اضطراری:</span>
+                <a href="tel:@cleanPhoneNumber" 
+                   class="emergency-sticky-phone" 
+                   aria-label="تماس اضطراری: @primaryContact.PhoneNumber"
+                   title="کلیک برای تماس: @primaryContact.PhoneNumber">
+                    @primaryContact.PhoneNumber
+                </a>
+            </div>
+            <a href="tel:@cleanPhoneNumber" 
+               class="emergency-sticky-button" 
+               aria-label="تماس فوری: @primaryContact.PhoneNumber">
+                <i class="fas fa-phone" aria-hidden="true"></i>
+                <span>تماس</span>
+            </a>
         </div>
     </div>
 </section>
-

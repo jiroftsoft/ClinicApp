@@ -1,160 +1,208 @@
 @model ClinicApp.ViewModels.ContactSectionViewModel
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/contact-section.css")" />
+@* CSS در Index.cshtml لود می‌شود *@
 
-<section class="contact-section animate-fade-in" aria-label="اطلاعات تماس">
+<section class="contact-section-modern" aria-label="تماس با ما">
     <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">@Model.SectionTitle</h2>
+        @* Header Section *@
+        <div class="contact-section-header">
+            <h2 class="contact-section-title">@(Model.SectionTitle ?? "تماس با ما")</h2>
+            <p class="contact-section-subtitle">
+                در خدمت شما هستیم تا بهترین خدمات درمانی را دریافت کنید
+            </p>
         </div>
 
-        <!-- Emergency Contacts (Strongly-Typed) -->
-        @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
-        {
-            <div class="row mb-5">
-                <div class="col-12">
-                    <div class="emergency-contacts-card">
-                        <div class="card-header">
-                            <h5>
-                                <i class="fas fa-exclamation-triangle"></i>
-                                تماس‌های اضطراری
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @foreach (var contact in Model.EmergencyContacts)
-                                {
-                                    <div class="col-md-4 mb-3">
-                                        <div class="emergency-contact-item">
-                                            @if (!string.IsNullOrEmpty(contact.IconUrl))
-                                            {
-                                                <img src="@contact.IconUrl" 
-                                                     alt="@contact.Title" 
-                                                     class="contact-icon"
-                                                     loading="lazy"
-                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                <div class="default-icon" style="display: none;">
-                                                    <i class="fas fa-phone-alt"></i>
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <div class="default-icon">
-                                                    <i class="fas fa-phone-alt"></i>
-                                                </div>
-                                            }
-                                            <div class="contact-info">
-                                                <div class="contact-title">@contact.Title</div>
-                                                <a href="tel:@contact.PhoneNumber" 
-                                                   class="btn btn-phone"
-                                                   aria-label="تماس با @contact.Title - @contact.PhoneNumber">
-                                                    <i class="fas fa-phone"></i> @contact.PhoneNumber
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-
-        <div class="row">
-            <div class="col-lg-6 mb-4">
+        @* Main Content Grid *@
+        <div class="contact-section-grid">
+            @* Left Column: Clinic Information *@
+            <div class="contact-info-column">
                 @if (Model.ClinicInfo != null)
                 {
-                    <div class="clinic-info-card animate-in" style="animation-delay: 0.1s;">
-                        <h3>@Model.ClinicInfo.Name</h3>
-                        
-                        <div class="clinic-info-item">
-                            <i class="fas fa-map-marker-alt info-icon"></i>
-                            <div class="info-content">
-                                <strong>آدرس:</strong> @Model.ClinicInfo.Address
-                            </div>
+                    @* Clinic Name Card *@
+                    <div class="contact-info-card clinic-name-card">
+                        <div class="contact-card-icon-wrapper">
+                            <i class="fas fa-hospital" aria-hidden="true"></i>
                         </div>
-                        
-                        <div class="clinic-info-item">
-                            <i class="fas fa-phone info-icon"></i>
-                            <div class="info-content">
-                                <strong>تلفن:</strong> 
-                                <a href="tel:@Model.ClinicInfo.PhoneNumber">@Model.ClinicInfo.PhoneNumber</a>
+                        <h3 class="clinic-name">@Model.ClinicInfo.Name</h3>
+                    </div>
+
+                    @* Address Card *@
+                    <div class="contact-info-card">
+                        <div class="contact-card-header">
+                            <div class="contact-card-icon-wrapper">
+                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
                             </div>
+                            <h4 class="contact-card-title">آدرس</h4>
                         </div>
-                        
-                        @if (!string.IsNullOrEmpty(Model.ClinicInfo.Email))
-                        {
-                            <div class="clinic-info-item">
-                                <i class="fas fa-envelope info-icon"></i>
-                                <div class="info-content">
-                                    <strong>ایمیل:</strong> 
-                                    <a href="mailto:@Model.ClinicInfo.Email">@Model.ClinicInfo.Email</a>
-                                </div>
-                            </div>
-                        }
-                        
-                        @if (!string.IsNullOrEmpty(Model.ClinicInfo.WorkingHours))
-                        {
-                            <div class="clinic-info-item">
-                                <i class="fas fa-clock info-icon"></i>
-                                <div class="info-content">
-                                    <strong>ساعات کاری:</strong> @Model.ClinicInfo.WorkingHours
-                                </div>
-                            </div>
-                        }
-                        
-                        @if (Model.ClinicInfo.WorkingDays != null && Model.ClinicInfo.WorkingDays.Any())
-                        {
-                            <div class="mt-4">
-                                <h5 class="mb-3" style="color: var(--heading-color); font-weight: 700;">ساعات کاری هفتگی:</h5>
-                                <ul class="working-days-list">
-                                    @foreach (var day in Model.ClinicInfo.WorkingDays)
-                                    {
-                                        <li>
-                                            <span class="day-name">@day.DayName:</span>
-                                            <span class="day-hours @(day.IsOpen ? "open" : "closed")">
-                                                @day.Hours
-                                            </span>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        
-                        @if (!string.IsNullOrEmpty(Model.WhatsAppLink))
-                        {
-                            <div class="mt-4">
-                                <a href="@Model.WhatsAppLink" 
+                        <div class="contact-card-content">
+                            <p class="contact-card-text">@Model.ClinicInfo.Address</p>
+                            @if (!string.IsNullOrEmpty(Model.GoogleMapsLink))
+                            {
+                                <a href="@Model.GoogleMapsLink" 
                                    target="_blank" 
                                    rel="noopener noreferrer"
-                                   class="btn btn-whatsapp"
-                                   aria-label="تماس از طریق واتساپ">
-                                    <i class="fab fa-whatsapp"></i> تماس از طریق واتساپ
+                                   class="contact-card-link"
+                                   aria-label="مشاهده نقشه در Google Maps">
+                                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                    <span>مشاهده در نقشه</span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    @* Phone Card *@
+                    if (!string.IsNullOrEmpty(Model.ClinicInfo.PhoneNumber))
+                    {
+                        <div class="contact-info-card">
+                            <div class="contact-card-header">
+                                <div class="contact-card-icon-wrapper">
+                                    <i class="fas fa-phone" aria-hidden="true"></i>
+                                </div>
+                                <h4 class="contact-card-title">تلفن</h4>
+                            </div>
+                            <div class="contact-card-content">
+                                <a href="tel:@Model.ClinicInfo.PhoneNumber.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "")" 
+                                   class="contact-card-phone"
+                                   aria-label="تماس: @Model.ClinicInfo.PhoneNumber">
+                                    @Model.ClinicInfo.PhoneNumber
                                 </a>
                             </div>
-                        }
-                    </div>
+                        </div>
+                    }
+
+                    @* Email Card *@
+                    if (!string.IsNullOrEmpty(Model.ClinicInfo.Email))
+                    {
+                        <div class="contact-info-card">
+                            <div class="contact-card-header">
+                                <div class="contact-card-icon-wrapper">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                </div>
+                                <h4 class="contact-card-title">ایمیل</h4>
+                            </div>
+                            <div class="contact-card-content">
+                                <a href="mailto:@Model.ClinicInfo.Email" 
+                                   class="contact-card-email"
+                                   aria-label="ارسال ایمیل به: @Model.ClinicInfo.Email">
+                                    @Model.ClinicInfo.Email
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    @* Working Hours Card *@
+                    if (Model.ClinicInfo.WorkingDays != null && Model.ClinicInfo.WorkingDays.Any())
+                    {
+                        <div class="contact-info-card working-hours-card">
+                            <div class="contact-card-header">
+                                <div class="contact-card-icon-wrapper">
+                                    <i class="fas fa-clock" aria-hidden="true"></i>
+                                </div>
+                                <h4 class="contact-card-title">ساعات کاری</h4>
+                            </div>
+                            <div class="contact-card-content">
+                                <div class="working-hours-table">
+                                    @foreach (var day in Model.ClinicInfo.WorkingDays)
+                                    {
+                                        <div class="working-hours-row">
+                                            <span class="working-day-name">@day.DayName</span>
+                                            <span class="working-day-hours @(day.IsOpen ? "working-hours-open" : "working-hours-closed")">
+                                                @if (day.IsOpen)
+                                                {
+                                                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                                                    <span>@day.Hours</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-times-circle" aria-hidden="true"></i>
+                                                    <span>تعطیل</span>
+                                                }
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* WhatsApp Button *@
+                    if (!string.IsNullOrEmpty(Model.WhatsAppLink))
+                    {
+                        <div class="contact-info-card whatsapp-card">
+                            <a href="@Model.WhatsAppLink" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               class="whatsapp-button"
+                               aria-label="تماس از طریق واتساپ">
+                                <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                                <span>تماس از طریق واتساپ</span>
+                            </a>
+                        </div>
+                    }
                 }
             </div>
-            
-            <div class="col-lg-6 mb-4">
+
+            @* Right Column: Map or Emergency Contacts *@
+            <div class="contact-map-column">
+                @* Google Maps *@
                 @if (!string.IsNullOrEmpty(Model.GoogleMapsEmbedUrl))
                 {
-                    <div class="maps-card animate-in" style="animation-delay: 0.2s;">
-                        <iframe src="@Model.GoogleMapsEmbedUrl" 
-                                width="100%" 
-                                height="450" 
-                                allowfullscreen="" 
-                                loading="lazy" 
-                                referrerpolicy="no-referrer-when-downgrade"
-                                title="نقشه موقعیت کلینیک"
-                                aria-label="نقشه موقعیت کلینیک">
-                        </iframe>
+                    <div class="contact-map-card">
+                        <div class="contact-map-header">
+                            <h4 class="contact-map-title">
+                                <i class="fas fa-map" aria-hidden="true"></i>
+                                <span>موقعیت کلینیک</span>
+                            </h4>
+                        </div>
+                        <div class="contact-map-wrapper">
+                            <iframe src="@Model.GoogleMapsEmbedUrl" 
+                                    width="100%" 
+                                    height="100%"
+                                    style="border:0; border-radius: 0 0 8px 8px;"
+                                    allowfullscreen="" 
+                                    loading="lazy" 
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    title="نقشه موقعیت کلینیک"
+                                    aria-label="نقشه موقعیت کلینیک">
+                            </iframe>
+                        </div>
+                    </div>
+                }
+
+                @* Emergency Contacts (اگر نقشه نباشد یا در کنار نقشه) *@
+                @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
+                {
+                    <div class="contact-emergency-card">
+                        <div class="contact-emergency-header">
+                            <div class="contact-emergency-icon-wrapper">
+                                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                            </div>
+                            <h4 class="contact-emergency-title">تماس‌های اضطراری</h4>
+                        </div>
+                        <div class="contact-emergency-content">
+                            @foreach (var contact in Model.EmergencyContacts)
+                            {
+                                <div class="contact-emergency-item">
+                                    <div class="emergency-item-icon">
+                                        <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="emergency-item-content">
+                                        @if (!string.IsNullOrEmpty(contact.Title))
+                                        {
+                                            <span class="emergency-item-title">@contact.Title</span>
+                                        }
+                                        <a href="tel:@contact.PhoneNumber.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "")" 
+                                           class="emergency-item-phone"
+                                           aria-label="تماس اضطراری: @contact.PhoneNumber">
+                                            @contact.PhoneNumber
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
             </div>
         </div>
     </div>
 </section>
-

@@ -1,4 +1,4 @@
-﻿@model ClinicApp.ViewModels.HomePageViewModel
+@model ClinicApp.ViewModels.HomePageViewModel
 @{
     ViewBag.Title = "خانه";
 }
@@ -6,139 +6,174 @@
 <div class="container body-content py-5">
     <div class="homepage-layout">
         <main class="animate-section homepage-main-content" id="mainContent">
-    <!-- Announcements Section (Important Announcements) -->
-    @if (Model.Announcements != null && Model.Announcements.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
-    }
-    
-    <!-- Hero Section -->
-    @if (Model.Hero != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
-    }
-    
-    <!-- Value Proposition Section -->
-    @if (Model.ValueProposition != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
-    }
-    
-    <!-- Services Section -->
-    @if (Model.Services != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
-    }
-    
-    <!-- Medical Services Info Section -->
-    @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
-    }
-    
-    <!-- Doctors Section -->
-    @if (Model.Doctors != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
-    }
-    
-    <!-- Quick Appointment Section -->
-    @if (Model.QuickAppointment != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
-    }
-    
-    <!-- Testimonials Section -->
-    @if (Model.Testimonials != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
-    }
-    
-    <!-- Gallery Section -->
-    @if (Model.Gallery != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
-    }
-    
-    <!-- Blog Section -->
-    @if (Model.Blog != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
-    }
-    
-    <!-- Video Section -->
-    @if (Model.Videos != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
-    }
-    
-    <!-- Health Tips Section -->
-    @if (Model.HealthTips != null && Model.HealthTips.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
-    }
-    
-    <!-- Insurance Info Section -->
-    @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
-    }
-    
-    <!-- FAQ Section -->
-    @if (Model.FAQs != null && Model.FAQs.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
-    }
-    
-    <!-- Emergency Contacts Section -->
-    @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", Model.EmergencyContacts)
-    }
-    
-    <!-- Medical Equipment Section -->
-    @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
-    }
-    
-    <!-- Contact Section -->
-    @if (Model.Contact != null)
-    {
-        @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
-    }
-    
-    </main>
-    
-    <!-- Professional Medical Sidebar -->
-    @if (Model.Sidebar != null)
-    {
-        <aside class="homepage-sidebar" role="complementary" aria-label="منوی کناری کلینیک">
-            @Html.Partial("~/Views/Home/Sections/_SidebarSection.cshtml", Model.Sidebar)
-        </aside>
-    }
-    else if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
-    {
-        @* Fallback to old sidebar sliders if new sidebar is not available *@
-        <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
-            @Html.Partial("~/Views/Home/Sections/_SidebarSliderSection.cshtml", Model.SidebarSliders)
-        </aside>
-    }
-</div>
+            <!-- Announcements Section (Important Announcements) -->
+            @if (Model.Announcements != null && Model.Announcements.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
+            }
 
-<!-- Footer Slider Section (Outside Homepage Layout) -->
-@if (Model.FooterSliders != null && Model.FooterSliders.Any())
-{
-    @Html.Partial("~/Views/Home/Sections/_FooterSliderSection.cshtml", Model.FooterSliders)
-}
+            <!-- Hero Section -->
+            @if (Model.Hero != null)
+            {
+                @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
+            }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-layout.css")" />
-}
+            <!-- Value Proposition Section -->
+            @if (Model.ValueProposition != null)
+            {
+                @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
+            }
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+            <!-- Services Section -->
+            @if (Model.Services != null && Model.Services.Services != null && Model.Services.Services.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
+            }
+
+            <!-- Medical Services Info Section -->
+            @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
+            }
+
+            <!-- Medical Equipment Section (بعد از خدمات، قبل از بیمه) -->
+            @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
+            }
+
+            <!-- Insurance Info Section (بعد از تجهیزات، قبل از نظرات) -->
+            @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
+            }
+
+            <!-- Doctors Section -->
+            @if (Model.Doctors != null && Model.Doctors.Doctors != null && Model.Doctors.Doctors.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
+            }
+
+            <!-- Quick Appointment Section -->
+            @if (Model.QuickAppointment != null)
+            {
+                @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
+            }
+
+            <!-- Testimonials Section -->
+            @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
+            }
+
+            <!-- Gallery Section -->
+            @if (Model.Gallery != null && Model.Gallery.Items != null && Model.Gallery.Items.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
+            }
+
+            <!-- Blog Section -->
+            @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
+            }
+
+            <!-- Health Tips Section (بعد از مقالات، قبل از نظرات) -->
+            @if (Model.HealthTips != null && Model.HealthTips.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
+            }
+
+            <!-- Video Section -->
+            @if (Model.Videos != null)
+            {
+                @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
+            }
+
+            <!-- FAQ Section -->
+            @if (Model.FAQs != null && Model.FAQs.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
+            }
+
+
+            <!-- Contact Section -->
+            @if (Model.Contact != null)
+            {
+                @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
+            }
+
+        </main>
+
+        <!-- Professional Medical Sidebar -->
+        @if (Model.Sidebar != null)
+        {
+            <aside class="homepage-sidebar" role="complementary" aria-label="منوی کناری کلینیک">
+                @Html.Partial("~/Views/Home/Sections/_SidebarSection.cshtml", Model.Sidebar)
+            </aside>
+        }
+        else if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
+        {
+            @* Fallback to old sidebar sliders if new sidebar is not available *@
+            <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
+                @Html.Partial("~/Views/Home/Sections/_SidebarSliderSection.cshtml", Model.SidebarSliders)
+            </aside>
+        }
+    </div>
+
+    <!-- Footer Slider Section (Outside Homepage Layout) -->
+    @if (Model.FooterSliders != null && Model.FooterSliders.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_FooterSliderSection.cshtml", Model.FooterSliders)
+    }
+
+    @section Styles {
+        <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-layout.css")" />
+        <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-sections-spacing.css")" />
+        @* CSS برای Medical Services Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-services-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Doctors Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.Doctors != null && Model.Doctors.Doctors != null && Model.Doctors.Doctors.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/doctors-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Testimonials Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Blog Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Health Tips Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.HealthTips != null && Model.HealthTips.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Medical Equipment Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-equipment-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Insurance Info Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+        @* CSS برای Contact Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
+        @if (Model.Contact != null)
+        {
+            <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+        }
+    }
+
+    @section Scripts {
+        <script>document.addEventListener('DOMContentLoaded', function() {
             // فعال کردن انیمیشن‌ها برای بخش اصلی
             const mainContent = document.getElementById('mainContent');
             if (mainContent) {
@@ -163,8 +198,7 @@
             animatedSections.forEach(section => {
                 observer.observe(section);
             });
-        });
-    </script>
-}
+        });</script>
+    }
 
 </div>

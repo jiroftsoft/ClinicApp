@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8" />
@@ -163,6 +163,8 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/css/design-system.css")" />
     <!-- Modern Navigation - باید بعد از Design System لود شود -->
     <link rel="stylesheet" href="@Url.Content("~/Content/css/modern-navigation.css")" />
+    <!-- Emergency Contacts Sticky Bar Styles -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/emergency-contacts-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
     <!-- Footer Styles -->
     <link rel="stylesheet" href="@Url.Content("~/Content/css/footer.css")" />
     @Styles.Render("~/Content/css")
@@ -413,6 +415,15 @@
         </nav>
     </header>
 
+    @* Emergency Contacts Sticky Bar (زیر Navigation - در تمام صفحات) *@
+    @{
+        var emergencyContacts = ViewBag.EmergencyContacts as System.Collections.Generic.List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>;
+    }
+    @if (emergencyContacts != null && emergencyContacts.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", emergencyContacts)
+    }
+
     <main role="main">
         @RenderBody()
     </main>
@@ -423,7 +434,7 @@
     }
     @if (footerModel != null)
     {
-        @Html.Partial("~/Views/Shared/_Footer.cshtml", footerModel)
+         Html.RenderPartial("~/Views/Shared/_Footer.cshtml", footerModel); 
     }
     else
     {

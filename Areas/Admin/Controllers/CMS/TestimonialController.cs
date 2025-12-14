@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -348,10 +349,37 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     // حذف تصویر قبلی در صورت ویرایش
                     if (isEdit && !string.IsNullOrEmpty(model.PhotoUrl))
                     {
-                        var deleteResult = _imageUploadService.DeleteImage(model.PhotoUrl);
+                        // محاسبه thumbnail path از image path
+                        // مثال: /Content/Images/testimonials/filename.jpg -> /Content/Images/testimonials/thumbnails/thumb_filename.jpg
+                        string thumbnailPath = null;
+                        try
+                        {
+                            var fileName = Path.GetFileName(model.PhotoUrl);
+                            if (!string.IsNullOrEmpty(fileName))
+                            {
+                                var thumbnailFileName = $"thumb_{fileName}";
+                                // استخراج directory از PhotoUrl (مثلاً /Content/Images/testimonials)
+                                var imageDirectory = Path.GetDirectoryName(model.PhotoUrl)?.Replace("\\", "/");
+                                if (!string.IsNullOrEmpty(imageDirectory))
+                                {
+                                    thumbnailPath = $"{imageDirectory}/thumbnails/{thumbnailFileName}";
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warning(ex, "خطا در محاسبه thumbnail path برای حذف: {PhotoUrl}", model.PhotoUrl);
+                        }
+
+                        var deleteResult = _imageUploadService.DeleteImage(model.PhotoUrl, thumbnailPath);
                         if (deleteResult.Success)
                         {
-                            _logger.Information("تصویر قبلی حذف شد: {PhotoUrl}", model.PhotoUrl);
+                            _logger.Information("تصویر قبلی و thumbnail حذف شد: {PhotoUrl}, Thumbnail: {ThumbnailPath}", 
+                                model.PhotoUrl, thumbnailPath ?? "N/A");
+                        }
+                        else
+                        {
+                            _logger.Warning("خطا در حذف تصویر قبلی: {Message}", deleteResult.Message);
                         }
                     }
 

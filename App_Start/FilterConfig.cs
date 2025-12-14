@@ -1,4 +1,4 @@
-﻿using System.Web;
+using System.Web;
 using System.Web.Mvc;
 using ClinicApp.Filters;
 
@@ -30,6 +30,12 @@ namespace ClinicApp
 
             // ⏱️ Request timing for performance visibility
             filters.Add(new ClinicApp.Filters.RequestTimingFilter());
+            
+            // 📄 Load Footer for all pages
+            filters.Add(new LoadFooterAttribute());
+            
+            // 🛑 Load Emergency Contacts for all pages (Sticky Bar)
+            filters.Add(new LoadEmergencyContactsAttribute());
         }
     }
 }

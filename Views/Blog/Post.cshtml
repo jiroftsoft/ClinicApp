@@ -1,0 +1,144 @@
+@model ClinicApp.ViewModels.CMS.BlogPostDetailsViewModel
+@{
+    ViewBag.Title = Model.MetaTitle ?? Model.Title;
+    ViewBag.MetaDescription = Model.MetaDescription ?? Model.Summary;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="blog-post-page py-5" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%); min-height: 70vh;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <article class="card shadow-lg border-0">
+                    @* تصویر شاخص *@
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="blog-post-image-wrapper">
+                            <img src="@Model.ImageUrl" class="card-img-top" alt="@Model.Title" style="max-height: 400px; object-fit: cover;">
+                        </div>
+                    }
+                    
+                    <div class="card-body p-4">
+                        @* دسته‌بندی و تاریخ *@
+                        <div class="mb-3">
+                            @if (!string.IsNullOrEmpty(Model.CategoryName))
+                            {
+                                <span class="badge badge-primary badge-lg">
+                                    <i class="fas fa-tag"></i>
+                                    @Model.CategoryName
+                                </span>
+                            }
+                            @if (Model.PublishedAt.HasValue)
+                            {
+                                <span class="badge badge-secondary badge-lg mr-2">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.PublishedAt.Value)
+                                </span>
+                            }
+                        </div>
+
+                        @* عنوان مقاله *@
+                        <h1 class="card-title mb-4">@Model.Title</h1>
+
+                        @* خلاصه *@
+                        @if (!string.IsNullOrEmpty(Model.Summary))
+                        {
+                            <div class="alert alert-info mb-4">
+                                <strong>خلاصه:</strong> @Model.Summary
+                            </div>
+                        }
+
+                        @* محتوای مقاله *@
+                        <div class="blog-post-content mb-4">
+                            @Html.Raw(Model.Content)
+                        </div>
+
+                        @* اطلاعات نویسنده *@
+                        @if (!string.IsNullOrEmpty(Model.AuthorName))
+                        {
+                            <div class="border-top pt-4 mt-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-md text-primary mr-2"></i>
+                                    <span class="text-muted"><strong>نویسنده:</strong> @Model.AuthorName</span>
+                                </div>
+                            </div>
+                        }
+
+                        @* Legal Notice *@
+                        <div class="border-top pt-4 mt-4">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>توجه:</strong> محتوای آموزشی است و جایگزین نظر پزشک نیست. این مقالات صرفاً جهت آگاهی عمومی ارائه شده و برای تشخیص یا درمان بیماری استفاده نشود.
+                            </div>
+                        </div>
+
+                        @* دکمه بازگشت *@
+                        <div class="mt-4 pt-3 border-top">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right"></i> بازگشت به لیست مقالات
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <style>
+        .blog-post-page {
+            position: relative;
+        }
+
+        .blog-post-content {
+            line-height: 2;
+            color: #495057;
+            font-size: 1.1rem;
+            text-align: justify;
+        }
+
+        .blog-post-content h1,
+        .blog-post-content h2,
+        .blog-post-content h3,
+        .blog-post-content h4,
+        .blog-post-content h5,
+        .blog-post-content h6 {
+            color: #212529;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .blog-post-content p {
+            margin-bottom: 1.5rem;
+        }
+
+        .blog-post-content ul,
+        .blog-post-content ol {
+            margin-bottom: 1.5rem;
+            padding-right: 2rem;
+        }
+
+        .blog-post-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .card.shadow-lg {
+            border-radius: 15px;
+        }
+
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .blog-post-image-wrapper {
+            overflow: hidden;
+            border-radius: 15px 15px 0 0;
+        }
+    </style>
+}

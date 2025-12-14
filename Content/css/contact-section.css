@@ -1,280 +1,608 @@
-/* Contact Section Styles */
-.contact-section {
-    background-color: var(--background-light);
-    padding: var(--space-xxxl) 0;
-    margin-bottom: var(--space-xxxl);
-    position: relative;
-    overflow: hidden;
+/**
+ * 📞 Contact Section - Production-Grade Professional Design
+ * 
+ * طراحی حرفه‌ای و Production-Ready برای بخش "تماس با ما"
+ * مطابق با استانداردهای UI/UX و اصول Medical Contact Design
+ * 
+ * ویژگی‌ها:
+ * - Card-based Layout
+ * - Grid System (2 Column)
+ * - رنگ‌های درمانی (آبی/سبز)
+ * - Responsive و Accessible
+ * - Production-Ready
+ */
+
+/* ============================================
+   BASE SECTION STYLES
+   ============================================ */
+.contact-section-modern {
+    background: #f8f9fa !important; /* پس‌زمینه خاکستری روشن */
+    padding: 4rem 0 !important;
+    margin: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
-.contact-section .section-title {
-    color: var(--heading-color);
-    font-weight: 700;
+.contact-section-modern .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 1rem !important;
 }
 
-/* Emergency Contacts Card */
-.contact-section .emergency-contacts-card {
-    background-color: white;
-    border: 2px solid var(--danger-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-md);
-    margin-bottom: var(--space-xxl);
-    overflow: hidden;
+/* ============================================
+   HEADER SECTION
+   ============================================ */
+.contact-section-header {
+    text-align: center !important;
+    margin-bottom: 3rem !important;
 }
 
-.contact-section .emergency-contacts-card .card-header {
-    background-color: var(--danger-color);
-    color: white;
-    padding: var(--space-md) var(--space-lg);
-    border-bottom: none;
+.contact-section-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 2rem !important; /* 32px */
+    font-weight: 700 !important;
+    color: #212529 !important;
+    margin: 0 0 1rem 0 !important;
+    line-height: 1.3 !important;
 }
 
-.contact-section .emergency-contacts-card .card-header h5 {
-    color: white;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+.contact-section-subtitle {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1rem !important; /* 16px */
+    font-weight: 400 !important;
+    color: #6c757d !important;
+    margin: 0 !important;
+    line-height: 1.6 !important;
 }
 
-.contact-section .emergency-contacts-card .card-body {
-    padding: var(--space-lg);
+/* ============================================
+   MAIN GRID LAYOUT
+   ============================================ */
+.contact-section-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 ستونه */
+    gap: 2rem !important;
 }
 
-.contact-section .emergency-contact-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    margin-bottom: var(--space-md);
-    padding: var(--space-sm);
-    border-radius: var(--border-radius-md);
-    transition: var(--transition-ease);
-}
-
-.contact-section .emergency-contact-item:hover {
-    background-color: var(--background-gray);
-}
-
-.contact-section .emergency-contact-item .contact-icon {
-    max-height: 40px;
-    max-width: 40px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.contact-section .emergency-contact-item .default-icon {
-    color: var(--danger-color);
-    font-size: 2rem;
-    flex-shrink: 0;
-}
-
-.contact-section .emergency-contact-item .contact-info {
-    flex: 1;
-}
-
-.contact-section .emergency-contact-item .contact-title {
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: var(--space-xs);
-}
-
-.contact-section .emergency-contact-item .btn-phone {
-    background-color: var(--danger-color);
-    color: white;
-    border: 1px solid var(--danger-color);
-    border-radius: var(--border-radius-full);
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    transition: var(--transition-ease);
-}
-.contact-section .emergency-contact-item .btn-phone:hover {
-    background-color: #c82333;
-    border-color: #c82333;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
-}
-
-/* Clinic Info Card */
-.contact-section .clinic-info-card {
-    background-color: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: var(--space-xxl);
-    height: 100%;
-    transition: var(--transition-ease);
-}
-
-.contact-section .clinic-info-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.contact-section .clinic-info-card h3 {
-    color: var(--primary-color);
-    font-weight: 700;
-    font-size: 1.5rem;
-    margin-bottom: var(--space-lg);
-}
-
-.contact-section .clinic-info-item {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
-    color: var(--text-color);
-}
-
-.contact-section .clinic-info-item .info-icon {
-    color: var(--primary-color);
-    font-size: 1.2rem;
-    margin-top: var(--space-xs);
-    flex-shrink: 0;
-}
-
-.contact-section .clinic-info-item .info-content {
-    flex: 1;
-}
-
-.contact-section .clinic-info-item strong {
-    color: var(--heading-color);
-    font-weight: 600;
-}
-
-.contact-section .clinic-info-item a {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: var(--transition-ease);
-}
-.contact-section .clinic-info-item a:hover {
-    color: var(--secondary-color);
-    text-decoration: underline;
-}
-
-.contact-section .working-days-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.contact-section .working-days-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-sm) 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.contact-section .working-days-list li:last-child {
-    border-bottom: none;
-}
-
-.contact-section .working-days-list .day-name {
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
-.contact-section .working-days-list .day-hours {
-    color: var(--text-color);
-}
-
-.contact-section .working-days-list .day-hours.open {
-    color: var(--success-color);
-    font-weight: 600;
-}
-
-.contact-section .working-days-list .day-hours.closed {
-    color: var(--text-color);
-    opacity: 0.6;
-}
-
-.contact-section .btn-whatsapp {
-    background-color: #25D366;
-    color: white;
-    border: 1px solid #25D366;
-    border-radius: var(--border-radius-full);
-    padding: var(--space-md) var(--space-lg);
-    font-weight: 600;
-    transition: var(--transition-ease);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-}
-.contact-section .btn-whatsapp:hover {
-    background-color: #20BA5A;
-    border-color: #20BA5A;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
-}
-
-/* Google Maps Card */
-.contact-section .maps-card {
-    background-color: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-    overflow: hidden;
-    transition: var(--transition-ease);
-}
-
-.contact-section .maps-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.contact-section .maps-card iframe {
-    width: 100%;
-    height: 450px;
-    border: none;
-    display: block;
-}
-
-/* Animations */
-.contact-section .clinic-info-card.animate-in,
-.contact-section .maps-card.animate-in {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: slideUp 0.6s ease-out forwards;
-}
-
-/* Responsive Adjustments */
 @media (max-width: 991.98px) {
-    .contact-section .clinic-info-card {
-        padding: var(--space-lg);
-        margin-bottom: var(--space-lg);
+    .contact-section-grid {
+        grid-template-columns: 1fr !important; /* 1 ستونه در تبلت */
+        gap: 1.5rem !important;
+    }
+}
+
+/* ============================================
+   CONTACT INFO COLUMN (Left)
+   ============================================ */
+.contact-info-column {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+/* ============================================
+   CONTACT INFO CARD (Base)
+   ============================================ */
+.contact-info-card {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    padding: 1.5rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.contact-info-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-color: #2c5aa0 !important; /* آبی درمانی */
+    transform: translateY(-2px) !important;
+}
+
+/* ============================================
+   CLINIC NAME CARD
+   ============================================ */
+.clinic-name-card {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    text-align: center !important;
+    padding: 2rem 1.5rem !important;
+}
+
+.clinic-name-card:hover {
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+
+.clinic-name-card .contact-card-icon-wrapper {
+    background: rgba(255, 255, 255, 0.2) !important;
+    width: 64px !important;
+    height: 64px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 1rem auto !important;
+}
+
+.clinic-name-card .contact-card-icon-wrapper i {
+    font-size: 2rem !important;
+    color: #ffffff !important;
+}
+
+.clinic-name {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.5rem !important; /* 24px */
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+/* ============================================
+   CONTACT CARD HEADER
+   ============================================ */
+.contact-card-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.contact-card-icon-wrapper {
+    width: 40px !important;
+    height: 40px !important;
+    background: #f0f4f8 !important; /* آبی خیلی روشن */
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.contact-card-icon-wrapper i {
+    font-size: 1.125rem !important; /* 18px */
+    color: #2c5aa0 !important; /* آبی درمانی */
+}
+
+.contact-card-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 600 !important;
+    color: #212529 !important;
+    margin: 0 !important;
+}
+
+/* ============================================
+   CONTACT CARD CONTENT
+   ============================================ */
+.contact-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.contact-card-text {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1rem !important; /* 16px */
+    font-weight: 400 !important;
+    color: #495057 !important;
+    margin: 0 !important;
+    line-height: 1.6 !important;
+}
+
+.contact-card-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 0.875rem !important; /* 14px */
+    font-weight: 500 !important;
+    color: #2c5aa0 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.contact-card-link:hover {
+    color: #1e3d6f !important;
+    text-decoration: underline !important;
+}
+
+.contact-card-link i {
+    font-size: 0.75rem !important;
+}
+
+/* ============================================
+   PHONE & EMAIL LINKS
+   ============================================ */
+.contact-card-phone,
+.contact-card-email {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1rem !important; /* 16px */
+    font-weight: 500 !important;
+    color: #2c5aa0 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+}
+
+.contact-card-phone:hover,
+.contact-card-email:hover {
+    color: #1e3d6f !important;
+    text-decoration: underline !important;
+}
+
+/* ============================================
+   WORKING HOURS CARD
+   ============================================ */
+.working-hours-card {
+    /* Same as contact-info-card */
+}
+
+.working-hours-table {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.working-hours-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.75rem 0 !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.working-hours-row:last-child {
+    border-bottom: none !important;
+}
+
+.working-day-name {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 0.9375rem !important; /* 15px */
+    font-weight: 500 !important;
+    color: #212529 !important;
+}
+
+.working-day-hours {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 0.9375rem !important; /* 15px */
+    font-weight: 500 !important;
+}
+
+.working-hours-open {
+    color: #28a745 !important; /* سبز */
+}
+
+.working-hours-open i {
+    color: #28a745 !important;
+}
+
+.working-hours-closed {
+    color: #6c757d !important; /* خاکستری */
+}
+
+.working-hours-closed i {
+    color: #dc3545 !important; /* قرمز */
+}
+
+/* ============================================
+   WHATSAPP BUTTON CARD
+   ============================================ */
+.whatsapp-card {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.whatsapp-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.whatsapp-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    padding: 1rem 1.5rem !important;
+    background: #25D366 !important; /* رنگ واتساپ */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1rem !important; /* 16px */
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3) !important;
+}
+
+.whatsapp-button:hover {
+    background: #20BA5A !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4) !important;
+}
+
+.whatsapp-button:active {
+    transform: translateY(0) !important;
+}
+
+.whatsapp-button:focus {
+    outline: 2px solid rgba(37, 211, 102, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
+.whatsapp-button i {
+    font-size: 1.25rem !important;
+}
+
+/* ============================================
+   MAP COLUMN (Right)
+   ============================================ */
+.contact-map-column {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+/* ============================================
+   MAP CARD
+   ============================================ */
+.contact-map-card {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    overflow: hidden !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.contact-map-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-color: #2c5aa0 !important;
+}
+
+.contact-map-header {
+    padding: 1rem 1.5rem !important;
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.contact-map-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 600 !important;
+    color: #212529 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.contact-map-title i {
+    color: #2c5aa0 !important;
+}
+
+.contact-map-wrapper {
+    position: relative !important;
+    width: 100% !important;
+    height: 450px !important;
+    overflow: hidden !important;
+}
+
+.contact-map-wrapper iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    display: block !important;
+}
+
+/* ============================================
+   EMERGENCY CONTACTS CARD
+   ============================================ */
+.contact-emergency-card {
+    background: #ffffff !important;
+    border: 2px solid #dc3545 !important; /* قرمز هشدار */
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15) !important;
+    overflow: hidden !important;
+}
+
+.contact-emergency-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    color: #ffffff !important;
+    padding: 1rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.contact-emergency-icon-wrapper {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.contact-emergency-icon-wrapper i {
+    font-size: 1.25rem !important;
+    color: #ffffff !important;
+}
+
+.contact-emergency-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+.contact-emergency-content {
+    padding: 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+}
+
+.contact-emergency-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+    background: #fff5f5 !important; /* قرمز خیلی روشن */
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.contact-emergency-item:hover {
+    background: #ffe0e0 !important;
+}
+
+.emergency-item-icon {
+    width: 48px !important;
+    height: 48px !important;
+    background: #dc3545 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.emergency-item-icon i {
+    font-size: 1.25rem !important;
+    color: #ffffff !important;
+}
+
+.emergency-item-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
+}
+
+.emergency-item-title {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 0.875rem !important; /* 14px */
+    font-weight: 600 !important;
+    color: #212529 !important;
+}
+
+.emergency-item-phone {
+    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 700 !important;
+    color: #dc3545 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.emergency-item-phone:hover {
+    color: #c82333 !important;
+    text-decoration: underline !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 991.98px) {
+    .contact-section-modern {
+        padding: 3rem 0 !important;
     }
     
-    .contact-section .maps-card iframe {
-        height: 400px;
+    .contact-section-header {
+        margin-bottom: 2rem !important;
+    }
+    
+    .contact-section-title {
+        font-size: 1.75rem !important; /* 28px */
+    }
+    
+    .contact-map-wrapper {
+        height: 400px !important;
     }
 }
 
 @media (max-width: 767.98px) {
-    .contact-section {
-        padding: var(--space-xxl) 0;
+    .contact-section-modern {
+        padding: 2.5rem 0 !important;
     }
     
-    .contact-section .emergency-contact-item {
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: right;
+    .contact-section-title {
+        font-size: 1.5rem !important; /* 24px */
     }
     
-    .contact-section .clinic-info-card {
-        padding: var(--space-md);
+    .contact-info-card {
+        padding: 1.25rem !important;
     }
     
-    .contact-section .maps-card iframe {
-        height: 350px;
+    .contact-map-wrapper {
+        height: 350px !important;
     }
     
-    .contact-section .working-days-list li {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-xs);
+    .working-hours-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    
+    .contact-emergency-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: right !important;
     }
 }
 
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .contact-info-card,
+    .contact-map-card,
+    .whatsapp-button,
+    .contact-emergency-item {
+        transition: none !important;
+    }
+    
+    .contact-info-card:hover,
+    .contact-map-card:hover {
+        transform: none !important;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .contact-info-card,
+    .contact-map-card {
+        border: 2px solid #000000 !important;
+    }
+}
+
+/* Focus Visible for Keyboard Navigation */
+.contact-card-link:focus-visible,
+.contact-card-phone:focus-visible,
+.contact-card-email:focus-visible,
+.whatsapp-button:focus-visible,
+.emergency-item-phone:focus-visible {
+    outline: 2px solid rgba(44, 90, 160, 0.8) !important;
+    outline-offset: 2px !important;
+}
+
+/* Touch Target Size (Mobile) */
+@media (max-width: 767.98px) {
+    .whatsapp-button,
+    .emergency-item-phone {
+        min-height: 44px !important; /* حداقل اندازه برای لمس */
+    }
+}
