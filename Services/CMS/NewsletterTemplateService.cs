@@ -47,6 +47,8 @@ namespace ClinicApp.Services.CMS
                     NewsletterTemplateId = t.NewsletterTemplateId,
                     Name = t.Name,
                     Subject = t.Subject,
+                    Description = t.Description,
+                    Content = t.Content,
                     IsActive = t.IsActive,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt
@@ -76,6 +78,7 @@ namespace ClinicApp.Services.CMS
                     NewsletterTemplateId = template.NewsletterTemplateId,
                     Name = template.Name,
                     Subject = template.Subject,
+                    Description = template.Description,
                     Content = template.Content,
                     IsActive = template.IsActive,
                     CreatedAt = template.CreatedAt,
@@ -108,6 +111,7 @@ namespace ClinicApp.Services.CMS
                     NewsletterTemplateId = template.NewsletterTemplateId,
                     Name = template.Name,
                     Subject = template.Subject,
+                    Description = template.Description,
                     Content = template.Content,
                     IsActive = template.IsActive
                 };
@@ -134,6 +138,7 @@ namespace ClinicApp.Services.CMS
                 {
                     Name = model.Name.Trim(),
                     Subject = model.Subject.Trim(),
+                    Description = !string.IsNullOrWhiteSpace(model.Description) ? model.Description.Trim() : null,
                     Content = model.Content,
                     IsActive = model.IsActive,
                     CreatedAt = DateTime.Now,
@@ -145,6 +150,9 @@ namespace ClinicApp.Services.CMS
 
                 _logger.Information("Template جدید ایجاد شد - Name: {Name}, TemplateId: {TemplateId}", 
                     template.Name, template.NewsletterTemplateId);
+
+                // پاک کردن Cache در صورت وجود
+                SmartTemplateService.ClearCache(template.NewsletterTemplateId.ToString());
 
                 return ServiceResult<NewsletterTemplate>.Successful(template, "Template با موفقیت ایجاد شد");
             }
@@ -172,6 +180,7 @@ namespace ClinicApp.Services.CMS
 
                 template.Name = model.Name.Trim();
                 template.Subject = model.Subject.Trim();
+                template.Description = !string.IsNullOrWhiteSpace(model.Description) ? model.Description.Trim() : null;
                 template.Content = model.Content;
                 template.IsActive = model.IsActive;
                 template.UpdatedAt = DateTime.Now;
@@ -179,6 +188,9 @@ namespace ClinicApp.Services.CMS
 
                 _templateRepository.Update(template);
                 await _context.SaveChangesAsync();
+
+                // پاک کردن Cache بعد از Update
+                SmartTemplateService.ClearCache(template.NewsletterTemplateId.ToString());
 
                 _logger.Information("Template به‌روزرسانی شد - TemplateId: {TemplateId}", template.NewsletterTemplateId);
 
@@ -296,19 +308,18 @@ namespace ClinicApp.Services.CMS
                     return ServiceResult<string>.Successful(string.Empty);
                 }
 
-                if (variables == null || !variables.Any())
+                // تبدیل Dictionary<string, string> به Dictionary<string, object> برای SmartTemplateRenderer
+                var objectVariables = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                if (variables != null)
                 {
-                    return ServiceResult<string>.Successful(content);
+                    foreach (var kvp in variables)
+                    {
+                        objectVariables[kvp.Key] = kvp.Value;
+                    }
                 }
 
-                var rendered = content;
-
-                // جایگزینی Variables با الگوی {{VariableName}}
-                foreach (var variable in variables)
-                {
-                    var pattern = $"\\{{\\{{{variable.Key}\\}}\\}}";
-                    rendered = Regex.Replace(rendered, pattern, variable.Value ?? string.Empty, RegexOptions.IgnoreCase);
-                }
+                // استفاده از SmartTemplateRenderer با Cache و Error Handling
+                var rendered = SmartTemplateRenderer.Render(content, objectVariables);
 
                 return ServiceResult<string>.Successful(rendered);
             }
@@ -316,6 +327,40 @@ namespace ClinicApp.Services.CMS
             {
                 _logger.Error(ex, "خطا در Render Template Content");
                 return ServiceResult<string>.Failed("خطا در Render Template");
+            }
+        }
+
+        /// <summary>
+        /// Render کردن Template با نتیجه کامل (شامل خطاها)
+        /// </summary>
+        public async Task<ServiceResult<TemplateRenderResult>> RenderTemplateWithResultAsync(string content, Dictionary<string, string> variables, int? templateId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return ServiceResult<TemplateRenderResult>.Successful(TemplateRenderResult.Successful(string.Empty));
+                }
+
+                // تبدیل Dictionary<string, string> به Dictionary<string, object>
+                var objectVariables = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                if (variables != null)
+                {
+                    foreach (var kvp in variables)
+                    {
+                        objectVariables[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                // استفاده از SmartTemplateRenderer با نتیجه کامل
+                var result = SmartTemplateRenderer.RenderWithResult(content, objectVariables, templateId?.ToString());
+
+                return ServiceResult<TemplateRenderResult>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در Render Template با Result");
+                return ServiceResult<TemplateRenderResult>.Failed("خطا در Render Template");
             }
         }
     }

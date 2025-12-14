@@ -120,13 +120,33 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>از تاریخ</label>
-                            <input type="date" name="FromDate" class="form-control" value="@(Model.SearchModel?.FromDate?.ToString("yyyy-MM-dd") ?? "")">
+                            @{
+                                ViewBag.PersianDatePickerId = "fromDatePicker";
+                                ViewBag.PersianDatePickerName = "FromDate";
+                                ViewBag.PersianDatePickerValue = Model.SearchModel?.FromDate;
+                                ViewBag.PersianDatePickerLabel = "";
+                                ViewBag.PersianDatePickerPlaceholder = "از تاریخ";
+                                ViewBag.PersianDatePickerHelpText = "";
+                                ViewBag.PersianDatePickerRequired = false;
+                                ViewBag.PersianDatePickerCssClass = "form-control";
+                            }
+                            @Html.Partial("_PersianDatePicker")
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>تا تاریخ</label>
-                            <input type="date" name="ToDate" class="form-control" value="@(Model.SearchModel?.ToDate?.ToString("yyyy-MM-dd") ?? "")">
+                            @{
+                                ViewBag.PersianDatePickerId = "toDatePicker";
+                                ViewBag.PersianDatePickerName = "ToDate";
+                                ViewBag.PersianDatePickerValue = Model.SearchModel?.ToDate;
+                                ViewBag.PersianDatePickerLabel = "";
+                                ViewBag.PersianDatePickerPlaceholder = "تا تاریخ";
+                                ViewBag.PersianDatePickerHelpText = "";
+                                ViewBag.PersianDatePickerRequired = false;
+                                ViewBag.PersianDatePickerCssClass = "form-control";
+                            }
+                            @Html.Partial("_PersianDatePicker")
                         </div>
                     </div>
                     <div class="col-md-1">
@@ -274,7 +294,7 @@
                             @if (Model.Campaigns.HasPreviousPage)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Campaigns.PageNumber - 1, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">
+                                    <a class="page-link" href="javascript:void(0);" onclick="goToPage(@(Model.Campaigns.PageNumber - 1))">
                                         <i class="fas fa-chevron-right"></i> قبلی
                                     </a>
                                 </li>
@@ -297,7 +317,7 @@
                                 else
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">@i</a>
+                                        <a class="page-link" href="javascript:void(0);" onclick="goToPage(@i)">@i</a>
                                     </li>
                                 }
                             }
@@ -305,7 +325,7 @@
                             @if (Model.Campaigns.HasNextPage)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = Model.Campaigns.PageNumber + 1, PageSize = Model.Campaigns.PageSize, SearchTerm = Model.SearchModel?.SearchTerm, Status = Model.SearchModel?.Status, FromDate = Model.SearchModel?.FromDate, ToDate = Model.SearchModel?.ToDate })">
+                                    <a class="page-link" href="javascript:void(0);" onclick="goToPage(@(Model.Campaigns.PageNumber + 1))">
                                         بعدی <i class="fas fa-chevron-left"></i>
                                     </a>
                                 </li>
@@ -331,7 +351,43 @@
 </div>
 
 @section Scripts {
+    @Html.Partial("_PersianDatePickerScript")
     <script>
+        // تابع برای رفتن به صفحه با حفظ فیلترها
+        function goToPage(pageNumber) {
+            var form = $('<form></form>');
+            form.attr('method', 'GET');
+            form.attr('action', '@Url.Action("Index")');
+            
+            // اضافه کردن فیلترهای جستجو
+            var searchTerm = $('input[name="SearchTerm"]').val();
+            if (searchTerm) {
+                form.append($('<input>').attr('type', 'hidden').attr('name', 'SearchTerm').val(searchTerm));
+            }
+            
+            var status = $('select[name="Status"]').val();
+            if (status) {
+                form.append($('<input>').attr('type', 'hidden').attr('name', 'Status').val(status));
+            }
+            
+            // اضافه کردن تاریخ‌ها از hidden inputs
+            var fromDateHidden = $('input[name="FromDate_Hidden"]').val();
+            if (fromDateHidden) {
+                form.append($('<input>').attr('type', 'hidden').attr('name', 'FromDate_Hidden').val(fromDateHidden));
+            }
+            
+            var toDateHidden = $('input[name="ToDate_Hidden"]').val();
+            if (toDateHidden) {
+                form.append($('<input>').attr('type', 'hidden').attr('name', 'ToDate_Hidden').val(toDateHidden));
+            }
+            
+            form.append($('<input>').attr('type', 'hidden').attr('name', 'PageNumber').val(pageNumber));
+            form.append($('<input>').attr('type', 'hidden').attr('name', 'PageSize').val('@Model.Campaigns.PageSize'));
+            
+            $('body').append(form);
+            form.submit();
+        }
+
         function cancelSchedule(id) {
             Swal.fire({
                 title: 'آیا مطمئن هستید؟',

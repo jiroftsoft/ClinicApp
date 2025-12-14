@@ -154,10 +154,10 @@
                                 </div>
                             </div>
 
-                            @if (!string.IsNullOrEmpty(template.Description))
+                            @if (!string.IsNullOrEmpty(template.Subject))
                             {
                                 <p class="card-text text-muted small">
-                                    @(template.Description.Length > 100 ? template.Description.Substring(0, 100) + "..." : template.Description)
+                                    <strong>موضوع:</strong> @(template.Subject.Length > 100 ? template.Subject.Substring(0, 100) + "..." : template.Subject)
                                 </p>
                             }
 

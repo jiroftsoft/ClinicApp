@@ -79,9 +79,21 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
+                        @Html.LabelFor(m => m.Subject, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Subject, new { @class = "form-control", placeholder = "مثال: خبرنامه هفتگی کلینیک" })
+                        @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">موضوع ایمیل که به مشترکین نمایش داده می‌شود</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
                         @Html.LabelFor(m => m.Description, new { @class = "control-label" })
-                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه درباره Template" })
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کوتاه درباره Template (اختیاری)" })
                         @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">توضیحات اختیاری برای کمک به کاربران در انتخاب Template مناسب</small>
                     </div>
                 </div>
             </div>
@@ -90,13 +102,24 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         @Html.LabelFor(m => m.Content, new { @class = "required" })
-                        <div id="contentEditor"></div>
-                        @Html.HiddenFor(m => m.Content)
+                        @Html.TextAreaFor(m => m.Content, new { @class = "form-control", id = "contentEditor", rows = "15" })
                         @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
-                        <small class="form-text text-muted">
-                            <i class="fas fa-info-circle"></i> می‌توانید از متغیرهای زیر استفاده کنید:
-                            <code>{{FullName}}</code>, <code>{{Email}}</code>, <code>{{UnsubscribeUrl}}</code>
-                        </small>
+                        <div class="template-variables-help">
+                            <div class="btn-group mb-2" role="group">
+                                <button type="button" class="btn btn-sm btn-info" id="showVariablesModalBtn">
+                                    <i class="fas fa-list"></i> مشاهده تمام متغیرهای موجود
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success" id="insertConditionalBtn">
+                                    <i class="fas fa-code-branch"></i> درج شرطی
+                                </button>
+                                <button type="button" class="btn btn-sm btn-warning" id="insertLoopBtn">
+                                    <i class="fas fa-redo"></i> درج حلقه
+                                </button>
+                            </div>
+                            <small class="form-text text-muted d-block">
+                                <i class="fas fa-info-circle"></i> می‌توانید از متغیرهای پیشرفته، شرطی‌سازی و حلقه‌ها استفاده کنید.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -124,52 +147,577 @@
     </div>
 </div>
 
+@* Modal برای نمایش متغیرهای موجود *@
+@{
+    var availableVariables = ClinicApp.Helpers.SmartTemplateVariableHelper.GetAvailableVariables();
+    var variablesByCategory = availableVariables.GroupBy(v => v.Category).ToList();
+}
+
+<div class="modal fade" id="variablesModal" tabindex="-1" role="dialog" aria-labelledby="variablesModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="variablesModalLabel">
+                    <i class="fas fa-list"></i> متغیرهای موجود در Template
+                </h5>
+                <button type="button" class="close" id="closeModalBtn" aria-label="Close" style="cursor: pointer;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> برای استفاده از هر متغیر، روی آن کلیک کنید تا به محتوای Template اضافه شود.
+                </div>
+                
+                @foreach (var category in variablesByCategory)
+                {
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <i class="fas fa-folder"></i> @category.Key
+                        </h6>
+                        <div class="row">
+                            @foreach (var variable in category)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm btn-block insert-variable-btn text-right" 
+                                            data-variable="@variable.Example">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small">@variable.Description</span>
+                                            <code class="ml-2">@variable.Example</code>
+                                        </div>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                
+                <div class="mt-4">
+                    <h6 class="text-success">
+                        <i class="fas fa-code"></i> مثال‌های پیشرفته:
+                    </h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">شرطی:</h6>
+                            <code>{{#if Category == "Articles"}}محتوای شرطی{{#else}}محتوای جایگزین{{/if}}</code>
+                            
+                            <h6 class="card-title mt-3">حلقه:</h6>
+                            <code>{{#for Items}}{{ItemName}} - {{ItemPrice}}{{/for}}</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeModalFooterBtn">
+                    <i class="fas fa-times"></i> بستن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    @Html.Partial("_CKEditorScript")
     @Scripts.Render("~/bundles/jqueryval")
+    
+    @* بارگذاری CKEditor Scripts *@
+    @Html.Partial("_CKEditorScript")
+    
+    @* Initialize CKEditor طبق قرارداد *@
+    @{
+        ViewBag.CKEditorSelector = "#contentEditor";
+        ViewBag.CKEditorHeight = 400;
+    }
+    @Html.Partial("_CKEditorInit")
+    
+    <script>
+        // ============================================
+        // Global Functions - باید قبل از IIFE تعریف شوند
+        // ============================================
+        
+        // Helper Function برای درج متن در Editor - Production Ready
+        // تعریف در Scope Global برای دسترسی از همه جا
+        // استفاده از jQuery در صورت موجود بودن
+        window.insertTextToEditor = function(text) {
+            if (!text || typeof text !== 'string') {
+                console.warn('⚠️ Invalid text for insertion');
+                alert('خطا: متن معتبری برای درج یافت نشد.');
+                return;
+            }
+            
+            try {
+                console.log('🔍 Attempting to insert text:', text);
+                console.log('🔍 jQuery available:', typeof jQuery !== 'undefined');
+                console.log('🔍 CKEDITOR available:', typeof CKEDITOR !== 'undefined');
+                
+                // اگر CKEditor initialize شده است
+                if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances['contentEditor']) {
+                    var editor = CKEDITOR.instances['contentEditor'];
+                    editor.insertText(text);
+                    editor.focus();
+                    console.log('✅ Text inserted into CKEditor');
+                    
+                    // نمایش پیام موفقیت
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('متغیر با موفقیت درج شد', 'موفقیت', { timeOut: 2000 });
+                    }
+                } else {
+                    // اگر CKEditor هنوز initialize نشده، در textarea قرار می‌دهیم
+                    // استفاده از jQuery یا DOM API
+                    var textarea;
+                    if (typeof jQuery !== 'undefined') {
+                        var $textarea = jQuery('#contentEditor');
+                        if ($textarea.length === 0) {
+                            console.error('❌ Textarea #contentEditor not found');
+                            alert('خطا: فیلد ویرایشگر پیدا نشد. لطفاً صفحه را رفرش کنید.');
+                            return;
+                        }
+                        
+                        var currentValue = $textarea.val() || '';
+                        var cursorPos = $textarea.prop('selectionStart') || currentValue.length;
+                        var textBefore = currentValue.substring(0, cursorPos);
+                        var textAfter = currentValue.substring(cursorPos);
+                        $textarea.val(textBefore + text + textAfter);
+                        $textarea.focus();
+                        var newCursorPos = cursorPos + text.length;
+                        $textarea.prop('selectionStart', newCursorPos);
+                        $textarea.prop('selectionEnd', newCursorPos);
+                        console.log('✅ Text inserted into textarea (jQuery)');
+                    } else {
+                        // Fallback: استفاده از DOM API
+                        textarea = document.getElementById('contentEditor');
+                        if (!textarea) {
+                            console.error('❌ Textarea #contentEditor not found');
+                            alert('خطا: فیلد ویرایشگر پیدا نشد. لطفاً صفحه را رفرش کنید.');
+                            return;
+                        }
+                        
+                        var currentValue = textarea.value || '';
+                        var cursorPos = textarea.selectionStart || currentValue.length;
+                        var textBefore = currentValue.substring(0, cursorPos);
+                        var textAfter = currentValue.substring(cursorPos);
+                        textarea.value = textBefore + text + textAfter;
+                        textarea.focus();
+                        var newCursorPos = cursorPos + text.length;
+                        textarea.setSelectionRange(newCursorPos, newCursorPos);
+                        console.log('✅ Text inserted into textarea (DOM API)');
+                    }
+                    
+                    // نمایش پیام موفقیت
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('متغیر با موفقیت درج شد', 'موفقیت', { timeOut: 2000 });
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error inserting text:', error);
+                alert('خطا در درج متن: ' + error.message + '\n\nلطفاً دوباره تلاش کنید.');
+            }
+        };
+        
+        // Helper Function برای بستن Modal - Production Ready
+        window.closeVariablesModal = function() {
+            try {
+                console.log('🔍 closeVariablesModal called');
+                var modal, backdrop, body;
+                
+                if (typeof jQuery !== 'undefined') {
+                    var $modal = jQuery('#variablesModal');
+                    if ($modal.length === 0) {
+                        console.warn('⚠️ Modal not found');
+                        return;
+                    }
+                    
+                    console.log('🔍 Modal found, closing...');
+                    console.log('🔍 Modal current display:', $modal.css('display'));
+                    console.log('🔍 Modal has show class:', $modal.hasClass('show'));
+                    
+                    // بستن با Bootstrap Modal
+                    if (typeof jQuery.fn.modal !== 'undefined') {
+                        console.log('🔍 Using Bootstrap modal hide');
+                        $modal.modal('hide');
+                        
+                        // Wait a bit and force close if needed
+                        setTimeout(function() {
+                            if ($modal.hasClass('show') || $modal.css('display') !== 'none') {
+                                console.log('⚠️ Bootstrap modal hide did not work, forcing close');
+                                $modal.css('display', 'none').removeClass('show');
+                                $modal.attr('aria-hidden', 'true');
+                                $modal.removeAttr('aria-modal');
+                            }
+                        }, 300);
+                    } else {
+                        console.log('🔍 Bootstrap modal not available, using manual close');
+                        // Fallback: بستن دستی
+                        $modal.css('display', 'none').removeClass('show');
+                        $modal.attr('aria-hidden', 'true');
+                        $modal.removeAttr('aria-modal');
+                    }
+                    
+                    // حذف backdrop - با چند روش
+                    var $backdrop = jQuery('.modal-backdrop');
+                    if ($backdrop.length > 0) {
+                        console.log('🔍 Removing backdrop:', $backdrop.length);
+                        $backdrop.remove();
+                    }
+                    
+                    // حذف class modal-open از body
+                    var $body = jQuery('body');
+                    if ($body.hasClass('modal-open')) {
+                        console.log('🔍 Removing modal-open class from body');
+                        $body.removeClass('modal-open');
+                    }
+                    
+                    // اطمینان از اینکه body style درست است
+                    $body.css('overflow', '');
+                    $body.css('padding-right', '');
+                } else {
+                    console.log('🔍 jQuery not available, using DOM API');
+                    // Fallback: استفاده از DOM API
+                    modal = document.getElementById('variablesModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        modal.setAttribute('aria-hidden', 'true');
+                        modal.removeAttribute('aria-modal');
+                    }
+                    
+                    backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    
+                    body = document.body;
+                    if (body) {
+                        body.classList.remove('modal-open');
+                        body.style.overflow = '';
+                        body.style.paddingRight = '';
+                    }
+                }
+                
+                console.log('✅ Modal closed successfully');
+                console.log('🔍 Modal display after close:', typeof jQuery !== 'undefined' ? jQuery('#variablesModal').css('display') : document.getElementById('variablesModal')?.style.display);
+            } catch (error) {
+                console.error('❌ Error closing modal:', error);
+                // Force close
+                try {
+                    var modal = document.getElementById('variablesModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                    }
+                    var backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    if (document.body) {
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }
+                    console.log('✅ Force close completed');
+                } catch (e) {
+                    console.error('❌ Force close failed:', e);
+                }
+            }
+        };
+        
+        // ============================================
+        // Production-Ready Modal Handler with Error Handling and Dependency Checks
+        // ============================================
+        (function() {
+            'use strict';
+            
+            // Check dependencies
+            function checkDependencies() {
+                var errors = [];
+                if (typeof jQuery === 'undefined') {
+                    errors.push('jQuery is not loaded');
+                }
+                if (typeof jQuery === 'undefined' || typeof jQuery.fn.modal === 'undefined') {
+                    errors.push('Bootstrap Modal is not loaded');
+                }
+                return errors;
+            }
+            
+            // Initialize when DOM is ready
+            function initializeVariablesModal() {
+                var dependencies = checkDependencies();
+                if (dependencies.length > 0) {
+                    console.error('❌ Modal dependencies missing:', dependencies);
+                    // Fallback: Show alert if modal fails
+                    $('#showVariablesModalBtn').on('click', function() {
+                        alert('خطا در بارگذاری Modal. لطفاً صفحه را رفرش کنید.');
+                    });
+                    return;
+                }
+                
+                console.log('✅ Modal dependencies loaded successfully');
+                
+                // Show Modal Button Handler - Production Ready
+                $('#showVariablesModalBtn').on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    try {
+                        var $modal = $('#variablesModal');
+                        
+                        if ($modal.length === 0) {
+                            console.error('❌ Modal element not found: #variablesModal');
+                            alert('خطا: Modal پیدا نشد. لطفاً صفحه را رفرش کنید.');
+                            return;
+                        }
+                        
+                        // Check if Bootstrap modal is available
+                        if (typeof jQuery.fn.modal === 'undefined') {
+                            console.error('❌ Bootstrap Modal plugin not available');
+                            // Fallback: Show modal manually
+                            $modal.css('display', 'block').addClass('show');
+                            $('body').append('<div class="modal-backdrop fade show"></div>');
+                            return;
+                        }
+                        
+                        // Show modal using Bootstrap - با Debugging کامل
+                        console.log('🔍 Modal element found:', $modal.length);
+                        console.log('🔍 Modal classes:', $modal.attr('class'));
+                        console.log('🔍 Modal display:', $modal.css('display'));
+                        console.log('🔍 Modal z-index:', $modal.css('z-index'));
+                        console.log('🔍 Modal position:', $modal.css('position'));
+                        
+                        // Force show modal with multiple methods
+                        $modal.css({
+                            'display': 'block',
+                            'z-index': '1055',
+                            'position': 'fixed',
+                            'top': '0',
+                            'left': '0',
+                            'width': '100%',
+                            'height': '100%'
+                        });
+                        
+                        // Add show class
+                        $modal.addClass('show');
+                        $modal.removeAttr('aria-hidden');
+                        $modal.attr('aria-modal', 'true');
+                        
+                        // Create backdrop
+                        if ($('.modal-backdrop').length === 0) {
+                            $('body').append('<div class="modal-backdrop fade show"></div>');
+                            $('body').addClass('modal-open');
+                        }
+                        
+                        // Use Bootstrap modal method if available
+                        if (typeof jQuery.fn.modal !== 'undefined') {
+                            $modal.modal({
+                                backdrop: true,
+                                keyboard: true,
+                                focus: true,
+                                show: true
+                            });
+                        }
+                        
+                        // Force scroll to top
+                        $modal.scrollTop(0);
+                        
+                        console.log('✅ Modal opened successfully');
+                        console.log('🔍 Modal display after:', $modal.css('display'));
+                        console.log('🔍 Modal has show class:', $modal.hasClass('show'));
+                        console.log('🔍 Backdrop exists:', $('.modal-backdrop').length > 0);
+                    } catch (error) {
+                        console.error('❌ Error opening modal:', error);
+                        alert('خطا در باز کردن Modal: ' + error.message);
+                    }
+                });
+                
+                // Insert Variable Button Handler - Production Ready
+                $(document).on('click', '.insert-variable-btn', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    try {
+                        var variable = $(this).data('variable');
+                        
+                        if (!variable) {
+                            console.warn('⚠️ Variable not found in data-variable attribute');
+                            return;
+                        }
+                        
+                        // درج متغیر - با بررسی کامل
+                        console.log('🔍 Checking insertTextToEditor function...');
+                        console.log('🔍 window.insertTextToEditor type:', typeof window.insertTextToEditor);
+                        console.log('🔍 window.insertTextToEditor:', window.insertTextToEditor);
+                        
+                        if (typeof window.insertTextToEditor === 'function') {
+                            console.log('✅ insertTextToEditor function found, calling...');
+                            window.insertTextToEditor(variable);
+                        } else {
+                            console.error('❌ insertTextToEditor function not found');
+                            console.error('❌ window object:', window);
+                            console.error('❌ Available functions:', Object.keys(window).filter(k => k.includes('insert')));
+                            alert('خطا: تابع درج متن در دسترس نیست. لطفاً صفحه را رفرش کنید.\n\nاگر مشکل ادامه داشت، با پشتیبانی تماس بگیرید.');
+                            return;
+                        }
+                        
+                        // بستن Modal
+                        if (typeof window.closeVariablesModal === 'function') {
+                            window.closeVariablesModal();
+                        } else {
+                            // Fallback
+                            var $modal = $('#variablesModal');
+                            if ($modal.length > 0) {
+                                if (typeof jQuery.fn.modal !== 'undefined') {
+                                    $modal.modal('hide');
+                                } else {
+                                    $modal.css('display', 'none').removeClass('show');
+                                    $modal.attr('aria-hidden', 'true');
+                                }
+                                $('.modal-backdrop').remove();
+                                $('body').removeClass('modal-open');
+                            }
+                        }
+                        
+                        console.log('✅ Variable inserted:', variable);
+                    } catch (error) {
+                        console.error('❌ Error inserting variable:', error);
+                        alert('خطا در درج متغیر: ' + error.message);
+                    }
+                });
+                
+                // Close modal on backdrop click
+                $(document).on('click', '.modal-backdrop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof window.closeVariablesModal === 'function') {
+                        window.closeVariablesModal();
+                    }
+                });
+                
+                // Close modal on ESC key
+                $(document).on('keydown', function(e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                        if ($('#variablesModal').hasClass('show')) {
+                            if (typeof window.closeVariablesModal === 'function') {
+                                window.closeVariablesModal();
+                            }
+                        }
+                    }
+                });
+                
+                // Close modal on close button click (×) - با ID مشخص
+                $(document).on('click', '#closeModalBtn, #closeModalFooterBtn', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔍 Close button clicked');
+                    if (typeof window.closeVariablesModal === 'function') {
+                        window.closeVariablesModal();
+                    } else {
+                        // Fallback
+                        $('#variablesModal').css('display', 'none').removeClass('show');
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                    }
+                });
+            }
+            
+            // Wait for DOM and dependencies
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Wait a bit for jQuery and Bootstrap to load
+                    setTimeout(initializeVariablesModal, 100);
+                });
+            } else {
+                // DOM already loaded
+                setTimeout(initializeVariablesModal, 100);
+            }
+            
+            // Also try when jQuery is ready (if available)
+            if (typeof jQuery !== 'undefined') {
+                jQuery(document).ready(function($) {
+                    setTimeout(initializeVariablesModal, 50);
+                });
+            }
+        })();
+        
+        // Insert Variable Button Handler (Legacy support)
+        $(document).ready(function() {
+            // Insert Conditional Button
+            $('#insertConditionalBtn').on('click', function() {
+                var conditional = '{{#if Category == "Articles"}}\n    محتوای شرطی\n{{#else}}\n    محتوای جایگزین\n{{/if}}';
+                if (typeof window.insertTextToEditor === 'function') {
+                    window.insertTextToEditor(conditional);
+                } else {
+                    console.error('❌ insertTextToEditor function not found');
+                    alert('خطا: تابع درج متن در دسترس نیست. لطفاً صفحه را رفرش کنید.');
+                }
+            });
+
+            // Insert Loop Button
+            $('#insertLoopBtn').on('click', function() {
+                var loop = '{{#for Items}}\n    {{ItemName}} - {{ItemPrice}}\n{{/for}}';
+                if (typeof window.insertTextToEditor === 'function') {
+                    window.insertTextToEditor(loop);
+                } else {
+                    console.error('❌ insertTextToEditor function not found');
+                    alert('خطا: تابع درج متن در دسترس نیست. لطفاً صفحه را رفرش کنید.');
+                }
+            });
+        });
+        
+        // Insert Variable Button Handler (Legacy support)
+        $(document).ready(function() {
+            // Insert Conditional Button
+            $('#insertConditionalBtn').on('click', function() {
+                var conditional = '{{#if Category == "Articles"}}\n    محتوای شرطی\n{{#else}}\n    محتوای جایگزین\n{{/if}}';
+                if (typeof window.insertTextToEditor === 'function') {
+                    window.insertTextToEditor(conditional);
+                } else {
+                    alert('خطا: تابع درج متن در دسترس نیست. لطفاً صفحه را رفرش کنید.');
+                }
+            });
+
+            // Insert Loop Button
+            $('#insertLoopBtn').on('click', function() {
+                var loop = '{{#for Items}}\n    {{ItemName}} - {{ItemPrice}}\n{{/for}}';
+                if (typeof window.insertTextToEditor === 'function') {
+                    window.insertTextToEditor(loop);
+                } else {
+                    alert('خطا: تابع درج متن در دسترس نیست. لطفاً صفحه را رفرش کنید.');
+                }
+            });
+    </script>
     
     <script>
         $(document).ready(function() {
-            if (typeof ClassicEditor !== 'undefined') {
-                ClassicEditor
-                    .create(document.querySelector('#contentEditor'), {
-                        language: 'fa',
-                        direction: 'rtl',
-                        toolbar: {
-                            items: [
-                                'heading', '|',
-                                'bold', 'italic', 'link', '|',
-                                'bulletedList', 'numberedList', '|',
-                                'blockQuote', 'insertTable', '|',
-                                'undo', 'redo'
-                            ]
-                        },
-                        heading: {
-                            options: [
-                                { model: 'paragraph', title: 'پاراگراف', class: 'ck-heading_paragraph' },
-                                { model: 'heading1', view: 'h1', title: 'عنوان 1', class: 'ck-heading_heading1' },
-                                { model: 'heading2', view: 'h2', title: 'عنوان 2', class: 'ck-heading_heading2' },
-                                { model: 'heading3', view: 'h3', title: 'عنوان 3', class: 'ck-heading_heading3' }
-                            ]
-                        }
-                    })
-                    .then(editor => {
-                        window.contentEditor = editor;
-                        editor.model.document.on('change:data', () => {
-                            $('#Content').val(editor.getData());
-                        });
-                        if ($('#Content').val()) {
-                            editor.setData($('#Content').val());
-                        }
-                    })
-                    .catch(error => {
-                        console.error('خطا در بارگذاری CKEditor:', error);
-                    });
-            }
-
+            // اطمینان از sync کردن محتوای CKEditor با textarea قبل از submit
             $('form').on('submit', function(e) {
-                if (window.contentEditor) {
-                    $('#Content').val(window.contentEditor.getData());
+                try {
+                    // بررسی اینکه CKEditor initialize شده است
+                    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['contentEditor']) {
+                        var editor = CKEDITOR.instances['contentEditor'];
+                        
+                        // اطمینان از sync کردن محتوا با textarea
+                        editor.updateElement();
+                        
+                        // بررسی اینکه محتوا خالی نیست
+                        var content = editor.getData();
+                        if (!content || content.trim() === '' || content.trim() === '<p>&nbsp;</p>' || content.trim() === '<p></p>') {
+                            e.preventDefault();
+                            alert('لطفاً محتوای Template را وارد کنید.');
+                            return false;
+                        }
+                        
+                        console.log('✅ CKEditor content synced before submit');
+                    } else {
+                        // اگر CKEditor initialize نشده، بررسی textarea
+                        var textareaContent = $('#contentEditor').val();
+                        if (!textareaContent || textareaContent.trim() === '') {
+                            e.preventDefault();
+                            alert('لطفاً محتوای Template را وارد کنید.');
+                            return false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ خطا در sync کردن CKEditor:', error);
+                    // در صورت خطا، اجازه submit را می‌دهیم تا validation سمت سرور کار کند
                 }
             });
         });

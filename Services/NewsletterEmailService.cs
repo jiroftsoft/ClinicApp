@@ -39,13 +39,9 @@ namespace ClinicApp.Services
                     return ServiceResult.Failed("Campaign یا Subscription نامعتبر است");
                 }
 
-                // Render محتوا با Variables
-                var variables = new Dictionary<string, string>
-                {
-                    { "FullName", subscription.FullName ?? "کاربر گرامی" },
-                    { "Email", subscription.Email },
-                    { "UnsubscribeUrl", GenerateUnsubscribeUrl(subscription.UnsubscribeToken) }
-                };
+                // Render محتوا با Variables پیشرفته
+                var unsubscribeUrl = GenerateUnsubscribeUrl(subscription.UnsubscribeToken);
+                var variables = SmartTemplateVariableHelper.BuildAdvancedVariables(subscription, unsubscribeUrl);
 
                 var renderResult = await RenderContentAsync(campaign.Content, variables);
                 if (!renderResult.Success)
@@ -207,19 +203,19 @@ namespace ClinicApp.Services
                     return ServiceResult<string>.Successful(string.Empty);
                 }
 
-                if (variables == null || !variables.Any())
+                // تبدیل Dictionary<string, string> به Dictionary<string, object> برای SmartTemplateRenderer
+                var objectVariables = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                if (variables != null)
                 {
-                    return ServiceResult<string>.Successful(content);
+                    foreach (var kvp in variables)
+                    {
+                        objectVariables[kvp.Key] = kvp.Value;
+                    }
                 }
 
-                var rendered = content;
-
-                // جایگزینی Variables با الگوی {{VariableName}}
-                foreach (var variable in variables)
-                {
-                    var pattern = $"\\{{\\{{{variable.Key}\\}}\\}}";
-                    rendered = Regex.Replace(rendered, pattern, variable.Value ?? string.Empty, RegexOptions.IgnoreCase);
-                }
+                // استفاده از SmartTemplateRenderer با Cache و Error Handling
+                // برای Email، HTML خود Template نباید Encode شود، فقط متغیرها Encode می‌شوند
+                var rendered = SmartTemplateRenderer.Render(content, objectVariables);
 
                 return ServiceResult<string>.Successful(rendered);
             }

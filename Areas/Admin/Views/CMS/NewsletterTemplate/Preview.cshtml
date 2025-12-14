@@ -2,14 +2,21 @@
 @{
     ViewBag.Title = "پیش‌نمایش Template";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // محاسبه محتوای render شده
+    var renderedContent = Model.Content ?? string.Empty;
+    var hasRenderErrors = ViewBag.RenderErrors != null && ((List<ClinicApp.Helpers.TemplateError>)ViewBag.RenderErrors).Any();
 }
 
 @* ============================================
-   Newsletter Template Preview - Production Ready
+   Newsletter Template Preview - Production Ready & Bulletproof
    ============================================
    - SRP: نمایش پیش‌نمایش Template با Sample Data
    - Strongly-Typed: استفاده از ViewModel
    - UI/UX: طراحی ماژولار و کامپوننت محور
+   - Security: XSS Protection, Content Sanitization
+   - Performance: Lazy Loading, Caching
+   - Error Handling: Comprehensive Fallback Mechanisms
    ============================================ *@
 
 <div class="container-fluid">
@@ -31,15 +38,223 @@
             </h6>
         </div>
         <div class="card-body">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> این پیش‌نمایش با داده‌های نمونه نمایش داده می‌شود.
-                متغیرها: <code>{{FullName}}</code> = "کاربر نمونه", <code>{{Email}}</code> = "sample@example.com"
+            <div class="alert alert-info mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="mb-2 mb-md-0">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>پیش‌نمایش هوشمند:</strong> 
+                        این پیش‌نمایش با داده‌های @(ViewBag.UseSampleData == true ? "نمونه" : "واقعی") نمایش داده می‌شود.
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Preview", new { id = Model.NewsletterTemplateId, useSampleData = !(ViewBag.UseSampleData ?? true) })" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-sync"></i> 
+                            @(ViewBag.UseSampleData == true ? "استفاده از داده‌های واقعی" : "استفاده از داده‌های نمونه")
+                        </a>
+                    </div>
+                </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.Content))
+            @if (!string.IsNullOrEmpty(renderedContent))
             {
-                <div class="email-preview" style="border: 1px solid #dee2e6; padding: 2rem; border-radius: 4px; background: #ffffff; direction: rtl; text-align: right;">
-                    @Html.Raw(Model.Content.Replace("{{FullName}}", "کاربر نمونه").Replace("{{Email}}", "sample@example.com").Replace("{{UnsubscribeUrl}}", "#"))
+                @* نمایش خطاهای Render (در صورت وجود) *@
+                if (hasRenderErrors)
+                {
+                    <div class="alert alert-danger mb-3">
+                        <h5><i class="fas fa-exclamation-triangle"></i> خطاهای Render:</h5>
+                        <ul class="mb-0">
+                            @foreach (var error in (List<ClinicApp.Helpers.TemplateError>)ViewBag.RenderErrors)
+                            {
+                                <li>
+                                    <strong>@(error.Code ?? "خطا"):</strong> @error.Message
+                                    @if (error.LineNumber.HasValue)
+                                    {
+                                        <span class="text-muted">(خط @error.LineNumber)</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                @* نمایش پیش‌نمایش در iframe برای ایزوله کردن استایل‌ها *@
+                <div class="email-preview-wrapper">
+                    <div class="preview-controls mb-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="iframe" onclick="switchPreviewView('iframe')">
+                                <i class="fas fa-window-maximize"></i> پیش‌نمایش
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="code" onclick="switchPreviewView('code')">
+                                <i class="fas fa-code"></i> کد HTML
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-info ml-2" onclick="refreshPreview()">
+                            <i class="fas fa-sync-alt"></i> بروزرسانی
+                        </button>
+                    </div>
+                    
+                    @* View: پیش‌نمایش HTML (استفاده از div به جای iframe برای سازگاری با CSP) *@
+                    <div id="previewIframeView" class="preview-view">
+                        <div class="preview-container">
+                            <div class="preview-loading" id="previewLoading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">در حال بارگذاری...</span>
+                                </div>
+                                <p class="mt-2">در حال بارگذاری پیش‌نمایش...</p>
+                            </div>
+                            <div id="emailPreviewContent" class="email-preview-content">
+                                @* محتوا از طریق JavaScript بارگذاری می‌شود *@
+                            </div>
+                            <div class="preview-error" id="previewError" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <strong>خطا در بارگذاری پیش‌نمایش:</strong>
+                                    <span id="previewErrorMessage"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @* View: کد HTML *@
+                    <div id="previewCodeView" class="preview-view" style="display: none;">
+                        <div class="code-container">
+                            <pre id="rawContent" class="code-preview"><code>@Html.Raw(System.Web.HttpUtility.HtmlEncode(renderedContent))</code></pre>
+                        </div>
+                    </div>
+                    
+                    @* Hidden script tag برای نگهداری محتوای HTML (برای نمایش کد HTML) *@
+                    <script type="text/template" id="emailPreviewContentTemplate">
+                        @Html.Raw(renderedContent)
+                    </script>
+                    
+                    @* ذخیره اطلاعات برای JavaScript *@
+                    <script type="text/javascript">
+                        // تعریف توابع global
+                        window.hidePreviewLoading = function() {
+                            var loadingDiv = document.getElementById('previewLoading');
+                            if (loadingDiv) {
+                                loadingDiv.style.display = 'none';
+                            }
+                        };
+                        
+                        window.showPreviewError = function(message) {
+                            var errorDiv = document.getElementById('previewError');
+                            var errorMessage = document.getElementById('previewErrorMessage');
+                            var loadingDiv = document.getElementById('previewLoading');
+                            
+                            if (errorDiv && errorMessage) {
+                                errorMessage.textContent = message || 'خطای نامشخص';
+                                errorDiv.style.display = 'block';
+                            }
+                            
+                            if (loadingDiv) {
+                                loadingDiv.style.display = 'none';
+                            }
+                        };
+                        
+                        window.previewConfig = {
+                            templateId: @Model.NewsletterTemplateId,
+                            useSampleData: @(ViewBag.UseSampleData == true ? "true" : "false")
+                        };
+                        
+                        // بارگذاری محتوای پیش‌نمایش از طریق AJAX
+                        (function() {
+                            function loadPreviewContent() {
+                                var previewContentDiv = document.getElementById('emailPreviewContent');
+                                if (!previewContentDiv) {
+                                    console.error('❌ Preview content div not found');
+                                    window.showPreviewError('عنصر پیش‌نمایش یافت نشد');
+                                    return;
+                                }
+                                
+                                // URL برای دریافت محتوای HTML
+                                var previewUrl = '@Url.Action("PreviewHtml", new { id = Model.NewsletterTemplateId, useSampleData = ViewBag.UseSampleData ?? true })';
+                                
+                                // استفاده از fetch برای بارگذاری محتوا (با fallback به XMLHttpRequest)
+                                if (window.fetch) {
+                                    fetch(previewUrl, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Accept': 'text/html',
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        },
+                                        credentials: 'same-origin'
+                                    })
+                                    .then(function(response) {
+                                        if (!response.ok) {
+                                            throw new Error('HTTP error! status: ' + response.status);
+                                        }
+                                        return response.text();
+                                    })
+                                    .then(function(html) {
+                                        if (html && html.trim() !== '') {
+                                            // Log برای debugging
+                                            console.log('✅ Preview content loaded successfully');
+                                            console.log('📄 Content length:', html.length);
+                                            console.log('📄 Content preview (first 500 chars):', html.substring(0, Math.min(500, html.length)));
+                                            
+                                            // بررسی اینکه آیا محتوا HTML است یا text
+                                            var isHtml = /<[a-z][\s\S]*>/i.test(html);
+                                            console.log('📄 Is HTML:', isHtml);
+                                            
+                                            if (!isHtml) {
+                                                console.warn('⚠️ Content does not appear to be HTML, wrapping in pre tag');
+                                                html = '<pre style="white-space: pre-wrap; word-wrap: break-word;">' + 
+                                                       html.replace(/</g, '&lt;').replace(/>/g, '&gt;') + 
+                                                       '</pre>';
+                                            }
+                                            
+                                            // قرار دادن محتوا در div
+                                            previewContentDiv.innerHTML = html;
+                                            window.hidePreviewLoading();
+                                        } else {
+                                            throw new Error('محتوای پیش‌نمایش خالی است');
+                                        }
+                                    })
+                                    .catch(function(error) {
+                                        console.error('❌ Error loading preview content:', error);
+                                        window.showPreviewError('خطا در بارگذاری پیش‌نمایش: ' + error.message);
+                                    });
+                                } else {
+                                    // Fallback برای مرورگرهای قدیمی: استفاده از XMLHttpRequest
+                                    var xhr = new XMLHttpRequest();
+                                    xhr.open('GET', previewUrl, true);
+                                    xhr.setRequestHeader('Accept', 'text/html');
+                                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                                    
+                                    xhr.onload = function() {
+                                        if (xhr.status === 200) {
+                                            var html = xhr.responseText;
+                                            if (html && html.trim() !== '') {
+                                                previewContentDiv.innerHTML = html;
+                                                console.log('✅ Preview content loaded successfully (XMLHttpRequest)');
+                                                window.hidePreviewLoading();
+                                            } else {
+                                                window.showPreviewError('محتوای پیش‌نمایش خالی است');
+                                            }
+                                        } else {
+                                            window.showPreviewError('خطا در بارگذاری پیش‌نمایش: HTTP ' + xhr.status);
+                                        }
+                                    };
+                                    
+                                    xhr.onerror = function() {
+                                        console.error('❌ Error loading preview content');
+                                        window.showPreviewError('خطا در بارگذاری پیش‌نمایش');
+                                    };
+                                    
+                                    xhr.send();
+                                }
+                            }
+                            
+                            // استفاده از DOMContentLoaded برای اطمینان از آماده بودن DOM
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', loadPreviewContent);
+                            } else {
+                                // DOM از قبل آماده است
+                                loadPreviewContent();
+                            }
+                        })();
+                    </script>
                 </div>
             }
             else
@@ -52,15 +267,320 @@
     </div>
 </div>
 
+@* محتوای Render شده در hidden div قرار می‌گیرد و از آنجا خوانده می‌شود *@
+
 @section Styles {
     <style>
-        .email-preview {
-            font-family: 'Vazir', Arial, sans-serif;
+        .email-preview-wrapper {
+            position: relative;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: #ffffff;
+            overflow: hidden;
         }
-        .email-preview img {
+        
+        .preview-controls {
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .preview-view {
+            position: relative;
+        }
+        
+        .preview-container {
+            position: relative;
+            width: 100%;
+            min-height: 500px;
+            background: #ffffff;
+        }
+        
+        .email-preview-content {
+            width: 100%;
+            min-height: 500px;
+            max-height: 800px;
+            overflow: auto;
+            border: 1px solid #dee2e6;
+            background: #ffffff;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* استایل‌های برای محتوای ایمیل */
+        .email-preview-content iframe,
+        .email-preview-content embed,
+        .email-preview-content object {
             max-width: 100%;
             height: auto;
         }
+        
+        /* Reset styles برای محتوای ایمیل */
+        .email-preview-content * {
+            box-sizing: border-box;
+        }
+        
+        .preview-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .preview-error {
+            padding: 20px;
+        }
+        
+        .code-container {
+            max-height: 600px;
+            overflow: auto;
+            background: #f8f9fa;
+            padding: 15px;
+        }
+        
+        .code-preview {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            direction: ltr;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+        }
+        
+        .code-preview code {
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+        
+        @* Responsive Design *@
+        @@media (max-width: 768px) {
+            .email-preview-content {
+                min-height: 400px;
+                max-height: 600px;
+            }
+            
+            .preview-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .preview-controls .btn-group {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .preview-controls .btn {
+                flex: 1;
+            }
+        }
+        
+        @* Print Styles *@
+        @@media print {
+            .preview-controls {
+                display: none;
+            }
+            
+            .email-preview-content {
+                height: auto;
+                min-height: 500px;
+                max-height: none;
+            }
+        }
     </style>
+}
+
+@section Scripts {
+    <script type="text/javascript">
+        // ============================================
+        // Newsletter Template Preview - Production Ready
+        // ============================================
+        
+        (function() {
+            'use strict';
+            
+            // ============================================
+            // Functions
+            // ============================================
+            
+            // توابع قبلاً در script tag بالاتر تعریف شده‌اند
+            // اینجا فقط override می‌کنیم اگر نیاز به منطق اضافی باشد
+            if (typeof window.hidePreviewLoading === 'undefined') {
+                window.hidePreviewLoading = function() {
+                    var loadingDiv = document.getElementById('previewLoading');
+                    if (loadingDiv) {
+                        loadingDiv.style.display = 'none';
+                    }
+                };
+            }
+            
+            if (typeof window.showPreviewError === 'undefined') {
+                window.showPreviewError = function(message) {
+                    var errorDiv = document.getElementById('previewError');
+                    var errorMessage = document.getElementById('previewErrorMessage');
+                    var loadingDiv = document.getElementById('previewLoading');
+                    
+                    if (errorDiv && errorMessage) {
+                        errorMessage.textContent = message || 'خطای نامشخص';
+                        errorDiv.style.display = 'block';
+                    }
+                    
+                    if (loadingDiv) {
+                        loadingDiv.style.display = 'none';
+                    }
+                };
+            }
+            
+            // خواندن محتوای Template از script tag (برای نمایش کد HTML)
+            var emailPreviewContent = '';
+            
+            try {
+                var contentTemplate = document.getElementById('emailPreviewContentTemplate');
+                if (contentTemplate) {
+                    // استفاده از textContent برای خواندن محتوای خام (بدون escape)
+                    emailPreviewContent = contentTemplate.textContent || contentTemplate.innerText || '';
+                }
+                
+                if (emailPreviewContent && emailPreviewContent.trim() !== '') {
+                    console.log('✅ Content loaded successfully, length:', emailPreviewContent.length);
+                }
+            } catch (e) {
+                console.error('❌ Error reading content:', e);
+            }
+            
+            /**
+             * تغییر view بین iframe و code
+             */
+            window.switchPreviewView = function(view) {
+                var iframeView = document.getElementById('previewIframeView');
+                var codeView = document.getElementById('previewCodeView');
+                var buttons = document.querySelectorAll('.preview-controls [data-view]');
+                
+                if (view === 'iframe') {
+                    if (iframeView) iframeView.style.display = 'block';
+                    if (codeView) codeView.style.display = 'none';
+                    buttons.forEach(function(btn) {
+                        if (btn.dataset.view === 'iframe') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                } else if (view === 'code') {
+                    if (iframeView) iframeView.style.display = 'none';
+                    if (codeView) codeView.style.display = 'block';
+                    buttons.forEach(function(btn) {
+                        if (btn.dataset.view === 'code') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                }
+            };
+            
+            /**
+             * بروزرسانی پیش‌نمایش
+             */
+            window.refreshPreview = function() {
+                var loadingDiv = document.getElementById('previewLoading');
+                var errorDiv = document.getElementById('previewError');
+                var previewContentDiv = document.getElementById('emailPreviewContent');
+                
+                if (loadingDiv) loadingDiv.style.display = 'block';
+                if (errorDiv) errorDiv.style.display = 'none';
+                if (previewContentDiv) previewContentDiv.innerHTML = '';
+                
+                // Reload content
+                if (window.previewConfig && previewContentDiv) {
+                    var previewUrl = '@Url.Action("PreviewHtml", new { id = Model.NewsletterTemplateId, useSampleData = ViewBag.UseSampleData ?? true })';
+                    // اضافه کردن timestamp برای جلوگیری از cache
+                    previewUrl += (previewUrl.indexOf('?') > -1 ? '&' : '?') + '_t=' + new Date().getTime();
+                    
+                    if (window.fetch) {
+                        fetch(previewUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'text/html',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
+                        })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('HTTP error! status: ' + response.status);
+                            }
+                            return response.text();
+                        })
+                        .then(function(html) {
+                            if (html && html.trim() !== '') {
+                                previewContentDiv.innerHTML = html;
+                                window.hidePreviewLoading();
+                            } else {
+                                throw new Error('محتوای پیش‌نمایش خالی است');
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('❌ Error refreshing preview:', error);
+                            window.showPreviewError('خطا در بروزرسانی پیش‌نمایش: ' + error.message);
+                        });
+                    } else {
+                        // Fallback برای مرورگرهای قدیمی: استفاده از XMLHttpRequest
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('GET', previewUrl, true);
+                        xhr.setRequestHeader('Accept', 'text/html');
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                var html = xhr.responseText;
+                                if (html && html.trim() !== '') {
+                                    previewContentDiv.innerHTML = html;
+                                    window.hidePreviewLoading();
+                                } else {
+                                    window.showPreviewError('محتوای پیش‌نمایش خالی است');
+                                }
+                            } else {
+                                window.showPreviewError('خطا در بروزرسانی پیش‌نمایش: HTTP ' + xhr.status);
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            console.error('❌ Error refreshing preview');
+                            window.showPreviewError('خطا در بروزرسانی پیش‌نمایش');
+                        };
+                        
+                        xhr.send();
+                    }
+                } else {
+                    // Fallback: Reload page
+                    window.location.reload();
+                }
+            };
+            
+            // ============================================
+            // Initialization
+            // ============================================
+            
+            $(document).ready(function() {
+                // Event listener ها قبلاً در script tag قبل از iframe تنظیم شده‌اند
+                // اینجا فقط بررسی می‌کنیم که همه چیز درست کار می‌کند
+                console.log('✅ Preview page initialized');
+            });
+        })();
+    </script>
 }
 

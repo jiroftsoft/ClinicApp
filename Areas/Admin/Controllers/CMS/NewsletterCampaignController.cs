@@ -51,6 +51,10 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                     };
                 }
 
+                // Parse تاریخ‌های جستجو از hidden inputs
+                searchModel.FromDate = this.ParseDateFromHiddenInput("FromDate", _logger);
+                searchModel.ToDate = this.ParseDateFromHiddenInput("ToDate", _logger);
+
                 var result = await _campaignService.GetCampaignsAsync(searchModel);
 
                 if (!result.Success)
@@ -149,8 +153,33 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ زمان‌بندی از hidden input
-                model.ScheduledAt = this.ParseDateFromHiddenInput("ScheduledAt", _logger);
+                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
+                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
+                var scheduledTime = Request.Form["ScheduledAtTime"];
+                
+                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                {
+                    // ترکیب تاریخ و زمان
+                    var timeParts = scheduledTime.Split(':');
+                    if (timeParts.Length >= 2)
+                    {
+                        var hour = int.Parse(timeParts[0]);
+                        var minute = int.Parse(timeParts[1]);
+                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
+                    }
+                    else
+                    {
+                        model.ScheduledAt = scheduledDate.Value;
+                    }
+                }
+                else if (scheduledDate.HasValue)
+                {
+                    model.ScheduledAt = scheduledDate.Value;
+                }
+                else
+                {
+                    model.ScheduledAt = null;
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -222,8 +251,33 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ زمان‌بندی از hidden input
-                model.ScheduledAt = this.ParseDateFromHiddenInput("ScheduledAt", _logger);
+                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
+                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
+                var scheduledTime = Request.Form["ScheduledAtTime"];
+                
+                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                {
+                    // ترکیب تاریخ و زمان
+                    var timeParts = scheduledTime.Split(':');
+                    if (timeParts.Length >= 2)
+                    {
+                        var hour = int.Parse(timeParts[0]);
+                        var minute = int.Parse(timeParts[1]);
+                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
+                    }
+                    else
+                    {
+                        model.ScheduledAt = scheduledDate.Value;
+                    }
+                }
+                else if (scheduledDate.HasValue)
+                {
+                    model.ScheduledAt = scheduledDate.Value;
+                }
+                else
+                {
+                    model.ScheduledAt = null;
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -322,8 +376,33 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ زمان‌بندی از hidden input
-                model.ScheduledAt = this.ParseDateFromHiddenInput("ScheduledAt", _logger);
+                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
+                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
+                var scheduledTime = Request.Form["ScheduledAtTime"];
+                
+                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                {
+                    // ترکیب تاریخ و زمان
+                    var timeParts = scheduledTime.Split(':');
+                    if (timeParts.Length >= 2)
+                    {
+                        var hour = int.Parse(timeParts[0]);
+                        var minute = int.Parse(timeParts[1]);
+                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
+                    }
+                    else
+                    {
+                        model.ScheduledAt = scheduledDate.Value;
+                    }
+                }
+                else if (scheduledDate.HasValue)
+                {
+                    model.ScheduledAt = scheduledDate.Value;
+                }
+                else
+                {
+                    model.ScheduledAt = null;
+                }
 
                 if (model.ScheduledAt.HasValue && model.ScheduledAt.Value > DateTime.Now)
                 {

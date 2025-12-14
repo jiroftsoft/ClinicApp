@@ -597,6 +597,7 @@
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
     <Compile Include="Extensions\CultureExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Extensions\GenderParsing.cs" />
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
@@ -637,9 +638,14 @@
     <Compile Include="Helpers\Security\SecurityLogger.cs" />
     <Compile Include="Helpers\Security\SensitiveDataMaskingHelper.cs" />
     <Compile Include="Helpers\ServiceResultExtensions.cs" />
+    <Compile Include="Helpers\SmartTemplateParser.cs" />
+    <Compile Include="Helpers\SmartTemplateRenderer.cs" />
+    <Compile Include="Helpers\SmartTemplateService.cs" />
+    <Compile Include="Helpers\SmartTemplateVariableHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
+    <Compile Include="Helpers\TemplateRenderResult.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\Validation\IdentityValidators.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
@@ -869,6 +875,10 @@
     <Compile Include="Migrations\202512131400196_addNewsletter.cs" />
     <Compile Include="Migrations\202512131400196_addNewsletter.Designer.cs">
       <DependentUpon>202512131400196_addNewsletter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202512131430564_AddDescriptionToNewsletterTemplate.cs" />
+    <Compile Include="Migrations\202512131430564_AddDescriptionToNewsletterTemplate.Designer.cs">
+      <DependentUpon>202512131430564_AddDescriptionToNewsletterTemplate.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
@@ -6131,6 +6141,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512131400196_addNewsletter.resx">
       <DependentUpon>202512131400196_addNewsletter.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512131430564_AddDescriptionToNewsletterTemplate.resx">
+      <DependentUpon>202512131430564_AddDescriptionToNewsletterTemplate.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

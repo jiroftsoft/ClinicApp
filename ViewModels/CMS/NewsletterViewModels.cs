@@ -148,6 +148,8 @@ namespace ClinicApp.ViewModels.CMS
         public int NewsletterTemplateId { get; set; }
         public string Name { get; set; }
         public string Subject { get; set; }
+        public string Description { get; set; }
+        public string Content { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -171,6 +173,10 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "موضوع ایمیل")]
         public string Subject { get; set; }
 
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        [Display(Name = "توضیحات")]
+        public string Description { get; set; }
+
         [Required(ErrorMessage = "محتوای Template الزامی است.")]
         [AllowHtml] // برای CKEditor
         [Display(Name = "محتوای Template")]
@@ -189,6 +195,7 @@ namespace ClinicApp.ViewModels.CMS
         public int NewsletterTemplateId { get; set; }
         public string Name { get; set; }
         public string Subject { get; set; }
+        public string Description { get; set; }
         public string Content { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }

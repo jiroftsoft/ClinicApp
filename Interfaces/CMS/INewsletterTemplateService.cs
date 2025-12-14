@@ -22,6 +22,7 @@ namespace ClinicApp.Interfaces.CMS
         Task<ServiceResult> DeactivateTemplateAsync(int templateId);
         Task<ServiceResult<string>> RenderTemplateAsync(int templateId, Dictionary<string, string> variables);
         Task<ServiceResult<string>> RenderTemplateAsync(string content, Dictionary<string, string> variables);
+        Task<ServiceResult<TemplateRenderResult>> RenderTemplateWithResultAsync(string content, Dictionary<string, string> variables, int? templateId = null);
     }
 }
 

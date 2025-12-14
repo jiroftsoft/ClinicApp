@@ -26,6 +26,13 @@ namespace ClinicApp.Models.Entities.CMS
         public string Subject { get; set; }
 
         /// <summary>
+        /// توضیحات کوتاه درباره Template (اختیاری)
+        /// برای کمک به کاربران در انتخاب Template مناسب
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
         /// محتوای Template (HTML) با Variables
         /// مثال: "سلام {{FullName}}، ..."
         /// </summary>
@@ -72,6 +79,10 @@ namespace ClinicApp.Models.Entities.CMS
                 .IsRequired()
                 .HasMaxLength(500)
                 .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("IX_NewsletterTemplate_Subject")));
+
+            Property(t => t.Description)
+                .IsOptional()
+                .HasMaxLength(500);
 
             Property(t => t.IsActive)
                 .IsRequired()

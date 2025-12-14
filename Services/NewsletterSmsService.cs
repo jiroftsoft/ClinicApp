@@ -40,12 +40,8 @@ namespace ClinicApp.Services
                     return ServiceResult.Failed("شماره تماس مشترک موجود نیست");
                 }
 
-                // Render محتوا با Variables
-                var variables = new Dictionary<string, string>
-                {
-                    { "FullName", subscription.FullName ?? "کاربر گرامی" },
-                    { "Email", subscription.Email }
-                };
+                // Render محتوا با Variables پیشرفته
+                var variables = SmartTemplateVariableHelper.BuildAdvancedVariables(subscription);
 
                 var renderResult = await RenderSmsContentAsync(campaign.Content, variables);
                 if (!renderResult.Success)
@@ -140,19 +136,24 @@ namespace ClinicApp.Services
                     return ServiceResult<string>.Successful(content);
                 }
 
+                // تبدیل Dictionary<string, string> به Dictionary<string, object> برای SmartTemplateRenderer
+                var objectVariables = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                if (variables != null)
+                {
+                    foreach (var kvp in variables)
+                    {
+                        objectVariables[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                // استفاده از SmartTemplateRenderer با Cache و Error Handling
+                var rendered = SmartTemplateRenderer.Render(content, objectVariables);
+
                 // حذف تگ‌های HTML برای SMS
-                var textContent = System.Web.HttpUtility.HtmlDecode(content);
+                var textContent = System.Web.HttpUtility.HtmlDecode(rendered);
                 textContent = Regex.Replace(textContent, "<.*?>", string.Empty);
                 textContent = Regex.Replace(textContent, @"\s+", " ").Trim();
-
-                var rendered = textContent;
-
-                // جایگزینی Variables با الگوی {{VariableName}}
-                foreach (var variable in variables)
-                {
-                    var pattern = $"\\{{\\{{{variable.Key}\\}}\\}}";
-                    rendered = Regex.Replace(rendered, pattern, variable.Value ?? string.Empty, RegexOptions.IgnoreCase);
-                }
+                rendered = textContent;
 
                 return ServiceResult<string>.Successful(rendered);
             }

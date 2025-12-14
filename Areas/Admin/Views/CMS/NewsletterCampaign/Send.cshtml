@@ -126,16 +126,38 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    @{
-                        ViewBag.PersianDatePickerId = "scheduledAtPicker";
-                        ViewBag.PersianDatePickerName = "ScheduledAt";
-                        ViewBag.PersianDatePickerValue = Model.ScheduledAt;
-                        ViewBag.PersianDatePickerLabel = "زمان‌بندی ارسال";
-                        ViewBag.PersianDatePickerPlaceholder = "تاریخ و زمان ارسال (اختیاری)";
-                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، Campaign فوراً ارسال می‌شود. در غیر این صورت، در زمان مشخص شده ارسال خواهد شد.";
-                        ViewBag.PersianDatePickerRequired = false;
-                    }
-                    @Html.Partial("_PersianDatePicker")
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ScheduledAt, new { @class = "control-label" })
+                        <div class="row">
+                            <div class="col-md-7">
+                                @{
+                                    ViewBag.PersianDatePickerId = "scheduledAtDatePicker";
+                                    ViewBag.PersianDatePickerName = "ScheduledAtDate";
+                                    ViewBag.PersianDatePickerValue = Model.ScheduledAt;
+                                    ViewBag.PersianDatePickerLabel = "";
+                                    ViewBag.PersianDatePickerPlaceholder = "تاریخ ارسال";
+                                    ViewBag.PersianDatePickerHelpText = "";
+                                    ViewBag.PersianDatePickerRequired = false;
+                                    ViewBag.PersianDatePickerCssClass = "form-control";
+                                }
+                                @Html.Partial("_PersianDatePicker")
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label for="scheduledAtTimePicker" class="sr-only">زمان ارسال</label>
+                                    <input type="time" 
+                                           id="scheduledAtTimePicker" 
+                                           name="ScheduledAtTime" 
+                                           class="form-control" 
+                                           value="@(Model.ScheduledAt?.ToString("HH:mm") ?? "")"
+                                           placeholder="زمان (HH:mm)">
+                                    <small class="form-text text-muted">زمان ارسال</small>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">اگر خالی باشد، Campaign فوراً ارسال می‌شود. در غیر این صورت، در زمان مشخص شده ارسال خواهد شد.</small>
+                        @Html.ValidationMessageFor(m => m.ScheduledAt, "", new { @class = "text-danger" })
+                    </div>
                 </div>
             </div>
 
@@ -169,19 +191,40 @@
                     return false;
                 }
 
-                // بررسی تاریخ زمان‌بندی از hidden input
-                var scheduledAtHidden = $('input[name="ScheduledAt_Hidden"]').val();
-                if (scheduledAtHidden) {
-                    var scheduledDate = new Date(scheduledAtHidden);
-                    var now = new Date();
-                    if (scheduledDate <= now) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'هشدار',
-                            text: 'تاریخ زمان‌بندی باید در آینده باشد.'
-                        });
-                        return false;
+                // ترکیب تاریخ و زمان قبل از بررسی
+                var persianDate = $('#scheduledAtDatePicker').val();
+                var time = $('#scheduledAtTimePicker').val();
+                
+                if (persianDate && persianDate.trim() !== '') {
+                    var hiddenDate = $('input[name="ScheduledAtDate_Hidden"]').val();
+                    if (hiddenDate) {
+                        var dateTimeStr = hiddenDate;
+                        if (time && time.trim() !== '') {
+                            var datePart = hiddenDate.split('T')[0];
+                            dateTimeStr = datePart + 'T' + time + ':00';
+                        }
+                        var $scheduledAtHidden = $('input[name="ScheduledAt_Hidden"]');
+                        if ($scheduledAtHidden.length === 0) {
+                            $scheduledAtHidden = $('<input>').attr({
+                                type: 'hidden',
+                                name: 'ScheduledAt_Hidden'
+                            });
+                            $('form').append($scheduledAtHidden);
+                        }
+                        $scheduledAtHidden.val(dateTimeStr);
+
+                        // بررسی اینکه تاریخ در آینده باشد
+                        var scheduledDate = new Date(dateTimeStr);
+                        var now = new Date();
+                        if (scheduledDate <= now) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'هشدار',
+                                text: 'تاریخ زمان‌بندی باید در آینده باشد.'
+                            });
+                            return false;
+                        }
                     }
                 }
             });

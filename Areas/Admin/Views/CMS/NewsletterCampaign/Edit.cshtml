@@ -115,8 +115,7 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         @Html.LabelFor(m => m.Content, new { @class = "required" })
-                        <div id="contentEditor"></div>
-                        @Html.HiddenFor(m => m.Content)
+                        @Html.TextAreaFor(m => m.Content, new { @class = "form-control", id = "contentEditor", rows = "15" })
                         @Html.ValidationMessageFor(m => m.Content, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">
                             <i class="fas fa-info-circle"></i> می‌توانید از متغیرهای زیر استفاده کنید:
@@ -163,16 +162,38 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    @{
-                        ViewBag.PersianDatePickerId = "scheduledAtPicker";
-                        ViewBag.PersianDatePickerName = "ScheduledAt";
-                        ViewBag.PersianDatePickerValue = Model.ScheduledAt;
-                        ViewBag.PersianDatePickerLabel = "زمان‌بندی ارسال";
-                        ViewBag.PersianDatePickerPlaceholder = "تاریخ و زمان ارسال (اختیاری)";
-                        ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، Campaign به صورت پیش‌نویس ذخیره می‌شود";
-                        ViewBag.PersianDatePickerRequired = false;
-                    }
-                    @Html.Partial("_PersianDatePicker")
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ScheduledAt, new { @class = "control-label" })
+                        <div class="row">
+                            <div class="col-md-7">
+                                @{
+                                    ViewBag.PersianDatePickerId = "scheduledAtDatePicker";
+                                    ViewBag.PersianDatePickerName = "ScheduledAtDate";
+                                    ViewBag.PersianDatePickerValue = Model.ScheduledAt;
+                                    ViewBag.PersianDatePickerLabel = "";
+                                    ViewBag.PersianDatePickerPlaceholder = "تاریخ ارسال";
+                                    ViewBag.PersianDatePickerHelpText = "";
+                                    ViewBag.PersianDatePickerRequired = false;
+                                    ViewBag.PersianDatePickerCssClass = "form-control";
+                                }
+                                @Html.Partial("_PersianDatePicker")
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label for="scheduledAtTimePicker" class="sr-only">زمان ارسال</label>
+                                    <input type="time" 
+                                           id="scheduledAtTimePicker" 
+                                           name="ScheduledAtTime" 
+                                           class="form-control" 
+                                           value="@(Model.ScheduledAt?.ToString("HH:mm") ?? "")"
+                                           placeholder="زمان (HH:mm)">
+                                    <small class="form-text text-muted">زمان ارسال</small>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">اگر خالی باشد، Campaign به صورت پیش‌نویس ذخیره می‌شود</small>
+                        @Html.ValidationMessageFor(m => m.ScheduledAt, "", new { @class = "text-danger" })
+                    </div>
                 </div>
             </div>
 
@@ -189,9 +210,19 @@
 </div>
 
 @section Scripts {
-    @Html.Partial("_CKEditorScript")
-    @Html.Partial("_PersianDatePickerScript")
     @Scripts.Render("~/bundles/jqueryval")
+    
+    @* بارگذاری CKEditor Scripts *@
+    @Html.Partial("_CKEditorScript")
+    
+    @* Initialize CKEditor طبق قرارداد *@
+    @{
+        ViewBag.CKEditorSelector = "#contentEditor";
+        ViewBag.CKEditorHeight = 400;
+    }
+    @Html.Partial("_CKEditorInit")
+    
+    @Html.Partial("_PersianDatePickerScript")
     
     <script>
         $(document).ready(function() {
@@ -203,46 +234,32 @@
                 }
             });
 
-            if (typeof ClassicEditor !== 'undefined') {
-                ClassicEditor
-                    .create(document.querySelector('#contentEditor'), {
-                        language: 'fa',
-                        direction: 'rtl',
-                        toolbar: {
-                            items: [
-                                'heading', '|',
-                                'bold', 'italic', 'link', '|',
-                                'bulletedList', 'numberedList', '|',
-                                'blockQuote', 'insertTable', '|',
-                                'undo', 'redo'
-                            ]
-                        },
-                        heading: {
-                            options: [
-                                { model: 'paragraph', title: 'پاراگراف', class: 'ck-heading_paragraph' },
-                                { model: 'heading1', view: 'h1', title: 'عنوان 1', class: 'ck-heading_heading1' },
-                                { model: 'heading2', view: 'h2', title: 'عنوان 2', class: 'ck-heading_heading2' },
-                                { model: 'heading3', view: 'h3', title: 'عنوان 3', class: 'ck-heading_heading3' }
-                            ]
-                        }
-                    })
-                    .then(editor => {
-                        window.contentEditor = editor;
-                        editor.model.document.on('change:data', () => {
-                            $('#Content').val(editor.getData());
-                        });
-                        if ($('#Content').val()) {
-                            editor.setData($('#Content').val());
-                        }
-                    })
-                    .catch(error => {
-                        console.error('خطا در بارگذاری CKEditor:', error);
-                    });
-            }
-
+            // CKEditor 4 به صورت خودکار محتوا را در textarea ذخیره می‌کند
+            
+            // Form Submit Handler - ترکیب تاریخ و زمان
             $('form').on('submit', function(e) {
-                if (window.contentEditor) {
-                    $('#Content').val(window.contentEditor.getData());
+                // ترکیب تاریخ شمسی و زمان برای ایجاد DateTime
+                var persianDate = $('#scheduledAtDatePicker').val();
+                var time = $('#scheduledAtTimePicker').val();
+                
+                if (persianDate && persianDate.trim() !== '') {
+                    var hiddenDate = $('input[name="ScheduledAtDate_Hidden"]').val();
+                    if (hiddenDate) {
+                        var dateTimeStr = hiddenDate;
+                        if (time && time.trim() !== '') {
+                            var datePart = hiddenDate.split('T')[0];
+                            dateTimeStr = datePart + 'T' + time + ':00';
+                        }
+                        var $scheduledAtHidden = $('input[name="ScheduledAt_Hidden"]');
+                        if ($scheduledAtHidden.length === 0) {
+                            $scheduledAtHidden = $('<input>').attr({
+                                type: 'hidden',
+                                name: 'ScheduledAt_Hidden'
+                            });
+                            $('form').append($scheduledAtHidden);
+                        }
+                        $scheduledAtHidden.val(dateTimeStr);
+                    }
                 }
             });
         });
