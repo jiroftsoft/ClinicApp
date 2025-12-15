@@ -12,22 +12,25 @@
 
 /* ============================================
    BASE STYLES - طبق Design System
+   رنگ‌های درمانی جذاب و رسمی - پس‌زمینه گرم و جذاب
    ============================================ */
 .medical-footer {
-    /* رنگ اصلی محیط درمانی - روشن و آرام برای محیط درمانی */
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #212529;
+    /* پس‌زمینه گرم و جذاب - آبی ملایم درمانی (جایگزین سرد و بی‌روح) */
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #e0f2f1 100%);
+    color: #1a365d; /* رنگ متن تیره‌تر برای خوانایی بهتر */
     padding: var(--spacing-xxxl, 3rem) 0 var(--spacing-lg, 1.5rem);
     margin-top: var(--spacing-xxxl, 3rem);
-    border-top: 4px solid var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    font-family: var(--font-family-base, 'Vazir', 'Tahoma', sans-serif);
+    border-top: 4px solid transparent;
+    border-image: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 50%, var(--medical-success, #28a745) 100%) 1;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
     line-height: var(--line-height-relaxed, 1.75);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 24px rgba(44, 90, 160, 0.12), 0 -1px 0 rgba(44, 90, 160, 0.05) inset; /* سایه آبی ملایم با عمق */
 }
 
-/* افکت پس‌زمینه ملایم و حرفه‌ای - برای پس‌زمینه روشن */
+/* افکت پس‌زمینه گرم و جذاب - آبی و سبز درمانی ملایم با Subtle Pattern */
 .medical-footer::before {
     content: '';
     position: absolute;
@@ -36,10 +39,28 @@
     right: 0;
     bottom: 0;
     background: 
-        radial-gradient(circle at 20% 50%, rgba(40, 167, 69, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(40, 167, 69, 0.02) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(44, 90, 160, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(40, 167, 69, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(23, 162, 184, 0.05) 0%, transparent 60%),
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 2px,
+            rgba(44, 90, 160, 0.02) 2px,
+            rgba(44, 90, 160, 0.02) 4px
+        );
     pointer-events: none;
     z-index: 0;
+    animation: subtleShift 20s ease-in-out infinite;
+}
+
+@keyframes subtleShift {
+    0%, 100% {
+        background-position: 0% 0%, 100% 0%, 50% 100%, 0 0;
+    }
+    50% {
+        background-position: 10% 10%, 90% 10%, 50% 90%, 10px 10px;
+    }
 }
 
 .medical-footer > .container {
@@ -63,14 +84,14 @@
     gap: var(--spacing-xl, 2rem) var(--spacing-lg, 1.5rem) !important;
     margin-bottom: var(--spacing-xxl, 2.5rem);
     padding-bottom: var(--spacing-xxl, 2.5rem);
-    border-bottom: 2px solid rgba(0, 0, 0, 0.1); /* خط ملایم برای پس‌زمینه روشن */
+    border-bottom: 2px solid rgba(44, 90, 160, 0.15); /* خط آبی ملایم */
     width: 100%;
     box-sizing: border-box;
     align-items: start; /* تراز بالا برای ستون‌ها */
 }
 
 /* ============================================
-   FOOTER SECTIONS
+   FOOTER SECTIONS - Premium Card Design
    ============================================ */
 .footer-section {
     display: flex;
@@ -78,23 +99,70 @@
     gap: var(--spacing-md, 1rem);
     min-width: 0; /* جلوگیری از overflow در Grid */
     word-wrap: break-word; /* شکستن کلمات طولانی */
+    /* Premium Card Design */
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-lg, 1.5rem);
+    border: 1px solid rgba(44, 90, 160, 0.1);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.08);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle Hover Effect برای Sections */
+.footer-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    z-index: 1;
+}
+
+.footer-section:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+    border-color: rgba(44, 90, 160, 0.2);
+}
+
+.footer-section:hover::before {
+    transform: scaleX(1);
+    transform-origin: left;
 }
 
 .footer-section-title {
     font-size: var(--font-size-lg, 1.125rem);
-    font-weight: 700;
-    color: #212529;
+    font-weight: var(--font-weight-bold, 700);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    color: #1a365d; /* رنگ تیره برای خوانایی بهتر */
     margin-bottom: var(--spacing-md, 1rem);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
     line-height: 1.5;
+    position: relative;
+    z-index: 2;
 }
 
 .footer-section-title i {
     font-size: 1.25rem;
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    filter: drop-shadow(0 2px 4px rgba(40, 167, 69, 0.3));
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 4px rgba(44, 90, 160, 0.25));
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.footer-section:hover .footer-section-title i {
+    transform: scale(1.15) rotate(5deg);
 }
 
 /* ============================================
@@ -186,28 +254,59 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    background: rgba(40, 167, 69, 0.1);
-    border: 2px solid rgba(40, 167, 69, 0.3);
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.1) 100%);
+    border: 2px solid rgba(44, 90, 160, 0.2);
     border-radius: var(--radius-full, 9999px);
-    color: var(--medical-success, #28a745);
+    color: var(--medical-primary, #2c5aa0); /* آبی درمانی جذاب */
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Ripple Effect برای Social Links */
+.social-link::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.social-link:hover::before {
+    width: 200%;
+    height: 200%;
 }
 
 .social-link:hover,
 .social-link:focus {
-    background: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    border-color: var(--medical-success, #28a745);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-    outline: 2px solid var(--medical-success, #28a745);
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    border-color: var(--medical-primary, #2c5aa0);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+    outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
     color: #ffffff;
+}
+
+.social-link i {
+    position: relative;
+    z-index: 1;
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.social-link:hover i {
+    transform: scale(1.15) rotate(5deg);
 }
 
 .social-link i {
@@ -230,33 +329,68 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-xs, 0.25rem) 0;
-    color: #495057;
+    padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+    margin: var(--spacing-xs, 0.25rem) 0;
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     text-decoration: none;
     font-size: var(--font-size-sm, 0.875rem);
-    transition: all 0.2s ease;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
     /* Touch target >= 44px */
     min-height: 44px;
     align-items: center;
     -webkit-tap-highlight-color: transparent;
+    border-radius: var(--radius-sm, 4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Premium Hover Effect با Ripple */
+.footer-link::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 0;
+    height: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(44, 90, 160, 0.1) 100%);
+    transform: translateY(-50%);
+    transition: width var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    z-index: 0;
 }
 
 .footer-link:hover,
 .footer-link:focus {
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    transform: translateX(-5px);
-    outline: 2px solid var(--medical-success, #28a745);
+    color: var(--medical-primary, #2c5aa0); /* آبی درمانی جذاب */
+    transform: translateX(-6px);
+    outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
-    border-radius: var(--radius-sm, 4px);
-    background: rgba(40, 167, 69, 0.15); /* پس‌زمینه سبز ملایم */
+    background: rgba(44, 90, 160, 0.08); /* پس‌زمینه آبی ملایم */
+    padding-right: var(--spacing-md, 1rem);
+}
+
+.footer-link:hover::before {
+    width: 100%;
+    height: 100%;
 }
 
 .footer-link i {
     font-size: 1rem;
     width: 20px;
     text-align: center;
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     flex-shrink: 0;
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    position: relative;
+    z-index: 1;
+}
+
+.footer-link:hover i {
+    transform: scale(1.2) translateX(-2px);
 }
 
 /* ============================================
@@ -272,8 +406,10 @@
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-sm, 0.5rem);
-    color: #495057;
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     font-size: var(--font-size-sm, 0.875rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
     line-height: var(--line-height-relaxed, 1.75);
     text-align: right; /* RTL Support */
     word-wrap: break-word; /* شکستن کلمات طولانی */
@@ -281,16 +417,25 @@
 
 .footer-contact-item i {
     font-size: 1.125rem;
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-top: 0.25rem;
     flex-shrink: 0;
     width: 20px;
     text-align: center;
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.footer-contact-item:hover i {
+    transform: scale(1.2);
 }
 
 .contact-link {
-    color: #495057;
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     text-decoration: none;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
     transition: color 0.2s ease;
     /* Touch target >= 44px */
     min-height: 44px;
@@ -301,11 +446,11 @@
 
 .contact-link:hover,
 .contact-link:focus {
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    outline: 2px solid var(--medical-success, #28a745);
+    color: var(--medical-primary, #2c5aa0); /* آبی درمانی جذاب */
+    outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
     border-radius: var(--radius-sm, 4px);
-    background: rgba(40, 167, 69, 0.15);
+    background: rgba(44, 90, 160, 0.1); /* پس‌زمینه آبی ملایم */
 }
 
 .contact-text {
@@ -316,15 +461,16 @@
 }
 
 .footer-emergency {
-    background: rgba(220, 53, 69, 0.1);
+    background: rgba(23, 162, 184, 0.12); /* آبی درمانی ملایم (جایگزین قرمز زننده) */
     padding: var(--spacing-sm, 0.5rem);
     border-radius: var(--radius-md, 8px);
-    border-right: 3px solid #dc3545;
+    border-right: 3px solid var(--medical-info, #17a2b8); /* آبی درمانی */
 }
 
 .contact-emergency {
-    color: var(--medical-warning, #ffc107) !important;
+    color: var(--medical-info, #17a2b8) !important; /* آبی درمانی (جایگزین نارنجی) */
     font-weight: var(--font-weight-semibold, 600);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
 }
 
 /* ============================================
@@ -341,16 +487,20 @@
     font-size: var(--font-size-sm, 0.875rem);
 }
 
+.footer-status {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
 .footer-status.status-open {
-    background: rgba(40, 167, 69, 0.2);
-    color: #90ee90;
+    background: rgba(40, 167, 69, 0.18); /* سبز درمانی ملایم */
+    color: #15803d; /* سبز تیره برای خوانایی بهتر */
     border: 1px solid rgba(40, 167, 69, 0.3);
 }
 
 .footer-status.status-closed {
-    background: rgba(220, 53, 69, 0.2);
-    color: #ff6b6b;
-    border: 1px solid rgba(220, 53, 69, 0.3);
+    background: rgba(220, 53, 69, 0.15); /* قرمز ملایم */
+    color: #b91c1c; /* قرمز تیره برای خوانایی بهتر */
+    border: 1px solid rgba(220, 53, 69, 0.25);
 }
 
 .status-indicator {
@@ -385,10 +535,12 @@
     align-items: center;
     padding: var(--spacing-xs, 0.25rem) 0;
     font-size: var(--font-size-sm, 0.875rem);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
+    border-bottom: 1px solid rgba(44, 90, 160, 0.12); /* خط آبی ملایم */
     line-height: var(--line-height-normal, 1.5);
     text-align: right; /* RTL Support */
-    color: #495057;
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
 }
 
 .footer-hour-item:last-child {
@@ -413,8 +565,8 @@
 .footer-certifications {
     padding: var(--spacing-lg, 1.5rem) 0;
     margin-bottom: var(--spacing-lg, 1.5rem);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(44, 90, 160, 0.15); /* خط آبی ملایم */
+    border-bottom: 1px solid rgba(44, 90, 160, 0.15); /* خط آبی ملایم */
 }
 
 .certifications-list {
@@ -430,10 +582,34 @@
     align-items: center;
     gap: var(--spacing-md, 1rem);
     padding: var(--spacing-md, 1rem);
-    background: rgba(40, 167, 69, 0.05);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
     border-radius: var(--radius-md, 8px);
-    border: 1px solid rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(44, 90, 160, 0.2); /* آبی درمانی */
     max-width: 300px;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    position: relative;
+    overflow: hidden;
+}
+
+.certification-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.certification-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.2);
+    border-color: rgba(44, 90, 160, 0.35);
+}
+
+.certification-item:hover::before {
+    left: 100%;
 }
 
 .certification-image {
@@ -451,21 +627,25 @@
 
 .certification-title {
     font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 700;
-    color: #212529;
+    font-weight: var(--font-weight-bold, 700);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    color: #1a365d; /* رنگ تیره برای خوانایی بهتر */
     margin: 0;
 }
 
 .certification-description {
     font-size: var(--font-size-xs, 0.75rem);
-    color: #6c757d;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     margin: 0;
     line-height: 1.6;
 }
 
 .certification-license {
     font-size: var(--font-size-xs, 0.75rem);
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    color: var(--medical-primary, #2c5aa0); /* آبی درمانی جذاب */
     font-weight: var(--font-weight-semibold, 600);
 }
 
@@ -477,7 +657,7 @@
     flex-direction: column;
     gap: var(--spacing-md, 1rem);
     padding-top: var(--spacing-lg, 1.5rem);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(44, 90, 160, 0.15); /* خط آبی ملایم */
 }
 
 .footer-copyright {
@@ -493,7 +673,9 @@
 
 .footer-privacy-notice {
     font-size: var(--font-size-xs, 0.75rem);
-    color: #6c757d;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     font-style: italic;
     margin-top: var(--spacing-sm, 0.5rem);
 }
@@ -515,9 +697,11 @@
 }
 
 .legal-link {
-    color: #6c757d;
+    color: #2d4a5f; /* رنگ متوسط برای خوانایی بهتر */
     text-decoration: none;
     font-size: var(--font-size-sm, 0.875rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-normal, 400);
     transition: color 0.2s ease;
     /* Touch target >= 44px */
     min-height: 44px;
@@ -529,11 +713,167 @@
 
 .legal-link:hover,
 .legal-link:focus {
-    color: var(--medical-success, #28a745); /* سبز - مناسب محیط درمانی */
-    outline: 2px solid var(--medical-success, #28a745);
+    color: var(--medical-primary, #2c5aa0); /* آبی درمانی جذاب */
+    outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
     border-radius: var(--radius-sm, 4px);
-    background: rgba(40, 167, 69, 0.15);
+    background: rgba(44, 90, 160, 0.1); /* پس‌زمینه آبی ملایم */
+}
+
+/* ============================================
+   NEWSLETTER SECTION - Premium Design
+   ============================================ */
+.footer-newsletter {
+    position: relative;
+}
+
+.newsletter-subscribe-widget {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 247, 255, 0.8) 100%);
+    backdrop-filter: blur(12px);
+    padding: var(--spacing-lg, 1.5rem);
+    border-radius: var(--radius-lg, 12px);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    position: relative;
+    overflow: hidden;
+}
+
+.newsletter-subscribe-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.newsletter-subscribe-widget:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.15);
+    border-color: rgba(44, 90, 160, 0.25);
+}
+
+.newsletter-subscribe-widget:hover::before {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.newsletter-subscribe-widget h5 {
+    color: #1a365d;
+    font-weight: var(--font-weight-bold, 700);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    margin-bottom: var(--spacing-md, 1rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    font-size: var(--font-size-lg, 1.125rem);
+}
+
+.newsletter-subscribe-widget h5 i {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.25rem;
+}
+
+.newsletter-subscribe-widget p {
+    color: #2d4a5f;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    line-height: var(--line-height-normal, 1.5);
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.newsletter-form .form-control {
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(44, 90, 160, 0.2);
+    background: rgba(255, 255, 255, 0.95);
+    color: #1a365d;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+}
+
+.newsletter-form .form-control:focus {
+    border-color: var(--medical-primary, #2c5aa0);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.15);
+    background: #ffffff;
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.newsletter-form .form-control::placeholder {
+    color: #6c757d;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.newsletter-form .btn {
+    border-radius: var(--radius-md, 8px);
+    font-weight: var(--font-weight-semibold, 600);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    border: none;
+    color: #ffffff;
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    position: relative;
+    overflow: hidden;
+}
+
+.newsletter-form .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.newsletter-form .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+}
+
+.newsletter-form .btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.newsletter-form .btn:active {
+    transform: translateY(0);
+}
+
+.newsletter-form .btn i {
+    margin-left: var(--spacing-xs, 0.25rem);
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.newsletter-form .btn:hover i {
+    transform: translateX(-3px);
+}
+
+.newsletter-subscribe-widget small {
+    color: #2d4a5f;
+    font-size: var(--font-size-xs, 0.75rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.newsletter-subscribe-widget small i {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-left: var(--spacing-xs, 0.25rem);
 }
 
 /* ============================================
@@ -628,12 +968,26 @@
     .social-link,
     .contact-link,
     .legal-link,
-    .footer-logo-link {
+    .footer-logo-link,
+    .footer-section,
+    .certification-item {
         transition: none !important;
+        animation: none !important;
     }
     
     .status-indicator {
         animation: none !important;
+    }
+    
+    .medical-footer::before {
+        animation: none !important;
+    }
+    
+    .footer-section::before,
+    .footer-link::before,
+    .social-link::before,
+    .certification-item::before {
+        display: none !important;
     }
 }
 
@@ -664,6 +1018,49 @@
     .footer-certifications {
         display: none;
     }
+}
+
+/* ============================================
+   PREMIUM ANIMATIONS - انیمیشن‌های حرفه‌ای
+   ============================================ */
+
+/* Fade In Animation برای Sections */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.footer-section {
+    animation: fadeInUp 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)) both;
+}
+
+/* Stagger Animation برای Sections */
+.footer-section:nth-child(1) { animation-delay: 0.1s; }
+.footer-section:nth-child(2) { animation-delay: 0.2s; }
+.footer-section:nth-child(3) { animation-delay: 0.3s; }
+.footer-section:nth-child(4) { animation-delay: 0.4s; }
+.footer-section:nth-child(5) { animation-delay: 0.5s; }
+
+/* Pulse Animation برای Status Indicator */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+.status-indicator {
+    animation: pulse 2s ease-in-out infinite;
 }
 
 /* ============================================

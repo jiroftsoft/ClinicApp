@@ -332,7 +332,5 @@
     </footer>
 }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-}
+@* CSS در _Layout.cshtml لود می‌شود - @section Styles در Partial View کار نمی‌کند *@
 

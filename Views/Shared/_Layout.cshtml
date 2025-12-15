@@ -165,8 +165,8 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/css/modern-navigation.css")" />
     <!-- Emergency Contacts Sticky Bar Styles -->
     <link rel="stylesheet" href="@Url.Content("~/Content/css/emergency-contacts-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-    <!-- Footer Styles -->
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/footer.css")" />
+    <!-- Footer Styles - Professional Medical Footer -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
     @RenderSection("styles", required: false)
@@ -287,7 +287,7 @@
             margin-top: 1rem;
         }
         /* --- End Megamenu --- */
-        /* Footer styles moved to Content/css/footer.css */
+        /* Footer styles: medical-footer.css loaded in head section (line 169) */
         /* --- Toastr Position --- */
         .toast-top-left {
             top: 80px !important;

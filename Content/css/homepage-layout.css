@@ -35,19 +35,19 @@
     padding: 0 var(--spacing-md, 1rem);
 }
 
-/* Desktop Layout: Sidebar + Main Content */
+/* Desktop Layout: Sidebar در سمت راست (RTL) */
 @media (min-width: 1200px) {
     .homepage-layout {
-        grid-template-columns: 1fr 320px;
+        grid-template-columns: 320px 1fr; /* در RTL: sidebar سمت راست (320px)، main content سمت چپ (1fr) */
         gap: var(--spacing-xxl, 3rem);
     }
     
     .homepage-main-content {
-        order: 1;
+        order: 2; /* main content در سمت چپ */
     }
     
     .homepage-sidebar {
-        order: 2;
+        order: 1; /* sidebar در سمت راست */
         position: sticky;
         top: 100px;
         align-self: start;
@@ -56,14 +56,19 @@
     }
 }
 
-/* Tablet Layout */
+/* Tablet Layout: Sidebar در سمت راست (RTL) */
 @media (min-width: 992px) and (max-width: 1199.98px) {
     .homepage-layout {
-        grid-template-columns: 1fr 280px;
+        grid-template-columns: 280px 1fr; /* در RTL: sidebar سمت راست (280px)، main content سمت چپ (1fr) */
         gap: var(--spacing-xl, 2rem);
     }
     
+    .homepage-main-content {
+        order: 2; /* main content در سمت چپ */
+    }
+    
     .homepage-sidebar {
+        order: 1; /* sidebar در سمت راست */
         position: sticky;
         top: 100px;
         align-self: start;
