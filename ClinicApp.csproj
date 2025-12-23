@@ -472,6 +472,7 @@
     <Compile Include="Areas\Admin\Controllers\AppointmentAvailabilityController.cs" />
     <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\AboutPageController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AnnouncementController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BaseCMSController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostCommentController.cs" />
@@ -694,6 +695,8 @@
     <Compile Include="Interfaces\ClinicAdmin\ScheduleOptimization\IPatientDistributor.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ScheduleOptimization\IPriorityManager.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ScheduleOptimization\IWorkloadAnalyzer.cs" />
+    <Compile Include="Interfaces\CMS\IAboutPageRepository.cs" />
+    <Compile Include="Interfaces\CMS\IAboutPageService.cs" />
     <Compile Include="Interfaces\CMS\IAnnouncementRepository.cs" />
     <Compile Include="Interfaces\CMS\IAnnouncementService.cs" />
     <Compile Include="Interfaces\CMS\IBlogPostCommentRepository.cs" />
@@ -884,6 +887,10 @@
     <Compile Include="Migrations\202512131430564_AddDescriptionToNewsletterTemplate.Designer.cs">
       <DependentUpon>202512131430564_AddDescriptionToNewsletterTemplate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512231346042_AddAboutPage.cs" />
+    <Compile Include="Migrations\202512231346042_AddAboutPage.Designer.cs">
+      <DependentUpon>202512231346042_AddAboutPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -891,6 +898,7 @@
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
+    <Compile Include="Models\Entities\CMS\AboutPage.cs" />
     <Compile Include="Models\Entities\CMS\Announcement.cs" />
     <Compile Include="Models\Entities\CMS\BlogPost.cs" />
     <Compile Include="Models\Entities\CMS\BlogPostComment.cs" />
@@ -922,6 +930,7 @@
     <Compile Include="Models\Enums\VideoType.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
+    <Compile Include="Repositories\CMS\AboutPageRepository.cs" />
     <Compile Include="Repositories\CMS\AnnouncementRepository.cs" />
     <Compile Include="Repositories\CMS\BlogPostCommentRepository.cs" />
     <Compile Include="Repositories\CMS\BlogPostLikeRepository.cs" />
@@ -1279,6 +1288,7 @@
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Strategies\WorkloadAnalyzer.cs" />
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Validators\OptimizationRequestValidator.cs" />
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Validators\ScheduleOptimizationValidator.cs" />
+    <Compile Include="Services\CMS\AboutPageService.cs" />
     <Compile Include="Services\CMS\AnnouncementService.cs" />
     <Compile Include="Services\CMS\BlogPostCommentService.cs" />
     <Compile Include="Services\CMS\BlogPostLikeService.cs" />
@@ -1481,8 +1491,10 @@
     <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
     <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="Validators\Reception\EnhancedReceptionValidators.cs" />
+    <Compile Include="ViewModels\AboutPageViewModel.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
+    <Compile Include="ViewModels\CMS\AboutPageViewModels.cs" />
     <Compile Include="ViewModels\CMS\AnnouncementViewModels.cs" />
     <Compile Include="ViewModels\CMS\BlogPostCommentViewModels.cs" />
     <Compile Include="ViewModels\CMS\BlogPostViewModels.cs" />
@@ -1807,6 +1819,7 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
+    <Content Include="Content\css\about-page.css" />
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\announcements-section.css" />
     <Content Include="Content\css\blog-section.css" />
@@ -4498,6 +4511,10 @@
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Send.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Statistics.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\AboutPage\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\AboutPage\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\AboutPage\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\AboutPage\Index.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6157,6 +6174,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512131430564_AddDescriptionToNewsletterTemplate.resx">
       <DependentUpon>202512131430564_AddDescriptionToNewsletterTemplate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512231346042_AddAboutPage.resx">
+      <DependentUpon>202512231346042_AddAboutPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

@@ -1,0 +1,336 @@
+@model ClinicApp.ViewModels.CMS.AboutPageDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات صفحه درباره ما";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-info-circle text-primary"></i>
+            جزئیات صفحه درباره ما
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.AboutPageId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4 @(Model.IsActive ? "border-success" : "border-warning")">
+                <div class="card-header py-3 @(Model.IsActive ? "bg-success text-white" : "bg-warning")">
+                    <h6 class="m-0 font-weight-bold">
+                        @Model.ClinicName
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge badge-light mr-2">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-dark mr-2">غیرفعال</span>
+                        }
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5>توضیحات کلینیک</h5>
+                        <div class="border p-3 rounded" style="background-color: #f8f9fa;">
+                            @Html.Raw(Model.ClinicDescription)
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.EstablishedYear))
+                    {
+                        <div class="mb-3">
+                            <h5>سال تأسیس</h5>
+                            <p class="text-muted">@Model.EstablishedYear</p>
+                        </div>
+                    }
+
+                    @if (Model.MissionValues != null && Model.MissionValues.Any())
+                    {
+                        <div class="mb-3">
+                            <h5>مأموریت و رویکرد درمانی</h5>
+                            <div class="row">
+                                @foreach (var mission in Model.MissionValues)
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card border-left-primary">
+                                            <div class="card-body">
+                                            <i class="@mission.Icon fa-2x text-primary mb-2"></i>
+                                            <h6>@mission.Title</h6>
+                                            <p class="text-muted small">@mission.Description</p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.Licenses != null && Model.Licenses.Any())
+                    {
+                        <div class="mb-3">
+                            <h5>مجوزها و اعتبارها</h5>
+                            @if (!string.IsNullOrEmpty(Model.RegulatoryBody))
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fas fa-check-circle"></i> @Model.RegulatoryBody
+                                </div>
+                            }
+                            @foreach (var license in Model.Licenses)
+                            {
+                                <div class="card mb-2">
+                                    <div class="card-body">
+                                        <h6><i class="fas fa-file-certificate"></i> @license.Title</h6>
+                                        <p class="mb-1"><strong>صادرکننده:</strong> @license.IssuingAuthority</p>
+                                        @if (!string.IsNullOrEmpty(license.LicenseNumber))
+                                        {
+                                            <p class="mb-1"><strong>شماره مجوز:</strong> @license.LicenseNumber</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(license.ValidUntil))
+                                        {
+                                            <p class="mb-0"><strong>اعتبار:</strong> @license.ValidUntil</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.MedicalTeamDescription))
+                    {
+                        <div class="mb-3">
+                            <h5>کادر درمان</h5>
+                            <p class="text-muted">@Model.MedicalTeamDescription</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.InfrastructureDescription))
+                    {
+                        <div class="mb-3">
+                            <h5>تجهیزات و زیرساخت‌ها</h5>
+                            <p class="text-muted">@Model.InfrastructureDescription</p>
+                        </div>
+                    }
+
+                    @if (Model.EthicalCommitments != null && Model.EthicalCommitments.Any())
+                    {
+                        <div class="mb-3">
+                            <h5>تعهدات اخلاقی</h5>
+                            <div class="row">
+                                @foreach (var commitment in Model.EthicalCommitments)
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card border-left-info">
+                                            <div class="card-body">
+                                            <i class="@commitment.Icon fa-2x text-info mb-2"></i>
+                                            <h6>@commitment.Title</h6>
+                                            <p class="text-muted small">@commitment.Description</p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.HeroImageUrl) || !string.IsNullOrEmpty(Model.BackgroundImageUrl))
+                    {
+                        <div class="mb-3">
+                            <h5>تصاویر</h5>
+                            <div class="row">
+                                @if (!string.IsNullOrEmpty(Model.HeroImageUrl))
+                                {
+                                    <div class="col-md-6">
+                                        <label>تصویر Hero Section</label>
+                                        <img src="@Model.HeroImageUrl" alt="Hero Image" class="img-fluid rounded" style="max-height: 200px;" />
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.BackgroundImageUrl))
+                                {
+                                    <div class="col-md-6">
+                                        <label>تصویر Background</label>
+                                        <img src="@Model.BackgroundImageUrl" alt="Background Image" class="img-fluid rounded" style="max-height: 200px;" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow mb-3">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary mb-3">اطلاعات صفحه</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>شناسه:</strong></td>
+                            <td>@Model.AboutPageId</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>آخرین به‌روزرسانی:</strong></td>
+                                <td>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td><strong>ایجادکننده:</strong></td>
+                            <td>@(Model.CreatedByUserName ?? "سیستم")</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                        {
+                            <tr>
+                                <td><strong>ویرایش‌کننده:</strong></td>
+                                <td>@Model.UpdatedByUserName</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Slug) || !string.IsNullOrEmpty(Model.MetaTitle))
+            {
+                <div class="card border-left-info shadow mb-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-info mb-3">تنظیمات SEO</h6>
+                        <table class="table table-sm">
+                            @if (!string.IsNullOrEmpty(Model.Slug))
+                            {
+                                <tr>
+                                    <td><strong>Slug:</strong></td>
+                                    <td><code>@Model.Slug</code></td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.MetaTitle))
+                            {
+                                <tr>
+                                    <td><strong>عنوان متا:</strong></td>
+                                    <td>@Model.MetaTitle</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.MetaDescription))
+                            {
+                                <tr>
+                                    <td><strong>توضیحات متا:</strong></td>
+                                    <td>@Model.MetaDescription</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <div class="card border-left-warning shadow">
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-warning mb-3">عملیات</h6>
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Edit", new { id = Model.AboutPageId })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> ویرایش
+                        </a>
+                        @if (Model.IsActive)
+                        {
+                            using (Html.BeginForm("Deactivate", "AboutPage", FormMethod.Post, new { @class = "d-inline deactivate-form" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                @Html.Hidden("id", Model.AboutPageId)
+                                <button type="submit" class="btn btn-secondary btn-sm w-100 deactivate-btn" 
+                                        data-clinic-name="@Model.ClinicName">
+                                    <i class="fas fa-toggle-on"></i> غیرفعال کردن
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            using (Html.BeginForm("Activate", "AboutPage", FormMethod.Post, new { @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                @Html.Hidden("id", Model.AboutPageId)
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-toggle-off"></i> فعال کردن
+                                </button>
+                            }
+                        }
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Production-Ready: SweetAlert Confirmations for AboutPage Actions
+        document.addEventListener('DOMContentLoaded', function () {
+            // غیرفعال کردن با تایید SweetAlert
+            const deactivateButtons = document.querySelectorAll('.deactivate-btn');
+            deactivateButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const form = button.closest('form');
+                    const clinicName = button.getAttribute('data-clinic-name') || 'این صفحه';
+
+                    // بررسی وجود SweetAlert2
+                    if (typeof Swal === 'undefined') {
+                        console.error('SweetAlert2 library not loaded');
+                        if (confirm('آیا از غیرفعال کردن صفحه "' + clinicName + '" مطمئن هستید؟')) {
+                            form.submit();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از غیرفعال کردن صفحه "' + clinicName + '" اطمینان دارید؟',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#6c757d',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، غیرفعال کن',
+                        cancelButtonText: 'لغو',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'farsi-font'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

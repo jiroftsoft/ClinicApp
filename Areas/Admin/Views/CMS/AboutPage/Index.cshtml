@@ -1,0 +1,350 @@
+@model ClinicApp.ViewModels.CMS.AboutPageIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت صفحه درباره ما";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .about-page-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .about-page-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .clinic-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .description-preview {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-info-circle text-primary"></i>
+            مدیریت صفحه درباره ما
+        </h1>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> صفحه جدید
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Search Panel -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "AboutPage", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="جستجو در نام و توضیحات..." value="@Request.QueryString["SearchTerm"]">
+                </div>
+                <div class="form-group mb-2 mr-2">
+                    <select name="IsActive" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true" @(Request.QueryString["IsActive"] == "true" ? "selected" : "")>فعال</option>
+                        <option value="false" @(Request.QueryString["IsActive"] == "false" ? "selected" : "")>غیرفعال</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">
+                    <i class="fas fa-redo"></i> پاک کردن فیلتر
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                لیست صفحات درباره ما
+                <span class="badge badge-primary">@(Model.PagedResult?.TotalCount ?? 0)</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (Model.PagedResult != null && Model.PagedResult.Items != null && Model.PagedResult.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>نام کلینیک</th>
+                                <th>توضیحات</th>
+                                <th>وضعیت</th>
+                                <th>ترتیب</th>
+                                <th>تاریخ ایجاد</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.PagedResult.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="clinic-name">@item.ClinicName</span>
+                                    </td>
+                                    <td>
+                                        <span class="description-preview">
+                                            @{
+                                                var descriptionText = !string.IsNullOrEmpty(item.ClinicDescription) 
+                                                    ? StripHtml(item.ClinicDescription) 
+                                                    : string.Empty;
+                                                var preview = descriptionText.Length > 100 
+                                                    ? descriptionText.Substring(0, 100) + "..." 
+                                                    : descriptionText;
+                                            }
+                                            @preview
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary status-badge">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>@item.DisplayOrder</td>
+                                    <td>@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.AboutPageId })" class="btn btn-sm btn-info" title="مشاهده">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.AboutPageId })" class="btn btn-sm btn-warning" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (item.IsActive)
+                                            {
+                                                using (Html.BeginForm("Deactivate", "AboutPage", FormMethod.Post, new { @class = "d-inline deactivate-form" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", item.AboutPageId)
+                                                    <button type="submit" class="btn btn-sm btn-secondary deactivate-btn" 
+                                                            title="غیرفعال"
+                                                            data-clinic-name="@item.ClinicName">
+                                                        <i class="fas fa-toggle-on"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                using (Html.BeginForm("Activate", "AboutPage", FormMethod.Post, new { @class = "d-inline" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("id", item.AboutPageId)
+                                                    <button type="submit" class="btn btn-sm btn-success" title="فعال">
+                                                        <i class="fas fa-toggle-off"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @using (Html.BeginForm("Delete", "AboutPage", FormMethod.Post, new { @class = "d-inline delete-form" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", item.AboutPageId)
+                                                <button type="submit" class="btn btn-sm btn-danger delete-btn" 
+                                                        title="حذف"
+                                                        data-clinic-name="@item.ClinicName">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.PagedResult.TotalCount > Model.PagedResult.PageSize)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @{
+                                int totalPages = (int)Math.Ceiling((double)Model.PagedResult.TotalCount / Model.PagedResult.PageSize);
+                                int currentPage = Model.PagedResult.PageNumber;
+                            }
+                            @if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = currentPage - 1, SearchTerm = Request.QueryString["SearchTerm"], IsActive = Request.QueryString["IsActive"] })">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </li>
+                            }
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = i, SearchTerm = Request.QueryString["SearchTerm"], IsActive = Request.QueryString["IsActive"] })">@i</a>
+                                </li>
+                            }
+                            @if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { PageNumber = currentPage + 1, SearchTerm = Request.QueryString["SearchTerm"], IsActive = Request.QueryString["IsActive"] })">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    هیچ صفحه درباره مایی یافت نشد.
+                    <a href="@Url.Action("Create")" class="alert-link">ایجاد صفحه جدید</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Production-Ready: SweetAlert Confirmations for AboutPage Actions
+        document.addEventListener('DOMContentLoaded', function () {
+            // حذف با تایید SweetAlert
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const form = button.closest('form');
+                    const clinicName = button.getAttribute('data-clinic-name') || 'این صفحه';
+
+                    // بررسی وجود SweetAlert2
+                    if (typeof Swal === 'undefined') {
+                        console.error('SweetAlert2 library not loaded');
+                        if (confirm('آیا از حذف صفحه "' + clinicName + '" اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
+                            form.submit();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از حذف صفحه "' + clinicName + '" اطمینان دارید؟ این عمل قابل بازگشت نیست.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، حذف کن',
+                        cancelButtonText: 'لغو',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'farsi-font'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+
+            // غیرفعال کردن با تایید SweetAlert
+            const deactivateButtons = document.querySelectorAll('.deactivate-btn');
+            deactivateButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const form = button.closest('form');
+                    const clinicName = button.getAttribute('data-clinic-name') || 'این صفحه';
+
+                    // بررسی وجود SweetAlert2
+                    if (typeof Swal === 'undefined') {
+                        console.error('SweetAlert2 library not loaded');
+                        if (confirm('آیا از غیرفعال کردن صفحه "' + clinicName + '" مطمئن هستید؟')) {
+                            form.submit();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟',
+                        text: 'آیا از غیرفعال کردن صفحه "' + clinicName + '" اطمینان دارید؟',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#6c757d',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'بله، غیرفعال کن',
+                        cancelButtonText: 'لغو',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'farsi-font'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
+
+@functions {
+    /// <summary>
+    /// حذف تگ‌های HTML از متن برای نمایش در لیست
+    /// </summary>
+    private string StripHtml(string html)
+    {
+        if (string.IsNullOrEmpty(html))
+            return string.Empty;
+
+        // حذف تگ‌های HTML
+        var stripped = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", string.Empty);
+        
+        // حذف فضاهای خالی اضافی
+        stripped = System.Text.RegularExpressions.Regex.Replace(stripped, @"\s+", " ");
+        
+        // تبدیل entityهای HTML به کاراکترهای عادی
+        stripped = System.Web.HttpUtility.HtmlDecode(stripped);
+        
+        return stripped.Trim();
+    }
+}

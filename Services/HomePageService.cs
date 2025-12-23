@@ -7,6 +7,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.CMS;
+using ClinicApp.ViewModels.CMS;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Clinic;
@@ -42,6 +43,7 @@ namespace ClinicApp.Services
         private readonly IInsuranceInfoService _insuranceInfoService;
         private readonly IMedicalServiceInfoService _medicalServiceInfoService;
         private readonly IEmergencyContactService _emergencyContactService;
+        private readonly IAboutPageService _aboutPageService;
 
         public HomePageService(
             ApplicationDbContext context,
@@ -62,7 +64,8 @@ namespace ClinicApp.Services
             IHealthTipService healthTipService,
             IInsuranceInfoService insuranceInfoService,
             IMedicalServiceInfoService medicalServiceInfoService,
-            IEmergencyContactService emergencyContactService)
+            IEmergencyContactService emergencyContactService,
+            IAboutPageService aboutPageService = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -83,6 +86,7 @@ namespace ClinicApp.Services
             _insuranceInfoService = insuranceInfoService ?? throw new ArgumentNullException(nameof(insuranceInfoService));
             _medicalServiceInfoService = medicalServiceInfoService ?? throw new ArgumentNullException(nameof(medicalServiceInfoService));
             _emergencyContactService = emergencyContactService ?? throw new ArgumentNullException(nameof(emergencyContactService));
+            _aboutPageService = aboutPageService; // Optional - اگر null باشد، از داده‌های پیش‌فرض استفاده می‌شود
         }
 
         /// <summary>
@@ -1298,6 +1302,249 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در دریافت تجهیزات پزشکی برای صفحه اصلی");
                 return new List<MedicalEquipmentPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های صفحه "درباره ما" - Production-Grade
+        /// طبق استانداردهای کلینیک درمانی
+        /// اولویت: داده‌های CMS > داده‌های پیش‌فرض
+        /// </summary>
+        public async Task<AboutPageViewModel> GetAboutPageDataAsync(int? clinicId = null)
+        {
+            try
+            {
+                var effectiveClinicId = clinicId ?? 1; // کلینیک پیش‌فرض: شفا
+                _logger.Information("دریافت داده‌های صفحه About - ClinicId: {ClinicId}", effectiveClinicId);
+
+                // تلاش برای دریافت داده‌های CMS
+                AboutPagePublicViewModel cmsData = null;
+                if (_aboutPageService != null)
+                {
+                    try
+                    {
+                        var cmsResult = await _aboutPageService.GetActiveAboutPageAsync();
+                        if (cmsResult.Success && cmsResult.Data != null)
+                        {
+                            cmsData = cmsResult.Data;
+                            _logger.Information("داده‌های CMS برای صفحه About یافت شد - AboutPageId: {AboutPageId}", cmsData.AboutPageId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در دریافت داده‌های CMS برای صفحه About - استفاده از داده‌های پیش‌فرض");
+                    }
+                }
+
+                // اگر داده‌های CMS موجود باشد، از آن استفاده کن
+                if (cmsData != null)
+                {
+                    // لود موازی داده‌های دینامیک (پزشکان، تخصص‌ها، تجهیزات)
+                    var cmsDoctorsTask = _context.Doctors
+                        .AsNoTracking()
+                        .Where(d => !d.IsDeleted && d.IsActive && (d.ClinicId == effectiveClinicId || effectiveClinicId == 0))
+                        .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
+                        .ToListAsync();
+                    var cmsEquipmentsTask = _medicalEquipmentService.GetActiveEquipmentsAsync();
+
+                    await Task.WhenAll(cmsDoctorsTask, cmsEquipmentsTask);
+
+                    var cmsDoctors = await cmsDoctorsTask;
+                    var cmsEquipmentsResult = await cmsEquipmentsTask;
+
+                    // محاسبه داده‌های دینامیک
+                    var cmsDoctorCount = cmsDoctors.Count;
+                    var cmsSpecializationGroups = cmsDoctors
+                        .SelectMany(d => d.DoctorSpecializations ?? new List<DoctorSpecialization>())
+                        .Where(ds => ds.Specialization != null && !ds.Specialization.IsDeleted)
+                        .GroupBy(ds => ds.Specialization.Name)
+                        .Select(g => new SpecializationSummaryViewModel
+                        {
+                            Name = g.Key,
+                            DoctorCount = g.Count()
+                        })
+                        .OrderByDescending(s => s.DoctorCount)
+                        .Take(6)
+                        .ToList();
+
+                    var cmsEquipmentCount = cmsEquipmentsResult.Success && cmsEquipmentsResult.Data != null ? cmsEquipmentsResult.Data.Count : 0;
+                    var cmsEquipmentCategories = cmsEquipmentsResult.Success && cmsEquipmentsResult.Data != null
+                        ? cmsEquipmentsResult.Data
+                            .GroupBy(e => e.Category ?? "عمومی")
+                            .Select(g => new EquipmentCategoryViewModel
+                            {
+                                CategoryName = g.Key,
+                                EquipmentCount = g.Count()
+                            })
+                            .Take(4)
+                            .ToList()
+                        : new List<EquipmentCategoryViewModel>();
+
+                    return new AboutPageViewModel
+                    {
+                        ClinicName = cmsData.ClinicName,
+                        ClinicDescription = cmsData.ClinicDescription,
+                        EstablishedYear = cmsData.EstablishedYear,
+                        MissionValues = cmsData.MissionValues ?? new List<MissionValueViewModel>(),
+                        Licenses = cmsData.Licenses ?? new List<LicenseViewModel>(),
+                        RegulatoryBody = cmsData.RegulatoryBody,
+                        DoctorCount = cmsDoctorCount,
+                        Specializations = cmsSpecializationGroups,
+                        MedicalTeamDescription = cmsData.MedicalTeamDescription,
+                        EquipmentCount = cmsEquipmentCount,
+                        EquipmentCategories = cmsEquipmentCategories,
+                        InfrastructureDescription = cmsData.InfrastructureDescription,
+                        EthicalCommitments = cmsData.EthicalCommitments ?? new List<EthicalCommitmentViewModel>()
+                    };
+                }
+
+                // Fallback: استفاده از داده‌های پیش‌فرض (کد قبلی)
+                var clinicTask = _clinicRepository.GetByIdAsync(effectiveClinicId);
+                var doctorsTask = _context.Doctors
+                    .AsNoTracking()
+                    .Where(d => !d.IsDeleted && d.IsActive && (d.ClinicId == effectiveClinicId || effectiveClinicId == 0))
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
+                    .ToListAsync();
+                var specializationsTask = _context.Specializations
+                    .AsNoTracking()
+                    .Where(s => !s.IsDeleted && s.IsActive)
+                    .ToListAsync();
+                var equipmentsTask = _medicalEquipmentService.GetActiveEquipmentsAsync();
+
+                await Task.WhenAll(clinicTask, doctorsTask, specializationsTask, equipmentsTask);
+
+                var clinic = await clinicTask;
+                var doctors = await doctorsTask;
+                var specializations = await specializationsTask;
+                var equipmentsResult = await equipmentsTask;
+
+                // 1. معرفی کلینیک
+                var clinicName = clinic?.Name ?? "کلینیک درمانی شفا";
+                var clinicDescription = "کلینیک درمانی شفا با بهره‌گیری از کادر درمان مجرب و تجهیزات پزشکی به‌روز، خدمات تشخیصی و درمانی را در محیطی ایمن و حرفه‌ای ارائه می‌دهد.";
+                var establishedYear = clinic?.CreatedAt.Year.ToString() ?? "1400";
+
+                // 2. مأموریت و رویکرد درمانی
+                var missionValues = new List<MissionValueViewModel>
+                {
+                    new MissionValueViewModel
+                    {
+                        Title = "رویکرد بیمارمحور",
+                        Description = "تمرکز بر احترام، شفافیت و آرامش مراجعین",
+                        Icon = "fas fa-heart"
+                    },
+                    new MissionValueViewModel
+                    {
+                        Title = "تشخیص دقیق و علمی",
+                        Description = "استفاده از استانداردهای روز پزشکی",
+                        Icon = "fas fa-stethoscope"
+                    },
+                    new MissionValueViewModel
+                    {
+                        Title = "رعایت اصول اخلاق پزشکی",
+                        Description = "حفظ محرمانگی اطلاعات بیماران",
+                        Icon = "fas fa-shield-alt"
+                    }
+                };
+
+                // 3. مجوزها و اعتبارها
+                var licenses = new List<LicenseViewModel>
+                {
+                    new LicenseViewModel
+                    {
+                        Title = "مجوز فعالیت",
+                        IssuingAuthority = "وزارت بهداشت، درمان و آموزش پزشکی",
+                        LicenseNumber = "مشخص می‌شود",
+                        ValidUntil = "در حال اعتبار"
+                    }
+                };
+                var regulatoryBody = "فعالیت تحت نظارت وزارت بهداشت، درمان و آموزش پزشکی";
+
+                // 4. کادر درمان و تخصص‌ها
+                var doctorCount = doctors.Count;
+                var specializationGroups = doctors
+                    .SelectMany(d => d.DoctorSpecializations ?? new List<DoctorSpecialization>())
+                    .Where(ds => ds.Specialization != null && !ds.Specialization.IsDeleted)
+                    .GroupBy(ds => ds.Specialization.Name)
+                    .Select(g => new SpecializationSummaryViewModel
+                    {
+                        Name = g.Key,
+                        DoctorCount = g.Count()
+                    })
+                    .OrderByDescending(s => s.DoctorCount)
+                    .Take(6)
+                    .ToList();
+
+                var medicalTeamDescription = $"همکاری با {doctorCount} پزشک و کادر درمانی مجرب در حوزه‌های {string.Join("، ", specializationGroups.Take(3).Select(s => s.Name))} و خدمات عمومی";
+
+                // 5. تجهیزات و زیرساخت‌ها
+                var equipmentCount = equipmentsResult.Success && equipmentsResult.Data != null ? equipmentsResult.Data.Count : 0;
+                var equipmentCategories = equipmentsResult.Success && equipmentsResult.Data != null
+                    ? equipmentsResult.Data
+                        .GroupBy(e => e.Category ?? "عمومی")
+                        .Select(g => new EquipmentCategoryViewModel
+                        {
+                            CategoryName = g.Key,
+                            EquipmentCount = g.Count()
+                        })
+                        .Take(4)
+                        .ToList()
+                    : new List<EquipmentCategoryViewModel>();
+
+                var infrastructureDescription = "استفاده از تجهیزات تشخیصی مدرن از جمله سیستم‌های پیشرفته تصویربرداری و پایش قلب";
+
+                // 6. تعهد به اخلاق پزشکی
+                var ethicalCommitments = new List<EthicalCommitmentViewModel>
+                {
+                    new EthicalCommitmentViewModel
+                    {
+                        Title = "حفظ حریم خصوصی",
+                        Description = "اطلاعات بیماران به صورت محرمانه نگهداری می‌شود",
+                        Icon = "fas fa-lock"
+                    },
+                    new EthicalCommitmentViewModel
+                    {
+                        Title = "امنیت اطلاعات",
+                        Description = "رعایت استانداردهای امنیتی برای حفاظت از داده‌های پزشکی",
+                        Icon = "fas fa-shield-alt"
+                    },
+                    new EthicalCommitmentViewModel
+                    {
+                        Title = "عدم افشای داده پزشکی",
+                        Description = "اطلاعات پزشکی بیماران بدون رضایت صریح افشا نمی‌شود",
+                        Icon = "fas fa-user-secret"
+                    }
+                };
+
+                return new AboutPageViewModel
+                {
+                    ClinicName = clinicName,
+                    ClinicDescription = clinicDescription,
+                    EstablishedYear = establishedYear,
+                    MissionValues = missionValues,
+                    Licenses = licenses,
+                    RegulatoryBody = regulatoryBody,
+                    DoctorCount = doctorCount,
+                    Specializations = specializationGroups,
+                    MedicalTeamDescription = medicalTeamDescription,
+                    EquipmentCount = equipmentCount,
+                    EquipmentCategories = equipmentCategories,
+                    InfrastructureDescription = infrastructureDescription,
+                    EthicalCommitments = ethicalCommitments
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های صفحه About");
+                return new AboutPageViewModel
+                {
+                    ClinicName = "کلینیک درمانی شفا",
+                    ClinicDescription = "کلینیک درمانی شفا با بهره‌گیری از کادر درمان مجرب و تجهیزات پزشکی به‌روز، خدمات تشخیصی و درمانی را در محیطی ایمن و حرفه‌ای ارائه می‌دهد.",
+                    MissionValues = new List<MissionValueViewModel>(),
+                    Licenses = new List<LicenseViewModel>(),
+                    Specializations = new List<SpecializationSummaryViewModel>(),
+                    EquipmentCategories = new List<EquipmentCategoryViewModel>(),
+                    EthicalCommitments = new List<EthicalCommitmentViewModel>()
+                };
             }
         }
 

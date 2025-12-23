@@ -79,6 +79,13 @@ namespace ClinicApp.Interfaces
         /// <param name="clinicId">شناسه کلینیک (اختیاری - اگر null باشد، کلینیک پیش‌فرض استفاده می‌شود)</param>
         /// <returns>ViewModel Footer</returns>
         Task<FooterViewModel> GetFooterDataAsync(int? clinicId = null);
+
+        /// <summary>
+        /// دریافت داده‌های صفحه "درباره ما" - Production-Grade
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+        /// <returns>ViewModel صفحه About</returns>
+        Task<AboutPageViewModel> GetAboutPageDataAsync(int? clinicId = null);
     }
 }
 

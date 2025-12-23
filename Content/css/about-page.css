@@ -1,0 +1,797 @@
+/**
+ * About Page Styles - Production-Grade & Medical Standard
+ * 
+ * طراحی حرفه‌ای برای صفحه "درباره ما" کلینیک درمانی
+ * مطابق با استانداردهای UI/UX و اصول Medical About Page Design
+ * 
+ * ویژگی‌ها:
+ * - Formal, calming, medical-friendly colors
+ * - RTL: Complete Persian support
+ * - Accessibility: WCAG AA compliance
+ * - Trust Building: Focus on credibility and medical ethics
+ * - Performance: Optimized, minimal DOM
+ * - Responsive: Mobile-first design
+ */
+
+/* ============================================
+   BASE STYLES - طبق Design System
+   ============================================ */
+.about-page-section {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #e0f2f1 100%);
+    padding: var(--spacing-xxxl, 4rem) 0;
+    min-height: calc(100vh - 200px);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+/* ============================================
+   1. HERO SECTION - معرفی کلینیک
+   ============================================ */
+.about-hero {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    padding: var(--spacing-xxxl, 4rem);
+    margin-bottom: var(--spacing-xxl, 3rem);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+}
+
+.about-hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.about-hero-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.about-hero-title i {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2.5rem;
+}
+
+.about-hero-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+/* استایل برای محتوای HTML از CKEditor */
+.about-hero-description p {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.about-hero-description p:last-child {
+    margin-bottom: 0;
+}
+
+.about-hero-description strong {
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+}
+
+/* حذف attributeهای اضافی CKEditor از نمایش (فقط برای خوانایی) */
+.about-hero-description [data-start],
+.about-hero-description [data-end] {
+    /* این attributeها فقط برای ویرایشگر هستند و در نمایش تأثیری ندارند */
+}
+
+.about-hero-year {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-medium, 500);
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.about-hero-year i {
+    color: var(--medical-primary, #2c5aa0);
+}
+
+/* ============================================
+   2. MISSION SECTION - مأموریت و رویکرد
+   ============================================ */
+.about-mission-section {
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.about-section-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-xl, 2rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    text-align: center;
+    justify-content: center;
+}
+
+.about-section-title i {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+}
+
+.mission-card {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-xl, 2rem);
+    height: 100%;
+    text-align: center;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.08);
+}
+
+.mission-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+    border-color: rgba(44, 90, 160, 0.3);
+}
+
+.mission-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-lg, 1.5rem);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mission-icon i {
+    font-size: 2rem;
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mission-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-xl, 1.25rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.mission-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin: 0;
+}
+
+/* ============================================
+   3. LICENSES SECTION - مجوزها و اعتبارها
+   ============================================ */
+.about-licenses-section {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    padding: var(--spacing-xxl, 3rem);
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.licenses-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.regulatory-notice {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.08) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-lg, 1.5rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: #155724;
+}
+
+.regulatory-notice i {
+    color: var(--medical-success, #28a745);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.licenses-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.license-item {
+    background: rgba(44, 90, 160, 0.05);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-lg, 1.5rem);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.license-item:hover {
+    background: rgba(44, 90, 160, 0.08);
+    border-color: rgba(44, 90, 160, 0.3);
+    transform: translateX(-4px);
+}
+
+.license-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    margin-bottom: var(--spacing-md, 1rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+}
+
+.license-header i {
+    color: var(--medical-primary, #2c5aa0);
+    font-size: 1.5rem;
+}
+
+.license-details {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+}
+
+.license-details p {
+    margin-bottom: var(--spacing-xs, 0.25rem);
+}
+
+.license-details strong {
+    font-weight: var(--font-weight-semibold, 600);
+    color: #1a365d;
+}
+
+/* ============================================
+   4. MEDICAL TEAM SECTION - کادر درمان
+   ============================================ */
+.about-medical-team-section {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    padding: var(--spacing-xxl, 3rem);
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.medical-team-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.medical-team-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin-bottom: var(--spacing-xl, 2rem);
+    text-align: center;
+}
+
+/* استایل برای محتوای HTML از CKEditor */
+.medical-team-description p {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.medical-team-description p:last-child {
+    margin-bottom: 0;
+}
+
+.medical-team-description strong {
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+}
+
+.medical-team-stats {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xxl, 3rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+    padding: var(--spacing-xl, 2rem);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(23, 162, 184, 0.03) 100%);
+    border-radius: var(--radius-lg, 12px);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    margin-bottom: var(--spacing-xs, 0.25rem);
+}
+
+.stat-label {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-medium, 500);
+    color: #6c757d;
+}
+
+.specializations-list {
+    margin-top: var(--spacing-xl, 2rem);
+    padding-top: var(--spacing-xl, 2rem);
+    border-top: 2px solid rgba(44, 90, 160, 0.15);
+}
+
+.specializations-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+    text-align: center;
+}
+
+.specializations-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md, 1rem);
+}
+
+.specializations-items li {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    padding: var(--spacing-sm, 0.5rem);
+    background: rgba(44, 90, 160, 0.05);
+    border-radius: var(--radius-sm, 4px);
+}
+
+.specializations-items li i {
+    color: var(--medical-success, #28a745);
+    font-size: 0.875rem;
+}
+
+.doctor-count {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: #6c757d;
+    font-weight: var(--font-weight-normal, 400);
+}
+
+/* ============================================
+   5. EQUIPMENT SECTION - تجهیزات
+   ============================================ */
+.about-equipment-section {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    padding: var(--spacing-xxl, 3rem);
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.equipment-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.equipment-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin-bottom: var(--spacing-xl, 2rem);
+    text-align: center;
+}
+
+/* استایل برای محتوای HTML از CKEditor */
+.equipment-description p {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.equipment-description p:last-child {
+    margin-bottom: 0;
+}
+
+.equipment-description strong {
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+}
+
+.equipment-stats {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--spacing-xl, 2rem);
+    padding: var(--spacing-xl, 2rem);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(23, 162, 184, 0.03) 100%);
+    border-radius: var(--radius-lg, 12px);
+}
+
+.equipment-categories {
+    margin-top: var(--spacing-xl, 2rem);
+    padding-top: var(--spacing-xl, 2rem);
+    border-top: 2px solid rgba(44, 90, 160, 0.15);
+}
+
+.equipment-categories-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+    text-align: center;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md, 1rem);
+}
+
+.category-item {
+    background: rgba(44, 90, 160, 0.05);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-md, 1rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.category-item:hover {
+    background: rgba(44, 90, 160, 0.1);
+    border-color: rgba(44, 90, 160, 0.3);
+    transform: translateY(-2px);
+}
+
+.category-item i {
+    color: var(--medical-primary, #2c5aa0);
+    font-size: 1.125rem;
+}
+
+.category-name {
+    font-weight: var(--font-weight-semibold, 600);
+    color: #1a365d;
+}
+
+.category-count {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: #6c757d;
+}
+
+.equipment-cta {
+    margin-top: var(--spacing-xl, 2rem);
+    text-align: center;
+}
+
+.btn-view-equipment {
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
+    color: var(--medical-primary, #2c5aa0);
+    border: 2px solid rgba(44, 90, 160, 0.3);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    text-decoration: none;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.btn-view-equipment:hover {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    color: #ffffff;
+    border-color: var(--medical-primary, #2c5aa0);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    text-decoration: none;
+}
+
+/* ============================================
+   6. ETHICS SECTION - تعهدات اخلاقی
+   ============================================ */
+.about-ethics-section {
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(23, 162, 184, 0.03) 100%);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-xxl, 3rem);
+    margin-bottom: var(--spacing-xxl, 3rem);
+}
+
+.ethics-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.ethics-intro {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin-bottom: var(--spacing-xl, 2rem);
+    text-align: center;
+    padding: var(--spacing-lg, 1.5rem);
+    background: #ffffff;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(44, 90, 160, 0.1);
+}
+
+.ethics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.ethics-card {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-xl, 2rem);
+    text-align: center;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.08);
+}
+
+.ethics-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+    border-color: rgba(44, 90, 160, 0.3);
+}
+
+.ethics-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto var(--spacing-md, 1rem);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ethics-icon i {
+    font-size: 1.75rem;
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ethics-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+.ethics-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin: 0;
+}
+
+/* ============================================
+   7. CTA SECTION - دعوت به اقدام
+   ============================================ */
+.about-cta-section {
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.08) 0%, rgba(23, 162, 184, 0.05) 100%);
+    border: 2px solid rgba(44, 90, 160, 0.2);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-xxl, 3rem);
+    text-align: center;
+}
+
+.cta-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.cta-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.cta-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.cta-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md, 1rem);
+    flex-wrap: wrap;
+}
+
+.btn-cta-primary,
+.btn-cta-secondary {
+    padding: var(--spacing-md, 1rem) var(--spacing-xl, 2rem);
+    border-radius: var(--radius-md, 8px);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    text-decoration: none;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    min-height: 48px;
+}
+
+.btn-cta-primary {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.btn-cta-primary:hover {
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-cta-secondary {
+    background: #ffffff;
+    color: var(--medical-primary, #2c5aa0);
+    border: 2px solid var(--medical-primary, #2c5aa0);
+}
+
+.btn-cta-secondary:hover {
+    background: rgba(44, 90, 160, 0.08);
+    transform: translateY(-2px);
+    color: var(--medical-primary, #2c5aa0);
+    text-decoration: none;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 991.98px) {
+    .about-hero,
+    .about-mission-section,
+    .about-licenses-section,
+    .about-medical-team-section,
+    .about-equipment-section,
+    .about-ethics-section {
+        padding: var(--spacing-xl, 2rem);
+    }
+    
+    .medical-team-stats {
+        flex-direction: column;
+        gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .specializations-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ethics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .cta-actions {
+        flex-direction: column;
+    }
+    
+    .btn-cta-primary,
+    .btn-cta-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .about-hero,
+    .about-mission-section,
+    .about-licenses-section,
+    .about-medical-team-section,
+    .about-equipment-section,
+    .about-ethics-section {
+        padding: var(--spacing-lg, 1.5rem);
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.about-section-title:focus-visible,
+.mission-card:focus-visible,
+.license-item:focus-visible,
+.ethics-card:focus-visible,
+.btn-cta-primary:focus-visible,
+.btn-cta-secondary:focus-visible {
+    outline: 3px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mission-card,
+    .license-item,
+    .category-item,
+    .ethics-card,
+    .btn-cta-primary,
+    .btn-cta-secondary,
+    .btn-view-equipment {
+        transition: none !important;
+    }
+}

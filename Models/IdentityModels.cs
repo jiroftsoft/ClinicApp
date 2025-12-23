@@ -1,4 +1,4 @@
-﻿using ClinicApp.Helpers;
+using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Triage;
 using ClinicApp.Models.Entities.Doctor;
@@ -169,6 +169,7 @@ namespace ClinicApp.Models
         public DbSet<NewsletterTemplate> NewsletterTemplates { get; set; }
         public DbSet<NewsletterCampaign> NewsletterCampaigns { get; set; }
         public DbSet<NewsletterCampaignRecipient> NewsletterCampaignRecipients { get; set; }
+        public DbSet<AboutPage> AboutPages { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

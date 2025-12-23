@@ -1,9 +1,258 @@
-﻿@{
-    ViewBag.Title = "About";
+@model ClinicApp.ViewModels.AboutPageViewModel
+@{
+    ViewBag.Title = "درباره ما";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
-    <h3>@ViewBag.Message</h3>
 
-    <p>Use this area to provide additional information.</p>
-</main>
+@* ============================================
+   About Page - Production-Grade & Medical Standard
+   ============================================
+   - SRP: صفحه درباره ما
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی رسمی و حرفه‌ای برای کلینیک درمانی
+   - Trust Building: تثبیت اعتماد و اعتبار پزشکی
+   - Accessibility: WCAG AA Compliance
+   ============================================ *@
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/about-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+}
+
+<section class="about-page-section" aria-label="درباره کلینیک">
+    <div class="container">
+        @* ============================================
+           1. معرفی کلینیک (Hero Section)
+           ============================================ *@
+        <div class="about-hero">
+            <div class="about-hero-content">
+                <h1 class="about-hero-title">
+                    <i class="fas fa-hospital" aria-hidden="true"></i>
+                    @Model.ClinicName
+                </h1>
+                <div class="about-hero-description">
+                    @Html.Raw(Model.ClinicDescription)
+                </div>
+                @if (!string.IsNullOrEmpty(Model.EstablishedYear))
+                {
+                    <p class="about-hero-year">
+                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                        فعالیت از سال @Model.EstablishedYear
+                    </p>
+                }
+            </div>
+        </div>
+
+        @* ============================================
+           2. مأموریت و رویکرد درمانی
+           ============================================ *@
+        <div class="about-mission-section">
+            <h2 class="about-section-title">
+                <i class="fas fa-bullseye" aria-hidden="true"></i>
+                <span>مأموریت و رویکرد درمانی</span>
+            </h2>
+            <div class="row">
+                @foreach (var mission in Model.MissionValues)
+                {
+                    <div class="col-md-4">
+                        <div class="mission-card">
+                            <div class="mission-icon">
+                                <i class="@mission.Icon" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="mission-title">@mission.Title</h3>
+                            <p class="mission-description">@mission.Description</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ============================================
+           3. مجوزها و اعتبارها
+           ============================================ *@
+        <div class="about-licenses-section">
+            <h2 class="about-section-title">
+                <i class="fas fa-certificate" aria-hidden="true"></i>
+                <span>مجوزها و اعتبارها</span>
+            </h2>
+            <div class="licenses-content">
+                @if (!string.IsNullOrEmpty(Model.RegulatoryBody))
+                {
+                    <div class="regulatory-notice">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                        <span>@Model.RegulatoryBody</span>
+                    </div>
+                }
+                <div class="licenses-list">
+                    @foreach (var license in Model.Licenses)
+                    {
+                        <div class="license-item">
+                            <div class="license-header">
+                                <i class="fas fa-file-certificate" aria-hidden="true"></i>
+                                <strong>@license.Title</strong>
+                            </div>
+                            <div class="license-details">
+                                <p><strong>صادرکننده:</strong> @license.IssuingAuthority</p>
+                                @if (!string.IsNullOrEmpty(license.LicenseNumber))
+                                {
+                                    <p><strong>شماره مجوز:</strong> @license.LicenseNumber</p>
+                                }
+                                @if (!string.IsNullOrEmpty(license.ValidUntil))
+                                {
+                                    <p><strong>اعتبار:</strong> @license.ValidUntil</p>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ============================================
+           4. کادر درمان و تخصص‌ها
+           ============================================ *@
+        <div class="about-medical-team-section">
+            <h2 class="about-section-title">
+                <i class="fas fa-user-md" aria-hidden="true"></i>
+                <span>کادر درمان و تخصص‌ها</span>
+            </h2>
+            <div class="medical-team-content">
+                <div class="medical-team-description">@Html.Raw(Model.MedicalTeamDescription)</div>
+                <div class="medical-team-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.DoctorCount</div>
+                        <div class="stat-label">پزشک و کادر درمانی</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Specializations.Count</div>
+                        <div class="stat-label">تخصص‌های پزشکی</div>
+                    </div>
+                </div>
+                @if (Model.Specializations.Any())
+                {
+                    <div class="specializations-list">
+                        <h3 class="specializations-title">تخصص‌های ارائه شده:</h3>
+                        <ul class="specializations-items">
+                            @foreach (var spec in Model.Specializations)
+                            {
+                                <li>
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>@spec.Name</span>
+                                    @if (spec.DoctorCount > 0)
+                                    {
+                                        <span class="doctor-count">(@spec.DoctorCount پزشک)</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ============================================
+           5. تجهیزات و زیرساخت‌ها
+           ============================================ *@
+        <div class="about-equipment-section">
+            <h2 class="about-section-title">
+                <i class="fas fa-x-ray" aria-hidden="true"></i>
+                <span>تجهیزات و زیرساخت‌ها</span>
+            </h2>
+            <div class="equipment-content">
+                <div class="equipment-description">@Html.Raw(Model.InfrastructureDescription)</div>
+                @if (Model.EquipmentCount > 0)
+                {
+                    <div class="equipment-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">@Model.EquipmentCount</div>
+                            <div class="stat-label">تجهیزات پزشکی</div>
+                        </div>
+                    </div>
+                    if (Model.EquipmentCategories.Any())
+                    {
+                        <div class="equipment-categories">
+                            <h3 class="equipment-categories-title">دسته‌بندی تجهیزات:</h3>
+                            <div class="categories-grid">
+                                @foreach (var category in Model.EquipmentCategories)
+                                {
+                                    <div class="category-item">
+                                        <i class="fas fa-microscope" aria-hidden="true"></i>
+                                        <span class="category-name">@category.CategoryName</span>
+                                        <span class="category-count">(@category.EquipmentCount دستگاه)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="equipment-cta">
+                        <a href="#medical-equipment" class="btn-view-equipment">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                            <span>مشاهده تجهیزات پزشکی</span>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ============================================
+           6. تعهد به اخلاق پزشکی
+           ============================================ *@
+        <div class="about-ethics-section">
+            <h2 class="about-section-title">
+                <i class="fas fa-handshake" aria-hidden="true"></i>
+                <span>تعهد به اخلاق پزشکی</span>
+            </h2>
+            <div class="ethics-content">
+                <p class="ethics-intro">
+                    حفظ محرمانگی اطلاعات بیماران و رعایت اصول اخلاق پزشکی، از تعهدات اصلی کلینیک درمانی شفا است.
+                </p>
+                <div class="ethics-grid">
+                    @foreach (var commitment in Model.EthicalCommitments)
+                    {
+                        <div class="ethics-card">
+                            <div class="ethics-icon">
+                                <i class="@commitment.Icon" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="ethics-title">@commitment.Title</h3>
+                            <p class="ethics-description">@commitment.Description</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ============================================
+           7. CTA ملایم
+           ============================================ *@
+        <div class="about-cta-section">
+            <div class="cta-content">
+                <h3 class="cta-title">آماده دریافت خدمات هستید؟</h3>
+                <p class="cta-description">برای رزرو نوبت یا دریافت اطلاعات بیشتر، با ما تماس بگیرید.</p>
+                <div class="cta-actions">
+                    <a href="@Url.Action("Book", "AppointmentBooking", new { area = "Patient" })" class="btn-cta-primary">
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                        <span>رزرو نوبت</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Contact")" class="btn-cta-secondary">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>تماس با کلینیک</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Smooth scroll to medical equipment section
+        document.querySelectorAll('a[href="#medical-equipment"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.getElementById('medical-equipment');
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+}

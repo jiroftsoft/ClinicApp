@@ -76,11 +76,30 @@ namespace ClinicApp.Controllers
             }
         }
 
-        public ActionResult About()
+        /// <summary>
+        /// صفحه "درباره ما" - Production-Grade
+        /// طراحی شده طبق استانداردهای کلینیک درمانی
+        /// </summary>
+        public async Task<ActionResult> About()
         {
-            ViewBag.Message = "Your application description page.";
-
-            return View();
+            try
+            {
+                var viewModel = await _homePageService.GetAboutPageDataAsync();
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا با جزئیات کامل
+                System.Diagnostics.Debug.WriteLine($"❌ ERROR in HomeController.About: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                
+                // در صورت خطا، صفحه خالی با ViewModel پیش‌فرض نمایش داده می‌شود
+                return View(new AboutPageViewModel());
+            }
         }
 
         /// <summary>

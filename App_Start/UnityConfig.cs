@@ -339,6 +339,7 @@ namespace ClinicApp
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 
                 // Register HomePage Service
+                // Note: IAboutPageService is optional - Unity به صورت خودکار resolve می‌کند
                 container.RegisterType<IHomePageService, HomePageService>(new PerRequestLifetimeManager());
                 
                 // Image Upload Service
@@ -394,6 +395,7 @@ namespace ClinicApp
                 container.RegisterType<IGalleryItemRepository, GalleryItemRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IVideoRepository, VideoRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IFAQRepository, FAQRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IAboutPageRepository, AboutPageRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipRepository, HealthTipRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoRepository, InsuranceInfoRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IMedicalServiceInfoRepository, MedicalServiceInfoRepository>(new PerRequestLifetimeManager());
@@ -423,6 +425,7 @@ namespace ClinicApp
                 container.RegisterType<IVideoUploadService, VideoUploadService>(new PerRequestLifetimeManager());
                 // IDocumentUploadService already registered in Image Upload Service section (line 346)
                 container.RegisterType<IFAQService, FAQService>(new PerRequestLifetimeManager());
+                container.RegisterType<IAboutPageService, AboutPageService>(new PerRequestLifetimeManager());
                 container.RegisterType<IHealthTipService, HealthTipService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceInfoService, InsuranceInfoService>(new PerRequestLifetimeManager());
                 container.RegisterType<IMedicalServiceInfoService, MedicalServiceInfoService>(new PerRequestLifetimeManager());
