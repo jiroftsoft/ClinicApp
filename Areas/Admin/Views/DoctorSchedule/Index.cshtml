@@ -5,6 +5,8 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@Html.AntiForgeryToken()
+
 @section Styles {
     <link href="~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/datatables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
@@ -156,30 +158,222 @@
             gap: 0.5rem;
             flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
         }
 
         .action-buttons .btn {
-            border-radius: 10px;
+            border-radius: 8px;
             margin: 0;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 600;
-            min-width: 48px;
-            min-height: 48px;
-            padding: 0.6rem 1.2rem;
-            display: inline-flex;
+            min-width: 36px;
+            min-height: 36px;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex !important;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            gap: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            position: relative;
         }
 
+            .action-buttons .btn i {
+                font-size: 1.25rem;
+                line-height: 1;
+                display: inline-block;
+                width: auto;
+                height: auto;
+                text-align: center;
+                vertical-align: middle;
+                font-weight: 600;
+            }
+            
+            /* بهبود visibility آیکون‌های خاص */
+            .action-buttons .btn-info i.fa-eye {
+                font-size: 1.3rem;
+                font-weight: 700;
+            }
+            
+            .action-buttons .btn-secondary i.fa-toggle-on {
+                font-size: 1.3rem;
+                font-weight: 700;
+            }
+            
+            .action-buttons .btn-success i.fa-toggle-off {
+                font-size: 1.3rem;
+                font-weight: 700;
+            }
+            
+            .action-buttons .btn-warning i.fa-edit {
+                font-size: 1.25rem;
+                font-weight: 600;
+            }
+            
+            .action-buttons .btn-danger i.fa-trash {
+                font-size: 1.25rem;
+                font-weight: 600;
+            }
+            
+            /* مخفی کردن sr-only در دکمه‌های آیکون */
+            .action-buttons .btn .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+
             .action-buttons .btn:hover {
-                transform: translateY(-3px) scale(1.05);
-                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+                transform: translateY(-2px) scale(1.08);
+                border-color: rgba(255, 255, 255, 0.5);
             }
 
             .action-buttons .btn:active {
-                transform: translateY(-1px) scale(1.02);
+                transform: translateY(0) scale(1);
+            }
+            
+            /* اطمینان از نمایش آیکون‌ها - Override هر استایل دیگری */
+            .action-buttons .btn i::before {
+                display: inline-block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                font-family: "Font Awesome 5 Free" !important;
+                font-weight: 900 !important;
+            }
+            
+            /* اطمینان از لود شدن Font Awesome */
+            .action-buttons .btn i.fas {
+                font-family: "Font Awesome 5 Free" !important;
+                font-weight: 900 !important;
+            }
+            
+            /* اطمینان از نمایش آیکون‌ها */
+            .action-buttons .btn i::before {
+                display: inline-block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .action-buttons .btn-info {
+                background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                border-color: #0a58ca;
+                color: white !important;
+            }
+
+            .action-buttons .btn-info:hover {
+                background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+                border-color: #084298;
+                color: white !important;
+                box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+            }
+            
+            .action-buttons .btn-info i {
+                color: #ffffff !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+
+            .action-buttons .btn-warning {
+                background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+                border-color: #ffb300;
+                color: #212529 !important;
+            }
+
+            .action-buttons .btn-warning:hover {
+                background: linear-gradient(135deg, #ffb300 0%, #e0a800 100%);
+                border-color: #d39e00;
+                box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+            }
+            
+            .action-buttons .btn-warning i {
+                color: #212529 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+
+            .action-buttons .btn-success {
+                background: linear-gradient(135deg, #198754 0%, #157347 100%);
+                border-color: #157347;
+                color: white !important;
+            }
+
+            .action-buttons .btn-success:hover {
+                background: linear-gradient(135deg, #157347 0%, #0f5132 100%);
+                border-color: #0f5132;
+                box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+            }
+            
+            .action-buttons .btn-success i {
+                color: #ffffff !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+
+            .action-buttons .btn-secondary {
+                background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+                border-color: #343a40;
+                color: white !important;
+            }
+
+            .action-buttons .btn-secondary:hover {
+                background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+                border-color: #212529;
+                color: white !important;
+                box-shadow: 0 4px 8px rgba(73, 80, 87, 0.3);
+            }
+            
+            .action-buttons .btn-secondary i {
+                color: #ffffff !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+            
+            .action-buttons .btn-success i {
+                color: white !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+            
+            .action-buttons .btn-info i {
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+            
+            .action-buttons .btn-warning i {
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+            
+            .action-buttons .btn-danger i {
+                color: white !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+            }
+
+            .action-buttons .btn-danger {
+                background-color: #dc3545;
+                border-color: #dc3545;
+                color: white;
+            }
+
+            .action-buttons .btn-danger:hover {
+                background-color: #c82333;
+                border-color: #bd2130;
             }
 
         .btn-primary {
@@ -732,17 +926,26 @@
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewSchedule(@item.Id)" title="مشاهده">
-                                                        <i class="fas fa-eye"></i>
+                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewSchedule(@item.Id)" title="مشاهده جزئیات" aria-label="مشاهده جزئیات">
+                                                        <i class="fas fa-eye" aria-hidden="true"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editSchedule(@item.Id)" title="ویرایش">
-                                                        <i class="fas fa-edit"></i>
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editSchedule(@item.Id)" title="ویرایش برنامه" aria-label="ویرایش برنامه">
+                                                        <i class="fas fa-edit" aria-hidden="true"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-success" onclick="activateSchedule(@item.Id)" title="فعال‌سازی">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSchedule(@item.Id)" title="حذف">
-                                                        <i class="fas fa-trash"></i>
+                                                    @if (item.IsActive)
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-secondary" onclick="deactivateSchedule(@item.Id)" title="غیرفعال کردن" aria-label="غیرفعال کردن">
+                                                            <i class="fas fa-toggle-on" aria-hidden="true"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-success" onclick="activateSchedule(@item.Id)" title="فعال کردن" aria-label="فعال کردن">
+                                                            <i class="fas fa-toggle-off" aria-hidden="true"></i>
+                                                        </button>
+                                                    }
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSchedule(@item.Id)" title="حذف برنامه" aria-label="حذف برنامه">
+                                                        <i class="fas fa-trash" aria-hidden="true"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -1245,22 +1448,39 @@
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'بله، فعال کن',
-                cancelButtonText: 'انصراف'
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
+                    showLoading();
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    if (!token) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطای امنیتی',
+                            text: 'توکن امنیتی یافت نشد. لطفاً صفحه را رفرش کنید.',
+                            confirmButtonText: 'باشه'
+                        });
+                        return;
+                    }
+                    
                     $.ajax({
                         url: '@Url.Action("ActivateSchedule", "DoctorSchedule", new { area = "Admin" })',
                         type: 'POST',
+                        dataType: 'json',
+                        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
                         data: {
                             scheduleId: id,
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            __RequestVerificationToken: token
                         },
                         success: function (data) {
-                            if (data.success) {
+                            hideLoading();
+                            console.log('ActivateSchedule Response:', data);
+                            if (data && data.success === true) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'موفقیت!',
-                                    text: data.message,
+                                    text: data.message || 'برنامه کاری با موفقیت فعال شد.',
                                     confirmButtonText: 'باشه'
                                 }).then(() => {
                                     location.reload();
@@ -1269,17 +1489,128 @@
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'خطا!',
-                                    text: data.message,
+                                    text: data && data.message ? data.message : 'خطا در فعال کردن برنامه کاری',
                                     confirmButtonText: 'باشه'
                                 });
                             }
                         },
-                        error: function() {
-                            hideLoading(); // ✅ مخفی کردن Loading State
+                        error: function(xhr, status, error) {
+                            hideLoading();
+                            console.error('ActivateSchedule Error:', {xhr: xhr, status: status, error: error, responseText: xhr.responseText});
+                            
+                            var errorMessage = 'خطا در ارتباط با سرور';
+                            if (xhr.status === 400) {
+                                errorMessage = 'درخواست نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
+                            } else if (xhr.status === 404) {
+                                errorMessage = 'صفحه مورد نظر یافت نشد.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'خطای سرور. لطفاً با پشتیبانی تماس بگیرید.';
+                            }
+                            
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
-                                text: 'خطا در ارتباط با سرور',
+                                text: errorMessage,
+                                confirmButtonText: 'باشه'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function deactivateSchedule(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این برنامه کاری غیرفعال خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، غیرفعال کن',
+                cancelButtonText: 'انصراف',
+                confirmButtonColor: '#6c757d',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    if (!token) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطای امنیتی',
+                            text: 'توکن امنیتی یافت نشد. لطفاً صفحه را رفرش کنید.',
+                            confirmButtonText: 'باشه'
+                        });
+                        return;
+                    }
+                    
+                    showLoading();
+                    $.ajax({
+                        url: '@Url.Action("DeactivateSchedule", "DoctorSchedule", new { area = "Admin" })',
+                        type: 'POST',
+                        dataType: 'json',
+                        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                        data: {
+                            scheduleId: id,
+                            __RequestVerificationToken: token
+                        },
+                        success: function (response) {
+                            hideLoading();
+                            console.log('DeactivateSchedule Response (raw):', response);
+                            console.log('DeactivateSchedule Response (type):', typeof response);
+                            
+                            // Handle both string and object responses
+                            var data = response;
+                            if (typeof response === 'string') {
+                                try {
+                                    data = JSON.parse(response);
+                                    console.log('DeactivateSchedule Response (parsed):', data);
+                                } catch (e) {
+                                    console.error('Failed to parse JSON:', e);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'خطا!',
+                                        text: 'خطا در پردازش پاسخ سرور',
+                                        confirmButtonText: 'باشه'
+                                    });
+                                    return;
+                                }
+                            }
+                            
+                            if (data && (data.success === true || data.success === 'true')) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفقیت!',
+                                    text: data.message || 'برنامه کاری با موفقیت غیرفعال شد.',
+                                    confirmButtonText: 'باشه'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                console.error('DeactivateSchedule failed:', data);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا!',
+                                    text: data && data.message ? data.message : 'خطا در غیرفعال کردن برنامه کاری',
+                                    confirmButtonText: 'باشه'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            hideLoading();
+                            console.error('DeactivateSchedule Error:', {xhr: xhr, status: status, error: error, responseText: xhr.responseText});
+                            
+                            var errorMessage = 'خطا در ارتباط با سرور';
+                            if (xhr.status === 400) {
+                                errorMessage = 'درخواست نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
+                            } else if (xhr.status === 404) {
+                                errorMessage = 'صفحه مورد نظر یافت نشد.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'خطای سرور. لطفاً با پشتیبانی تماس بگیرید.';
+                            }
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا!',
+                                text: errorMessage,
                                 confirmButtonText: 'باشه'
                             });
                         }
@@ -1300,20 +1631,34 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     showLoading(); // ✅ نمایش Loading State
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    if (!token) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطای امنیتی',
+                            text: 'توکن امنیتی یافت نشد. لطفاً صفحه را رفرش کنید.',
+                            confirmButtonText: 'باشه'
+                        });
+                        return;
+                    }
+                    
                     $.ajax({
                         url: '@Url.Action("RemoveSchedule", "DoctorSchedule", new { area = "Admin" })',
                         type: 'POST',
+                        dataType: 'json',
+                        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
                         data: {
                             scheduleId: id,
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            __RequestVerificationToken: token
                         },
                         success: function (data) {
-                            hideLoading(); // ✅ مخفی کردن Loading State
-                            if (data.success) {
+                            hideLoading();
+                            console.log('RemoveSchedule Response:', data);
+                            if (data && data.success === true) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'موفقیت!',
-                                    text: data.message,
+                                    text: data.message || 'برنامه کاری با موفقیت حذف شد.',
                                     confirmButtonText: 'باشه'
                                 }).then(() => {
                                     location.reload();
@@ -1322,17 +1667,28 @@
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'خطا!',
-                                    text: data.message,
+                                    text: data && data.message ? data.message : 'خطا در حذف برنامه کاری',
                                     confirmButtonText: 'باشه'
                                 });
                             }
                         },
-                        error: function() {
-                            hideLoading(); // ✅ مخفی کردن Loading State
+                        error: function(xhr, status, error) {
+                            hideLoading();
+                            console.error('RemoveSchedule Error:', {xhr: xhr, status: status, error: error, responseText: xhr.responseText});
+                            
+                            var errorMessage = 'خطا در ارتباط با سرور';
+                            if (xhr.status === 400) {
+                                errorMessage = 'درخواست نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
+                            } else if (xhr.status === 404) {
+                                errorMessage = 'صفحه مورد نظر یافت نشد.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'خطای سرور. لطفاً با پشتیبانی تماس بگیرید.';
+                            }
+                            
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
-                                text: 'خطا در ارتباط با سرور',
+                                text: errorMessage,
                                 confirmButtonText: 'باشه'
                             });
                         }

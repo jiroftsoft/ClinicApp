@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
+using System.Data.Entity;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -358,6 +359,21 @@ namespace ClinicApp.Services.Appointment
         {
             try
             {
+                // ✅ اعتبارسنجی ورودی‌ها
+                if (doctorId <= 0)
+                {
+                    return ServiceResult<List<AvailableTimeSlotDto>>.Failed("شناسه پزشک نامعتبر است");
+                }
+
+                // ✅ اطمینان از اینکه فقط بخش تاریخ است (بدون زمان)
+                date = date.Date;
+
+                // ✅ بررسی اینکه تاریخ در گذشته نباشد
+                if (date < DateTime.Today)
+                {
+                    return ServiceResult<List<AvailableTimeSlotDto>>.Failed("تاریخ انتخاب شده در گذشته است. لطفاً تاریخ امروز یا آینده را انتخاب کنید");
+                }
+
                 _logger.Information("دریافت اسلات‌های در دسترس - پزشک: {DoctorId}, تاریخ: {Date}",
                     doctorId, date.ToString("yyyy/MM/dd"));
 

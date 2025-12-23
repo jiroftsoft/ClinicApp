@@ -21,16 +21,61 @@
         }
 
         * {
-            font-family: 'Vazir', 'Tahoma', Arial, sans-serif;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
+        }
+
+        body {
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
+            font-weight: 400;
+            line-height: 1.7;
+            color: var(--medical-text);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
+            font-weight: 700;
+            line-height: 1.4;
         }
 
         .page-header {
             background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
-            border-radius: 20px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            margin-bottom: 2.5rem;
             color: white;
-            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.3);
+            box-shadow: 0 12px 40px rgba(44, 90, 160, 0.25);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        .page-header > div {
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin: 0;
         }
 
         .doctor-profile-card {
@@ -57,38 +102,92 @@
 
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInScale 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(44, 90, 160, 0.2);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 35px rgba(44, 90, 160, 0.2);
             border-color: var(--medical-primary);
         }
 
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
         .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 3rem;
+            font-weight: 700;
             color: var(--medical-primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            line-height: 1;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
         }
 
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: var(--medical-secondary);
+            font-weight: 500;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
         }
 
         .schedule-card {
             background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        .schedule-card h5 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .schedule-card h5 i {
+            font-size: 1.75rem;
+        }
+
+        .schedule-card h6 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .schedule-day {
@@ -220,29 +319,213 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
             border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            border-radius: 16px;
+            padding: 1.125rem 2.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+            min-width: 200px;
         }
 
         .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(44, 90, 160, 0.4);
+            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-light {
+            border-radius: 16px;
+            padding: 0.875rem 1.75rem;
+            font-weight: 600;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .btn-light:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* ========== Animations ========== */
+        @@keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ========== Form Controls ========== */
+        .form-control, .form-select {
+            border-radius: 12px;
+            padding: 0.875rem 1.25rem;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+            font-size: 1rem;
+            border: 2px solid var(--medical-border);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 0.75rem;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+        }
+
+        /* ========== Alert Styles ========== */
+        .alert {
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border-right: 4px solid #ffc107;
+        }
+
+        /* ========== Responsive Design ========== */
+        @@media (max-width: 992px) {
+            .time-slot-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 0.75rem;
+            }
         }
 
         @@media (max-width: 768px) {
-            .time-slot-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 0.5rem;
+            .page-header {
+                padding: 2rem 1.5rem;
             }
 
+            .page-header h2 {
+                font-size: 1.75rem;
+            }
+
+            .doctor-profile-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .doctor-avatar {
+                width: 120px;
+                height: 120px;
+                font-size: 3rem;
+            }
+
+            .doctor-name {
+                font-size: 1.75rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .stat-value {
+                font-size: 2.5rem;
+            }
+
+            .schedule-card {
+                padding: 1.5rem;
+            }
+
+            .time-slot-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .time-slot {
+                padding: 1rem 1.25rem;
+                font-size: 0.95rem;
+            }
+
+            .bio-section {
+                padding: 1.5rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
             .page-header {
                 padding: 1.5rem;
             }
 
             .doctor-profile-card {
                 padding: 1.5rem;
+            }
+
+            .doctor-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+
+            .time-slot-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .time-slot {
+                padding: 0.875rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-primary {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+                min-width: auto;
+                width: 100%;
             }
         }
     </style>
@@ -267,53 +550,86 @@
 @if (Model.Doctor != null)
 {
     <div class="doctor-profile-card">
-        <div class="doctor-avatar">
-            @Model.Doctor.FullName.Substring(0, 1)
-        </div>
         <div class="text-center">
-            <h3 class="mb-2" style="font-weight: 700; color: var(--medical-primary);">
+            <div class="doctor-avatar-container">
+                @if (!string.IsNullOrEmpty(Model.Doctor.ProfileImageUrl))
+                {
+                    <img src="@Model.Doctor.ProfileImageUrl" alt="@Model.Doctor.FullName" class="doctor-avatar" />
+                }
+                else
+                {
+                    <div class="doctor-avatar" role="img" aria-label="@Model.Doctor.FullName">
+                        @Model.Doctor.FullName.Substring(0, 1)
+                    </div>
+                }
+            </div>
+            <h3 class="doctor-name">
                 @Model.Doctor.FullName
             </h3>
-            <p class="text-muted mb-3">
-                <i class="fas fa-stethoscope me-2"></i>
-                @(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() 
+            <div class="doctor-specialization">
+                <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                <span>@(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() 
                     ? string.Join("، ", Model.Doctor.SpecializationNames) 
-                    : "نامشخص")
-            </p>
-            @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
+                    : "نامشخص")</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode) || Model.ExperienceYears > 0)
             {
-                <p class="text-muted">
-                    <i class="fas fa-id-card me-2"></i>
-                    کد نظام پزشکی: @Model.Doctor.MedicalCouncilCode
-                </p>
+                <div class="doctor-meta">
+                    @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
+                    {
+                        <div class="meta-item">
+                            <i class="fas fa-id-card" aria-hidden="true"></i>
+                            <span>کد نظام: @Model.Doctor.MedicalCouncilCode</span>
+                        </div>
+                    }
+                    @if (Model.ExperienceYears > 0)
+                    {
+                        <div class="meta-item">
+                            <i class="fas fa-briefcase" aria-hidden="true"></i>
+                            <span>@Model.ExperienceYears سال تجربه</span>
+                        </div>
+                    }
+                </div>
             }
         </div>
     </div>
 
     <!-- آمار پزشک -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" role="region" aria-label="آمار پزشک">
         <div class="col-md-3 col-6">
-            <div class="stat-card">
-                <div class="stat-value">@Model.TotalAppointments</div>
-                <div class="stat-label">کل نوبت‌ها</div>
+            <div class="stat-card" role="article" aria-label="کل نوبت‌ها">
+                <div class="stat-value" aria-label="@Model.TotalAppointments نوبت">@Model.TotalAppointments</div>
+                <div class="stat-label">
+                    <i class="fas fa-calendar-check me-1" aria-hidden="true"></i>
+                    کل نوبت‌ها
+                </div>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="stat-card">
-                <div class="stat-value">@Model.TodayAppointments</div>
-                <div class="stat-label">نوبت‌های امروز</div>
+            <div class="stat-card" role="article" aria-label="نوبت‌های امروز">
+                <div class="stat-value" aria-label="@Model.TodayAppointments نوبت امروز">@Model.TodayAppointments</div>
+                <div class="stat-label">
+                    <i class="fas fa-calendar-day me-1" aria-hidden="true"></i>
+                    نوبت‌های امروز
+                </div>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="stat-card">
-                <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
-                <div class="stat-label">امتیاز</div>
+            <div class="stat-card" role="article" aria-label="امتیاز">
+                <div class="stat-value" aria-label="@Model.AverageRating.ToString("0.0") امتیاز">@Model.AverageRating.ToString("0.0")</div>
+                <div class="stat-label">
+                    <i class="fas fa-star me-1" aria-hidden="true"></i>
+                    امتیاز
+                </div>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="stat-card">
-                <div class="stat-value">@Model.ExperienceYears</div>
-                <div class="stat-label">سال تجربه</div>
+            <div class="stat-card" role="article" aria-label="سال تجربه">
+                <div class="stat-value" aria-label="@Model.ExperienceYears سال">@Model.ExperienceYears</div>
+                <div class="stat-label">
+                    <i class="fas fa-briefcase me-1" aria-hidden="true"></i>
+                    سال تجربه
+                </div>
             </div>
         </div>
     </div>
@@ -321,96 +637,140 @@
     <!-- بیوگرافی -->
     if (!string.IsNullOrEmpty(Model.Doctor.Bio))
     {
-        <div class="bio-section">
-            <h5 class="mb-3" style="font-weight: 600; color: var(--medical-primary);">
-                <i class="fas fa-user-circle me-2"></i>
+        <section class="bio-section" aria-labelledby="bio-heading">
+            <h5 id="bio-heading">
+                <i class="fas fa-user-circle" aria-hidden="true"></i>
                 درباره پزشک
             </h5>
-            <p style="line-height: 1.8; color: var(--medical-text);">
-                @Model.Doctor.Bio
+            <p>
+                @Html.Raw(Model.Doctor.Bio.Replace("\n", "<br />"))
             </p>
-        </div>
+        </section>
     }
 
     <!-- برنامه کاری -->
     if (Model.ScheduleDetails != null)
     {
-        @Html.Partial("_DoctorSchedule", Model.ScheduleDetails)
+        <section aria-labelledby="schedule-heading">
+            @Html.Partial("_DoctorSchedule", Model.ScheduleDetails)
+        </section>
     }
     else
     {
-        <div class="no-schedule-message" style="text-align: center; padding: 3rem 2rem; color: #6c757d; animation: fadeIn 0.6s ease-out; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 16px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
-            <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; color: #adb5bd;"></i>
-            <p style="font-size: 1.1rem; margin: 0; font-weight: 500;">برنامه کاری برای این پزشک تعریف نشده است.</p>
+        <div class="no-schedule-message" role="alert" aria-live="polite" style="text-align: center; padding: 3rem 2rem; color: #6c757d; animation: fadeIn 0.6s ease-out; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 24px; margin: 2rem 0; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);">
+            <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; color: #adb5bd;" aria-hidden="true"></i>
+            <p style="font-size: 1.1rem; margin: 0; font-weight: 600; font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;">برنامه کاری برای این پزشک تعریف نشده است.</p>
         </div>
     }
 
     <!-- انتخاب تاریخ و زمان -->
-    <div class="schedule-card">
-        <h5 class="mb-3" style="font-weight: 600; color: var(--medical-primary);">
-            <i class="fas fa-calendar-check me-2"></i>
+    <section class="schedule-card" aria-labelledby="appointment-heading">
+        <h5 id="appointment-heading">
+            <i class="fas fa-calendar-check" aria-hidden="true"></i>
             انتخاب تاریخ و زمان نوبت
         </h5>
         
         <div class="row g-3 mb-4">
             <div class="col-md-6">
-                <label class="form-label">تاریخ نوبت</label>
-                <input type="text" id="appointmentDate" class="form-control" 
-                       placeholder="تاریخ را انتخاب کنید" />
+                <label for="appointmentDate" class="form-label">
+                    <i class="fas fa-calendar-alt me-1" aria-hidden="true"></i>
+                    تاریخ نوبت
+                </label>
+                <input type="text" 
+                       id="appointmentDate" 
+                       class="form-control" 
+                       placeholder="تاریخ را انتخاب کنید"
+                       aria-label="انتخاب تاریخ نوبت"
+                       autocomplete="off" />
+                <small class="form-text text-muted mt-2">
+                    <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                    لطفاً تاریخ امروز یا آینده را انتخاب کنید
+                </small>
             </div>
         </div>
 
         <!-- نمایش تاریخ انتخاب شده -->
-        <div id="selectedDateDisplay" class="selected-date-display" style="display: none;">
+        <div id="selectedDateDisplay" 
+             class="selected-date-display" 
+             style="display: none;"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true">
             <div class="selected-date-content">
-                <i class="fas fa-calendar-alt me-2"></i>
+                <i class="fas fa-calendar-alt me-2" aria-hidden="true"></i>
                 <span id="selectedDateText"></span>
             </div>
         </div>
 
-        <div id="timeSlotsContainer">
-            <h6 class="mb-3">
-                <i class="fas fa-clock me-2"></i>
+        <div id="timeSlotsContainer" aria-labelledby="time-slots-heading">
+            <h6 id="time-slots-heading" class="mb-3">
+                <i class="fas fa-clock me-2" aria-hidden="true"></i>
                 زمان‌های در دسترس:
-                <span id="slotsCount" class="slots-count-badge"></span>
+                <span id="slotsCount" class="slots-count-badge" aria-label="تعداد نوبت‌های در دسترس"></span>
             </h6>
-            <div class="time-slot-grid" id="timeSlotsGrid">
+            <div class="time-slot-grid" 
+                 id="timeSlotsGrid" 
+                 role="group" 
+                 aria-label="زمان‌های در دسترس برای رزرو">
                 @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
                 {
                     foreach (var slot in Model.AvailableSlots)
                     {
-                        <div class="time-slot @(slot.IsAvailable ? "available" : "unavailable")" 
-                             data-start="@slot.StartTime.ToString(@"hh\:mm")"
-                             data-end="@slot.EndTime.ToString(@"hh\:mm")"
-                             @(!slot.IsAvailable ? "data-disabled=true" : "")>
-                            @slot.DisplayTime
-                        </div>
+                        <button type="button"
+                                class="time-slot @(slot.IsAvailable ? "available" : "unavailable")" 
+                                data-start="@slot.StartTime.ToString(@"hh\:mm")"
+                                data-end="@slot.EndTime.ToString(@"hh\:mm")"
+                                @(!slot.IsAvailable ? "data-disabled=true aria-disabled=true" : "aria-label=\"انتخاب زمان " + slot.DisplayTime + "\"")
+                                @(!slot.IsAvailable ? "tabindex=\"-1\"" : "")>
+                            <span aria-hidden="true">@slot.DisplayTime</span>
+                            @if (!slot.IsAvailable)
+                            {
+                                <span class="sr-only">این زمان پر شده است</span>
+                            }
+                        </button>
                     }
                 }
                 else
                 {
-                    <p class="text-muted">لطفاً ابتدا تاریخ را انتخاب کنید</p>
+                    <p class="text-muted" role="status">
+                        <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                        لطفاً ابتدا تاریخ را انتخاب کنید
+                    </p>
                 }
             </div>
         </div>
 
         @if (!User.Identity.IsAuthenticated)
         {
-            <div class="alert alert-warning mt-4" role="alert">
-                <i class="fas fa-info-circle me-2"></i>
-                برای رزرو نوبت، لطفاً ابتدا <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" class="alert-link">ثبت‌نام</a> کنید یا <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" class="alert-link">وارد</a> شوید.
+            <div class="alert alert-warning mt-4" role="alert" aria-live="polite">
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                برای رزرو نوبت، لطفاً ابتدا 
+                <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" 
+                   class="alert-link fw-bold">ثبت‌نام</a> 
+                کنید یا 
+                <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" 
+                   class="alert-link fw-bold">وارد</a> 
+                شوید.
             </div>
         }
         else
         {
             <div class="text-center mt-4">
-                <button type="button" id="bookAppointmentBtn" class="btn btn-primary btn-lg" disabled>
-                    <i class="fas fa-calendar-plus me-2"></i>
+                <button type="button" 
+                        id="bookAppointmentBtn" 
+                        class="btn btn-primary btn-lg" 
+                        disabled
+                        aria-label="رزرو نوبت"
+                        aria-describedby="book-appointment-help">
+                    <i class="fas fa-calendar-plus me-2" aria-hidden="true"></i>
                     رزرو نوبت
                 </button>
+                <small id="book-appointment-help" class="d-block text-muted mt-2" role="status">
+                    لطفاً تاریخ و زمان را انتخاب کنید
+                </small>
             </div>
         }
-    </div>
+    </section>
 }
 
 @section Scripts {
@@ -1128,14 +1488,15 @@
 
             // انتخاب زمان
             $(document).on('click', '.time-slot.available', function () {
-                if ($(this).data('disabled')) return;
+                if ($(this).data('disabled') || $(this).attr('aria-disabled') === 'true') return;
 
-                $('.time-slot').removeClass('selected');
-                $(this).addClass('selected');
+                $('.time-slot').removeClass('selected').attr('aria-pressed', 'false');
+                $(this).addClass('selected').attr('aria-pressed', 'true');
                 selectedTime = $(this).data('start');
                 $('#bookAppointmentBtn').prop('disabled', false);
+                $('#book-appointment-help').text('برای ادامه رزرو نوبت، روی دکمه رزرو کلیک کنید');
 
-                toastr.success('زمان انتخاب شد: ' + $(this).text(), 'موفق');
+                toastr.success('زمان انتخاب شد: ' + $(this).find('span').first().text(), 'موفق');
             });
 
             // نمایش تاریخ انتخاب شده
@@ -1284,12 +1645,18 @@
                                     unavailableCount++;
                                 }
                                 
-                                html += '<div class="time-slot ' + cssClass + '" ' +
+                                var ariaLabel = slot.isAvailable 
+                                    ? 'aria-label="انتخاب زمان ' + slot.displayTime + '"' 
+                                    : 'aria-label="زمان ' + slot.displayTime + ' پر شده است" aria-disabled="true" tabindex="-1"';
+                                
+                                html += '<button type="button" class="time-slot ' + cssClass + '" ' +
                                     'data-start="' + slot.startTime + '" ' +
                                     'data-end="' + slot.endTime + '" ' +
-                                    disabled + '>' +
-                                    slot.displayTime +
-                                    '</div>';
+                                    disabled + ' ' +
+                                    ariaLabel + '>' +
+                                    '<span aria-hidden="true">' + slot.displayTime + '</span>' +
+                                    (!slot.isAvailable ? '<span class="sr-only">این زمان پر شده است</span>' : '') +
+                                    '</button>';
                             });
                             
                             $('#timeSlotsGrid').html(html);

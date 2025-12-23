@@ -13,6 +13,7 @@ using ClinicApp.ViewModels.Patient;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities.Doctor;
 using Serilog;
+using static ClinicApp.Helpers.NotificationHelper;
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -63,7 +64,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var doctorsResult = await _bookingService.GetAvailableDoctorsAsync();
                 if (!doctorsResult.Success)
                 {
-                    TempData["Error"] = "خطا در دریافت لیست پزشکان";
+                    NotificationHelper.SetError(TempData, "خطا در دریافت لیست پزشکان");
                     return View(new AvailableAppointmentsViewModel
                     {
                         Doctors = new List<DoctorSearchResultDto>(),
@@ -71,21 +72,44 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
+                // اطمینان از اینکه تاریخ معتبر است
+                var selectedDate = date ?? DateTime.Now;
+                if (selectedDate < DateTime.Today)
+                {
+                    selectedDate = DateTime.Now;
+                }
+                
                 var viewModel = new AvailableAppointmentsViewModel
                 {
                     Doctors = doctorsResult.Data ?? new List<DoctorSearchResultDto>(),
                     SelectedDoctorId = doctorId,
-                    SelectedDate = date ?? DateTime.Now,
+                    SelectedDate = selectedDate,
                     AvailableSlots = new List<AvailableTimeSlotDto>()
                 };
 
                 // اگر پزشک و تاریخ انتخاب شده، اسلات‌های موجود را دریافت کن
                 if (doctorId.HasValue && date.HasValue)
                 {
-                    var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId.Value, date.Value);
-                    if (slotsResult.Success && slotsResult.Data != null)
+                    // اطمینان از اینکه تاریخ فقط شامل بخش تاریخ است (بدون زمان)
+                    var dateOnly = date.Value.Date;
+                    
+                    // بررسی اینکه تاریخ در گذشته نباشد
+                    if (dateOnly < DateTime.Today)
                     {
-                        viewModel.AvailableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
+                        TempData["Warning"] = "تاریخ انتخاب شده در گذشته است. لطفاً تاریخ معتبری انتخاب کنید.";
+                        viewModel.SelectedDate = DateTime.Now;
+                    }
+                    else
+                    {
+                        var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId.Value, dateOnly);
+                        if (slotsResult.Success && slotsResult.Data != null)
+                        {
+                            viewModel.AvailableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
+                        }
+                        else if (!slotsResult.Success)
+                        {
+                            TempData["Warning"] = slotsResult.Message ?? "خطا در دریافت زمان‌های در دسترس";
+                        }
                     }
                 }
 
