@@ -657,11 +657,11 @@
                 <p class="mb-0 opacity-75">مدیریت برنامه کاری و زمان‌بندی</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("AssignSchedule", new { doctorId = Model?.DoctorId ?? 0 })" class="btn btn-light btn-action">
+                <a href="@Url.Action("AssignSchedule", "DoctorSchedule", new { area = "Admin", doctorId = Model?.DoctorId ?? 0 })" class="btn btn-light btn-action">
                     <i class="fas fa-plus me-2"></i>
                     برنامه جدید
                 </a>
-                <a href="@Url.Action("Index")" class="btn btn-light btn-action ms-2">
+                <a href="@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })" class="btn btn-light btn-action ms-2">
                     <i class="fas fa-arrow-right me-2"></i>
                     بازگشت
                 </a>
@@ -809,7 +809,7 @@
                                 }
 
                                 <div class="action-buttons">
-                                    <a href="@Url.Action("Edit", new { id = Model?.Id ?? 0 })" class="btn btn-info btn-action">
+                                    <a href="@Url.Action("Edit", "DoctorSchedule", new { area = "Admin", id = Model?.Id ?? 0 })" class="btn btn-info btn-action">
                                         <i class="fas fa-edit me-1"></i>
                                         ویرایش
                                     </a>

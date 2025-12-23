@@ -94,7 +94,7 @@
                 <p class="mb-0 opacity-75">@(Model.DoctorName ?? "پزشک")</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-light">
+                <a href="@Url.Action("Details", "DoctorSchedule", new { area = "Admin", id = Model.Id })" class="btn btn-light">
                     <i class="fas fa-arrow-left me-2"></i>
                     بازگشت به جزئیات
                 </a>
@@ -211,7 +211,7 @@
             
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary btn-action">
+                <a href="@Url.Action("Details", "DoctorSchedule", new { area = "Admin", id = Model.Id })" class="btn btn-secondary btn-action">
                     <i class="fas fa-times me-2"></i>
                     انصراف
                 </a>

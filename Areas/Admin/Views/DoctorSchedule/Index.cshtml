@@ -793,6 +793,11 @@
     </div>
 </div>
 
+<!-- ✅ Loading Overlay -->
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
 <!-- ✅ Modal انتخاب پزشک برای ایجاد برنامه جدید -->
 <div class="modal fade" id="selectDoctorModal" tabindex="-1" aria-labelledby="selectDoctorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -956,9 +961,12 @@
             console.log('Loading doctors...');
             return new Promise(function(resolve, reject) {
                 $.ajax({
-                    url: '@Url.Action("GetDoctors", "Doctor")',
+                    url: '/Admin/Doctor/GetDoctors',
                     type: 'GET',
                     dataType: 'json',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    },
                     success: function (data) {
                         console.log('AJAX response:', data);
                         if (data.success && data.data) {
@@ -981,9 +989,9 @@
                             $('#doctorFilter').html(filterOptions);
                             console.log('Filter dropdown updated, options count:', $('#doctorFilter option').length);
 
-                            // Update modal dropdown
-                            $('#doctorId').html(modalOptions);
-                            console.log('Modal dropdown updated, options count:', $('#doctorId option').length);
+                            // Update modal dropdown (selectDoctorId)
+                            $('#selectDoctorId').html(modalOptions);
+                            console.log('Modal dropdown updated, options count:', $('#selectDoctorId option').length);
 
                             console.log('Doctors loaded successfully:', data.data.length);
                             resolve(data.data); // Resolve the promise with data
@@ -991,7 +999,7 @@
                             console.error('Failed to load doctors:', data.message);
                             var errorOption = '<option value="">خطا در بارگذاری پزشکان</option>';
                             $('#doctorFilter').html(errorOption);
-                            $('#doctorId').html(errorOption);
+                            $('#selectDoctorId').html(errorOption);
                             reject(data.message); // Reject the promise with error
                         }
                     },
@@ -1002,7 +1010,7 @@
                         console.error('XHR response:', xhr.responseText);
                         var errorOption = '<option value="">خطا در بارگذاری پزشکان</option>';
                         $('#doctorFilter').html(errorOption);
-                        $('#doctorId').html(errorOption);
+                        $('#selectDoctorId').html(errorOption);
                         // ✅ نمایش پیام خطا به کاربر
                         Swal.fire({
                             icon: 'error',
@@ -1025,11 +1033,11 @@
             });
 
             // Initialize Select2 for modal doctor selection with proper parent
-            $('#doctorId').select2({
+            $('#selectDoctorId').select2({
                 placeholder: 'انتخاب پزشک',
                 allowClear: true,
                 width: '100%',
-                dropdownParent: $('#addScheduleModal') // Important for modal positioning
+                dropdownParent: $('#selectDoctorModal') // Important for modal positioning
             });
 
             console.log('Select2 initialized successfully');
@@ -1040,8 +1048,8 @@
             if ($('#doctorFilter').hasClass('select2-hidden-accessible')) {
                 $('#doctorFilter').select2('destroy');
             }
-            if ($('#doctorId').hasClass('select2-hidden-accessible')) {
-                $('#doctorId').select2('destroy');
+            if ($('#selectDoctorId').hasClass('select2-hidden-accessible')) {
+                $('#selectDoctorId').select2('destroy');
             }
 
             // Re-initialize Select2
@@ -1059,9 +1067,12 @@
             }
 
             $.ajax({
-                url: '@Url.Action("GetDoctors", "Doctor")',
+                url: '/Admin/Doctor/GetDoctors',
                 type: 'GET',
                 dataType: 'json',
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                },
                 success: function (data) {
                     if (data.success && data.data) {
                         var options = '<option value="">انتخاب پزشک</option>';
@@ -1175,7 +1186,7 @@
                 console.log('Submitting form data:', formData);
 
                 $.ajax({
-                    url: '@Url.Action("QuickScheduleOperation")',
+                    url: '@Url.Action("QuickScheduleOperation", "DoctorSchedule", new { area = "Admin" })',
                     type: 'POST',
                     data: formData,
                 success: function (data) {
@@ -1220,11 +1231,11 @@
         }
 
         function viewSchedule(id) {
-            window.location.href = '@Url.Action("Details")/' + id;
+            window.location.href = '@Url.Action("Details", "DoctorSchedule", new { area = "Admin" })/' + id;
         }
 
         function editSchedule(id) {
-            window.location.href = '@Url.Action("Edit")/' + id;
+            window.location.href = '@Url.Action("Edit", "DoctorSchedule", new { area = "Admin" })/' + id;
         }
 
         function activateSchedule(id) {
@@ -1238,7 +1249,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: '@Url.Action("ActivateSchedule")',
+                        url: '@Url.Action("ActivateSchedule", "DoctorSchedule", new { area = "Admin" })',
                         type: 'POST',
                         data: {
                             scheduleId: id,
@@ -1290,7 +1301,7 @@
                 if (result.isConfirmed) {
                     showLoading(); // ✅ نمایش Loading State
                     $.ajax({
-                        url: '@Url.Action("RemoveSchedule")',
+                        url: '@Url.Action("RemoveSchedule", "DoctorSchedule", new { area = "Admin" })',
                         type: 'POST',
                         data: {
                             scheduleId: id,
@@ -1332,7 +1343,7 @@
 
         function loadPage(page) {
             showLoading(); // ✅ نمایش Loading State
-            var url = '@Url.Action("Index")?page=' + page;
+            var url = '@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })?page=' + page;
             var filters = {
                 doctorId: $('#doctorFilter').val(),
                 dayOfWeek: $('#dayOfWeekFilter').val(),
@@ -1346,6 +1357,20 @@
             });
 
             window.location.href = url;
+        }
+
+        // ✅ توابع Loading State
+        function showLoading() {
+            var overlay = $('.loading-overlay');
+            if (overlay.length === 0) {
+                // ایجاد overlay اگر وجود نداشته باشد
+                $('body').append('<div class="loading-overlay"><div class="loading-spinner"></div></div>');
+            }
+            $('.loading-overlay').addClass('active');
+        }
+
+        function hideLoading() {
+            $('.loading-overlay').removeClass('active');
         }
     </script>
 }
