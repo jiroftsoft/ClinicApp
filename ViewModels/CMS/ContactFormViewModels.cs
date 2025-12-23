@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -67,7 +68,7 @@ namespace ClinicApp.ViewModels.CMS
         public string Subject { get; set; }
 
         [Required(ErrorMessage = "پیام الزامی است.")]
-        [MaxLength(5000, ErrorMessage = "پیام نمی‌تواند بیش از 5000 کاراکتر باشد.")]
+        [MaxLength(2000, ErrorMessage = "پیام نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         [Display(Name = "پیام")]
         public string Message { get; set; }
 
@@ -159,8 +160,12 @@ namespace ClinicApp.ViewModels.CMS
 
     #endregion
 
-    #region Public Contact Form
+    #region Public Contact Form - GDPR-Compliant
 
+    /// <summary>
+    /// ViewModel برای فرم تماس عمومی - Production-Grade و GDPR-Compliant
+    /// طبق استانداردهای کلینیک درمانی
+    /// </summary>
     public class PublicContactFormViewModel
     {
         [Required(ErrorMessage = "نام و نام خانوادگی الزامی است.")]
@@ -174,24 +179,76 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "ایمیل")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "شماره تماس الزامی است.")]
         [MaxLength(50, ErrorMessage = "شماره تماس نمی‌تواند بیش از 50 کاراکتر باشد.")]
-        [Display(Name = "شماره تماس")]
+        [Display(Name = "شماره تماس (اختیاری)")]
+        [RegularExpression(@"^[\d\s\-\(\)]+$", ErrorMessage = "فرمت شماره تماس نامعتبر است.")]
         public string PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "موضوع الزامی است.")]
+        [Required(ErrorMessage = "موضوع / نوع درخواست الزامی است.")]
         [MaxLength(500, ErrorMessage = "موضوع نمی‌تواند بیش از 500 کاراکتر باشد.")]
-        [Display(Name = "موضوع")]
+        [Display(Name = "موضوع / نوع درخواست")]
         public string Subject { get; set; }
 
         [Required(ErrorMessage = "پیام الزامی است.")]
-        [MaxLength(5000, ErrorMessage = "پیام نمی‌تواند بیش از 5000 کاراکتر باشد.")]
+        [MaxLength(2000, ErrorMessage = "پیام نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         [Display(Name = "پیام")]
         public string Message { get; set; }
 
-        [Required(ErrorMessage = "دسته‌بندی الزامی است.")]
-        [Display(Name = "دسته‌بندی")]
+        [Required(ErrorMessage = "نوع درخواست الزامی است.")]
+        [Display(Name = "نوع درخواست")]
         public ContactFormCategory Category { get; set; }
+
+        [Display(Name = "روش ترجیحی تماس")]
+        public PreferredContactMethod PreferredContactMethod { get; set; } = PreferredContactMethod.Email;
+
+        [Required(ErrorMessage = "لطفاً سیاست حریم خصوصی را مطالعه و بپذیرید.")]
+        [Display(Name = "مطالعه و پذیرش سیاست حریم خصوصی")]
+        public bool AcceptPrivacyPolicy { get; set; }
+
+        // Anti-Spam Fields (Hidden)
+        [Display(Name = "Honeypot Field")]
+        public string Website { get; set; } // Honeypot - اگر پر شد = ربات
+
+        [Display(Name = "Form Start Time")]
+        public DateTime? FormStartTime { get; set; } // برای بررسی زمان ارسال
+    }
+
+    /// <summary>
+    /// Enum برای روش ترجیحی تماس
+    /// </summary>
+    public enum PreferredContactMethod
+    {
+        [Display(Name = "ایمیل")]
+        Email = 1,
+        [Display(Name = "تلفن")]
+        Phone = 2
+    }
+
+    #endregion
+
+    #region Contact Form Tracking (برای کاربران عمومی)
+
+    /// <summary>
+    /// ViewModel برای نمایش وضعیت فرم تماس با Tracking ID
+    /// </summary>
+    public class ContactFormTrackingViewModel
+    {
+        public int ContactFormId { get; set; }
+        public string TrackingId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Subject { get; set; }
+        public ContactFormCategory Category { get; set; }
+        public string CategoryDisplay { get; set; }
+        public ContactFormStatus Status { get; set; }
+        public string StatusDisplay { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedAtPersian { get; set; }
+        public bool IsRead { get; set; }
+        public DateTime? ReadAt { get; set; }
+        public bool HasReply { get; set; }
+        public DateTime? RepliedAt { get; set; }
+        public string RepliedAtPersian { get; set; }
     }
 
     #endregion

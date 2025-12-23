@@ -156,6 +156,63 @@
             font-style: normal;
             font-display: swap;
         }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Thin.woff2")') format('woff2');
+            font-weight: 100;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-ExtraLight.woff2")') format('woff2');
+            font-weight: 200;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-ExtraBold.woff2")') format('woff2');
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Black.woff2")') format('woff2');
+            font-weight: 900;
+            font-style: normal;
+            font-display: swap;
+        }
+        /* Fallback برای فونت Vazir قدیمی */
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir.woff2")') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Bold.woff2")') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Medium.woff2")') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazir';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Light.woff2")') format('woff2');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
     </style>
     <!-- Font Awesome Local (Better Performance & Security) -->
     <link rel="stylesheet" href="@Url.Content("~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css")" />
@@ -405,7 +462,27 @@
                         @Html.ActionLink("مقالات", "Index", "Blog", null, new { @class = "nav-link-modern" })
                     </li>
                     <li class="nav-item-modern">
-                        @Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link-modern" })
+                        @Html.ActionLink("درباره ما", "About", "Home", null, new { @class = "nav-link-modern" })
+                    </li>
+                    <li class="nav-item-modern">
+                        @Html.ActionLink("تماس با ما", "Index", "Contact", null, new { @class = "nav-link-modern" })
+                    </li>
+                    <li class="nav-item-modern">
+                        <a href="@Url.Action("Track", "Contact")" 
+                           class="nav-link-modern"
+                           aria-label="پیگیری وضعیت پیام">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <span>پیگیری پیام</span>
+                        </a>
+                    </li>
+                    @* CTA نوبت‌دهی - برجسته و قابل توجه *@
+                    <li class="nav-item-modern">
+                        <a href="@Url.Action("Book", "AppointmentBooking", new { area = "Patient" })" 
+                           class="nav-link-modern nav-link-cta-appointment"
+                           aria-label="رزرو نوبت آنلاین">
+                            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                            <span>رزرو نوبت</span>
+                        </a>
                     </li>
                 </ul>
                 <div class="user-menu-modern">

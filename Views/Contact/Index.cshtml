@@ -1,3 +1,4 @@
+@using ClinicApp.Extensions
 @model ClinicApp.ViewModels.CMS.PublicContactFormViewModel
 @{
     ViewBag.Title = "تماس با ما";
@@ -5,71 +6,57 @@
 }
 
 @* ============================================
-   Public Contact Form - Production Ready
+   Public Contact Form - Production-Grade & GDPR-Compliant
    ============================================
    - SRP: فرم تماس عمومی
    - Strongly-Typed: استفاده از ViewModel
-   - UI/UX: طراحی رسمی و حرفه‌ای
+   - UI/UX: طراحی رسمی و حرفه‌ای برای کلینیک درمانی
+   - Security: CSRF, Rate Limiting, Anti-Spam
+   - GDPR: Privacy Notice, Medical Data Warning
+   - Accessibility: WCAG AA Compliance
    ============================================ *@
 
-@Html.AntiForgeryToken()
-
 @section Styles {
-    <style>
-        .contact-form-section {
-            background-color: var(--medical-bg);
-            padding: var(--spacing-xxl) 0;
-        }
-        .contact-form-card {
-            background-color: white;
-            border: 1px solid var(--medical-border);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-md);
-            padding: var(--spacing-xxl);
-        }
-        .contact-info-card {
-            background-color: var(--medical-light);
-            border: 1px solid var(--medical-border);
-            border-radius: var(--border-radius-lg);
-            padding: var(--spacing-xl);
-            height: 100%;
-        }
-        .contact-info-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: var(--spacing-lg);
-        }
-        .contact-info-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: var(--border-radius-full);
-            background-color: var(--medical-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: var(--spacing-md);
-            font-size: 1.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-form-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 }
 
-<section class="contact-form-section">
+<section class="contact-form-page-section" aria-label="فرم تماس با کلینیک">
     <div class="container">
         <div class="row mb-5">
             <div class="col-12 text-center">
-                <h1 class="section-title">تماس با ما</h1>
-                <p class="section-subtitle">
+                <h1 class="contact-page-title">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    تماس با ما
+                </h1>
+                <p class="contact-page-subtitle">
                     ما آماده پاسخگویی به سوالات و پیشنهادات شما هستیم. لطفاً فرم زیر را تکمیل کنید.
                 </p>
+                <div class="contact-page-actions">
+                    <a href="@Url.Action("Track", "Contact")" class="btn-track-link">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <span>پیگیری وضعیت پیام قبلی</span>
+                    </a>
+                </div>
             </div>
         </div>
 
-        @if (TempData["SuccessMessage"] != null)
+        @* هشدار اورژانسی - بسیار مهم *@
+        <div class="alert alert-warning emergency-warning-alert" role="alert">
+            <div class="alert-content">
+                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                <div class="alert-text">
+                    <strong>⚠️ هشدار مهم:</strong>
+                    <span>برای موارد اورژانسی از این فرم استفاده نکنید. لطفاً مستقیماً با شماره تماس اضطراری تماس بگیرید.</span>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["ErrorMessage"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                <span>@TempData["ErrorMessage"]</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -78,70 +65,157 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="contact-form-card">
-                    <h2 class="mb-4">
-                        <i class="fas fa-envelope text-primary"></i>
-                        ارسال پیام
+                    <h2 class="contact-form-card-title">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                        <span>ارسال پیام</span>
                     </h2>
 
-                    @using (Html.BeginForm("Submit", "Contact", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    @using (Html.BeginForm("Submit", "Contact", FormMethod.Post, new { @class = "contact-form", role = "form", id = "contactForm" }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.ValidationSummary(true, "", new { @class = "alert alert-danger", role = "alert" })
 
+                        @* Honeypot Field (مخفی از کاربر) *@
+                        <div class="honeypot-field" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                            @Html.TextBoxFor(m => m.Website, new { @class = "form-control", tabindex = "-1", autocomplete = "off" })
+                        </div>
+
+                        @* Hidden Form Start Time *@
+                        @Html.HiddenFor(m => m.FormStartTime)
+
                         <div class="form-group">
-                            @Html.LabelFor(m => m.FullName, new { @class = "control-label" })
-                            @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", placeholder = "نام و نام خانوادگی خود را وارد کنید" })
-                            @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger" })
+                            @Html.LabelFor(m => m.FullName, new { @class = "form-label required" })
+                            @Html.TextBoxFor(m => m.FullName, new { 
+                                @class = "form-control", 
+                                placeholder = "نام و نام خانوادگی خود را وارد کنید",
+                                autocomplete = "name",
+                                aria_required = "true"
+                            })
+                            @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger", role = "alert" })
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    @Html.LabelFor(m => m.Email, new { @class = "control-label" })
-                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "example@email.com" })
-                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                                    @Html.LabelFor(m => m.Email, new { @class = "form-label required" })
+                                    @Html.TextBoxFor(m => m.Email, new { 
+                                        @class = "form-control", 
+                                        type = "email", 
+                                        placeholder = "example@email.com",
+                                        autocomplete = "email",
+                                        aria_required = "true"
+                                    })
+                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger", role = "alert" })
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    @Html.LabelFor(m => m.PhoneNumber, new { @class = "control-label" })
-                                    @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "09123456789" })
-                                    @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger" })
+                                    @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.PhoneNumber, new { 
+                                        @class = "form-control", 
+                                        placeholder = "09123456789 (اختیاری)",
+                                        autocomplete = "tel",
+                                        type = "tel"
+                                    })
+                                    @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger", role = "alert" })
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                        اختیاری - در صورت نیاز به تماس تلفنی
+                                    </small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            @Html.LabelFor(m => m.Category, new { @class = "control-label" })
-                            @Html.DropDownListFor(m => m.Category, new SelectList(new[]
-                            {
-                                new SelectListItem { Text = "سوال", Value = "1" },
-                                new SelectListItem { Text = "پیشنهاد", Value = "2" },
-                                new SelectListItem { Text = "شکایت", Value = "3" },
-                                new SelectListItem { Text = "نوبت‌دهی", Value = "4" },
-                                new SelectListItem { Text = "سایر", Value = "5" }
-                            }, "Value", "Text"), "لطفاً دسته‌بندی را انتخاب کنید", new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Subject, new { @class = "control-label" })
-                            @Html.TextBoxFor(m => m.Subject, new { @class = "form-control", placeholder = "موضوع پیام خود را وارد کنید" })
-                            @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.Message, new { @class = "control-label" })
-                            @Html.TextAreaFor(m => m.Message, new { @class = "form-control", rows = "8", placeholder = "پیام خود را وارد کنید..." })
-                            @Html.ValidationMessageFor(m => m.Message, "", new { @class = "text-danger" })
+                            @Html.LabelFor(m => m.Category, new { @class = "form-label required" })
+                            @Html.DropDownListFor(m => m.Category, 
+                                Enum.GetValues(typeof(ClinicApp.Models.Enums.ContactFormCategory))
+                                    .Cast<ClinicApp.Models.Enums.ContactFormCategory>()
+                                    .Select(e => new SelectListItem 
+                                    { 
+                                        Text = e.GetDisplayName(), 
+                                        Value = ((byte)e).ToString() 
+                                    }), 
+                                "لطفاً نوع درخواست را انتخاب کنید", 
+                                new { @class = "form-control", aria_required = "true" })
+                            @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger", role = "alert" })
                             <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> حداکثر 5000 کاراکتر
+                                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                نوع درخواست خود را انتخاب کنید (نوبت‌دهی، سؤال عمومی، مالی، همکاری...)
                             </small>
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-medical-primary btn-lg">
-                                <i class="fas fa-paper-plane"></i> ارسال پیام
+                            @Html.LabelFor(m => m.Subject, new { @class = "form-label required" })
+                            @Html.TextBoxFor(m => m.Subject, new { 
+                                @class = "form-control", 
+                                placeholder = "موضوع / نوع درخواست خود را وارد کنید",
+                                maxlength = "500",
+                                aria_required = "true"
+                            })
+                            @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger", role = "alert" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Message, new { @class = "form-label required" })
+                            @Html.TextAreaFor(m => m.Message, new { 
+                                @class = "form-control", 
+                                rows = "6", 
+                                placeholder = "پیام خود را وارد کنید...",
+                                maxlength = "2000",
+                                aria_required = "true"
+                            })
+                            @Html.ValidationMessageFor(m => m.Message, "", new { @class = "text-danger", role = "alert" })
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                حداکثر 2000 کاراکتر
+                                <span class="char-counter">0 / 2000</span>
+                            </small>
+                            @* GDPR Warning: عدم ارسال اطلاعات پزشکی *@
+                            <div class="gdpr-warning-box">
+                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                <strong>توجه:</strong> لطفاً اطلاعات پزشکی، شرح بیماری، یا جزئیات درمانی ارسال نکنید. برای موارد پزشکی، لطفاً با کلینیک تماس تلفنی بگیرید.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PreferredContactMethod, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.PreferredContactMethod, 
+                                Enum.GetValues(typeof(ClinicApp.ViewModels.CMS.PreferredContactMethod))
+                                    .Cast<ClinicApp.ViewModels.CMS.PreferredContactMethod>()
+                                    .Select(e => new SelectListItem 
+                                    { 
+                                        Text = e.GetDisplayName(), 
+                                        Value = ((int)e).ToString() 
+                                    }), 
+                                new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.PreferredContactMethod, "", new { @class = "text-danger", role = "alert" })
+                        </div>
+
+                        @* Privacy Policy Acceptance - GDPR Required *@
+                        <div class="form-group privacy-policy-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.AcceptPrivacyPolicy, new { 
+                                    @class = "form-check-input", 
+                                    id = "acceptPrivacyPolicy",
+                                    aria_required = "true"
+                                })
+                                <label class="form-check-label" for="acceptPrivacyPolicy">
+                                    مطالعه و پذیرش 
+                                    <a href="@Url.Action("Privacy", "Home")" target="_blank" rel="noopener noreferrer" class="privacy-policy-link">
+                                        سیاست حریم خصوصی
+                                        <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                    </a>
+                                    <span class="required-indicator" aria-label="فیلد الزامی">*</span>
+                                </label>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.AcceptPrivacyPolicy, "", new { @class = "text-danger", role = "alert" })
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-contact-submit" id="submitContactForm">
+                                <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                                <span>ارسال پیام</span>
                             </button>
                         </div>
                     }
@@ -149,49 +223,53 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="contact-info-card">
-                    <h3 class="mb-4">
-                        <i class="fas fa-info-circle text-primary"></i>
-                        اطلاعات تماس
+                <div class="contact-info-sidebar">
+                    <h3 class="contact-info-title">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        <span>اطلاعات تماس</span>
                     </h3>
 
                     <div class="contact-info-item">
                         <div class="contact-info-icon">
-                            <i class="fas fa-map-marker-alt"></i>
+                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
                         </div>
-                        <div>
+                        <div class="contact-info-content">
                             <strong>آدرس</strong>
-                            <p class="mb-0">جیرفت، خیابان اصلی، کوچه شفا، پلاک 10</p>
+                            <p>جیرفت، خیابان آزادی، کوچه 12</p>
+                            <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="contact-info-link">
+                                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                مشاهده نقشه
+                            </a>
                         </div>
                     </div>
 
                     <div class="contact-info-item">
                         <div class="contact-info-icon">
-                            <i class="fas fa-phone-alt"></i>
+                            <i class="fas fa-phone-alt" aria-hidden="true"></i>
                         </div>
-                        <div>
+                        <div class="contact-info-content">
                             <strong>تلفن</strong>
-                            <p class="mb-0"><a href="tel:+983432221234">+98 (34) 3222 1234</a></p>
+                            <p><a href="tel:03412345678" class="contact-info-link">034-12345678</a></p>
                         </div>
                     </div>
 
                     <div class="contact-info-item">
                         <div class="contact-info-icon">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
                         </div>
-                        <div>
+                        <div class="contact-info-content">
                             <strong>ایمیل</strong>
-                            <p class="mb-0"><a href="mailto:info@shafa-jiroft.com">info@shafa-jiroft.com</a></p>
+                            <p><a href="mailto:info@clinic.com" class="contact-info-link">info@clinic.com</a></p>
                         </div>
                     </div>
 
                     <div class="contact-info-item">
                         <div class="contact-info-icon">
-                            <i class="fas fa-clock"></i>
+                            <i class="fas fa-clock" aria-hidden="true"></i>
                         </div>
-                        <div>
+                        <div class="contact-info-content">
                             <strong>ساعات کاری</strong>
-                            <p class="mb-0">شنبه تا پنجشنبه: 8:00 - 20:00</p>
+                            <p>شنبه تا پنجشنبه: 8:00 - 20:00</p>
                         </div>
                     </div>
                 </div>
@@ -202,5 +280,38 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Character Counter برای Message
+            var messageTextarea = document.getElementById('@Html.IdFor(m => m.Message)');
+            var charCounter = document.querySelector('.char-counter');
+            
+            if (messageTextarea && charCounter) {
+                function updateCharCounter() {
+                    var length = messageTextarea.value.length;
+                    charCounter.textContent = length + ' / 2000';
+                    if (length > 2000) {
+                        charCounter.classList.add('text-danger');
+                    } else {
+                        charCounter.classList.remove('text-danger');
+                    }
+                }
+                
+                messageTextarea.addEventListener('input', updateCharCounter);
+                updateCharCounter(); // Initial count
+            }
 
+            // Form Validation Enhancement
+            var contactForm = document.getElementById('contactForm');
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    var submitButton = document.getElementById('submitContactForm');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> <span>در حال ارسال...</span>';
+                    }
+                });
+            }
+        });
+    </script>
+}

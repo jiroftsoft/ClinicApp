@@ -1135,8 +1135,9 @@ namespace ClinicApp.Services
                     new FooterLinkViewModel { Title = "درباره ما", Url = "/About", Icon = "fas fa-info-circle", Order = 2 },
                     new FooterLinkViewModel { Title = "پزشکان", Url = "/Doctors", Icon = "fas fa-user-md", Order = 3 },
                     new FooterLinkViewModel { Title = "مقالات", Url = "/Blog", Icon = "fas fa-newspaper", Order = 4 },
-                    new FooterLinkViewModel { Title = "تماس با ما", Url = "/Home/Contact", Icon = "fas fa-envelope", Order = 5 },
-                    new FooterLinkViewModel { Title = "سوالات متداول", Url = "/FAQ", Icon = "fas fa-question-circle", Order = 6 }
+                    new FooterLinkViewModel { Title = "تماس با ما", Url = "/Contact", Icon = "fas fa-envelope", Order = 5 },
+                    new FooterLinkViewModel { Title = "پیگیری پیام", Url = "/Contact/Track", Icon = "fas fa-search", Order = 6 },
+                    new FooterLinkViewModel { Title = "سوالات متداول", Url = "/FAQ", Icon = "fas fa-question-circle", Order = 7 }
                 };
 
                 // ساخت Service Links

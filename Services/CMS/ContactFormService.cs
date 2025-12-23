@@ -9,8 +9,11 @@ using ClinicApp.Models;
 using ClinicApp.Models.Entities.CMS;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.CMS;
+using ClinicApp.Services;
+using Microsoft.AspNet.Identity;
 using Serilog;
 using System.ComponentModel;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Services.CMS
 {
@@ -208,6 +211,51 @@ namespace ClinicApp.Services.CMS
                 await _context.SaveChangesAsync();
 
                 _logger.Information("فرم تماس با موفقیت ایجاد شد - ContactFormId: {ContactFormId}", contactForm.ContactFormId);
+
+                // ارسال SMS تایید (اگر شماره موبایل وارد شده باشد) - Fire and Forget
+                if (!string.IsNullOrWhiteSpace(contactForm.PhoneNumber))
+                {
+                    try
+                    {
+                        var trackingId = $"CF-{contactForm.ContactFormId:D6}";
+                        
+                        // Fire and Forget - خطا در ارسال SMS نباید فرآیند را متوقف کند
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var smsService = new AsanakSmsService();
+                                var smsMessage = new IdentityMessage
+                                {
+                                    Destination = contactForm.PhoneNumber,
+                                    Body = $"✅ پیام شما با موفقیت دریافت شد\n" +
+                                           $"📋 شماره پیگیری: {trackingId}\n" +
+                                           $"📧 ایمیل: {contactForm.Email}\n" +
+                                           $"📝 موضوع: {contactForm.Subject}\n" +
+                                           $"⏰ زمان تقریبی پاسخ: در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)\n" +
+                                           $"🏥 کلینیک درمانی شفا"
+                                };
+
+                                await smsService.SendAsync(smsMessage);
+                                _logger.Information("SMS تایید فرم تماس ارسال شد - ContactFormId: {ContactFormId}, Phone: {Phone}, TrackingId: {TrackingId}",
+                                    contactForm.ContactFormId, contactForm.PhoneNumber, trackingId);
+                            }
+                            catch (Exception smsEx)
+                            {
+                                _logger.Error(smsEx, "خطا در ارسال SMS تایید فرم تماس - ContactFormId: {ContactFormId}, Phone: {Phone}",
+                                    contactForm.ContactFormId, contactForm.PhoneNumber);
+                                // خطا را لاگ می‌کنیم اما exception را throw نمی‌کنیم
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در ایجاد Task ارسال SMS - ContactFormId: {ContactFormId}",
+                            contactForm.ContactFormId);
+                        // خطا را لاگ می‌کنیم اما فرآیند را متوقف نمی‌کنیم
+                    }
+                }
+
                 return ServiceResult<ContactForm>.Successful(contactForm, "فرم تماس با موفقیت ارسال شد");
             }
             catch (Exception ex)
@@ -302,11 +350,57 @@ namespace ClinicApp.Services.CMS
                 _contactFormRepository.Update(contactForm);
                 await _context.SaveChangesAsync();
 
-                // TODO: ارسال ایمیل/SMS در صورت انتخاب کاربر
-                // if (model.SendEmail) { ... }
-                // if (model.SendSms) { ... }
-
                 _logger.Information("پاسخ با موفقیت ثبت شد - ContactFormId: {ContactFormId}", model.ContactFormId);
+
+                // ارسال SMS اطلاع‌رسانی پاسخ (اگر شماره موبایل وارد شده باشد) - Fire and Forget
+                if (!string.IsNullOrWhiteSpace(contactForm.PhoneNumber))
+                {
+                    try
+                    {
+                        var trackingId = $"CF-{contactForm.ContactFormId:D6}";
+                        
+                        // Fire and Forget - خطا در ارسال SMS نباید فرآیند را متوقف کند
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var smsService = new AsanakSmsService();
+                                // محتوای SMS گرم و حرفه‌ای برای اطلاع‌رسانی پاسخ
+                                var smsMessage = new IdentityMessage
+                                {
+                                    Destination = contactForm.PhoneNumber,
+                                    Body = $"✅ پاسخ شما آماده است\n" +
+                                           $"📋 شماره پیگیری: {trackingId}\n" +
+                                           $"👤 عزیز {contactForm.FullName}\n" +
+                                           $"📝 موضوع: {contactForm.Subject}\n" +
+                                           $"💬 پاسخ شما آماده است. در صورت نیاز از طریق ایمیل یا تماس تلفنی با شما ارتباط برقرار خواهیم کرد.\n" +
+                                           $"🙏 از صبر و اعتماد شما به کلینیک شفا متشکریم\n" +
+                                           $"🏥 کلینیک درمانی شفا"
+                                };
+
+                                await smsService.SendAsync(smsMessage);
+                                _logger.Information("SMS اطلاع‌رسانی پاسخ فرم تماس ارسال شد - ContactFormId: {ContactFormId}, Phone: {Phone}, TrackingId: {TrackingId}",
+                                    contactForm.ContactFormId, contactForm.PhoneNumber, trackingId);
+                            }
+                            catch (Exception smsEx)
+                            {
+                                _logger.Error(smsEx, "خطا در ارسال SMS اطلاع‌رسانی پاسخ فرم تماس - ContactFormId: {ContactFormId}, Phone: {Phone}",
+                                    contactForm.ContactFormId, contactForm.PhoneNumber);
+                                // خطا را لاگ می‌کنیم اما exception را throw نمی‌کنیم
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در ایجاد Task ارسال SMS اطلاع‌رسانی پاسخ - ContactFormId: {ContactFormId}",
+                            contactForm.ContactFormId);
+                        // خطا را لاگ می‌کنیم اما فرآیند را متوقف نمی‌کنیم
+                    }
+                }
+
+                // TODO: ارسال ایمیل در صورت انتخاب کاربر
+                // if (model.SendEmail) { ... }
+
                 return ServiceResult.Successful("پاسخ با موفقیت ثبت شد");
             }
             catch (Exception ex)
@@ -457,6 +551,69 @@ namespace ClinicApp.Services.CMS
             {
                 _logger.Error(ex, "خطا در دریافت تعداد پاسخ داده شده");
                 return ServiceResult<int>.Failed("خطا در دریافت تعداد پاسخ داده شده");
+            }
+        }
+
+        public async Task<ServiceResult<ContactFormTrackingViewModel>> GetContactFormByTrackingIdAsync(string trackingId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(trackingId))
+                {
+                    return ServiceResult<ContactFormTrackingViewModel>.Failed("شماره پیگیری وارد نشده است");
+                }
+
+                // استخراج ContactFormId از Tracking ID (فرمت: CF-XXXXXX)
+                int contactFormId;
+                if (trackingId.StartsWith("CF-", StringComparison.OrdinalIgnoreCase))
+                {
+                    var idPart = trackingId.Substring(3);
+                    if (!int.TryParse(idPart, out contactFormId))
+                    {
+                        return ServiceResult<ContactFormTrackingViewModel>.Failed("شماره پیگیری نامعتبر است");
+                    }
+                }
+                else
+                {
+                    // اگر فقط عدد وارد شده باشد
+                    if (!int.TryParse(trackingId, out contactFormId))
+                    {
+                        return ServiceResult<ContactFormTrackingViewModel>.Failed("شماره پیگیری نامعتبر است");
+                    }
+                }
+
+                var contactForm = await _contactFormRepository.GetByIdAsync(contactFormId);
+                if (contactForm == null || contactForm.IsDeleted)
+                {
+                    return ServiceResult<ContactFormTrackingViewModel>.Failed("پیامی با این شماره پیگیری یافت نشد");
+                }
+
+                var viewModel = new ContactFormTrackingViewModel
+                {
+                    ContactFormId = contactForm.ContactFormId,
+                    TrackingId = $"CF-{contactForm.ContactFormId:D6}",
+                    FullName = contactForm.FullName,
+                    Email = contactForm.Email,
+                    Subject = contactForm.Subject,
+                    Category = contactForm.Category,
+                    CategoryDisplay = GetEnumDescription(contactForm.Category),
+                    Status = contactForm.Status,
+                    StatusDisplay = GetEnumDescription(contactForm.Status),
+                    CreatedAt = contactForm.CreatedAt,
+                    CreatedAtPersian = contactForm.CreatedAt.ToPersianDate(),
+                    IsRead = contactForm.IsRead,
+                    ReadAt = contactForm.ReadAt,
+                    HasReply = !string.IsNullOrWhiteSpace(contactForm.ReplyMessage),
+                    RepliedAt = contactForm.RepliedAt,
+                    RepliedAtPersian = contactForm.RepliedAt?.ToPersianDate()
+                };
+
+                return ServiceResult<ContactFormTrackingViewModel>.Successful(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در جستجوی فرم تماس با Tracking ID - TrackingId: {TrackingId}", trackingId);
+                return ServiceResult<ContactFormTrackingViewModel>.Failed("خطا در جستجوی پیام");
             }
         }
 

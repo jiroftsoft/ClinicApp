@@ -1,0 +1,440 @@
+/**
+ * Contact Track Page Styles - Production-Grade
+ * 
+ * طراحی حرفه‌ای برای صفحه پیگیری وضعیت پیام با Tracking ID
+ */
+
+.track-contact-section,
+.track-result-section {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #e0f2f1 100%);
+    padding: var(--spacing-xxxl, 4rem) 0;
+    min-height: calc(100vh - 200px);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.track-contact-card,
+.track-result-card {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 8px 32px rgba(44, 90, 160, 0.15);
+    padding: var(--spacing-xxxl, 4rem);
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.track-contact-card::before,
+.track-result-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+}
+
+.track-contact-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.track-icon,
+.track-result-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-lg, 1.5rem);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.track-icon i,
+.track-result-icon i {
+    font-size: 2rem;
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.track-title,
+.track-result-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.track-subtitle {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+}
+
+.track-form {
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.track-form .form-group {
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.track-form .form-label {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: #1a365d;
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.track-form .form-control {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-normal, 400);
+    padding: var(--spacing-md, 1rem);
+    border: 2px solid rgba(44, 90, 160, 0.2);
+    border-radius: var(--radius-md, 8px);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    min-height: 50px;
+    text-align: center;
+    letter-spacing: 2px;
+    font-weight: var(--font-weight-bold, 700);
+}
+
+.track-form .form-control:focus {
+    border-color: var(--medical-primary, #2c5aa0);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    outline: none;
+}
+
+.btn-track {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-md, 1rem) var(--spacing-xl, 2rem);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    cursor: pointer;
+    min-height: 50px;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm, 0.5rem);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.btn-track:hover {
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.track-help {
+    background: rgba(44, 90, 160, 0.05);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-lg, 1.5rem);
+    margin-top: var(--spacing-xl, 2rem);
+}
+
+.track-help h3 {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-md, 1rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.track-help ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.track-help li {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.track-help li i {
+    color: var(--medical-primary, #2c5aa0);
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* Track Result Styles */
+.track-result-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl, 2rem);
+    padding-bottom: var(--spacing-lg, 1.5rem);
+    border-bottom: 2px solid rgba(44, 90, 160, 0.15);
+}
+
+.track-result-content {
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.track-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem) 0;
+    border-bottom: 1px solid rgba(44, 90, 160, 0.1);
+}
+
+.track-info-row:last-child {
+    border-bottom: none;
+}
+
+.track-info-row.status-row {
+    background: rgba(44, 90, 160, 0.05);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-md, 1rem);
+    margin-top: var(--spacing-md, 1rem);
+    border-bottom: none;
+}
+
+.track-info-label {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: #1a365d;
+    min-width: 150px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.25rem);
+}
+
+.track-info-label i {
+    color: var(--medical-primary, #2c5aa0);
+    font-size: 1.125rem;
+}
+
+.track-info-value {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    flex: 1;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+    border-radius: var(--radius-sm, 4px);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.status-badge.status-new {
+    background: rgba(23, 162, 184, 0.1);
+    color: #138496;
+    border: 1px solid rgba(23, 162, 184, 0.3);
+}
+
+.status-badge.status-inprogress {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.status-badge.status-replied {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.status-badge.status-closed {
+    background: rgba(108, 117, 125, 0.1);
+    color: #383d41;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.track-reply-section {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.08) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-lg, 1.5rem);
+    margin-top: var(--spacing-lg, 1.5rem);
+}
+
+.track-reply-header {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #155724;
+    margin-bottom: var(--spacing-md, 1rem);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.track-reply-header i {
+    color: var(--medical-success, #28a745);
+}
+
+.track-reply-content {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #2d4a5f;
+    line-height: var(--line-height-relaxed, 1.75);
+}
+
+.track-no-reply {
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-lg, 1.5rem);
+    margin-top: var(--spacing-lg, 1.5rem);
+    text-align: center;
+}
+
+.track-no-reply i {
+    font-size: 2rem;
+    color: var(--medical-warning, #ffc107);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+.track-no-reply p {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-normal, 400);
+    color: #856404;
+    margin: 0;
+}
+
+.track-result-actions {
+    display: flex;
+    gap: var(--spacing-md, 1rem);
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: var(--spacing-lg, 1.5rem);
+    border-top: 2px solid rgba(44, 90, 160, 0.15);
+}
+
+.btn-track-again,
+.btn-contact-again,
+.btn-home {
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    border-radius: var(--radius-md, 8px);
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    font-weight: var(--font-weight-semibold, 600);
+    text-decoration: none;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    min-height: 44px;
+}
+
+.btn-track-status {
+    background: linear-gradient(135deg, var(--medical-info, #17a2b8) 0%, var(--medical-primary, #2c5aa0) 100%);
+    color: #ffffff;
+    border: none;
+}
+
+.btn-track-status:hover {
+    background: linear-gradient(135deg, var(--medical-info-dark, #138496) 0%, var(--medical-primary-dark, #1e3d6f) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-track-again {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    color: #ffffff;
+    border: none;
+}
+
+.btn-track-again:hover {
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-contact-again {
+    background: #ffffff;
+    color: var(--medical-primary, #2c5aa0);
+    border: 2px solid var(--medical-primary, #2c5aa0);
+}
+
+.btn-contact-again:hover {
+    background: rgba(44, 90, 160, 0.08);
+    transform: translateY(-2px);
+    color: var(--medical-primary, #2c5aa0);
+    text-decoration: none;
+}
+
+.btn-home {
+    background: #ffffff;
+    color: #6c757d;
+    border: 2px solid #6c757d;
+}
+
+.btn-home:hover {
+    background: rgba(108, 117, 125, 0.08);
+    transform: translateY(-2px);
+    color: #6c757d;
+    text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+    .track-contact-card,
+    .track-result-card {
+        padding: var(--spacing-xl, 2rem);
+    }
+    
+    .track-info-row {
+        flex-direction: column;
+        gap: var(--spacing-xs, 0.25rem);
+    }
+    
+    .track-info-label {
+        min-width: auto;
+    }
+    
+    .track-result-actions {
+        flex-direction: column;
+    }
+    
+    .btn-track-again,
+    .btn-contact-again,
+    .btn-home {
+        width: 100%;
+        justify-content: center;
+    }
+}

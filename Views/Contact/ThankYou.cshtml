@@ -1,0 +1,93 @@
+@{
+    ViewBag.Title = "پیام شما ارسال شد";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* ============================================
+   Thank You Page - Production-Grade
+   ============================================
+   - نمایش Tracking ID
+   - زمان تقریبی پاسخ
+   - CTA برای بازگشت
+   ============================================ *@
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-thankyou-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+}
+
+<section class="thank-you-section" aria-label="صفحه تشکر">
+    <div class="container">
+        <div class="thank-you-card">
+            <div class="thank-you-icon">
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+            </div>
+            
+            <h1 class="thank-you-title">پیام شما با موفقیت ارسال شد</h1>
+            
+            <p class="thank-you-message">
+                از اینکه با ما تماس گرفتید متشکریم. پیام شما دریافت شده و در اسرع وقت بررسی خواهد شد.
+            </p>
+
+            @if (ViewBag.TrackingId != null)
+            {
+                <div class="tracking-id-box">
+                    <div class="tracking-id-label">
+                        <i class="fas fa-barcode" aria-hidden="true"></i>
+                        <span>شماره پیگیری:</span>
+                    </div>
+                    <div class="tracking-id-value" id="trackingId" aria-label="شماره پیگیری: @ViewBag.TrackingId">
+                        @ViewBag.TrackingId
+                    </div>
+                    <button type="button" class="btn-copy-tracking" onclick="copyTrackingId()" aria-label="کپی شماره پیگیری">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                        <span>کپی</span>
+                    </button>
+                </div>
+            }
+
+            <div class="response-time-info">
+                <i class="fas fa-clock" aria-hidden="true"></i>
+                <div class="response-time-content">
+                    <strong>زمان تقریبی پاسخ:</strong>
+                    <p>@(ViewBag.ResponseTime ?? "در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)")</p>
+                </div>
+            </div>
+
+            <div class="thank-you-actions">
+                <a href="@Url.Action("Track", "Contact")" class="btn btn-track-status">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span>پیگیری وضعیت پیام</span>
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-home">
+                    <i class="fas fa-home" aria-hidden="true"></i>
+                    <span>بازگشت به صفحه اصلی</span>
+                </a>
+                <a href="@Url.Action("Index", "Contact")" class="btn btn-contact-again">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    <span>ارسال پیام دیگر</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function copyTrackingId() {
+            var trackingId = document.getElementById('trackingId').textContent.trim();
+            navigator.clipboard.writeText(trackingId).then(function() {
+                var btn = event.target.closest('.btn-copy-tracking');
+                var originalText = btn.querySelector('span').textContent;
+                btn.querySelector('span').textContent = 'کپی شد!';
+                btn.classList.add('copied');
+                
+                setTimeout(function() {
+                    btn.querySelector('span').textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('خطا در کپی:', err);
+            });
+        }
+    </script>
+}

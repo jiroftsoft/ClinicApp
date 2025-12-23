@@ -631,6 +631,9 @@ namespace ClinicApp
 
                 // ثبت سرویس‌های پرداخت
                 container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس‌های پرداخت آنلاین
+                container.RegisterType<Interfaces.Payment.Gateway.IPaymentGatewayService, Services.Payment.Gateway.PaymentGatewayService>(new PerRequestLifetimeManager());
                 // ثبت ریپازیتوری‌های POS
                 container.RegisterType<IPosTerminalRepository, PosTerminalRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashSessionRepository, CashSessionRepository>(new PerRequestLifetimeManager());

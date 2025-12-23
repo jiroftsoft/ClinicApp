@@ -83,11 +83,12 @@ namespace ClinicApp.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Redirect به ContactController برای استفاده از فرم تماس Production-Grade
+        /// </summary>
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
-
-            return View();
+            return RedirectToAction("Index", "Contact");
         }
 
         #region Partial Actions (برای کش کردن هر سکشن جداگانه)

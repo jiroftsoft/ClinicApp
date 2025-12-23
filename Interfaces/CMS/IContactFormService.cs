@@ -27,6 +27,11 @@ namespace ClinicApp.Interfaces.CMS
         Task<ServiceResult<int>> GetNewCountAsync();
         Task<ServiceResult<int>> GetInProgressCountAsync();
         Task<ServiceResult<int>> GetRepliedCountAsync();
+        
+        /// <summary>
+        /// جستجوی فرم تماس با Tracking ID (برای کاربران عمومی)
+        /// </summary>
+        Task<ServiceResult<ContactFormTrackingViewModel>> GetContactFormByTrackingIdAsync(string trackingId);
     }
 }
 

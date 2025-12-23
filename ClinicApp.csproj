@@ -603,6 +603,7 @@
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
     <Compile Include="Filters\AppointmentRateLimitAttribute.cs" />
+    <Compile Include="Filters\ContactRateLimitAttribute.cs" />
     <Compile Include="Filters\CorrelationIdFilter.cs" />
     <Compile Include="Filters\LoadFooterAttribute.cs" />
     <Compile Include="Filters\LoadEmergencyContactsAttribute.cs" />
@@ -1809,7 +1810,10 @@
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\announcements-section.css" />
     <Content Include="Content\css\blog-section.css" />
+    <Content Include="Content\css\contact-form-page.css" />
     <Content Include="Content\css\contact-section.css" />
+    <Content Include="Content\css\contact-thankyou-page.css" />
+    <Content Include="Content\css\contact-track-page.css" />
     <Content Include="Content\css\design-system.css" />
     <Content Include="Content\css\details-page-medical.css" />
     <Content Include="Content\css\details-standards.css" />
@@ -5759,7 +5763,6 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
-    <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\Lockout.cshtml" />
     <Content Include="Views\Patient\Index.cshtml" />
@@ -5919,6 +5922,9 @@
     <Content Include="Views\Shared\_NewsletterSubscribePartial.cshtml" />
     <Content Include="Views\Blog\Index.cshtml" />
     <Content Include="Views\Blog\Post.cshtml" />
+    <Content Include="Views\Contact\ThankYou.cshtml" />
+    <Content Include="Views\Contact\Track.cshtml" />
+    <Content Include="Views\Contact\TrackResult.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

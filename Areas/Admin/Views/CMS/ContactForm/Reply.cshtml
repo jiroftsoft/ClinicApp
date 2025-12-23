@@ -118,13 +118,11 @@
                         </div>
 
                         <div class="form-group">
-                            <div class="form-check">
-                                @Html.CheckBoxFor(m => m.SendSms, new { @class = "form-check-input" })
-                                @Html.LabelFor(m => m.SendSms, new { @class = "form-check-label" })
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>اطلاع‌رسانی خودکار:</strong>
+                                در صورت وجود شماره موبایل، پیامک اطلاع‌رسانی پاسخ به صورت خودکار برای کاربر ارسال خواهد شد.
                             </div>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> در صورت انتخاب، پاسخ به شماره تماس کاربر ارسال می‌شود.
-                            </small>
                         </div>
 
                         <div class="form-group">

@@ -1,0 +1,114 @@
+@{
+    ViewBag.Title = "پیگیری وضعیت پیام";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* ============================================
+   Track Contact Form - Production-Grade
+   ============================================
+   - جستجوی وضعیت پیام با Tracking ID
+   - UI/UX: طراحی رسمی و حرفه‌ای
+   ============================================ *@
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-track-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+}
+
+<section class="track-contact-section" aria-label="پیگیری وضعیت پیام">
+    <div class="container">
+        <div class="track-contact-card">
+            <div class="track-contact-header">
+                <div class="track-icon">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </div>
+                <h1 class="track-title">پیگیری وضعیت پیام</h1>
+                <p class="track-subtitle">
+                    با وارد کردن شماره پیگیری که پس از ارسال پیام دریافت کرده‌اید، می‌توانید وضعیت پیام خود را مشاهده کنید.
+                </p>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    <span>@TempData["ErrorMessage"]</span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            @using (Html.BeginForm("Track", "Contact", FormMethod.Post, new { @class = "track-form", role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-danger", role = "alert" })
+
+                <div class="form-group">
+                    <label for="trackingId" class="form-label">
+                        <i class="fas fa-barcode" aria-hidden="true"></i>
+                        <span>شماره پیگیری</span>
+                    </label>
+                    <input type="text" 
+                           id="trackingId" 
+                           name="trackingId" 
+                           class="form-control" 
+                           placeholder="مثال: CF-000123 یا 123"
+                           required
+                           autocomplete="off"
+                           aria-required="true" />
+                    @Html.ValidationMessage("trackingId", "", new { @class = "text-danger", role = "alert" })
+                    <small class="form-text text-muted">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        شماره پیگیری را که در SMS یا صفحه تایید دریافت کرده‌اید وارد کنید
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-track">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <span>جستجو</span>
+                    </button>
+                </div>
+            }
+
+            <div class="track-help">
+                <h3>
+                    <i class="fas fa-question-circle" aria-hidden="true"></i>
+                    <span>شماره پیگیری را کجا پیدا کنم؟</span>
+                </h3>
+                <ul>
+                    <li>
+                        <i class="fas fa-sms" aria-hidden="true"></i>
+                        <span>در پیامک تایید که پس از ارسال فرم دریافت کرده‌اید</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                        <span>در صفحه تایید پس از ارسال موفق فرم</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>در ایمیل تایید (در صورت فعال بودن)</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var trackingInput = document.getElementById('trackingId');
+            if (trackingInput) {
+                // تبدیل به حروف بزرگ و حذف فاصله
+                trackingInput.addEventListener('input', function(e) {
+                    var value = e.target.value.toUpperCase().replace(/\s/g, '');
+                    e.target.value = value;
+                });
+
+                // Focus on load
+                trackingInput.focus();
+            }
+        });
+    </script>
+}
