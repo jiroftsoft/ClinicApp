@@ -1,7 +1,39 @@
 @model ClinicApp.ViewModels.Patient.AvailableAppointmentsViewModel
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "نوبت‌های موجود";
     Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+    
+    // ✅ تبدیل تاریخ میلادی به شمسی برای نمایش در date picker
+    // استفاده از ToPersianDate برای تبدیل دقیق تاریخ میلادی به شمسی
+    // ⚠️ مهم: همیشه از Date property استفاده می‌کنیم تا فقط تاریخ (بدون زمان) مقایسه شود
+    string persianSelectedDate;
+    
+    // ✅ بررسی دقیق تاریخ برای تعیین اینکه آیا امروز است یا نه
+    // استفاده از Date property برای مقایسه فقط تاریخ (بدون زمان) - جلوگیری از مشکل timezone
+    var selectedDateOnly = Model.SelectedDate.Date;
+    var todayDateOnly = DateTime.Today;
+    
+    // ✅ اگر تاریخ معتبر نیست یا تاریخ امروز است، از تاریخ امروز شمسی استفاده کن
+    if (Model.SelectedDate == DateTime.MinValue || Model.SelectedDate == DateTime.MaxValue || 
+        selectedDateOnly == todayDateOnly)
+    {
+        // ✅ استفاده مستقیم از PersianDateHelper.Today برای اطمینان از تاریخ صحیح امروز شمسی
+        // PersianDateHelper.Today حالا از DateTime.Today استفاده می‌کند (بدون زمان) - رفع مشکل timezone
+        persianSelectedDate = PersianDateHelper.Today;
+    }
+    else
+    {
+        // ✅ تبدیل تاریخ میلادی به شمسی - اطمینان از اینکه فقط تاریخ (بدون زمان) تبدیل می‌شود
+        // استفاده از selectedDateOnly (که فقط تاریخ است) به جای Model.SelectedDate (که ممکن است زمان داشته باشد)
+        persianSelectedDate = PersianDateHelper.ToPersianDate(selectedDateOnly);
+        
+        // ✅ اگر تبدیل ناموفق بود، از تاریخ امروز استفاده کن
+        if (string.IsNullOrEmpty(persianSelectedDate) || persianSelectedDate == "0000/00/00")
+        {
+            persianSelectedDate = PersianDateHelper.Today;
+        }
+    }
 }
 
 @section Styles {
@@ -10,13 +42,19 @@
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
         :root {
+            /* رنگ‌های استاندارد درمانی - طبق قرارداد */
             --medical-primary: #2c5aa0;
-            --medical-primary-light: #3d6bb3;
-            --medical-secondary: #667eea;
+            --medical-secondary: #6c757d;
             --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-bg: #ffffff;
+            --medical-dark: #212529;
+            --medical-text: #212529;
+            --medical-text-muted: #6c757d;
             --medical-border: #dee2e6;
-            --medical-text: #495057;
-            --medical-bg: #f8f9fa;
         }
 
         * {
@@ -24,32 +62,19 @@
         }
 
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            background-color: var(--medical-light);
             min-height: 100vh;
         }
 
         /* ========== Page Header ========== */
         .page-header {
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
-            border-radius: 24px;
+            background-color: var(--medical-primary);
+            border-radius: 12px;
             padding: 3rem 2.5rem;
             margin-bottom: 2.5rem;
             color: white;
-            box-shadow: 0 12px 40px rgba(44, 90, 160, 0.25);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             animation: fadeInDown 0.6s ease-out;
-        }
-
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
         }
 
         .page-header-content {
@@ -72,11 +97,12 @@
 
         /* ========== Filter Card ========== */
         .filter-card {
-            background: white;
-            border-radius: 20px;
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
             padding: 2.5rem;
             margin-bottom: 2.5rem;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             animation: fadeInUp 0.6s ease-out 0.2s both;
         }
 
@@ -89,44 +115,28 @@
         }
 
         .doctor-card {
-            background: white;
-            border-radius: 20px;
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
             padding: 0;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             animation: fadeInScale 0.5s ease-out;
             animation-fill-mode: both;
             position: relative;
-            border: 2px solid transparent;
-        }
-
-        .doctor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
-            transform: scaleX(0);
-            transition: transform 0.4s ease;
         }
 
         .doctor-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 16px 40px rgba(44, 90, 160, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
             border-color: var(--medical-primary);
-        }
-
-        .doctor-card:hover::before {
-            transform: scaleX(1);
         }
 
         .doctor-card.selected {
             border-color: var(--medical-primary);
-            box-shadow: 0 12px 35px rgba(44, 90, 160, 0.25);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2);
         }
 
         .doctor-card:nth-child(1) { animation-delay: 0.1s; }
@@ -138,7 +148,7 @@
 
         /* Doctor Card Header */
         .doctor-card-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background-color: var(--medical-light);
             padding: 2rem;
             display: flex;
             align-items: center;
@@ -169,7 +179,7 @@
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+            background-color: var(--medical-primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -177,8 +187,8 @@
             font-size: 3rem;
             font-weight: 700;
             border: 4px solid white;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            transition: transform 0.4s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
         .doctor-card:hover .doctor-avatar-placeholder {
@@ -190,19 +200,19 @@
             bottom: 0;
             left: 0;
             padding: 0.4rem 0.8rem;
-            border-radius: 20px;
+            border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 600;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .status-badge.available {
-            background: linear-gradient(135deg, var(--medical-success) 0%, #34ce57 100%);
+            background-color: var(--medical-success);
             color: white;
         }
 
         .status-badge.unavailable {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            background-color: var(--medical-secondary);
             color: white;
         }
 
@@ -229,7 +239,7 @@
         }
 
         .doctor-specialization i {
-            color: var(--medical-secondary);
+            color: var(--medical-primary);
         }
 
         .doctor-bio {
@@ -267,7 +277,8 @@
         }
 
         .schedule-info {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
@@ -289,9 +300,9 @@
 
         .btn-view-details {
             width: 100%;
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            background-color: var(--medical-primary);
             border: none;
-            border-radius: 12px;
+            border-radius: 6px;
             padding: 1rem 1.5rem;
             color: white;
             font-weight: 600;
@@ -301,12 +312,13 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
         }
 
         .btn-view-details:hover {
+            background-color: #1e4a7a;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(44, 90, 160, 0.4);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
             color: white;
         }
 
@@ -318,9 +330,10 @@
         .empty-state {
             text-align: center;
             padding: 5rem 2rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            background-color: var(--medical-bg);
+            border: 1px solid var(--medical-border);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             animation: fadeIn 0.6s ease-out;
         }
 
@@ -344,13 +357,14 @@
 
         /* ========== Login Prompt ========== */
         .login-prompt {
-            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-            border-radius: 20px;
+            background-color: var(--medical-warning);
+            border: 1px solid #ff9800;
+            border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2.5rem;
-            color: white;
+            color: var(--medical-dark);
             text-align: center;
-            box-shadow: 0 8px 30px rgba(255, 193, 7, 0.3);
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
             animation: fadeInUp 0.6s ease-out 0.1s both;
         }
 
@@ -386,9 +400,9 @@
 
         .time-slot:hover {
             border-color: var(--medical-primary);
-            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+            background-color: #f0f7ff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.15);
         }
 
         .time-slot.available {
@@ -446,14 +460,6 @@
             }
         }
 
-        @@keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
 
         /* ========== Responsive Design ========== */
         @@media (max-width: 992px) {
@@ -565,9 +571,17 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label for="date" class="form-label fw-bold">تاریخ</label>
-                <input type="text" name="date" id="date" class="form-control" 
-                       placeholder="تاریخ را انتخاب کنید" style="border-radius: 12px; padding: 0.75rem;" />
+                @{
+                    // ✅ استفاده از کامپوننت اصولی Persian DatePicker
+                    ViewBag.PersianDatePickerId = "date";
+                    ViewBag.PersianDatePickerName = "date";
+                    ViewBag.PersianDatePickerValue = Model.SelectedDate;
+                    ViewBag.PersianDatePickerLabel = "تاریخ";
+                    ViewBag.PersianDatePickerPlaceholder = "تاریخ را انتخاب کنید";
+                    ViewBag.PersianDatePickerHelpText = "";
+                    ViewBag.PersianDatePickerRequired = false;
+                }
+                @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
             </div>
             <div class="col-md-4">
                 <label class="form-label">&nbsp;</label>
@@ -731,8 +745,8 @@ else if (Model.SelectedDoctorId.HasValue)
 }
 
 @section Scripts {
-    <script src="~/Content/plugins/persian-datepicker/persian-date.min.js"></script>
-    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    @* ✅ استفاده از کامپوننت اصولی Persian DatePicker *@
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
     <script src="~/Content/plugins/toastr/toastr.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -756,7 +770,8 @@ else if (Model.SelectedDoctorId.HasValue)
                 "rtl": true
             };
 
-            var selectedDate = '@(Model.SelectedDate.ToString("yyyy/MM/dd"))';
+            // ✅ استفاده از تاریخ شمسی (نه میلادی)
+            var selectedDate = '@persianSelectedDate';
             var selectedDoctorId = '@(Model.SelectedDoctorId?.ToString() ?? "")';
 
             // ✅ متغیرهای enterprise-level برای مدیریت state
@@ -941,42 +956,56 @@ else if (Model.SelectedDoctorId.HasValue)
                 window.location.href = url;
             }
 
-            // راه‌اندازی Persian DatePicker
-            $("#date").pDatepicker({
-                observer: true,
-                format: 'YYYY/MM/DD',
-                altField: '#dateAlt',
-                altFormat: 'YYYY/MM/DD',
-                initialValue: selectedDate !== '01/01/0001' ? selectedDate : false,
-                initialValueType: 'persian',
-                calendarType: 'persian',
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
-                    }
-                },
-                onSelect: function (selectedDateValue) {
-                    console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
+            // ✅ استفاده از کامپوننت اصولی Persian DatePicker
+            // کامپوننت خودش initialize می‌کند
+            // برای فرم GET، نیازی به hidden input نیست، فقط تاریخ شمسی را در query string ارسال می‌کنیم
+            // منتظر می‌مانیم تا کامپوننت initialize شود
+            var datePickerInitCheck = setInterval(function() {
+                var $dateInput = $("#date");
+                if ($dateInput.length && $dateInput.data('pDatepicker-initialized')) {
+                    clearInterval(datePickerInitCheck);
+                    datePickerInitialized = true;
+                    console.log('✅ DatePicker initialized by component');
                     
-                    // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
-                    if (!pollingEnabled) {
-                        pollingEnabled = true;
-                        startDatePolling();
+                    // ✅ اضافه کردن onSelect handler به datePicker instance
+                    var datePickerInstance = $dateInput.data('pDatepicker');
+                    if (datePickerInstance && datePickerInstance.config) {
+                        // ذخیره onSelect قبلی
+                        var originalOnSelect = datePickerInstance.config.onSelect;
+                        
+                        // تنظیم onSelect handler جدید
+                        datePickerInstance.config.onSelect = function(selectedDateValue) {
+                            console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
+                            
+                            // فراخوانی onSelect قبلی (اگر وجود داشته باشد)
+                            if (originalOnSelect && typeof originalOnSelect === 'function') {
+                                originalOnSelect.call(this, selectedDateValue);
+                            }
+                            
+                            // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
+                            if (!pollingEnabled) {
+                                pollingEnabled = true;
+                                startDatePolling();
+                            }
+                            isInitialLoad = false;
+                            
+                            // ✅ پردازش تاریخ
+                            if (dateChangeTimeout) {
+                                clearTimeout(dateChangeTimeout);
+                            }
+                            
+                            dateChangeTimeout = setTimeout(function() {
+                                processDateFromInput(true);
+                            }, 50);
+                        };
                     }
-                    isInitialLoad = false; // ✅ دیگر بارگذاری اولیه نیست
-                    
-                    // ✅ روش Enterprise: پردازش مستقیم تاریخ بدون debounce زیاد
-                    if (dateChangeTimeout) {
-                        clearTimeout(dateChangeTimeout);
-                    }
-                    
-                    dateChangeTimeout = setTimeout(function() {
-                        processDateFromInput(true); // force process
-                    }, 50); // تاخیر کوتاه برای اطمینان از به‌روزرسانی input
                 }
-            });
+            }, 100);
+            
+            // Timeout برای جلوگیری از infinite loop
+            setTimeout(function() {
+                clearInterval(datePickerInitCheck);
+            }, 5000);
 
             // ✅ Event Listeners Enterprise-Level (مطمئن‌ترین روش در پروژه‌های enterprise)
             // 1. change event - وقتی کاربر تاریخ را انتخاب می‌کند
@@ -1067,6 +1096,7 @@ else if (Model.SelectedDoctorId.HasValue)
             }
             
             // ✅ Initialize تاریخ اولیه و تنظیم flags
+            // منتظر می‌مانیم تا کامپوننت تاریخ امروز را از سرور بگیرد
             setTimeout(function() {
                 // تنظیم تاریخ اولیه در lastProcessedDate و lastPolledValue
                 var initialDate = $("#date").val();
@@ -1077,16 +1107,34 @@ else if (Model.SelectedDoctorId.HasValue)
                         lastPolledValue = $("#date").val();
                         console.log('✅ [Initial Load] Date initialized:', initialDate);
                     }
+                } else {
+                    // اگر تاریخ خالی است، منتظر می‌مانیم تا کامپوننت تاریخ امروز را تنظیم کند
+                    var dateCheckInterval = setInterval(function() {
+                        var currentDate = $("#date").val();
+                        if (currentDate) {
+                            clearInterval(dateCheckInterval);
+                            var normalizedDate = convertPersianToEnglishNumbers(currentDate);
+                            if (normalizedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                lastProcessedDate = normalizedDate;
+                                lastPolledValue = currentDate;
+                                console.log('✅ [Component] Date set from server:', normalizedDate);
+                            }
+                        }
+                    }, 100);
+                    
+                    setTimeout(function() {
+                        clearInterval(dateCheckInterval);
+                    }, 3000);
                 }
                 
                 // ✅ بعد از 2 ثانیه، بارگذاری اولیه تمام شده است
                 setTimeout(function() {
                     isInitialLoad = false;
-                    pollingEnabled = true; // ✅ فعال کردن polling فقط بعد از بارگذاری اولیه
+                    pollingEnabled = true;
                     datePickerInitialized = true;
-                    console.log('✅ DatePicker initialized, polling enabled');
+                    console.log('✅ DatePicker initialized by component, polling enabled');
                 }, 2000);
-            }, 1000);
+            }, 1500); // تاخیر بیشتر برای اطمینان از initialize شدن کامپوننت
 
             // ✅ فیلتر پزشک - اعمال خودکار فیلتر
             $('#doctorId').on('change', function() {
@@ -1156,23 +1204,35 @@ else if (Model.SelectedDoctorId.HasValue)
                 }
             });
 
-            // نمایش پیغام‌های TempData
-            @if (TempData["Success"] != null)
+            // نمایش پیغام‌های NotificationHelper
+            @{
+                var successMsg = NotificationHelper.GetSuccess(TempData);
+                var errorMsg = NotificationHelper.GetError(TempData);
+                var warningMsg = NotificationHelper.GetWarning(TempData);
+                var infoMsg = NotificationHelper.GetInfo(TempData);
+            }
+            @if (successMsg != null)
             {
                 <text>
-                toastr.success('@TempData["Success"]', 'موفق');
+                toastr.success('@Html.Raw(successMsg.Message)', '@Html.Raw(successMsg.Title)');
                 </text>
             }
-            @if (TempData["Error"] != null)
+            @if (errorMsg != null)
             {
                 <text>
-                toastr.error('@TempData["Error"]', 'خطا');
+                toastr.error('@Html.Raw(errorMsg.Message)', '@Html.Raw(errorMsg.Title)');
                 </text>
             }
-            @if (TempData["Info"] != null)
+            @if (warningMsg != null)
             {
                 <text>
-                toastr.info('@TempData["Info"]', 'اطلاعات');
+                toastr.warning('@Html.Raw(warningMsg.Message)', '@Html.Raw(warningMsg.Title)');
+                </text>
+            }
+            @if (infoMsg != null)
+            {
+                <text>
+                toastr.info('@Html.Raw(infoMsg.Message)', '@Html.Raw(infoMsg.Title)');
                 </text>
             }
         });

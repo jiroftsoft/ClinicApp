@@ -17,10 +17,16 @@ namespace ClinicApp
             config.MapHttpAttributeRoutes();
 
             // Convention-based Routing
+            // ⚠️ مهم: این route فقط برای controller هایی که نامشان بدون hyphen است کار می‌کند
+            // Controller های با hyphen (مثل persian-date) باید توسط MVC routing پردازش شوند
+            // Constraint: فقط controller names که با حرف شروع می‌شوند و hyphen ندارند
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
+                defaults: new { id = RouteParameter.Optional },
+                constraints: new { 
+                    controller = @"^[a-zA-Z][a-zA-Z0-9]*$" // فقط controller names بدون hyphen
+                }
             );
         }
     }

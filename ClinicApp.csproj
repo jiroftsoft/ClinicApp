@@ -536,6 +536,7 @@
     <Compile Include="Controllers\Api\DoctorController.cs" />
     <Compile Include="Controllers\Api\InsuranceController.cs" />
     <Compile Include="Controllers\Api\PatientController.cs" />
+    <Compile Include="Controllers\Api\PersianDateApiController.cs" />
     <Compile Include="Controllers\Api\ReceptionApiController.cs" />
     <Compile Include="Controllers\Api\ReceptionApiDtos.cs" />
     <Compile Include="Controllers\Api\ReceptionApiV1Controller.cs" />
@@ -1878,6 +1879,10 @@
     <Content Include="Content\css\value-proposition-section.css" />
     <Content Include="Content\css\video-section.css" />
     <Content Include="Content\favicon.ico" />
+    <Content Include="Content\Images\about\2_14041002_175811_4dcd3b2d64f744a8a1059c11ba2aaa6e.png" />
+    <Content Include="Content\Images\about\3_14041002_175811_5ddc0ff1781f4e42b63a4ab1e46df39c.png" />
+    <Content Include="Content\Images\about\thumbnails\thumb_2_14041002_175811_4dcd3b2d64f744a8a1059c11ba2aaa6e.png" />
+    <Content Include="Content\Images\about\thumbnails\thumb_3_14041002_175811_5ddc0ff1781f4e42b63a4ab1e46df39c.png" />
     <Content Include="Content\Images\blog\profile-soltanipour_14040920_105752_a435ea50a5ed4a419dde0c61a0502e86.jpg" />
     <Content Include="Content\Images\blog\thumbnails\profile-soltanipour_14040920_105753_6ad47c8ba9f741f9aa5e98741fc18666.jpg" />
     <Content Include="Content\Images\blog\thumbnails\thumb_profile-soltanipour_14040920_105752_a435ea50a5ed4a419dde0c61a0502e86.jpg" />
@@ -1994,6 +1999,7 @@
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\js\modern-navigation.js" />
     <Content Include="Content\js\performance-optimizer.js" />
+    <Content Include="Content\js\persian-datepicker-component.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
     <Content Include="Content\js\video-modal.js" />
     <Content Include="Content\medical-forms.css" />
@@ -4515,6 +4521,7 @@
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Details.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Index.cshtml" />
+    <Content Include="Docs\date_bug_analysis.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

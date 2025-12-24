@@ -51,14 +51,14 @@ namespace ClinicApp.Areas.Patient.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> Available(
             int? doctorId = null,
-            DateTime? date = null,
+            string date = null,  // ✅ تغییر از DateTime? به string برای دریافت تاریخ شمسی
             int page = 1,
             int pageSize = 20)
         {
             try
             {
-                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, Date: {Date}",
-                    doctorId, date?.ToString("yyyy/MM/dd") ?? "همه");
+                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}",
+                    doctorId, date ?? "همه");
 
                 // دریافت لیست پزشکان
                 var doctorsResult = await _bookingService.GetAvailableDoctorsAsync();
@@ -72,44 +72,62 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
-                // اطمینان از اینکه تاریخ معتبر است
-                var selectedDate = date ?? DateTime.Now;
+                // ✅ تبدیل دستی تاریخ شمسی به میلادی
+                DateTime selectedDate;
+                if (string.IsNullOrWhiteSpace(date))
+                {
+                    selectedDate = DateTime.Today;
+                    _logger.Information("تاریخ خالی است، استفاده از امروز: {Today}", selectedDate.ToString("yyyy/MM/dd"));
+                }
+                else
+                {
+                    try
+                    {
+                        // ✅ تبدیل صحیح تاریخ شمسی به میلادی با PersianDateHelper
+                        selectedDate = PersianDateHelper.ToGregorianDate(date).Date;
+                        _logger.Information("تاریخ شمسی '{PersianDate}' به میلادی '{GregorianDate}' تبدیل شد",
+                            date, selectedDate.ToString("yyyy/MM/dd"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در تبدیل تاریخ شمسی '{PersianDate}'، استفاده از امروز", date);
+                        selectedDate = DateTime.Today;
+                        NotificationHelper.SetWarning(TempData, $"تاریخ '{date}' نامعتبر است. از تاریخ امروز استفاده شد.");
+                    }
+                }
+
+                // بررسی اینکه تاریخ در گذشته نباشد
                 if (selectedDate < DateTime.Today)
                 {
-                    selectedDate = DateTime.Now;
+                    _logger.Warning("تاریخ انتخاب شده '{Date}' در گذشته است، تنظیم به امروز", 
+                        selectedDate.ToString("yyyy/MM/dd"));
+                    selectedDate = DateTime.Today;
+                    NotificationHelper.SetWarning(TempData, "تاریخ انتخاب شده در گذشته است. لطفاً تاریخ معتبری انتخاب کنید.");
                 }
                 
                 var viewModel = new AvailableAppointmentsViewModel
                 {
                     Doctors = doctorsResult.Data ?? new List<DoctorSearchResultDto>(),
                     SelectedDoctorId = doctorId,
-                    SelectedDate = selectedDate,
+                    SelectedDate = selectedDate,  // ✅ حالا این تاریخ صحیح است
                     AvailableSlots = new List<AvailableTimeSlotDto>()
                 };
 
-                // اگر پزشک و تاریخ انتخاب شده، اسلات‌های موجود را دریافت کن
-                if (doctorId.HasValue && date.HasValue)
+                // اگر پزشک انتخاب شده، اسلات‌های موجود را دریافت کن
+                if (doctorId.HasValue)
                 {
-                    // اطمینان از اینکه تاریخ فقط شامل بخش تاریخ است (بدون زمان)
-                    var dateOnly = date.Value.Date;
-                    
-                    // بررسی اینکه تاریخ در گذشته نباشد
-                    if (dateOnly < DateTime.Today)
+                    // ✅ استفاده از selectedDate که قبلاً parse شده
+                    var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId.Value, selectedDate);
+                    if (slotsResult.Success && slotsResult.Data != null)
                     {
-                        TempData["Warning"] = "تاریخ انتخاب شده در گذشته است. لطفاً تاریخ معتبری انتخاب کنید.";
-                        viewModel.SelectedDate = DateTime.Now;
+                        viewModel.AvailableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
+                        _logger.Information("دریافت {Count} اسلات موجود برای تاریخ {Date}", 
+                            viewModel.AvailableSlots.Count, selectedDate.ToString("yyyy/MM/dd"));
                     }
-                    else
+                    else if (!slotsResult.Success)
                     {
-                        var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId.Value, dateOnly);
-                        if (slotsResult.Success && slotsResult.Data != null)
-                        {
-                            viewModel.AvailableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
-                        }
-                        else if (!slotsResult.Success)
-                        {
-                            TempData["Warning"] = slotsResult.Message ?? "خطا در دریافت زمان‌های در دسترس";
-                        }
+                        _logger.Warning("خطا در دریافت اسلات‌ها: {Message}", slotsResult.Message);
+                        NotificationHelper.SetWarning(TempData, slotsResult.Message ?? "خطا در دریافت زمان‌های در دسترس");
                     }
                 }
 
@@ -118,7 +136,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش نوبت‌های موجود");
-                TempData["Error"] = "خطا در بارگذاری صفحه";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
                 return View(new AvailableAppointmentsViewModel
                 {
                     Doctors = new List<DoctorSearchResultDto>(),
@@ -143,7 +161,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
-                    TempData["Error"] = "پزشک یافت نشد";
+                    NotificationHelper.SetError(TempData, "پزشک یافت نشد");
                     return RedirectToAction("Available");
                 }
 
@@ -169,7 +187,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
 
                 // دریافت اسلات‌های موجود
-                var selectedDateValue = selectedDate ?? DateTime.Now;
+                var selectedDateValue = selectedDate ?? DateTime.Today; // ✅ استفاده از Today به جای Now
                 var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, selectedDateValue);
                 var availableSlots = slotsResult.Success && slotsResult.Data != null 
                     ? slotsResult.Data.Where(s => s.IsAvailable).ToList() 
@@ -194,7 +212,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت جزئیات پزشک {DoctorId}", doctorId);
-                TempData["Error"] = "خطا در بارگذاری اطلاعات پزشک";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری اطلاعات پزشک");
                 return RedirectToAction("Available");
             }
         }
@@ -270,7 +288,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 DateTime appointmentDate;
                 if (string.IsNullOrEmpty(date))
                 {
-                    appointmentDate = DateTime.Now;
+                    appointmentDate = DateTime.Today; // ✅ استفاده از Today به جای Now
                 }
                 else
                 {
@@ -442,7 +460,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    TempData["Error"] = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.";
+                    NotificationHelper.SetError(TempData, "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.");
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
 
@@ -454,7 +472,7 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message ?? "خطا در دریافت نوبت‌ها";
+                    NotificationHelper.SetError(TempData, result.Message ?? "خطا در دریافت نوبت‌ها");
                     return View(new PatientAppointmentListViewModel
                     {
                         Appointments = new System.Collections.Generic.List<PatientAppointmentDto>(),
@@ -503,7 +521,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش نوبت‌های بیمار");
-                TempData["Error"] = "خطا در بارگذاری نوبت‌ها";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری نوبت‌ها");
                 return View(new ViewModels.Patient.PatientAppointmentListViewModel
                 {
                     Appointments = new System.Collections.Generic.List<PatientAppointmentDto>(),
@@ -569,7 +587,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return Json(new { success = false, message = result.Message });
                 }
 
-                TempData["Success"] = "نوبت با موفقیت لغو شد";
+                NotificationHelper.SetSuccess(TempData, "نوبت با موفقیت لغو شد");
                 return Json(new { success = true, message = result.Message });
             }
             catch (Exception ex)

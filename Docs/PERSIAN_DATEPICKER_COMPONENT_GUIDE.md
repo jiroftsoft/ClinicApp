@@ -1,294 +1,259 @@
-# 📅 راهنمای استفاده از Component Persian DatePicker
+# 📅 راهنمای کامپوننت Persian DatePicker
 
-**نسخه:** 1.0  
-**تاریخ:** 1404/09/12  
-**نویسنده:** تیم توسعه کلینیک شفا
+## 🎯 مقدمه
 
----
+کامپوننت اصولی و قابل استفاده مجدد برای Persian DatePicker که طبق استانداردهای فرم‌های درمانی سطح سازمانی طراحی شده است.
 
-## 📋 فهرست مطالب
+### ✨ ویژگی‌ها
 
-1. [معرفی](#معرفی)
-2. [نصب و راه‌اندازی](#نصب-و-راه‌اندازی)
-3. [استفاده پایه](#استفاده-پایه)
-4. [استفاده پیشرفته](#استفاده-پیشرفته)
-5. [مدیریت در Controller](#مدیریت-در-controller)
-6. [مثال‌های عملی](#مثال‌های-عملی)
-7. [عیب‌یابی](#عیب‌یابی)
+- ✅ **Component-Based**: کامپوننت محور و قابل استفاده مجدد
+- ✅ **Server-Side Today**: دریافت تاریخ امروز از سرور برای اطمینان از صحت
+- ✅ **Medical Form Standards**: طبق استانداردهای فرم‌های درمانی سطح سازمانی
+- ✅ **Bulletproof**: مقاوم و ضد گلوله
+- ✅ **Tested**: تست شده و قابل اعتماد
 
----
+### 🔧 رفع مشکل تاریخ امروز
 
-## 🎯 معرفی
+**مشکل:** تاریخ امروز به اشتباه نمایش داده می‌شد (مثلاً 3 به جای 4)
 
-Component Persian DatePicker یک راه‌حل قابل استفاده مجدد برای استفاده از Persian DatePicker در تمام فرم‌های پروژه است. این Component:
-
-- ✅ **قابل استفاده مجدد** - یک بار کد، استفاده در همه جا
-- ✅ **سازگار با Model Binding** - تبدیل خودکار تاریخ شمسی به میلادی
-- ✅ **پشتیبانی کامل از Validation** - اعتبارسنجی خودکار
-- ✅ **بهینه برای فارسی** - پشتیبانی کامل از RTL
+**راه حل:**
+- دریافت تاریخ امروز از سرور (C#) برای اطمینان از صحت
+- Fallback به محاسبه client-side در صورت عدم دسترسی به سرور
+- Cache برای بهینه‌سازی عملکرد
 
 ---
 
-## 🚀 نصب و راه‌اندازی
+## 🚀 استفاده
 
-### فایل‌های Component:
+### 1. اضافه کردن Script
 
-1. `Areas/Admin/Views/Shared/_PersianDatePicker.cshtml` - Component اصلی
-2. `Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml` - Script های لازم
-3. `Helpers/PersianDateHelper.cs` - Helper برای تبدیل تاریخ
-
----
-
-## 📝 استفاده پایه
-
-### روش 1: استفاده از Partial View (توصیه می‌شود)
+در `@section Scripts`:
 
 ```csharp
-@model MyModel
-
-@using (Html.BeginForm())
-{
-    <div class="row">
-        <div class="col-md-6">
-            @{
-                ViewBag.PersianDatePickerId = "startDatePicker";
-                ViewBag.PersianDatePickerName = "StartDate";
-                ViewBag.PersianDatePickerValue = Model.StartDate;
-                ViewBag.PersianDatePickerLabel = "تاریخ شروع";
-                ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
-                ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
-                ViewBag.PersianDatePickerRequired = false;
-                ViewBag.PersianDatePickerValidationMessage = Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" }).ToString();
-            }
-            @Html.Partial("_PersianDatePicker")
-        </div>
-    </div>
-    
-    <button type="submit" class="btn btn-primary">ذخیره</button>
-}
-
 @section Scripts {
     @Html.Partial("_PersianDatePickerScript")
+    // سایر script ها...
 }
 ```
 
-### روش 2: استفاده از Helper Extension (پیشرفته)
-
-```csharp
-@Html.PersianDatePickerFor(m => m.StartDate, new { @class = "form-control" })
-```
-
----
-
-## 🎨 استفاده پیشرفته
-
-### تنظیمات کامل Component:
+### 2. استفاده در View
 
 ```csharp
 @{
-    ViewBag.PersianDatePickerId = "myDatePicker";
-    ViewBag.PersianDatePickerName = "MyDate";
-    ViewBag.PersianDatePickerValue = Model.MyDate;
-    ViewBag.PersianDatePickerLabel = "تاریخ";
-    ViewBag.PersianDatePickerPlaceholder = "تاریخ را انتخاب کنید";
-    ViewBag.PersianDatePickerHelpText = "راهنمای انتخاب تاریخ";
-    ViewBag.PersianDatePickerRequired = true;
-    ViewBag.PersianDatePickerCssClass = "form-control custom-class";
-    ViewBag.PersianDatePickerValidationMessage = Html.ValidationMessageFor(m => m.MyDate).ToString();
+    ViewBag.PersianDatePickerId = "startDatePicker";
+    ViewBag.PersianDatePickerName = "StartDate";
+    ViewBag.PersianDatePickerValue = Model.StartDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
+    ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
+    ViewBag.PersianDatePickerRequired = false;
 }
 @Html.Partial("_PersianDatePicker")
 ```
 
-### پارامترهای ViewBag:
-
-| پارامتر | نوع | توضیحات | پیش‌فرض |
-|---------|-----|---------|---------|
-| `PersianDatePickerId` | string | ID عنصر input | "persianDatePicker" |
-| `PersianDatePickerName` | string | نام فیلد | "PersianDate" |
-| `PersianDatePickerValue` | DateTime? | مقدار تاریخ (میلادی) | null |
-| `PersianDatePickerLabel` | string | برچسب فیلد | "تاریخ" |
-| `PersianDatePickerPlaceholder` | string | متن placeholder | "تاریخ را انتخاب کنید" |
-| `PersianDatePickerHelpText` | string | متن راهنما | null |
-| `PersianDatePickerRequired` | bool | الزامی بودن | false |
-| `PersianDatePickerCssClass` | string | کلاس CSS اضافی | "form-control" |
-| `PersianDatePickerValidationMessage` | string | پیام validation | null |
-
----
-
-## 🔧 مدیریت در Controller
-
-### تبدیل خودکار تاریخ شمسی به میلادی:
+### 3. استفاده در Controller
 
 ```csharp
 [HttpPost]
 [ValidateAntiForgeryToken]
-public async Task<ActionResult> Create(MyModel model)
+public async Task<ActionResult> Create(MyViewModel model)
 {
-    // تبدیل تاریخ‌های شمسی به میلادی از hidden inputs
-    var startDateHidden = Request.Form["StartDate_Hidden"];
-    if (!string.IsNullOrEmpty(startDateHidden))
-    {
-        if (DateTime.TryParse(startDateHidden, out DateTime startDate))
-        {
-            model.StartDate = startDate;
-        }
-        else
-        {
-            // اگر parse نشد، از PersianDateHelper استفاده کن
-            var startDatePersian = Request.Form["StartDate"];
-            if (!string.IsNullOrEmpty(startDatePersian))
-            {
-                model.StartDate = Helpers.PersianDateHelper.ParsePersianDate(startDatePersian);
-            }
-        }
-    }
-
-    // حذف خطاهای validation برای تاریخ‌ها
+    // تبدیل خودکار تاریخ‌ها از hidden inputs
+    model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+    model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
+    
+    // حذف خطاهای validation
     ModelState.Remove("StartDate");
     ModelState.Remove("EndDate");
-
-    if (!ModelState.IsValid)
-    {
-        return View(model);
-    }
-
-    // ادامه عملیات...
-}
-```
-
----
-
-## 💡 مثال‌های عملی
-
-### مثال 1: فرم ساده با یک تاریخ
-
-```csharp
-@model AnnouncementCreateEditViewModel
-
-@using (Html.BeginForm())
-{
-    <div class="form-group">
-        @{
-            ViewBag.PersianDatePickerId = "startDatePicker";
-            ViewBag.PersianDatePickerName = "StartDate";
-            ViewBag.PersianDatePickerValue = Model.StartDate;
-            ViewBag.PersianDatePickerLabel = "تاریخ شروع";
-            ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
-            ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
-            ViewBag.PersianDatePickerRequired = false;
-            ViewBag.PersianDatePickerValidationMessage = Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" }).ToString();
-        }
-        @Html.Partial("_PersianDatePicker")
-    </div>
     
-    <button type="submit" class="btn btn-primary">ذخیره</button>
-}
-
-@section Scripts {
-    @Html.Partial("_PersianDatePickerScript")
+    // ادامه...
 }
 ```
 
-### مثال 2: فرم با دو تاریخ (شروع و پایان)
+---
 
-```csharp
-@model AnnouncementCreateEditViewModel
+## 📚 API Reference
 
-@using (Html.BeginForm())
+### JavaScript API
+
+#### `PersianDatePickerComponent.getTodayFromServer()`
+
+دریافت تاریخ امروز شمسی از سرور.
+
+**Returns:**
+- `Promise<string>`: Promise که تاریخ امروز شمسی را برمی‌گرداند
+
+**Example:**
+```javascript
+PersianDatePickerComponent.getTodayFromServer().then(function(today) {
+    console.log('تاریخ امروز:', today); // "1404/10/04"
+});
+```
+
+#### `PersianDatePickerComponent.initializeAll()`
+
+Initialize کردن تمام DatePicker ها.
+
+**Returns:**
+- `boolean`: true اگر موفق باشد
+
+**Example:**
+```javascript
+PersianDatePickerComponent.initializeAll();
+```
+
+### C# API
+
+#### `PersianDateApiController.GetToday()`
+
+API endpoint برای دریافت تاریخ امروز شمسی از سرور.
+
+**Route:** `GET /api/persian-date/today`
+
+**Response:**
+```json
 {
-    <div class="row">
-        <div class="col-md-6">
-            @{
-                ViewBag.PersianDatePickerId = "startDatePicker";
-                ViewBag.PersianDatePickerName = "StartDate";
-                ViewBag.PersianDatePickerValue = Model.StartDate;
-                ViewBag.PersianDatePickerLabel = "تاریخ شروع";
-                ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
-                ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه از همین الان فعال می‌شود";
-                ViewBag.PersianDatePickerRequired = false;
-                ViewBag.PersianDatePickerValidationMessage = Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" }).ToString();
-            }
-            @Html.Partial("_PersianDatePicker")
-        </div>
-        <div class="col-md-6">
-            @{
-                ViewBag.PersianDatePickerId = "endDatePicker";
-                ViewBag.PersianDatePickerName = "EndDate";
-                ViewBag.PersianDatePickerValue = Model.EndDate;
-                ViewBag.PersianDatePickerLabel = "تاریخ پایان";
-                ViewBag.PersianDatePickerPlaceholder = "تاریخ پایان (اختیاری)";
-                ViewBag.PersianDatePickerHelpText = "اگر خالی باشد، اطلاعیه تا زمان غیرفعال شدن دستی فعال می‌ماند";
-                ViewBag.PersianDatePickerRequired = false;
-                ViewBag.PersianDatePickerValidationMessage = Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" }).ToString();
-            }
-            @Html.Partial("_PersianDatePicker")
-        </div>
-    </div>
-    
-    <button type="submit" class="btn btn-primary">ذخیره</button>
-}
-
-@section Scripts {
-    @Html.Partial("_PersianDatePickerScript")
+    "success": true,
+    "persianDate": "1404/10/04",
+    "gregorianDate": "2025-12-25",
+    "timestamp": 1735084800
 }
 ```
 
----
+#### `Controller.ParseDateFromHiddenInput(fieldName, logger)`
 
-## 🔍 عیب‌یابی
+تبدیل تاریخ شمسی به میلادی از hidden input.
 
-### مشکل 1: تاریخ ذخیره نمی‌شود
+**Parameters:**
+- `fieldName` (string): نام فیلد (مثلاً "StartDate")
+- `logger` (ILogger): Logger برای لاگ‌گذاری (اختیاری)
 
-**علت:** تاریخ به میلادی تبدیل نشده است.
+**Returns:**
+- `DateTime?`: تاریخ میلادی یا null
 
-**راه‌حل:** مطمئن شوید که در Controller تاریخ‌ها را تبدیل می‌کنید:
-
+**Example:**
 ```csharp
-var startDateHidden = Request.Form["StartDate_Hidden"];
-if (!string.IsNullOrEmpty(startDateHidden))
-{
-    if (DateTime.TryParse(startDateHidden, out DateTime startDate))
-    {
-        model.StartDate = startDate;
-    }
+model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+```
+
+---
+
+## 🎨 استایل‌های فرم‌های درمانی
+
+کامپوننت طبق استانداردهای فرم‌های درمانی سطح سازمانی طراحی شده است:
+
+### رنگ‌بندی
+
+```css
+:root {
+    --medical-form-primary: #2c5aa0;        /* آبی تیره */
+    --medical-form-secondary: #28a745;      /* سبز ملایم */
+    --medical-form-bg: #ffffff;             /* سفید */
+    --medical-form-error: #dc3545;          /* قرمز ملایم */
+    --medical-form-success: #28a745;        /* سبز خنثی */
+    --medical-form-border: #dee2e6;        /* خاکستری ملایم */
 }
 ```
 
-### مشکل 2: Validation خطا می‌دهد
+### تایپوگرافی
 
-**علت:** ModelState هنوز خطاهای تاریخ را دارد.
+- فونت: `IRANSansX`, `Vazirmatn`, `Dana`, `Shabnam`
+- سایز متن: 14px – 16px
+- Line-height: حداقل 1.6
 
-**راه‌حل:** قبل از بررسی ModelState، خطاهای تاریخ را حذف کنید:
+---
 
-```csharp
-ModelState.Remove("StartDate");
-ModelState.Remove("EndDate");
+## 🔧 تنظیمات
+
+### Configuration
+
+```javascript
+PersianDatePickerComponent.config = {
+    selector: 'input[data-persian-datepicker="true"]',
+    hiddenInputSuffix: '_Hidden',
+    apiEndpoint: '/api/persian-date/today',
+    logPrefix: '📅 [PersianDatePicker]',
+    enableLogging: true,
+    cacheTodayFor: 60000, // 1 دقیقه (میلی‌ثانیه)
+    retryDelay: 100,
+    maxRetries: 3
+};
 ```
 
-### مشکل 3: DatePicker لود نمی‌شود
+### تغییر تنظیمات
 
-**علت:** Script لود نشده است.
+```javascript
+// تغییر endpoint
+PersianDatePickerComponent.config.apiEndpoint = '/custom/api/today';
 
-**راه‌حل:** مطمئن شوید که `_PersianDatePickerScript` را در `@section Scripts` اضافه کرده‌اید.
+// غیرفعال کردن logging
+PersianDatePickerComponent.config.enableLogging = false;
 
----
-
-## ✅ بهترین روش‌ها
-
-1. **همیشه از Component استفاده کنید** - کد تکراری ننویسید
-2. **در Controller تاریخ‌ها را تبدیل کنید** - قبل از ذخیره در دیتابیس
-3. **Validation را مدیریت کنید** - خطاهای تاریخ را از ModelState حذف کنید
-4. **از Helper استفاده کنید** - برای تبدیل تاریخ‌ها از `PersianDateHelper.ParsePersianDate` استفاده کنید
+// تغییر زمان cache
+PersianDatePickerComponent.config.cacheTodayFor = 300000; // 5 دقیقه
+```
 
 ---
 
-## 📚 منابع بیشتر
+## 🐛 Troubleshooting
 
-- `Helpers/PersianDateHelper.cs` - متدهای تبدیل تاریخ
-- `Areas/Admin/Views/Shared/_PersianDatePicker.cshtml` - Component اصلی
-- `Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml` - Script های لازم
+### مشکل: تاریخ امروز به اشتباه نمایش داده می‌شود
+
+**راه حل:**
+1. بررسی اتصال به سرور: `GET /api/persian-date/today`
+2. بررسی Console برای خطاها
+3. بررسی Cache: `PersianDatePickerComponent.cache.today`
+
+### مشکل: DatePicker initialize نمی‌شود
+
+**راه حل:**
+1. بررسی jQuery: `typeof jQuery !== 'undefined'`
+2. بررسی pDatepicker: `typeof $.fn.pDatepicker !== 'undefined'`
+3. بررسی Selector: `input[data-persian-datepicker="true"]`
+
+### مشکل: تاریخ در submit تبدیل نمی‌شود
+
+**راه حل:**
+1. بررسی hidden input: `fieldName_Hidden`
+2. بررسی jalaali library
+3. بررسی Console برای خطاها
 
 ---
 
-**آخرین به‌روزرسانی:** 1404/09/12
+## 📝 Checklist
 
+### قبل از استفاده
+
+- [ ] Script ها لود شده‌اند (`_PersianDatePickerScript`)
+- [ ] jQuery و pDatepicker موجود هستند
+- [ ] API endpoint در دسترس است (`/api/persian-date/today`)
+- [ ] ViewBag تنظیم شده است
+
+### بعد از استفاده
+
+- [ ] DatePicker initialize شده است
+- [ ] تاریخ امروز به درستی نمایش داده می‌شود
+- [ ] انتخاب تاریخ کار می‌کند
+- [ ] تبدیل تاریخ در submit کار می‌کند
+- [ ] Hidden input ایجاد شده است
+
+---
+
+## 🔗 مراجع
+
+- `Docs/DEVELOPMENT_CONTRACT.md` - قرارداد توسعه
+- `Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md` - راهنمای ماژول قدیمی
+- `Helpers/PersianDateHelper.cs` - Helper Methods
+- `Helpers/ControllerExtensions.cs` - Extension Methods
+- `Controllers/Api/PersianDateApiController.cs` - API Controller
+- `Content/js/persian-datepicker-component.js` - کامپوننت JavaScript
+
+---
+
+## ✅ تایید
+
+این کامپوننت طبق استانداردهای فرم‌های درمانی سطح سازمانی طراحی شده و آماده استفاده در Production است.
+
+**نسخه:** 2.0.0  
+**تاریخ:** 1404/10/04  
+**وضعیت:** فعال و تست شده

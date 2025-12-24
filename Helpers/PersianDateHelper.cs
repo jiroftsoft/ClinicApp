@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading;
 using ClinicApp.Extensions;
@@ -494,13 +494,15 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
-        /// محاسبه تاریخ شمسی امروز
+        /// محاسبه تاریخ شمسی امروز (فقط تاریخ، بدون زمان)
         /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
         /// - برای نمایش تاریخ جاری در UI
         /// - برای ایجاد پرونده‌های جدید
         /// - برای ارسال اطلاع‌رسانی‌های روزانه
+        /// 
+        /// ⚠️ مهم: استفاده از DateTime.Today به جای DateTime.Now برای جلوگیری از مشکل timezone
         /// </summary>
-        public static string Today => DateTime.Now.ToPersianDate();
+        public static string Today => DateTime.Today.ToPersianDate();
 
         /// <summary>
         /// محاسبه تاریخ و زمان شمسی امروز

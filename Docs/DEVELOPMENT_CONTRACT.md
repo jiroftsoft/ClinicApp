@@ -1397,12 +1397,635 @@ Interfaces/
 
 ---
 
+## 1️⃣5️⃣ استانداردهای طراحی فرم‌های درمانی سطح سازمانی (Hospital / HIS / Clinic)
+
+### 15.1 اصول پایه (Foundation Rules)
+
+#### ✅ الزامات غیرقابل مذاکره:
+
+**سادگی مطلق (Less is More):**
+- حداقل رنگ، حداکثر خوانایی
+- حذف هر عنصر غیرضروری
+- تمرکز روی «ورود اطلاعات سریع و بدون خطا»
+
+**رسمی و حرفه‌ای:**
+- طراحی مناسب محیط درمانی سازمانی
+- بدون رنگ و لعاب جلف
+- تمرکز بر کارایی و دقت
+
+### 15.2 ساختار فرم (Form Architecture)
+
+#### ✅ تقسیم‌بندی منطقی:
+
+**استفاده از Section / Fieldset:**
+```html
+<!-- ✅ درست -->
+<form>
+    <fieldset class="form-section">
+        <legend class="form-section-header">اطلاعات هویتی</legend>
+        <!-- فیلدهای اطلاعات هویتی -->
+    </fieldset>
+    
+    <fieldset class="form-section">
+        <legend class="form-section-header">اطلاعات تماس</legend>
+        <!-- فیلدهای اطلاعات تماس -->
+    </fieldset>
+    
+    <fieldset class="form-section">
+        <legend class="form-section-header">اطلاعات پزشکی</legend>
+        <!-- فیلدهای اطلاعات پزشکی -->
+    </fieldset>
+</form>
+```
+
+**هر بخش = یک هدف مشخص:**
+- اطلاعات هویتی
+- اطلاعات تماس
+- اطلاعات پزشکی
+- تأیید نهایی
+
+#### ✅ فرم‌های چندمرحله‌ای (Step Form):
+
+**مزایا:**
+- کاهش فشار ذهنی کاربر
+- نمایش Progress Bar ساده
+- بدون انیمیشن اغراق‌آمیز
+
+**پیاده‌سازی:**
+```html
+<!-- ✅ درست -->
+<div class="step-progress">
+    <div class="step active">1. اطلاعات اولیه</div>
+    <div class="step">2. اطلاعات تماس</div>
+    <div class="step">3. اطلاعات پزشکی</div>
+    <div class="step">4. تأیید نهایی</div>
+</div>
+```
+
+### 15.3 رنگ‌بندی رسمی (Professional Medical Colors)
+
+#### ✅ پالت رنگ استاندارد:
+
+```css
+:root {
+    /* رنگ اصلی */
+    --medical-form-primary: #2c5aa0;        /* آبی تیره (Navy / Medical Blue) */
+    
+    /* رنگ ثانویه */
+    --medical-form-secondary: #28a745;      /* سبز ملایم */
+    
+    /* پس‌زمینه */
+    --medical-form-bg: #ffffff;              /* سفید */
+    --medical-form-bg-light: #f8f9fa;       /* خاکستری خیلی روشن */
+    
+    /* خطا */
+    --medical-form-error: #dc3545;           /* قرمز ملایم (نه جیغ) */
+    
+    /* موفقیت */
+    --medical-form-success: #28a745;         /* سبز خنثی */
+    
+    /* Border */
+    --medical-form-border: #dee2e6;          /* خاکستری ملایم */
+    
+    /* Text */
+    --medical-form-text: #212529;            /* تیره */
+    --medical-form-text-muted: #6c757d;      /* خاکستری */
+}
+```
+
+#### ❌ ممنوع:
+
+**رنگ‌های ممنوع:**
+- بنفش جیغ (`#9b59b6`, `#8e44ad`)
+- صورتی (`#e91e63`, `#f06292`)
+- نارنجی تند (`#ff5722`, `#ff9800`)
+- گرادینت‌های فانتزی (`linear-gradient(135deg, #667eea 0%, #764ba2 100%)`)
+
+**استایل‌های ممنوع:**
+```css
+/* ❌ اشتباه */
+.form-header {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 25px;
+}
+
+/* ✅ درست */
+.form-header {
+    background-color: var(--medical-form-primary);
+    border-radius: 6px;
+}
+```
+
+### 15.4 تایپوگرافی (فونت خوانا و رسمی)
+
+#### ✅ فونت‌های پیشنهادی فارسی:
+
+**اولویت 1:**
+- `IRANSansX` - فونت رسمی و خوانا
+- `Vazirmatn` - فونت استاندارد فارسی
+
+**اولویت 2:**
+- `Dana` - فونت مدرن و خوانا
+- `Shabnam` - فونت ساده و رسمی
+
+#### ✅ قواعد فونت:
+
+```css
+/* ✅ درست */
+.medical-form {
+    font-family: 'IRANSansX', 'Vazirmatn', 'Dana', 'Shabnam', sans-serif;
+    font-size: 16px;              /* سایز متن: 14px – 16px */
+    line-height: 1.6;            /* فاصله خطوط: حداقل 1.6 */
+}
+
+.medical-form label {
+    font-weight: 600;             /* Label کمی Bold‌تر از Input */
+    font-size: 15px;
+}
+
+.medical-form input,
+.medical-form select,
+.medical-form textarea {
+    font-size: 16px;
+    line-height: 1.6;
+}
+```
+
+### 15.5 طراحی Input‌ها (Input Design)
+
+#### ✅ استایل حرفه‌ای:
+
+```css
+/* ✅ درست */
+.medical-form input,
+.medical-form select,
+.medical-form textarea {
+    border: 1px solid var(--medical-form-border);
+    border-radius: 4px;           /* Radius کم (4px یا 6px) */
+    padding: 0.75rem;
+    font-size: 16px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    /* بدون Shadow سنگین */
+}
+
+.medical-form input:focus,
+.medical-form select:focus,
+.medical-form textarea:focus {
+    border-color: var(--medical-form-primary);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+}
+```
+
+#### ✅ Placeholder و Label:
+
+```html
+<!-- ✅ درست -->
+<div class="form-group">
+    <label for="phoneNumber" class="form-label">
+        شماره تماس <span class="text-danger">*</span>
+    </label>
+    <input 
+        type="tel" 
+        id="phoneNumber" 
+        name="phoneNumber" 
+        class="form-control" 
+        placeholder="09123456789"
+        required
+    />
+    <small class="form-text text-muted">
+        شماره تماس را بدون صفر ابتدایی وارد کنید
+    </small>
+</div>
+```
+
+**قواعد:**
+- Placeholder فقط راهنما، نه جای Label
+- Label همیشه قابل مشاهده باشد
+- Help Text برای راهنمایی بیشتر
+
+### 15.6 اعتبارسنجی هوشمند (Smart Validation)
+
+#### ✅ Real-time Validation:
+
+```javascript
+// ✅ درست - نمایش خطا بعد از خروج از فیلد
+document.querySelectorAll('.medical-form input').forEach(input => {
+    input.addEventListener('blur', function() {
+        validateField(this);
+    });
+    
+    input.addEventListener('input', function() {
+        if (this.classList.contains('is-invalid')) {
+            validateField(this);
+        }
+    });
+});
+
+function validateField(field) {
+    const value = field.value.trim();
+    const fieldName = field.name;
+    
+    // اعتبارسنجی
+    let isValid = true;
+    let errorMessage = '';
+    
+    if (field.required && !value) {
+        isValid = false;
+        errorMessage = 'این فیلد الزامی است';
+    } else if (fieldName === 'phoneNumber' && value && !/^09\d{9}$/.test(value)) {
+        isValid = false;
+        errorMessage = 'شماره تماس معتبر وارد کنید';
+    }
+    
+    // نمایش خطا
+    if (isValid) {
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+        const errorElement = field.parentElement.querySelector('.invalid-feedback');
+        if (errorElement) errorElement.remove();
+    } else {
+        field.classList.remove('is-valid');
+        field.classList.add('is-invalid');
+        let errorElement = field.parentElement.querySelector('.invalid-feedback');
+        if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'invalid-feedback';
+            field.parentElement.appendChild(errorElement);
+        }
+        errorElement.textContent = errorMessage;
+    }
+}
+```
+
+#### ✅ متن خطا استاندارد:
+
+```html
+<!-- ❌ غلط -->
+<div class="invalid-feedback">این فیلد اشتباه است</div>
+
+<!-- ✅ درست -->
+<div class="invalid-feedback">شماره تماس معتبر وارد کنید</div>
+<div class="invalid-feedback">کد ملی باید 10 رقم باشد</div>
+<div class="invalid-feedback">تاریخ تولد را به درستی وارد کنید</div>
+```
+
+**قواعد پیام خطا:**
+- کوتاه، رسمی، واضح
+- راهنمایی برای رفع خطا
+- بدون پیام‌های منفی یا توهین‌آمیز
+
+### 15.7 انیمیشن‌های مینیمال (Minimal Animations)
+
+#### ✅ انیمیشن‌های مجاز:
+
+```css
+/* ✅ مجاز - Fade-in ملایم بخش‌ها */
+.form-section {
+    animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ✅ مجاز - Focus transition روی Input */
+.medical-form input:focus {
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* ✅ مجاز - Progress step نرم */
+.step-progress .step.active {
+    transition: all 0.25s ease-in-out;
+}
+```
+
+#### ⏱ تنظیمات پیشنهادی:
+
+```css
+/* ✅ درست */
+--form-transition-duration: 0.2s;    /* Duration: 150ms – 250ms */
+--form-transition-easing: ease-in-out; /* Easing: ease-in-out */
+```
+
+#### ❌ ممنوع:
+
+```css
+/* ❌ ممنوع - Bounce */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* ❌ ممنوع - Shake */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* ❌ ممنوع - Slide اغراق‌آمیز */
+@keyframes slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+```
+
+### 15.8 دکمه‌ها (Buttons)
+
+#### ✅ قواعد دکمه درمانی:
+
+```html
+<!-- ✅ درست -->
+<div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+        ثبت اطلاعات
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="history.back()">
+        انصراف
+    </button>
+</div>
+```
+
+**قواعد:**
+- Primary فقط یکی
+- متن واضح: «ثبت اطلاعات»، «ادامه»، «ذخیره»
+- بدون آیکون فانتزی
+- رنگ رسمی
+
+#### ✅ رنگ دکمه‌ها:
+
+```css
+/* ✅ درست */
+.btn-primary {
+    background-color: var(--medical-form-primary);  /* آبی تیره */
+    border-color: var(--medical-form-primary);
+    color: white;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.btn-secondary {
+    background-color: #6c757d;  /* خاکستری */
+    border-color: #6c757d;
+    color: white;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-size: 16px;
+}
+```
+
+### 15.9 دسترس‌پذیری (Accessibility)
+
+#### ✅ الزامات دسترس‌پذیری:
+
+**کنتراست رنگ مناسب:**
+```css
+/* ✅ درست - کنتراست مناسب */
+.medical-form label {
+    color: var(--medical-form-text);  /* #212529 */
+}
+
+.medical-form input {
+    background-color: white;
+    color: var(--medical-form-text);
+    border-color: var(--medical-form-border);
+}
+```
+
+**Tab Navigation:**
+```html
+<!-- ✅ درست - ترتیب منطقی Tab -->
+<input type="text" name="firstName" tabindex="1" />
+<input type="text" name="lastName" tabindex="2" />
+<input type="tel" name="phoneNumber" tabindex="3" />
+<button type="submit" tabindex="4">ثبت</button>
+```
+
+**Label مرتبط با Input:**
+```html
+<!-- ✅ درست */
+<label for="phoneNumber">شماره تماس</label>
+<input type="tel" id="phoneNumber" name="phoneNumber" />
+
+<!-- ❌ اشتباه -->
+<label>شماره تماس</label>
+<input type="tel" name="phoneNumber" />
+```
+
+**پیام خطا قابل خواندن توسط Screen Reader:**
+```html
+<!-- ✅ درست -->
+<input 
+    type="tel" 
+    id="phoneNumber" 
+    name="phoneNumber" 
+    aria-describedby="phoneNumberError"
+    aria-invalid="true"
+/>
+<div id="phoneNumberError" class="invalid-feedback" role="alert">
+    شماره تماس معتبر وارد کنید
+</div>
+```
+
+### 15.10 بهینه‌سازی تجربه کاربری (UX)
+
+#### ✅ Auto-focus روی فیلد بعدی:
+
+```javascript
+// ✅ درست
+document.querySelectorAll('.medical-form input').forEach((input, index, inputs) => {
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const nextInput = inputs[index + 1];
+            if (nextInput && nextInput.type !== 'submit') {
+                nextInput.focus();
+            } else {
+                const submitButton = document.querySelector('button[type="submit"]');
+                if (submitButton) submitButton.focus();
+            }
+        }
+    });
+});
+```
+
+#### ✅ Mask برای موبایل / کد ملی:
+
+```javascript
+// ✅ درست - Mask برای شماره موبایل
+document.getElementById('phoneNumber').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 0 && !value.startsWith('09')) {
+        value = '09' + value;
+    }
+    if (value.length > 11) {
+        value = value.slice(0, 11);
+    }
+    e.target.value = value;
+});
+
+// ✅ درست - Mask برای کد ملی
+document.getElementById('nationalCode').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.slice(0, 10);
+    }
+    e.target.value = value;
+});
+```
+
+#### ✅ DatePicker شمسی استاندارد:
+
+```html
+<!-- ✅ درست - استفاده از _PersianDatePicker -->
+@{
+    ViewBag.PersianDatePickerId = "birthDatePicker";
+    ViewBag.PersianDatePickerName = "BirthDate";
+    ViewBag.PersianDatePickerValue = Model.BirthDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ تولد";
+    ViewBag.PersianDatePickerPlaceholder = "تاریخ تولد را انتخاب کنید";
+    ViewBag.PersianDatePickerRequired = true;
+}
+@Html.Partial("_PersianDatePicker")
+@Html.Partial("_PersianDatePickerScript")
+```
+
+#### ✅ Auto-fill امن:
+
+```html
+<!-- ✅ درست - Auto-fill با autocomplete مناسب -->
+<input 
+    type="text" 
+    name="firstName" 
+    autocomplete="given-name"
+/>
+<input 
+    type="text" 
+    name="lastName" 
+    autocomplete="family-name"
+/>
+<input 
+    type="tel" 
+    name="phoneNumber" 
+    autocomplete="tel"
+/>
+<input 
+    type="email" 
+    name="email" 
+    autocomplete="email"
+/>
+```
+
+### 15.11 امنیت فرم‌های درمانی
+
+#### ✅ الزامات امنیتی:
+
+**HTTPS الزامی:**
+```csharp
+// ✅ درست - Force HTTPS در Production
+[RequireHttps]
+public class MedicalFormController : Controller
+{
+    // ...
+}
+```
+
+**Anti-Forgery Token:**
+```html
+<!-- ✅ درست -->
+@using (Html.BeginForm("Create", "MedicalForm", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <!-- فیلدهای فرم -->
+}
+```
+
+```csharp
+// ✅ درست - Validate Anti-Forgery Token
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> Create(MedicalFormViewModel model)
+{
+    // ...
+}
+```
+
+**عدم ذخیره اطلاعات حساس در LocalStorage:**
+```javascript
+// ❌ اشتباه - ذخیره اطلاعات حساس
+localStorage.setItem('patientData', JSON.stringify(patientData));
+
+// ✅ درست - فقط داده‌های غیرحساس
+localStorage.setItem('formStep', currentStep);
+```
+
+**Timeout Session:**
+```csharp
+// ✅ درست - تنظیم Timeout Session
+public class MedicalFormController : Controller
+{
+    protected override void OnActionExecuting(ActionExecutingContext filterContext)
+    {
+        // بررسی Timeout Session
+        if (Session.Timeout < 5) // کمتر از 5 دقیقه باقی مانده
+        {
+            NotificationHelper.SetWarning(TempData, "جلسه شما به زودی منقضی می‌شود. لطفاً فرم را ذخیره کنید.");
+        }
+        base.OnActionExecuting(filterContext);
+    }
+}
+```
+
+### 15.12 Checklist فرم‌های درمانی:
+
+**قبل از پیاده‌سازی:**
+- [ ] ساختار فرم با Section/Fieldset تقسیم‌بندی شده است
+- [ ] پالت رنگ استاندارد استفاده شده است
+- [ ] فونت فارسی خوانا انتخاب شده است
+- [ ] استایل Input حرفه‌ای است (Border ساده، Radius کم)
+- [ ] Label و Placeholder به درستی تنظیم شده‌اند
+
+**بعد از پیاده‌سازی:**
+- [ ] Real-time Validation پیاده‌سازی شده است
+- [ ] پیام‌های خطا کوتاه، رسمی و واضح هستند
+- [ ] انیمیشن‌های مینیمال استفاده شده‌اند (فقط Fade-in، Focus transition)
+- [ ] دکمه‌ها رسمی و بدون آیکون فانتزی هستند
+- [ ] دسترس‌پذیری رعایت شده است (کنتراست، Tab Navigation، ARIA)
+- [ ] Auto-focus، Mask، DatePicker شمسی پیاده‌سازی شده‌اند
+- [ ] امنیت رعایت شده است (HTTPS، Anti-Forgery Token، عدم ذخیره در LocalStorage)
+
+**بعد از تست:**
+- [ ] فرم در محیط Production رسمی به نظر می‌رسد
+- [ ] ورود اطلاعات سریع و بدون خطا است
+- [ ] هیچ رنگ جلف و جیغی وجود ندارد
+- [ ] تمام انیمیشن‌ها ملایم و حرفه‌ای هستند
+- [ ] فرم با Screen Reader سازگار است
+
+### 15.13 مراجع:
+
+- `Content/medical-forms.css` - استایل‌های فرم‌های درمانی
+- `Content/css/forms-medical.css` - استایل‌های محیط درمانی
+- `Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md` - راهنمای تقویم شمسی
+- `Areas/Admin/Views/Shared/_PersianDatePicker.cshtml` - Partial View تقویم شمسی
+
+---
+
 ## ✅ تایید و امضا
 
 این قرارداد باید توسط تمام توسعه‌دهندگان پروژه رعایت شود. هر تغییری در این استانداردها باید با تایید تیم فنی انجام شود.
 
 **تاریخ آخرین به‌روزرسانی:** 2024  
-**نسخه:** 1.0.0  
+**نسخه:** 1.1.0  
 **وضعیت:** فعال
 
 ---

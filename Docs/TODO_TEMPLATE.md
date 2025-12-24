@@ -404,27 +404,140 @@
 
 ---
 
-## Phase 11: Testing & Quality Assurance (تست و کنترل کیفیت)
+## Phase 11: Medical Form Design Standards (استانداردهای طراحی فرم‌های درمانی)
 
-### 11.1 Unit Testing
+### 11.1 اصول پایه (Foundation Rules)
+- [ ] سادگی مطلق (Less is More) - حداقل رنگ، حداکثر خوانایی
+- [ ] حذف هر عنصر غیرضروری
+- [ ] تمرکز روی «ورود اطلاعات سریع و بدون خطا»
+- [ ] طراحی رسمی و حرفه‌ای مناسب محیط درمانی
+
+### 11.2 ساختار فرم (Form Architecture)
+- [ ] تقسیم‌بندی منطقی با Section / Fieldset:
+  - [ ] اطلاعات هویتی
+  - [ ] اطلاعات تماس
+  - [ ] اطلاعات پزشکی
+  - [ ] تأیید نهایی
+- [ ] پیاده‌سازی فرم‌های چندمرحله‌ای (در صورت نیاز):
+  - [ ] Progress Bar ساده
+  - [ ] بدون انیمیشن اغراق‌آمیز
+  - [ ] کاهش فشار ذهنی کاربر
+
+### 11.3 رنگ‌بندی رسمی (Professional Medical Colors)
+- [ ] استفاده از پالت رنگ استاندارد:
+  - [ ] `--medical-form-primary: #2c5aa0` (آبی تیره)
+  - [ ] `--medical-form-secondary: #28a745` (سبز ملایم)
+  - [ ] `--medical-form-bg: #ffffff` (سفید)
+  - [ ] `--medical-form-error: #dc3545` (قرمز ملایم)
+  - [ ] `--medical-form-success: #28a745` (سبز خنثی)
+- [ ] حذف رنگ‌های ممنوع:
+  - [ ] بنفش جیغ
+  - [ ] صورتی
+  - [ ] نارنجی تند
+  - [ ] گرادینت‌های فانتزی
+
+### 11.4 تایپوگرافی (فونت خوانا و رسمی)
+- [ ] انتخاب فونت فارسی مناسب:
+  - [ ] IRANSansX (اولویت 1)
+  - [ ] Vazirmatn (اولویت 1)
+  - [ ] Dana (اولویت 2)
+  - [ ] Shabnam (اولویت 2)
+- [ ] تنظیم قواعد فونت:
+  - [ ] سایز متن: 14px – 16px
+  - [ ] Label کمی Bold‌تر از Input
+  - [ ] فاصله خطوط (Line-height): حداقل 1.6
+
+### 11.5 طراحی Input‌ها (Input Design)
+- [ ] استایل حرفه‌ای:
+  - [ ] Border ساده و نازک
+  - [ ] Radius کم (4px یا 6px)
+  - [ ] بدون Shadow سنگین
+- [ ] Placeholder و Label:
+  - [ ] Placeholder فقط راهنما، نه جای Label
+  - [ ] Label همیشه قابل مشاهده باشد
+  - [ ] Help Text برای راهنمایی بیشتر
+
+### 11.6 اعتبارسنجی هوشمند (Smart Validation)
+- [ ] Real-time Validation:
+  - [ ] نمایش خطا بعد از خروج از فیلد
+  - [ ] پیام خطا کوتاه، رسمی، واضح
+- [ ] متن خطا استاندارد:
+  - [ ] «شماره تماس معتبر وارد کنید» (نه «این فیلد اشتباه است»)
+  - [ ] راهنمایی برای رفع خطا
+  - [ ] بدون پیام‌های منفی
+
+### 11.7 انیمیشن‌های مینیمال (Minimal Animations)
+- [ ] انیمیشن‌های مجاز:
+  - [ ] Fade-in ملایم بخش‌ها
+  - [ ] Focus transition روی Input
+  - [ ] Progress step نرم
+- [ ] تنظیمات:
+  - [ ] Duration: 150ms – 250ms
+  - [ ] Easing: ease-in-out
+- [ ] حذف انیمیشن‌های ممنوع:
+  - [ ] Bounce
+  - [ ] Shake
+  - [ ] Slide اغراق‌آمیز
+
+### 11.8 دکمه‌ها (Buttons)
+- [ ] قواعد دکمه درمانی:
+  - [ ] Primary فقط یکی
+  - [ ] متن واضح: «ثبت اطلاعات»، «ادامه»
+  - [ ] بدون آیکون فانتزی
+- [ ] رنگ:
+  - [ ] Primary: آبی تیره (`--medical-form-primary`)
+  - [ ] Secondary: خاکستری (`#6c757d`)
+
+### 11.9 دسترس‌پذیری (Accessibility)
+- [ ] کنتراست رنگ مناسب
+- [ ] امکان Tab Navigation
+- [ ] Label مرتبط با Input (استفاده از `for` و `id`)
+- [ ] پیام خطا قابل خواندن توسط Screen Reader (استفاده از `aria-describedby` و `role="alert"`)
+
+### 11.10 بهینه‌سازی تجربه کاربری (UX)
+- [ ] Auto-focus روی فیلد بعدی (با Enter)
+- [ ] Mask برای موبایل / کد ملی
+- [ ] DatePicker شمسی استاندارد (استفاده از `_PersianDatePicker`)
+- [ ] Auto-fill امن (استفاده از `autocomplete` مناسب)
+
+### 11.11 امنیت فرم‌های درمانی
+- [ ] HTTPS الزامی (`[RequireHttps]`)
+- [ ] Anti-Forgery Token (`@Html.AntiForgeryToken()`)
+- [ ] عدم ذخیره اطلاعات حساس در LocalStorage
+- [ ] Timeout Session (هشدار به کاربر)
+
+### 11.12 Testing
+- [ ] تست در محیط Production
+- [ ] بررسی رسمی بودن طراحی
+- [ ] بررسی سرعت ورود اطلاعات
+- [ ] تست دسترس‌پذیری با Screen Reader
+- [ ] تست امنیت (HTTPS، Anti-Forgery Token)
+
+**زمان تخمینی:** 1-2 روز
+
+---
+
+## Phase 12: Testing & Quality Assurance (تست و کنترل کیفیت)
+
+### 12.1 Unit Testing
 - [ ] تست Repository Methods
 - [ ] تست Service Methods
 - [ ] تست Controller Actions
 - [ ] تست ViewModels
 
-### 11.2 Integration Testing
+### 12.2 Integration Testing
 - [ ] تست End-to-End Flows
 - [ ] تست Database Operations
 - [ ] تست File Upload Operations
 - [ ] تست Notification System
 
-### 11.3 Security Testing
+### 12.3 Security Testing
 - [ ] تست SQL Injection Protection
 - [ ] تست XSS Protection
 - [ ] تست CSRF Protection
 - [ ] تست Authorization Checks
 
-### 11.4 Performance Testing
+### 12.4 Performance Testing
 - [ ] تست Page Load Time
 - [ ] تست Database Query Performance
 - [ ] تست Image Upload Performance
@@ -432,23 +545,23 @@
 
 ---
 
-## Phase 12: Code Review & Optimization (بازبینی و بهینه‌سازی)
+## Phase 13: Code Review & Optimization (بازبینی و بهینه‌سازی)
 
-### 12.1 Code Review Checklist
+### 13.1 Code Review Checklist
 - [ ] بررسی Strongly-Typed
 - [ ] بررسی SRP Principles
 - [ ] بررسی Error Handling
 - [ ] بررسی Logging
 - [ ] بررسی Security
 
-### 12.2 Code Optimization
+### 13.2 Code Optimization
 - [ ] بهینه‌سازی Database Queries
 - [ ] حذف N+1 Queries
 - [ ] بهینه‌سازی JavaScript
 - [ ] بهینه‌سازی CSS
 - [ ] Minification Resources
 
-### 12.3 Documentation
+### 13.3 Documentation
 - [ ] به‌روزرسانی Code Comments
 - [ ] ایجاد API Documentation
 - [ ] به‌روزرسانی README
@@ -456,23 +569,23 @@
 
 ---
 
-## Phase 13: Deployment Preparation (آماده‌سازی برای Production)
+## Phase 14: Deployment Preparation (آماده‌سازی برای Production)
 
-### 11.1 Pre-Deployment Checklist
+### 14.1 Pre-Deployment Checklist
 - [ ] تمام Tests پاس شده‌اند
 - [ ] تمام Linter Errors برطرف شده‌اند
 - [ ] تمام Warnings برطرف شده‌اند
 - [ ] تمام TODOs بررسی شده‌اند
 - [ ] تمام Documentation به‌روز است
 
-### 11.2 Production Configuration
+### 14.2 Production Configuration
 - [ ] تنظیم Connection Strings
 - [ ] تنظیم Logging Levels
 - [ ] تنظیم Error Pages
 - [ ] تنظیم Caching
 - [ ] تنظیم Security Headers
 
-### 11.3 Deployment
+### 14.3 Deployment
 - [ ] Backup Database
 - [ ] Deploy Application
 - [ ] Run Migrations
@@ -498,10 +611,11 @@
 - Phase 8: 1 روز (Persian DatePicker Integration)
 - Phase 9: 0.5-1 روز (CKEditor Integration)
 - Phase 10: 1-2 روز (Image Upload System)
-- Phase 11-12: 2-3 روز
-- Phase 13: 1 روز
+- Phase 11: 1-2 روز (Medical Form Design Standards)
+- Phase 12-13: 2-3 روز
+- Phase 14: 1 روز
 
-**کل زمان:** 12-17 روز کاری
+**کل زمان:** 13-19 روز کاری
 
 ---
 
