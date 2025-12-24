@@ -75,15 +75,7 @@
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
+    @* حذف Alert های Bootstrap - استفاده از Toastr به جای آن *@
 
     <div class="form-container">
         @using (Html.BeginForm("Edit", "Story", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data", id = "storyForm" }))
@@ -128,7 +120,8 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <label for="ThumbnailFile">تصویر Thumbnail (برای تغییر، فایل جدید انتخاب کنید)</label>
-                        <input type="file" name="thumbnailFile" id="ThumbnailFile" class="form-control-file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" />
+                        @Html.TextBoxFor(m => m.ThumbnailFile, new { type = "file", @class = "form-control-file", accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp", id = "ThumbnailFile" })
+                        @Html.ValidationMessageFor(m => m.ThumbnailFile, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">
                             <i class="fas fa-info-circle"></i> 
                             فرمت‌های مجاز: JPG, PNG, GIF, WebP | حداکثر حجم: 5 مگابایت | اندازه پیشنهادی: 400x400 پیکسل
@@ -206,7 +199,7 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <label for="VideoFile">فایل ویدیو (برای تغییر، فایل جدید انتخاب کنید)</label>
-                        <input type="file" name="videoFile" id="VideoFile" class="form-control-file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo" />
+                        <input type="file" name="VideoFile" id="VideoFile" class="form-control-file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo" />
                         <small class="form-text text-muted">
                             <i class="fas fa-info-circle"></i> 
                             فرمت‌های مجاز: MP4, WebM, OGG, MOV, AVI | حداکثر حجم: 100 مگابایت
@@ -371,6 +364,62 @@
 
             // مقداردهی اولیه
             toggleVideoFields();
+
+            // نمایش خطاهای ModelState با Toastr (طبق قرارداد)
+            @{
+                var errorMsg = NotificationHelper.GetError(TempData);
+                var warningMsg = NotificationHelper.GetWarning(TempData);
+                var successMsg = NotificationHelper.GetSuccess(TempData);
+                var infoMsg = NotificationHelper.GetInfo(TempData);
+            }
+
+            @if (errorMsg != null)
+            {
+                <text>
+                toastr.error('@Html.Raw(errorMsg.Message)', '@Html.Raw(errorMsg.Title)');
+                </text>
+            }
+
+            @if (warningMsg != null)
+            {
+                <text>
+                toastr.warning('@Html.Raw(warningMsg.Message)', '@Html.Raw(warningMsg.Title)');
+                </text>
+            }
+
+            @if (successMsg != null)
+            {
+                <text>
+                toastr.success('@Html.Raw(successMsg.Message)', '@Html.Raw(successMsg.Title)');
+                </text>
+            }
+
+            @if (infoMsg != null)
+            {
+                <text>
+                toastr.info('@Html.Raw(infoMsg.Message)', '@Html.Raw(infoMsg.Title)');
+                </text>
+            }
+
+            // نمایش خطاهای ModelState در صورت وجود
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <text>
+                var modelStateErrors = [];
+                @foreach (var key in ViewData.ModelState.Keys)
+                {
+                    foreach (var error in ViewData.ModelState[key].Errors)
+                    {
+                        <text>
+                        modelStateErrors.push('@Html.Raw(error.ErrorMessage)');
+                        </text>
+                    }
+                }
+                if (modelStateErrors.length > 0) {
+                    toastr.error(modelStateErrors.join('<br/>'), 'خطاهای اعتبارسنجی');
+                }
+                </text>
+            }
         });
     </script>
 }

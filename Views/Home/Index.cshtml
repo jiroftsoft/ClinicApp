@@ -90,6 +90,12 @@
                 @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
             }
 
+            <!-- Stories Section -->
+            @if (Model.Stories != null && Model.Stories.Any())
+            {
+                @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", Model.Stories)
+            }
+
             <!-- FAQ Section -->
             @if (Model.FAQs != null && Model.FAQs.Any())
             {

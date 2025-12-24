@@ -155,20 +155,20 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
-            // Admin default route - باید قبل از CMS route باشد
-            context.MapRoute(
-                "Admin_default",
-                "Admin/{controller}/{action}/{id}",
-                new { action = "Index", id = UrlParameter.Optional },
-                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
-            );
-
-            // CMS Routes - مسیرهای CMS (بعد از Admin default)
+            // CMS Routes - مسیرهای CMS (باید قبل از Admin default باشد تا اولویت داشته باشد)
             context.MapRoute(
                 name: "Admin_CMS_Default",
                 url: "Admin/CMS/{controller}/{action}/{id}",
                 defaults: new { action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.CMS" }
+            );
+
+            // Admin default route - باید بعد از CMS route باشد
+            context.MapRoute(
+                "Admin_default",
+                "Admin/{controller}/{action}/{id}",
+                new { action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
         }
     }

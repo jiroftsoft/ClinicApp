@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Web;
 using System.Web.Mvc;
 
 namespace ClinicApp.ViewModels.CMS
@@ -49,9 +50,14 @@ namespace ClinicApp.ViewModels.CMS
         [Display(Name = "نوع ویدیو")]
         public string VideoType { get; set; } // "YouTube", "Vimeo", "DirectUpload"
 
-        [Required(ErrorMessage = "تصویر Thumbnail الزامی است.")]
-        [MaxLength(500, ErrorMessage = "آدرس تصویر Thumbnail نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        /// <summary>
+        /// فایل تصویر Thumbnail برای آپلود
+        /// </summary>
         [Display(Name = "تصویر Thumbnail")]
+        public HttpPostedFileBase ThumbnailFile { get; set; }
+
+        [MaxLength(500, ErrorMessage = "آدرس تصویر Thumbnail نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        [Display(Name = "آدرس تصویر Thumbnail")]
         public string ThumbnailUrl { get; set; }
 
         [MaxLength(500, ErrorMessage = "لینک نمی‌تواند بیش از 500 کاراکتر باشد.")]

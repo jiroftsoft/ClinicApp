@@ -30,6 +30,9 @@ namespace ClinicApp.ViewModels
         public List<ClinicApp.ViewModels.CMS.MedicalServiceInfoPublicViewModel> MedicalServiceInfos { get; set; }
         public List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel> EmergencyContacts { get; set; }
         
+        // Stories Section (برای نمایش در صفحه اصلی)
+        public List<ClinicApp.ViewModels.CMS.StoryPublicViewModel> Stories { get; set; }
+        
         // Slider Sections
         public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> SidebarSliders { get; set; }
         public List<ClinicApp.ViewModels.CMS.SliderIndexViewModel> FooterSliders { get; set; }

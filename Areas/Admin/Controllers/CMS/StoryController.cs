@@ -131,61 +131,30 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(StoryCreateEditViewModel model, HttpPostedFileBase thumbnailFile, HttpPostedFileBase videoFile)
+        public async Task<ActionResult> Create(StoryCreateEditViewModel model)
         {
             try
             {
                 _logger.Information("درخواست ایجاد Story جدید توسط کاربر {UserId}", _currentUserService.UserId);
 
-                // پردازش آپلود تصویر Thumbnail
-                if (thumbnailFile != null && thumbnailFile.ContentLength > 0)
+                // لاگ برای دیباگ: بررسی Request
+                _logger.Information("Create Action - Request.ContentType: {ContentType}, Request.Files.Count: {FileCount}",
+                    Request.ContentType ?? "null", Request.Files.Count);
+                
+                foreach (string key in Request.Files.AllKeys)
                 {
-                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
-                        thumbnailFile,
-                        StoryImageUploadPath,
-                        StoryThumbnailUploadPath,
-                        ThumbnailWidth,
-                        ThumbnailHeight,
-                        MaxImageWidth,
-                        MaxImageHeight);
+                    var file = Request.Files[key];
+                    _logger.Information("Create Action - فایل پیدا شد - Key: {Key}, FileName: {FileName}, ContentLength: {ContentLength}",
+                        key, file?.FileName ?? "null", file?.ContentLength ?? 0);
+                }
 
-                    if (uploadResult.Success)
-                    {
-                        model.ThumbnailUrl = uploadResult.Data.ThumbnailUrl;
-                        _logger.Information("تصویر Thumbnail با موفقیت آپلود شد: {ThumbnailUrl}", model.ThumbnailUrl);
-                    }
-                    else
-                    {
-                        NotificationHelper.SetWarning(TempData, $"خطا در آپلود تصویر Thumbnail: {uploadResult.Message}");
-                        ModelState.AddModelError("ThumbnailFile", uploadResult.Message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError("ThumbnailFile", "تصویر Thumbnail الزامی است");
-                }
+                // پردازش آپلود تصویر Thumbnail (طبق قرارداد - استفاده از ProcessImageUpload)
+                await ProcessImageUpload(model, isCreate: true);
 
                 // پردازش آپلود ویدیو (اگر DirectUpload)
                 if (model.VideoType == "DirectUpload")
                 {
-                    if (videoFile != null && videoFile.ContentLength > 0)
-                    {
-                        var videoUploadResult = _videoUploadService.UploadVideo(videoFile, StoryVideoUploadPath);
-                        if (videoUploadResult.Success)
-                        {
-                            model.VideoUrl = videoUploadResult.Data.VideoUrl;
-                            _logger.Information("ویدیو با موفقیت آپلود شد: {VideoUrl}", model.VideoUrl);
-                        }
-                        else
-                        {
-                            NotificationHelper.SetWarning(TempData, $"خطا در آپلود ویدیو: {videoUploadResult.Message}");
-                            ModelState.AddModelError("VideoFile", videoUploadResult.Message);
-                        }
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("VideoFile", "فایل ویدیو الزامی است");
-                    }
+                    await ProcessVideoUpload(model);
                 }
                 else
                 {
@@ -203,6 +172,8 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!ModelState.IsValid)
                 {
+                    // نمایش خطاهای ModelState با Toastr
+                    this.AddModelStateErrorsToNotification(_logger);
                     return View(GetViewPath("Create"), model);
                 }
 
@@ -274,64 +245,52 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit(StoryCreateEditViewModel model, HttpPostedFileBase thumbnailFile, HttpPostedFileBase videoFile)
+        public async Task<ActionResult> Edit(StoryCreateEditViewModel model)
         {
             try
             {
                 _logger.Information("درخواست به‌روزرسانی Story - StoryId: {StoryId}", model.StoryId);
 
-                // پردازش آپلود تصویر Thumbnail (فقط در صورت ارسال فایل جدید)
+                // دریافت Story موجود برای بررسی ThumbnailUrl قبلی
+                var existingStory = await _storyService.GetStoryByIdAsync(model.StoryId);
+                if (!existingStory.Success)
+                {
+                    NotificationHelper.SetError(TempData, "Story یافت نشد");
+                    return RedirectToAction("Index");
+                }
+
+                // پردازش آپلود تصویر Thumbnail (طبق قرارداد - استفاده از ProcessImageUpload)
+                // در Edit، ThumbnailFile اختیاری است (اگر ThumbnailUrl قبلاً وجود دارد)
+                // ✅ استفاده از model.ThumbnailFile (از Model Binding) یا Request.Files (fallback)
+                var thumbnailFile = model.ThumbnailFile ?? Request.Files["ThumbnailFile"];
                 if (thumbnailFile != null && thumbnailFile.ContentLength > 0)
                 {
                     // حذف تصویر قبلی
-                    var existingStory = await _storyService.GetStoryByIdAsync(model.StoryId);
-                    if (existingStory.Success && !string.IsNullOrEmpty(existingStory.Data.ThumbnailUrl))
+                    if (!string.IsNullOrEmpty(existingStory.Data.ThumbnailUrl))
                     {
                         _imageUploadService.DeleteImage(existingStory.Data.ThumbnailUrl);
                     }
-
-                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
-                        thumbnailFile,
-                        StoryImageUploadPath,
-                        StoryThumbnailUploadPath,
-                        ThumbnailWidth,
-                        ThumbnailHeight,
-                        MaxImageWidth,
-                        MaxImageHeight);
-
-                    if (uploadResult.Success)
+                    await ProcessImageUpload(model, isCreate: false);
+                }
+                else
+                {
+                    // اگر فایل جدید انتخاب نشده، ThumbnailUrl قبلی را حفظ کن
+                    if (!string.IsNullOrEmpty(existingStory.Data.ThumbnailUrl))
                     {
-                        model.ThumbnailUrl = uploadResult.Data.ThumbnailUrl;
-                        _logger.Information("تصویر Thumbnail جدید با موفقیت آپلود شد: {ThumbnailUrl}", model.ThumbnailUrl);
-                    }
-                    else
-                    {
-                        NotificationHelper.SetWarning(TempData, $"خطا در آپلود تصویر Thumbnail: {uploadResult.Message}");
-                        ModelState.AddModelError("ThumbnailFile", uploadResult.Message);
+                        model.ThumbnailUrl = existingStory.Data.ThumbnailUrl;
                     }
                 }
 
                 // پردازش آپلود ویدیو (اگر DirectUpload و فایل جدید انتخاب شده)
+                var videoFile = Request.Files["VideoFile"];
                 if (model.VideoType == "DirectUpload" && videoFile != null && videoFile.ContentLength > 0)
                 {
                     // حذف ویدیو قدیمی
-                    var existingStory = await _storyService.GetStoryByIdAsync(model.StoryId);
-                    if (existingStory.Success && !string.IsNullOrEmpty(existingStory.Data.VideoUrl))
+                    if (!string.IsNullOrEmpty(existingStory.Data.VideoUrl))
                     {
                         _videoUploadService.DeleteVideo(existingStory.Data.VideoUrl);
                     }
-
-                    var videoUploadResult = _videoUploadService.UploadVideo(videoFile, StoryVideoUploadPath);
-                    if (videoUploadResult.Success)
-                    {
-                        model.VideoUrl = videoUploadResult.Data.VideoUrl;
-                        _logger.Information("ویدیو جدید با موفقیت آپلود شد: {VideoUrl}", model.VideoUrl);
-                    }
-                    else
-                    {
-                        NotificationHelper.SetWarning(TempData, $"خطا در آپلود ویدیو: {videoUploadResult.Message}");
-                        ModelState.AddModelError("VideoFile", videoUploadResult.Message);
-                    }
+                    await ProcessVideoUpload(model);
                 }
                 else if (model.VideoType != "DirectUpload")
                 {
@@ -349,6 +308,8 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
                 if (!ModelState.IsValid)
                 {
+                    // نمایش خطاهای ModelState با Toastr
+                    this.AddModelStateErrorsToNotification(_logger);
                     return View(GetViewPath("Edit"), model);
                 }
 
@@ -433,7 +394,116 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
         #endregion
 
-        #region Helper Methods
+
+        #region Image & Video Upload Processing
+
+        /// <summary>
+        /// پردازش آپلود تصویر Thumbnail
+        /// طبق قرارداد: استفاده از ProcessImageUpload مطابق الگوی سایر Controllerها
+        /// </summary>
+        private async Task ProcessImageUpload(StoryCreateEditViewModel model, bool isCreate = false)
+        {
+            try
+            {
+                // ✅ استفاده از model.ThumbnailFile (از Model Binding) یا Request.Files (fallback)
+                // طبق قرارداد: اولویت با Model Binding است، اما fallback به Request.Files برای سازگاری
+                var thumbnailFile = model.ThumbnailFile ?? Request.Files["ThumbnailFile"];
+
+                // لاگ برای دیباگ
+                _logger.Information("ProcessImageUpload - ThumbnailFile: {ThumbnailFile}, isCreate: {IsCreate}",
+                    thumbnailFile != null 
+                        ? $"نام: {thumbnailFile.FileName}, اندازه: {thumbnailFile.ContentLength}, نوع: {thumbnailFile.ContentType}" 
+                        : "null", isCreate);
+
+                // در Create، ThumbnailFile الزامی است
+                if (isCreate)
+                {
+                    if (thumbnailFile == null)
+                    {
+                        _logger.Warning("ProcessImageUpload - ThumbnailFile null است در Create");
+                        ModelState.AddModelError("ThumbnailFile", "تصویر Thumbnail الزامی است");
+                        return;
+                    }
+
+                    if (thumbnailFile.ContentLength == 0)
+                    {
+                        _logger.Warning("ProcessImageUpload - ThumbnailFile ContentLength = 0 است در Create");
+                        ModelState.AddModelError("ThumbnailFile", "تصویر Thumbnail الزامی است");
+                        return;
+                    }
+                }
+
+                // اگر فایل Thumbnail آپلود شده
+                if (thumbnailFile != null && thumbnailFile.ContentLength > 0)
+                {
+                    var uploadResult = _imageUploadService.UploadImageWithThumbnail(
+                        thumbnailFile,
+                        StoryImageUploadPath,
+                        StoryThumbnailUploadPath,
+                        ThumbnailWidth,
+                        ThumbnailHeight,
+                        MaxImageWidth,
+                        MaxImageHeight);
+
+                    if (!uploadResult.Success)
+                    {
+                        _logger.Warning("خطا در آپلود تصویر Thumbnail: {ErrorMessage}", uploadResult.Message);
+                        NotificationHelper.SetError(TempData, uploadResult.Message);
+                        ModelState.AddModelError("ThumbnailFile", uploadResult.Message);
+                        return;
+                    }
+
+                    model.ThumbnailUrl = uploadResult.Data.ThumbnailUrl;
+                    _logger.Information("تصویر Thumbnail با موفقیت آپلود شد: {ThumbnailUrl}", model.ThumbnailUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پردازش آپلود تصویر Thumbnail");
+                NotificationHelper.SetError(TempData, "خطا در آپلود تصویر Thumbnail");
+                ModelState.AddModelError("ThumbnailFile", "خطا در آپلود تصویر Thumbnail");
+            }
+        }
+
+        /// <summary>
+        /// پردازش آپلود ویدیو (فقط برای DirectUpload)
+        /// </summary>
+        private async Task ProcessVideoUpload(StoryCreateEditViewModel model)
+        {
+            try
+            {
+                var videoFile = Request.Files["VideoFile"];
+
+                // در Create، VideoFile برای DirectUpload الزامی است
+                if (videoFile == null || videoFile.ContentLength == 0)
+                {
+                    ModelState.AddModelError("VideoFile", "فایل ویدیو الزامی است");
+                    return;
+                }
+
+                var videoUploadResult = _videoUploadService.UploadVideo(videoFile, StoryVideoUploadPath);
+                if (!videoUploadResult.Success)
+                {
+                    _logger.Warning("خطا در آپلود ویدیو: {ErrorMessage}", videoUploadResult.Message);
+                    NotificationHelper.SetError(TempData, videoUploadResult.Message);
+                    ModelState.AddModelError("VideoFile", videoUploadResult.Message);
+                    return;
+                }
+
+                model.VideoUrl = videoUploadResult.Data.VideoUrl;
+                _logger.Information("ویدیو با موفقیت آپلود شد: {VideoUrl}", model.VideoUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پردازش آپلود ویدیو");
+                NotificationHelper.SetError(TempData, "خطا در آپلود ویدیو");
+                ModelState.AddModelError("VideoFile", "خطا در آپلود ویدیو");
+            }
+        }
+
+        #endregion
+
+        #region Video URL Processing
 
         /// <summary>
         /// پردازش URL ویدیو برای YouTube و Vimeo

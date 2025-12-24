@@ -559,7 +559,7 @@
     <form id="filterForm" method="get" action="@Url.Action("Available")">
         <fieldset class="medical-form-section">
             <legend>جستجوی نوبت</legend>
-            <div class="row g-3">
+        <div class="row g-3">
                 <div class="col-md-3">
                     <label for="searchTerm" class="form-label">جستجوی پزشک</label>
                     <input type="text" 
@@ -572,15 +572,15 @@
                 <div class="col-md-3">
                     <label for="doctorId" class="form-label">پزشک</label>
                     <select name="doctorId" id="doctorId" class="form-select">
-                        <option value="">همه پزشکان</option>
-                        @foreach (var doctor in Model.Doctors)
-                        {
-                            <option value="@doctor.DoctorId" @(Model.SelectedDoctorId == doctor.DoctorId ? "selected" : "")>
-                                @doctor.FullName - @doctor.Specialization
-                            </option>
-                        }
-                    </select>
-                </div>
+                    <option value="">همه پزشکان</option>
+                    @foreach (var doctor in Model.Doctors)
+                    {
+                        <option value="@doctor.DoctorId" @(Model.SelectedDoctorId == doctor.DoctorId ? "selected" : "")>
+                            @doctor.FullName - @doctor.Specialization
+                        </option>
+                    }
+                </select>
+            </div>
                 <div class="col-md-3">
                     @{
                         // ✅ استفاده از کامپوننت اصولی Persian DatePicker
@@ -593,7 +593,7 @@
                         ViewBag.PersianDatePickerRequired = false;
                     }
                     @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
-                </div>
+            </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         جستجو
@@ -606,13 +606,13 @@
 
 <!-- لیست پزشکان -->
 <div id="doctors-container">
-    @if (Model.Doctors != null && Model.Doctors.Any())
-    {
-        <div class="doctors-grid">
-            @foreach (var doctor in Model.Doctors)
-            {
-                <div class="doctor-card @(Model.SelectedDoctorId == doctor.DoctorId ? "selected" : "")" 
-                     data-doctor-id="@doctor.DoctorId">
+@if (Model.Doctors != null && Model.Doctors.Any())
+{
+    <div class="doctors-grid">
+        @foreach (var doctor in Model.Doctors)
+        {
+            <div class="doctor-card @(Model.SelectedDoctorId == doctor.DoctorId ? "selected" : "")" 
+                 data-doctor-id="@doctor.DoctorId">
                 <div class="doctor-card-header">
                     <div class="doctor-avatar-container">
                         @if (!string.IsNullOrEmpty(doctor.ProfileImageUrl))
@@ -690,18 +690,18 @@
                         مشاهده جزئیات و رزرو نوبت
                     </a>
                 </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">
-            <i class="fas fa-user-md"></i>
-            <h4>پزشکی یافت نشد</h4>
-            <p>در حال حاضر پزشکی در دسترس نیست.</p>
-        </div>
-    }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">
+        <i class="fas fa-user-md"></i>
+        <h4>پزشکی یافت نشد</h4>
+        <p>در حال حاضر پزشکی در دسترس نیست.</p>
+    </div>
+}
 </div>
 
 <!-- اسلات‌های زمانی -->
@@ -1066,9 +1066,9 @@ else if (Model.SelectedDoctorId.HasValue)
                     
                     if (!doctors || doctors.length === 0) {
                         $container.html('<div class="empty-state"><i class="fas fa-user-md"></i><h4>پزشکی یافت نشد</h4><p>در حال حاضر پزشکی در دسترس نیست.</p></div>');
-                        return;
-                    }
-                    
+                    return;
+                }
+                
                     var html = '<div class="doctors-grid">';
                     doctors.forEach(function(doctor) {
                         var isSelected = selectedDoctorId && doctor.doctorId === selectedDoctorId;
@@ -1519,27 +1519,27 @@ else if (Model.SelectedDoctorId.HasValue)
                         
                         // تنظیم onSelect handler جدید
                         datePickerInstance.config.onSelect = function(selectedDateValue) {
-                            console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
+                    console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
                             
                             // فراخوانی onSelect قبلی (اگر وجود داشته باشد)
                             if (originalOnSelect && typeof originalOnSelect === 'function') {
                                 originalOnSelect.call(this, selectedDateValue);
                             }
-                            
-                            // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
-                            if (!pollingEnabled) {
-                                pollingEnabled = true;
-                                startDatePolling();
-                            }
+                    
+                    // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
+                    if (!pollingEnabled) {
+                        pollingEnabled = true;
+                        startDatePolling();
+                    }
                             AppState.isInitialLoad = false;
                             isInitialLoad = false; // Legacy compatibility
-                            
+                    
                             // ✅ پردازش تاریخ - استفاده مستقیم از تاریخ انتخاب شده
-                            if (dateChangeTimeout) {
-                                clearTimeout(dateChangeTimeout);
-                            }
-                            
-                            dateChangeTimeout = setTimeout(function() {
+                    if (dateChangeTimeout) {
+                        clearTimeout(dateChangeTimeout);
+                    }
+                    
+                    dateChangeTimeout = setTimeout(function() {
                                 // ✅ استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
                                 var persianDateStr = null;
                                 
@@ -1718,14 +1718,14 @@ else if (Model.SelectedDoctorId.HasValue)
                 init: function() {
                     // ✅ Initialize Event Handlers
                     EventHandlersModule.init();
-                    
-                    // ✅ Initialize تاریخ اولیه و تنظیم flags
+            
+            // ✅ Initialize تاریخ اولیه و تنظیم flags
                     this.initializeDateState();
                 },
                 
                 initializeDateState: function() {
                     // منتظر می‌مانیم تا کامپوننت تاریخ امروز را از سرور بگیرد
-                    setTimeout(function() {
+            setTimeout(function() {
                 // تنظیم تاریخ اولیه در lastProcessedDate و lastPolledValue
                 var initialDate = $("#date").val();
                 if (initialDate) {
@@ -1755,14 +1755,14 @@ else if (Model.SelectedDoctorId.HasValue)
                     }, 3000);
                 }
                 
-                        // ✅ بعد از 2 ثانیه، بارگذاری اولیه تمام شده است
-                        setTimeout(function() {
+                // ✅ بعد از 2 ثانیه، بارگذاری اولیه تمام شده است
+                setTimeout(function() {
                             AppState.isInitialLoad = false;
                             isInitialLoad = false; // Legacy compatibility
                             pollingEnabled = true;
-                            datePickerInitialized = true;
+                    datePickerInitialized = true;
                             console.log('✅ DatePicker initialized by component, polling enabled');
-                        }, 2000);
+                }, 2000);
                     }, 1500); // تاخیر بیشتر برای اطمینان از initialize شدن کامپوننت
                 }
             };
@@ -1778,17 +1778,17 @@ else if (Model.SelectedDoctorId.HasValue)
                 var infoMsg = NotificationHelper.GetInfo(TempData);
             }
             @if (successMsg != null)
-            {
-                <text>
+                {
+                    <text>
                 toastr.success('@Html.Raw(successMsg.Message)', '@Html.Raw(successMsg.Title)');
-                </text>
-            }
+                    </text>
+                }
             @if (errorMsg != null)
-            {
-                <text>
+                {
+                    <text>
                 toastr.error('@Html.Raw(errorMsg.Message)', '@Html.Raw(errorMsg.Title)');
-                </text>
-            }
+                    </text>
+                }
             @if (warningMsg != null)
             {
                 <text>

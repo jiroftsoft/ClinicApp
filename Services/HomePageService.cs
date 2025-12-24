@@ -44,6 +44,7 @@ namespace ClinicApp.Services
         private readonly IMedicalServiceInfoService _medicalServiceInfoService;
         private readonly IEmergencyContactService _emergencyContactService;
         private readonly IAboutPageService _aboutPageService;
+        private readonly IStoryService _storyService;
 
         public HomePageService(
             ApplicationDbContext context,
@@ -65,7 +66,8 @@ namespace ClinicApp.Services
             IInsuranceInfoService insuranceInfoService,
             IMedicalServiceInfoService medicalServiceInfoService,
             IEmergencyContactService emergencyContactService,
-            IAboutPageService aboutPageService = null)
+            IAboutPageService aboutPageService = null,
+            IStoryService storyService = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -87,6 +89,7 @@ namespace ClinicApp.Services
             _medicalServiceInfoService = medicalServiceInfoService ?? throw new ArgumentNullException(nameof(medicalServiceInfoService));
             _emergencyContactService = emergencyContactService ?? throw new ArgumentNullException(nameof(emergencyContactService));
             _aboutPageService = aboutPageService; // Optional - اگر null باشد، از داده‌های پیش‌فرض استفاده می‌شود
+            _storyService = storyService; // Optional - اگر null باشد، Stories لود نمی‌شود
         }
 
         /// <summary>
@@ -120,6 +123,9 @@ namespace ClinicApp.Services
                 var medicalServiceInfosTask = GetMedicalServiceInfosSectionAsync(6);
                 var emergencyContactsTask = GetEmergencyContactsSectionAsync();
                 
+                // لود Stories Section
+                var storiesTask = GetStoriesSectionAsync();
+                
                 // لود Slider Sections
                 var sidebarSlidersTask = GetSidebarSlidersAsync();
                 var footerSlidersTask = GetFooterSlidersAsync();
@@ -137,7 +143,7 @@ namespace ClinicApp.Services
                     testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
                     medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
                     insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask,
-                    sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
+                    storiesTask, sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
 
                 var viewModel = new HomePageViewModel
                 {
@@ -158,6 +164,7 @@ namespace ClinicApp.Services
                     InsuranceInfos = await insuranceInfosTask,
                     MedicalServiceInfos = await medicalServiceInfosTask,
                     EmergencyContacts = await emergencyContactsTask,
+                    Stories = await storiesTask,
                     SidebarSliders = await sidebarSlidersTask,
                     FooterSliders = await footerSlidersTask,
                     Sidebar = await sidebarTask,
@@ -809,6 +816,35 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در دریافت داده‌های Emergency Contacts Section");
                 return new List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت Stories برای نمایش در صفحه اصلی
+        /// </summary>
+        private async Task<List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>> GetStoriesSectionAsync()
+        {
+            try
+            {
+                if (_storyService == null)
+                {
+                    _logger.Warning("IStoryService not available, returning empty Stories list");
+                    return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+                }
+
+                var result = await _storyService.GetActiveStoriesForPublicAsync();
+                if (result.Success && result.Data != null && result.Data.Any())
+                {
+                    _logger.Information("✅ {Count} Story برای نمایش در صفحه اصلی لود شد", result.Data.Count);
+                    return result.Data;
+                }
+
+                return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های Stories Section");
+                return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
             }
         }
 
