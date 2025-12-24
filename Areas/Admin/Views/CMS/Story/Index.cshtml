@@ -1,0 +1,179 @@
+@model List<ClinicApp.ViewModels.CMS.StoryIndexViewModel>
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "مدیریت Story ها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت Story ها</h1>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Story جدید
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeInactive" @(ViewBag.IncludeInactive == true ? "checked" : "") onchange="toggleInactive()">
+                <label class="form-check-label" for="includeInactive">
+                    نمایش Story های غیرفعال
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stories List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست Story ها (@Model.Count مورد)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>تصویر</th>
+                                <th>عنوان</th>
+                                <th>توضیحات</th>
+                                <th>نوع ویدیو</th>
+                                <th>وضعیت</th>
+                                <th>ترتیب</th>
+                                <th>بازدید</th>
+                                <th>تاریخ شروع</th>
+                                <th>تاریخ پایان</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@Url.Content(item.ThumbnailUrl)" alt="@item.Title" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" />
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">بدون تصویر</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@item.Title</strong>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <small class="text-muted">@StringHelper.StripHtmlAndTruncate(item.Description, 100)</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@(item.VideoType ?? "DirectUpload")</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge badge-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>@item.DisplayOrder</td>
+                                    <td>@item.ViewCount</td>
+                                    <td>@(item.StartDate.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.StartDate.Value) : "-")</td>
+                                    <td>@(item.EndDate.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(item.EndDate.Value) : "-")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = item.StoryId })" class="btn btn-sm btn-info" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = item.StoryId })" class="btn btn-sm btn-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @using (Html.BeginForm("Delete", "Story", new { id = item.StoryId }, FormMethod.Post, new { @class = "d-inline", @id = "deleteForm_" + item.StoryId }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="button" class="btn btn-sm btn-danger" title="حذف" onclick="confirmDelete(@item.StoryId)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> هیچ Story ای یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function toggleInactive() {
+            var includeInactive = document.getElementById('includeInactive').checked;
+            window.location.href = '@Url.Action("Index")?includeInactive=' + includeInactive;
+        }
+
+        function confirmDelete(storyId) {
+            Swal.fire({
+                title: 'آیا اطمینان دارید؟',
+                text: "این Story حذف خواهد شد و قابل بازگشت نیست!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('deleteForm_' + storyId).submit();
+                }
+            });
+        }
+    </script>
+}

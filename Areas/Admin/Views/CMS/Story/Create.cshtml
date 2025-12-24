@@ -1,0 +1,368 @@
+@model ClinicApp.ViewModels.CMS.StoryCreateEditViewModel
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "ایجاد Story جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .thumbnail-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .video-type-info {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .video-type-info.youtube {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .video-type-info.vimeo {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        .video-type-info.direct {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .section-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            margin-top: 2rem;
+        }
+        .section-header h5 {
+            color: #495057;
+            font-weight: 600;
+            margin: 0;
+        }
+        .section-header:first-child {
+            margin-top: 0;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-video text-primary"></i>
+            ایجاد Story جدید
+        </h1>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "Story", FormMethod.Post, new { @class = "form-horizontal", role = "form", enctype = "multipart/form-data", id = "storyForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <!-- اطلاعات اصلی -->
+            <div class="section-header">
+                <h5><i class="fas fa-info-circle"></i> اطلاعات اصلی</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Title, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "عنوان Story (الزامی)" })
+                        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">حداکثر 200 کاراکتر</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Description)
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات Story (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">حداکثر 500 کاراکتر</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تصویر Thumbnail -->
+            <div class="section-header">
+                <h5><i class="fas fa-image"></i> تصویر Thumbnail</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label for="ThumbnailFile" class="required">تصویر Thumbnail</label>
+                        <input type="file" name="thumbnailFile" id="ThumbnailFile" class="form-control-file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" />
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            فرمت‌های مجاز: JPG, PNG, GIF, WebP | حداکثر حجم: 5 مگابایت | اندازه پیشنهادی: 400x400 پیکسل
+                        </small>
+                        @Html.HiddenFor(m => m.ThumbnailUrl)
+                        <div id="thumbnailPreview" class="mt-2" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="Preview" class="thumbnail-preview" />
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Url.Content(Model.ThumbnailUrl)" alt="Current thumbnail" class="thumbnail-preview" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- ویدیو -->
+            <div class="section-header">
+                <h5><i class="fas fa-video"></i> ویدیو</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.VideoType, new { @class = "required" })
+                        @{
+                            var videoTypeList = new SelectList(new[] {
+                                new SelectListItem { Text = "آپلود مستقیم", Value = "DirectUpload" },
+                                new SelectListItem { Text = "YouTube", Value = "YouTube" },
+                                new SelectListItem { Text = "Vimeo", Value = "Vimeo" },
+                                new SelectListItem { Text = "آپارات", Value = "Aparat" }
+                            }, "Value", "Text", Model.VideoType);
+                        }
+                        @Html.DropDownListFor(m => m.VideoType, videoTypeList, new { @class = "form-control", id = "VideoType" })
+                        @Html.ValidationMessageFor(m => m.VideoType, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Duration)
+                        @Html.TextBoxFor(m => m.Duration, new { @class = "form-control", type = "number", placeholder = "مدت زمان به ثانیه (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.Duration, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">مثال: 120 برای 2 دقیقه</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video URL (برای YouTube, Vimeo, Aparat) -->
+            <div class="row" id="videoUrlRow">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.VideoUrl, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "لینک YouTube, Vimeo یا Aparat", id = "VideoUrl" })
+                        @Html.ValidationMessageFor(m => m.VideoUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            <span id="videoTypeHelp">
+                                برای YouTube: لینک کامل ویدیو (مثال: https://www.youtube.com/watch?v=VIDEO_ID)
+                                <br />
+                                برای Vimeo: لینک کامل ویدیو (مثال: https://vimeo.com/VIDEO_ID)
+                                <br />
+                                برای آپارات: لینک کامل ویدیو (مثال: https://www.aparat.com/v/VIDEO_ID)
+                            </span>
+                        </small>
+                        <div id="videoTypeInfo" class="video-type-info" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video File Upload (فقط برای DirectUpload) -->
+            <div class="row" id="videoFileRow" style="display: none;">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label for="VideoFile" class="required">فایل ویدیو</label>
+                        <input type="file" name="videoFile" id="VideoFile" class="form-control-file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo" />
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            فرمت‌های مجاز: MP4, WebM, OGG, MOV, AVI | حداکثر حجم: 100 مگابایت
+                        </small>
+                        @Html.HiddenFor(m => m.VideoUrl)
+                    </div>
+                </div>
+            </div>
+
+            <!-- لینک و دکمه (اختیاری) -->
+            <div class="section-header">
+                <h5><i class="fas fa-link"></i> لینک و دکمه (اختیاری)</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.LinkUrl)
+                        @Html.TextBoxFor(m => m.LinkUrl, new { @class = "form-control", placeholder = "لینک کلیک (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.LinkUrl, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">در صورت کلیک روی Story، به این لینک هدایت می‌شود</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ButtonText)
+                        @Html.TextBoxFor(m => m.ButtonText, new { @class = "form-control", placeholder = "متن دکمه (اختیاری)" })
+                        @Html.ValidationMessageFor(m => m.ButtonText, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">مثال: "مشاهده بیشتر"</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تنظیمات نمایش -->
+            <div class="section-header">
+                <h5><i class="fas fa-cog"></i> تنظیمات نمایش</h5>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DisplayOrder)
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0" })
+                        @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">ترتیب نمایش (عدد کمتر = اولویت بیشتر)</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.StartDate)
+                        <div class="date-picker-wrapper">
+                            @{
+                                ViewBag.PersianDatePickerId = "StartDate";
+                                ViewBag.PersianDatePickerName = "StartDate";
+                                ViewBag.PersianDatePickerValue = Model.StartDate;
+                                ViewBag.PersianDatePickerLabel = "";
+                                ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
+                                ViewBag.PersianDatePickerHelpText = "";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+                        @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.EndDate)
+                        <div class="date-picker-wrapper">
+                            @{
+                                ViewBag.PersianDatePickerId = "EndDate";
+                                ViewBag.PersianDatePickerName = "EndDate";
+                                ViewBag.PersianDatePickerValue = Model.EndDate;
+                                ViewBag.PersianDatePickerLabel = "";
+                                ViewBag.PersianDatePickerPlaceholder = "تاریخ پایان (اختیاری)";
+                                ViewBag.PersianDatePickerHelpText = "";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+                        @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره Story
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    <script>
+        $(document).ready(function() {
+            // مدیریت نمایش/مخفی کردن فیلدهای ویدیو بر اساس نوع
+            function toggleVideoFields() {
+                var videoType = $('#VideoType').val();
+                
+                if (videoType === 'DirectUpload') {
+                    $('#videoUrlRow').hide();
+                    $('#videoFileRow').show();
+                    $('#VideoUrl').removeAttr('required');
+                    $('#VideoFile').attr('required', 'required');
+                    $('#videoTypeInfo').removeClass('youtube vimeo direct').addClass('direct').html('<i class="fas fa-info-circle"></i> ویدیو به صورت مستقیم از سرور پخش می‌شود').show();
+                } else {
+                    $('#videoUrlRow').show();
+                    $('#videoFileRow').hide();
+                    $('#VideoUrl').attr('required', 'required');
+                    $('#VideoFile').removeAttr('required');
+                    
+                    if (videoType === 'YouTube') {
+                        $('#videoTypeInfo').removeClass('vimeo direct').addClass('youtube').html('<i class="fab fa-youtube"></i> ویدیو از YouTube پخش می‌شود').show();
+                    } else if (videoType === 'Vimeo') {
+                        $('#videoTypeInfo').removeClass('youtube direct').addClass('vimeo').html('<i class="fab fa-vimeo"></i> ویدیو از Vimeo پخش می‌شود').show();
+                    } else if (videoType === 'Aparat') {
+                        $('#videoTypeInfo').removeClass('youtube vimeo').addClass('direct').html('<i class="fas fa-video"></i> ویدیو از آپارات پخش می‌شود').show();
+                    }
+                }
+            }
+
+            // تغییر نوع ویدیو
+            $('#VideoType').on('change', function() {
+                toggleVideoFields();
+            });
+
+            // نمایش پیش‌نمایش تصویر Thumbnail
+            $('#ThumbnailFile').on('change', function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#thumbnailPreviewImg').attr('src', e.target.result);
+                        $('#thumbnailPreview').show();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // مقداردهی اولیه
+            toggleVideoFields();
+        });
+    </script>
+}

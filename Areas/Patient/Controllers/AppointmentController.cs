@@ -146,6 +146,128 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
+        /// دریافت داده‌های نوبت‌های موجود به صورت AJAX (بدون رفرش صفحه)
+        /// GET: /Patient/Appointment/GetAvailableData?doctorId={doctorId}&date={date}&searchTerm={searchTerm}
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<JsonResult> GetAvailableData(int? doctorId = null, string date = null, string searchTerm = null)
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, SearchTerm: {SearchTerm}",
+                    doctorId, date ?? "همه", searchTerm ?? "");
+
+                // ✅ دریافت لیست پزشکان با فیلتر جستجو
+                var doctorsResult = await _bookingService.GetAvailableDoctorsAsync(
+                    departmentId: null,
+                    searchTerm: searchTerm);
+                if (!doctorsResult.Success)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در دریافت لیست پزشکان"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                // ✅ تبدیل دستی تاریخ شمسی به میلادی
+                DateTime selectedDate;
+                if (string.IsNullOrWhiteSpace(date))
+                {
+                    selectedDate = DateTime.Today;
+                }
+                else
+                {
+                    try
+                    {
+                        selectedDate = PersianDateHelper.ToGregorianDate(date).Date;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در تبدیل تاریخ شمسی '{PersianDate}'", date);
+                        selectedDate = DateTime.Today;
+                    }
+                }
+
+                // بررسی اینکه تاریخ در گذشته نباشد
+                if (selectedDate < DateTime.Today)
+                {
+                    selectedDate = DateTime.Today;
+                }
+
+                var availableSlots = new List<AvailableTimeSlotDto>();
+
+                // اگر پزشک انتخاب شده، اسلات‌های موجود را دریافت کن
+                if (doctorId.HasValue)
+                {
+                    var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId.Value, selectedDate);
+                    if (slotsResult.Success && slotsResult.Data != null)
+                    {
+                        availableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
+                    }
+                }
+
+                // ✅ تبدیل تاریخ میلادی به شمسی برای نمایش
+                var persianSelectedDate = PersianDateHelper.ToPersianDate(selectedDate);
+
+                // ✅ تبدیل لیست پزشکان به anonymous type
+                // استفاده از conditional operator برای جلوگیری از خطای type mismatch
+                object doctorsList;
+                if (doctorsResult.Data != null && doctorsResult.Data.Any())
+                {
+                    doctorsList = doctorsResult.Data.Select(d => new
+                    {
+                        doctorId = d.DoctorId,
+                        fullName = d.FullName,
+                        specialization = d.Specialization,
+                        bio = d.Bio,
+                        profileImageUrl = d.ProfileImageUrl,
+                        medicalCouncilCode = d.MedicalCouncilCode,
+                        experienceYears = d.ExperienceYears,
+                        departmentName = d.DepartmentName,
+                        hasActiveSchedule = d.HasActiveSchedule,
+                        scheduleInfo = d.ScheduleInfo,
+                        isSelected = doctorId.HasValue && d.DoctorId == doctorId.Value
+                    }).ToList();
+                }
+                else
+                {
+                    doctorsList = new List<object>();
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        doctors = doctorsList,
+                        selectedDoctorId = doctorId,
+                        selectedDate = persianSelectedDate,
+                        availableSlots = availableSlots.Select(s => new
+                        {
+                            startTime = s.StartTime.ToString(@"hh\:mm"),
+                            endTime = s.EndTime.ToString(@"hh\:mm"),
+                            displayTime = s.DisplayTime,
+                            displayRange = s.DisplayRange,
+                            isAvailable = s.IsAvailable,
+                            duration = s.Duration
+                        }).ToList()
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های نوبت‌های موجود");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری داده‌ها"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
         /// نمایش جزئیات پزشک با رزومه و آمار
         /// GET: /Patient/Appointment/DoctorDetails/{doctorId}
         /// </summary>

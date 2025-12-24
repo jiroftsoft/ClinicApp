@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using ClinicApp.Filters;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.ViewModels;
@@ -23,6 +24,7 @@ namespace ClinicApp.Controllers
         private readonly IInsuranceInfoService _insuranceInfoService;
         private readonly IMedicalServiceInfoService _medicalServiceInfoService;
         private readonly IEmergencyContactService _emergencyContactService;
+        private readonly IStoryService _storyService;
 
         public HomeController(
             IHomePageService homePageService,
@@ -31,7 +33,8 @@ namespace ClinicApp.Controllers
             IHealthTipService healthTipService,
             IInsuranceInfoService insuranceInfoService,
             IMedicalServiceInfoService medicalServiceInfoService,
-            IEmergencyContactService emergencyContactService)
+            IEmergencyContactService emergencyContactService,
+            IStoryService storyService)
         {
             _homePageService = homePageService ?? throw new ArgumentNullException(nameof(homePageService));
             _announcementService = announcementService ?? throw new ArgumentNullException(nameof(announcementService));
@@ -40,6 +43,7 @@ namespace ClinicApp.Controllers
             _insuranceInfoService = insuranceInfoService ?? throw new ArgumentNullException(nameof(insuranceInfoService));
             _medicalServiceInfoService = medicalServiceInfoService ?? throw new ArgumentNullException(nameof(medicalServiceInfoService));
             _emergencyContactService = emergencyContactService ?? throw new ArgumentNullException(nameof(emergencyContactService));
+            _storyService = storyService ?? throw new ArgumentNullException(nameof(storyService));
         }
 
         /// <summary>
@@ -404,6 +408,28 @@ namespace ClinicApp.Controllers
             }
             
             return PartialView("Sections/_ContactSection", contact);
+        }
+
+        /// <summary>
+        /// بخش Stories (برای نمایش زیر منو)
+        /// </summary>
+        [OutputCache(Duration = 300, VaryByParam = "none")]
+        [ChildActionOnly]
+        public async Task<ActionResult> StoriesSection()
+        {
+            try
+            {
+                var stories = await _storyService.GetActiveStoriesForPublicAsync();
+                if (stories.Success && stories.Data != null && stories.Data.Any())
+                {
+                    return PartialView("Sections/_StoriesSection", stories.Data);
+                }
+                return new EmptyResult();
+            }
+            catch
+            {
+                return new EmptyResult();
+            }
         }
 
         #endregion

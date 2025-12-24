@@ -1,0 +1,197 @@
+@model ClinicApp.ViewModels.CMS.StoryDetailsViewModel
+@using ClinicApp.Helpers
+@{
+    ViewBag.Title = "جزئیات Story";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-eye text-primary"></i>
+            جزئیات Story
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.StoryId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">اطلاعات Story</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="200">عنوان</th>
+                            <td>@Model.Title</td>
+                        </tr>
+                        <tr>
+                            <th>توضیحات</th>
+                            <td>@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</td>
+                        </tr>
+                        <tr>
+                            <th>نوع ویدیو</th>
+                            <td>
+                                <span class="badge badge-info">@(Model.VideoType ?? "DirectUpload")</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>آدرس ویدیو</th>
+                            <td>
+                                @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                                {
+                                    if (Model.VideoType == "YouTube")
+                                    {
+                                        <a href="https://www.youtube.com/watch?v=@Model.VideoUrl" target="_blank">@Model.VideoUrl</a>
+                                    }
+                                    else if (Model.VideoType == "Vimeo")
+                                    {
+                                        <a href="https://vimeo.com/@Model.VideoUrl" target="_blank">@Model.VideoUrl</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Content(Model.VideoUrl)" target="_blank">@Model.VideoUrl</a>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>لینک کلیک</th>
+                            <td>
+                                @if (!string.IsNullOrEmpty(Model.LinkUrl))
+                                {
+                                    <a href="@Model.LinkUrl" target="_blank">@Model.LinkUrl</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>متن دکمه</th>
+                            <td>@(string.IsNullOrEmpty(Model.ButtonText) ? "-" : Model.ButtonText)</td>
+                        </tr>
+                        <tr>
+                            <th>مدت زمان</th>
+                            <td>@(Model.Duration.HasValue ? $"{Model.Duration.Value} ثانیه" : "-")</td>
+                        </tr>
+                        <tr>
+                            <th>وضعیت</th>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">غیرفعال</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>ترتیب نمایش</th>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                        <tr>
+                            <th>تعداد بازدید</th>
+                            <td>@Model.ViewCount</td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ شروع</th>
+                            <td>@(Model.StartDate.HasValue ? PersianDateHelper.ToPersianDate(Model.StartDate.Value) : "-")</td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ پایان</th>
+                            <td>@(Model.EndDate.HasValue ? PersianDateHelper.ToPersianDate(Model.EndDate.Value) : "-")</td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ ایجاد</th>
+                            <td>@PersianDateHelper.ToPersianDate(Model.CreatedAt)</td>
+                        </tr>
+                        <tr>
+                            <th>ایجاد کننده</th>
+                            <td>@(Model.CreatedByUserName ?? "سیستم")</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <th>تاریخ به‌روزرسانی</th>
+                                <td>@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</td>
+                            </tr>
+                            <tr>
+                                <th>به‌روزرسانی کننده</th>
+                                <td>@(Model.UpdatedByUserName ?? "سیستم")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">تصویر Thumbnail</h6>
+                </div>
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                    {
+                        <img src="@Url.Content(Model.ThumbnailUrl)" alt="@Model.Title" class="img-fluid" style="max-height: 400px; border-radius: 8px;" />
+                    }
+                    else
+                    {
+                        <p class="text-muted">تصویر Thumbnail وجود ندارد</p>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.VideoUrl))
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">پیش‌نمایش ویدیو</h6>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.VideoType == "YouTube")
+                        {
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/@Model.VideoUrl" allowfullscreen></iframe>
+                            </div>
+                        }
+                        else if (Model.VideoType == "Vimeo")
+                        {
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/@Model.VideoUrl" allowfullscreen></iframe>
+                            </div>
+                        }
+                        else if (Model.VideoType == "Aparat")
+                        {
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe class="embed-responsive-item" src="@Model.VideoUrl" allowfullscreen></iframe>
+                            </div>
+                        }
+                        else
+                        {
+                            <video controls class="w-100" style="max-height: 400px;">
+                                <source src="@Url.Content(Model.VideoUrl)" type="video/mp4">
+                                مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                            </video>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

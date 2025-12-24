@@ -408,6 +408,7 @@ namespace ClinicApp
                 container.RegisterType<INewsletterTemplateRepository, NewsletterTemplateRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterCampaignRepository, NewsletterCampaignRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterCampaignRecipientRepository, NewsletterCampaignRecipientRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IStoryRepository, StoryRepository>(new PerRequestLifetimeManager());
                 
                 // ========== ثبت Service های CMS ==========
                 container.RegisterType<IBlogPostService, BlogPostService>(new PerRequestLifetimeManager());
@@ -439,6 +440,7 @@ namespace ClinicApp
                 container.RegisterType<INewsletterCampaignService, NewsletterCampaignService>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterEmailService, NewsletterEmailService>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterSmsService, NewsletterSmsService>(new PerRequestLifetimeManager());
+                container.RegisterType<IStoryService, StoryService>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Repositories
                 container.RegisterType<IDoctorCrudRepository, DoctorCrudRepository>(new PerRequestLifetimeManager());

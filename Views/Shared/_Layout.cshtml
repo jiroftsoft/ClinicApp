@@ -1,3 +1,4 @@
+@using ClinicApp.Helpers
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -115,105 +116,10 @@
     <link rel="apple-touch-icon" href="@Url.Content("~/Content/apple-touch-icon.png")">
     <link rel="manifest" href="@Url.Content("~/site.webmanifest")" type="application/manifest+json">
     
-    <!-- Local Vazirmatn Font (Better Performance & Security) -->
-    <style>
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Regular.woff2")') format('woff2'),
-                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir.woff2")') format('woff2');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Bold.woff2")') format('woff2'),
-                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Bold.woff2")') format('woff2');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Medium.woff2")') format('woff2'),
-                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Medium.woff2")') format('woff2');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Light.woff2")') format('woff2'),
-                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Light.woff2")') format('woff2');
-            font-weight: 300;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-SemiBold.woff2")') format('woff2');
-            font-weight: 600;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Thin.woff2")') format('woff2');
-            font-weight: 100;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-ExtraLight.woff2")') format('woff2');
-            font-weight: 200;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-ExtraBold.woff2")') format('woff2');
-            font-weight: 800;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazirmatn';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Black.woff2")') format('woff2');
-            font-weight: 900;
-            font-style: normal;
-            font-display: swap;
-        }
-        /* Fallback برای فونت Vazir قدیمی */
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir.woff2")') format('woff2');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Bold.woff2")') format('woff2');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Medium.woff2")') format('woff2');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Light.woff2")') format('woff2');
-            font-weight: 300;
-            font-style: normal;
-            font-display: swap;
-        }
-    </style>
+    <!-- Local Fonts - فونت‌های محلی Vazir, Shabnam, Yekan -->
+    <!-- فونت‌ها از فایل local-fonts.css لود می‌شوند -->
+    <!-- Local Fonts - فونت‌های محلی Vazir, Shabnam, Yekan -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/local-fonts.css")" />
     <!-- Font Awesome Local (Better Performance & Security) -->
     <link rel="stylesheet" href="@Url.Content("~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css")" />
     <!-- Design System - باید قبل از سایر CSS ها لود شود -->
@@ -224,6 +130,8 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/css/emergency-contacts-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
     <!-- Footer Styles - Professional Medical Footer -->
     <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-footer.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+    <!-- Stories Section Styles -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/stories-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
     @RenderSection("styles", required: false)
@@ -492,26 +400,31 @@
         </nav>
     </header>
 
-    @* Emergency Contacts Sticky Bar (زیر Navigation - در تمام صفحات) *@
+    @* Layout Data - Strongly-Typed (بدون ViewBag) *@
     @{
-        var emergencyContacts = ViewBag.EmergencyContacts as System.Collections.Generic.List<ClinicApp.ViewModels.CMS.EmergencyContactPublicViewModel>;
+        var layoutData = LayoutDataHelper.GetLayoutData();
     }
-    @if (emergencyContacts != null && emergencyContacts.Any())
+
+    @* Stories Section (زیر Navigation - مشابه دیجی‌کالا) - Strongly-Typed *@
+    @if (layoutData.Stories != null && layoutData.Stories.Any())
     {
-        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", emergencyContacts)
+        @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", layoutData.Stories)
+    }
+
+    @* Emergency Contacts Sticky Bar (زیر Stories - در تمام صفحات) - Strongly-Typed *@
+    @if (layoutData.EmergencyContacts != null && layoutData.EmergencyContacts.Any())
+    {
+        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", layoutData.EmergencyContacts)
     }
 
     <main role="main">
         @RenderBody()
     </main>
 
-    @* Professional Medical Footer *@
-    @{
-        var footerModel = ViewBag.Footer as ClinicApp.ViewModels.FooterViewModel;
-    }
-    @if (footerModel != null)
+    @* Professional Medical Footer - Strongly-Typed *@
+    @if (layoutData.Footer != null)
     {
-         Html.RenderPartial("~/Views/Shared/_Footer.cshtml", footerModel); 
+         Html.RenderPartial("~/Views/Shared/_Footer.cshtml", layoutData.Footer); 
     }
     else
     {
@@ -927,6 +840,9 @@
     </script>
     
     @RenderSection("scripts", required: false)
+    
+    <!-- Stories Component JavaScript -->
+    <script src="@Url.Content("~/Content/js/stories-component.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {

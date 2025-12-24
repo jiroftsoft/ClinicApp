@@ -170,6 +170,7 @@ namespace ClinicApp.Models
         public DbSet<NewsletterCampaign> NewsletterCampaigns { get; set; }
         public DbSet<NewsletterCampaignRecipient> NewsletterCampaignRecipients { get; set; }
         public DbSet<AboutPage> AboutPages { get; set; }
+        public DbSet<Story> Stories { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

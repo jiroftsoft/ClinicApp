@@ -301,8 +301,15 @@
                 $hiddenInput = this.getOrCreateHiddenInput($form, fieldName);
             }
 
-            // اگر input مقدار دارد (مثلاً در Edit form)، تبدیل کن
+            // ✅ خواندن مقدار فعلی input (ممکن است از View set شده باشد)
             var currentValue = $input.val();
+            this.logger.log('مقدار فعلی input:', {
+                field: fieldName,
+                currentValue: currentValue,
+                hasValue: currentValue && currentValue.trim() !== ''
+            });
+            
+            // اگر input مقدار دارد (مثلاً در Edit form یا از View)، تبدیل کن
             if (currentValue && currentValue.trim() !== '' && $hiddenInput) {
                 var gregorianDate = this.convertPersianToGregorian(currentValue);
                 if (gregorianDate) {
@@ -315,8 +322,21 @@
                 }
             }
 
-            // ✅ دریافت تاریخ امروز از سرور
+            // ✅ دریافت تاریخ امروز از سرور (فقط برای fallback - اگر currentValue خالی باشد)
+            // ⚠️ مهم: این فقط برای initialize اولیه است، نه برای reset کردن تاریخ انتخاب شده
             this.getTodayFromServer().then(function(todayPersianDate) {
+                // ✅ دوباره چک کردن currentValue (ممکن است در این فاصله set شده باشد)
+                var finalCurrentValue = $input.val();
+                if (!finalCurrentValue || finalCurrentValue.trim() === '') {
+                    finalCurrentValue = currentValue; // استفاده از مقدار اولیه
+                }
+                
+                self.logger.log('مقدار نهایی برای initialValue:', {
+                    field: fieldName,
+                    finalCurrentValue: finalCurrentValue,
+                    todayPersianDate: todayPersianDate,
+                    willUseCurrentValue: finalCurrentValue && finalCurrentValue.trim() !== ''
+                });
                 // Initialize pDatepicker
                 var datePickerConfig = {
                     calendarType: 'persian',
@@ -350,22 +370,95 @@
                             locale: 'fa'
                         }
                     },
-                    // ✅ تنظیم تاریخ امروز از سرور
-                    initialValue: currentValue && currentValue.trim() !== '' 
-                        ? self.convertPersianToEnglishNumbers(currentValue.trim())
-                        : todayPersianDate,
+                    // ✅ تنظیم initialValue: اول از finalCurrentValue استفاده می‌کنیم (تاریخ انتخاب شده از View)
+                    // فقط اگر finalCurrentValue خالی باشد، از todayPersianDate استفاده می‌کنیم
+                    // ⚠️ مهم: این تضمین می‌کند که تاریخ انتخاب شده از View حفظ می‌شود
+                    initialValue: (finalCurrentValue && finalCurrentValue.trim() !== '') 
+                        ? self.convertPersianToEnglishNumbers(finalCurrentValue.trim())
+                        : (todayPersianDate || false),
                     initialValueType: 'persian',
                     onSelect: function(unix) {
                         // ✅ برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
                         if ($hiddenInput) {
                             self.handleDateSelect($input, $hiddenInput, fieldName, unix);
                         } else {
-                            // برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
-                            var persianDateStr = $input.val();
-                            self.logger.success('تاریخ انتخاب شد (فرم GET):', {
-                                field: fieldName,
-                                persian: persianDateStr
-                            });
+                            // ✅ برای فرم GET، استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
+                            // ⚠️ مهم: نباید از $input.val() استفاده کنیم چون ممکن است هنوز به‌روز نشده باشد
+                            var persianDateStr = null;
+                            
+                            try {
+                                // ✅ استفاده از datePicker instance برای دریافت تاریخ انتخاب شده
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    // روش 1: استفاده از selected object (jy, jm, jd) - بهترین روش
+                                    var selected = datePickerInstance.selected;
+                                    if (selected && 
+                                        typeof selected.jy === 'number' && 
+                                        typeof selected.jm === 'number' && 
+                                        typeof selected.jd === 'number' &&
+                                        selected.jy > 0 && 
+                                        selected.jm >= 1 && selected.jm <= 12 && 
+                                        selected.jd >= 1 && selected.jd <= 31) {
+                                        
+                                        var year = String(selected.jy).padStart(4, '0');
+                                        var month = String(selected.jm).padStart(2, '0');
+                                        var day = String(selected.jd).padStart(2, '0');
+                                        persianDateStr = year + '/' + month + '/' + day;
+                                        
+                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از selected object:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        }
+                                    }
+                                    
+                                    // روش 2: استفاده از getFormattedDate (fallback)
+                                    if (!persianDateStr) {
+                                        var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                        if (formattedDate && 
+                                            typeof formattedDate === 'string' && 
+                                            formattedDate.includes('/') && 
+                                            formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            persianDateStr = formattedDate;
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از getFormattedDate:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        }
+                                    }
+                                }
+                                
+                                // روش 3: استفاده از input value (آخرین fallback)
+                                if (!persianDateStr) {
+                                    persianDateStr = $input.val();
+                                    if (persianDateStr) {
+                                        persianDateStr = self.convertPersianToEnglishNumbers(persianDateStr);
+                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از input value:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        } else {
+                                            persianDateStr = null;
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                self.logger.error('خطا در دریافت تاریخ از datePicker:', error, {
+                                    field: fieldName
+                                });
+                                // Fallback: استفاده از input value
+                                persianDateStr = $input.val();
+                            }
+                            
+                            // ✅ اگر تاریخ معتبر پیدا نشد، لاگ warning
+                            if (!persianDateStr || !persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                self.logger.warn('تاریخ معتبر پیدا نشد در onSelect:', {
+                                    field: fieldName,
+                                    inputValue: $input.val()
+                                });
+                            }
                         }
                     }
                 };
@@ -407,12 +500,83 @@
                         if ($hiddenInput) {
                             self.handleDateSelect($input, $hiddenInput, fieldName, unix);
                         } else {
-                            // برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
-                            var persianDateStr = $input.val();
-                            self.logger.success('تاریخ انتخاب شد (فرم GET):', {
-                                field: fieldName,
-                                persian: persianDateStr
-                            });
+                            // ✅ برای فرم GET، استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
+                            // ⚠️ مهم: نباید از $input.val() استفاده کنیم چون ممکن است هنوز به‌روز نشده باشد
+                            var persianDateStr = null;
+                            
+                            try {
+                                // ✅ استفاده از datePicker instance برای دریافت تاریخ انتخاب شده
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    // روش 1: استفاده از selected object (jy, jm, jd) - بهترین روش
+                                    var selected = datePickerInstance.selected;
+                                    if (selected && 
+                                        typeof selected.jy === 'number' && 
+                                        typeof selected.jm === 'number' && 
+                                        typeof selected.jd === 'number' &&
+                                        selected.jy > 0 && 
+                                        selected.jm >= 1 && selected.jm <= 12 && 
+                                        selected.jd >= 1 && selected.jd <= 31) {
+                                        
+                                        var year = String(selected.jy).padStart(4, '0');
+                                        var month = String(selected.jm).padStart(2, '0');
+                                        var day = String(selected.jd).padStart(2, '0');
+                                        persianDateStr = year + '/' + month + '/' + day;
+                                        
+                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از selected object:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        }
+                                    }
+                                    
+                                    // روش 2: استفاده از getFormattedDate (fallback)
+                                    if (!persianDateStr) {
+                                        var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                        if (formattedDate && 
+                                            typeof formattedDate === 'string' && 
+                                            formattedDate.includes('/') && 
+                                            formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            persianDateStr = formattedDate;
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از getFormattedDate:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        }
+                                    }
+                                }
+                                
+                                // روش 3: استفاده از input value (آخرین fallback)
+                                if (!persianDateStr) {
+                                    persianDateStr = $input.val();
+                                    if (persianDateStr) {
+                                        persianDateStr = self.convertPersianToEnglishNumbers(persianDateStr);
+                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از input value:', {
+                                                field: fieldName,
+                                                persian: persianDateStr
+                                            });
+                                        } else {
+                                            persianDateStr = null;
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                self.logger.error('خطا در دریافت تاریخ از datePicker:', error, {
+                                    field: fieldName
+                                });
+                                // Fallback: استفاده از input value
+                                persianDateStr = $input.val();
+                            }
+                            
+                            // ✅ اگر تاریخ معتبر پیدا نشد، لاگ warning
+                            if (!persianDateStr || !persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                self.logger.warn('تاریخ معتبر پیدا نشد در onSelect:', {
+                                    field: fieldName,
+                                    inputValue: $input.val()
+                                });
+                            }
                         }
                     }
                 };

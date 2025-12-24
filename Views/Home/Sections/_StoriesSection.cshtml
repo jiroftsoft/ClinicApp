@@ -1,0 +1,88 @@
+@model List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>
+@using System.Web.Mvc
+@{
+    if (Model == null || !Model.Any())
+    {
+        return;
+    }
+}
+
+@* CSS و JavaScript در Layout لود می‌شوند *@
+<section class="stories-section" role="region" aria-label="استوری‌ها">
+    <div class="stories-container">
+        <div class="stories-scroll-wrapper">
+            <div class="stories-list" id="storiesList">
+                @foreach (var story in Model)
+                {
+                    <div class="story-item" 
+                         data-story-id="@story.StoryId"
+                         data-video-url="@story.VideoUrl"
+                         data-video-type="@story.VideoType"
+                         data-link-url="@(story.LinkUrl ?? "")"
+                         data-button-text="@(story.ButtonText ?? "")"
+                         role="button"
+                         tabindex="0"
+                         aria-label="استوری: @story.Title">
+                        <div class="story-thumbnail-wrapper">
+                            @if (!string.IsNullOrEmpty(story.ThumbnailUrl))
+                            {
+                                <img src="@Url.Content(story.ThumbnailUrl)" 
+                                     alt="@story.Title" 
+                                     class="story-thumbnail"
+                                     loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="story-thumbnail-placeholder">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                            }
+                            <div class="story-overlay">
+                                <div class="story-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            @if (story.Duration.HasValue)
+                            {
+                                <div class="story-duration">
+                                    @FormatDuration(story.Duration.Value)
+                                </div>
+                            }
+                        </div>
+                        <div class="story-title">
+                            @story.Title
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@* Video Player Modal *@
+<div class="modal fade" id="storyVideoModal" tabindex="-1" role="dialog" aria-labelledby="storyVideoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="storyVideoModalLabel">پخش ویدیو</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="storyVideoPlayer" class="story-video-player">
+                    <!-- ویدیو در اینجا لود می‌شود -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string FormatDuration(int seconds)
+    {
+        var minutes = seconds / 60;
+        var remainingSeconds = seconds % 60;
+        return $"{minutes}:{remainingSeconds:D2}";
+    }
+}

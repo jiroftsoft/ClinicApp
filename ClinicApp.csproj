@@ -491,6 +491,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\NewsletterTemplateController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\PatientEducationMaterialController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\SliderController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\StoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\TestimonialController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\VideoController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
@@ -611,6 +612,7 @@
     <Compile Include="Filters\LoadEmergencyContactsAttribute.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\GlobalExceptionFilter.cs" />
+    <Compile Include="Filters\LoadStoriesActionFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
     <Compile Include="Filters\NoCacheAttribute.cs" />
     <Compile Include="Filters\NoCacheFilter.cs" />
@@ -632,6 +634,8 @@
     <Compile Include="Helpers\ImagePathHelper.cs" />
     <Compile Include="Helpers\InsurancePriorityHelper.cs" />
     <Compile Include="Helpers\Insurance\InsuranceTypeHelper.cs" />
+    <Compile Include="Helpers\LayoutDataHelper.cs" />
+    <Compile Include="Helpers\LoadStoriesActionFilter.cs" />
     <Compile Include="Helpers\LoggingConfiguration.cs" />
     <Compile Include="Helpers\LoggingHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
@@ -735,6 +739,8 @@
     <Compile Include="Interfaces\CMS\IPatientEducationMaterialService.cs" />
     <Compile Include="Interfaces\CMS\ISliderRepository.cs" />
     <Compile Include="Interfaces\CMS\ISliderService.cs" />
+    <Compile Include="Interfaces\CMS\IStoryRepository.cs" />
+    <Compile Include="Interfaces\CMS\IStoryService.cs" />
     <Compile Include="Interfaces\CMS\ITestimonialRepository.cs" />
     <Compile Include="Interfaces\CMS\ITestimonialService.cs" />
     <Compile Include="Interfaces\CMS\IVideoRepository.cs" />
@@ -892,6 +898,10 @@
     <Compile Include="Migrations\202512231346042_AddAboutPage.Designer.cs">
       <DependentUpon>202512231346042_AddAboutPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512241615247_AddStoryTable.cs" />
+    <Compile Include="Migrations\202512241615247_AddStoryTable.Designer.cs">
+      <DependentUpon>202512241615247_AddStoryTable.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -919,6 +929,7 @@
     <Compile Include="Models\Entities\CMS\NewsletterTemplate.cs" />
     <Compile Include="Models\Entities\CMS\PatientEducationMaterial.cs" />
     <Compile Include="Models\Entities\CMS\Slider.cs" />
+    <Compile Include="Models\Entities\CMS\Story.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
     <Compile Include="Models\Entities\CMS\Video.cs" />
     <Compile Include="Models\Enums\ContactFormCategory.cs" />
@@ -951,6 +962,7 @@
     <Compile Include="Repositories\CMS\NewsletterTemplateRepository.cs" />
     <Compile Include="Repositories\CMS\PatientEducationMaterialRepository.cs" />
     <Compile Include="Repositories\CMS\SliderRepository.cs" />
+    <Compile Include="Repositories\CMS\StoryRepository.cs" />
     <Compile Include="Repositories\CMS\TestimonialRepository.cs" />
     <Compile Include="Repositories\CMS\VideoRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
@@ -1308,6 +1320,7 @@
     <Compile Include="Services\CMS\NewsletterTemplateService.cs" />
     <Compile Include="Services\CMS\PatientEducationMaterialService.cs" />
     <Compile Include="Services\CMS\SliderService.cs" />
+    <Compile Include="Services\CMS\StoryService.cs" />
     <Compile Include="Services\CMS\TestimonialService.cs" />
     <Compile Include="Services\CMS\VideoService.cs" />
     <Compile Include="Services\DocumentUploadService.cs" />
@@ -1511,6 +1524,7 @@
     <Compile Include="ViewModels\CMS\NewsletterViewModels.cs" />
     <Compile Include="ViewModels\CMS\PatientEducationMaterialViewModels.cs" />
     <Compile Include="ViewModels\CMS\SliderViewModels.cs" />
+    <Compile Include="ViewModels\CMS\StoryViewModels.cs" />
     <Compile Include="ViewModels\CMS\TestimonialViewModels.cs" />
     <Compile Include="ViewModels\CMS\VideoViewModels.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
@@ -1608,6 +1622,7 @@
     <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryTariffServiceViewModel.cs" />
     <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryTariffViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\DepartmentDtos.cs" />
+    <Compile Include="ViewModels\LayoutViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Patient\AppointmentBookingViewModel.cs" />
@@ -1856,6 +1871,7 @@
     <Content Include="Content\css\medical-environment.css" />
     <Content Include="Content\css\medical-equipment-section.css" />
     <Content Include="Content\css\medical-footer.css" />
+    <Content Include="Content\css\medical-forms.css" />
     <Content Include="Content\css\medical-select2.css" />
     <Content Include="Content\css\medical-services-section.css" />
     <Content Include="Content\css\medical-sidebar.css" />
@@ -1874,6 +1890,7 @@
     <Content Include="Content\css\select2.min.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\sidebar-slider-section.css" />
+    <Content Include="Content\css\stories-section.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />
     <Content Include="Content\css\testimonials-section.css" />
     <Content Include="Content\css\value-proposition-section.css" />
@@ -2001,6 +2018,7 @@
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
+    <Content Include="Content\js\stories-component.js" />
     <Content Include="Content\js\video-modal.js" />
     <Content Include="Content\medical-forms.css" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
@@ -4522,6 +4540,10 @@
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Index.cshtml" />
     <Content Include="Docs\date_bug_analysis.md" />
+    <Content Include="Areas\Admin\Views\CMS\Story\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Story\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Story\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Story\Index.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5949,6 +5971,7 @@
     <Content Include="Views\Contact\ThankYou.cshtml" />
     <Content Include="Views\Contact\Track.cshtml" />
     <Content Include="Views\Contact\TrackResult.cshtml" />
+    <Content Include="Views\Home\Sections\_StoriesSection.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6184,6 +6207,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512231346042_AddAboutPage.resx">
       <DependentUpon>202512231346042_AddAboutPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512241615247_AddStoryTable.resx">
+      <DependentUpon>202512241615247_AddStoryTable.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

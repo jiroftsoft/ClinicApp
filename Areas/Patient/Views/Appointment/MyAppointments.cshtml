@@ -4,30 +4,24 @@
 }
 
 @section Styles {
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-primary-light: #3d6bb3;
-            --medical-border: #dee2e6;
-            --medical-text: #495057;
-        }
-
         .page-header {
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            background: var(--medical-primary);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             color: white;
-            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
         }
 
         .filter-card {
-            background: white;
-            border-radius: 12px;
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border-light);
+            border-radius: 6px;
             padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
         }
 
         .appointments-container {
@@ -65,41 +59,57 @@
 </div>
 
 <!-- فیلترها -->
-<div class="filter-card">
+<div class="filter-card medical-form">
     <form id="filterForm" method="get" action="@Url.Action("MyAppointments")">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">از تاریخ</label>
-                <input type="date" name="startDate" class="form-control" value="@(Model.StartDateFilter?.ToString("yyyy-MM-dd"))" />
+        <fieldset class="medical-form-section">
+            <legend>فیلتر نوبت‌ها</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="startDate" class="form-label">از تاریخ</label>
+                    <input type="text" 
+                           id="startDate" 
+                           name="startDate" 
+                           class="form-control" 
+                           value="@(Model.StartDateFilter?.ToString("yyyy-MM-dd"))" 
+                           placeholder="از تاریخ" />
+                </div>
+                <div class="col-md-3">
+                    <label for="endDate" class="form-label">تا تاریخ</label>
+                    <input type="text" 
+                           id="endDate" 
+                           name="endDate" 
+                           class="form-control" 
+                           value="@(Model.EndDateFilter?.ToString("yyyy-MM-dd"))" 
+                           placeholder="تا تاریخ" />
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">وضعیت</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">همه</option>
+                        <option value="Scheduled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Scheduled ? "selected" : "")>رزرو شده</option>
+                        <option value="Completed" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Completed ? "selected" : "")>تکمیل شده</option>
+                        <option value="Cancelled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Cancelled ? "selected" : "")>لغو شده</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="searchTerm" class="form-label">جستجو</label>
+                    <input type="text" 
+                           id="searchTerm" 
+                           name="searchTerm" 
+                           class="form-control" 
+                           placeholder="نام پزشک..." 
+                           value="@Model.SearchTerm" />
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        جستجو
+                    </button>
+                    <a href="@Url.Action("MyAppointments")" class="btn btn-outline-secondary">
+                        پاک کردن فیلترها
+                    </a>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">تا تاریخ</label>
-                <input type="date" name="endDate" class="form-control" value="@(Model.EndDateFilter?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">وضعیت</label>
-                <select name="status" class="form-select">
-                    <option value="">همه</option>
-                    <option value="Scheduled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Scheduled ? "selected" : "")>رزرو شده</option>
-                    <option value="Completed" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Completed ? "selected" : "")>تکمیل شده</option>
-                    <option value="Cancelled" @(Model.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Cancelled ? "selected" : "")>لغو شده</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">جستجو</label>
-                <input type="text" name="searchTerm" class="form-control" placeholder="نام پزشک..." value="@Model.SearchTerm" />
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search me-1"></i>
-                    جستجو
-                </button>
-                <a href="@Url.Action("MyAppointments")" class="btn btn-outline-secondary">
-                    <i class="fas fa-redo me-1"></i>
-                    پاک کردن فیلترها
-                </a>
-            </div>
-        </div>
+        </fieldset>
     </form>
 </div>
 

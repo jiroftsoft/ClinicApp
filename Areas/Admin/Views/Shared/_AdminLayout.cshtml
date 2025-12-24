@@ -1,4 +1,4 @@
-﻿@using Org.BouncyCastle.Asn1.Ocsp
+@using Org.BouncyCastle.Asn1.Ocsp
 @{
     var appName = "کلینیک درمانی شفا";
     var title = ViewBag.Title ?? "داشبورد مدیریت";
@@ -43,50 +43,11 @@
     <link href="~/Content/css/notification-system.css" rel="stylesheet" />
     @RenderSection("styles", required: false)
 
-    <!-- Vazir Font for CMS Modules -->
+    <!-- Local Fonts - فونت‌های محلی Vazir, Shabnam, Yekan -->
+    <link rel="stylesheet" href="~/Content/css/local-fonts.css" />
+    
     <style>
-        /* Vazir Font Face Definitions */
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('/Content/Fonts/vazirmatn/Vazir.woff2') format('woff2'),
-                 url('/Content/Fonts/vazirmatn/Vazir.woff') format('woff'),
-                 url('/Content/Fonts/vazirmatn/Vazir.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('/Content/Fonts/vazirmatn/Vazir-Bold.woff2') format('woff2'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Bold.woff') format('woff'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Bold.ttf') format('truetype');
-            font-weight: bold;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('/Content/Fonts/vazirmatn/Vazir-Medium.woff2') format('woff2'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Medium.woff') format('woff'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Medium.ttf') format('truetype');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        @@font-face {
-            font-family: 'Vazir';
-            src: url('/Content/Fonts/vazirmatn/Vazir-Light.woff2') format('woff2'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Light.woff') format('woff'),
-                 url('/Content/Fonts/vazirmatn/Vazir-Light.ttf') format('truetype');
-            font-weight: 300;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        /* Apply Vazir Font to CMS Modules */
+        /* Apply Local Fonts to CMS Modules */
         body,
         .container-fluid,
         .card,
@@ -103,7 +64,9 @@
         .form-group,
         .navbar,
         .sidebar {
-            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important;
+            font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Medical Environment: Icon Fallback CSS */

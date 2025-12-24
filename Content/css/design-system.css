@@ -105,9 +105,9 @@
        📝 TYPOGRAPHY SYSTEM - سیستم تایپوگرافی
        ============================================ */
     
-    /* Font Family */
-    --font-family-base: 'Vazir', 'Tahoma', 'Arial', sans-serif;
-    --font-family-heading: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    /* Font Family - استفاده از فونت‌های محلی */
+    --font-family-base: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+    --font-family-heading: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
     
     /* Font Sizes */
     --font-size-xs: 0.75rem;      /* 12px */
@@ -338,10 +338,37 @@
 }
 
 .section-subtitle {
+    font-family: var(--font-family-base);
     font-size: var(--font-size-lg);
     color: var(--medical-text-muted);
     text-align: center;
     margin-bottom: var(--spacing-xxl);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ✅ اعمال فونت‌های محلی به تمام عناصر */
+body,
+html {
+    font-family: var(--font-family-base) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+p, span, div, a, button,
+input, textarea, select, label,
+table, th, td,
+.form-control, .form-select, .btn,
+.card, .alert, .badge {
+    font-family: var(--font-family-base) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Card Styles */

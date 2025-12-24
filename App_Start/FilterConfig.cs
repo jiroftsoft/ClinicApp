@@ -36,6 +36,9 @@ namespace ClinicApp
             
             // 🛑 Load Emergency Contacts for all pages (Sticky Bar)
             filters.Add(new LoadEmergencyContactsAttribute());
+            
+            // 📹 Load Stories - DEPRECATED: استفاده از LayoutDataHelper.GetLayoutData() در _Layout.cshtml (Strongly-Typed)
+            // filters.Add(new LoadStoriesActionFilter()); // ❌ حذف شد - استفاده از LayoutDataHelper به جای ViewBag
         }
     }
 }

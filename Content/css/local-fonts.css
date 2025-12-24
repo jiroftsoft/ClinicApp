@@ -1,7 +1,70 @@
-/* Local Fonts - طبق قرارداد */
+/* ============================================
+   📋 Local Fonts - فونت‌های محلی پروژه
+   ============================================
+   فونت‌های Vazir, Shabnam, Yekan از فولدر Content/fonts
+   ============================================ */
+
+/* ✅ 1️⃣ Vazir Font Family - استفاده از فایل‌های Farsi-Digits */
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff') format('woff'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.ttf') format('truetype'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.eot') format('embedded-opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff') format('woff'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.ttf') format('truetype'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.eot') format('embedded-opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff') format('woff'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.ttf') format('truetype'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.eot') format('embedded-opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.woff') format('woff'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.ttf') format('truetype'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.eot') format('embedded-opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Thin-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Thin-FD.woff') format('woff'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Thin-FD.ttf') format('truetype'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Thin-FD.eot') format('embedded-opentype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ✅ 2️⃣ Vazirmatn Font Family (برای سازگاری) */
 @font-face {
     font-family: 'Vazirmatn';
-    src: url('../Fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-FD.woff') format('woff');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -9,15 +72,8 @@
 
 @font-face {
     font-family: 'Vazirmatn';
-    src: url('../Fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Vazirmatn';
-    src: url('../Fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Bold-FD.woff') format('woff');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
@@ -25,24 +81,68 @@
 
 @font-face {
     font-family: 'Vazirmatn';
-    src: url('../Fonts/vazirmatn/Vazirmatn-Light.woff2') format('woff2');
-    font-weight: 300;
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Medium-FD.woff') format('woff');
+    font-weight: 500;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
     font-family: 'Vazirmatn';
-    src: url('../Fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
-    font-weight: 600;
+    src: url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.woff2') format('woff2'),
+         url('../fonts/vazirmatn/Farsi-Digits/Vazir-Light-FD.woff') format('woff');
+    font-weight: 300;
     font-style: normal;
     font-display: swap;
 }
 
-/* Font Awesome Local */
+/* ✅ 3️⃣ Shabnam Font Family */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.woff2') format('woff2'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.woff') format('woff'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Shabnam';
+    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.woff2') format('woff2'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.woff') format('woff'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Shabnam';
+    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.woff2') format('woff2'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.woff') format('woff'),
+         url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ✅ 4️⃣ Yekan Font Family */
+@font-face {
+    font-family: 'Yekan';
+    src: url('../fonts/yekan-font/Yekan.woff') format('woff'),
+         url('../fonts/yekan-font/Yekan.ttf') format('truetype'),
+         url('../fonts/yekan-font/Yekan.eot') format('embedded-opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ✅ 5️⃣ Font Awesome Local */
 @font-face {
     font-family: 'Font Awesome 6 Free';
-    src: url('../Fonts/fontawesome-free-6.7.2-web/webfonts/fa-solid-900.woff2') format('woff2');
+    src: url('../fonts/fontawesome-free-6.7.2-web/webfonts/fa-solid-900.woff2') format('woff2');
     font-weight: 900;
     font-style: normal;
     font-display: swap;
@@ -50,7 +150,7 @@
 
 @font-face {
     font-family: 'Font Awesome 6 Free';
-    src: url('../Fonts/fontawesome-free-6.7.2-web/webfonts/fa-regular-400.woff2') format('woff2');
+    src: url('../fonts/fontawesome-free-6.7.2-web/webfonts/fa-regular-400.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -58,20 +158,41 @@
 
 @font-face {
     font-family: 'Font Awesome 6 Brands';
-    src: url('../Fonts/fontawesome-free-6.7.2-web/webfonts/fa-brands-400.woff2') format('woff2');
+    src: url('../fonts/fontawesome-free-6.7.2-web/webfonts/fa-brands-400.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
-/* Apply Vazirmatn as default font */
-body {
-    font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+/* ✅ 5️⃣ اعمال فونت پیش‌فرض در کل پروژه */
+body,
+html {
+    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif !important;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Font weight classes */
+/* ✅ 6️⃣ اعمال فونت برای عناصر اصلی */
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button,
+input, textarea, select, label,
+table, th, td,
+.form-control, .form-select, .btn,
+.card, .alert, .badge,
+.navbar, .sidebar, .menu {
+    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif !important;
+}
+
+/* ✅ 7️⃣ Font weight classes */
 .font-light { font-weight: 300; }
 .font-normal { font-weight: 400; }
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 .font-bold { font-weight: 700; }
+
+/* ✅ 8️⃣ Font family classes */
+.font-vazir { font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important; }
+.font-shabnam { font-family: 'Shabnam', 'Tahoma', 'Arial', sans-serif !important; }
+.font-yekan { font-family: 'Yekan', 'Tahoma', 'Arial', sans-serif !important; }
