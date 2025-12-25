@@ -1,0 +1,475 @@
+# 📅 راهنمای کامل Helpers تاریخ و زمان
+
+**نسخه:** 1.0.0  
+**تاریخ:** 1404/10/05  
+**تعداد Helpers:** 6
+
+---
+
+## 📋 فهرست
+
+1. [PersianDateHelper.cs](#1-persiandatehelpercs)
+2. [PersianDatePickerHelper.cs](#2-persiandatepickerhelpercs)
+3. [DateTimeExtensions.cs](#3-datetimeextensionscs)
+4. [PersianDateExtensions.cs](#4-persiandateextensionscs)
+5. [TimeFormatHelper.cs](#5-timeformathelpercs)
+6. [AgeCalculationHelper.cs](#6-agecalculationhelpercs)
+7. [ControllerExtensions.ParseDateFromHiddenInput](#7-controllerextensionsparsedatefromhiddeninput)
+
+---
+
+## 1️⃣ PersianDateHelper.cs
+
+**مسیر:** `Helpers/PersianDateHelper.cs`  
+**حجم:** 31,469 بایت  
+**هدف:** تبدیل تاریخ میلادی ↔ شمسی
+
+### 📌 توابع اصلی:
+
+#### **1.1. ToPersianDate() - تبدیل میلادی به شمسی**
+
+```csharp
+// ✅ تبدیل DateTime به string شمسی
+public static string ToPersianDate(DateTime? date)
+```
+
+**مثال‌ها:**
+```csharp
+// مثال 1: تبدیل ساده
+var persianDate = PersianDateHelper.ToPersianDate(DateTime.Now);
+// خروجی: "1404/10/05"
+
+// مثال 2: تبدیل با بررسی null
+var persianDate = PersianDateHelper.ToPersianDate(model.BirthDate);
+// خروجی: "1380/05/15" یا null
+
+// مثال 3: استفاده در View
+@PersianDateHelper.ToPersianDate(Model.CreatedAt)
+// خروجی در View: "1404/10/05"
+```
+
+**Use Cases:**
+- ✅ نمایش تاریخ در View (Index, Details)
+- ✅ نمایش تاریخ در گزارش‌ها
+- ✅ لاگ‌گذاری با تاریخ شمسی
+
+---
+
+#### **1.2. ParsePersianDate() - تبدیل شمسی به میلادی**
+
+```csharp
+// ✅ تبدیل string شمسی به DateTime میلادی
+public static DateTime? ParsePersianDate(string persianDate)
+```
+
+**مثال‌ها:**
+```csharp
+// مثال 1: تبدیل string به DateTime
+var gregorianDate = PersianDateHelper.ParsePersianDate("1404/10/05");
+// خروجی: DateTime(2025, 12, 25)
+
+// مثال 2: بررسی null
+var date = PersianDateHelper.ParsePersianDate(null);
+// خروجی: null
+
+// مثال 3: Format نادرست
+var date = PersianDateHelper.ParsePersianDate("1404-10-05"); // با خط فاصله
+// خروجی: null (نیاز به "/" دارد)
+```
+
+**Use Cases:**
+- ✅ دریافت تاریخ از فرم
+- ✅ پردازش تاریخ از API
+- ✅ Import داده از Excel
+
+---
+
+#### **1.3. ToPersianDateString() - تبدیل با فرمت سفارشی**
+
+```csharp
+// ✅ تبدیل با فرمت دلخواه
+public static string ToPersianDateString(DateTime date, string format)
+```
+
+**مثال‌ها:**
+```csharp
+// مثال 1: فرمت کامل
+var date = PersianDateHelper.ToPersianDateString(DateTime.Now, "yyyy/MM/dd");
+// خروجی: "1404/10/05"
+
+// مثال 2: فقط سال و ماه
+var date = PersianDateHelper.ToPersianDateString(DateTime.Now, "yyyy/MM");
+// خروجی: "1404/10"
+
+// مثال 3: فرمت طولانی
+var date = PersianDateHelper.ToPersianDateString(DateTime.Now, "yyyy/MM/dd - HH:mm");
+// خروجی: "1404/10/05 - 15:40"
+```
+
+---
+
+### 🎯 Best Practices:
+
+```csharp
+// ✅ درست - همیشه از Helper استفاده کن
+var persianDate = PersianDateHelper.ToPersianDate(DateTime.Now);
+
+// ❌ اشتباه - تبدیل دستی
+var persianDate = DateTime.Now.ToString("yyyy/MM/dd"); // این میلادی است!
+
+// ✅ درست - در View
+@PersianDateHelper.ToPersianDate(Model.Date)
+
+// ❌ اشتباه - در View
+@Model.Date.ToString("yyyy/MM/dd")
+```
+
+---
+
+## 2️⃣ PersianDatePickerHelper.cs
+
+**مسیر:** `Helpers/PersianDatePickerHelper.cs`  
+**حجم:** 14,055 بایت  
+**هدف:** DatePicker شمسی در View
+
+### 📌 استفاده:
+
+```razor
+@* در View - Create/Edit *@
+@{
+    ViewBag.PersianDatePickerId = "startDatePicker";
+    ViewBag.PersianDatePickerName = "StartDate";
+    ViewBag.PersianDatePickerValue = Model.StartDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع را انتخاب کنید";
+    ViewBag.PersianDatePickerHelpText = "اختیاری - اگر خالی باشد، از همین الان شروع می‌شود";
+    ViewBag.PersianDatePickerRequired = false;
+}
+@Html.Partial("_PersianDatePicker")
+
+@* در Scripts Section *@
+@section Scripts {
+    @Html.Partial("_PersianDatePickerScript")
+}
+```
+
+### 🎯 Best Practices:
+
+```razor
+// ✅ درست - استفاده از Partial View
+@Html.Partial("_PersianDatePicker")
+
+// ❌ اشتباه - datetime-local
+<input type="datetime-local" ... />
+```
+
+---
+
+## 3️⃣ DateTimeExtensions.cs
+
+**مسیر:** `Extensions/DateTimeExtensions.cs`  
+**حجم:** 2,714 بایت
+
+### 📌 Extension Methods:
+
+```csharp
+// ✅ تبدیل به تاریخ شمسی (Extension Method)
+public static string ToPersianDate(this DateTime date)
+public static string ToPersianDate(this DateTime? date)
+```
+
+**مثال‌ها:**
+```csharp
+using ClinicApp.Extensions;
+
+// مثال 1: استفاده از Extension
+var persianDate = DateTime.Now.ToPersianDate();
+// خروجی: "1404/10/05"
+
+// مثال 2: با nullable
+DateTime? date = model.BirthDate;
+var persianDate = date.ToPersianDate();
+// خروجی: "1380/05/15" یا null
+
+// مثال 3: در LINQ
+var list = patients.Select(p => new {
+    Name = p.Name,
+    BirthDate = p.BirthDate.ToPersianDate()
+}).ToList();
+```
+
+### 🎯 Best Practices:
+
+```csharp
+// ✅ درست - Extension Method
+using ClinicApp.Extensions;
+var date = DateTime.Now.ToPersianDate();
+
+// ✅ همچنین درست - Helper Method
+var date = PersianDateHelper.ToPersianDate(DateTime.Now);
+
+// هر دو صحیح هستند - انتخاب بر اساس سلیقه
+```
+
+---
+
+## 4️⃣ PersianDateExtensions.cs
+
+**مسیر:** `Extensions/PersianDateExtensions.cs`  
+**حجم:** 12,130 بایت
+
+### 📌 Extension Methods پیشرفته:
+
+```csharp
+// ✅ تبدیل با فرمت سفارشی
+public static string ToPersianDateString(this DateTime date, string format)
+
+// ✅ بررسی تاریخ شمسی معتبر
+public static bool IsValidPersianDate(this string persianDate)
+
+// ✅ مقایسه تاریخ‌ها
+public static int ComparePersianDates(this string persianDate1, string persianDate2)
+```
+
+**مثال‌ها:**
+```csharp
+using ClinicApp.Extensions;
+
+// مثال 1: فرمت سفارشی
+var date = DateTime.Now.ToPersianDateString("yyyy/MM/dd - HH:mm");
+// خروجی: "1404/10/05 - 15:40"
+
+// مثال 2: Validation
+var isValid = "1404/10/05".IsValidPersianDate();
+// خروجی: true
+
+var isValid = "1404/13/32".IsValidPersianDate();
+// خروجی: false
+
+// مثال 3: مقایسه
+var result = "1404/10/05".ComparePersianDates("1404/09/01");
+// خروجی: 1 (اولی بزرگتر است)
+```
+
+---
+
+## 5️⃣ TimeFormatHelper.cs
+
+**مسیر:** `Helpers/TimeFormatHelper.cs`  
+**حجم:** 1,547 بایت
+
+### 📌 توابع:
+
+```csharp
+// ✅ فرمت زمان فارسی
+public static string FormatTime(DateTime dateTime)
+
+// ✅ فرمت مدت زمان
+public static string FormatDuration(TimeSpan duration)
+```
+
+**مثال‌ها:**
+```csharp
+// مثال 1: فرمت زمان
+var time = TimeFormatHelper.FormatTime(DateTime.Now);
+// خروجی: "15:40:22"
+
+// مثال 2: فرمت مدت
+var duration = TimeSpan.FromMinutes(125);
+var formatted = TimeFormatHelper.FormatDuration(duration);
+// خروجی: "2 ساعت و 5 دقیقه"
+```
+
+---
+
+## 6️⃣ AgeCalculationHelper.cs
+
+**مسیر:** `Helpers/AgeCalculationHelper.cs`  
+**حجم:** 14,719 بایت
+
+### 📌 توابع اصلی:
+
+```csharp
+// ✅ محاسبه سن (عدد)
+public static int? CalculateAge(DateTime? birthDate)
+
+// ✅ محاسبه سن (string فارسی)
+public static string CalculateAgeString(DateTime? birthDate)
+```
+
+**مثال‌ها:**
+```csharp
+// مثال 1: محاسبه سن
+var age = AgeCalculationHelper.CalculateAge(new DateTime(1990, 5, 15));
+// خروجی: 35
+
+// مثال 2: string فارسی
+var ageString = AgeCalculationHelper.CalculateAgeString(new DateTime(1990, 5, 15));
+// خروجی: "۳۵ سال"
+
+// مثال 3: در ViewModel
+public class PatientViewModel
+{
+    public DateTime? BirthDate { get; set; }
+    
+    public int? Age => AgeCalculationHelper.CalculateAge(BirthDate);
+    
+    public string AgeString => AgeCalculationHelper.CalculateAgeString(BirthDate);
+}
+
+// در View:
+@Model.AgeString
+// خروجی: "۳۵ سال"
+```
+
+**Validation:**
+```csharp
+// ✅ محدودیت سن (0-150 سال)
+var age = AgeCalculationHelper.CalculateAge(new DateTime(1800, 1, 1));
+// خروجی: null (خارج از محدوده)
+```
+
+---
+
+## 7️⃣ ControllerExtensions.ParseDateFromHiddenInput
+
+**مسیر:** `Helpers/ControllerExtensions.cs`  
+**هدف:** Parse تاریخ از hidden input در Controller
+
+### 📌 استفاده:
+
+```csharp
+using ClinicApp.Helpers;
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> Create(MyViewModel model)
+{
+    // ✅ Parse تاریخ از hidden input
+    model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+    model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
+    
+    if (!ModelState.IsValid)
+    {
+        return View(GetViewPath("Create"), model);
+    }
+    
+    // ادامه عملیات...
+}
+```
+
+**چرا از این Extension استفاده کنیم؟**
+- ✅ Parse خودکار از hidden input
+- ✅ لاگ خودکار خطاها
+- ✅ مدیریت null
+- ✅ یکپارچگی کد
+
+---
+
+## 📊 خلاصه و مقایسه
+
+| Helper/Extension | استفاده | مثال |
+|-----------------|---------|------|
+| `PersianDateHelper.ToPersianDate()` | تبدیل به شمسی | `"1404/10/05"` |
+| `PersianDateHelper.ParsePersianDate()` | تبدیل به میلادی | `DateTime(2025, 12, 25)` |
+| `DateTime.ToPersianDate()` | Extension تبدیل | `DateTime.Now.ToPersianDate()` |
+| `_PersianDatePicker` | DatePicker در View | `@Html.Partial("_PersianDatePicker")` |
+| `ControllerExtensions.ParseDate` | Parse در Controller | `this.ParseDateFromHiddenInput("Date", _logger)` |
+| `AgeCalculationHelper.CalculateAge()` | محاسبه سن | `35` |
+
+---
+
+## 🎯 Workflow کامل (تاریخ در Form)
+
+### **1. در View (Create/Edit):**
+```razor
+@{
+    ViewBag.PersianDatePickerId = "birthDatePicker";
+    ViewBag.PersianDatePickerName = "BirthDate";
+    ViewBag.PersianDatePickerValue = Model.BirthDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ تولد";
+    ViewBag.PersianDatePickerRequired = true;
+}
+@Html.Partial("_PersianDatePicker")
+@Html.Partial("_PersianDatePickerScript")
+```
+
+### **2. در Controller (POST):**
+```csharp
+[HttpPost]
+public async Task<ActionResult> Create(PatientViewModel model)
+{
+    // ✅ Parse تاریخ
+    model.BirthDate = this.ParseDateFromHiddenInput("BirthDate", _logger);
+    
+    // ✅ محاسبه سن
+    var age = AgeCalculationHelper.CalculateAge(model.BirthDate);
+    
+    // بررسی سن
+    if (age < 18)
+    {
+        ModelState.AddModelError("BirthDate", "سن باید بیشتر از 18 سال باشد");
+    }
+    
+    // ادامه...
+}
+```
+
+### **3. در View (Index/Details) - نمایش:**
+```razor
+@* نمایش تاریخ شمسی *@
+@PersianDateHelper.ToPersianDate(Model.BirthDate)
+
+@* نمایش سن *@
+@AgeCalculationHelper.CalculateAgeString(Model.BirthDate)
+```
+
+---
+
+## ⚠️ خطاهای رایج
+
+### **❌ خطا 1: استفاده از ToString()**
+```csharp
+// ❌ اشتباه
+var date = DateTime.Now.ToString("yyyy/MM/dd"); // میلادی است!
+
+// ✅ درست
+var date = PersianDateHelper.ToPersianDate(DateTime.Now); // شمسی
+```
+
+### **❌ خطا 2: عدم Parse در Controller**
+```csharp
+// ❌ اشتباه - مستقیم از Model
+model.StartDate // null است یا اشتباه
+
+// ✅ درست - Parse از hidden input
+model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+```
+
+### **❌ خطا 3: استفاده از datetime-local**
+```html
+<!-- ❌ اشتباه -->
+<input type="datetime-local" name="BirthDate" />
+
+<!-- ✅ درست -->
+@Html.Partial("_PersianDatePicker")
+```
+
+---
+
+## 📚 مراجع
+
+- `Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md` - راهنمای کامل DatePicker
+- `Docs/DEVELOPMENT_CONTRACT.md` - استانداردهای تاریخ
+- `Helpers/PersianDateHelper.cs` - کد منبع
+- `Extensions/DateTimeExtensions.cs` - Extension Methods
+
+---
+
+**نسخه:** 1.0.0  
+**آخرین به‌روزرسانی:** 1404/10/05
+
+---
+
+🎉 **راهنمای تاریخ و زمان آماده است!** 🎉
+

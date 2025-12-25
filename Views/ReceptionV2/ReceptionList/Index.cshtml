@@ -1,7 +1,16 @@
 @model ClinicApp.ViewModels.Reception.ReceptionListViewModel
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "لیست پذیرش‌ها (مراجعات قبلی)";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "داشبورد", Url = Url.Action("Index", "Home"), Icon = "fas fa-home", Tooltip = "بازگشت به صفحه اصلی" },
+        new BreadcrumbItem { Title = "لیست پذیرش‌ها", Icon = "fas fa-list-alt", IsActive = true }
+    };
 }
 
 @* Anti-Forgery Token for AJAX - چند منبع برای اطمینان *@

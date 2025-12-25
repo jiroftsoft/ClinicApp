@@ -1,7 +1,16 @@
 @model ClinicApp.ViewModels.Reception.ReceptionFormVM
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "پذیرش (نسخه جدید)";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "داشبورد", Url = Url.Action("Index", "Home"), Icon = "fas fa-home", Tooltip = "بازگشت به صفحه اصلی" },
+        new BreadcrumbItem { Title = "پذیرش جدید", Icon = "fas fa-user-plus", IsActive = true }
+    };
 
     // ✅ تنظیم SignalR URL برای استفاده در JavaScript
     var signalRUrl = System.Configuration.ConfigurationManager.AppSettings["SamanKishSignalRUrl"] ?? "http://localhost:5000/signalr";
@@ -17,17 +26,17 @@
 @Html.Partial("Partials/_ReceptionSummaryHeader")
 
 <div class="reception-pro container-fluid" dir="rtl">
-    <header class="reception-pro__header d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#receptionSidebar" aria-controls="receptionSidebar">☰</button>
-            <h5 class="m-0">پذیرش</h5>
+    <!-- Simple Header: Quick Navigation Only -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="m-0">
+                <i class="fas fa-user-plus me-2"></i>پذیرش جدید
+            </h5>
+            <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-light btn-sm">
+                <i class="fas fa-list me-1"></i>لیست پذیرش‌ها
+            </a>
         </div>
-        <div class="d-flex gap-2">
-            <input id="NationalCode" class="form-control" placeholder="کدملی" autocomplete="off" />
-            <button id="BtnPatientLookup" class="btn btn-primary">جستجو/ساخت بیمار</button>
-            <span id="PosStatus" class="badge bg-success">POS آماده</span>
-        </div>
-    </header>
+    </div>
 
     <div class="row mt-3">
         <div class="col-xl-8 col-lg-7">

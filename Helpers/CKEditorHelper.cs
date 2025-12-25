@@ -1,13 +1,14 @@
 using System;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Routing;
 
 namespace ClinicApp.Helpers
 {
     /// <summary>
     /// Helper Class برای استفاده آسان از CKEditor در Views
     /// </summary>
-    public static class CKEditorHelper
+    public static class CkEditorHelper
     {
         /// <summary>
         /// ایجاد TextArea با CKEditor برای استفاده در فرم‌ها
@@ -18,7 +19,7 @@ namespace ClinicApp.Helpers
         /// <param name="htmlAttributes">ویژگی‌های HTML</param>
         /// <param name="height">ارتفاع Editor (پیش‌فرض: 300)</param>
         /// <returns>MvcHtmlString</returns>
-        public static MvcHtmlString CKEditorFor(this HtmlHelper htmlHelper, string name, string value = "", object htmlAttributes = null, int height = 300)
+        public static MvcHtmlString CkEditorFor<TModel>(this HtmlHelper<TModel> htmlHelper, string name, string value = "", object htmlAttributes = null, int height = 300)
         {
             var tagBuilder = new TagBuilder("textarea");
             tagBuilder.Attributes.Add("name", name);
@@ -31,7 +32,7 @@ namespace ClinicApp.Helpers
             
             if (htmlAttributes != null)
             {
-                var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+                var attributes = new RouteValueDictionary(htmlAttributes);
                 foreach (var attr in attributes)
                 {
                     tagBuilder.Attributes.Add(attr.Key, attr.Value.ToString());
@@ -78,7 +79,7 @@ namespace ClinicApp.Helpers
         /// </summary>
         /// <param name="htmlHelper">HtmlHelper</param>
         /// <returns>MvcHtmlString</returns>
-        public static MvcHtmlString CKEditorScript(this HtmlHelper htmlHelper)
+        public static MvcHtmlString CkEditorScript<TModel>(this HtmlHelper<TModel> htmlHelper)
         {
             var useCDN = System.Configuration.ConfigurationManager.AppSettings["CKEditor:UseCDN"] ?? "false";
             var isCDN = useCDN.ToLower() == "true";
@@ -103,7 +104,7 @@ namespace ClinicApp.Helpers
         /// </summary>
         /// <param name="htmlHelper">HtmlHelper</param>
         /// <returns>MvcHtmlString</returns>
-        public static MvcHtmlString CKEditorConfig(this HtmlHelper htmlHelper)
+        public static MvcHtmlString CkEditorConfig<TModel>(this HtmlHelper<TModel> htmlHelper)
         {
             var useCDN = System.Configuration.ConfigurationManager.AppSettings["CKEditor:UseCDN"] ?? "false";
             var isCDN = useCDN.ToLower() != "true";

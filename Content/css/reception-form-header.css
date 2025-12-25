@@ -1,0 +1,214 @@
+/**
+ * Reception Form Header Styles
+ * Enhanced header for Reception V2 form
+ * 
+ * Features:
+ * - Professional and minimal design
+ * - Responsive layout
+ * - Status indicators
+ * - Quick actions
+ */
+
+/* ========== Main Container ========== */
+.reception-form-header {
+    background: var(--medical-bg, #f8f9fa);
+    border: 1px solid var(--medical-border, #dee2e6);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.reception-form-header__container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ========== Left Section (Quick Actions) ========== */
+.reception-form-header__left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ========== Center Section (Patient Lookup) ========== */
+.reception-form-header__center {
+    flex: 1;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.patient-lookup-group {
+    width: 100%;
+}
+
+.patient-lookup-group .form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--medical-text-secondary, #6c757d);
+}
+
+.patient-lookup-group .input-group {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.patient-lookup-group .form-control {
+    border: 1px solid var(--medical-border, #dee2e6);
+    padding: 0.625rem 1rem;
+    font-size: 1rem;
+}
+
+.patient-lookup-group .form-control:focus {
+    border-color: var(--medical-primary, #0d6efd);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.patient-lookup-group .btn-primary {
+    padding: 0.625rem 1.5rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ========== Right Section (Status Indicators) ========== */
+.reception-form-header__right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reception-form-header__right .badge {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.reception-form-header__right .badge i {
+    font-size: 0.9em;
+}
+
+/* Badge Colors */
+.badge.bg-info {
+    background-color: var(--medical-info, #0dcaf0) !important;
+    color: #000;
+}
+
+.badge.bg-success {
+    background-color: var(--medical-success, #198754) !important;
+    color: #fff;
+}
+
+/* ========== Animations ========== */
+@keyframes pulse-save {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+#AutoSaveStatus.saving {
+    animation: pulse-save 1.5s ease-in-out infinite;
+}
+
+/* POS Status Real-time Indicator */
+#PosStatus.connected {
+    background-color: var(--medical-success, #198754) !important;
+}
+
+#PosStatus.disconnected {
+    background-color: var(--medical-danger, #dc3545) !important;
+}
+
+#PosStatus.connecting {
+    background-color: var(--medical-warning, #ffc107) !important;
+    color: #000;
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 1200px) {
+    .reception-form-header__container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .reception-form-header__center {
+        max-width: 100%;
+        order: 1;
+    }
+    
+    .reception-form-header__left {
+        order: 2;
+        justify-content: center;
+    }
+    
+    .reception-form-header__right {
+        order: 3;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .reception-form-header {
+        padding: 0.75rem;
+    }
+    
+    .patient-lookup-group .btn-primary {
+        padding: 0.625rem 1rem;
+    }
+    
+    .reception-form-header__right .badge {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .reception-form-header__left .btn span,
+    .reception-form-header__right .badge span {
+        display: none !important;
+    }
+    
+    .reception-form-header__right .badge {
+        padding: 0.375rem;
+    }
+}
+
+/* ========== Print Styles ========== */
+@media print {
+    .reception-form-header {
+        display: none;
+    }
+}
+
+/* ========== Accessibility ========== */
+.reception-form-header .btn:focus-visible,
+.reception-form-header .form-control:focus-visible {
+    outline: 3px solid var(--medical-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .reception-form-header {
+        border: 2px solid #000;
+    }
+    
+    .reception-form-header__right .badge {
+        border: 1px solid #000;
+    }
+}
+

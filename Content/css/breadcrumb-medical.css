@@ -1,0 +1,183 @@
+/**
+ * Breadcrumb Navigation for Medical Systems
+ * طراحی شده برای سیستم‌های درمانی با ساختارهای پیچیده
+ * 
+ * ویژگی‌ها:
+ * - RTL سازگار
+ * - Responsive
+ * - رنگ‌بندی طبق استانداردهای پزشکی
+ * - Accessible (WCAG 2.1)
+ */
+
+/* ========== Container ========== */
+.breadcrumb-medical {
+    background: var(--medical-bg, #f8f9fa);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--medical-border, #dee2e6);
+}
+
+/* ========== Breadcrumb List ========== */
+.breadcrumb-reception {
+    background: transparent;
+    margin-bottom: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* ========== Breadcrumb Items ========== */
+.breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    color: var(--medical-text-secondary, #6c757d);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Separator برای RTL */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "\f053"; /* FontAwesome chevron-left */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    padding: 0 0.5rem;
+    color: var(--medical-text-muted, #adb5bd);
+    font-size: 0.75rem;
+}
+
+/* ========== Links ========== */
+.breadcrumb-link {
+    color: var(--medical-primary, #0d6efd);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: var(--medical-primary-dark, #0a58ca);
+    background-color: rgba(13, 110, 253, 0.1);
+    text-decoration: none;
+}
+
+.breadcrumb-link:focus {
+    outline: 2px solid var(--medical-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+/* ========== Active/Current Item ========== */
+.breadcrumb-item.active {
+    color: var(--medical-text-primary, #212529);
+    font-weight: 600;
+}
+
+.breadcrumb-current {
+    color: var(--medical-text-primary, #212529);
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(13, 110, 253, 0.05);
+    border-radius: 4px;
+}
+
+/* ========== Home Icon ========== */
+.breadcrumb-home .breadcrumb-link {
+    font-weight: 600;
+    color: var(--medical-success, #198754);
+}
+
+.breadcrumb-home .breadcrumb-link:hover {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: var(--medical-success-dark, #146c43);
+}
+
+/* ========== Icons ========== */
+.breadcrumb-item i {
+    font-size: 0.9em;
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 768px) {
+    .breadcrumb-medical {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .breadcrumb-reception {
+        gap: 0.25rem;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        padding: 0 0.35rem;
+        font-size: 0.7rem;
+    }
+    
+    .breadcrumb-link,
+    .breadcrumb-current {
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .breadcrumb-medical {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+    
+    /* مخفی کردن آیکون‌ها در موبایل برای صرفه‌جویی در فضا */
+    .breadcrumb-item i {
+        display: none;
+    }
+}
+
+/* ========== Print Styles ========== */
+@media print {
+    .breadcrumb-medical {
+        background: white;
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+    
+    .breadcrumb-link {
+        color: #000;
+        text-decoration: underline;
+    }
+}
+
+/* ========== Accessibility ========== */
+.breadcrumb-link:focus-visible {
+    outline: 3px solid var(--medical-primary, #0d6efd);
+    outline-offset: 3px;
+}
+
+/* ========== Dark Mode Support (اختیاری) ========== */
+@media (prefers-color-scheme: dark) {
+    .breadcrumb-medical {
+        background: #212529;
+        border-color: #495057;
+    }
+    
+    .breadcrumb-item {
+        color: #adb5bd;
+    }
+    
+    .breadcrumb-link {
+        color: #0dcaf0;
+    }
+    
+    .breadcrumb-link:hover {
+        background-color: rgba(13, 202, 240, 0.15);
+    }
+    
+    .breadcrumb-current {
+        color: #f8f9fa;
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+}
+

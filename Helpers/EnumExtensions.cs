@@ -18,7 +18,7 @@ namespace ClinicApp.Helpers
         /// <typeparam name="T">نوع enum</typeparam>
         /// <param name="htmlHelper">HtmlHelper</param>
         /// <returns>SelectList</returns>
-        public static SelectList GetEnumSelectList<T>(this HtmlHelper htmlHelper) where T : struct
+        public static SelectList GetEnumSelectList<TModel, T>(this HtmlHelper<TModel> htmlHelper) where T : struct
         {
             var enumType = typeof(T);
             if (!enumType.IsEnum)
@@ -60,9 +60,9 @@ namespace ClinicApp.Helpers
         /// <param name="htmlHelper">HtmlHelper</param>
         /// <param name="defaultText">متن پیش‌فرض</param>
         /// <returns>SelectList</returns>
-        public static SelectList GetEnumSelectList<T>(this HtmlHelper htmlHelper, string defaultText) where T : struct
+        public static SelectList GetEnumSelectList<TModel, T>(this HtmlHelper<TModel> htmlHelper, string defaultText) where T : struct
         {
-            var selectList = GetEnumSelectList<T>(htmlHelper);
+            var selectList = GetEnumSelectList<TModel, T>(htmlHelper);
             var items = new List<SelectListItem> { new SelectListItem { Text = defaultText, Value = "" } };
             items.AddRange(selectList);
 

@@ -1,0 +1,336 @@
+@using ClinicApp.Helpers
+@{
+    var appName = "کلینیک شفا جیرفت";
+    var title = ViewBag.Title ?? "پذیرش بیمار";
+    var currentUser = User.Identity?.Name ?? "کاربر مهمان";
+    var currentTime = DateTime.Now;
+}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-layout="reception">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    
+    <!-- Medical Environment: No Cache Policy -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Last-Modified" content="@DateTime.UtcNow.ToString("R")">
+    <meta name="cache-control" content="no-cache">
+    <meta name="expires" content="0">
+    <meta name="pragma" content="no-cache">
+    
+    <title>@title - @appName</title>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://cdn.ckeditor.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:5000 ws://localhost:5000; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Meta Tags Section -->
+    @RenderSection("MetaTags", required: false)
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="~/Content/css/reception-layout.css" as="style">
+    
+    <!-- Local Fonts - Vazir, Shabnam, Yekan -->
+    <link rel="stylesheet" href="~/Content/css/local-fonts.css" />
+    
+    <!-- Font Awesome Local -->
+    <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css" />
+    
+    <!-- Design System - باید قبل از سایر CSS ها لود شود -->
+    <link rel="stylesheet" href="~/Content/css/design-system.css" />
+    
+    <!-- Medical Environment Styles -->
+    <link rel="stylesheet" href="~/Content/css/medical-environment.css" />
+    <link rel="stylesheet" href="~/Content/css/medical-environment-styles.css" />
+    
+    <!-- Form Styles -->
+    <link rel="stylesheet" href="~/Content/css/forms-medical.css" />
+    <link rel="stylesheet" href="~/Content/css/medical-forms.css" />
+    <link rel="stylesheet" href="~/Content/css/form-standards.css" />
+    
+    <!-- Stylesheets -->
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/bootstrap")
+    @Styles.Render("~/Content/plugins/css")
+    
+    <!-- Reception Specific Styles -->
+    <link href="~/Content/css/reception-layout.css" rel="stylesheet" />
+    <link href="~/Content/css/reception-standards.css" rel="stylesheet" />
+    <link href="~/Content/css/reception/patient-accordion.css" rel="stylesheet" />
+    <link href="~/Content/css/reception/reception-accordion.css" rel="stylesheet" />
+    <link href="~/Content/css/reception/realtime-insurance-binding.css" rel="stylesheet" />
+    
+    <!-- Medical Sidebar -->
+    <link href="~/Content/css/medical-sidebar.css" rel="stylesheet" />
+    
+    <!-- Breadcrumb for Medical Systems -->
+    <link href="~/Content/css/breadcrumb-medical.css" rel="stylesheet" />
+    
+    <!-- Select2 for Medical Environment -->
+    <link href="~/Content/css/medical-select2.css" rel="stylesheet" />
+    <link href="~/Content/css/select2.min.css" rel="stylesheet" />
+    
+    <!-- Page-Specific Styles -->
+    @RenderSection("styles", required: false)
+    
+    <style>
+        /* Apply Local Fonts to All Elements */
+        body,
+        .container-fluid,
+        .reception-pro,
+        .form-control,
+        .btn,
+        .table,
+        .alert,
+        .badge,
+        h1, h2, h3, h4, h5, h6,
+        label,
+        input,
+        textarea,
+        select,
+        .form-group {
+            font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body class="reception-layout">
+    <!-- Reception Sidebar (Hamburger) - Professional Medical Navigation -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="receptionSidebar" aria-labelledby="receptionSidebarLabel">
+        <div class="offcanvas-header reception-nav-header">
+            <h5 class="offcanvas-title" id="receptionSidebarLabel">
+                <i class="fas fa-bars me-2"></i>ناوبری سریع
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body reception-nav-body">
+            <ul class="list-group reception-nav-list">
+                <li class="list-group-item reception-nav-item">
+                    <a href="@Url.Action("Index", "ReceptionV2")" class="reception-nav-link">
+                        <span><i class="fas fa-user-plus me-2"></i>پذیرش جدید</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="list-group-item reception-nav-item">
+                    <a href="@Url.Action("Index", "ReceptionListV2", new { area = "" })" class="reception-nav-link">
+                        <span><i class="fas fa-list-ul me-2"></i>لیست پذیرش‌ها</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="list-group-item reception-nav-item">
+                    <a href="@Url.Action("Index", "PosManagement", new { area = "" })" class="reception-nav-link">
+                        <span><i class="fas fa-credit-card me-2"></i>تنظیمات پوز</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="list-group-item reception-nav-item">
+                    <a href="@Url.Action("Index", "Home")" class="reception-nav-link">
+                        <span><i class="fas fa-home me-2"></i>صفحه اصلی</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Minimal Header for Reception -->
+    <header class="reception-header" role="banner">
+        <div class="reception-header__container">
+            <!-- Left: App Info + Hamburger Menu -->
+            <div class="reception-header__left">
+                <!-- Hamburger Menu Button -->
+                <button class="reception-header__hamburger" 
+                        type="button" 
+                        data-bs-toggle="offcanvas" 
+                        data-bs-target="#receptionSidebar" 
+                        aria-controls="receptionSidebar"
+                        aria-label="منوی ناوبری">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="reception-header__brand">
+                    <i class="fas fa-hospital-alt" aria-hidden="true"></i>
+                    <span class="reception-header__app-name">@appName</span>
+                    <span class="reception-header__module">| سیستم پذیرش</span>
+                </div>
+            </div>
+            
+            <!-- Center: Current Date/Time -->
+            <div class="reception-header__center">
+                <div class="reception-header__datetime">
+                    <span class="reception-header__date" id="currentDate">
+                        <i class="far fa-calendar-alt" aria-hidden="true"></i>
+                        @PersianDateHelper.ToPersianDate(currentTime)
+                    </span>
+                    <span class="reception-header__time" id="currentTime">
+                        <i class="far fa-clock" aria-hidden="true"></i>
+                        @currentTime.ToString("HH:mm:ss")
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Right: User Menu -->
+            <div class="reception-header__right">
+                <div class="reception-header__user">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    <span class="reception-header__username">@currentUser</span>
+                </div>
+                <a href="@Url.Action("LogOff","Account")"
+                   class="reception-header__logout"
+                   title="خروج از سیستم"
+                   aria-label="خروج از سیستم">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                    <span>خروج</span>
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Breadcrumb Navigation (مسیر سلسله مراتبی) -->
+    <div class="container-fluid">
+        @Html.Partial("_BreadcrumbReception")
+    </div>
+    
+    <!-- Main Content Area (Full Width) -->
+    <main class="reception-main" role="main" id="main-content">
+        @RenderBody()
+    </main>
+    
+    <!-- Notifications Container -->
+    <div data-notifications class="notifications-container"></div>
+    
+    <!-- Core Scripts -->
+    <script src="~/Scripts/jquery-3.7.1.min.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+    <script src="~/Content/js/jquery-protection.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+    
+    <!-- jQuery Validation -->
+    @Scripts.Render("~/bundles/jqueryval")
+    
+    <!-- Bootstrap -->
+    <script src="~/Scripts/popper.min.js"></script>
+    @Scripts.Render("~/bundles/bootstrap")
+    
+    <!-- Other Scripts -->
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <!-- Toastr Notification Library -->
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    
+    <!-- SweetAlert2 Library -->
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    
+    <!-- Notification Service -->
+    <script src="~/Content/js/notification-helper.js"></script>
+    
+    <!-- Medical Sidebar JavaScript -->
+    <script src="~/Content/js/medical-sidebar.js"></script>
+    
+    <!-- Performance Optimization Scripts -->
+    <script src="~/Content/js/image-optimization.js" defer></script>
+    <script src="~/Content/js/performance-optimizer.js" defer></script>
+    
+    <!-- Reception Layout Scripts -->
+    <script>
+        // Persian Date Conversion Helper
+        function toPersianDate(date) {
+            // استفاده از Intl.DateTimeFormat برای تبدیل به تاریخ شمسی
+            const persianFormatter = new Intl.DateTimeFormat('fa-IR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                calendar: 'persian'
+            });
+            
+            return persianFormatter.format(date);
+        }
+        
+        // Real-time Clock Update
+        function updateClock() {
+            const now = new Date();
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                timeElement.innerHTML = '<i class="far fa-clock" aria-hidden="true"></i> ' + hours + ':' + minutes + ':' + seconds;
+            }
+        }
+        
+        // Update date with Persian Date
+        function updateDate() {
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                const now = new Date();
+                const persianDate = toPersianDate(now);
+                dateElement.innerHTML = '<i class="far fa-calendar-alt" aria-hidden="true"></i> ' + persianDate;
+            }
+        }
+        
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        
+        // Update date every minute
+        setInterval(updateDate, 60000);
+        
+        // Initial update
+        updateDate();
+    </script>
+    
+    <!-- Global Toastr configuration -->
+    <script>
+        if (typeof toastr !== 'undefined') {
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-left",
+                "preventDuplicates": true,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut",
+                "rtl": true
+            };
+        }
+    </script>
+    
+    <!-- Bootstrap Offcanvas Initialization for Medical Sidebar -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all offcanvas elements
+            var offcanvasElements = document.querySelectorAll('.offcanvas');
+            offcanvasElements.forEach(function(element) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                    new bootstrap.Offcanvas(element);
+                }
+            });
+            
+            // Initialize all tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    new bootstrap.Tooltip(tooltipTriggerEl);
+                }
+            });
+        });
+    </script>
+    
+    <!-- Page-Specific Scripts -->
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+

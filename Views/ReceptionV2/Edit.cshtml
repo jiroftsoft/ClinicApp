@@ -1,8 +1,18 @@
 @model ClinicApp.ViewModels.Reception.ReceptionFormVM
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "ویرایش پذیرش";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
     var receptionId = ViewBag.ReceptionId as int? ?? 0;
+    
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "داشبورد", Url = Url.Action("Index", "Home"), Icon = "fas fa-home", Tooltip = "بازگشت به صفحه اصلی" },
+        new BreadcrumbItem { Title = "لیست پذیرش‌ها", Url = Url.Action("Index", "ReceptionListV2"), Icon = "fas fa-list-alt", Tooltip = "لیست تمام پذیرش‌ها" },
+        new BreadcrumbItem { Title = "ویرایش پذیرش #" + receptionId, Icon = "fas fa-edit", IsActive = true }
+    };
 }
 
 @* Anti-Forgery Token for AJAX (MUST be before scripts to ensure token exists in DOM) *@
@@ -15,24 +25,28 @@
 @Html.Partial("Partials/_ReceptionSummaryHeader")
 
 <div class="reception-pro container-fluid" dir="rtl">
-  <header class="reception-pro__header d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#receptionSidebar" aria-controls="receptionSidebar">☰</button>
-      <h5 class="m-0">ویرایش پذیرش</h5>
-      <span id="ReceptionStatusBadge" class="badge bg-secondary ms-2">در حال بارگذاری...</span>
+  <!-- Simple Header for Edit -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
+      <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+          <i class="fas fa-edit me-2"></i>ویرایش پذیرش #@receptionId
+        </h5>
+        <span id="ReceptionStatusBadge" class="badge bg-light text-dark">در حال بارگذاری...</span>
+      </div>
+      <div class="d-flex gap-2 mt-2 mt-md-0">
+        <button id="BtnSaveChanges" class="btn btn-success btn-sm">
+          <i class="fas fa-save me-1"></i>ذخیره تغییرات
+        </button>
+        <button id="BtnCancelReception" class="btn btn-danger btn-sm">
+          <i class="fas fa-ban me-1"></i>لغو پذیرش
+        </button>
+        <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-outline-light btn-sm">
+          <i class="fas fa-arrow-right me-1"></i>بازگشت به لیست
+        </a>
+      </div>
     </div>
-    <div class="d-flex gap-2">
-      <button id="BtnSaveChanges" class="btn btn-success">
-        <i class="fas fa-save me-1"></i> ذخیره تغییرات
-      </button>
-      <button id="BtnCancelReception" class="btn btn-danger">
-        <i class="fas fa-ban me-1"></i> لغو پذیرش
-      </button>
-      <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-outline-secondary">
-        <i class="fas fa-times me-1"></i> انصراف
-      </a>
-    </div>
-  </header>
+  </div>
 
   <div class="row mt-3">
     <div class="col-xl-8 col-lg-7">

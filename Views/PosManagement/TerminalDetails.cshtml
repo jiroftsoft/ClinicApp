@@ -2,9 +2,19 @@
 @using System.Linq
 @using System.Reflection
 @using System.ComponentModel.DataAnnotations
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "جزئیات ترمینال POS";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus", Tooltip = "بازگشت به صفحه اصلی پذیرش" },
+        new BreadcrumbItem { Title = "مدیریت POS", Url = Url.Action("Index", "PosManagement"), Icon = "fas fa-credit-card", Tooltip = "لیست ترمینال‌های POS" },
+        new BreadcrumbItem { Title = "جزئیات ترمینال: " + Model.Name, Icon = "fas fa-info-circle", IsActive = true }
+    };
     
     // Helper function برای دریافت Display Name از Enum
     Func<Enum, string> getDisplayName = (enumValue) => {
@@ -22,6 +32,9 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="m-0">جزئیات ترمینال POS</h5>
                 <div class="d-flex gap-2">
+                    <a class="btn btn-success" href="@Url.Action("Index", "PosTest")">
+                        <i class="fas fa-vial me-2"></i>تست POS
+                    </a>
                     <a class="btn btn-primary" href="@Url.Action("EditTerminal", "PosManagement", new { id = Model.Id })">
                         <i class="fas fa-edit me-2"></i>ویرایش
                     </a>
@@ -214,6 +227,9 @@
                             </a>
                         </div>
                         <div class="d-flex gap-2">
+                            <a href="@Url.Action("Index", "PosTest")" class="btn btn-success">
+                                <i class="fas fa-vial me-2"></i>تست POS
+                            </a>
                             <a href="@Url.Action("EditTerminal", "PosManagement", new { id = Model.Id })" class="btn btn-primary">
                                 <i class="fas fa-edit me-2"></i>ویرایش ترمینال
                             </a>

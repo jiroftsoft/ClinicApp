@@ -1,0 +1,57 @@
+@using ClinicApp.ViewModels.Shared
+@using System.Collections.Generic
+@* 
+    Breadcrumb Navigation برای محیط پذیرش
+    طراحی شده برای سیستم‌های درمانی با ساختارهای پیچیده
+    
+    نحوه استفاده در Controller/View:
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus" },
+        new BreadcrumbItem { Title = "تنظیمات POS", Url = Url.Action("Index", "PosManagement"), Icon = "fas fa-cog" },
+        new BreadcrumbItem { Title = "جزئیات ترمینال", Icon = "fas fa-info-circle", IsActive = true }
+    };
+*@
+@{
+    var breadcrumbs = ViewBag.Breadcrumbs as List<BreadcrumbItem>;
+    
+    // اگر Breadcrumb تعریف نشده، نمایش نده
+    if (breadcrumbs == null || breadcrumbs.Count == 0)
+    {
+        return;
+    }
+}
+
+<nav aria-label="مسیر فعلی" class="breadcrumb-medical mb-3">
+    <ol class="breadcrumb breadcrumb-reception">
+        @for (int i = 0; i < breadcrumbs.Count; i++)
+        {
+            var item = breadcrumbs[i];
+            var isLast = (i == breadcrumbs.Count - 1);
+            var isFirst = (i == 0);
+            
+            <li class="breadcrumb-item @(isLast || item.IsActive ? "active" : "") @(isFirst ? "breadcrumb-home" : "")" 
+                @(isLast || item.IsActive ? Html.Raw("aria-current=\"page\"") : null)>
+                @if ((!isLast && !item.IsActive) && !string.IsNullOrEmpty(item.Url))
+                {
+                    <a href="@item.Url" class="breadcrumb-link" title="@item.Tooltip">
+                        @if (!string.IsNullOrEmpty(item.Icon))
+                        {
+                            <i class="@item.Icon me-1" aria-hidden="true"></i>
+                        }
+                        <span>@item.Title</span>
+                    </a>
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <i class="@item.Icon me-1" aria-hidden="true"></i>
+                    }
+                    <span class="breadcrumb-current">@item.Title</span>
+                }
+            </li>
+        }
+    </ol>
+</nav>
+

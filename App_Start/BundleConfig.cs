@@ -147,10 +147,13 @@ namespace ClinicApp
 
             // Reception V2 Bundles - Zero Cache, Medical-Grade
             bundles.Add(new StyleBundle("~/content/reception.v2").Include(
-                "~/Content/bootstrap.rtl.min.css",
+                "~/Content/bootstrap.min.css",          // ✅ Bootstrap اصلی (برای table-dark و سایر کلاس‌ها)
+                "~/Content/bootstrap.rtl.min.css",      // ✅ Bootstrap RTL (برای راست‌چین)
                 "~/Content/select2.min.css",
                 "~/Content/persian-datepicker.min.css",
                 "~/Content/toastr.min.css",
+                "~/Content/css/breadcrumb-medical.css",  // ✅ Breadcrumb Navigation برای سیستم‌های درمانی
+                "~/Content/css/reception-form-header.css",  // ✅ Enhanced Header برای فرم پذیرش
                 "~/Content/reception.v2.css"
             ));
 

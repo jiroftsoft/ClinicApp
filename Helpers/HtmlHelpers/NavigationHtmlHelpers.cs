@@ -16,7 +16,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// ایجاد ناوبری پزشکی تخصصی - Strongly Typed
         /// </summary>
-        public static MvcHtmlString MedicalNavigation(this HtmlHelper htmlHelper, MedicalNavigationViewModel model)
+        public static MvcHtmlString MedicalNavigation<TModel>(this HtmlHelper<TModel> htmlHelper, MedicalNavigationViewModel model)
         {
             if (model == null)
                 return MvcHtmlString.Empty;
@@ -42,7 +42,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// هدر ناوبری پزشکی
         /// </summary>
-        public static MvcHtmlString MedicalNavigationHeader(this HtmlHelper htmlHelper, MedicalNavigationViewModel model)
+        public static MvcHtmlString MedicalNavigationHeader<TModel>(this HtmlHelper<TModel> htmlHelper, MedicalNavigationViewModel model)
         {
             var sb = new StringBuilder();
             
@@ -62,7 +62,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// بخش ناوبری پزشکی
         /// </summary>
-        public static MvcHtmlString MedicalNavigationSection(this HtmlHelper htmlHelper, NavigationSection section, MedicalNavigationViewModel model)
+        public static MvcHtmlString MedicalNavigationSection<TModel>(this HtmlHelper<TModel> htmlHelper, NavigationSection section, MedicalNavigationViewModel model)
         {
             if (section == null || !section.Items.Any())
                 return MvcHtmlString.Empty;
@@ -92,7 +92,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// آیتم ناوبری پزشکی - Strongly Typed
         /// </summary>
-        public static MvcHtmlString MedicalNavigationItem(this HtmlHelper htmlHelper, NavigationItem item, MedicalNavigationViewModel model)
+        public static MvcHtmlString MedicalNavigationItem<TModel>(this HtmlHelper<TModel> htmlHelper, NavigationItem item, MedicalNavigationViewModel model)
         {
             if (item == null || !item.IsVisible)
                 return MvcHtmlString.Empty;
@@ -136,7 +136,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// عملیات سریع پزشکی
         /// </summary>
-        public static MvcHtmlString MedicalQuickActions(this HtmlHelper htmlHelper, List<QuickAction> quickActions)
+        public static MvcHtmlString MedicalQuickActions<TModel>(this HtmlHelper<TModel> htmlHelper, List<QuickAction> quickActions)
         {
             if (quickActions == null || !quickActions.Any())
                 return MvcHtmlString.Empty;
@@ -166,7 +166,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// عملیات سریع منفرد
         /// </summary>
-        public static MvcHtmlString MedicalQuickAction(this HtmlHelper htmlHelper, QuickAction action)
+        public static MvcHtmlString MedicalQuickAction<TModel>(this HtmlHelper<TModel> htmlHelper, QuickAction action)
         {
             if (action == null || !action.IsVisible)
                 return MvcHtmlString.Empty;
@@ -190,7 +190,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// ناوبری دپارتمان‌ها - Strongly Typed
         /// </summary>
-        public static MvcHtmlString DepartmentNavigation(this HtmlHelper htmlHelper, DepartmentNavigationViewModel model)
+        public static MvcHtmlString DepartmentNavigation<TModel>(this HtmlHelper<TModel> htmlHelper, DepartmentNavigationViewModel model)
         {
             if (model == null || !model.Departments.Any())
                 return MvcHtmlString.Empty;
@@ -217,7 +217,7 @@ namespace ClinicApp.Helpers.HtmlHelpers
         /// <summary>
         /// آیتم ناوبری دپارتمان
         /// </summary>
-        public static MvcHtmlString DepartmentNavigationItem(this HtmlHelper htmlHelper, DepartmentNavigationItem department, int selectedDepartmentId)
+        public static MvcHtmlString DepartmentNavigationItem<TModel>(this HtmlHelper<TModel> htmlHelper, DepartmentNavigationItem department, int selectedDepartmentId)
         {
             if (department == null)
                 return MvcHtmlString.Empty;

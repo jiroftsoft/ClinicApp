@@ -2,9 +2,19 @@
 @using System.Linq
 @using System.Reflection
 @using System.ComponentModel.DataAnnotations
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "ایجاد ترمینال POS";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus", Tooltip = "بازگشت به صفحه اصلی پذیرش" },
+        new BreadcrumbItem { Title = "مدیریت POS", Url = Url.Action("Index", "PosManagement"), Icon = "fas fa-credit-card", Tooltip = "لیست ترمینال‌های POS" },
+        new BreadcrumbItem { Title = "ایجاد ترمینال", Icon = "fas fa-plus-circle", IsActive = true }
+    };
     
     // Helper function برای دریافت Display Name از Enum
     Func<Enum, string> getDisplayName = (enumValue) => {

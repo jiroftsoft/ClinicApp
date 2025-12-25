@@ -1,6 +1,15 @@
+@using System.Collections.Generic
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "مدیریت دستگاه‌های پوز";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation (مسیر سلسله مراتبی)
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus", Tooltip = "بازگشت به صفحه اصلی پذیرش" },
+        new BreadcrumbItem { Title = "مدیریت POS", Icon = "fas fa-credit-card", IsActive = true }
+    };
 }
 <!-- ✅ POS Management Page - Single Instance -->
 <div class="container-fluid" dir="rtl" id="pos-management-page">
@@ -12,6 +21,9 @@
     <div class="d-flex gap-2">
       <a class="btn btn-primary" href="@Url.Action("CreateTerminal","PosManagement")">
         <i class="fas fa-plus me-2"></i>ایجاد ترمینال
+      </a>
+      <a class="btn btn-success" href="@Url.Action("Index","PosTest")" title="تست اتصال و عملکرد دستگاه‌های POS">
+        <i class="fas fa-vial me-2"></i>تست POS
       </a>
       <button id="btnRefresh" class="btn btn-outline-secondary">
         <i class="fas fa-sync-alt me-2"></i>بروزرسانی

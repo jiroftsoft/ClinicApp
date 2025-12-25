@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Web.Mvc;
 using System.Web.Mvc.Html;
+using System.Web.Routing;
 
 namespace ClinicApp.Helpers
 {
@@ -36,7 +37,7 @@ namespace ClinicApp.Helpers
             string id = TagBuilder.CreateSanitizedId(fullName);
             
             // ایجاد HTML attributes
-            var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+            var attributes = new RouteValueDictionary(htmlAttributes);
             attributes["class"] = (attributes.ContainsKey("class") ? attributes["class"] + " " : "") + "form-control persian-datepicker";
             attributes["data-datepicker-id"] = id;
             
@@ -82,7 +83,7 @@ namespace ClinicApp.Helpers
             string compareId = TagBuilder.CreateSanitizedId(compareFullName);
             
             // ایجاد HTML attributes
-            var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+            var attributes = new RouteValueDictionary(htmlAttributes);
             attributes["class"] = (attributes.ContainsKey("class") ? attributes["class"] + " " : "") + "form-control persian-datepicker";
             attributes["data-datepicker-id"] = id;
             attributes["data-compare-with"] = compareId;
@@ -105,7 +106,7 @@ namespace ClinicApp.Helpers
         /// <param name="value">مقدار DateTime (میلادی)</param>
         /// <param name="htmlAttributes">ویژگی‌های HTML</param>
         /// <returns>MvcHtmlString</returns>
-        public static MvcHtmlString PersianDatePicker(this HtmlHelper htmlHelper, string name, DateTime? value = null, object htmlAttributes = null)
+        public static MvcHtmlString PersianDatePicker<TModel>(this HtmlHelper<TModel> htmlHelper, string name, DateTime? value = null, object htmlAttributes = null)
         {
             var tagBuilder = new TagBuilder("input");
             tagBuilder.Attributes.Add("type", "text");
@@ -122,7 +123,7 @@ namespace ClinicApp.Helpers
             
             if (htmlAttributes != null)
             {
-                var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+                var attributes = new RouteValueDictionary(htmlAttributes);
                 foreach (var attr in attributes)
                 {
                     if (attr.Key == "class")
