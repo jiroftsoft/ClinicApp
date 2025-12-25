@@ -26,6 +26,7 @@ namespace ClinicApp.Helpers
                 var storyService = DependencyResolver.Current.GetService<IStoryService>();
                 if (storyService == null)
                 {
+                    System.Diagnostics.Debug.WriteLine("⚠️ [LayoutDataHelper] IStoryService not found in Dependency Resolver");
                     return new List<StoryPublicViewModel>();
                 }
 
@@ -34,9 +35,14 @@ namespace ClinicApp.Helpers
                 storiesTask.Wait(); // Wait for completion
 
                 var storiesResult = storiesTask.Result;
-                if (storiesResult.Success && storiesResult.Data != null && storiesResult.Data.Any())
+                if (storiesResult != null && storiesResult.Success && storiesResult.Data != null && storiesResult.Data.Any())
                 {
+                    System.Diagnostics.Debug.WriteLine($"✅ [LayoutDataHelper] {storiesResult.Data.Count} Story loaded successfully");
                     return storiesResult.Data;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ [LayoutDataHelper] No stories found - Success: {storiesResult?.Success}, Data: {storiesResult?.Data?.Count ?? 0}");
                 }
 
                 return new List<StoryPublicViewModel>();
@@ -44,6 +50,11 @@ namespace ClinicApp.Helpers
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ ERROR in LayoutDataHelper.GetStories: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return new List<StoryPublicViewModel>();
             }
         }

@@ -121,7 +121,17 @@ namespace ClinicApp.Services.CMS
         {
             try
             {
+                _logger.Information("GetActiveStoriesForPublicAsync - شروع دریافت Stories");
+                
                 var stories = await _storyRepository.GetActiveStoriesAsync();
+                
+                _logger.Information("GetActiveStoriesForPublicAsync - تعداد Stories از Repository: {Count}", stories?.Count ?? 0);
+
+                if (stories == null || !stories.Any())
+                {
+                    _logger.Warning("⚠️ هیچ Story فعالی در Repository یافت نشد");
+                    return ServiceResult<List<StoryPublicViewModel>>.Successful(new List<StoryPublicViewModel>());
+                }
 
                 var viewModels = stories.Select(s => new StoryPublicViewModel
                 {
@@ -136,11 +146,12 @@ namespace ClinicApp.Services.CMS
                     Duration = s.Duration
                 }).ToList();
 
+                _logger.Information("✅ GetActiveStoriesForPublicAsync - {Count} Story ViewModel ایجاد شد", viewModels.Count);
                 return ServiceResult<List<StoryPublicViewModel>>.Successful(viewModels);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت Story های فعال برای نمایش عمومی");
+                _logger.Error(ex, "❌ خطا در دریافت Story های فعال برای نمایش عمومی");
                 return ServiceResult<List<StoryPublicViewModel>>.Failed("خطا در دریافت Story ها");
             }
         }

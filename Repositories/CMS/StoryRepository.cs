@@ -53,7 +53,7 @@ namespace ClinicApp.Repositories.CMS
         public async Task<List<Story>> GetActiveStoriesAsync()
         {
             var now = DateTime.Now;
-            return await _context.Set<Story>()
+            var stories = await _context.Set<Story>()
                 .Where(s => !s.IsDeleted && 
                            s.IsActive &&
                            (s.StartDate == null || s.StartDate <= now) &&
@@ -61,6 +61,15 @@ namespace ClinicApp.Repositories.CMS
                 .OrderBy(s => s.DisplayOrder)
                 .ThenByDescending(s => s.CreatedAt)
                 .ToListAsync();
+            
+            // ✅ لاگ برای دیباگ
+            System.Diagnostics.Debug.WriteLine($"[StoryRepository] GetActiveStoriesAsync - Found {stories.Count} active stories");
+            foreach (var story in stories)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StoryRepository] Story: {story.StoryId} - {story.Title} - IsActive: {story.IsActive} - StartDate: {story.StartDate} - EndDate: {story.EndDate}");
+            }
+            
+            return stories;
         }
 
         public async Task<Story> AddAsync(Story story)

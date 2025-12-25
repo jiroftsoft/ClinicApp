@@ -826,24 +826,74 @@ namespace ClinicApp.Services
         {
             try
             {
+                // ✅ دیباگ: بررسی تزریق IStoryService
+                _logger.Information("GetStoriesSectionAsync - _storyService is {IsNull}", _storyService == null ? "NULL" : "NOT NULL");
+                
                 if (_storyService == null)
                 {
-                    _logger.Warning("IStoryService not available, returning empty Stories list");
+                    _logger.Warning("⚠️ IStoryService not available in HomePageService - بررسی Dependency Injection");
+                    _logger.Warning("⚠️ لطفاً مطمئن شوید که IStoryService در UnityConfig ثبت شده است");
+                    
+                    // ✅ Fallback: تلاش برای دریافت از DependencyResolver
+                    try
+                    {
+                        var storyServiceFromResolver = System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IStoryService)) as IStoryService;
+                        if (storyServiceFromResolver != null)
+                        {
+                            _logger.Information("✅ IStoryService از DependencyResolver دریافت شد");
+                            var fallbackResult = await storyServiceFromResolver.GetActiveStoriesForPublicAsync();
+                            if (fallbackResult != null && fallbackResult.Success && fallbackResult.Data != null && fallbackResult.Data.Any())
+                            {
+                                _logger.Information("✅ {Count} Story از DependencyResolver لود شد", fallbackResult.Data.Count);
+                                return fallbackResult.Data;
+                            }
+                        }
+                        else
+                        {
+                            _logger.Warning("⚠️ IStoryService از DependencyResolver هم null است");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "❌ خطا در دریافت IStoryService از DependencyResolver");
+                    }
+                    
                     return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
                 }
 
+                _logger.Information("🔍 در حال دریافت Stories از StoryService...");
                 var result = await _storyService.GetActiveStoriesForPublicAsync();
-                if (result.Success && result.Data != null && result.Data.Any())
+                
+                if (result == null)
                 {
-                    _logger.Information("✅ {Count} Story برای نمایش در صفحه اصلی لود شد", result.Data.Count);
-                    return result.Data;
+                    _logger.Warning("⚠️ StoryService.GetActiveStoriesForPublicAsync returned null");
+                    return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
                 }
 
-                return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+                if (!result.Success)
+                {
+                    _logger.Warning("⚠️ StoryService.GetActiveStoriesForPublicAsync failed: {Message}", result.Message ?? "Unknown error");
+                    return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+                }
+
+                if (result.Data == null)
+                {
+                    _logger.Warning("⚠️ StoryService.GetActiveStoriesForPublicAsync returned null Data");
+                    return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+                }
+
+                if (!result.Data.Any())
+                {
+                    _logger.Information("ℹ️ هیچ Story فعالی برای نمایش یافت نشد");
+                    return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
+                }
+
+                _logger.Information("✅ {Count} Story برای نمایش در صفحه اصلی لود شد", result.Data.Count);
+                return result.Data;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت داده‌های Stories Section");
+                _logger.Error(ex, "❌ خطا در دریافت داده‌های Stories Section");
                 return new List<ClinicApp.ViewModels.CMS.StoryPublicViewModel>();
             }
         }

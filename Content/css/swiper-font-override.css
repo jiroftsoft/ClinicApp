@@ -1,0 +1,54 @@
+/**
+ * Swiper Font Override - رفع خطای CSP برای فونت Swiper
+ * این فایل فونت data URI Swiper را با Font Awesome جایگزین می‌کند
+ * 
+ * مشکل: Swiper از فونت data URI استفاده می‌کند که با CSP تداخل دارد
+ * راه‌حل: استفاده از Font Awesome برای آیکون‌های Swiper
+ */
+
+/* Override Swiper Icons Font - استفاده از Font Awesome به جای data URI */
+@font-face {
+    font-family: 'swiper-icons';
+    src: url('data:font/woff2;base64,') format('woff2'); /* Empty font to prevent CSP error */
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* استفاده از Font Awesome برای آیکون‌های Swiper Navigation */
+.swiper-button-next:after,
+.swiper-button-prev:after {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro', 'FontAwesome', sans-serif !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+}
+
+/* آیکون‌های Navigation با Font Awesome - LTR */
+.swiper-button-prev:after {
+    content: '\f053' !important; /* fa-chevron-left */
+}
+
+.swiper-button-next:after {
+    content: '\f054' !important; /* fa-chevron-right */
+}
+
+/* آیکون‌های Navigation با Font Awesome - RTL */
+.swiper-rtl .swiper-button-prev:after {
+    content: '\f054' !important; /* fa-chevron-right */
+}
+
+.swiper-rtl .swiper-button-next:after {
+    content: '\f053' !important; /* fa-chevron-left */
+}
+
+/* Fallback: اگر Font Awesome لود نشد، از Unicode استفاده کن */
+.swiper-button-prev:after,
+.swiper-rtl .swiper-button-next:after {
+    font-family: Arial, 'Segoe UI', Tahoma, sans-serif !important;
+}
+
+.swiper-button-next:after,
+.swiper-rtl .swiper-button-prev:after {
+    font-family: Arial, 'Segoe UI', Tahoma, sans-serif !important;
+}
+

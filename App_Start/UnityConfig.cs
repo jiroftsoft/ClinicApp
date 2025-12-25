@@ -339,7 +339,8 @@ namespace ClinicApp
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 
                 // Register HomePage Service
-                // Note: IAboutPageService is optional - Unity به صورت خودکار resolve می‌کند
+                // Note: IAboutPageService و IStoryService optional هستند
+                // Unity به صورت خودکار optional parameters را resolve می‌کند اگر در container ثبت شده باشند
                 container.RegisterType<IHomePageService, HomePageService>(new PerRequestLifetimeManager());
                 
                 // Image Upload Service

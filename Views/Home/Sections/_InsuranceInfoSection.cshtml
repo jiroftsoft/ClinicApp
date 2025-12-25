@@ -158,9 +158,14 @@
             }
             
             try {
+                // ✅ شمارش تعداد slides برای تصمیم‌گیری در مورد loop mode
+                const slides = sliderElement.querySelectorAll('.swiper-slide');
+                const slidesCount = slides ? slides.length : 0;
+                const shouldLoop = slidesCount > 6; // فقط اگر بیش از 6 slide باشد، loop فعال می‌شود
+                
                 const insuranceSlider = new Swiper('#insuranceLogoSlider', {
                     direction: 'horizontal',
-                    loop: true,
+                    loop: shouldLoop, // ✅ فقط اگر slides کافی باشد
                     rtl: true,
                     freeMode: true,
                     autoplay: {
