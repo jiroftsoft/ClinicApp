@@ -4,9 +4,9 @@
    طراحی شده مشابه دیجی‌کالا - مدرن و زیبا
    ============================================ */
 
-/* ✅ Container اصلی */
+/* ✅ Container اصلی - رسمی و مینیمال */
 .stories-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    background: #ffffff; /* سفید ساده */
     border-bottom: 1px solid #e9ecef;
     padding: 1rem 0;
     margin-bottom: 0;
@@ -74,19 +74,19 @@
 }
 
 .story-item:focus {
-    outline: 2px solid var(--medical-primary, #007bff);
+    outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
-    border-radius: 12px;
+    border-radius: 50%; /* دایره کامل */
 }
 
-/* ✅ Thumbnail Wrapper */
+/* ✅ Thumbnail Wrapper - Instagram Style (دایره‌ای کامل) */
 .story-thumbnail-wrapper {
     position: relative;
     width: 90px;
     height: 90px;
-    border-radius: 12px;
+    border-radius: 50%; /* دایره کامل */
     overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 3px solid #ffffff;
     transition: all 0.3s ease;
@@ -111,12 +111,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
     color: #ffffff;
     font-size: 2rem;
 }
 
-/* ✅ Overlay */
+/* ✅ Overlay - دایره‌ای */
 .story-overlay {
     position: absolute;
     top: 0;
@@ -129,7 +129,7 @@
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
-    border-radius: 12px;
+    border-radius: 50%; /* دایره کامل */
 }
 
 .story-item:hover .story-overlay {
@@ -145,7 +145,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--medical-primary, #007bff);
+    color: var(--medical-primary, #2c5aa0);
     font-size: 1.2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease;
@@ -190,32 +190,88 @@
     min-height: 2.6em;
 }
 
-/* ✅ Video Player Modal */
+/* ✅ Video Player Modal - Production Ready */
 #storyVideoModal .modal-content {
     border-radius: 12px;
     overflow: hidden;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+#storyVideoModal .modal-dialog {
+    max-width: 800px;
+}
+
+#storyVideoModal .modal-body {
+    padding: 0;
+    background: #000000;
 }
 
 #storyVideoModal .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
     color: #ffffff;
     border-bottom: none;
     padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1055;
 }
 
 #storyVideoModal .modal-title {
     font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
     font-weight: 600;
+    margin: 0;
+    flex: 1;
 }
 
-#storyVideoModal .close {
+/* ✅ دکمه بستن (X) - بهینه شده برای RTL و کاملاً Clickable */
+#storyVideoModal .modal-close-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    margin-left: 1rem; /* فاصله از سمت راست (RTL) */
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
     color: #ffffff;
-    opacity: 0.9;
-    text-shadow: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    order: -1; /* قرار دادن در سمت راست برای RTL */
+    z-index: 1060; /* بالاتر از Modal */
+    pointer-events: auto; /* اطمینان از clickable بودن */
+    opacity: 1;
+    flex-shrink: 0;
 }
 
-#storyVideoModal .close:hover {
-    opacity: 1;
+#storyVideoModal .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+#storyVideoModal .modal-close-btn:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#storyVideoModal .modal-close-btn:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 2px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#storyVideoModal .modal-close-btn i {
+    font-size: 1rem;
+    pointer-events: none; /* فقط دکمه clickable باشد، نه آیکون */
 }
 
 .story-video-player {
@@ -223,7 +279,6 @@
     width: 100%;
     padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
     background: #000000;
-    border-radius: 8px;
     overflow: hidden;
 }
 
@@ -237,8 +292,137 @@
     border: none;
 }
 
-/* ✅ Responsive Design */
-@media (max-width: 768px) {
+/* ✅ Loading State for Video */
+.story-video-player.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ✅ Modal Backdrop */
+#storyVideoModal.modal.fade .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+/* ✅ Modal Responsive */
+@media (max-width: 991px) {
+    #storyVideoModal .modal-dialog {
+        max-width: 90%;
+        margin: 1rem auto;
+    }
+}
+
+@media (max-width: 767px) {
+    #storyVideoModal .modal-dialog {
+        max-width: 95%;
+        margin: 0.5rem auto;
+    }
+    
+    #storyVideoModal .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    #storyVideoModal .modal-title {
+        font-size: 1rem;
+    }
+    
+    #storyVideoModal .modal-close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+    
+    #storyVideoModal .modal-close-btn i {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 575px) {
+    #storyVideoModal .modal-dialog {
+        max-width: 100%;
+        margin: 0;
+        min-height: 100vh;
+    }
+    
+    #storyVideoModal .modal-content {
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    #storyVideoModal .modal-header {
+        border-radius: 0;
+    }
+}
+
+/* ✅ Responsive Design - 100% برای تمام مانیتورها */
+
+/* Large Desktop (1920px+) */
+@media (min-width: 1920px) {
+    .stories-container {
+        max-width: 1920px;
+        padding: 0 2rem;
+    }
+    
+    .story-item {
+        width: 100px;
+    }
+    
+    .story-thumbnail-wrapper {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .story-title {
+        font-size: 0.8rem;
+    }
+}
+
+/* Desktop (1200px - 1919px) */
+@media (min-width: 1200px) and (max-width: 1919px) {
+    .stories-container {
+        max-width: 1400px;
+    }
+    
+    .story-item {
+        width: 90px;
+    }
+    
+    .story-thumbnail-wrapper {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+/* Tablet (768px - 1199px) */
+@media (max-width: 1199px) and (min-width: 768px) {
+    .story-item {
+        width: 85px;
+    }
+    
+    .story-thumbnail-wrapper {
+        width: 85px;
+        height: 85px;
+    }
+    
+    .story-title {
+        font-size: 0.72rem;
+    }
+    
+    .stories-list {
+        gap: 0.8rem;
+    }
+}
+
+/* Mobile Landscape (576px - 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
     .story-item {
         width: 80px;
     }
@@ -257,7 +441,8 @@
     }
 }
 
-@media (max-width: 576px) {
+/* Mobile Portrait (< 576px) */
+@media (max-width: 575px) {
     .story-item {
         width: 70px;
     }
@@ -274,6 +459,34 @@
     
     .stories-list {
         gap: 0.5rem;
+    }
+    
+    .stories-container {
+        padding: 0 0.5rem;
+    }
+}
+
+/* Ultra Wide (2560px+) */
+@media (min-width: 2560px) {
+    .stories-container {
+        max-width: 2400px;
+    }
+    
+    .story-item {
+        width: 110px;
+    }
+    
+    .story-thumbnail-wrapper {
+        width: 110px;
+        height: 110px;
+    }
+    
+    .story-title {
+        font-size: 0.85rem;
+    }
+    
+    .stories-list {
+        gap: 1.25rem;
     }
 }
 
@@ -305,7 +518,7 @@
 
 /* ✅ Accessibility */
 .story-item:focus-visible {
-    outline: 3px solid var(--medical-primary, #007bff);
+    outline: 3px solid var(--medical-primary, #2c5aa0);
     outline-offset: 3px;
 }
 

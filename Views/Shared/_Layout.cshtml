@@ -394,6 +394,27 @@
                             <span>رزرو نوبت</span>
                         </a>
                     </li>
+                    @* تماس اضطراری - مینیمال و زیبا *@
+                    @{
+                        var navLayoutData = LayoutDataHelper.GetLayoutData();
+                        if (navLayoutData?.EmergencyContacts != null && navLayoutData.EmergencyContacts.Any())
+                        {
+                            var primaryContact = navLayoutData.EmergencyContacts.FirstOrDefault();
+                            if (primaryContact != null && !string.IsNullOrEmpty(primaryContact.PhoneNumber))
+                            {
+                                var cleanPhoneNumber = primaryContact.PhoneNumber.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+                                <li class="nav-item-modern">
+                                    <a href="tel:@cleanPhoneNumber" 
+                                       class="nav-link-modern nav-link-emergency"
+                                       aria-label="تماس اضطراری: @primaryContact.PhoneNumber"
+                                       title="تماس اضطراری">
+                                        <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                                        <span>@primaryContact.PhoneNumber</span>
+                                    </a>
+                                </li>
+                            }
+                        }
+                    }
                 </ul>
                 <div class="user-menu-modern">
                     @Html.Partial("_LoginPartial")
@@ -421,12 +442,6 @@
     @if (layoutData != null && layoutData.Stories != null && layoutData.Stories.Any())
     {
         @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", layoutData.Stories)
-    }
-
-    @* Emergency Contacts Sticky Bar (زیر Stories - در تمام صفحات) - Strongly-Typed *@
-    @if (layoutData.EmergencyContacts != null && layoutData.EmergencyContacts.Any())
-    {
-        @Html.Partial("~/Views/Home/Sections/_EmergencyContactsSection.cshtml", layoutData.EmergencyContacts)
     }
 
     <main role="main">

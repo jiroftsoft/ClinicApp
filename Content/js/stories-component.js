@@ -44,10 +44,58 @@
                 }
             });
 
-            // ✅ بستن Modal
+            // ✅ بستن Modal با دکمه X
+            $(document).off('click.storyModalClose').on('click.storyModalClose', '#storyVideoModal .modal-close-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('✅ Close button clicked - closing modal');
+                self.closeModal();
+            });
+
+            // ✅ بستن Modal با کلیک روی backdrop
+            $(document).off('click.storyModalBackdrop').on('click.storyModalBackdrop', '#storyVideoModal', function(e) {
+                if ($(e.target).is('#storyVideoModal')) {
+                    console.log('✅ Backdrop clicked - closing modal');
+                    self.closeModal();
+                }
+            });
+
+            // ✅ بستن Modal با کلید ESC
+            $(document).off('keydown.storyModalEsc').on('keydown.storyModalEsc', function(e) {
+                if (e.key === 'Escape' && $('#storyVideoModal').hasClass('show')) {
+                    console.log('✅ ESC key pressed - closing modal');
+                    self.closeModal();
+                }
+            });
+
+            // ✅ بعد از بسته شدن Modal
             $('#storyVideoModal').on('hidden.bs.modal', function() {
+                console.log('✅ Modal hidden event - clearing video');
                 self.clearVideoPlayer();
             });
+        },
+
+        closeModal: function() {
+            var $modal = $('#storyVideoModal');
+            console.log('✅ Closing modal...');
+            
+            // ✅ پاک کردن ویدیو قبل از بستن
+            this.clearVideoPlayer();
+            
+            // ✅ بستن Modal با Bootstrap
+            $modal.modal('hide');
+            
+            // ✅ Fallback: بستن دستی اگر Bootstrap کار نکرد
+            setTimeout(function() {
+                if ($modal.hasClass('show')) {
+                    console.log('⚠️ Bootstrap modal.hide() failed, using manual close');
+                    $modal.removeClass('show');
+                    $modal.hide();
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('padding-right', '');
+                }
+            }, 300);
         },
 
         setupKeyboardNavigation: function() {
@@ -154,6 +202,27 @@
         if ($('.stories-section').length > 0) {
             StoriesModule.init();
             console.log('✅ Stories Module initialized');
+            
+            // ✅ تست Bootstrap Modal
+            if (typeof $.fn.modal === 'undefined') {
+                console.error('❌ Bootstrap Modal plugin not loaded!');
+            } else {
+                console.log('✅ Bootstrap Modal plugin loaded');
+            }
+            
+            // ✅ تست وجود Modal
+            if ($('#storyVideoModal').length === 0) {
+                console.error('❌ Story Video Modal not found in DOM!');
+            } else {
+                console.log('✅ Story Video Modal found in DOM');
+            }
+            
+            // ✅ تست وجود دکمه Close
+            if ($('#storyVideoModal .modal-close-btn').length === 0) {
+                console.error('❌ Modal close button not found!');
+            } else {
+                console.log('✅ Modal close button found');
+            }
         }
     });
 
