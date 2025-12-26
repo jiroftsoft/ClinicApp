@@ -240,10 +240,11 @@
           },
           
           onPrint: function() {
-            console.log('🖨️ V2: POS Payment - Print clicked');
-            if (currentReceptionId) {
-              printPaymentReceipt(currentReceptionId);
-            }
+            // ✅ DISABLED: استفاده از Print Manager به جای این callback
+            // این callback باعث duplicate call می‌شود
+            // چاپ از طریق event handler دکمه انجام می‌شود
+            console.log('🖨️ V2: POS Payment - Print clicked (handled by button event)');
+            // Do nothing - handled by button click event
           },
           
           onRetry: function() {
@@ -961,6 +962,12 @@
         console.log('🔓 FRONTEND: Finalize flag cleared');
         console.log('✅ FRONTEND: Reception Finalized flag set - ReceptionId:', receptionId);
         
+        // ✅ CRITICAL: Unmark Draft as Finalizing - چون Finalize موفق شد
+        if (window.AutoDraftManager && typeof window.AutoDraftManager.unmarkDraftAsFinalizing === 'function') {
+          window.AutoDraftManager.unmarkDraftAsFinalizing();
+          console.log('✅ FRONTEND: Draft unmarked as finalizing (success)');
+        }
+        
         toastr.success("پذیرش با موفقیت نهایی شد", 'موفق', {
           timeOut: 5000
         });
@@ -987,14 +994,35 @@
           }
           
           // ✅ Cleanup Event Handlers قبل از attach جدید (جلوگیری از چند بار attach)
-          $('#posPaymentPrintBtn').off('click');
-          $('#posPaymentPrintInsuranceBtn').off('click');
+          $('#posPaymentPrintBtn').off('click.print');
+          $('#posPaymentPrintInsuranceBtn').off('click.print');
           $('#posPaymentConfirmBtn').off('click');
           
-          // فعال کردن دکمه چاپ قبض پرداخت
-          $('#posPaymentPrintBtn').on('click', function() {
+          // ✅ فعال کردن دکمه چاپ قبض پرداخت با Print Manager
+          $('#posPaymentPrintBtn').on('click.print', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             console.log('🖨️ FRONTEND: چاپ قبض پرداخت - ReceptionId:', receptionId);
-            printPaymentReceipt(receptionId);
+            
+            // ✅ استفاده از Print Manager برای چاپ حرفه‌ای
+            if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+              var printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+              window.PrintManager.print(printUrl)
+                .then(function() {
+                  console.log('✅ FRONTEND: چاپ قبض پرداخت با موفقیت به صف اضافه شد');
+                })
+                .catch(function(err) {
+                  console.error('❌ FRONTEND: خطا در چاپ:', err);
+                  toastr.error(err.message || 'خطا در چاپ قبض پرداخت', 'خطا', {
+                    timeOut: 5000,
+                    closeButton: true
+                  });
+                });
+            } else {
+              // Fallback: استفاده از تابع قدیمی
+              console.warn('⚠️ FRONTEND: PrintManager not available, using fallback');
+              printPaymentReceipt(receptionId);
+            }
           });
           
           // ✅ اضافه کردن دکمه چاپ قبض بیمه تکمیلی (اگر وجود ندارد)
@@ -1008,10 +1036,31 @@
             $('#posPaymentPrintBtn').after($printInsuranceBtn);
           }
           
-          // فعال کردن دکمه چاپ قبض بیمه تکمیلی
-          $('#posPaymentPrintInsuranceBtn').on('click', function() {
+          // ✅ فعال کردن دکمه چاپ قبض بیمه تکمیلی با Print Manager
+          $('#posPaymentPrintInsuranceBtn').on('click.print', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             console.log('🖨️ FRONTEND: چاپ قبض بیمه تکمیلی - ReceptionId:', receptionId);
-            printInsuranceReceipt(receptionId);
+            
+            // ✅ استفاده از Print Manager برای چاپ حرفه‌ای
+            if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+              var printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
+              window.PrintManager.print(printUrl)
+                .then(function() {
+                  console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی با موفقیت به صف اضافه شد');
+                })
+                .catch(function(err) {
+                  console.error('❌ FRONTEND: خطا در چاپ:', err);
+                  toastr.error(err.message || 'خطا در چاپ قبض بیمه تکمیلی', 'خطا', {
+                    timeOut: 5000,
+                    closeButton: true
+                  });
+                });
+            } else {
+              // Fallback: استفاده از تابع قدیمی
+              console.warn('⚠️ FRONTEND: PrintManager not available, using fallback');
+              printInsuranceReceipt(receptionId);
+            }
           });
           
           // ✅ نمایش دکمه‌های چاپ
@@ -1325,10 +1374,18 @@
       if (receptionId && receptionId > 0) {
         console.log('🏥 V2: حذف Draft قبل از Reset فرم - ReceptionId:', receptionId);
         
-        // بررسی اینکه آیا Draft در حال نهایی شدن است (اگر در حال نهایی شدن است، حذف نکن)
+        // ✅ CRITICAL: بررسی اینکه آیا Reception قبلاً finalized شده است یا نه
+        // اگر finalized شده است، Draft را حذف نکن (چون دیگر Draft نیست، Reception است)
+        let isFinalized = false;
+        if (window._receptionFinalized === true) {
+          isFinalized = true;
+          console.log('✅ V2: Reception قبلاً finalized شده است - Draft حذف نمی‌شود');
+        }
+        
+        // ✅ بررسی اینکه آیا Draft در حال نهایی شدن است (اگر در حال نهایی شدن است، حذف نکن)
         // بررسی flag isDraftFinalizing از AutoDraftManager
         let isFinalizing = false;
-        if (window.AutoDraftManager) {
+        if (window.AutoDraftManager && !isFinalized) {
           // بررسی flag داخلی (اگر در دسترس باشد)
           // یا بررسی از طریق بررسی وضعیت فعلی
           try {
@@ -1341,7 +1398,16 @@
           }
         }
         
-        if (isFinalizing) {
+        // ✅ اگر finalized شده است، فقط Reset کنیم (بدون حذف Draft)
+        if (isFinalized) {
+          console.log('✅ V2: Reception finalized شده است - فقط Reset می‌کنیم (بدون حذف Draft)');
+          // Unmark Draft as Finalizing برای پذیرش بعدی
+          if (window.AutoDraftManager && typeof window.AutoDraftManager.unmarkDraftAsFinalizing === 'function') {
+            window.AutoDraftManager.unmarkDraftAsFinalizing();
+            console.log('✅ V2: Draft unmarked as finalizing (برای پذیرش بعدی)');
+          }
+          // ادامه می‌دهیم بدون حذف Draft
+        } else if (isFinalizing) {
           console.log('⚠️ V2: Draft در حال نهایی شدن است، حذف نمی‌شود');
           toastr.warning('در حال نهایی‌سازی پذیرش است. لطفاً صبر کنید...', 'هشدار', {
             timeOut: 3000
@@ -1681,7 +1747,9 @@
   /**
    * ✅ چاپ قبض پرداخت برای فیش پرینتر - Production-Grade
    * فرمت مناسب برای دستگاه‌های فیش پرینتر مثل SRP-330II (58mm)
-   * با مدیریت حرفه‌ای Popup Blocker و Error Handling
+   * با استفاده از Print Manager برای مدیریت حرفه‌ای
+   * 
+   * ⚠️ Fallback: اگر Print Manager موجود نباشد، از روش قدیمی استفاده می‌کند
    */
   function printPaymentReceipt(receptionId) {
     if (!receptionId) {
@@ -1696,119 +1764,106 @@
     
     console.log('🖨️ FRONTEND: چاپ قبض پرداخت - ReceptionId:', receptionId);
     
-    // ✅ استفاده از Route صحیح برای چاپ قبض پرداخت (فیش پرینتر)
-    var printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
-    console.log('🔗 FRONTEND: Print URL:', printUrl);
-    
-    // ✅ Production-Grade: استفاده از iframe برای جلوگیری از Popup Blocker
-    var printFrame = document.createElement('iframe');
-    printFrame.style.position = 'fixed';
-    printFrame.style.right = '0';
-    printFrame.style.bottom = '0';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = 'none';
-    printFrame.src = printUrl;
-    
-    // ✅ اضافه کردن iframe به DOM
-    document.body.appendChild(printFrame);
-    
-    // ✅ Event Handler برای بارگذاری iframe
-    printFrame.onload = function() {
-      console.log('✅ FRONTEND: Print iframe loaded successfully');
+    // ✅ استفاده از Print Manager (بهترین روش)
+    if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+      var printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+      console.log('🔗 FRONTEND: Print URL:', printUrl);
       
-      try {
-        // ✅ تاخیر کوتاه برای اطمینان از بارگذاری کامل
-        setTimeout(function() {
-          try {
-            // ✅ چاپ از iframe
-            printFrame.contentWindow.focus();
-            printFrame.contentWindow.print();
-            console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (iframe)');
-            
-            // ✅ حذف iframe بعد از چاپ (با تاخیر)
-            setTimeout(function() {
-              if (printFrame && printFrame.parentNode) {
-                printFrame.parentNode.removeChild(printFrame);
-                console.log('✅ FRONTEND: Print iframe removed');
-              }
-            }, 2000);
-          } catch (printErr) {
-            console.error('❌ FRONTEND: خطا در چاپ از iframe:', printErr);
-            // Fallback: استفاده از window.open
-            fallbackPrintWindow(printUrl);
-          }
-        }, 500);
-      } catch (err) {
-        console.error('❌ FRONTEND: Exception در onload handler:', err);
-        // Fallback: استفاده از window.open
-        fallbackPrintWindow(printUrl);
-      }
-    };
-    
-    // ✅ Error Handling برای iframe
-    printFrame.onerror = function() {
-      console.error('❌ FRONTEND: خطا در بارگذاری iframe');
-      // حذف iframe در صورت خطا
-      if (printFrame && printFrame.parentNode) {
-        printFrame.parentNode.removeChild(printFrame);
-      }
-      // Fallback: استفاده از window.open
-      fallbackPrintWindow(printUrl);
-    };
-    
-    // ✅ Timeout برای iframe (اگر بارگذاری نشد)
-    setTimeout(function() {
-      if (printFrame && printFrame.parentNode && !printFrame.contentWindow) {
-        console.warn('⚠️ FRONTEND: Print iframe timeout - using fallback');
-        printFrame.parentNode.removeChild(printFrame);
-        fallbackPrintWindow(printUrl);
-      }
-    }, 5000);
-    
-    // ✅ Helper Function: Fallback به window.open
-    function fallbackPrintWindow(url) {
-      try {
-        var printWindow = window.open(url, '_blank', 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no');
-        
-        if (printWindow) {
-          printWindow.onload = function() {
-            setTimeout(function() {
-              printWindow.print();
-              console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (fallback window.open)');
-            }, 500);
-          };
-          
-          printWindow.onerror = function() {
-            console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ (fallback)');
-            toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
-              timeOut: 7000,
-              positionClass: 'toast-top-center',
-              closeButton: true
-            });
-          };
-        } else {
-          console.error('❌ FRONTEND: window.open returned null - Popup blocker فعال است');
-          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید و دوباره تلاش کنید.', 'خطا', {
+      window.PrintManager.print(printUrl)
+        .then(function() {
+          console.log('✅ FRONTEND: چاپ قبض پرداخت با موفقیت به صف اضافه شد');
+        })
+        .catch(function(err) {
+          console.error('❌ FRONTEND: خطا در چاپ:', err);
+          toastr.error(err.message || 'خطا در چاپ قبض پرداخت', 'خطا', {
             timeOut: 7000,
             positionClass: 'toast-top-center',
             closeButton: true
           });
-        }
-      } catch (ex) {
-        console.error('❌ FRONTEND: Exception در fallbackPrintWindow:', ex);
-        toastr.error('خطا در چاپ قبض پرداخت: ' + (ex.message || 'خطای نامشخص'), 'خطا', {
+        });
+      return;
+    }
+    
+    // ✅ Fallback: روش قدیمی (اگر Print Manager موجود نباشد)
+    console.warn('⚠️ FRONTEND: PrintManager not available, using fallback method');
+    var printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+    
+    try {
+      var printWindow = window.open(printUrl, '_blank', 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+      
+      if (printWindow) {
+        var checkLoad = setInterval(function() {
+          try {
+            if (printWindow.document && printWindow.document.readyState === 'complete') {
+              clearInterval(checkLoad);
+              setTimeout(function() {
+                try {
+                  printWindow.focus();
+                  printWindow.print();
+                  console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (fallback)');
+                  setTimeout(function() {
+                    try {
+                      if (printWindow && !printWindow.closed) {
+                        printWindow.close();
+                      }
+                    } catch (closeErr) {
+                      console.warn('⚠️ FRONTEND: Cannot close print window:', closeErr);
+                    }
+                  }, 1000);
+                } catch (printErr) {
+                  console.error('❌ FRONTEND: خطا در چاپ:', printErr);
+                  toastr.warning('لطفاً از منوی مرورگر برای چاپ استفاده کنید.', 'توجه', {
+                    timeOut: 5000
+                  });
+                }
+              }, 500);
+            }
+          } catch (err) {
+            console.warn('⚠️ FRONTEND: Cannot check window state:', err);
+          }
+        }, 100);
+        
+        setTimeout(function() {
+          clearInterval(checkLoad);
+          try {
+            if (printWindow && !printWindow.closed) {
+              printWindow.focus();
+              printWindow.print();
+              console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (timeout fallback)');
+            }
+          } catch (err) {
+            console.warn('⚠️ FRONTEND: Cannot print after timeout:', err);
+          }
+        }, 5000);
+        
+        printWindow.onerror = function() {
+          console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ');
+          clearInterval(checkLoad);
+          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
+            timeOut: 7000,
+            positionClass: 'toast-top-center',
+            closeButton: true
+          });
+        };
+      } else {
+        console.error('❌ FRONTEND: window.open returned null - Popup blocker فعال است');
+        toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
           timeOut: 7000,
           positionClass: 'toast-top-center',
           closeButton: true
         });
       }
+    } catch (ex) {
+      console.error('❌ FRONTEND: Exception در printPaymentReceipt:', ex);
+      toastr.error('خطا در چاپ قبض پرداخت: ' + (ex.message || 'خطای نامشخص'), 'خطا');
     }
   }
   
   /**
-   * ✅ چاپ قبض بیمه تکمیلی برای فیش پرینتر
-   * استفاده از iframe برای جلوگیری از Popup Blocker (مشابه printPaymentReceipt)
+   * ✅ چاپ قبض بیمه تکمیلی برای فیش پرینتر - Production-Grade
+   * با استفاده از Print Manager برای مدیریت حرفه‌ای
+   * 
+   * ⚠️ Fallback: اگر Print Manager موجود نباشد، از روش قدیمی استفاده می‌کند
    */
   function printInsuranceReceipt(receptionId) {
     if (!receptionId) {
@@ -1819,95 +1874,97 @@
     
     console.log('🖨️ FRONTEND: چاپ قبض بیمه تکمیلی - ReceptionId:', receptionId);
     
-    var printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
-    console.log('🔗 FRONTEND: Print URL:', printUrl);
-    
-    // Helper function for fallback to window.open
-    function fallbackPrintWindow(url) {
-      try {
-        var printWindow = window.open(url, '_blank', 'width=400,height=600');
-        if (printWindow) {
-          printWindow.onload = function() {
-            setTimeout(function() {
-              printWindow.print();
-              console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (fallback)');
-            }, 500);
-          };
-          printWindow.onerror = function() {
-            console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ (fallback)');
-            toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا');
-          };
-        } else {
-          console.error('❌ FRONTEND: window.open returned null (fallback) - Popup blocker فعال است');
-          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا');
-        }
-      } catch (ex) {
-        console.error('❌ FRONTEND: Exception در fallbackPrintWindow:', ex);
-        toastr.error('خطا در چاپ قبض بیمه تکمیلی: ' + (ex.message || 'خطای نامشخص'), 'خطا');
-      }
+    // ✅ استفاده از Print Manager (بهترین روش)
+    if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+      var printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
+      console.log('🔗 FRONTEND: Print URL:', printUrl);
+      
+      window.PrintManager.print(printUrl)
+        .then(function() {
+          console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی با موفقیت به صف اضافه شد');
+        })
+        .catch(function(err) {
+          console.error('❌ FRONTEND: خطا در چاپ:', err);
+          toastr.error(err.message || 'خطا در چاپ قبض بیمه تکمیلی', 'خطا', {
+            timeOut: 5000,
+            closeButton: true
+          });
+        });
+      return;
     }
     
+    // ✅ Fallback: روش قدیمی (اگر Print Manager موجود نباشد)
+    console.warn('⚠️ FRONTEND: PrintManager not available, using fallback method');
+    var printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
+    
     try {
-      // ✅ استفاده از iframe برای چاپ (کنترل بیشتر و جلوگیری از Popup Blocker)
-      var printFrame = document.createElement('iframe');
-      printFrame.style.cssText = 'position:absolute;width:0;height:0;left:-9999px;top:-9999px;';
-      printFrame.src = printUrl;
-      document.body.appendChild(printFrame);
+      var printWindow = window.open(printUrl, '_blank', 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
       
-      printFrame.onload = function() {
-        try {
-          // ✅ تاخیر کوتاه برای اطمینان از بارگذاری کامل
-          setTimeout(function() {
-            try {
-              // ✅ چاپ از iframe
-              printFrame.contentWindow.focus();
-              printFrame.contentWindow.print();
-              console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (iframe)');
-              
-              // ✅ حذف iframe بعد از چاپ (با تاخیر)
+      if (printWindow) {
+        var checkLoad = setInterval(function() {
+          try {
+            if (printWindow.document && printWindow.document.readyState === 'complete') {
+              clearInterval(checkLoad);
               setTimeout(function() {
-                if (printFrame && printFrame.parentNode) {
-                  printFrame.parentNode.removeChild(printFrame);
-                  console.log('✅ FRONTEND: Print iframe removed');
+                try {
+                  printWindow.focus();
+                  printWindow.print();
+                  console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (fallback)');
+                  setTimeout(function() {
+                    try {
+                      if (printWindow && !printWindow.closed) {
+                        printWindow.close();
+                      }
+                    } catch (closeErr) {
+                      console.warn('⚠️ FRONTEND: Cannot close print window:', closeErr);
+                    }
+                  }, 1000);
+                } catch (printErr) {
+                  console.error('❌ FRONTEND: خطا در چاپ:', printErr);
+                  toastr.warning('لطفاً از منوی مرورگر برای چاپ استفاده کنید.', 'توجه', {
+                    timeOut: 5000
+                  });
                 }
-              }, 2000);
-            } catch (printErr) {
-              console.error('❌ FRONTEND: خطا در چاپ از iframe:', printErr);
-              // Fallback: استفاده از window.open
-              fallbackPrintWindow(printUrl);
+              }, 500);
             }
-          }, 500);
-        } catch (err) {
-          console.error('❌ FRONTEND: Exception در onload handler:', err);
-          // Fallback: استفاده از window.open
-          fallbackPrintWindow(printUrl);
-        }
-      };
-      
-      // ✅ Error Handling برای iframe
-      printFrame.onerror = function() {
-        console.error('❌ FRONTEND: خطا در بارگذاری iframe');
-        // حذف iframe در صورت خطا
-        if (printFrame && printFrame.parentNode) {
-          printFrame.parentNode.removeChild(printFrame);
-        }
-        // Fallback: استفاده از window.open
-        fallbackPrintWindow(printUrl);
-      };
-      
-      // ✅ Timeout برای iframe (اگر بارگذاری نشد)
-      setTimeout(function() {
-        if (printFrame && printFrame.parentNode && !printFrame.contentWindow) {
-          console.warn('⚠️ FRONTEND: Print iframe timeout - using fallback');
-          printFrame.parentNode.removeChild(printFrame);
-          fallbackPrintWindow(printUrl);
-        }
-      }, 5000);
-      
+          } catch (err) {
+            console.warn('⚠️ FRONTEND: Cannot check window state:', err);
+          }
+        }, 100);
+        
+        setTimeout(function() {
+          clearInterval(checkLoad);
+          try {
+            if (printWindow && !printWindow.closed) {
+              printWindow.focus();
+              printWindow.print();
+              console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (timeout fallback)');
+            }
+          } catch (err) {
+            console.warn('⚠️ FRONTEND: Cannot print after timeout:', err);
+          }
+        }, 5000);
+        
+        printWindow.onerror = function() {
+          console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ');
+          clearInterval(checkLoad);
+          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
+            timeOut: 7000,
+            positionClass: 'toast-top-center',
+            closeButton: true
+          });
+        };
+      } else {
+        console.error('❌ FRONTEND: window.open returned null - Popup blocker فعال است');
+        toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
+          timeOut: 7000,
+          positionClass: 'toast-top-center',
+          closeButton: true
+        });
+      }
     } catch (ex) {
-      console.error('❌ FRONTEND: Exception در printInsuranceReceipt (initial):', ex);
+      console.error('❌ FRONTEND: Exception در printInsuranceReceipt:', ex);
       toastr.error('خطا در چاپ قبض بیمه تکمیلی: ' + (ex.message || 'خطای نامشخص'), 'خطا');
-      fallbackPrintWindow(printUrl); // Fallback if initial iframe creation fails
     }
   }
   
@@ -1943,9 +2000,9 @@
     currentReceptionId = null;
     currentAmountIRR = null;
     
-    // ✅ Cleanup Event Handlers
-    $('#posPaymentPrintBtn').off('click');
-    $('#posPaymentPrintInsuranceBtn').off('click');
+    // ✅ Cleanup Event Handlers (با namespace برای جلوگیری از conflict)
+    $('#posPaymentPrintBtn').off('click.print');
+    $('#posPaymentPrintInsuranceBtn').off('click.print');
     $('#posPaymentConfirmBtn').off('click');
     
     // ✅ Reset Modal State
@@ -1955,6 +2012,17 @@
     
     // ✅ CRITICAL: Reset فرم بعد از بستن Modal
     console.log('🔄 FRONTEND: Reset فرم بعد از بستن Modal...');
+    
+    // ✅ CRITICAL: اگر Reception finalized شده است، Unmark Draft as Finalizing
+    // این باید قبل از resetForm() انجام شود
+    if (window._receptionFinalized === true) {
+      console.log('✅ FRONTEND: Reception finalized شده است - Unmarking Draft as Finalizing...');
+      if (window.AutoDraftManager && typeof window.AutoDraftManager.unmarkDraftAsFinalizing === 'function') {
+        window.AutoDraftManager.unmarkDraftAsFinalizing();
+        console.log('✅ FRONTEND: Draft unmarked as finalizing (برای پذیرش بعدی)');
+      }
+    }
+    
     if (typeof resetForm === 'function') {
       resetForm().then(function() {
         console.log('✅ FRONTEND: فرم با موفقیت Reset شد');

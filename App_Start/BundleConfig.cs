@@ -190,6 +190,7 @@ namespace ClinicApp
                 "~/Scripts/pos-payment/pos-payment-lock-manager.js", // ✅ NEW: Lock Manager برای جلوگیری از Stuck Payments
                 "~/Scripts/pos-payment/pos-payment-client.js", // ✅ ماژول جدید POS Payment Client
                 "~/Scripts/pos-payment/pos-payment-ui.js", // ✅ ماژول جدید POS Payment UI
+                "~/Scripts/reception.v2/print-manager.js", // ✅ NEW: Print Manager برای مدیریت حرفه‌ای چاپ (Single Window Reuse, Queue, Debounce)
                 "~/Scripts/reception.v2/payment-panel.js",
                 "~/Scripts/reception.v2/reception-main.js"
             );

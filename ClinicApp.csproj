@@ -5712,6 +5712,7 @@
     <Content Include="Scripts\reception.v2\patient-lookup.js" />
     <Content Include="Scripts\reception.v2\payment-panel.js" />
     <Content Include="Scripts\reception.v2\pricing-ui.js" />
+    <Content Include="Scripts\reception.v2\print-manager.js" />
     <Content Include="Scripts\reception.v2\reception-api.js" />
     <Content Include="Scripts\reception.v2\reception-edit.js" />
     <Content Include="Scripts\reception.v2\reception-list.js" />
