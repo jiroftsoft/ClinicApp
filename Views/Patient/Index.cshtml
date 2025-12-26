@@ -1,7 +1,8 @@
 ﻿@model ClinicApp.ViewModels.PatientIndexPageViewModel
 
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "مدیریت بیماران";
 }
 
 <div class="container-fluid">
@@ -266,7 +267,7 @@
             var token = $('input[name="__RequestVerificationToken"]').val();
 
             $.ajax({
-                url: '@Url.Action("LoadPatients", "Patient")',
+                url: '@Url.Action("LoadPatients", "Patient", new { area = "" })',
                 type: 'POST',
                 data: {
                     __RequestVerificationToken: token,

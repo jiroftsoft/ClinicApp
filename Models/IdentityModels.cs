@@ -110,6 +110,11 @@ namespace ClinicApp.Models
         public DbSet<CashSession> CashSessions { get; set; }
         public DbSet<PosTerminal> PosTerminals { get; set; }
         
+        // ========== موجودیت‌های جدید برای Audit Trail و Performance - 1404/10/05 ==========
+        public DbSet<CashSessionAuditLog> CashSessionAuditLogs { get; set; }
+        public DbSet<PaymentDiscrepancy> PaymentDiscrepancies { get; set; }
+        public DbSet<CashierPerformanceMetrics> CashierPerformanceMetrics { get; set; }
+        
         // ========== موجودیت‌های جدید برای پرداخت‌های آنلاین ==========
         public DbSet<PaymentGateway> PaymentGateways { get; set; }
         public DbSet<OnlinePayment> OnlinePayments { get; set; }

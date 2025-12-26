@@ -1296,6 +1296,77 @@
         }
     };
 
+    /**
+     * Force Cleanup - Emergency method to reset all state
+     * 
+     * @param {string} reason - Reason for cleanup
+     * @param {string} message - User-friendly message
+     */
+    PosPaymentClient.prototype._forceCleanup = function(reason, message) {
+        this._log('warn', '🧹 Force cleanup - Reason: ' + reason);
+        
+        // Clear all timeouts
+        if (this.globalTimeoutId) {
+            clearTimeout(this.globalTimeoutId);
+            this.globalTimeoutId = null;
+        }
+        
+        if (this.currentPayment && this.currentPayment.transactionTimeoutId) {
+            clearTimeout(this.currentPayment.transactionTimeoutId);
+            this.currentPayment.transactionTimeoutId = null;
+        }
+        
+        // Reset state
+        this.isProcessing = false;
+        this.transactionResponseReceived = false;
+        this.serverMessage = '';
+        this.currentPayment = null;
+        this.retryCount = 0;
+        
+        // Notify UI
+        if (this.onCancel) {
+            this.onCancel({
+                reason: reason,
+                message: message || 'پرداخت لغو شد'
+            });
+        }
+        
+        this._log('info', '✅ Force cleanup completed');
+    };
+
+    /**
+     * Cancel Payment - User-initiated cancellation
+     * 
+     * @param {string} reason - Reason for cancellation
+     */
+    PosPaymentClient.prototype.cancelPayment = function(reason) {
+        this._log('info', '🛑 Cancelling payment - Reason: ' + reason);
+        
+        if (!this.isProcessing) {
+            this._log('warn', '⚠️ No payment in progress to cancel');
+            return;
+        }
+        
+        // Try to notify server (best effort)
+        try {
+            if (this.isConnected && this.posHub && this.posHub.server && typeof this.posHub.server.cancelTransaction === 'function') {
+                var self = this;
+                this.posHub.server.cancelTransaction()
+                    .done(function() {
+                        self._log('info', '✅ Server notified of cancellation');
+                    })
+                    .fail(function(err) {
+                        self._log('warn', '⚠️ Failed to notify server: ' + (err ? err.message || err : 'Unknown error'));
+                    });
+            }
+        } catch (ex) {
+            this._log('error', '❌ Error notifying server: ' + ex.message);
+        }
+        
+        // Force cleanup regardless
+        this._forceCleanup(reason, 'پرداخت لغو شد');
+    };
+
     // ============================================
     // Export to Global Scope
     // ============================================

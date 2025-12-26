@@ -66,6 +66,7 @@ using ClinicApp.Repositories.Appointment;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.Repositories.CMS;
 using ClinicApp.Services.CMS;
+using ClinicApp.Services.Payment;
 
 namespace ClinicApp
 {
@@ -653,6 +654,12 @@ namespace ClinicApp
                 // ثبت ماژول پرداخت POS (Production-Ready)
                 container.RegisterType<IPosPaymentService, PosPaymentService>(new PerRequestLifetimeManager());
                 container.RegisterType<PosPaymentConfigurationService, PosPaymentConfigurationService>(new PerRequestLifetimeManager());
+                
+                // ========== ثبت سرویس‌های جدید برای Audit Trail و Performance - 1404/10/05 ==========
+                container.RegisterType<ICashierReportService, CashierReportService>(new PerRequestLifetimeManager());
+                container.RegisterType<ICashSessionAuditService, CashSessionAuditService>(new PerRequestLifetimeManager());
+                container.RegisterType<IPaymentReconciliationService, PaymentReconciliationService>(new PerRequestLifetimeManager());
+                container.RegisterType<ICashierPerformanceService, CashierPerformanceService>(new PerRequestLifetimeManager());
 
                 // Register Supplementary Tariff Seeder Service
                 container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());

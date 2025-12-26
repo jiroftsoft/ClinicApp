@@ -1648,18 +1648,31 @@ namespace ClinicApp.Controllers.Api
         [ValidateAntiForgeryTokenOnPosts]
         public async Task<ActionResult> FinalizeWithPos(Controllers.Api.FinalizePosRequest request)
         {
+            // ✅ Generate Correlation ID for tracking
+            var correlationId = System.Guid.NewGuid().ToString("N").Substring(0, 8);
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            
             try
             {
-                _logger?.Information("🏥 V1 API: نهایی‌سازی با POS - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                // ✅ Log START with all details
+                _logger?.Information("💰 POS PAYMENT START - CorrelationId: {CorrelationId}, ReceptionId: {ReceptionId}, Amount: {Amount}, IdempotencyKey: {IdempotencyKey}, UserAgent: {UserAgent}, IP: {IP}",
+                    correlationId, 
+                    request?.ReceptionId, 
+                    request?.Amount, 
+                    request?.IdempotencyKey,
+                    Request.UserAgent,
+                    Request.UserHostAddress);
 
                 if (request == null || request.ReceptionId <= 0)
                 {
+                    _logger?.Warning("⚠️ POS PAYMENT VALIDATION FAILED - CorrelationId: {CorrelationId}, Reason: Invalid ReceptionId", correlationId);
                     return Json(ServiceResult.Failed("درخواست نامعتبر است. ReceptionId الزامی است.", "VALIDATION"));
                 }
                 
                 // ✅ اعتبارسنجی اولیه مبلغ (validation دقیق‌تر در Facade انجام می‌شود)
                 if (request.Amount < 0)
                 {
+                    _logger?.Warning("⚠️ POS PAYMENT VALIDATION FAILED - CorrelationId: {CorrelationId}, Reason: Negative Amount: {Amount}", correlationId, request.Amount);
                     return Json(ServiceResult.Failed("مبلغ پرداخت نمی‌تواند منفی باشد.", "VALIDATION"));
                 }
 
@@ -1680,26 +1693,34 @@ namespace ClinicApp.Controllers.Api
                         } : null
                     };
 
+                    _logger?.Information("🔄 POS PAYMENT PROCESSING - CorrelationId: {CorrelationId}, Calling Facade...", correlationId);
+
                     var result = await _facade.FinalizePosAsync(facadeRequest);
+                    
+                    stopwatch.Stop();
                     
                     if (result.Success)
                     {
-                        _logger?.Information("✅ V1 API: پذیرش با موفقیت نهایی شد - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        _logger?.Information("✅ POS PAYMENT SUCCESS - CorrelationId: {CorrelationId}, ReceptionId: {ReceptionId}, Amount: {Amount}, Duration: {Duration}ms",
+                            correlationId, request.ReceptionId, request.Amount, stopwatch.ElapsedMilliseconds);
                     }
                     else
                     {
-                        _logger?.Warning("⚠️ V1 API: نهایی‌سازی پذیرش ناموفق - ReceptionId: {ReceptionId}, Error: {Error}", 
-                            request.ReceptionId, result.Message);
+                        _logger?.Warning("⚠️ POS PAYMENT FAILED - CorrelationId: {CorrelationId}, ReceptionId: {ReceptionId}, Error: {Error}, Code: {Code}, Duration: {Duration}ms", 
+                            correlationId, request.ReceptionId, result.Message, result.Code, stopwatch.ElapsedMilliseconds);
                     }
                     
                     return Json(result);
                 }
 
+                _logger?.Error("❌ POS PAYMENT ERROR - CorrelationId: {CorrelationId}, Reason: Facade is null", correlationId);
                 return Json(ServiceResult.Failed("سرویس در دسترس نیست.", "SERVICE_UNAVAILABLE"));
             }
             catch (Exception ex)
             {
-                _logger?.Error(ex, "❌ V1 API: خطا در نهایی‌سازی POS - ReceptionId: {ReceptionId}", request?.ReceptionId);
+                stopwatch.Stop();
+                _logger?.Error(ex, "❌ POS PAYMENT EXCEPTION - CorrelationId: {CorrelationId}, ReceptionId: {ReceptionId}, Duration: {Duration}ms, Exception: {Exception}",
+                    correlationId, request?.ReceptionId, stopwatch.ElapsedMilliseconds, ex.Message);
                 return Json(ServiceResult.Failed("UNHANDLED: " + ex.Message, "UNHANDLED").WithExceptionDev(ex));
             }
         }

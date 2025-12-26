@@ -390,25 +390,25 @@
 
             let html = `
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped">
-                        <thead class="table-dark">
+                    <table class="table table-hover table-striped table-bordered reception-list-table">
+                        <thead class="bg-primary text-white" style="background-color: #2c5aa0 !important;">
                             <tr>
-                                <th>شماره رسید</th>
-                                <th>شماره پذیرش</th>
-                                <th>شماره الکترونیکی</th>
-                                <th>بیمار</th>
-                                <th>کد ملی</th>
-                                <th>پزشک</th>
-                                <th>دپارتمان</th>
-                                <th>تاریخ پذیرش</th>
-                                <th>وضعیت</th>
-                                <th>مبلغ کل</th>
-                                <th>سهم بیمه پایه</th>
-                                <th>سهم بیمه تکمیلی</th>
-                                <th>سهم بیمار</th>
-                                <th>پرداخت شده</th>
-                                <th>باقی‌مانده</th>
-                                <th>عملیات</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">شماره رسید</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">شماره پذیرش</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">شماره الکترونیکی</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">بیمار</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">کد ملی</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">پزشک</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">دپارتمان</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">تاریخ پذیرش</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">وضعیت</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">مبلغ کل</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">سهم بیمه پایه</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">سهم بیمه تکمیلی</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">سهم بیمار</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">پرداخت شده</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">باقی‌مانده</th>
+                                <th class="text-center align-middle" style="font-weight: 600; font-size: 14px; padding: 12px 8px;">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>

@@ -1,0 +1,176 @@
+/**
+ * 🏥 Reception Error Toast Styles
+ * استایل‌های مخصوص نمایش خطاها برای منشی
+ * 
+ * @version 1.0.0
+ * @date 1404/10/05
+ */
+
+/* =====================================================
+   📱 TOAST LARGE - برای خوانایی بهتر منشی
+   ===================================================== */
+
+.toast-reception-error {
+  min-width: 450px !important;
+  max-width: 600px !important;
+  padding: 20px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3) !important;
+  border-right: 5px solid var(--medical-danger, #dc3545) !important;
+}
+
+.toast-message-large {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  font-family: 'Vazir', 'Tahoma', sans-serif !important;
+  white-space: pre-line !important; /* برای نمایش \n */
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* =====================================================
+   🎨 ERROR TOAST STYLING
+   ===================================================== */
+
+.toast-error.toast-reception-error {
+  background-color: #fff !important;
+  color: #333 !important;
+}
+
+.toast-error.toast-reception-error .toast-title {
+  color: var(--medical-danger, #dc3545) !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 2px solid rgba(220, 53, 69, 0.2) !important;
+}
+
+.toast-error.toast-reception-error .toast-message {
+  color: #555 !important;
+  font-weight: 500 !important;
+}
+
+/* =====================================================
+   🔘 CLOSE BUTTON
+   ===================================================== */
+
+.toast-reception-error .toast-close-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  color: var(--medical-danger, #dc3545) !important;
+  opacity: 0.8 !important;
+  transition: all 0.2s ease !important;
+}
+
+.toast-reception-error .toast-close-button:hover {
+  opacity: 1 !important;
+  transform: scale(1.2) !important;
+  color: #c82333 !important;
+}
+
+/* =====================================================
+   📋 VALIDATION ERRORS LIST
+   ===================================================== */
+
+.toast-reception-error ul {
+  margin: 10px 0 0 0 !important;
+  padding-right: 20px !important;
+  list-style: none !important;
+}
+
+.toast-reception-error ul li {
+  margin: 8px 0 !important;
+  padding: 8px !important;
+  background: rgba(220, 53, 69, 0.05) !important;
+  border-radius: 4px !important;
+  border-right: 3px solid var(--medical-danger, #dc3545) !important;
+}
+
+.toast-reception-error ul li::before {
+  content: '• ' !important;
+  color: var(--medical-danger, #dc3545) !important;
+  font-weight: 700 !important;
+  margin-left: 5px !important;
+}
+
+/* =====================================================
+   💡 HINT SECTION
+   ===================================================== */
+
+.toast-reception-error .hint-section {
+  margin-top: 15px !important;
+  padding: 12px !important;
+  background: rgba(13, 110, 253, 0.05) !important;
+  border-radius: 6px !important;
+  border-right: 3px solid var(--medical-info, #0d6efd) !important;
+}
+
+.toast-reception-error .hint-section strong {
+  color: var(--medical-info, #0d6efd) !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+}
+
+/* =====================================================
+   📞 SUPPORT SECTION
+   ===================================================== */
+
+.toast-reception-error .support-section {
+  margin-top: 15px !important;
+  padding: 10px !important;
+  background: rgba(255, 193, 7, 0.1) !important;
+  border-radius: 6px !important;
+  text-align: center !important;
+  font-size: 14px !important;
+  color: #856404 !important;
+}
+
+/* =====================================================
+   📱 RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .toast-reception-error {
+    min-width: 90vw !important;
+    max-width: 95vw !important;
+    margin: 10px !important;
+  }
+  
+  .toast-message-large {
+    font-size: 14px !important;
+  }
+}
+
+/* =====================================================
+   🎯 ANIMATION
+   ===================================================== */
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-reception-error {
+  animation: slideInRight 0.3s ease-out !important;
+}
+
+/* =====================================================
+   ✨ HOVER EFFECTS
+   ===================================================== */
+
+.toast-reception-error:hover {
+  box-shadow: 0 6px 25px rgba(220, 53, 69, 0.4) !important;
+  transform: translateY(-2px) !important;
+  transition: all 0.2s ease !important;
+}
+

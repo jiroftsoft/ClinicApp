@@ -246,12 +246,12 @@
                     <hr class="nav-divider">
 
                     <!-- Admin Modules Menu Section -->
-                    @Html.Partial("_AdminModulesMenu")
+                    @Html.Partial("~/Areas/Admin/Views/Shared/_AdminModulesMenu.cshtml")
 
                     <hr class="nav-divider">
 
                     <!-- CMS Menu Section -->
-                    @Html.Partial("_CMSMenu")
+                    @Html.Partial("~/Areas/Admin/Views/Shared/_CMSMenu.cshtml")
 
                     <hr class="nav-divider">
 
@@ -291,7 +291,7 @@
             <!-- Main Content -->
             <main id="main-content" class="main-content" role="main" aria-label="محتوای اصلی">
                 <!-- Breadcrumb Navigation -->
-                @Html.Partial("_Breadcrumb")
+                @Html.Partial("~/Areas/Admin/Views/Shared/_Breadcrumb.cshtml")
                 
                 @RenderBody()
             </main>
@@ -301,7 +301,7 @@
     <div data-notifications class="notifications-container"></div>
 
     <!-- Scripts -->
-    @Html.Partial("_ValidationToasts")
+    @Html.Partial("~/Views/Shared/_ValidationToasts.cshtml")
 
     <!-- Core Scripts -->
     @Scripts.Render("~/bundles/jquery")

@@ -559,6 +559,7 @@
     <Compile Include="Controllers\MedicalServiceInfoController.cs" />
     <Compile Include="Controllers\NewsletterController.cs" />
     <Compile Include="Controllers\PatientEducationController.cs" />
+    <Compile Include="Controllers\Payment\CashierDashboardController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
@@ -802,7 +803,11 @@
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
+    <Compile Include="Interfaces\Payment\ICashierPerformanceService.cs" />
+    <Compile Include="Interfaces\Payment\ICashierReportService.cs" />
+    <Compile Include="Interfaces\Payment\ICashSessionAuditService.cs" />
     <Compile Include="Interfaces\Payment\IOnlinePaymentRepository.cs" />
+    <Compile Include="Interfaces\Payment\IPaymentReconciliationService.cs" />
     <Compile Include="Interfaces\Payment\IPaymentService.cs" />
     <Compile Include="Interfaces\Payment\IPaymentTransactionRepository.cs" />
     <Compile Include="Interfaces\Payment\POS\ICashSessionRepository.cs" />
@@ -914,12 +919,27 @@
     <Compile Include="Migrations\202512260553032_AddDepartmentTypeField.Designer.cs">
       <DependentUpon>202512260553032_AddDepartmentTypeField.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.cs" />
+    <Compile Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.Designer.cs">
+      <DependentUpon>202512261144179_AddCashierAuditAndPerformanceEnt.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
+    <Compile Include="Models\DTOs\Payment\AuditSummary.cs" />
+    <Compile Include="Models\DTOs\Payment\CashierDailyReport.cs" />
+    <Compile Include="Models\DTOs\Payment\CashierMonthlyReport.cs" />
+    <Compile Include="Models\DTOs\Payment\CashierPerformanceComparison.cs" />
+    <Compile Include="Models\DTOs\Payment\CashierRanking.cs" />
+    <Compile Include="Models\DTOs\Payment\CashierSummary.cs" />
+    <Compile Include="Models\DTOs\Payment\CashSessionSummary.cs" />
+    <Compile Include="Models\DTOs\Payment\DiscrepancyDetail.cs" />
+    <Compile Include="Models\DTOs\Payment\DiscrepancyReport.cs" />
+    <Compile Include="Models\DTOs\Payment\DiscrepancySummary.cs" />
+    <Compile Include="Models\DTOs\Payment\ReconciliationReport.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Models\Entities\CMS\AboutPage.cs" />
     <Compile Include="Models\Entities\CMS\Announcement.cs" />
@@ -944,15 +964,21 @@
     <Compile Include="Models\Entities\CMS\Story.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
     <Compile Include="Models\Entities\CMS\Video.cs" />
+    <Compile Include="Models\Entities\Payment\CashierPerformanceMetrics.cs" />
+    <Compile Include="Models\Entities\Payment\CashSessionAuditLog.cs" />
+    <Compile Include="Models\Entities\Payment\PaymentDiscrepancy.cs" />
     <Compile Include="Models\Enums\ContactFormCategory.cs" />
     <Compile Include="Models\Enums\ContactFormStatus.cs" />
     <Compile Include="Models\Enums\DepartmentType.cs" />
+    <Compile Include="Models\Enums\DiscrepancyStatus.cs" />
+    <Compile Include="Models\Enums\DiscrepancyType.cs" />
     <Compile Include="Models\Enums\NewsletterCampaignStatus.cs" />
     <Compile Include="Models\Enums\NewsletterCategory.cs" />
     <Compile Include="Models\Enums\NewsletterRecipientStatus.cs" />
     <Compile Include="Models\Enums\NewsletterSubscriptionSource.cs" />
     <Compile Include="Models\Enums\PatientEducationCategory.cs" />
     <Compile Include="Models\Enums\VideoType.cs" />
+    <Compile Include="Models\Validators\PatientFastCreateValidator.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\CMS\AboutPageRepository.cs" />
@@ -1344,6 +1370,10 @@
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\NewsletterEmailService.cs" />
     <Compile Include="Services\NewsletterSmsService.cs" />
+    <Compile Include="Services\Payment\CashierPerformanceService.cs" />
+    <Compile Include="Services\Payment\CashierReportService.cs" />
+    <Compile Include="Services\Payment\CashSessionAuditService.cs" />
+    <Compile Include="Services\Payment\PaymentReconciliationService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishSignalRDriver.cs" />
@@ -1646,6 +1676,8 @@
     <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
     <Compile Include="ViewModels\Patient\TimeSlotSelectionViewModel.cs" />
+    <Compile Include="ViewModels\Payment\CashierDashboardViewModel.cs" />
+    <Compile Include="ViewModels\Payment\CashierStatsViewModel.cs" />
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementDtos.cs" />
@@ -1849,6 +1881,7 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
+    <Content Include="Content\cashier\cashier-dashboard.css" />
     <Content Include="Content\css\about-page.css" />
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\announcements-section.css" />
@@ -1897,6 +1930,7 @@
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\quick-appointment-section.css" />
+    <Content Include="Content\css\reception-error-toast.css" />
     <Content Include="Content\css\reception-form-header.css" />
     <Content Include="Content\css\reception-layout.css" />
     <Content Include="Content\css\reception-standards.css" />
@@ -2037,6 +2071,7 @@
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
+    <Content Include="Content\js\reception-error-handler.js" />
     <Content Include="Content\js\stories-component.js" />
     <Content Include="Content\js\video-modal.js" />
     <Content Include="Content\medical-forms.css" />
@@ -4614,8 +4649,42 @@
     <Content Include="Docs\Knowledge-Base\README.md" />
     <Content Include="Docs\Knowledge-Base\HelperExtensionsGuide.md" />
     <Content Include="Documentation\HelperExtensionsGuide.md" />
-    <Content Include="Docs\BREADCRUMB_NAVIGATION_GUIDE.md" />
     <Content Include="Areas\Admin\Views\Shared\_AdminModulesMenu.cshtml" />
+    <Content Include="Docs\14041004\BREADCRUMB_NAVIGATION_GUIDE.md" />
+    <Content Include="Docs\14041004\CLINIC_ROUTING_FIX_REPORT.md" />
+    <Content Include="Docs\14041004\DOMAIN_EXPERT_PAYMENT_TRANSACTION_AUDIT.md" />
+    <Content Include="Docs\14041004\NOTIFICATION_HELPER_USAGE_GUIDE.md" />
+    <Content Include="Docs\14041004\POS_MANAGEMENT_LAYOUT_UPDATE.md" />
+    <Content Include="Docs\14041004\PROJECT_MODULES_CATALOG.md" />
+    <Content Include="Docs\14041004\RECEPTION_FORM_COMPREHENSIVE_ANALYSIS.md" />
+    <Content Include="Docs\14041004\RECEPTION_FORM_HEADER_REMOVAL_REPORT.md" />
+    <Content Include="Docs\14041004\RECEPTION_FORM_IMPROVEMENTS_REPORT.md" />
+    <Content Include="Docs\14041004\RECEPTION_HEADER_CLEANUP_REPORT.md" />
+    <Content Include="Docs\14041004\RECEPTION_LAYOUT_FIX_REPORT.md" />
+    <Content Include="Docs\14041004\RECEPTION_LAYOUT_IMPLEMENTATION_REPORT.md" />
+    <Content Include="Docs\14041004\RECEPTION_V2_PAYMENT_POS_COMPLETE_ANALYSIS.md" />
+    <Content Include="Docs\14041005\ADMIN_NAVIGATION_SYSTEM_REPORT.md" />
+    <Content Include="Docs\14041005\ADMIN_ROUTING_COMPREHENSIVE_FIX.md" />
+    <Content Include="Docs\14041005\CASHIER_AUDIT_TRAIL_DEEP_ANALYSIS.md" />
+    <Content Include="Docs\14041005\CRITICAL_PAYMENT_NOT_SAVED_ANALYSIS.md" />
+    <Content Include="Docs\14041005\DEPARTMENT_TYPE_FEATURE_GUIDE.md" />
+    <Content Include="Docs\14041005\ERROR_HANDLER_IMPLEMENTATION_REPORT.md" />
+    <Content Include="Docs\14041005\PATIENT_CREATE_BULLETPROOF_FIX.md" />
+    <Content Include="Docs\14041005\PATIENT_INDEX_LOADPATIENTS_ROUTING_FIX.md" />
+    <Content Include="Docs\14041005\PHASE1_IMPLEMENTATION_SUMMARY.md" />
+    <Content Include="Docs\14041005\PHASE1_VALIDATION_IMPLEMENTATION_REPORT.md" />
+    <Content Include="Docs\14041005\POS_PAYMENT_BULLETPROOF_IMPLEMENTATION_SUMMARY.md" />
+    <Content Include="Docs\14041005\POS_PAYMENT_LOCK_BULLETPROOF_SOLUTION.md" />
+    <Content Include="Docs\14041005\RECEPTION_MODAL_BACKDROP_BULLETPROOF_FIX.md" />
+    <Content Include="Docs\14041005\RECEPTION_OPTIMIZATION_ROADMAP.md" />
+    <Content Include="Docs\14041005\SHARED_SERVICE_COMPREHENSIVE_ANALYSIS.md" />
+    <Content Include="Docs\14041005\SYSTEMSEED_COMPREHENSIVE_ANALYSIS.md" />
+    <Content Include="Docs\14041005\TODO_PHASE1_DATABASE_ENTITIES.md" />
+    <Content Include="Docs\14041005\TODO_PHASE2_SERVICES_REPORTS.md" />
+    <Content Include="Docs\Knowledge-Base\08-MVC-Routing-Best-Practices.md" />
+    <Content Include="Docs\Knowledge-Base\CHANGELOG.md" />
+    <Content Include="Docs\Knowledge-Base\CRITICAL-FINANCIAL-MODULE-CONTRACT.md" />
+    <Content Include="Docs\Knowledge-Base\SUMMARY.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5245,6 +5314,7 @@
     <Content Include="Content\plugins\DataTables\js\responsive.jqueryui.min.js" />
     <Content Include="Content\plugins\DataTables\js\responsive.semanticui.js" />
     <Content Include="Content\plugins\DataTables\js\responsive.semanticui.min.js" />
+    <Content Include="Scripts\cashier\cashier-dashboard.js" />
     <Content Include="Scripts\chart.js" />
     <Content Include="Scripts\chart.min.js" />
     <Content Include="Content\plugins\ckeditor\adapters\jquery.js" />
@@ -5631,6 +5701,7 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
     <Content Include="Scripts\popper.min.js" />
     <Content Include="Scripts\pos-payment\pos-payment-client.js" />
+    <Content Include="Scripts\pos-payment\pos-payment-lock-manager.js" />
     <Content Include="Scripts\pos-payment\pos-payment-ui.js" />
     <Content Include="Scripts\reception.v2\auto-draft-manager.js" />
     <Content Include="Scripts\reception.v2\clinic-dept-doctor.js" />
@@ -5646,6 +5717,8 @@
     <Content Include="Scripts\reception.v2\reception-list.js" />
     <Content Include="Scripts\reception.v2\reception-main.js" />
     <Content Include="Scripts\reception.v2\reception-utils.js" />
+    <Content Include="Scripts\reception.v2\reception-validator.js" />
+    <Content Include="Scripts\reception.v2\service-eligibility-validator.js" />
     <Content Include="Scripts\reception.v2\service-lookup.js" />
     <Content Include="Scripts\reception.v2\summary-header.js" />
     <Content Include="Scripts\reception.v2\totals-panel.js" />
@@ -6046,6 +6119,10 @@
     <Content Include="Views\Home\Sections\_StoriesSection.cshtml" />
     <Content Include="Views\Shared\_ReceptionLayout.cshtml" />
     <Content Include="Views\Shared\_BreadcrumbReception.cshtml" />
+    <Content Include="Scripts\pos-payment\README.md" />
+    <Content Include="Views\Payment\CashierDashboard\Index.cshtml" />
+    <Content Include="Views\Payment\CashierDashboard\_StatsPartial.cshtml" />
+    <Content Include="Views\Payment\CashierDashboard\_TopPerformersPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6287,6 +6364,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512260553032_AddDepartmentTypeField.resx">
       <DependentUpon>202512260553032_AddDepartmentTypeField.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.resx">
+      <DependentUpon>202512261144179_AddCashierAuditAndPerformanceEnt.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

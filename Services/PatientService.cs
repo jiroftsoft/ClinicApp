@@ -689,32 +689,166 @@ namespace ClinicApp.Services
                         SecurityLevel.Low);
                 }
 
-                // بررسی وجود کد ملی تکراری
-                bool nationalCodeExists = await _context.Patients
-                    .AnyAsync(p => p.NationalCode == normalizedNationalCode && !p.IsDeleted);
+                // ✅ BULLETPROOF: بررسی کامل وجود Patient و ApplicationUser
+                // 1️⃣ بررسی Patient فعال
+                var existingPatient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.NationalCode == normalizedNationalCode && !p.IsDeleted);
 
-                if (nationalCodeExists)
+                if (existingPatient != null)
                 {
-                    _log.Warning("تلاش برای ایجاد بیمار با کد ملی تکراری: {NationalCode}", normalizedNationalCode);
-                    return ServiceResult.Failed(
+                    _log.Warning("تلاش برای ایجاد بیمار با کد ملی تکراری: {NationalCode}, PatientId: {PatientId}", 
+                        normalizedNationalCode, existingPatient.PatientId);
+                    return ServiceResult.FailedWithValidationErrors(
                         "بیماری با این کد ملی قبلاً ثبت شده است.",
-                        "DUPLICATE_NATIONAL_CODE",
-                        ErrorCategory.Validation,
-                        SecurityLevel.Low);
+                        new List<ValidationError> 
+                        { 
+                            new ValidationError("NationalCode", "بیماری با این کد ملی قبلاً ثبت شده است.") 
+                        },
+                        "DUPLICATE_NATIONAL_CODE");
                 }
 
-                // بررسی وجود شماره موبایل تکراری
-                bool phoneNumberExists = await _context.Patients
-                    .AnyAsync(p => p.PhoneNumber == normalizedPhoneNumber && !p.IsDeleted);
+                // 2️⃣ بررسی شماره موبایل تکراری (فقط در Patient های فعال)
+                var patientWithPhone = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PhoneNumber == normalizedPhoneNumber && !p.IsDeleted);
 
-                if (phoneNumberExists)
+                if (patientWithPhone != null)
                 {
-                    _log.Warning("تلاش برای ایجاد بیمار با شماره موبایل تکراری: {PhoneNumber}", normalizedPhoneNumber);
-                    return ServiceResult.Failed(
+                    _log.Warning("تلاش برای ایجاد بیمار با شماره موبایل تکراری: {PhoneNumber}, PatientId: {PatientId}", 
+                        normalizedPhoneNumber, patientWithPhone.PatientId);
+                    return ServiceResult.FailedWithValidationErrors(
                         "بیماری با این شماره موبایل قبلاً ثبت شده است.",
-                        "DUPLICATE_PHONE_NUMBER",
-                        ErrorCategory.Validation,
-                        SecurityLevel.Low);
+                        new List<ValidationError> 
+                        { 
+                            new ValidationError("Mobile", "بیماری با این شماره موبایل قبلاً ثبت شده است.") 
+                        },
+                        "DUPLICATE_PHONE_NUMBER");
+                }
+
+                // 3️⃣ ✅ CRITICAL FIX: بررسی ApplicationUser موجود
+                var existingUser = await _userManager.FindByNameAsync(normalizedNationalCode);
+                bool userAlreadyExists = existingUser != null;
+
+                if (userAlreadyExists)
+                {
+                    _log.Warning("✅ ApplicationUser با این کد ملی قبلاً ثبت شده است (احتمالاً Patient حذف شده) - NationalCode: {NationalCode}, UserId: {UserId}", 
+                        normalizedNationalCode, existingUser.Id);
+                    
+                    // بررسی اینکه آیا Patient حذف شده وجود دارد یا خیر
+                    var deletedPatient = await _context.Patients
+                        .FirstOrDefaultAsync(p => p.NationalCode == normalizedNationalCode && p.IsDeleted);
+                    
+                    if (deletedPatient != null)
+                    {
+                        _log.Information("✅ Patient حذف شده یافت شد - PatientId: {PatientId}, ایجاد Patient جدید با استفاده از ApplicationUser موجود", 
+                            deletedPatient.PatientId);
+                        
+                        // Patient حذف شده را بازیابی می‌کنیم (Restore)
+                        deletedPatient.IsDeleted = false;
+                        deletedPatient.DeletedAt = null;
+                        deletedPatient.DeletedByUserId = null;
+                        deletedPatient.UpdatedAt = DateTime.UtcNow;
+                        deletedPatient.UpdatedByUserId = _currentUserService.UserId;
+                        
+                        // به‌روزرسانی اطلاعات با داده‌های جدید
+                        deletedPatient.FirstName = model.FirstName;
+                        deletedPatient.LastName = model.LastName;
+                        deletedPatient.PhoneNumber = normalizedPhoneNumber;
+                        deletedPatient.Email = model.Email;
+                        deletedPatient.Gender = model.Gender;
+                        deletedPatient.Address = model.Address;
+                        deletedPatient.PatientCode = model.PatientCode;
+                        
+                        // تبدیل تاریخ تولد
+                        if (!string.IsNullOrWhiteSpace(model.BirthDateShamsi))
+                        {
+                            try
+                            {
+                                deletedPatient.BirthDate = PersianDateHelper.ToGregorianDate(model.BirthDateShamsi);
+                            }
+                            catch
+                            {
+                                return ServiceResult.FailedWithValidationErrors(
+                                    "تاریخ تولد وارد شده معتبر نیست.",
+                                    new List<ValidationError> 
+                                    { 
+                                        new ValidationError("BirthDateShamsi", "تاریخ تولد وارد شده معتبر نیست. فرمت صحیح: yyyy/MM/dd") 
+                                    },
+                                    "INVALID_BIRTH_DATE");
+                            }
+                        }
+                        
+                        // به‌روزرسانی ApplicationUser
+                        existingUser.FirstName = model.FirstName;
+                        existingUser.LastName = model.LastName;
+                        existingUser.PhoneNumber = normalizedPhoneNumber;
+                        existingUser.Email = model.Email;
+                        existingUser.Gender = model.Gender;
+                        existingUser.Address = model.Address;
+                        existingUser.IsActive = true;
+                        existingUser.IsDeleted = false;
+                        existingUser.UpdatedAt = DateTime.UtcNow;
+                        existingUser.UpdatedByUserId = _currentUserService.UserId;
+                        
+                        await _userManager.UpdateAsync(existingUser);
+                        await _context.SaveChangesAsync();
+                        
+                        _log.Information("✅ Patient حذف شده با موفقیت بازیابی شد - PatientId: {PatientId}, NationalCode: {NationalCode}", 
+                            deletedPatient.PatientId, normalizedNationalCode);
+                        
+                        return ServiceResult.Successful(
+                            "بیمار با موفقیت بازیابی و به‌روزرسانی شد.",
+                            operationName: "RestorePatient",
+                            userId: existingUser.Id,
+                            userFullName: existingUser.FullName,
+                            securityLevel: SecurityLevel.Medium);
+                    }
+                    else
+                    {
+                        // ApplicationUser وجود دارد اما Patient وجود ندارد (حالت غیرعادی)
+                        // این نباید اتفاق بیفتد، اما برای Bulletproof کد می‌تونیم Patient جدید ایجاد کنیم
+                        _log.Warning("⚠️ حالت غیرعادی: ApplicationUser موجود است اما Patient وجود ندارد - NationalCode: {NationalCode}, UserId: {UserId}", 
+                            normalizedNationalCode, existingUser.Id);
+                        
+                        return ServiceResult.FailedWithValidationErrors(
+                            "کاربری با این کد ملی قبلاً ثبت شده است اما اطلاعات بیمار یافت نشد. لطفاً با پشتیبانی تماس بگیرید.",
+                            new List<ValidationError> 
+                            { 
+                                new ValidationError("NationalCode", "کاربری با این کد ملی قبلاً ثبت شده است اما اطلاعات بیمار یافت نشد. لطفاً با پشتیبانی تماس بگیرید.") 
+                            },
+                            "USER_EXISTS_PATIENT_MISSING");
+                    }
+                }
+
+                // 4️⃣ ✅ Email Validation قبل از ایجاد User
+                if (!string.IsNullOrWhiteSpace(model.Email))
+                {
+                    // بررسی فرمت Email
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(model.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                    {
+                        _log.Warning("Email نامعتبر برای ایجاد بیمار: {Email}", model.Email);
+                        return ServiceResult.FailedWithValidationErrors(
+                            "آدرس ایمیل وارد شده معتبر نیست.",
+                            new List<ValidationError> 
+                            { 
+                                new ValidationError("Email", "آدرس ایمیل وارد شده معتبر نیست. مثال: example@domain.com") 
+                            },
+                            "INVALID_EMAIL");
+                    }
+                    
+                    // بررسی Email تکراری
+                    var userWithEmail = await _userManager.FindByEmailAsync(model.Email);
+                    if (userWithEmail != null)
+                    {
+                        _log.Warning("تلاش برای ایجاد بیمار با ایمیل تکراری: {Email}, UserId: {UserId}", 
+                            model.Email, userWithEmail.Id);
+                        return ServiceResult.FailedWithValidationErrors(
+                            "کاربری با این ایمیل قبلاً ثبت شده است.",
+                            new List<ValidationError> 
+                            { 
+                                new ValidationError("Email", "کاربری با این ایمیل قبلاً ثبت شده است.") 
+                            },
+                            "DUPLICATE_EMAIL");
+                    }
                 }
 
                 // بیمه آزاد حذف شد - از PatientInsurance استفاده کنید
@@ -751,21 +885,37 @@ namespace ClinicApp.Services
                     PatientCode = model.PatientCode
                 };
 
-                // تبدیل تاریخ شمسی به میلادی
-                if (!string.IsNullOrWhiteSpace(model.BirthDateShamsi))
+                // ✅ BULLETPROOF: تبدیل تاریخ تولد (اولویت با BirthDate مستقیم، سپس BirthDateShamsi)
+                if (model.BirthDate.HasValue)
                 {
+                    // اگر BirthDate مستقیماً آمده (از API)، از آن استفاده کن
+                    patient.BirthDate = model.BirthDate.Value;
+                    _log.Information("✅ BirthDate مستقیماً از model استفاده شد - BirthDate: {BirthDate}", model.BirthDate.Value);
+                }
+                else if (!string.IsNullOrWhiteSpace(model.BirthDateShamsi))
+                {
+                    // اگر BirthDateShamsi آمده، تبدیل به میلادی کن
                     try
                     {
                         patient.BirthDate = PersianDateHelper.ToGregorianDate(model.BirthDateShamsi);
+                        _log.Information("✅ BirthDate از BirthDateShamsi تبدیل شد - BirthDateShamsi: {BirthDateShamsi}, BirthDate: {BirthDate}", 
+                            model.BirthDateShamsi, patient.BirthDate);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _log.Warning(ex, "❌ خطا در تبدیل BirthDateShamsi - BirthDateShamsi: {BirthDateShamsi}", model.BirthDateShamsi);
                         return ServiceResult.Failed(
                             "تاریخ تولد وارد شده معتبر نیست.",
                             "INVALID_BIRTH_DATE",
                             ErrorCategory.Validation,
                             SecurityLevel.Low);
                     }
+                }
+                else
+                {
+                    // هیچ تاریخ تولدی نیامده، null باقی می‌ماند
+                    patient.BirthDate = null;
+                    _log.Information("ℹ️ BirthDate ارسال نشده، null باقی ماند");
                 }
 
                 // تنظیم بیمه حذف شد - از PatientInsurance استفاده کنید
@@ -782,17 +932,55 @@ namespace ClinicApp.Services
                 {
                     try
                     {
-                        // ایجاد کاربر در Identity
+                        // ✅ BULLETPROOF: ایجاد کاربر در Identity با Error Handling کامل
                         var identityResult = await _userManager.CreateAsync(newUser);
                         if (!identityResult.Succeeded)
                         {
                             transaction.Rollback();
+                            
+                            // ✅ تبدیل خطاهای Identity به پیام‌های کاربرپسند
+                            var validationErrors = new List<ValidationError>();
+                            foreach (var error in identityResult.Errors)
+                            {
+                                string fieldName = "Identity";
+                                string userFriendlyMessage = error;
+                                
+                                // تشخیص نوع خطا و تبدیل به پیام فارسی
+                                if (error.Contains("Name") && error.Contains("already taken"))
+                                {
+                                    fieldName = "NationalCode";
+                                    userFriendlyMessage = "کاربری با این کد ملی قبلاً در سیستم ثبت شده است.";
+                                }
+                                else if (error.Contains("Email") && error.Contains("already taken"))
+                                {
+                                    fieldName = "Email";
+                                    userFriendlyMessage = "کاربری با این ایمیل قبلاً در سیستم ثبت شده است.";
+                                }
+                                else if (error.Contains("Email") && error.Contains("invalid"))
+                                {
+                                    fieldName = "Email";
+                                    userFriendlyMessage = "آدرس ایمیل وارد شده معتبر نیست.";
+                                }
+                                else if (error.Contains("PhoneNumber"))
+                                {
+                                    fieldName = "Mobile";
+                                    userFriendlyMessage = "شماره موبایل وارد شده معتبر نیست.";
+                                }
+                                else
+                                {
+                                    // برای خطاهای دیگر، از پیام اصلی استفاده کن
+                                    userFriendlyMessage = error;
+                                }
+                                
+                                validationErrors.Add(new ValidationError(fieldName, userFriendlyMessage));
+                            }
+                            
                             _log.Warning("ایجاد کاربر شکست خورد. کد ملی: {NationalCode}، خطاها: {@Errors}",
-                                normalizedNationalCode, identityResult.Errors);
+                                normalizedNationalCode, validationErrors);
 
                             return ServiceResult.FailedWithValidationErrors(
-                                "خطاهای اعتبارسنجی رخ داده است.",
-                                identityResult.Errors.Select(e => new ValidationError("Identity", e)),
+                                "ثبت بیمار ناموفق بود. لطفاً موارد زیر را بررسی کنید:",
+                                validationErrors,
                                 "IDENTITY_VALIDATION_ERROR");
                         }
 

@@ -18,13 +18,23 @@
 5. **راهنمای کامل Helpers** - 50+ Helper با مثال
 6. **راهنمای کامل Extensions** - 6 Extension با مثال
 7. **Quick Reference** - دسترسی سریع به توابع
-8. **Best Practices** - بهترین روش‌های استفاده
+8. **MVC Routing Best Practices** 🛣️ - درس‌های گرانبها از تجربه واقعی (جدید!)
 
 ---
 
 ## 🚨 الزامی قبل از هر کاری!
 
-### ⚡ این سه فایل را باید حفظ باشید:
+### ⚡ این فایل‌ها را باید حفظ باشید:
+
+#### 🚨 **فوق‌العاده مهم:**
+0. **[CRITICAL-FINANCIAL-MODULE-CONTRACT.md](CRITICAL-FINANCIAL-MODULE-CONTRACT.md)** 💰
+   - **الزامی برای هر تغییر در صندوق، پرداخت، گزارش، محاسبات**
+   - 10 قانون طلایی
+   - **کوچکترین اشتباه = مشکل حقوقی!**
+   - Checklist قبل از تغییر
+   - **این قرارداد نقض‌ناپذیر است**
+
+#### ⚡ **کلیدی:**
 
 1. **[03-Development-Contract-Quick-Guide.md](03-Development-Contract-Quick-Guide.md)**
    - استانداردهای توسعه
@@ -55,12 +65,14 @@
 Docs/Knowledge-Base/
 ├── README.md (این فایل)
 ├── INDEX.md (فهرست کامل)
+├── CRITICAL-FINANCIAL-MODULE-CONTRACT.md 🚨💰 الزامی مالی!
 ├── 01-Helpers-DateTime.md
 ├── 02-Helpers-Validation.md
 ├── 03-Development-Contract-Quick-Guide.md ⚡ الزامی
 ├── 04-TODO-Implementation-Guide.md ⚡ الزامی
 ├── 05-Debugging-Specialist-Contract.md 🔧 الزامی
 ├── 06-Quick-Reference.md
+├── 08-MVC-Routing-Best-Practices.md 🛣️ جدید!
 └── HelperExtensionsGuide.md 🧰 جعبه ابزار (100+ متد)
 ```
 

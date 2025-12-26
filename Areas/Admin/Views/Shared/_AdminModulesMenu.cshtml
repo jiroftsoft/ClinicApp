@@ -46,7 +46,10 @@
         new { Name = "AppointmentAvailability", Title = "دسترس‌پذیری نوبت", Icon = "fa-calendar-check", Controller = "AppointmentAvailability", Action = (string)null, Category = "مدیریت نوبت‌ها" },
         new { Name = "ScheduleOptimization", Title = "بهینه‌سازی برنامه", Icon = "fa-chart-bar", Controller = "ScheduleOptimization", Action = (string)null, Category = "مدیریت نوبت‌ها" },
         
-        // 6️⃣ تنظیمات سیستم
+        // 6️⃣ مدیریت مالی
+        new { Name = "CashierDashboard", Title = "داشبورد منشی‌ها", Icon = "fa-tachometer-alt", Controller = "CashierDashboard", Action = (string)null, Category = "مدیریت مالی" },
+        
+        // 7️⃣ تنظیمات سیستم
         new { Name = "FactorSetting", Title = "تنظیمات ضرایب", Icon = "fa-sliders-h", Controller = "FactorSetting", Action = (string)null, Category = "تنظیمات سیستم" },
         new { Name = "InsuranceTypeUpdate", Title = "به‌روزرسانی بیمه", Icon = "fa-sync-alt", Controller = "InsuranceTypeUpdate", Action = (string)null, Category = "تنظیمات سیستم" },
         new { Name = "SystemSeed", Title = "داده‌های اولیه", Icon = "fa-database", Controller = "SystemSeed", Action = (string)null, Category = "تنظیمات سیستم" }
@@ -98,6 +101,9 @@
                         case "مدیریت نوبت‌ها":
                             <i class="fas fa-calendar-alt"></i>
                             break;
+                        case "مدیریت مالی":
+                            <i class="fas fa-credit-card"></i>
+                            break;
                         case "تنظیمات سیستم":
                             <i class="fas fa-cog"></i>
                             break;
@@ -116,7 +122,9 @@
                                       (string.IsNullOrEmpty(module.Action) || actionName.Equals(module.Action, StringComparison.OrdinalIgnoreCase));
                         
                         var moduleUrl = string.IsNullOrEmpty(module.Action) 
-                            ? Url.Action("Index", module.Controller, new { area = "Admin" })
+                            ? (module.Controller == "CashierDashboard" 
+                                ? Url.Action("Index", "CashierDashboard", new { area = "" }) 
+                                : Url.Action("Index", module.Controller, new { area = "Admin" }))
                             : Url.Action(module.Action, module.Controller, new { area = "Admin" });
                         
                         <li class="admin-modules-menu-item @(isActive ? "active" : "")">

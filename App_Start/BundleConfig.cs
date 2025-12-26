@@ -154,6 +154,7 @@ namespace ClinicApp
                 "~/Content/toastr.min.css",
                 "~/Content/css/breadcrumb-medical.css",  // ✅ Breadcrumb Navigation برای سیستم‌های درمانی
                 "~/Content/css/reception-form-header.css",  // ✅ Enhanced Header برای فرم پذیرش
+                "~/Content/css/reception-error-toast.css",  // ✅ استایل خطاهای کاربرپسند برای منشی
                 "~/Content/reception.v2.css"
             ));
 
@@ -170,6 +171,9 @@ namespace ClinicApp
                 "~/Scripts/lodash.debounce.min.js",
                 "~/Scripts/jquery.inputmask.bundle.min.js",
                 "~/Scripts/jquery.signalR-2.4.2.min.js", // ✅ SignalR Client برای POS Payment
+                "~/Content/js/reception-error-handler.js", // ✅ NEW: مدیریت حرفه‌ای خطاها برای منشی
+                "~/Scripts/reception.v2/reception-validator.js", // ✅ NEW: اعتبارسنجی قدرتمند (کد ملی، موبایل، فیلدهای الزامی)
+                "~/Scripts/reception.v2/service-eligibility-validator.js", // ✅ NEW: اعتبارسنجی صلاحیت خدمت (سن/جنسیت)
                 "~/Scripts/reception.v2/reception-api.js",
                 "~/Scripts/reception.v2/reception-utils.js",
                 "~/Scripts/reception.v2/pricing-ui.js",
@@ -183,6 +187,7 @@ namespace ClinicApp
                 "~/Scripts/reception.v2/service-lookup.js",
                 "~/Scripts/reception.v2/coverage-modal.js",
                 "~/Scripts/reception.v2/totals-panel.js",
+                "~/Scripts/pos-payment/pos-payment-lock-manager.js", // ✅ NEW: Lock Manager برای جلوگیری از Stuck Payments
                 "~/Scripts/pos-payment/pos-payment-client.js", // ✅ ماژول جدید POS Payment Client
                 "~/Scripts/pos-payment/pos-payment-ui.js", // ✅ ماژول جدید POS Payment UI
                 "~/Scripts/reception.v2/payment-panel.js",

@@ -81,6 +81,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
+            // ✅ Insurance Tariff Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_InsuranceTariff_Index",
+                url: "Admin/InsuranceTariff/{action}/{id}",
+                defaults: new { controller = "InsuranceTariff", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
             context.MapRoute(
                 name: "Admin_PatientInsurance_Index",
                 url: "Admin/Insurance/PatientInsurance/{action}/{id}",

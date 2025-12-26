@@ -106,13 +106,28 @@
   /**
    * رویداد کلیک: باز کردن پرونده بیمار
    */
-  $(document).on('click', '[data-action="open-patient"]', function () {
+  $(document).on('click', '[data-action="open-patient"]', function (e) {
+    e.preventDefault();
+    console.log('🏥 V2 Summary: کلیک روی نام بیمار - state:', ns.state);
+    
     var s = ns.state;
-    if (!s?.patient?.PatientId) {
-      toastr.warning('ابتدا بیمار را انتخاب کنید');
+    
+    // ✅ بررسی دقیق‌تر برای PatientId
+    var patientId = s?.patient?.PatientId || s?.patient?.patientId;
+    
+    console.log('🏥 V2 Summary: PatientId:', patientId, 'Full patient object:', s?.patient);
+    
+    if (!patientId || patientId <= 0) {
+      console.warn('🏥 V2 Summary: ❌ PatientId معتبر نیست - state.patient:', s?.patient);
+      toastr.warning('ابتدا بیمار را انتخاب کنید', 'هشدار', {
+        positionClass: 'toast-top-center',
+        timeOut: 3000
+      });
       return;
     }
-    var url = '/Patient/Edit/' + s.patient.PatientId;
+    
+    var url = '/Patient/Edit/' + patientId;
+    console.log('🏥 V2 Summary: ✅ باز کردن URL:', url);
     window.open(url, '_blank');
   });
 
@@ -163,9 +178,13 @@
    * رویداد یکپارچه: هر ماژول بعد از تغییر state باید این را تریگر کند
    */
   $(document).on('rv2:stateChanged', function (e, newState) {
+    console.log('🏥 V2 Summary: rv2:stateChanged triggered - newState:', newState);
+    
     if (newState) {
       ns.state = $.extend(true, {}, ns.state, newState);
+      console.log('🏥 V2 Summary: ✅ state به‌روزرسانی شد - ns.state:', ns.state);
     }
+    
     renderSummary();
   });
 

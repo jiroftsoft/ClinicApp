@@ -42,6 +42,15 @@ namespace ClinicApp
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
 
+            // 🏥 CRITICAL: Patient Controller Route - باید قبل از ApiPatientController باشد
+            // این route باید قبل از Default route باشد و conflict با Api/PatientController را جلوگیری کند
+            routes.MapRoute(
+                name: "Patient_Specific",
+                url: "Patient/{action}/{id}",
+                defaults: new { controller = "Patient", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers" } // ✅ ONLY MVC PatientController
+            ).DataTokens["UseNamespaceFallback"] = false; // ❌ جلوگیری از fallback به namespace های دیگر
+
             // Redirect route for incorrect View URLs to correct Controller URLs
             // مثال: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml -> /Admin/CMS/ClinicWorkingHours
             routes.MapRoute(
@@ -73,6 +82,16 @@ namespace ClinicApp
                 defaults: new { controller = "ReceptionApi", action = "Index", area = "" },
                 namespaces: new[] { "ClinicApp.Controllers.Api" }
             );
+            
+            // 🏥 API Patient Controller Route - برای جلوگیری از conflict با MVC Patient Controller
+            // این controller در واقع یک MVC Controller است که در namespace Api قرار گرفته
+            routes.MapRoute(
+                name: "ApiPatientController",
+                url: "Api/Patient/{action}/{id}",
+                defaults: new { controller = "Patient", action = "Search", area = "", id = UrlParameter.Optional },
+                // ❌ حذف constraint httpMethod برای support کردن GET/POST
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ جلوگیری از fallback به namespace های دیگر
             
             // 🏥 V2: Reception V2 Route
             routes.MapRoute(
@@ -513,23 +532,18 @@ namespace ClinicApp
                 namespaces: new[] { "ClinicApp.Controllers" }
             );
 
-            routes.MapRoute(
-                name: "Patient",
-                url: "Patient/{action}/{id}",
-                defaults: new { controller = "Patient", action = "Index", id = UrlParameter.Optional },
-                namespaces: new[] { "ClinicApp.Controllers" } // فقط کنترلر اصلی Patient
-            );
-
+            // 🏥 Default Route - با اولویت namespace ها
+            // CRITICAL: Api namespace باید آخر باشد تا conflict با MVC controllers نداشته باشد
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { 
-                    "ClinicApp.Controllers", 
-                    "ClinicApp.Controllers.ReceptionV2", 
-                    "ClinicApp.Controllers.Reception", 
-                    "ClinicApp.Controllers.Payment.POS", 
-                    "ClinicApp.Controllers.Api" 
+                    "ClinicApp.Controllers",                    // ✅ اولویت 1: MVC Controllers
+                    "ClinicApp.Controllers.ReceptionV2",       // ✅ اولویت 2
+                    "ClinicApp.Controllers.Reception",         // ✅ اولویت 3
+                    "ClinicApp.Controllers.Payment.POS"        // ✅ اولویت 4
+                    // ❌ REMOVED: "ClinicApp.Controllers.Api" - باعث conflict با Patient/Index می‌شد
                 }
             );
         }

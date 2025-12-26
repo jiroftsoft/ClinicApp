@@ -65,8 +65,8 @@ namespace ClinicApp.Controllers
         [HttpGet]
         public ActionResult Index()
         {
-            _log.Information("بازدید از صفحه اصلی بیماران. User: {UserName} (Id: {UserId})",
-                _currentUserService.UserName, _currentUserService.UserId);
+            _log.Information("✅ PATIENT_CONTROLLER: Index action accessed. User: {UserName} (Id: {UserId}), Namespace: {Namespace}",
+                _currentUserService.UserName, _currentUserService.UserId, this.GetType().Namespace);
 
             // طبق قرارداد FormStandards - استفاده از Model
             var model = new PatientIndexPageViewModel

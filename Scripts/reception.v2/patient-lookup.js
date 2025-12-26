@@ -180,7 +180,12 @@
             console.log('🏥 V2: Patient not found, opening Fast Create Modal...');
             openFastCreateModal(nc);
           } else {
-            toastr.error(errorMsg);
+            // نمایش خطا با Error Handler
+            if (window.ReceptionErrorHandler) {
+              window.ReceptionErrorHandler.showError(responseObj);
+            } else {
+              toastr.error(errorMsg);
+            }
           }
           return;
         }
@@ -217,6 +222,7 @@
                 Mobile: identity.Mobile || identity.mobile
             };
             
+            console.log('🏥 V2 Patient-Lookup: ✅ Triggering rv2:stateChanged with patientData:', patientData);
             $(document).trigger('rv2:stateChanged', { patient: patientData });
             
             // ✅ Trigger event for Insurance Status Checker (کامپوننت قابل استفاده مجدد)
@@ -577,7 +583,13 @@
     
     request.fail(function(err) {
       console.error('🏥 V2: Fast Create error:', err);
-      toastr.error('خطا در ثبت سریع بیمار');
+      
+      // نمایش خطا با Error Handler
+      if (window.ReceptionErrorHandler) {
+        window.ReceptionErrorHandler.showError(err);
+      } else {
+        toastr.error('خطا در ثبت سریع بیمار');
+      }
     });
     
     request.always(function() {
@@ -630,7 +642,13 @@
     
     updateRequest.fail(function(err) {
       console.error('🏥 V2: Update patient error:', err);
-      toastr.error('خطا در به‌روزرسانی اطلاعات');
+      
+      // نمایش خطا با Error Handler
+      if (window.ReceptionErrorHandler) {
+        window.ReceptionErrorHandler.showError(err);
+      } else {
+        toastr.error('خطا در به‌روزرسانی اطلاعات');
+      }
     });
   }
 
@@ -858,36 +876,79 @@
 
       $('#fc_insurancePanel').removeClass('show');
       
-      // ✅ CRITICAL FIX: پاکسازی کامل Modal Backdrop
-      console.log('🏥 V2: Cleaning up modal backdrop...');
-      
-      // روش 1: حذف کلاس modal-open از body
-      $('body').removeClass('modal-open');
-      
-      // روش 2: حذف تمامbackdrop ها
-      $('.modal-backdrop').remove();
-      
-      // روش 3: اطمینان از پاک شدن overflow hidden
-      $('body').css('overflow', '');
-      $('body').css('padding-right', '');
-      
-      // روش 4: پاکسازی inline styles از body
-      if ($('body').attr('style')) {
-        $('body').removeAttr('style');
-      }
-      
-      // روش 5: اطمینان از بستن کامل modal
-      const modalElement = document.getElementById('patientFastCreateModal');
-      if (modalElement) {
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) {
-          modalInstance.dispose();
+      // ✅ BULLETPROOF FIX: پاکسازی کامل Modal Backdrop با استفاده از چند لایه امنیتی
+      function cleanupModalBackdrop() {
+        console.log('🏥 V2: Cleaning up modal backdrop...');
+        
+        // روش 1: حذف کلاس modal-open از body
+        $('body').removeClass('modal-open');
+        
+        // روش 2: حذف تمام backdrop ها
+        $('.modal-backdrop').remove();
+        
+        // روش 3: اطمینان از پاک شدن overflow hidden
+        $('body').css({
+          'overflow': '',
+          'padding-right': ''
+        });
+        
+        // روش 4: پاکسازی inline styles از body (با حفظ سایر styles)
+        const bodyStyle = $('body').attr('style');
+        if (bodyStyle) {
+          // حذف فقط overflow و padding-right
+          const newStyle = bodyStyle
+            .replace(/overflow\s*:\s*[^;]+;?/gi, '')
+            .replace(/padding-right\s*:\s*[^;]+;?/gi, '')
+            .trim();
+          
+          if (newStyle) {
+            $('body').attr('style', newStyle);
+          } else {
+            $('body').removeAttr('style');
+          }
         }
+        
+        // روش 5: dispose instance modal
+        const modalElement = document.getElementById('patientFastCreateModal');
+        if (modalElement) {
+          const modalInstance = bootstrap.Modal.getInstance(modalElement);
+          if (modalInstance) {
+            modalInstance.dispose();
+          }
+        }
+        
+        console.log('🏥 V2: ✅ Modal backdrop cleanup completed');
+        console.log('🏥 V2: ✅ Body classes:', $('body').attr('class'));
+        console.log('🏥 V2: ✅ Body style:', $('body').attr('style') || 'none');
+        console.log('🏥 V2: ✅ Remaining backdrops:', $('.modal-backdrop').length);
       }
       
-      console.log('🏥 V2: ✅ Modal backdrop cleanup completed');
-      console.log('🏥 V2: ✅ Body classes:', $('body').attr('class'));
-      console.log('🏥 V2: ✅ Remaining backdrops:', $('.modal-backdrop').length);
+      // اجرای فوری
+      cleanupModalBackdrop();
+      
+      // اجرای با تاخیر (fallback) - در صورتی که Bootstrap هنوز cleanup نکرده باشد
+      setTimeout(function() {
+        const remainingBackdrops = $('.modal-backdrop').length;
+        if (remainingBackdrops > 0 || $('body').hasClass('modal-open')) {
+          console.warn('🏥 V2: ⚠️ Backdrop still exists after 100ms, forcing cleanup...');
+          cleanupModalBackdrop();
+        }
+      }, 100);
+      
+      // اجرای با تاخیر بیشتر (double-check)
+      setTimeout(function() {
+        const remainingBackdrops = $('.modal-backdrop').length;
+        if (remainingBackdrops > 0 || $('body').hasClass('modal-open')) {
+          console.error('🏥 V2: ❌ Backdrop STILL exists after 300ms, forcing aggressive cleanup...');
+          cleanupModalBackdrop();
+          
+          // اگر هنوز باقی مانده، با force حذف کن
+          $('.modal-backdrop').each(function() {
+            $(this).remove();
+          });
+          $('body').removeClass('modal-open').removeAttr('style');
+        }
+      }, 300);
     });
   });
   
@@ -923,7 +984,19 @@
       
       initRequest.fail(function(err) {
         console.warn('🏥 V2: Failed to load patient data on init:', err);
+        // نمایش خطا به منشی
+        if (window.ReceptionErrorHandler) {
+          window.ReceptionErrorHandler.showError(err);
+        }
       });
+    }
+    
+    // ✅ فعال‌سازی Real-time Validation
+    if (window.ReceptionValidator && typeof window.ReceptionValidator.initializeRealtimeValidation === 'function') {
+      window.ReceptionValidator.initializeRealtimeValidation();
+      console.log('✅ V2: Real-time Validation activated');
+    } else {
+      console.warn('⚠️ V2: ReceptionValidator not found - Real-time validation disabled');
     }
   });
 

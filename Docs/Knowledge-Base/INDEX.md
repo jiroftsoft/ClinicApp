@@ -17,6 +17,7 @@
 | 05 | **متخصص دیباگر** 🔧 | [05-Debugging-Specialist-Contract.md](05-Debugging-Specialist-Contract.md) | قرارداد دیباگ ارشد |
 | 06 | **Quick Reference** | [06-Quick-Reference.md](06-Quick-Reference.md) | جدول سریع تمام Helpers |
 | 07 | **جعبه ابزار (Toolbox)** 🧰 | [HelperExtensionsGuide.md](HelperExtensionsGuide.md) | 14 Helper/Extension + 100+ متد |
+| 08 | **🚨 ماژول‌های مالی** 💰 | [CRITICAL-FINANCIAL-MODULE-CONTRACT.md](CRITICAL-FINANCIAL-MODULE-CONTRACT.md) | قرارداد Critical برای صندوق، پرداخت، گزارش‌ها |
 | -- | **فهرست این صفحه** | [INDEX.md](INDEX.md) | شما اینجا هستید |
 
 ---

@@ -1,0 +1,114 @@
+@model ClinicApp.ViewModels.Payment.CashierStatsViewModel
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-primary text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="total-transactions">@Model.TotalTransactions</h4>
+                    <p class="mb-0">کل تراکنش‌ها</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-receipt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-success text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="total-amount">@Model.TotalAmount.ToString("N0")</h4>
+                    <p class="mb-0">مبلغ کل (ریال)</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-info text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="success-rate">@Model.SuccessRate.ToString("F2")%</h4>
+                    <p class="mb-0">نرخ موفقیت</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-warning text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="avg-transaction-time">@Model.AverageTransactionTime.ToString("F2")</h4>
+                    <p class="mb-0">زمان میانگین (ثانیه)</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-danger text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="discrepancy-count">@Model.DiscrepancyCount</h4>
+                    <p class="mb-0">تعداد اختلاف‌ها</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-secondary text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="sessions-opened">@Model.SessionsOpened</h4>
+                    <p class="mb-0">جلسات باز شده</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-door-open fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-dark text-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h4 id="sessions-closed">@Model.SessionsClosed</h4>
+                    <p class="mb-0">جلسات بسته شده</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-door-closed fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

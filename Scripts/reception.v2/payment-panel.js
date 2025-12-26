@@ -37,12 +37,23 @@
   // ============================================
   var posPaymentClient = null;
   var posPaymentUI = null;
+  var posPaymentLockManager = null; // ✅ NEW: Lock Manager
   var currentReceptionId = null;
   var currentAmountIRR = null;
 
   // ✅ اطمینان از لود شدن DOM قبل از attach کردن event handlers
   $(document).ready(function() {
     console.log('🏥 V2: Payment Panel - DOM Ready, attaching event handlers...');
+    
+    // ============================================
+    // Initialize POS Payment Lock Manager
+    // ============================================
+    if (typeof PosPaymentLockManager !== 'undefined') {
+      posPaymentLockManager = new PosPaymentLockManager();
+      console.log('✅ V2: PosPaymentLockManager initialized');
+    } else {
+      console.warn('⚠️ V2: PosPaymentLockManager not found - Lock management disabled');
+    }
     
     // ============================================
     // Initialize POS Payment Modules
@@ -77,6 +88,12 @@
           onSuccess: function(response) {
             console.log('✅ V2: POS Payment - Success:', response);
             
+            // ✅ Unlock payment (success)
+            if (posPaymentLockManager) {
+              posPaymentLockManager.unlock();
+              console.log('🔓 Payment unlocked (success)');
+            }
+            
             // نمایش موفقیت در Modal
             if (posPaymentUI) {
               posPaymentUI.showSuccess({
@@ -100,6 +117,12 @@
           
           onCancel: function(response) {
             console.log('⚠️ V2: POS Payment - Canceled:', response);
+            
+            // ✅ Unlock payment via Lock Manager
+            if (posPaymentLockManager) {
+              posPaymentLockManager.unlock();
+            }
+            
             if (posPaymentUI) {
               posPaymentUI.showCanceled();
             }
@@ -107,6 +130,13 @@
           
           onError: function(error) {
             console.error('❌ V2: POS Payment - Error:', error);
+            
+            // ✅ Unlock payment (error)
+            if (posPaymentLockManager) {
+              posPaymentLockManager.unlock();
+              console.log('🔓 Payment unlocked (error)');
+            }
+            
             if (posPaymentUI) {
               posPaymentUI.showError(error.message || 'خطا در پرداخت', error.code);
             }
@@ -152,6 +182,17 @@
           
           onCancel: function() {
             console.log('❌ V2: POS Payment - Cancel clicked');
+            
+            // ✅ Cancel payment via client
+            if (posPaymentClient) {
+              posPaymentClient.cancelPayment('USER_CANCELLED');
+            }
+            
+            // ✅ Unlock via Lock Manager
+            if (posPaymentLockManager) {
+              posPaymentLockManager.unlock();
+            }
+            
             posPaymentUI.close();
             // Reset payment data
             window.posPaymentData = null;
@@ -715,6 +756,17 @@
   function openPosPaymentModal(receptionId, amountIRR) {
     console.log('🏥 V2: Opening POS Payment Modal - ReceptionId:', receptionId, 'AmountIRR:', amountIRR);
     
+    // ✅ بررسی Lock Manager - جلوگیری از پرداخت همزمان
+    if (posPaymentLockManager && posPaymentLockManager.isLocked()) {
+      console.warn('⚠️ V2: Payment already in progress (locked)');
+      toastr.warning('یک پرداخت در حال انجام است. لطفاً صبر کنید یا آن را لغو کنید.', 'توجه', {
+        timeOut: 5000,
+        closeButton: true,
+        positionClass: 'toast-top-center'
+      });
+      return;
+    }
+    
     // ذخیره برای استفاده در callbacks
     currentReceptionId = receptionId;
     currentAmountIRR = amountIRR;
@@ -749,6 +801,12 @@
           $('#posPaymentStartBtn').off('click').on('click', function() {
             console.log('🏥 V2: POS Payment Start button clicked');
             
+            // ✅ Lock payment
+            if (posPaymentLockManager) {
+              posPaymentLockManager.lock();
+              console.log('🔒 Payment locked');
+            }
+            
             // نمایش Loading
             posPaymentUI.showLoading('در حال ارسال مبلغ...', 'در حال ارسال مبلغ به دستگاه POS', 'لطفاً کارت را وارد کنید');
             
@@ -758,6 +816,11 @@
             } else {
               console.error('❌ V2: Missing terminal info:', { terminalId, ipAddress });
               posPaymentUI.showError('اطلاعات ترمینال ناقص است', 'INVALID_TERMINAL');
+              
+              // ✅ Unlock on error
+              if (posPaymentLockManager) {
+                posPaymentLockManager.unlock();
+              }
             }
           });
         } else {

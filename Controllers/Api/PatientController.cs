@@ -47,6 +47,54 @@ namespace ClinicApp.Controllers.Api
         #region Patient Lookup Actions
 
         /// <summary>
+        /// بارگیری لیست بیماران با صفحه‌بندی (برای سازگاری با Api route)
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="page">شماره صفحه</param>
+        /// <param name="genderFilter">فیلتر جنسیت</param>
+        /// <returns>لیست بیماران</returns>
+        [HttpPost]
+        [HttpGet]
+        public async Task<JsonResult> LoadPatients(string searchTerm = "", int page = 1, string genderFilter = "")
+        {
+            using (StartPerformanceMonitoring("LoadPatients"))
+            {
+                try
+                {
+                    _logger.Information(
+                        "📋 بارگیری لیست بیماران. SearchTerm: {SearchTerm}, Page: {Page}, کاربر: {UserName}",
+                        searchTerm, page, _currentUserService.UserName);
+
+                    AddSecurityHeaders();
+
+                    var result = await _patientService.SearchPatientsAsync(searchTerm, page, 10);
+
+                    if (result == null || !result.Success)
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = "خطا در بارگیری لیست بیماران"
+                        }, JsonRequestBehavior.AllowGet);
+                    }
+
+                    _logger.Information("✅ لیست بیماران با موفقیت بارگذاری شد. Count: {Count}", result.Data.TotalItems);
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "لیست بیماران با موفقیت بارگذاری شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                catch (Exception ex)
+                {
+                    return HandleReceptionError(ex, "LoadPatients", new { searchTerm, page, genderFilter });
+                }
+            }
+        }
+
+        /// <summary>
         /// جستجوی بیمار بر اساس کد ملی
         /// </summary>
         /// <param name="nationalCode">کد ملی بیمار</param>
