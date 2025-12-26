@@ -5573,6 +5573,7 @@
     <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\spinner.gif" />
     <Content Include="Content\plugins\ckeditor\styles.js" />
     <Content Include="Content\plugins\ckeditor\vendor\promise.js" />
+    <Content Include="Scripts\DELETE_SHARED_SERVICES_SAFE.sql" />
     <Content Include="Scripts\dropzone\basic.css" />
     <Content Include="Scripts\dropzone\basic.min.css" />
     <Content Include="Scripts\dropzone\dropzone-amd-module.js" />

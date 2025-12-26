@@ -530,8 +530,9 @@
 
             $container.html(html);
 
-            // Attach event handlers
-            attachEventHandlers();
+            // ✅ Event handlers با Event Delegation فقط یک بار attach می‌شوند
+            // نیازی به فراخوانی مجدد attachEventHandlers نیست چون از Event Delegation استفاده می‌کنیم
+            // Event handlers در document.ready یک بار attach می‌شوند و برای همه عناصر کار می‌کنند
         }
 
         /**
@@ -578,46 +579,78 @@
         }
 
         /**
-         * Attach event handlers
+         * ✅ Attach event handlers - Production-Grade با Event Delegation
+         * استفاده از Event Delegation برای جلوگیری از duplicate event handlers
+         * Event Delegation: event handler ها فقط یک بار attach می‌شوند و برای همه عناصر کار می‌کنند
          */
+        let eventHandlersAttached = false;
+        
         function attachEventHandlers() {
-            // پرداخت بدهی
-            $('.btn-pay-debt').off('click').on('click', function() {
+            // ✅ CRITICAL: اگر event handler ها قبلاً attach شده‌اند، دوباره attach نکن
+            if (eventHandlersAttached) {
+                console.log('ℹ️ Reception List: Event handlers already attached, skipping...');
+                return;
+            }
+            
+            console.log('✅ Reception List: Attaching event handlers with Event Delegation...');
+            
+            // ✅ Event Delegation: استفاده از $(document).on() برای جلوگیری از duplicate handlers
+            // این روش باعث می‌شود که event handler فقط یک بار attach شود و برای همه عناصر کار کند
+            
+            // ✅ پرداخت بدهی
+            $(document).off('click.receptionList', '.btn-pay-debt').on('click.receptionList', '.btn-pay-debt', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
                 const amount = $(this).data('amount');
                 handlePayDebt(receptionId, amount);
             });
 
-            // چاپ قبض پذیرش
-            $('.btn-print-receipt').off('click').on('click', function() {
+            // ✅ چاپ قبض پذیرش - با Event Delegation و stopPropagation
+            $(document).off('click.receptionList', '.btn-print-receipt').on('click.receptionList', '.btn-print-receipt', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
+                console.log('🖨️ Reception List: Print button clicked - ReceptionId:', receptionId);
                 handlePrintReceipt(receptionId);
             });
 
-            // 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
-            $('.btn-print-insurance').off('click').on('click', function() {
+            // ✅ چاپ قبض بیمه تکمیلی - با Event Delegation و stopPropagation
+            $(document).off('click.receptionList', '.btn-print-insurance').on('click.receptionList', '.btn-print-insurance', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
+                console.log('🖨️ Reception List: Print insurance button clicked - ReceptionId:', receptionId);
                 handlePrintInsurance(receptionId);
             });
 
-            // ویرایش پذیرش
-            $('.btn-edit-reception').off('click').on('click', function() {
+            // ✅ ویرایش پذیرش
+            $(document).off('click.receptionList', '.btn-edit-reception').on('click.receptionList', '.btn-edit-reception', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
                 window.location.href = `/ReceptionV2/reception/edit/${receptionId}`;
             });
 
-            // لغو پذیرش
-            $('.btn-cancel-reception').off('click').on('click', function() {
+            // ✅ لغو پذیرش
+            $(document).off('click.receptionList', '.btn-cancel-reception').on('click.receptionList', '.btn-cancel-reception', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
                 const paidAmount = parseFloat($(this).data('paid-amount')) || 0;
                 handleCancelReception(receptionId, paidAmount);
             });
 
-            // مشاهده جزئیات
-            $('.btn-view-details').off('click').on('click', function() {
+            // ✅ مشاهده جزئیات
+            $(document).off('click.receptionList', '.btn-view-details').on('click.receptionList', '.btn-view-details', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const receptionId = $(this).data('reception-id');
                 handleViewDetails(receptionId);
             });
+            
+            eventHandlersAttached = true;
+            console.log('✅ Reception List: Event handlers attached successfully');
         }
 
         // ============================================
@@ -1060,22 +1093,142 @@
             });
         }
 
+        // ✅ CRITICAL: Flag برای جلوگیری از فراخوانی همزمان
+        let isPrintingInProgress = false;
+        
         /**
-         * چاپ قبض پذیرش
+         * ✅ چاپ قبض پذیرش - Production-Grade با Print Manager
+         * بهینه برای فیش پرینتر (58mm/80mm)
+         * منشی فقط دکمه چاپ را می‌زند و همه چیز خودکار است
+         * 
+         * ⚠️ CRITICAL: این تابع باید فقط یک بار فراخوانی شود
          */
         function handlePrintReceipt(receptionId) {
-            const url = '/ReceptionV2/reception/print/' + receptionId;
-            console.log('🏥 Reception List: Printing receipt for reception:', receptionId);
-            window.open(url, '_blank');
+            if (!receptionId) {
+                console.error('❌ Reception List: ReceptionId برای چاپ موجود نیست');
+                toastr.error('شناسه پذیرش برای چاپ موجود نیست', 'خطا');
+                return;
+            }
+            
+            // ✅ CRITICAL: جلوگیری از فراخوانی همزمان
+            if (isPrintingInProgress) {
+                console.warn('⚠️ Reception List: Print already in progress - ReceptionId:', receptionId);
+                toastr.warning('در حال چاپ قبض قبلی... لطفاً صبر کنید', 'در حال چاپ', {
+                    timeOut: 2000,
+                    closeButton: true
+                });
+                return;
+            }
+            
+            // ✅ CRITICAL: جلوگیری از فراخوانی مکرر با Debounce (افزایش به 2000ms)
+            const now = Date.now();
+            if (window._lastPrintTime && (now - window._lastPrintTime) < 2000) {
+                console.warn('⚠️ Reception List: Print request ignored (debounce) - ReceptionId:', receptionId);
+                toastr.warning('لطفاً صبر کنید... در حال چاپ قبض قبلی', 'صبر کنید', {
+                    timeOut: 2000,
+                    closeButton: true
+                });
+                return;
+            }
+            window._lastPrintTime = now;
+            
+            // ✅ CRITICAL: بررسی وضعیت Print Manager - اگر در حال چاپ است، صبر کنید
+            if (window.PrintManager && window.PrintManager.getStatus) {
+                const status = window.PrintManager.getStatus();
+                if (status.isPrinting || status.isWindowBusy) {
+                    console.warn('⚠️ Reception List: Print Manager is busy, waiting...');
+                    toastr.info('در حال چاپ قبض قبلی... لطفاً صبر کنید', 'در حال چاپ', {
+                        timeOut: 2000,
+                        closeButton: true
+                    });
+                    return;
+                }
+            }
+            
+            // ✅ Set flag
+            isPrintingInProgress = true;
+            
+            console.log('🖨️ Reception List: Printing receipt for reception:', receptionId);
+            
+            // ✅ استفاده از Print Manager (بهترین روش برای Production)
+            if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+                const printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+                console.log('🔗 Reception List: Print URL:', printUrl);
+                
+                window.PrintManager.print(printUrl)
+                    .then(function() {
+                        console.log('✅ Reception List: چاپ قبض با موفقیت به صف اضافه شد');
+                        // ✅ Release flag after delay
+                        setTimeout(function() {
+                            isPrintingInProgress = false;
+                        }, 2500); // 2.5s delay
+                    })
+                    .catch(function(err) {
+                        console.error('❌ Reception List: خطا در چاپ:', err);
+                        toastr.error(err.message || 'خطا در چاپ قبض', 'خطا', {
+                            timeOut: 5000,
+                            closeButton: true
+                        });
+                        // ✅ Release flag on error
+                        isPrintingInProgress = false;
+                    });
+            } else {
+                // Fallback: استفاده از روش قدیمی
+                console.warn('⚠️ Reception List: PrintManager not available, using fallback');
+                const url = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+                window.open(url, '_blank');
+                // ✅ Release flag after delay
+                setTimeout(function() {
+                    isPrintingInProgress = false;
+                }, 2500);
+            }
         }
 
         /**
-         * 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
+         * ✅ چاپ قبض بیمه تکمیلی - Production-Grade با Print Manager
+         * بهینه برای فیش پرینتر (58mm/80mm)
+         * 
+         * ⚠️ CRITICAL: این تابع باید فقط یک بار فراخوانی شود
          */
         function handlePrintInsurance(receptionId) {
-            const url = '/ReceptionV2/reception/print-insurance/' + receptionId;
-            console.log('🏥 Reception List: Printing insurance receipt for reception:', receptionId);
-            window.open(url, '_blank');
+            if (!receptionId) {
+                console.error('❌ Reception List: ReceptionId برای چاپ بیمه تکمیلی موجود نیست');
+                toastr.error('شناسه پذیرش برای چاپ بیمه تکمیلی موجود نیست', 'خطا');
+                return;
+            }
+            
+            // ✅ CRITICAL: جلوگیری از فراخوانی مکرر با Debounce
+            const now = Date.now();
+            if (window._lastPrintInsuranceTime && (now - window._lastPrintInsuranceTime) < 500) {
+                console.warn('⚠️ Reception List: Print insurance request ignored (debounce) - ReceptionId:', receptionId);
+                return;
+            }
+            window._lastPrintInsuranceTime = now;
+            
+            console.log('🖨️ Reception List: Printing insurance receipt for reception:', receptionId);
+            
+            // ✅ استفاده از Print Manager (بهترین روش برای Production)
+            if (window.PrintManager && typeof window.PrintManager.print === 'function') {
+                const printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
+                console.log('🔗 Reception List: Print URL:', printUrl);
+                
+                window.PrintManager.print(printUrl)
+                    .then(function() {
+                        console.log('✅ Reception List: چاپ قبض بیمه تکمیلی با موفقیت به صف اضافه شد');
+                    })
+                    .catch(function(err) {
+                        console.error('❌ Reception List: خطا در چاپ:', err);
+                        toastr.error(err.message || 'خطا در چاپ قبض بیمه تکمیلی', 'خطا', {
+                            timeOut: 5000,
+                            closeButton: true
+                        });
+                    });
+            } else {
+                // Fallback: استفاده از روش قدیمی
+                console.warn('⚠️ Reception List: PrintManager not available, using fallback');
+                const url = `/ReceptionV2/PrintInsurance/${receptionId}`;
+                window.open(url, '_blank');
+            }
         }
 
         /**
@@ -1392,8 +1545,22 @@
             $('#detailsNotes').text(data.Notes || 'یادداشتی ثبت نشده است');
 
             // 9. Event Handler برای دکمه چاپ
-            $('#btnPrintReceptionDetails').off('click').on('click', function() {
-                window.open(`/ReceptionV2/Print/${data.ReceptionId}`, '_blank');
+            // ✅ چاپ قبض از Modal جزئیات - Production-Grade با Print Manager
+            $('#btnPrintReceptionDetails').off('click.receptionList').on('click.receptionList', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const receptionId = data.ReceptionId;
+                if (!receptionId) {
+                    console.error('❌ Reception List: ReceptionId برای چاپ موجود نیست');
+                    toastr.error('شناسه پذیرش برای چاپ موجود نیست', 'خطا');
+                    return;
+                }
+                
+                console.log('🖨️ Reception List: Printing receipt from details modal:', receptionId);
+                
+                // ✅ استفاده از handlePrintReceipt برای consistency
+                handlePrintReceipt(receptionId);
             });
         }
 
@@ -1633,6 +1800,9 @@
 
         // Initialize POS Payment Modules
         initializePosPaymentModules();
+
+        // ✅ CRITICAL: Attach event handlers با Event Delegation (فقط یک بار)
+        attachEventHandlers();
 
         // Initial load با تاخیر کوتاه برای اطمینان از لود شدن کامل
         setTimeout(function() {

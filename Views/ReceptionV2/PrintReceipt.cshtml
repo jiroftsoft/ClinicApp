@@ -278,22 +278,37 @@
     }
 </style>
 
-@* ✅ JavaScript برای چاپ خودکار *@
+@* ✅ JavaScript برای چاپ خودکار - فقط اگر PrintManager نباشد *@
+@* ⚠️ CRITICAL: PrintManager خودش window.print() را فراخوانی می‌کند، پس نباید اینجا هم فراخوانی کنیم *@
 <script>
     (function() {
-        // چاپ خودکار بعد از بارگذاری صفحه
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        });
+        // ✅ بررسی اینکه آیا PrintManager در حال مدیریت چاپ است یا نه
+        // اگر PrintManager وجود دارد، اجازه می‌دهیم که PrintManager چاپ را مدیریت کند
+        // در غیر این صورت، چاپ خودکار انجام می‌شود (برای حالت fallback)
         
-        // بستن پنجره بعد از چاپ
-        window.addEventListener('afterprint', function() {
-            setTimeout(function() {
-                window.close();
-            }, 500);
-        });
+        // بررسی اینکه آیا از PrintManager استفاده می‌شود
+        const isManagedByPrintManager = window.opener && window.opener.PrintManager;
+        
+        if (!isManagedByPrintManager) {
+            // فقط در حالت fallback (بدون PrintManager) چاپ خودکار انجام می‌شود
+            console.log('🖨️ PrintReceipt: Fallback mode - Auto print without PrintManager');
+            window.addEventListener('load', function() {
+                // ✅ Delay کوتاه فقط برای اطمینان از آماده بودن document
+                setTimeout(function() {
+                    window.print();
+                }, 300);
+            });
+            
+            // بستن پنجره بعد از چاپ (فقط در حالت fallback) - بدون delay اضافی
+            window.addEventListener('afterprint', function() {
+                setTimeout(function() {
+                    window.close();
+                }, 500); // فقط 500ms delay برای اطمینان از کامل شدن چاپ
+            });
+        } else {
+            // PrintManager در حال مدیریت چاپ است - فقط منتظر می‌مانیم
+            console.log('🖨️ PrintReceipt: Managed by PrintManager - waiting for print command');
+        }
     })();
 </script>
 

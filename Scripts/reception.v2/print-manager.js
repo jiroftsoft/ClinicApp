@@ -6,13 +6,21 @@
  * ویژگی‌ها:
  * ✅ Single Window Reuse (یک پنجره برای همه چاپ‌ها)
  * ✅ Print Queue (FIFO) برای مدیریت درخواست‌های متوالی
- * ✅ Debounce برای جلوگیری از کلیک‌های مکرر
+ * ✅ Debounce برای جلوگیری از کلیک‌های مکرر (1500ms)
  * ✅ Lock Manager برای جلوگیری از چاپ همزمان
+ * ✅ انتظار تا بسته شدن کامل پنجره قبلی قبل از باز کردن پنجره جدید
+ * ✅ استفاده از نام یکتا برای پنجره‌ها (ClinicApp_PrintWindow_timestamp)
  * ✅ Error Recovery و Fallback
  * ✅ Memory Efficient
  * 
+ * 🔧 Fixes:
+ * - رفع مشکل باز شدن چندباره پنجره چاپ (انتظار تا بسته شدن کامل پنجره قبلی)
+ * - افزایش debounce delay به 1500ms
+ * - افزایش delay بین چاپ‌ها به 2s
+ * - چاپ فوری بدون delay اضافی (300ms فقط برای اطمینان از آماده بودن document)
+ * 
  * @author ClinicApp Team
- * @version 1.0.0
+ * @version 1.3.0
  */
 
 (function(window, $) {
@@ -36,9 +44,10 @@
     
     // Configuration
     config: {
-      debounceDelay: 300,        // 300ms debounce
+      debounceDelay: 1500,       // 1500ms debounce (افزایش از 300ms برای جلوگیری از کلیک‌های مکرر)
       queueCheckInterval: 100,   // Check queue every 100ms
-      windowCloseDelay: 2000,     // Close window after 2s
+      windowCloseDelay: 1000,     // Close window after 1s (کاهش برای بستن سریع بعد از چاپ)
+      printDelay: 300,           // Delay before print (300ms فقط برای اطمینان از آماده بودن document)
       maxQueueSize: 10,           // Maximum queue size
       printTimeout: 10000         // 10s timeout for print
     },
@@ -152,7 +161,7 @@
           }
         })
         .finally(function() {
-          // ✅ Release lock after delay
+          // ✅ Release lock after delay (افزایش delay برای اطمینان از بسته شدن کامل پنجره)
           setTimeout(function() {
             self.isPrinting = false;
             self.isWindowBusy = false;
@@ -163,9 +172,9 @@
               console.log('🔄 PrintManager: Processing next job in queue...');
               setTimeout(function() {
                 self._processQueue();
-              }, 500); // 500ms delay between prints
+              }, 1000); // 1s delay between prints (افزایش از 500ms به 1000ms)
             }
-          }, 1000); // 1s delay before next print
+          }, 2000); // 2s delay before next print (افزایش از 1s به 2s)
         });
     },
     
@@ -178,126 +187,209 @@
       
       return new Promise(function(resolve, reject) {
         try {
-          // ✅ Reuse existing window or create new one
-          if (self.printWindow && !self.printWindow.closed) {
-            console.log('♻️ PrintManager: Reusing existing print window');
-            // Close previous window if it's still open
-            try {
-              self.printWindow.close();
-            } catch (e) {
-              console.warn('⚠️ PrintManager: Cannot close previous window:', e);
-            }
-          }
-          
-          // ✅ Create new print window
-          const windowFeatures = 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes';
-          self.printWindow = window.open(url, '_blank', windowFeatures);
-          
-          if (!self.printWindow) {
-            const error = new Error('Popup blocker فعال است. لطفاً popup blocker را غیرفعال کنید.');
-            console.error('❌ PrintManager:', error.message);
-            reject(error);
-            return;
-          }
-          
-          console.log('✅ PrintManager: Print window opened');
-          
-          // ✅ Monitor window state
-          let checkInterval = null;
-          let timeoutId = null;
-          let isResolved = false;
-          
-          // ✅ Check if window is loaded
-          checkInterval = setInterval(function() {
-            try {
-              if (self.printWindow.closed) {
-                clearInterval(checkInterval);
-                if (timeoutId) clearTimeout(timeoutId);
-                if (!isResolved) {
-                  isResolved = true;
-                  console.log('✅ PrintManager: Window closed by user');
-                  resolve();
+          // ✅ CRITICAL: بستن کامل پنجره قبلی قبل از باز کردن پنجره جدید
+          const closePreviousWindow = function() {
+            return new Promise(function(closeResolve) {
+              if (self.printWindow && !self.printWindow.closed) {
+                console.log('♻️ PrintManager: Closing previous print window...');
+                try {
+                  self.printWindow.close();
+                  
+                  // ✅ انتظار تا پنجره کاملاً بسته شود (با polling)
+                  let checkCount = 0;
+                  const maxChecks = 20; // حداکثر 2 ثانیه انتظار (20 * 100ms)
+                  const checkInterval = setInterval(function() {
+                    checkCount++;
+                    try {
+                      if (self.printWindow.closed || checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        console.log('✅ PrintManager: Previous window closed');
+                        self.printWindow = null;
+                        closeResolve();
+                      }
+                    } catch (e) {
+                      // اگر به پنجره دسترسی نداریم، یعنی بسته شده
+                      clearInterval(checkInterval);
+                      console.log('✅ PrintManager: Previous window closed (access denied)');
+                      self.printWindow = null;
+                      closeResolve();
+                    }
+                  }, 100);
+                } catch (e) {
+                  console.warn('⚠️ PrintManager: Cannot close previous window:', e);
+                  self.printWindow = null;
+                  closeResolve();
                 }
-                return;
+              } else {
+                closeResolve();
               }
-              
-              // ✅ Check if document is ready
-              if (self.printWindow.document && self.printWindow.document.readyState === 'complete') {
-                clearInterval(checkInterval);
-                if (timeoutId) clearTimeout(timeoutId);
+            });
+          };
+          
+          // ✅ بستن پنجره قبلی و سپس باز کردن پنجره جدید
+          closePreviousWindow().then(function() {
+            // ✅ Create new print window با نام یکتا برای جلوگیری از باز شدن چند پنجره
+            const windowFeatures = 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes';
+            const uniqueWindowName = 'ClinicApp_PrintWindow_' + Date.now();
+            self.printWindow = window.open(url, uniqueWindowName, windowFeatures);
+            
+            if (!self.printWindow) {
+              const error = new Error('Popup blocker فعال است. لطفاً popup blocker را غیرفعال کنید.');
+              console.error('❌ PrintManager:', error.message);
+              reject(error);
+              return;
+            }
+            
+            console.log('✅ PrintManager: Print window opened');
+            
+            // ✅ Monitor window state
+            let checkInterval = null;
+            let timeoutId = null;
+            let isResolved = false;
+            
+            // ✅ Check if window is loaded
+            checkInterval = setInterval(function() {
+              try {
+                if (self.printWindow.closed) {
+                  clearInterval(checkInterval);
+                  if (timeoutId) clearTimeout(timeoutId);
+                  if (!isResolved) {
+                    isResolved = true;
+                    console.log('✅ PrintManager: Window closed by user');
+                    resolve();
+                  }
+                  return;
+                }
                 
-                // ✅ Print after short delay
-                setTimeout(function() {
-                  try {
-                    if (self.printWindow && !self.printWindow.closed) {
-                      self.printWindow.focus();
-                      self.printWindow.print();
-                      console.log('✅ PrintManager: Print command sent');
-                      
-                      // ✅ Auto-close window after delay
-                      setTimeout(function() {
-                        try {
-                          if (self.printWindow && !self.printWindow.closed) {
-                            self.printWindow.close();
-                            console.log('✅ PrintManager: Window auto-closed');
-                          }
-                        } catch (closeErr) {
-                          console.warn('⚠️ PrintManager: Cannot auto-close window:', closeErr);
+                // ✅ Check if document is ready
+                if (self.printWindow.document && self.printWindow.document.readyState === 'complete') {
+                  clearInterval(checkInterval);
+                  if (timeoutId) clearTimeout(timeoutId);
+                  
+                  // ✅ Print immediately after document is ready (بدون delay اضافی)
+                  setTimeout(function() {
+                    try {
+                      if (self.printWindow && !self.printWindow.closed) {
+                        // ✅ CRITICAL: بررسی اینکه آیا document آماده است
+                        if (self.printWindow.document && self.printWindow.document.readyState === 'complete') {
+                          // ✅ چاپ فوری (فقط delay کوتاه برای اطمینان از آماده بودن)
+                          setTimeout(function() {
+                            try {
+                              if (self.printWindow && !self.printWindow.closed) {
+                                self.printWindow.focus();
+                                self.printWindow.print();
+                                console.log('✅ PrintManager: Print command sent');
+                                
+                                // ✅ Auto-close window immediately after print (بدون delay اضافی)
+                                setTimeout(function() {
+                                  try {
+                                    if (self.printWindow && !self.printWindow.closed) {
+                                      self.printWindow.close();
+                                      console.log('✅ PrintManager: Window auto-closed');
+                                    }
+                                  } catch (closeErr) {
+                                    console.warn('⚠️ PrintManager: Cannot auto-close window:', closeErr);
+                                  }
+                                }, self.config.windowCloseDelay);
+                                
+                                if (!isResolved) {
+                                  isResolved = true;
+                                  resolve();
+                                }
+                              }
+                            } catch (printErr) {
+                              console.error('❌ PrintManager: Print error:', printErr);
+                              if (!isResolved) {
+                                isResolved = true;
+                                resolve();
+                              }
+                            }
+                          }, self.config.printDelay); // فقط 300ms برای اطمینان از آماده بودن
+                          
+                        } else {
+                          // Document هنوز آماده نیست - دوباره تلاش می‌کنیم
+                          console.warn('⚠️ PrintManager: Document not ready, retrying...');
+                          setTimeout(function() {
+                            if (self.printWindow && !self.printWindow.closed) {
+                              setTimeout(function() {
+                                if (self.printWindow && !self.printWindow.closed) {
+                                  self.printWindow.focus();
+                                  self.printWindow.print();
+                                  console.log('✅ PrintManager: Print command sent (retry)');
+                                  if (!isResolved) {
+                                    isResolved = true;
+                                    resolve();
+                                  }
+                                }
+                              }, self.config.printDelay);
+                            }
+                          }, 500);
                         }
-                      }, self.config.windowCloseDelay);
-                      
+                      }
+                    } catch (printErr) {
+                      console.error('❌ PrintManager: Print error:', printErr);
                       if (!isResolved) {
                         isResolved = true;
+                        // Don't reject - window opened successfully
                         resolve();
                       }
                     }
-                  } catch (printErr) {
-                    console.error('❌ PrintManager: Print error:', printErr);
-                    if (!isResolved) {
-                      isResolved = true;
-                      // Don't reject - window opened successfully
-                      resolve();
-                    }
-                  }
-                }, 500);
-              }
-            } catch (err) {
-              // Cross-origin یا خطای دیگر - ادامه می‌دهیم
-              console.warn('⚠️ PrintManager: Cannot check window state:', err);
-            }
-          }, 100);
-          
-          // ✅ Timeout fallback
-          timeoutId = setTimeout(function() {
-            clearInterval(checkInterval);
-            if (!isResolved) {
-              isResolved = true;
-              // Try to print anyway
-              try {
-                if (self.printWindow && !self.printWindow.closed) {
-                  self.printWindow.focus();
-                  self.printWindow.print();
-                  console.log('✅ PrintManager: Print command sent (timeout fallback)');
+                  }, 500); // کاهش delay از 1000ms به 500ms
                 }
-                resolve();
               } catch (err) {
-                console.warn('⚠️ PrintManager: Cannot print after timeout:', err);
-                resolve(); // Resolve anyway - window opened
+                // Cross-origin یا خطای دیگر - ادامه می‌دهیم
+                console.warn('⚠️ PrintManager: Cannot check window state:', err);
               }
+            }, 100);
+            
+            // ✅ Timeout fallback
+            timeoutId = setTimeout(function() {
+              clearInterval(checkInterval);
+              if (!isResolved) {
+                isResolved = true;
+                // Try to print anyway
+                try {
+                  if (self.printWindow && !self.printWindow.closed) {
+                    self.printWindow.focus();
+                    // ✅ Delay کوتاه فقط برای اطمینان از آماده بودن
+                    setTimeout(function() {
+                      if (self.printWindow && !self.printWindow.closed) {
+                        self.printWindow.print();
+                        console.log('✅ PrintManager: Print command sent (timeout fallback)');
+                      }
+                    }, self.config.printDelay);
+                  }
+                  resolve();
+                } catch (err) {
+                  console.warn('⚠️ PrintManager: Cannot print after timeout:', err);
+                  resolve(); // Resolve anyway - window opened
+                }
+              }
+            }, self.config.printTimeout);
+            
+            // ✅ Error handler
+            self.printWindow.onerror = function() {
+              clearInterval(checkInterval);
+              if (timeoutId) clearTimeout(timeoutId);
+              if (!isResolved) {
+                isResolved = true;
+                const error = new Error('خطا در باز کردن پنجره چاپ');
+                console.error('❌ PrintManager:', error.message);
+                reject(error);
+              }
+            };
+          }).catch(function(err) {
+            console.error('❌ PrintManager: Error closing previous window:', err);
+            // حتی اگر بستن پنجره قبلی خطا داد، ادامه می‌دهیم
+            const windowFeatures = 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes';
+            const uniqueWindowName = 'ClinicApp_PrintWindow_' + Date.now();
+            self.printWindow = window.open(url, uniqueWindowName, windowFeatures);
+            if (!self.printWindow) {
+              reject(new Error('Popup blocker فعال است'));
+            } else {
+              resolve();
             }
-          }, self.config.printTimeout);
-          
-          // ✅ Error handler
-          self.printWindow.onerror = function() {
-            clearInterval(checkInterval);
-            if (timeoutId) clearTimeout(timeoutId);
-            if (!isResolved) {
-              isResolved = true;
-              const error = new Error('خطا در باز کردن پنجره چاپ');
-              console.error('❌ PrintManager:', error.message);
-              reject(error);
-            }
-          };
+          });
           
         } catch (ex) {
           console.error('❌ PrintManager: Exception in _executePrint:', ex);
@@ -366,7 +458,7 @@
   // ✅ Export to global scope
   window.PrintManager = PrintManager;
   
-  console.log('✅ PrintManager loaded - Version: 1.0.0');
+  console.log('✅ PrintManager loaded - Version: 1.3.0');
   
 })(window, jQuery);
 
