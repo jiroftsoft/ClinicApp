@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Models.Entities.Clinic;
 
@@ -56,6 +57,20 @@ public class Department : ISoftDelete, ITrackable
     /// </summary>
     [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// نوع دپارتمان
+    /// این فیلد برای دسته‌بندی دپارتمان‌ها بر اساس نوع فعالیت استفاده می‌شود
+    /// 
+    /// مثال‌های کاربرد:
+    /// - فیلتر کردن دپارتمان‌های درمانی در فرم پذیرش
+    /// - عدم نمایش دپارتمان‌های اداری در فرم پذیرش
+    /// - گزارش‌گیری بر اساس نوع دپارتمان
+    /// 
+    /// مقدار پیش‌فرض: Medical (درمانی)
+    /// </summary>
+    [Required(ErrorMessage = "نوع دپارتمان الزامی است.")]
+    public DepartmentType Type { get; set; } = DepartmentType.Medical;
 
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
@@ -177,6 +192,11 @@ public class DepartmentConfig : EntityTypeConfiguration<Department>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Department_IsActive")));
 
+        Property(d => d.Type)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Department_Type")));
+
         // پیاده‌سازی ISoftDelete
         Property(d => d.IsDeleted)
             .IsRequired()
@@ -254,6 +274,11 @@ public class DepartmentConfig : EntityTypeConfiguration<Department>
 
         HasIndex(d => new { d.ClinicId, d.IsActive, d.IsDeleted })
             .HasName("IX_Department_ClinicId_IsActive_IsDeleted");
+
+        // ایندکس ترکیبی برای فیلتر دپارتمان‌ها در فرم پذیرش
+        // فقط دپارتمان‌های فعال، حذف نشده، و با نوع خاص
+        HasIndex(d => new { d.Type, d.IsActive, d.IsDeleted })
+            .HasName("IX_Department_Type_IsActive_IsDeleted");
     }
 }
 

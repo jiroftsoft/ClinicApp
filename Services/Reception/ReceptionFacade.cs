@@ -135,9 +135,12 @@ namespace ClinicApp.Services.Reception
                     .ToListAsync();
                 result.Clinics = clinics;
 
-                // 2. بارگذاری دپارتمان‌ها
-                var departmentsResult = await _departmentManagementService.GetAllDepartmentsAsync();
-                _logger.Information("🔍 FACADE: GetAllDepartmentsAsync result - Success: {Success}, Count: {Count}", 
+                // 2. بارگذاری دپارتمان‌ها - فقط مناسب برای پذیرش
+                // ✅ IMPROVED: فقط دپارتمان‌های درمانی با خدمات فعال نمایش داده می‌شوند
+                // ✅ بهبود سرعت کار منشی: دپارتمان‌های بدون خدمت نمایش داده نمی‌شوند
+                // ✅ فیلتر خودکار بر اساس نوع دپارتمان (درمانی، پاراکلینیک، اورژانس، ...)
+                var departmentsResult = await _departmentManagementService.GetDepartmentsForReceptionAsync(clinicId);
+                _logger.Information("🔍 FACADE: GetDepartmentsForReceptionAsync result - Success: {Success}, Count: {Count}", 
                     departmentsResult.Success, departmentsResult.Data?.Count ?? 0);
                 
                 if (departmentsResult.Success)
@@ -152,11 +155,11 @@ namespace ClinicApp.Services.Reception
                         Description = d.Description
                     }).ToList();
                     
-                    _logger.Information("✅ FACADE: Departments converted - Count: {Count}", result.Departments.Count);
+                    _logger.Information("✅ FACADE: Departments filtered for reception - Count: {Count}", result.Departments.Count);
                 }
                 else
                 {
-                    _logger.Warning("⚠️ FACADE: GetAllDepartmentsAsync failed - Message: {Message}", departmentsResult.Message);
+                    _logger.Warning("⚠️ FACADE: GetDepartmentsForReceptionAsync failed - Message: {Message}", departmentsResult.Message);
                     result.Departments = new List<ViewModels.Reception.DepartmentDto>();
                 }
 
@@ -4453,8 +4456,9 @@ namespace ClinicApp.Services.Reception
 
                 if (permissions.CanEditDepartment)
                 {
-                    // بارگذاری دپارتمان‌ها
-                    var deptsResult = await _departmentManagementService.GetAllDepartmentsAsync();
+                    // بارگذاری دپارتمان‌ها - فقط مناسب برای پذیرش
+                    // ✅ IMPROVED: فقط دپارتمان‌های درمانی با خدمات فعال
+                    var deptsResult = await _departmentManagementService.GetDepartmentsForReceptionAsync(reception.ClinicId);
                     if (deptsResult.Success && deptsResult.Data != null)
                     {
                         result.AvailableDepartments = deptsResult.Data.Select(d => new DepartmentDto

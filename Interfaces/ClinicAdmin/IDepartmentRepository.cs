@@ -77,4 +77,22 @@ public interface IDepartmentRepository
         /// <param name="departmentIds">لیست شناسه‌های دپارتمان‌ها</param>
         /// <returns>لیستی از دپارتمان‌های یافت شده</returns>
         Task<List<Department>> GetDepartmentsByIdsAsync(List<int> departmentIds);
+
+    /// <summary>
+    /// دریافت دپارتمان‌های مناسب برای نمایش در فرم پذیرش
+    /// 
+    /// شرایط فیلتر:
+    /// 1. دپارتمان فعال باشد (IsActive = true)
+    /// 2. دپارتمان حذف نشده باشد (IsDeleted = false)
+    /// 3. نوع دپارتمان مناسب برای پذیرش باشد (Type)
+    /// 4. حداقل یک خدمت در دپارتمان تعریف شده باشد (برای سرعت بیشتر منشی)
+    /// 
+    /// 🏥 MEDICAL ENVIRONMENT:
+    /// - فقط دپارتمان‌های درمانی نمایش داده می‌شوند
+    /// - دپارتمان‌های بدون خدمت نادیده گرفته می‌شوند
+    /// - عملکرد بهینه با Index ترکیبی
+    /// </summary>
+    /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+    /// <returns>لیست دپارتمان‌های مناسب برای فرم پذیرش</returns>
+    Task<List<Department>> GetDepartmentsForReceptionAsync(int? clinicId = null);
 }

@@ -470,18 +470,18 @@
         <div class="header-actions">
             @if (ViewBag.DepartmentId != null)
             {
-                <a href="@Url.Action("Categories")" class="btn btn-outline-light me-2">
+                <a href="@Url.Action("Categories", "Service", new { area = "Admin" })" class="btn btn-outline-light me-2">
                     <i class="fas fa-list me-2"></i>
                     همه دسته‌بندی‌ها
                 </a>
-                <a href="@Url.Action("CreateCategory", new { departmentId = ViewBag.DepartmentId })" 
+                <a href="@Url.Action("CreateCategory", "Service", new { area = "Admin", departmentId = ViewBag.DepartmentId })" 
                    class="btn btn-light btn-lg">
                     <i class="fas fa-plus me-2"></i>دسته‌بندی جدید
                 </a>
             }
             else
             {
-                <a href="@Url.Action("CreateCategory", new { departmentId = 0 })" 
+                <a href="@Url.Action("CreateCategory", "Service", new { area = "Admin", departmentId = 0 })" 
                    class="btn btn-light btn-lg">
                     <i class="fas fa-plus me-2"></i>دسته‌بندی جدید
                 </a>
@@ -633,10 +633,10 @@
                 const departmentId = $(this).val();
                 if (departmentId) {
                     // اگر دپارتمان انتخاب شد، به صفحه آن دپارتمان برو
-                    window.location.href = '@Url.Action("Categories")?departmentId=' + departmentId;
+                    window.location.href = '@Url.Action("Categories", "Service", new { area = "Admin" })?departmentId=' + departmentId;
                 } else {
                     // اگر "همه" انتخاب شد، به صفحه اصلی برو
-                    window.location.href = '@Url.Action("Categories")';
+                    window.location.href = '@Url.Action("Categories", "Service", new { area = "Admin" })';
                 }
             });
 
@@ -709,7 +709,7 @@
             console.log('🏥 MEDICAL: Anti-Forgery Token found:', token.substring(0, 10) + '...');
             
             $.ajax({
-                url: '@Url.Action("DeleteCategory")',
+                url: '@Url.Action("DeleteCategory", "Service", new { area = "Admin" })',
                 type: 'POST',
                 dataType: 'json',
                 contentType: 'application/x-www-form-urlencoded; charset=UTF-8',

@@ -350,5 +350,55 @@ namespace ClinicApp.Services
                 return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات مشترک");
             }
         }
+
+        /// <summary>
+        /// دریافت دپارتمان‌های مناسب برای نمایش در فرم پذیرش
+        /// 
+        /// این متد تنها دپارتمان‌هایی را برمی‌گرداند که:
+        /// 1. فعال و حذف نشده باشند
+        /// 2. نوع مناسبی داشته باشند (درمانی، پاراکلینیک، اورژانس، تزریقات، ...)
+        /// 3. حداقل یک خدمت فعال داشته باشند
+        /// 
+        /// 🏥 MEDICAL ENVIRONMENT - PRODUCTION READY:
+        /// - بهبود سرعت کار منشی
+        /// - عدم نمایش دپارتمان‌های بدون خدمت
+        /// - فیلتر خودکار بر اساس نوع دپارتمان
+        /// - استفاده از Repository برای تفکیک concerns
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+        /// <returns>لیست دپارتمان‌های مناسب برای فرم پذیرش</returns>
+        public async Task<ServiceResult<List<DepartmentDto>>> GetDepartmentsForReceptionAsync(int? clinicId = null)
+        {
+            try
+            {
+                _log.Information("🏥 RECEPTION: دریافت دپارتمان‌های مناسب برای پذیرش - ClinicId: {ClinicId}", clinicId);
+
+                // دریافت دپارتمان‌ها از Repository
+                var departments = await _departmentRepo.GetDepartmentsForReceptionAsync(clinicId);
+
+                // تبدیل به DTO
+                var departmentDtos = departments.Select(d => new DepartmentDto
+                {
+                    DepartmentId = d.DepartmentId,
+                    Name = d.Name,
+                    Code = d.Code,
+                    IsActive = d.IsActive,
+                    Description = d.Description,
+                    ClinicId = d.ClinicId,
+                    ClinicName = d.Clinic?.Name ?? "",
+                    CreatedAt = d.CreatedAt,
+                    CreatedBy = d.CreatedByUser?.UserName ?? ""
+                }).ToList();
+
+                _log.Information("✅ RECEPTION: دپارتمان‌های مناسب دریافت شد - تعداد: {Count}", departmentDtos.Count);
+
+                return ServiceResult<List<DepartmentDto>>.Successful(departmentDtos);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ RECEPTION: خطا در دریافت دپارتمان‌های مناسب برای پذیرش");
+                return ServiceResult<List<DepartmentDto>>.Failed("خطا در دریافت دپارتمان‌ها برای پذیرش");
+            }
+        }
     }
 }

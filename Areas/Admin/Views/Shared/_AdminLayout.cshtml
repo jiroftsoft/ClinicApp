@@ -210,43 +210,43 @@
             <aside class="sidebar" role="complementary" aria-label="منوی اصلی">
                 <nav role="navigation" aria-label="منوی ناوبری">
                     <div class="nav-section">
-                        <h3 class="nav-section-title" aria-label="منوی اصلی">منوی اصلی</h3>
+                        <h3 class="nav-section-title" aria-label="دسترسی سریع">دسترسی سریع</h3>
 
-                        <a href="@Url.Action("Index","Dashboard")" class="nav-item" aria-label="داشبورد">
-                            <i class="fas fa-tachometer-alt icon" aria-hidden="true"></i>
-                            <span>داشبورد</span>
+                        <a href="@Url.Action("Index","Home")" class="nav-item" aria-label="صفحه اصلی">
+                            <i class="fas fa-home icon" aria-hidden="true"></i>
+                            <span>صفحه اصلی</span>
                         </a>
 
-                        <a href="@Url.Action("Index","Patients")" class="nav-item" aria-label="مدیریت بیماران">
-                            <i class="fas fa-users icon" aria-hidden="true"></i>
-                            <span>بیماران</span>
+                        <a href="@Url.Action("Index","ReceptionV2")" class="nav-item" aria-label="پذیرش بیمار">
+                            <i class="fas fa-user-plus icon" aria-hidden="true"></i>
+                            <span>پذیرش بیمار</span>
                         </a>
 
-                        <a href="@Url.Action("Index","Appointments")" class="nav-item" aria-label="مدیریت نوبت‌ها">
-                            <i class="fas fa-calendar-alt icon" aria-hidden="true"></i>
-                            <span>نوبت‌ها</span>
+                        <a href="@Url.Action("Index","Clinic", new { area = "Admin" })" class="nav-item" aria-label="مدیریت کلینیک‌ها">
+                            <i class="fas fa-hospital icon" aria-hidden="true"></i>
+                            <span>کلینیک‌ها</span>
                         </a>
 
-                        <a href="@Url.Action("Index","Doctors")" class="nav-item" aria-label="مدیریت پزشکان">
+                        <a href="@Url.Action("Index","Doctor", new { area = "Admin" })" class="nav-item" aria-label="مدیریت پزشکان">
                             <i class="fas fa-user-md icon" aria-hidden="true"></i>
                             <span>پزشکان</span>
                         </a>
 
-                        <a href="@Url.Action("Index","SupplementaryTariff")" class="nav-item" aria-label="تعرفه‌های بیمه تکمیلی">
+                        <a href="@Url.Action("Index","Service", new { area = "Admin" })" class="nav-item" aria-label="خدمات پزشکی">
+                            <i class="fas fa-stethoscope icon" aria-hidden="true"></i>
+                            <span>خدمات پزشکی</span>
+                        </a>
+
+                        <a href="@Url.Action("Index","InsurancePlan", new { area = "Admin" })" class="nav-item" aria-label="پلن‌های بیمه">
                             <i class="fas fa-shield-alt icon" aria-hidden="true"></i>
-                            <span>تعرفه تکمیلی</span>
-                        </a>
-
-                        <a href="@Url.Action("CreateBulk","SupplementaryTariff")" class="nav-item" aria-label="ایجاد تعرفه گروهی">
-                            <i class="fas fa-layer-group icon" aria-hidden="true"></i>
-                            <span>تعرفه گروهی</span>
-                        </a>
-
-                        <a href="@Url.Action("Index","Reports")" class="nav-item" aria-label="گزارش‌ها">
-                            <i class="fas fa-chart-bar icon" aria-hidden="true"></i>
-                            <span>گزارش‌ها</span>
+                            <span>بیمه‌ها</span>
                         </a>
                     </div>
+
+                    <hr class="nav-divider">
+
+                    <!-- Admin Modules Menu Section -->
+                    @Html.Partial("_AdminModulesMenu")
 
                     <hr class="nav-divider">
 
@@ -258,14 +258,14 @@
                     <div class="nav-section">
                         <h3 class="nav-section-title" aria-label="عملیات سریع">عملیات سریع</h3>
 
-                        <a href="@Url.Action("Create","Appointments")" class="btn btn-primary nav-action-btn" aria-label="ایجاد نوبت جدید">
-                            <i class="fas fa-plus icon" aria-hidden="true"></i>
-                            <span>نوبت جدید</span>
+                        <a href="@Url.Action("Index","ReceptionV2")" class="btn btn-primary nav-action-btn" aria-label="پذیرش جدید">
+                            <i class="fas fa-user-plus icon" aria-hidden="true"></i>
+                            <span>پذیرش جدید</span>
                         </a>
 
-                        <a href="@Url.Action("Create","Patients")" class="btn btn-outline nav-action-btn" aria-label="ثبت بیمار جدید">
-                            <i class="fas fa-user-plus icon" aria-hidden="true"></i>
-                            <span>بیمار جدید</span>
+                        <a href="@Url.Action("Create","Clinic", new { area = "Admin" })" class="btn btn-outline nav-action-btn" aria-label="کلینیک جدید">
+                            <i class="fas fa-hospital-alt icon" aria-hidden="true"></i>
+                            <span>کلینیک جدید</span>
                         </a>
                     </div>
 

@@ -1,0 +1,344 @@
+@using System.Web.Mvc
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var areaName = ViewContext.RouteData.DataTokens["area"]?.ToString() ?? "";
+    
+    // ============================================
+    // 🏥 ساختار کامل ماژول‌های Admin Panel
+    // ============================================
+    
+    var adminModules = new[]
+    {
+        // 1️⃣ مدیریت کلینیک
+        new { Name = "Clinic", Title = "کلینیک‌ها", Icon = "fa-hospital", Controller = "Clinic", Action = (string)null, Category = "مدیریت کلینیک" },
+        new { Name = "Department", Title = "دپارتمان‌ها", Icon = "fa-building", Controller = "Department", Action = (string)null, Category = "مدیریت کلینیک" },
+        new { Name = "ClinicBankAccount", Title = "حساب‌های بانکی", Icon = "fa-university", Controller = "ClinicBankAccount", Action = (string)null, Category = "مدیریت کلینیک" },
+        
+        // 2️⃣ مدیریت پزشکان
+        new { Name = "Doctor", Title = "پزشکان", Icon = "fa-user-md", Controller = "Doctor", Action = (string)null, Category = "مدیریت پزشکان" },
+        new { Name = "Specialization", Title = "تخصص‌ها", Icon = "fa-graduation-cap", Controller = "Specialization", Action = (string)null, Category = "مدیریت پزشکان" },
+        new { Name = "DoctorSchedule", Title = "برنامه زمانی", Icon = "fa-calendar-alt", Controller = "DoctorSchedule", Action = (string)null, Category = "مدیریت پزشکان" },
+        new { Name = "DoctorAssignment", Title = "اختصاص پزشکان", Icon = "fa-user-check", Controller = "DoctorAssignment", Action = (string)null, Category = "مدیریت پزشکان" },
+        new { Name = "DoctorDashboard", Title = "داشبورد پزشک", Icon = "fa-tachometer-alt", Controller = "DoctorDashboard", Action = (string)null, Category = "مدیریت پزشکان" },
+        new { Name = "DoctorReporting", Title = "گزارشات پزشکان", Icon = "fa-chart-line", Controller = "DoctorReporting", Action = (string)null, Category = "مدیریت پزشکان" },
+        
+        // 3️⃣ مدیریت خدمات پزشکی
+        new { Name = "Service", Title = "خدمات پزشکی", Icon = "fa-stethoscope", Controller = "Service", Action = (string)null, Category = "مدیریت خدمات" },
+        new { Name = "ServiceCategory", Title = "دسته‌بندی خدمات", Icon = "fa-layer-group", Controller = "Service", Action = "Categories", Category = "مدیریت خدمات" },
+        new { Name = "ServiceComponent", Title = "اجزای خدمات", Icon = "fa-puzzle-piece", Controller = "ServiceComponent", Action = (string)null, Category = "مدیریت خدمات" },
+        new { Name = "ServiceTemplate", Title = "Template خدمات", Icon = "fa-file-alt", Controller = "ServiceTemplate", Action = (string)null, Category = "مدیریت خدمات" },
+        new { Name = "SharedService", Title = "خدمات مشترک", Icon = "fa-share-alt", Controller = "SharedService", Action = (string)null, Category = "مدیریت خدمات" },
+        new { Name = "ServiceManagement", Title = "مدیریت پیشرفته", Icon = "fa-cogs", Controller = "ServiceManagement", Action = (string)null, Category = "مدیریت خدمات" },
+        
+        // 4️⃣ مدیریت بیمه
+        new { Name = "InsuranceProvider", Title = "ارائه‌دهندگان بیمه", Icon = "fa-building", Controller = "InsuranceProvider", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "InsurancePlan", Title = "پلن‌های بیمه", Icon = "fa-shield-alt", Controller = "InsurancePlan", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "InsuranceTariff", Title = "تعرفه‌های بیمه", Icon = "fa-money-bill", Controller = "InsuranceTariff", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "SupplementaryTariff", Title = "تعرفه تکمیلی", Icon = "fa-plus-circle", Controller = "SupplementaryTariff", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "InsuranceCalculation", Title = "محاسبات بیمه", Icon = "fa-calculator", Controller = "InsuranceCalculation", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "CombinedInsuranceCalculation", Title = "محاسبه ترکیبی", Icon = "fa-compress", Controller = "CombinedInsuranceCalculation", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "PatientInsurance", Title = "بیمه بیماران", Icon = "fa-user-shield", Controller = "PatientInsurance", Action = (string)null, Category = "مدیریت بیمه" },
+        new { Name = "BusinessRule", Title = "قوانین کسب‌وکار", Icon = "fa-balance-scale", Controller = "BusinessRule", Action = (string)null, Category = "مدیریت بیمه" },
+        
+        // 5️⃣ مدیریت نوبت‌ها
+        new { Name = "EmergencyBooking", Title = "نوبت‌های اضطراری", Icon = "fa-ambulance", Controller = "EmergencyBooking", Action = (string)null, Category = "مدیریت نوبت‌ها" },
+        new { Name = "AppointmentAvailability", Title = "دسترس‌پذیری نوبت", Icon = "fa-calendar-check", Controller = "AppointmentAvailability", Action = (string)null, Category = "مدیریت نوبت‌ها" },
+        new { Name = "ScheduleOptimization", Title = "بهینه‌سازی برنامه", Icon = "fa-chart-bar", Controller = "ScheduleOptimization", Action = (string)null, Category = "مدیریت نوبت‌ها" },
+        
+        // 6️⃣ تنظیمات سیستم
+        new { Name = "FactorSetting", Title = "تنظیمات ضرایب", Icon = "fa-sliders-h", Controller = "FactorSetting", Action = (string)null, Category = "تنظیمات سیستم" },
+        new { Name = "InsuranceTypeUpdate", Title = "به‌روزرسانی بیمه", Icon = "fa-sync-alt", Controller = "InsuranceTypeUpdate", Action = (string)null, Category = "تنظیمات سیستم" },
+        new { Name = "SystemSeed", Title = "داده‌های اولیه", Icon = "fa-database", Controller = "SystemSeed", Action = (string)null, Category = "تنظیمات سیستم" }
+    };
+    
+    // دسته‌بندی ماژول‌ها
+    var categories = adminModules.GroupBy(m => m.Category).OrderBy(g => g.Key);
+}
+
+@* ============================================
+   Admin Modules Menu - Professional Navigation
+   ============================================
+   - ساختار درختی حرفه‌ای
+   - Active State Detection
+   - Responsive Design
+   - Medical Environment Colors
+   ============================================ *@
+
+<div class="admin-modules-menu-section">
+    <div class="admin-modules-menu-header">
+        <h3 class="admin-modules-menu-title">
+            <i class="fas fa-th-large"></i>
+            ماژول‌های مدیریتی
+        </h3>
+        <button class="admin-modules-menu-toggle" type="button" aria-label="باز/بسته کردن منوی ماژول‌ها" aria-expanded="true">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+    
+    <nav class="admin-modules-menu-nav" role="navigation" aria-label="منوی ماژول‌های مدیریتی">
+        @foreach (var category in categories)
+        {
+            <div class="admin-modules-menu-category">
+                <div class="admin-modules-menu-category-header">
+                    @switch (category.Key)
+                    {
+                        case "مدیریت کلینیک":
+                            <i class="fas fa-hospital-alt"></i>
+                            break;
+                        case "مدیریت پزشکان":
+                            <i class="fas fa-user-md"></i>
+                            break;
+                        case "مدیریت خدمات":
+                            <i class="fas fa-stethoscope"></i>
+                            break;
+                        case "مدیریت بیمه":
+                            <i class="fas fa-shield-alt"></i>
+                            break;
+                        case "مدیریت نوبت‌ها":
+                            <i class="fas fa-calendar-alt"></i>
+                            break;
+                        case "تنظیمات سیستم":
+                            <i class="fas fa-cog"></i>
+                            break;
+                        default:
+                            <i class="fas fa-folder"></i>
+                            break;
+                    }
+                    <span class="admin-modules-menu-category-title">@category.Key</span>
+                    <span class="admin-modules-menu-category-count">(@category.Count())</span>
+                </div>
+                
+                <ul class="admin-modules-menu-list">
+                    @foreach (var module in category.OrderBy(m => m.Title))
+                    {
+                        var isActive = controllerName.Equals(module.Controller, StringComparison.OrdinalIgnoreCase) && 
+                                      (string.IsNullOrEmpty(module.Action) || actionName.Equals(module.Action, StringComparison.OrdinalIgnoreCase));
+                        
+                        var moduleUrl = string.IsNullOrEmpty(module.Action) 
+                            ? Url.Action("Index", module.Controller, new { area = "Admin" })
+                            : Url.Action(module.Action, module.Controller, new { area = "Admin" });
+                        
+                        <li class="admin-modules-menu-item @(isActive ? "active" : "")">
+                            <a href="@moduleUrl" 
+                               class="admin-modules-menu-link @(isActive ? "active" : "")" 
+                               aria-label="@module.Title"
+                               title="@module.Title">
+                                <i class="fas @module.Icon admin-modules-menu-icon"></i>
+                                <span class="admin-modules-menu-text">@module.Title</span>
+                                @if (isActive)
+                                {
+                                    <i class="fas fa-chevron-left admin-modules-menu-active-indicator" aria-hidden="true"></i>
+                                }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </nav>
+</div>
+
+<style>
+    /* Admin Modules Menu Styles - Production Ready */
+    .admin-modules-menu-section {
+        background-color: var(--medical-bg, #ffffff);
+        border: 1px solid var(--medical-border, #dee2e6);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .admin-modules-menu-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .admin-modules-menu-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .admin-modules-menu-toggle {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 0.875rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .admin-modules-menu-toggle[aria-expanded="false"] {
+        transform: rotate(-90deg);
+    }
+    
+    .admin-modules-menu-nav {
+        padding: 0.5rem 0;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .admin-modules-menu-nav[aria-hidden="true"] {
+        display: none;
+    }
+    
+    .admin-modules-menu-category {
+        margin-bottom: 0.5rem;
+    }
+    
+    .admin-modules-menu-category-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(to bottom, #f1f5f9, #f8fafc);
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #1e293b;
+        border-bottom: 1px solid var(--medical-border, #dee2e6);
+    }
+    
+    .admin-modules-menu-category-title {
+        flex: 1;
+    }
+    
+    .admin-modules-menu-category-count {
+        font-size: 0.75rem;
+        color: var(--medical-text-muted, #6c757d);
+        background-color: var(--medical-bg, #ffffff);
+        padding: 0.125rem 0.5rem;
+        border-radius: 12px;
+    }
+    
+    .admin-modules-menu-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .admin-modules-menu-item {
+        margin: 0;
+    }
+    
+    .admin-modules-menu-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem 0.75rem 2rem;
+        color: var(--medical-text, #212529);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-right: 3px solid transparent;
+        position: relative;
+    }
+    
+    .admin-modules-menu-link:hover {
+        background-color: #eff6ff;
+        color: #1e3a8a;
+        text-decoration: none;
+    }
+    
+    .admin-modules-menu-link.active {
+        background-color: rgba(30, 58, 138, 0.1);
+        color: #1e3a8a;
+        border-right-color: #2563eb;
+        font-weight: 600;
+    }
+    
+    .admin-modules-menu-icon {
+        width: 20px;
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .admin-modules-menu-text {
+        flex: 1;
+    }
+    
+    .admin-modules-menu-active-indicator {
+        color: #2563eb;
+        font-size: 0.75rem;
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .admin-modules-menu-section {
+            margin-bottom: 0.5rem;
+        }
+        
+        .admin-modules-menu-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .admin-modules-menu-link {
+            padding: 0.625rem 1rem 0.625rem 1.5rem;
+        }
+    }
+    
+    /* Scrollbar Styling */
+    .admin-modules-menu-nav::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .admin-modules-menu-nav::-webkit-scrollbar-track {
+        background: var(--medical-light, #f8f9fa);
+    }
+    
+    .admin-modules-menu-nav::-webkit-scrollbar-thumb {
+        background: var(--medical-border, #dee2e6);
+        border-radius: 3px;
+    }
+    
+    .admin-modules-menu-nav::-webkit-scrollbar-thumb:hover {
+        background: var(--medical-text-muted, #6c757d);
+    }
+</style>
+
+<script>
+    (function() {
+        'use strict';
+        
+        // Toggle Admin Modules Menu
+        var menuToggle = document.querySelector('.admin-modules-menu-toggle');
+        var menuNav = document.querySelector('.admin-modules-menu-nav');
+        
+        if (menuToggle && menuNav) {
+            // Check localStorage for saved state
+            var savedState = localStorage.getItem('adminModulesMenuExpanded');
+            var isExpanded = savedState !== null ? savedState === 'true' : true;
+            
+            menuToggle.setAttribute('aria-expanded', isExpanded);
+            if (!isExpanded) {
+                menuNav.setAttribute('aria-hidden', 'true');
+            }
+            
+            menuToggle.addEventListener('click', function() {
+                var currentState = menuToggle.getAttribute('aria-expanded') === 'true';
+                var newState = !currentState;
+                
+                menuToggle.setAttribute('aria-expanded', newState);
+                if (newState) {
+                    menuNav.removeAttribute('aria-hidden');
+                } else {
+                    menuNav.setAttribute('aria-hidden', 'true');
+                }
+                
+                // Save state to localStorage
+                localStorage.setItem('adminModulesMenuExpanded', newState);
+            });
+        }
+    })();
+</script>
+

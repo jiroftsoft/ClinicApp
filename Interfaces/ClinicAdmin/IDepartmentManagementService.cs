@@ -72,5 +72,22 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// </summary>
         /// <returns>لیست خدمات مشترک</returns>
         Task<ServiceResult<List<ServiceDto>>> GetSharedServicesAsync();
+
+    /// <summary>
+    /// دریافت دپارتمان‌های مناسب برای نمایش در فرم پذیرش
+    /// 
+    /// این متد فقط دپارتمان‌هایی را برمی‌گرداند که:
+    /// 1. فعال و حذف نشده باشند
+    /// 2. نوع مناسبی داشته باشند (درمانی، پاراکلینیک، اورژانس، تزریقات، ...)
+    /// 3. حداقل یک خدمت فعال داشته باشند
+    /// 
+    /// 🏥 MEDICAL ENVIRONMENT:
+    /// - بهبود سرعت کار منشی
+    /// - عدم نمایش دپارتمان‌های بدون خدمت
+    /// - فیلتر خودکار بر اساس نوع
+    /// </summary>
+    /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+    /// <returns>لیست دپارتمان‌های مناسب</returns>
+    Task<ServiceResult<List<DepartmentDto>>> GetDepartmentsForReceptionAsync(int? clinicId = null);
     }
 }

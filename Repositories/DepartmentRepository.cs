@@ -6,6 +6,7 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Repositories;
 
@@ -121,5 +122,63 @@ public class DepartmentRepository : IDepartmentRepository
                 .OrderBy(d => d.Name)
                 .ToListAsync();
         }
+
+    /// <summary>
+    /// دریافت دپارتمان‌های مناسب برای نمایش در فرم پذیرش
+    /// 
+    /// این متد تنها دپارتمان‌هایی را برمی‌گرداند که:
+    /// 1. فعال هستند (IsActive = true)
+    /// 2. حذف نشده‌اند (IsDeleted = false)
+    /// 3. نوع مناسبی دارند (Type.ShouldShowInReception() = true)
+    /// 4. حداقل یک خدمت فعال دارند
+    /// 
+    /// 🏥 MEDICAL ENVIRONMENT - PRODUCTION READY:
+    /// - استفاده از AsNoTracking برای Performance
+    /// - فیلتر بر اساس نوع دپارتمان (Medical, Paraclinical, Emergency, etc.)
+    /// - فیلتر خدمات: فقط دپارتمان‌های دارای خدمات فعال
+    /// - Join کارآمد با ServiceCategories و Services
+    /// - مرتب‌سازی بر اساس نام
+    /// </summary>
+    /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+    /// <returns>لیست دپارتمان‌های مناسب</returns>
+    public async Task<List<Department>> GetDepartmentsForReceptionAsync(int? clinicId = null)
+    {
+        var query = _context.Departments
+            .AsNoTracking() // ✅ Performance: ReadOnly
+            .Where(d => !d.IsDeleted && d.IsActive); // ✅ فقط فعال و حذف نشده
+
+        // ✅ فیلتر بر اساس کلینیک (اگر مشخص شده)
+        if (clinicId.HasValue)
+        {
+            query = query.Where(d => d.ClinicId == clinicId.Value);
+        }
+
+        // ✅ فیلتر بر اساس نوع دپارتمان
+        // فقط دپارتمان‌های درمانی که باید در فرم پذیرش نمایش داده شوند
+        var validTypes = new[]
+        {
+            DepartmentType.Medical,          // ✅ درمانی
+            DepartmentType.Paraclinical,    // ✅ پاراکلینیک
+            DepartmentType.Emergency,        // ✅ اورژانس
+            DepartmentType.Injection,        // ✅ تزریقات
+            DepartmentType.Surgery,          // ✅ جراحی
+            DepartmentType.Rehabilitation    // ✅ توانبخشی
+        };
+
+        query = query.Where(d => validTypes.Contains(d.Type));
+
+        // ✅ فیلتر: فقط دپارتمان‌هایی که حداقل یک خدمت فعال دارند
+        // این کار سرعت کار منشی را افزایش می‌دهد
+        query = query.Where(d => d.ServiceCategories.Any(sc => 
+            !sc.IsDeleted && 
+            sc.IsActive && 
+            sc.Services.Any(s => !s.IsDeleted && s.IsActive)
+        ));
+
+        // ✅ مرتب‌سازی بر اساس نام
+        return await query
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
 
 }

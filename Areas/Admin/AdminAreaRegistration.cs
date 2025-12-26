@@ -155,6 +155,158 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
+            // ✅ Clinic Routes - باید قبل از CMS باشد تا تداخل نکند
+            context.MapRoute(
+                name: "Admin_Clinic_Routes",
+                url: "Admin/Clinic/{action}/{id}",
+                defaults: new { controller = "Clinic", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Department Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_Department_Routes",
+                url: "Admin/Department/{action}/{id}",
+                defaults: new { controller = "Department", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Doctor Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_Doctor_Routes",
+                url: "Admin/Doctor/{action}/{id}",
+                defaults: new { controller = "Doctor", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Service Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_Service_Routes",
+                url: "Admin/Service/{action}/{id}",
+                defaults: new { controller = "Service", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ SystemSeed Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_SystemSeed_Routes",
+                url: "Admin/SystemSeed/{action}/{id}",
+                defaults: new { controller = "SystemSeed", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ FactorSetting Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_FactorSetting_Routes",
+                url: "Admin/FactorSetting/{action}/{id}",
+                defaults: new { controller = "FactorSetting", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ InsuranceTypeUpdate Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_InsuranceTypeUpdate_Routes",
+                url: "Admin/InsuranceTypeUpdate/{action}/{id}",
+                defaults: new { controller = "InsuranceTypeUpdate", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ ClinicBankAccount Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_ClinicBankAccount_Routes",
+                url: "Admin/ClinicBankAccount/{action}/{id}",
+                defaults: new { controller = "ClinicBankAccount", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Specialization Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_Specialization_Routes",
+                url: "Admin/Specialization/{action}/{id}",
+                defaults: new { controller = "Specialization", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Doctor Related Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_DoctorSchedule_Routes",
+                url: "Admin/DoctorSchedule/{action}/{id}",
+                defaults: new { controller = "DoctorSchedule", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_DoctorAssignment_Routes",
+                url: "Admin/DoctorAssignment/{action}/{id}",
+                defaults: new { controller = "DoctorAssignment", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_DoctorDashboard_Routes",
+                url: "Admin/DoctorDashboard/{action}/{id}",
+                defaults: new { controller = "DoctorDashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_DoctorReporting_Routes",
+                url: "Admin/DoctorReporting/{action}/{id}",
+                defaults: new { controller = "DoctorReporting", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Service Related Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_ServiceComponent_Routes",
+                url: "Admin/ServiceComponent/{action}/{id}",
+                defaults: new { controller = "ServiceComponent", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_ServiceTemplate_Routes",
+                url: "Admin/ServiceTemplate/{action}/{id}",
+                defaults: new { controller = "ServiceTemplate", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_SharedService_Routes",
+                url: "Admin/SharedService/{action}/{id}",
+                defaults: new { controller = "SharedService", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_ServiceManagement_Routes",
+                url: "Admin/ServiceManagement/{action}/{id}",
+                defaults: new { controller = "ServiceManagement", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            // ✅ Appointment Related Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_EmergencyBooking_Routes",
+                url: "Admin/EmergencyBooking/{action}/{id}",
+                defaults: new { controller = "EmergencyBooking", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_AppointmentAvailability_Routes",
+                url: "Admin/AppointmentAvailability/{action}/{id}",
+                defaults: new { controller = "AppointmentAvailability", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
+                name: "Admin_ScheduleOptimization_Routes",
+                url: "Admin/ScheduleOptimization/{action}/{id}",
+                defaults: new { controller = "ScheduleOptimization", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
             // CMS Routes - مسیرهای CMS (باید قبل از Admin default باشد تا اولویت داشته باشد)
             context.MapRoute(
                 name: "Admin_CMS_Default",

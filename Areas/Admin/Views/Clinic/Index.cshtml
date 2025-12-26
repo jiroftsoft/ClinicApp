@@ -327,7 +327,7 @@
                 </h2>
                 <p class="mb-0 opacity-75">مدیریت و نظارت بر کلینیک‌های مجموعه درمانی</p>
             </div>
-            <a href="@Url.Action("Create")" class="btn btn-medical-success">
+            <a href="@Url.Action("Create", "Clinic", new { area = "Admin" })" class="btn btn-medical-success">
                 <i class="fas fa-plus"></i>
                 کلینیک جدید
             </a>
@@ -436,13 +436,13 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="@Url.Action("Edit", "Clinic", new { id = clinic.ClinicId })" 
+                                        <a href="@Url.Action("Edit", "Clinic", new { area = "Admin", id = clinic.ClinicId })" 
                                            class="btn btn-action btn-edit" 
                                            title="ویرایش کلینیک" 
                                            data-bs-toggle="tooltip">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="@Url.Action("Details", "Clinic", new { id = clinic.ClinicId })" 
+                                        <a href="@Url.Action("Details", "Clinic", new { area = "Admin", id = clinic.ClinicId })" 
                                            class="btn btn-action btn-view" 
                                            title="مشاهده جزئیات" 
                                            data-bs-toggle="tooltip">
@@ -468,7 +468,7 @@
                                     <i class="fas fa-clinic-medical"></i>
                                     <h5>هیچ کلینیکی یافت نشد</h5>
                                     <p class="mb-3">در حال حاضر کلینیکی در سیستم وجود ندارد.</p>
-                                    <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                                    <a href="@Url.Action("Create", "Clinic", new { area = "Admin" })" class="btn btn-medical-success">
                                         <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
                                     </a>
                                 </div>
@@ -655,7 +655,7 @@
                 showLoading();
 
                 $.ajax({
-                    url: '@Url.Action("Index")',
+                    url: '@Url.Action("Index", "Clinic", new { area = "Admin" })',
                     type: 'GET',
                     data: { 
                         searchTerm: term, 
@@ -758,7 +758,7 @@
                                 <i class="fas fa-clinic-medical"></i>
                                 <h5>هیچ کلینیکی یافت نشد</h5>
                                 <p class="mb-3">در حال حاضر کلینیکی با معیارهای جستجوی شما وجود ندارد.</p>
-                                <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                                <a href="/Admin/Clinic/Create" class="btn btn-medical-success">
                                     <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
                                 </a>
                             </div>
@@ -886,7 +886,7 @@
                 showLoading();
                 
                 $.ajax({
-                    url: '@Url.Action("GetDependencyInfo", "Clinic")',
+                    url: '@Url.Action("GetDependencyInfo", "Clinic", new { area = "Admin" })',
                     type: 'GET',
                     data: { id: clinicId },
                     dataType: 'json',
@@ -927,7 +927,7 @@
                                 console.log('🏥 MEDICAL: امکان حذف وجود دارد');
                                 // ✅ امکان حذف وجود دارد
                                 clinicNameToDelete.text(clinicName);
-                                const deleteUrl = `@Url.Action("Delete", "Clinic")/${clinicId}`;
+                                const deleteUrl = `@Url.Action("Delete", "Clinic", new { area = "Admin" })/${clinicId}`;
                 deleteForm.attr('action', deleteUrl);
                 deleteModal.show();
                             } else {

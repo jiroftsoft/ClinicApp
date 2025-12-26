@@ -839,7 +839,8 @@
     });
 
     $('#patientFastCreateModal').on('hidden.bs.modal', function() {
-      console.log('🏥 V2: Fast Create Modal hidden');
+      console.log('🏥 V2: Fast Create Modal hidden - Starting cleanup...');
+      
       const $btn = $('#btnFastCreateSave');
       $btn.prop('disabled', false)
           .html('<i class="fas fa-save me-2"></i>ثبت و ادامه پذیرش');
@@ -856,8 +857,37 @@
       }
 
       $('#fc_insurancePanel').removeClass('show');
+      
+      // ✅ CRITICAL FIX: پاکسازی کامل Modal Backdrop
+      console.log('🏥 V2: Cleaning up modal backdrop...');
+      
+      // روش 1: حذف کلاس modal-open از body
       $('body').removeClass('modal-open');
+      
+      // روش 2: حذف تمامbackdrop ها
       $('.modal-backdrop').remove();
+      
+      // روش 3: اطمینان از پاک شدن overflow hidden
+      $('body').css('overflow', '');
+      $('body').css('padding-right', '');
+      
+      // روش 4: پاکسازی inline styles از body
+      if ($('body').attr('style')) {
+        $('body').removeAttr('style');
+      }
+      
+      // روش 5: اطمینان از بستن کامل modal
+      const modalElement = document.getElementById('patientFastCreateModal');
+      if (modalElement) {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.dispose();
+        }
+      }
+      
+      console.log('🏥 V2: ✅ Modal backdrop cleanup completed');
+      console.log('🏥 V2: ✅ Body classes:', $('body').attr('class'));
+      console.log('🏥 V2: ✅ Remaining backdrops:', $('.modal-backdrop').length);
     });
   });
   

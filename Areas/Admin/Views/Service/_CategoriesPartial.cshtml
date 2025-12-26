@@ -54,15 +54,15 @@
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <a href="@Url.Action("CategoryDetails", new { id = category.ServiceCategoryId })" 
+                                <a href="@Url.Action("CategoryDetails", "Service", new { area = "Admin", id = category.ServiceCategoryId })" 
                                    class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
                                     👁️
                                 </a>
-                                <a href="@Url.Action("EditCategory", new { id = category.ServiceCategoryId })" 
+                                <a href="@Url.Action("EditCategory", "Service", new { area = "Admin", id = category.ServiceCategoryId })" 
                                    class="btn btn-sm btn-outline-warning" title="ویرایش دسته‌بندی">
                                     ✏️
                                 </a>
-                                <a href="@Url.Action("Index", new { serviceCategoryId = category.ServiceCategoryId })" 
+                                <a href="@Url.Action("Index", "Service", new { area = "Admin", serviceCategoryId = category.ServiceCategoryId })" 
                                    class="btn btn-sm btn-outline-primary" title="مشاهده خدمات">
                                     📋
                                 </a>
@@ -123,7 +123,7 @@ else
         <p class="text-muted">برای شروع، یک دسته‌بندی جدید ایجاد کنید.</p>
         @if (ViewBag.DepartmentId != null)
         {
-            <a href="@Url.Action("CreateCategory", new { departmentId = ViewBag.DepartmentId })" 
+            <a href="@Url.Action("CreateCategory", "Service", new { area = "Admin", departmentId = ViewBag.DepartmentId })" 
                class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>ایجاد اولین دسته‌بندی
             </a>

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Web.Mvc;
 using ClinicApp.Interfaces;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels
 {
@@ -30,6 +31,14 @@ namespace ClinicApp.ViewModels
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
 
+        /// <summary>
+        /// نوع دپارتمان
+        /// این فیلد برای دسته‌بندی و فیلتر کردن دپارتمان‌ها استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "نوع دپارتمان الزامی است.")]
+        [Display(Name = "نوع دپارتمان")]
+        public DepartmentType Type { get; set; } = DepartmentType.Medical;
+
         // این فیلد برای نمایش نام کلینیک در هدر صفحات Create/Edit استفاده می‌شود
         public string ClinicName { get; set; }
 
@@ -45,6 +54,7 @@ namespace ClinicApp.ViewModels
                 Name = department.Name,
                 ClinicId = department.ClinicId,
                 IsActive = department.IsActive,
+                Type = department.Type, // ✅ نوع دپارتمان
                 ClinicName = department.Clinic?.Name // دسترسی امن به رابطه
             };
         }
@@ -58,6 +68,7 @@ namespace ClinicApp.ViewModels
             department.Name = this.Name?.Trim();
             department.ClinicId = this.ClinicId;
             department.IsActive = this.IsActive;
+            department.Type = this.Type; // ✅ نوع دپارتمان
         }
     }
 
@@ -72,6 +83,11 @@ namespace ClinicApp.ViewModels
         public int DoctorCount { get; set; }
         public int ServiceCategoryCount { get; set; }
         public bool IsActive { get; set; }
+        
+        /// <summary>
+        /// نوع دپارتمان
+        /// </summary>
+        public DepartmentType Type { get; set; }
 
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
@@ -87,7 +103,8 @@ namespace ClinicApp.ViewModels
                 // شمارش امن روابط برای جلوگیری از خطا
                 DoctorCount = department.DoctorDepartments?.Count(dd => dd.Doctor.IsActive) ?? 0,
                 ServiceCategoryCount = department.ServiceCategories?.Count(sc => sc.IsActive) ?? 0,
-                IsActive = department.IsActive
+                IsActive = department.IsActive,
+                Type = department.Type // ✅ نوع دپارتمان
             };
         }
     }
@@ -104,6 +121,7 @@ namespace ClinicApp.ViewModels
         public int DoctorCount { get; set; }
         public int ServiceCategoryCount { get; set; }
         public bool IsActive { get; set; }
+        public DepartmentType Type { get; set; } // ✅ نوع دپارتمان
         public string CreatedAtShamsi { get; set; }
         public string UpdatedAtShamsi { get; set; }
         public string CreatedByUser { get; set; }
@@ -122,6 +140,7 @@ namespace ClinicApp.ViewModels
                 ClinicId = department.ClinicId,
                 ClinicName = department.Clinic?.Name,
                 IsActive = department.IsActive,
+                Type = department.Type, // ✅ نوع دپارتمان
                 DoctorCount = department.DoctorDepartments?.Count(dd => dd.Doctor.IsActive) ?? 0,
                 ServiceCategoryCount = department.ServiceCategories?.Count(sc => sc.IsActive) ?? 0,
                 CreatedAtShamsi = department.CreatedAt.ToPersianDateTime(),

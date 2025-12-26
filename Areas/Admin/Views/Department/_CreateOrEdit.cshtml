@@ -1,4 +1,5 @@
 ﻿@model ClinicApp.ViewModels.DepartmentCreateEditViewModel
+@using ClinicApp.Models.Enums
 
 @Html.AntiForgeryToken()
 @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
@@ -10,15 +11,60 @@
 }
 
 <div class="alert alert-info">
-    <strong>Clinic:</strong> @Model.ClinicName
+    <strong>کلینیک:</strong> @Model.ClinicName
 </div>
 
 <div class="row g-3">
-    <div class="col-12">
+    <div class="col-md-6">
         @Html.LabelFor(model => model.Name, new { @class = "form-label" })
-        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "e.g., Cardiology, Pediatrics" } })
+        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: دندانپزشکی، چشم‌پزشکی" } })
         @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
     </div>
+    
+    <div class="col-md-6">
+        @Html.LabelFor(model => model.Type, new { @class = "form-label" })
+        <select asp-for="Type" name="Type" id="Type" class="form-select">
+            <option value="@((int)DepartmentType.Medical)" @(Model.Type == DepartmentType.Medical ? "selected" : "")>
+                <i class="fa fa-stethoscope"></i> درمانی (Medical)
+            </option>
+            <option value="@((int)DepartmentType.Administrative)" @(Model.Type == DepartmentType.Administrative ? "selected" : "")>
+                اداری (Administrative)
+            </option>
+            <option value="@((int)DepartmentType.AdmissionDischarge)" @(Model.Type == DepartmentType.AdmissionDischarge ? "selected" : "")>
+                پذیرش و ترخیص (Admission & Discharge)
+            </option>
+            <option value="@((int)DepartmentType.Paraclinical)" @(Model.Type == DepartmentType.Paraclinical ? "selected" : "")>
+                پاراکلینیک (Paraclinical)
+            </option>
+            <option value="@((int)DepartmentType.Emergency)" @(Model.Type == DepartmentType.Emergency ? "selected" : "")>
+                اورژانس (Emergency)
+            </option>
+            <option value="@((int)DepartmentType.Injection)" @(Model.Type == DepartmentType.Injection ? "selected" : "")>
+                تزریقات (Injection)
+            </option>
+            <option value="@((int)DepartmentType.Surgery)" @(Model.Type == DepartmentType.Surgery ? "selected" : "")>
+                جراحی (Surgery)
+            </option>
+            <option value="@((int)DepartmentType.Inpatient)" @(Model.Type == DepartmentType.Inpatient ? "selected" : "")>
+                بستری (Inpatient)
+            </option>
+            <option value="@((int)DepartmentType.Rehabilitation)" @(Model.Type == DepartmentType.Rehabilitation ? "selected" : "")>
+                توانبخشی (Rehabilitation)
+            </option>
+            <option value="@((int)DepartmentType.Pharmacy)" @(Model.Type == DepartmentType.Pharmacy ? "selected" : "")>
+                دارویی (Pharmacy)
+            </option>
+            <option value="@((int)DepartmentType.Other)" @(Model.Type == DepartmentType.Other ? "selected" : "")>
+                سایر (Other)
+            </option>
+        </select>
+        @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
+        <small class="form-text text-muted">
+            <i class="fas fa-info-circle"></i> 
+            فقط دپارتمان‌های درمانی در فرم پذیرش نمایش داده می‌شوند
+        </small>
+    </div>
+    
     <div class="col-12">
         <div class="form-check form-switch">
             @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })

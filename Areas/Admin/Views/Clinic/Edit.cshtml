@@ -197,7 +197,7 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <a href="@Url.Action("Details", new { id = Model.ClinicId })" class="btn-edit-action btn-details">
+                        <a href="@Url.Action("Details", "Clinic", new { area = "Admin", id = Model.ClinicId })" class="btn-edit-action btn-details">
                             <i class="fas fa-eye"></i>
                             مشاهده جزئیات
                         </a>
@@ -226,7 +226,7 @@
                         <small>تغییرات اعمال‌شده بلافاصله در سیستم نوبت‌دهی نمایش داده می‌شود</small>
                     </div>
                     <div class="d-flex gap-2">
-                        <a href="@Url.Action("Index")" class="btn-edit-action btn-cancel-edit">
+                        <a href="@Url.Action("Index", "Clinic", new { area = "Admin" })" class="btn-edit-action btn-cancel-edit">
                             <i class="fas fa-times"></i>
                             انصراف
                         </a>
