@@ -23,7 +23,7 @@
     @date 1404/09/11
 *@
 
-<div class="modal fade" id="posPaymentModal" tabindex="-1" aria-labelledby="posPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="posPaymentModal" tabindex="-1" aria-labelledby="posPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-allow-close="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <!-- Modal Header -->
@@ -148,7 +148,10 @@
                     <i class="fas fa-check me-2"></i>تأیید و نهایی‌سازی
                 </button>
                 <button type="button" class="btn btn-info d-none" id="posPaymentPrintBtn">
-                    <i class="fas fa-print me-2"></i>چاپ قبض
+                    <i class="fas fa-print me-2"></i>چاپ قبض پرداخت
+                </button>
+                <button type="button" class="btn btn-warning d-none" id="posPaymentPrintInsuranceBtn">
+                    <i class="fas fa-file-invoice me-2"></i>چاپ قبض بیمه تکمیلی
                 </button>
                 <button type="button" class="btn btn-warning d-none" id="posPaymentRetryBtn">
                     <i class="fas fa-redo me-2"></i>تلاش مجدد
@@ -194,6 +197,7 @@
         
         /**
          * نمایش State Success
+         * ✅ Production-Grade: بهینه‌سازی برای چاپ قبض
          */
         showSuccess: function(data) {
             this._hideAllStates();
@@ -207,9 +211,21 @@
             $('#posSuccessAmount').text(data.amount ? parseFloat(data.amount).toLocaleString('fa-IR') + ' ریال' : 'نامشخص');
             $('#posTxnDate').text(data.txnDate || 'نامشخص');
             
-            $('#posPaymentConfirmBtn').removeClass('d-none');
-            $('#posPaymentPrintBtn').removeClass('d-none');
+            // ✅ دکمه "تأیید" را به "بستن" تغییر می‌دهیم (Finalize خودکار انجام شده است)
+            $('#posPaymentConfirmBtn')
+                .html('<i class="fas fa-times me-2"></i>بستن')
+                .removeClass('btn-success')
+                .addClass('btn-secondary')
+                .removeClass('d-none');
+            
+            // ✅ دکمه‌های چاپ (بعداً در finalizeReception فعال می‌شوند)
+            $('#posPaymentPrintBtn').addClass('d-none'); // ابتدا مخفی، بعد فعال می‌شود
+            $('#posPaymentPrintInsuranceBtn').addClass('d-none'); // ابتدا مخفی، بعد فعال می‌شود
             $('#posPaymentCancelBtn').removeClass('d-none');
+            
+            // ✅ مخفی کردن دکمه "شروع پرداخت"
+            $('#posPaymentStartBtn').addClass('d-none');
+            $('#posPaymentRetryBtn').addClass('d-none');
         },
         
         /**

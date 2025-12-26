@@ -1,383 +1,419 @@
-@model int?
+@model ClinicApp.ViewModels.Reception.ReceptionDetailsFullDto
 @{
     ViewBag.Title = "چاپ قبض بیمه تکمیلی";
-    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    Layout = "~/Views/Shared/_ThermalPrintLayout.cshtml";
+    
+    // ✅ Production-Grade: داده‌ها از Server-Side بارگذاری شده‌اند (بدون AJAX)
+    var reception = Model;
+    var hasData = reception != null;
+    
+    // محاسبه مبالغ
+    var totalAmount = reception?.TotalAmount ?? 0;
+    var baseInsuranceShare = reception?.BasePay ?? 0;
+    var supplementaryInsuranceShare = reception?.SuppPay ?? 0;
+    var patientShare = reception?.PatientPay ?? 0;
+    
+    // محاسبه سهم بیمه تکمیلی از Items
+    var totalSupplementaryShare = 0m;
+    var totalBaseShare = 0m;
+    if (reception?.Items != null)
+    {
+        foreach (var item in reception.Items)
+        {
+            // استخراج سهم بیمه تکمیلی از SnapshotJson
+            if (!string.IsNullOrEmpty(item.SnapshotJson))
+            {
+                try
+                {
+                    var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                    if (snapshot?.SupplementaryPays != null)
+                    {
+                        totalSupplementaryShare += (decimal)snapshot.SupplementaryPays;
+                    }
+                    if (snapshot?.PrimaryPays != null)
+                    {
+                        totalBaseShare += (decimal)snapshot.PrimaryPays;
+                    }
+                }
+                catch
+                {
+                    // اگر SnapshotJson parse نشد، از InsurerShareAmount استفاده کن
+                    if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                    {
+                        totalBaseShare += item.InsurerShareAmount / 2;
+                        totalSupplementaryShare += item.InsurerShareAmount - (item.InsurerShareAmount / 2);
+                    }
+                    else if (reception.SupplementaryPlanId.HasValue)
+                    {
+                        totalSupplementaryShare += item.InsurerShareAmount;
+                    }
+                }
+            }
+            else
+            {
+                // اگر SnapshotJson وجود ندارد، از InsurerShareAmount استفاده کن
+                if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                {
+                    totalBaseShare += item.InsurerShareAmount / 2;
+                    totalSupplementaryShare += item.InsurerShareAmount - (item.InsurerShareAmount / 2);
+                }
+                else if (reception.SupplementaryPlanId.HasValue)
+                {
+                    totalSupplementaryShare += item.InsurerShareAmount;
+                }
+            }
+        }
+    }
 }
 
-<div class="receipt-container">
-    <div class="receipt-header">
-        <h1>قبض بیمه تکمیلی</h1>
-        <div class="receipt-info">
-            <p><strong>شماره پذیرش:</strong> <span id="receptionNo">-</span></p>
-            <p><strong>تاریخ:</strong> <span id="receptionDate">-</span></p>
-            <p><strong>ساعت:</strong> <span id="receptionTime">-</span></p>
+@if (!hasData)
+{
+    <div class="alert alert-danger">
+        <h3>خطا در بارگذاری اطلاعات</h3>
+        <p>اطلاعات پذیرش یافت نشد. لطفاً دوباره تلاش کنید.</p>
+    </div>
+}
+else
+{
+    @* ✅ فرمت مناسب برای فیش پرینتر 58mm (SRP-330II) *@
+    <div class="thermal-receipt" data-printer-width="58mm">
+        @* Header *@
+        <div class="receipt-header text-center">
+            <h1 class="receipt-title">کلینیک شفا</h1>
+            <p class="receipt-subtitle">قبض بیمه تکمیلی</p>
+            <hr class="receipt-divider">
         </div>
-    </div>
-
-    <div class="receipt-patient">
-        <h2>اطلاعات بیمار</h2>
-        <div class="patient-info">
-            <p><strong>نام:</strong> <span id="patientName">-</span></p>
-            <p><strong>کد ملی:</strong> <span id="patientNationalCode">-</span></p>
-            <p><strong>موبایل:</strong> <span id="patientMobile">-</span></p>
-        </div>
-    </div>
-
-    <div class="receipt-insurance">
-        <h2>اطلاعات بیمه تکمیلی</h2>
-        <div class="insurance-info">
-            <p><strong>نام بیمه تکمیلی:</strong> <span id="supplementaryInsuranceName">-</span></p>
-            <p><strong>شماره بیمه‌نامه:</strong> <span id="supplementaryPolicyNumber">-</span></p>
-            <p><strong>شماره کارت:</strong> <span id="supplementaryCardNumber">-</span></p>
-        </div>
-    </div>
-
-    <div class="receipt-doctor">
-        <h2>اطلاعات پزشک</h2>
-        <div class="doctor-info">
-            <p><strong>نام پزشک:</strong> <span id="doctorName">-</span></p>
-            <p><strong>بخش:</strong> <span id="departmentName">-</span></p>
-        </div>
-    </div>
-
-    <div class="receipt-services">
-        <h2>خدمات تحت پوشش بیمه تکمیلی</h2>
-        <table class="services-table">
-            <thead>
-                <tr>
-                    <th>نام خدمت</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>جمع</th>
-                    <th>سهم بیمه تکمیلی</th>
-                </tr>
-            </thead>
-            <tbody id="servicesList">
-                <!-- خدمات از JavaScript بارگذاری می‌شوند -->
-            </tbody>
-        </table>
-    </div>
-
-    <div class="receipt-totals">
-        <h2>خلاصه مالی بیمه تکمیلی</h2>
-        <div class="totals-info">
-            <p><strong>مبلغ کل خدمات:</strong> <span id="totalAmount">-</span> ریال</p>
-            <p><strong>سهم بیمه پایه:</strong> <span id="baseInsuranceShare">-</span> ریال</p>
-            <p><strong>سهم بیمه تکمیلی:</strong> <span id="supplementaryInsuranceShare">-</span> ریال</p>
-            <p><strong>سهم بیمار:</strong> <span id="patientShare">-</span> ریال</p>
-        </div>
-    </div>
-
-    <div class="receipt-footer">
-        <p>با تشکر از انتخاب شما</p>
-        <p>کلینیک شفا</p>
-    </div>
-</div>
-
-<script>
-    $(document).ready(function() {
-        var receptionId = @(Model.HasValue && Model.Value > 0 ? Model.Value : 0);
-        if (receptionId > 0) {
-            loadReceptionData(receptionId);
-        } else {
-            alert('شناسه پذیرش نامعتبر است');
-        }
-    });
-
-    function loadReceptionData(receptionId) {
-        $.ajax({
-            url: '/Api/ReceptionApi/GetReceptionDetails',
-            type: 'GET',
-            data: { id: receptionId },
-            dataType: 'json',
-            success: function(response) {
-                console.log('Response received:', response);
-                if (response && response.Success) {
-                    if (response.Data) {
-                        console.log('Data:', response.Data);
-                        populateInsuranceReceipt(response.Data);
-                    } else {
-                        console.error('Data is null or undefined');
-                        alert('خطا در بارگذاری اطلاعات: داده‌ها یافت نشد');
-                    }
-                } else {
-                    var errorMsg = (response && response.Message) ? response.Message : 'خطای نامشخص';
-                    console.error('API Error:', errorMsg);
-                    alert('خطا در بارگذاری اطلاعات: ' + errorMsg);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', { xhr: xhr, status: status, error: error });
-                alert('خطا در ارتباط با سرور: ' + (error || status));
-            }
-        });
-    }
-
-    function populateInsuranceReceipt(data) {
-        try {
-            console.log('Populating insurance receipt with data:', data);
-            
-            // اطلاعات پذیرش
-            $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber || '-');
-            $('#receptionDate').text(formatDate(data.ReceptionDate));
-            $('#receptionTime').text(formatTime(data.ReceptionDate));
-
-            // اطلاعات بیمار
-            $('#patientName').text(data.PatientName || '-');
-            $('#patientNationalCode').text(data.PatientNationalCode || '-');
-            $('#patientMobile').text(data.PatientMobile || '-');
-
-        // اطلاعات بیمه تکمیلی
-        $('#supplementaryInsuranceName').text(data.SupplementaryInsuranceName || '-');
-        $('#supplementaryPolicyNumber').text(data.SupplementaryPolicyNumber || '-');
-        $('#supplementaryCardNumber').text(data.SupplementaryCardNumber || '-');
-
-        // اطلاعات پزشک
-        $('#doctorName').text(data.DoctorName);
-        $('#departmentName').text(data.DepartmentName);
-
-        // خدمات
-        var servicesHtml = '';
-        var totalSupplementaryShare = 0;
-        var totalBaseShare = 0;
         
-        if (data.Items && data.Items.length > 0) {
-            data.Items.forEach(function(item) {
-                // استخراج سهم بیمه تکمیلی از SnapshotJson
-                var supplementaryShare = 0;
-                var baseShare = 0;
-                
-                if (item.SnapshotJson) {
-                    try {
-                        var snapshot = JSON.parse(item.SnapshotJson);
-                        if (snapshot.SupplementaryPays) {
-                            supplementaryShare = snapshot.SupplementaryPays;
-                        }
-                        if (snapshot.PrimaryPays) {
-                            baseShare = snapshot.PrimaryPays;
-                        }
-                    } catch (e) {
-                        // اگر SnapshotJson parse نشد، از InsurerShareAmount استفاده کن
-                        // و بر اساس وجود BasePlanId و SupplementaryPlanId تقسیم کن
-                        if (data.BasePlanId && data.SupplementaryPlanId) {
-                            baseShare = item.InsurerShareAmount / 2;
-                            supplementaryShare = item.InsurerShareAmount - baseShare;
-                        } else if (data.SupplementaryPlanId) {
-                            supplementaryShare = item.InsurerShareAmount;
-                        }
-                    }
-                }
-                
-                    totalSupplementaryShare += supplementaryShare;
-                    totalBaseShare += baseShare;
-                    
-                    servicesHtml += '<tr>';
-                    servicesHtml += '<td>' + (item.ServiceName || '-') + '</td>';
-                    servicesHtml += '<td>' + (item.Quantity || 1) + '</td>';
-                    servicesHtml += '<td>' + formatCurrency(item.UnitPrice || 0) + '</td>';
-                    servicesHtml += '<td>' + formatCurrency((item.UnitPrice || 0) * (item.Quantity || 1)) + '</td>';
-                    servicesHtml += '<td>' + formatCurrency(supplementaryShare) + '</td>';
-                    servicesHtml += '</tr>';
-                });
-            } else {
-                servicesHtml = '<tr><td colspan="5" style="text-align: center;">خدمتی یافت نشد</td></tr>';
+        @* Reception Info *@
+        <div class="receipt-section">
+            <div class="receipt-row">
+                <span class="receipt-label">شماره پذیرش:</span>
+                <span class="receipt-value">@(reception.ReceptionNo ?? reception.ElectronicReceptionNumber ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">تاریخ:</span>
+                <span class="receipt-value">@(reception.ReceptionDateShamsi ?? reception.ReceptionDate.ToString("yyyy/MM/dd") ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">ساعت:</span>
+                <span class="receipt-value">@reception.ReceptionDate.ToString("HH:mm")</span>
+            </div>
+        </div>
+        
+        <hr class="receipt-divider">
+        
+        @* Patient Info *@
+        <div class="receipt-section">
+            <h2 class="receipt-section-title">بیمار</h2>
+            <div class="receipt-row">
+                <span class="receipt-label">نام:</span>
+                <span class="receipt-value">@(reception.PatientFullName ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">کد ملی:</span>
+                <span class="receipt-value">@(reception.PatientNationalCode ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">موبایل:</span>
+                <span class="receipt-value">@(reception.PatientPhoneNumber ?? "-")</span>
+            </div>
+        </div>
+        
+        <hr class="receipt-divider">
+        
+        @* Insurance Info *@
+        <div class="receipt-section">
+            <h2 class="receipt-section-title">اطلاعات بیمه تکمیلی</h2>
+            <div class="receipt-row">
+                <span class="receipt-label">نام بیمه تکمیلی:</span>
+                <span class="receipt-value">@(reception.SupplementaryPlanName ?? "-")</span>
+            </div>
+            @if (!string.IsNullOrEmpty(reception.PatientNationalCode))
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">شماره کارت:</span>
+                    <span class="receipt-value">@reception.PatientNationalCode</span>
+                </div>
             }
-            $('#servicesList').html(servicesHtml);
+        </div>
+        
+        <hr class="receipt-divider">
+        
+        @* Doctor Info *@
+        @if (!string.IsNullOrEmpty(reception.DoctorFullName))
+        {
+            <div class="receipt-section">
+                <h2 class="receipt-section-title">پزشک</h2>
+                <div class="receipt-row">
+                    <span class="receipt-label">نام:</span>
+                    <span class="receipt-value">@reception.DoctorFullName</span>
+                </div>
+                @if (!string.IsNullOrEmpty(reception.DoctorSpecialization))
+                {
+                    <div class="receipt-row">
+                        <span class="receipt-label">تخصص:</span>
+                        <span class="receipt-value">@reception.DoctorSpecialization</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(reception.DepartmentName))
+                {
+                    <div class="receipt-row">
+                        <span class="receipt-label">بخش:</span>
+                        <span class="receipt-value">@reception.DepartmentName</span>
+                    </div>
+                }
+            </div>
+            <hr class="receipt-divider">
+        }
+        
+        @* Services *@
+        @if (reception.Items != null && reception.Items.Any())
+        {
+            <div class="receipt-section">
+                <h2 class="receipt-section-title">خدمات تحت پوشش بیمه تکمیلی</h2>
+                <table class="services-table">
+                    <thead>
+                        <tr>
+                            <th>خدمت</th>
+                            <th>تعداد</th>
+                            <th>قیمت</th>
+                            <th>جمع</th>
+                            <th>سهم بیمه تکمیلی</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in reception.Items)
+                        {
+                            var itemTotal = item.UnitPrice * item.Quantity;
+                            var supplementaryShare = 0m;
+                            var baseShare = 0m;
+                            
+                            // استخراج سهم بیمه تکمیلی از SnapshotJson
+                            if (!string.IsNullOrEmpty(item.SnapshotJson))
+                            {
+                                try
+                                {
+                                    var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                                    if (snapshot?.SupplementaryPays != null)
+                                    {
+                                        supplementaryShare = (decimal)snapshot.SupplementaryPays;
+                                    }
+                                    if (snapshot?.PrimaryPays != null)
+                                    {
+                                        baseShare = (decimal)snapshot.PrimaryPays;
+                                    }
+                                }
+                                catch
+                                {
+                                    // اگر SnapshotJson parse نشد، از InsurerShareAmount استفاده کن
+                                    if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                                    {
+                                        baseShare = item.InsurerShareAmount / 2;
+                                        supplementaryShare = item.InsurerShareAmount - baseShare;
+                                    }
+                                    else if (reception.SupplementaryPlanId.HasValue)
+                                    {
+                                        supplementaryShare = item.InsurerShareAmount;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // اگر SnapshotJson وجود ندارد، از InsurerShareAmount استفاده کن
+                                if (reception.BasePlanId.HasValue && reception.SupplementaryPlanId.HasValue)
+                                {
+                                    baseShare = item.InsurerShareAmount / 2;
+                                    supplementaryShare = item.InsurerShareAmount - baseShare;
+                                }
+                                else if (reception.SupplementaryPlanId.HasValue)
+                                {
+                                    supplementaryShare = item.InsurerShareAmount;
+                                }
+                            }
+                            
+                            <tr>
+                                <td>@(item.ServiceName ?? "-")</td>
+                                <td>@item.Quantity</td>
+                                <td>@item.UnitPrice.ToString("N0")</td>
+                                <td>@itemTotal.ToString("N0")</td>
+                                <td>@supplementaryShare.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <hr class="receipt-divider">
+        }
+        
+        @* Totals *@
+        <div class="receipt-section">
+            <h2 class="receipt-section-title">خلاصه مالی بیمه تکمیلی</h2>
+            <div class="receipt-row">
+                <span class="receipt-label">مبلغ کل خدمات:</span>
+                <span class="receipt-value">@totalAmount.ToString("N0") ریال</span>
+            </div>
+            @if (totalBaseShare > 0)
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">سهم بیمه پایه:</span>
+                    <span class="receipt-value">@totalBaseShare.ToString("N0") ریال</span>
+                </div>
+            }
+            @if (totalSupplementaryShare > 0)
+            {
+                <div class="receipt-row receipt-total">
+                    <span class="receipt-label">سهم بیمه تکمیلی:</span>
+                    <span class="receipt-value">@totalSupplementaryShare.ToString("N0") ریال</span>
+                </div>
+            }
+            @if (patientShare > 0)
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">سهم بیمار:</span>
+                    <span class="receipt-value">@patientShare.ToString("N0") ریال</span>
+                </div>
+            }
+        </div>
+        
+        <hr class="receipt-divider">
+        
+        @* Footer *@
+        <div class="receipt-footer text-center">
+            <p>با تشکر از انتخاب شما</p>
+            <p>کلینیک شفا</p>
+            <p>@DateTime.Now.ToString("yyyy/MM/dd HH:mm")</p>
+        </div>
+    </div>
+}
 
-            // خلاصه مالی
-            $('#totalAmount').text(formatCurrency(data.TotalAmount || 0));
-            $('#baseInsuranceShare').text(formatCurrency(totalBaseShare));
-            $('#supplementaryInsuranceShare').text(formatCurrency(totalSupplementaryShare));
-            $('#patientShare').text(formatCurrency(data.PatientCoPay || 0));
-
-            console.log('Insurance receipt populated successfully');
-            
-            // چاپ خودکار
+@* ✅ چاپ خودکار بعد از بارگذاری صفحه *@
+<script>
+    (function() {
+        // چاپ خودکار بعد از بارگذاری صفحه
+        window.addEventListener('load', function() {
             setTimeout(function() {
                 window.print();
-            }, 1000);
-        } catch (e) {
-            console.error('خطا در populateInsuranceReceipt:', e);
-            alert('خطا در نمایش اطلاعات: ' + e.message);
-        }
-    }
-
-    function parseMicrosoftDate(dateString) {
-        // پشتیبانی از Microsoft JSON date format: /Date(1234567890)/
-        if (!dateString) return null;
+            }, 500);
+        });
         
-        var match = dateString.match(/\/Date\((\d+)\)\//);
-        if (match) {
-            return new Date(parseInt(match[1]));
-        }
-        
-        // اگر format معمولی بود
-        return new Date(dateString);
-    }
-
-    function formatDate(dateString) {
-        try {
-            var date = parseMicrosoftDate(dateString);
-            if (!date || isNaN(date.getTime())) {
-                return '-';
-            }
-            return date.toLocaleDateString('fa-IR', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
-            });
-        } catch (e) {
-            console.error('خطا در formatDate:', e);
-            return '-';
-        }
-    }
-
-    function formatTime(dateString) {
-        try {
-            var date = parseMicrosoftDate(dateString);
-            if (!date || isNaN(date.getTime())) {
-                return '-';
-            }
-            return date.toLocaleTimeString('fa-IR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        } catch (e) {
-            console.error('خطا در formatTime:', e);
-            return '-';
-        }
-    }
-
-    function formatCurrency(amount) {
-        try {
-            if (amount == null || amount === undefined || isNaN(amount)) {
-                return '0';
-            }
-            return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
-        } catch (e) {
-            console.error('خطا در formatCurrency:', e);
-            return amount || '0';
-        }
-    }
+        // بستن پنجره بعد از چاپ (اختیاری)
+        window.addEventListener('afterprint', function() {
+            // می‌توانید این خط را حذف کنید اگر می‌خواهید پنجره باز بماند
+            // setTimeout(function() { window.close(); }, 500);
+        });
+    })();
 </script>
 
+@* ✅ استایل‌های مخصوص فیش پرینتر *@
 <style>
-    .receipt-container {
-        max-width: 800px;
+    .thermal-receipt {
+        width: 58mm;
+        max-width: 58mm;
         margin: 0 auto;
-        padding: 20px;
-        font-family: 'Tahoma', sans-serif;
+        padding: 5mm;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        line-height: 1.4;
         direction: rtl;
     }
-
+    
     .receipt-header {
         text-align: center;
-        border-bottom: 2px solid #333;
-        padding-bottom: 20px;
-        margin-bottom: 20px;
-    }
-
-    .receipt-header h1 {
-        color: #28a745;
-        margin-bottom: 15px;
-    }
-
-    .receipt-info {
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-    }
-
-    .receipt-info p {
-        margin: 5px 0;
-    }
-
-    .receipt-patient,
-    .receipt-insurance,
-    .receipt-doctor,
-    .receipt-services,
-    .receipt-totals {
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        padding: 15px;
-        border-radius: 5px;
-    }
-
-    .receipt-insurance {
-        background-color: #f0f8ff;
-        border-color: #28a745;
-    }
-
-    .receipt-patient h2,
-    .receipt-insurance h2,
-    .receipt-doctor h2,
-    .receipt-services h2,
-    .receipt-totals h2 {
-        color: #333;
         margin-bottom: 10px;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
     }
-
-    .patient-info,
-    .insurance-info,
-    .doctor-info,
-    .totals-info {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px;
+    
+    .receipt-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 5px;
     }
-
+    
+    .receipt-subtitle {
+        font-size: 12px;
+        color: #28a745;
+        margin-bottom: 5px;
+    }
+    
+    .receipt-divider {
+        border: none;
+        border-top: 1px dashed #000;
+        margin: 8px 0;
+    }
+    
+    .receipt-section {
+        margin-bottom: 10px;
+    }
+    
+    .receipt-section-title {
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+    
+    .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        font-size: 10px;
+    }
+    
+    .receipt-label {
+        font-weight: bold;
+    }
+    
+    .receipt-value {
+        text-align: left;
+    }
+    
+    .receipt-total {
+        font-weight: bold;
+        border-top: 1px solid #000;
+        padding-top: 3px;
+        margin-top: 5px;
+    }
+    
     .services-table {
         width: 100%;
+        font-size: 9px;
         border-collapse: collapse;
-        margin-top: 10px;
+        margin-top: 5px;
     }
-
+    
     .services-table th,
     .services-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
+        padding: 2px;
         text-align: center;
+        border-bottom: 1px dotted #ccc;
     }
-
+    
     .services-table th {
+        font-weight: bold;
         background-color: #f5f5f5;
-        font-weight: bold;
     }
-
+    
     .receipt-footer {
-        text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 2px solid #333;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px dashed #000;
+        font-size: 10px;
     }
-
-    .receipt-footer p {
-        margin: 5px 0;
-        font-weight: bold;
-    }
-
+    
     @@media print {
         body {
             margin: 0;
             padding: 0;
         }
         
-        .receipt-container {
-            max-width: none;
+        .thermal-receipt {
+            width: 58mm;
+            max-width: 58mm;
             margin: 0;
-            padding: 10px;
+            padding: 0;
         }
         
-        .receipt-header,
-        .receipt-patient,
-        .receipt-insurance,
-        .receipt-doctor,
-        .receipt-services,
-        .receipt-totals {
-            break-inside: avoid;
+        .no-print {
+            display: none !important;
         }
     }
 </style>
-

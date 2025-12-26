@@ -84,44 +84,105 @@ namespace ClinicApp.Controllers.ReceptionV2
 
         /// <summary>
         /// چاپ رسید پذیرش
+        /// ✅ Production-Grade: استفاده از Facade برای بارگذاری داده‌ها در Server-Side
         /// </summary>
         [HttpGet]
         [Route("Print/{id:int}", Name = "ReceptionV2_Print")]
         [Route("reception/print/{id:int}", Name = "ReceptionV2_Print_Legacy")] // Legacy route برای سازگاری
-        public ActionResult Print(int id)
+        public async Task<ActionResult> Print(int id)
         {
             try
             {
-                _logger.Information("🏥 V2: چاپ رسید پذیرش - ID: {Id}", id);
+                _logger.Information("🏥 V2: چاپ رسید پذیرش - ReceptionId: {Id}", id);
                 
-                // TODO: از Reception رسمی / یا Draft Finalized داده‌ها را بخوان
-                return View("~/Views/ReceptionV2/Print.cshtml", model: id);
+                // ✅ استفاده از Facade برای دریافت داده‌های کامل پذیرش
+                var receptionResult = await _receptionFacade.GetReceptionDetailsFullAsync(id);
+                if (!receptionResult.Success || receptionResult.Data == null)
+                {
+                    _logger.Warning("⚠️ V2: پذیرش یافت نشد - ReceptionId: {Id}", id);
+                    ViewBag.ErrorMessage = receptionResult.Message ?? "پذیرش یافت نشد";
+                    return View("Error");
+                }
+                
+                _logger.Information("✅ V2: داده‌های پذیرش با موفقیت بارگذاری شد - ReceptionId: {Id}", id);
+                
+                // ارسال داده‌ها به View به صورت Model
+                return View("~/Views/ReceptionV2/Print.cshtml", receptionResult.Data);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در چاپ رسید");
+                _logger.Error(ex, "❌ خطا در چاپ رسید - ReceptionId: {Id}", id);
+                ViewBag.ErrorMessage = "خطا در بارگذاری اطلاعات پذیرش";
+                return View("Error");
+            }
+        }
+
+        /// <summary>
+        /// 🖨️ چاپ قبض پرداخت برای فیش پرینتر (58mm/80mm)
+        /// فرمت مناسب برای دستگاه‌های فیش پرینتر مثل SRP-330II
+        /// </summary>
+        [HttpGet]
+        [Route("PrintReceipt/{id:int}", Name = "ReceptionV2_PrintReceipt")]
+        public async Task<ActionResult> PrintReceipt(int id, string type = "payment", string printer = "thermal")
+        {
+            try
+            {
+                _logger.Information("🖨️ V2: چاپ قبض {Type} برای فیش پرینتر - ReceptionId: {Id}, Printer: {Printer}", 
+                    type, id, printer);
+                
+                // دریافت اطلاعات پذیرش از Facade
+                var receptionResult = await _receptionFacade.GetReceptionDetailsFullAsync(id);
+                if (!receptionResult.Success || receptionResult.Data == null)
+                {
+                    _logger.Warning("⚠️ V2: پذیرش یافت نشد - ReceptionId: {Id}", id);
+                    return View("Error");
+                }
+                
+                ViewBag.ReceptionId = id;
+                ViewBag.ReceiptType = type; // payment یا insurance
+                ViewBag.PrinterType = printer; // thermal یا normal
+                ViewBag.ReceptionData = receptionResult.Data;
+                
+                return View("~/Views/ReceptionV2/PrintReceipt.cshtml", receptionResult.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در چاپ قبض - ReceptionId: {Id}, Type: {Type}", id, type);
                 return View("Error");
             }
         }
 
         /// <summary>
         /// 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
+        /// ✅ Production-Grade: استفاده از Facade برای بارگذاری داده‌ها در Server-Side
         /// </summary>
         [HttpGet]
         [Route("PrintInsurance/{id:int}", Name = "ReceptionV2_PrintInsurance")]
         [Route("reception/print-insurance/{id:int}", Name = "ReceptionV2_PrintInsurance_Legacy")] // Legacy route برای سازگاری
-        public ActionResult PrintInsurance(int id)
+        public async Task<ActionResult> PrintInsurance(int id)
         {
             try
             {
                 _logger.Information("🏥 V2: چاپ قبض بیمه تکمیلی - ReceptionId: {Id}", id);
                 
-                // TODO: از Reception رسمی داده‌ها را بخوان و View مخصوص بیمه تکمیلی را نمایش بده
-                return View("~/Views/ReceptionV2/PrintInsurance.cshtml", model: id);
+                // ✅ استفاده از Facade برای دریافت داده‌های کامل پذیرش
+                var receptionResult = await _receptionFacade.GetReceptionDetailsFullAsync(id);
+                if (!receptionResult.Success || receptionResult.Data == null)
+                {
+                    _logger.Warning("⚠️ V2: پذیرش یافت نشد - ReceptionId: {Id}", id);
+                    ViewBag.ErrorMessage = receptionResult.Message ?? "پذیرش یافت نشد";
+                    return View("Error");
+                }
+                
+                _logger.Information("✅ V2: داده‌های پذیرش با موفقیت بارگذاری شد - ReceptionId: {Id}", id);
+                
+                // ارسال داده‌ها به View به صورت Model
+                return View("~/Views/ReceptionV2/PrintInsurance.cshtml", receptionResult.Data);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در چاپ قبض بیمه تکمیلی");
+                _logger.Error(ex, "❌ خطا در چاپ قبض بیمه تکمیلی - ReceptionId: {Id}", id);
+                ViewBag.ErrorMessage = "خطا در بارگذاری اطلاعات پذیرش";
                 return View("Error");
             }
         }

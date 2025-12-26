@@ -100,9 +100,9 @@
 /* ✅ 3️⃣ Shabnam Font Family */
 @font-face {
     font-family: 'Shabnam';
-    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.woff2') format('woff2'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.woff') format('woff'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-FD.ttf') format('truetype');
+    src: url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-FD.woff2') format('woff2'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-FD.woff') format('woff'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-FD.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -110,9 +110,9 @@
 
 @font-face {
     font-family: 'Shabnam';
-    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.woff2') format('woff2'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.woff') format('woff'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-Bold-FD.ttf') format('truetype');
+    src: url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Bold-FD.woff2') format('woff2'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Bold-FD.woff') format('woff'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Bold-FD.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
@@ -120,9 +120,9 @@
 
 @font-face {
     font-family: 'Shabnam';
-    src: url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.woff2') format('woff2'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.woff') format('woff'),
-         url('../fonts/shabnam-font-v2.4.0/Shabnam-Light-FD.ttf') format('truetype');
+    src: url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Light-FD.woff2') format('woff2'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Light-FD.woff') format('woff'),
+         url('../Fonts/shabnam-font-v2.4.0/Farsi-Digits/Shabnam-Light-FD.ttf') format('truetype');
     font-weight: 300;
     font-style: normal;
     font-display: swap;

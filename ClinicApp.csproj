@@ -6123,6 +6123,10 @@
     <Content Include="Views\Payment\CashierDashboard\Index.cshtml" />
     <Content Include="Views\Payment\CashierDashboard\_StatsPartial.cshtml" />
     <Content Include="Views\Payment\CashierDashboard\_TopPerformersPartial.cshtml" />
+    <Content Include="Views\ReceptionV2\PrintReceipt.cshtml" />
+    <Content Include="Views\PosManagement\Sessions.cshtml" />
+    <Content Include="Views\PosManagement\StartSession.cshtml" />
+    <Content Include="Views\Shared\_ThermalPrintLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

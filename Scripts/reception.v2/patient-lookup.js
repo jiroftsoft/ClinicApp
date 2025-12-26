@@ -132,11 +132,41 @@
 
     console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc);
 
+    // ✅ Performance: بررسی Cache اول
+    const cached = patientLookupCache.get(nc);
+    if (cached) {
+      console.log('✅ V2: Using cached patient data for national code:', nc);
+      // Process cached data
+      const dto = cached;
+      const identity = dto?.Identity || dto?.identity;
+      const insurance = dto?.Insurance || dto?.insurance;
+      
+      if (identity) {
+        fillIdentity(identity);
+        if (window.insPanel && insurance) {
+          window.insPanel.set(insurance);
+        }
+        setReadonly(true);
+        toastr.success('اطلاعات بیمار از Cache بارگذاری شد');
+      }
+      
+      return $.Deferred().resolve(cached).promise();
+    }
+
+    // ✅ Cancel previous request
+    if (currentLookupRequest && currentLookupRequest.abort) {
+      console.log('🔄 V2: Canceling previous patient lookup request...');
+      currentLookupRequest.abort();
+      currentLookupRequest = null;
+    }
+
     // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
-    // ❌ هیچ cache - همیشه realtime query
-    const lookupRequest = API.post('/patient/lookup-or-create', { NationalCode: nc });
+    // ✅ Performance: Request Cancellation + Cache
+    currentLookupRequest = API.post('/patient/lookup-or-create', { NationalCode: nc });
     
-    lookupRequest.done(function(fullResponse) {
+    currentLookupRequest.done(function(fullResponse) {
+        currentLookupRequest = null; // ✅ Clear request reference
+        
         // Log کامل response برای دیباگ
         console.log('🏥 V2: Full API response (raw):', fullResponse);
         console.log('🏥 V2: Response type:', typeof fullResponse);
@@ -196,6 +226,10 @@
         console.log('🏥 V2: Data type:', typeof dto);
         console.log('🏥 V2: Data keys:', dto ? Object.keys(dto) : 'null/undefined');
 
+        // ✅ Performance: Cache response
+        patientLookupCache.set(nc, dto);
+        console.log('✅ V2: Patient lookup data cached for national code:', nc);
+
         // ذخیره کپی برای انصراف
         const identity = dto?.Identity || dto?.identity;
         console.log('🏥 V2: Identity extracted:', identity);
@@ -252,7 +286,15 @@
         }
       });
     
-    lookupRequest.fail(function(err) {
+    currentLookupRequest.fail(function(err) {
+      currentLookupRequest = null; // ✅ Clear request reference
+      
+      // ✅ Ignore aborted requests
+      if (err && err.status === 'abort') {
+        console.log('ℹ️ V2: Patient lookup request was aborted');
+        return;
+      }
+      
       console.error('🏥 V2: Patient lookup error:', err);
       
       // بررسی response JSON برای خطاهای خاص
@@ -271,7 +313,7 @@
       toastr.error('خطا در جستجوی بیمار');
     });
     
-    return lookupRequest; // Return promise برای استفاده در performLookup
+    return currentLookupRequest; // Return promise برای استفاده در performLookup
   }
 
   /**
@@ -664,10 +706,32 @@
   }
 
   // ✅ رویکرد حرفه‌ای: Auto-lookup با debounce + Enter key + Blur fallback
-  // ❌ هیچ cache - همه چیز realtime برای محیط درمانی
+  // ✅ Performance: Cache برای Lookup Results (5 دقیقه)
+  
+  // ✅ Cache برای Patient Lookup (5 دقیقه)
+  const patientLookupCache = {
+    data: {},
+    get: function(nationalCode) {
+      const cached = this.data[nationalCode];
+      if (cached && Date.now() - cached.timestamp < 300000) { // 5 minutes
+        return cached.data;
+      }
+      return null;
+    },
+    set: function(nationalCode, data) {
+      this.data[nationalCode] = {
+        data: data,
+        timestamp: Date.now()
+      };
+    },
+    clear: function() {
+      this.data = {};
+    }
+  };
   
   let lookupTimeout = null;
   let isLookingUp = false; // Flag برای جلوگیری از درخواست‌های همزمان
+  let currentLookupRequest = null; // ✅ برای Cancel کردن Request های قبلی
   
   /**
    * Lookup با debounce و loading state

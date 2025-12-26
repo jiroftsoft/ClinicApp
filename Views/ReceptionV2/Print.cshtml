@@ -1,217 +1,149 @@
-@model int?
+@model ClinicApp.ViewModels.Reception.ReceptionDetailsFullDto
 @{
     ViewBag.Title = "چاپ رسید پذیرش";
     Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    
+    // ✅ Production-Grade: داده‌ها از Server-Side بارگذاری شده‌اند (بدون AJAX)
+    var reception = Model;
+    var hasData = reception != null;
+    
+    // محاسبه مبالغ
+    var totalAmount = reception?.TotalAmount ?? 0;
+    var baseInsuranceShare = reception?.BasePay ?? 0;
+    var supplementaryInsuranceShare = reception?.SuppPay ?? 0;
+    var patientShare = reception?.PatientPay ?? 0;
+    var paidAmount = reception?.PaidAmount ?? 0;
+    var remainingAmount = reception?.RemainingAmount ?? 0;
+    
+    // دریافت آخرین تراکنش پرداخت
+    var lastPayment = reception?.Transactions?
+        .Where(t => t.Status == ClinicApp.Models.Enums.PaymentStatus.Success)
+        .OrderByDescending(t => t.CreatedAt)
+        .FirstOrDefault();
 }
 
-<div class="receipt-container">
-    <div class="receipt-header">
-        <h1>رسید پذیرش</h1>
-        <div class="receipt-info">
-            <p><strong>شماره پذیرش:</strong> <span id="receptionNo">-</span></p>
-            <p><strong>تاریخ:</strong> <span id="receptionDate">-</span></p>
-            <p><strong>ساعت:</strong> <span id="receptionTime">-</span></p>
+@if (!hasData)
+{
+    <div class="alert alert-danger">
+        <h3>خطا در بارگذاری اطلاعات</h3>
+        <p>اطلاعات پذیرش یافت نشد. لطفاً دوباره تلاش کنید.</p>
+    </div>
+}
+else
+{
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <h1>رسید پذیرش</h1>
+            <div class="receipt-info">
+                <p><strong>شماره پذیرش:</strong> <span>@(reception.ReceptionNo ?? reception.ElectronicReceptionNumber ?? "-")</span></p>
+                <p><strong>تاریخ:</strong> <span>@(reception.ReceptionDateShamsi ?? reception.ReceptionDate.ToString("yyyy/MM/dd"))</span></p>
+                <p><strong>ساعت:</strong> <span>@reception.ReceptionDate.ToString("HH:mm")</span></p>
+            </div>
         </div>
-    </div>
 
-    <div class="receipt-patient">
-        <h2>اطلاعات بیمار</h2>
-        <div class="patient-info">
-            <p><strong>نام:</strong> <span id="patientName">-</span></p>
-            <p><strong>کد ملی:</strong> <span id="patientNationalCode">-</span></p>
-            <p><strong>موبایل:</strong> <span id="patientMobile">-</span></p>
+        <div class="receipt-patient">
+            <h2>اطلاعات بیمار</h2>
+            <div class="patient-info">
+                <p><strong>نام:</strong> <span>@(reception.PatientFullName ?? "-")</span></p>
+                <p><strong>کد ملی:</strong> <span>@(reception.PatientNationalCode ?? "-")</span></p>
+                <p><strong>موبایل:</strong> <span>@(reception.PatientPhoneNumber ?? "-")</span></p>
+            </div>
         </div>
-    </div>
 
-    <div class="receipt-doctor">
-        <h2>اطلاعات پزشک</h2>
-        <div class="doctor-info">
-            <p><strong>نام پزشک:</strong> <span id="doctorName">-</span></p>
-            <p><strong>بخش:</strong> <span id="departmentName">-</span></p>
+        <div class="receipt-doctor">
+            <h2>اطلاعات پزشک</h2>
+            <div class="doctor-info">
+                <p><strong>نام پزشک:</strong> <span>@(reception.DoctorFullName ?? "-")</span></p>
+                <p><strong>تخصص:</strong> <span>@(reception.DoctorSpecialization ?? "-")</span></p>
+                <p><strong>بخش:</strong> <span>@(reception.DepartmentName ?? "-")</span></p>
+            </div>
         </div>
-    </div>
 
-    <div class="receipt-services">
-        <h2>خدمات</h2>
-        <table class="services-table">
-            <thead>
-                <tr>
-                    <th>نام خدمت</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>جمع</th>
-                </tr>
-            </thead>
-            <tbody id="servicesList">
-                <!-- خدمات از JavaScript بارگذاری می‌شوند -->
-            </tbody>
-        </table>
-    </div>
-
-    <div class="receipt-totals">
-        <h2>خلاصه مالی</h2>
-        <div class="totals-info">
-            <p><strong>مبلغ کل:</strong> <span id="totalAmount">-</span> ریال</p>
-            <p><strong>سهم بیمه:</strong> <span id="insurerShare">-</span> ریال</p>
-            <p><strong>سهم بیمار:</strong> <span id="patientShare">-</span> ریال</p>
-            <p><strong>روش پرداخت:</strong> <span id="paymentMethod">-</span></p>
-        </div>
-    </div>
-
-    <div class="receipt-footer">
-        <p>با تشکر از انتخاب شما</p>
-        <p>کلینیک شفا</p>
-    </div>
-</div>
-
-<script>
-    $(document).ready(function() {
-        var receptionId = @(Model.HasValue && Model.Value > 0 ? Model.Value : 0);
-        if (receptionId > 0) {
-            loadReceptionData(receptionId);
-        } else {
-            alert('شناسه پذیرش نامعتبر است');
+        @if (reception.Items != null && reception.Items.Any())
+        {
+            <div class="receipt-services">
+                <h2>خدمات</h2>
+                <table class="services-table">
+                    <thead>
+                        <tr>
+                            <th>نام خدمت</th>
+                            <th>تعداد</th>
+                            <th>قیمت واحد</th>
+                            <th>جمع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in reception.Items)
+                        {
+                            <tr>
+                                <td>@(item.ServiceName ?? "-")</td>
+                                <td>@item.Quantity</td>
+                                <td>@item.UnitPrice.ToString("N0") ریال</td>
+                                <td>@item.TotalPrice.ToString("N0") ریال</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
-    });
 
-    function loadReceptionData(receptionId) {
-        $.ajax({
-            url: '/Api/ReceptionApi/GetReceptionDetails',
-            type: 'GET',
-            data: { id: receptionId },
-            dataType: 'json',
-            success: function(response) {
-                console.log('Response received:', response);
-                if (response && response.Success) {
-                    if (response.Data) {
-                        console.log('Data:', response.Data);
-                        populateReceipt(response.Data);
-                    } else {
-                        console.error('Data is null or undefined');
-                        alert('خطا در بارگذاری اطلاعات: داده‌ها یافت نشد');
-                    }
-                } else {
-                    var errorMsg = (response && response.Message) ? response.Message : 'خطای نامشخص';
-                    console.error('API Error:', errorMsg);
-                    alert('خطا در بارگذاری اطلاعات: ' + errorMsg);
+        <div class="receipt-totals">
+            <h2>خلاصه مالی</h2>
+            <div class="totals-info">
+                <p><strong>مبلغ کل:</strong> <span>@totalAmount.ToString("N0") ریال</span></p>
+                @if (baseInsuranceShare > 0)
+                {
+                    <p><strong>سهم بیمه پایه:</strong> <span>@baseInsuranceShare.ToString("N0") ریال</span></p>
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', { xhr: xhr, status: status, error: error });
-                alert('خطا در ارتباط با سرور: ' + (error || status));
-            }
-        });
-    }
+                @if (supplementaryInsuranceShare > 0)
+                {
+                    <p><strong>سهم بیمه تکمیلی:</strong> <span>@supplementaryInsuranceShare.ToString("N0") ریال</span></p>
+                }
+                <p><strong>سهم بیمار:</strong> <span>@patientShare.ToString("N0") ریال</span></p>
+                <p><strong>پرداخت شده:</strong> <span>@paidAmount.ToString("N0") ریال</span></p>
+                @if (remainingAmount > 0)
+                {
+                    <p><strong>باقی‌مانده:</strong> <span class="text-danger">@remainingAmount.ToString("N0") ریال</span></p>
+                }
+                @if (lastPayment != null)
+                {
+                    <p><strong>روش پرداخت:</strong> <span>@(lastPayment.MethodText ?? lastPayment.Method.ToString())</span></p>
+                    if (lastPayment.Method == ClinicApp.Models.Enums.PaymentMethod.POS && !string.IsNullOrEmpty(lastPayment.ReferenceCode))
+                    {
+                        <p><strong>RRN:</strong> <span>@lastPayment.ReferenceCode</span></p>
+                        if (!string.IsNullOrEmpty(lastPayment.TransactionId))
+                        {
+                            <p><strong>Trace No:</strong> <span>@lastPayment.TransactionId</span></p>
+                        }
+                    }
+                }
+            </div>
+        </div>
 
-    function populateReceipt(data) {
-        try {
-            console.log('Populating receipt with data:', data);
-            
-            // اطلاعات پذیرش
-            $('#receptionNo').text(data.ReceptionNo || data.ReceptionNumber || '-');
-            $('#receptionDate').text(formatDate(data.ReceptionDate));
-            $('#receptionTime').text(formatTime(data.ReceptionDate));
+        <div class="receipt-footer">
+            <p>با تشکر از انتخاب شما</p>
+            <p>کلینیک شفا</p>
+            <p>@DateTime.Now.ToString("yyyy/MM/dd HH:mm")</p>
+        </div>
+    </div>
+}
 
-            // اطلاعات بیمار
-            $('#patientName').text(data.PatientName || '-');
-            $('#patientNationalCode').text(data.PatientNationalCode || '-');
-            $('#patientMobile').text(data.PatientMobile || '-');
-
-            // اطلاعات پزشک
-            $('#doctorName').text(data.DoctorName || '-');
-            $('#departmentName').text(data.DepartmentName || '-');
-
-            // خدمات
-            var servicesHtml = '';
-            if (data.Items && data.Items.length > 0) {
-                data.Items.forEach(function(item) {
-                    servicesHtml += '<tr>';
-                    servicesHtml += '<td>' + (item.ServiceName || '-') + '</td>';
-                    servicesHtml += '<td>' + (item.Quantity || 0) + '</td>';
-                    servicesHtml += '<td>' + formatCurrency(item.UnitPrice) + '</td>';
-                    servicesHtml += '<td>' + formatCurrency(item.TotalPrice) + '</td>';
-                    servicesHtml += '</tr>';
-                });
-            } else {
-                servicesHtml = '<tr><td colspan="4" style="text-align: center;">خدمتی یافت نشد</td></tr>';
-            }
-            $('#servicesList').html(servicesHtml);
-
-            // خلاصه مالی
-            $('#totalAmount').text(formatCurrency(data.TotalAmount));
-            $('#insurerShare').text(formatCurrency(data.InsurerShareAmount));
-            $('#patientShare').text(formatCurrency(data.PatientCoPay));
-            $('#paymentMethod').text(data.PaymentMethod || 'نقدی');
-
-            console.log('Receipt populated successfully');
-            
-            // چاپ خودکار
+@* ✅ چاپ خودکار بعد از بارگذاری صفحه *@
+<script>
+    (function() {
+        // چاپ خودکار بعد از بارگذاری صفحه
+        window.addEventListener('load', function() {
             setTimeout(function() {
                 window.print();
-            }, 1000);
-        } catch (e) {
-            console.error('خطا در populateReceipt:', e);
-            alert('خطا در نمایش اطلاعات: ' + e.message);
-        }
-    }
-
-    function parseMicrosoftDate(dateString) {
-        // پشتیبانی از Microsoft JSON date format: /Date(1234567890)/
-        if (!dateString) return null;
+            }, 500);
+        });
         
-        var match = dateString.match(/\/Date\((\d+)\)\//);
-        if (match) {
-            return new Date(parseInt(match[1]));
-        }
-        
-        // اگر format معمولی بود
-        return new Date(dateString);
-    }
-
-    function formatDate(dateString) {
-        try {
-            var date = parseMicrosoftDate(dateString);
-            if (!date || isNaN(date.getTime())) {
-                return '-';
-            }
-            return date.toLocaleDateString('fa-IR', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
-            });
-        } catch (e) {
-            console.error('خطا در formatDate:', e);
-            return '-';
-        }
-    }
-
-    function formatTime(dateString) {
-        try {
-            var date = parseMicrosoftDate(dateString);
-            if (!date || isNaN(date.getTime())) {
-                return '-';
-            }
-            return date.toLocaleTimeString('fa-IR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        } catch (e) {
-            console.error('خطا در formatTime:', e);
-            return '-';
-        }
-    }
-
-    function formatCurrency(amount) {
-        try {
-            if (amount == null || amount === undefined || isNaN(amount)) {
-                return '0';
-            }
-            return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
-        } catch (e) {
-            console.error('خطا در formatCurrency:', e);
-            return amount || '0';
-        }
-    }
+        // بستن پنجره بعد از چاپ (اختیاری)
+        window.addEventListener('afterprint', function() {
+            // می‌توانید این خط را حذف کنید اگر می‌خواهید پنجره باز بماند
+            // setTimeout(function() { window.close(); }, 500);
+        });
+    })();
 </script>
 
 <style>

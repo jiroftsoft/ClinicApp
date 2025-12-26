@@ -22,6 +22,8 @@
         const pageSize = 20;
         let currentFilters = {};
         let isLoading = false;
+        let currentRequest = null; // ✅ برای Cancel کردن Request های قبلی
+        let searchDebounceTimer = null; // ✅ برای Debouncing جستجو
 
         // 🏥 MEDICAL: پاکسازی Draft‌های Pending کاربر فعلی هنگام بارگذاری صفحه
         // این مهم است چون ممکن است کاربر Draft ایجاد کرده و بدون کلیک روی "ذخیره و پذیرش" به این صفحه آمده باشد
@@ -148,8 +150,16 @@
 
         /**
          * بارگذاری لیست پذیرش‌ها - بهینه‌سازی شده برای محیط درمانی
+         * ✅ Performance: Request Cancellation, Debouncing, Retry Logic
          */
         function loadReceptionList(page = 1) {
+            // ✅ Cancel کردن Request قبلی اگر وجود دارد
+            if (currentRequest && currentRequest.abort) {
+                console.log('🔄 Reception List: Canceling previous request...');
+                currentRequest.abort();
+                currentRequest = null;
+            }
+            
             // جلوگیری از درخواست‌های تکراری
             if (isLoading) {
                 console.warn('⚠️ Reception List: Request already in progress');
@@ -202,8 +212,8 @@
             console.log('🏥 Reception List: Loading page', page, 'with filters:', filters);
             console.log('🏥 Reception List: API URL:', apiUrl);
 
-            // استفاده از AJAX مستقیم با error handling بهتر
-            $.ajax({
+            // ✅ استفاده از AJAX مستقیم با error handling بهتر و Request Cancellation
+            currentRequest = $.ajax({
                 url: apiUrl,
                 method: 'POST',
                 headers: {
@@ -216,9 +226,12 @@
                 dataType: 'json',
                 cache: false,
                 timeout: 30000 // 30 ثانیه timeout برای محیط درمانی
-            })
+            });
+            
+            currentRequest
             .done(function(fullResponse) {
                 isLoading = false;
+                currentRequest = null; // ✅ Clear request reference
                 $btnSearch.prop('disabled', false).html('<i class="fas fa-search me-1"></i>جستجو');
                 
                 console.log('🏥 Reception List: Raw response received', fullResponse);
@@ -320,6 +333,14 @@
             })
             .fail(function(xhr, status, error) {
                 isLoading = false;
+                currentRequest = null; // ✅ Clear request reference
+                
+                // ✅ Ignore aborted requests
+                if (status === 'abort') {
+                    console.log('ℹ️ Reception List: Request was aborted (cancelled)');
+                    return;
+                }
+                
                 $btnSearch.prop('disabled', false).html('<i class="fas fa-search me-1"></i>جستجو');
                 
                 console.error('❌ Reception List: Load failed', {
@@ -1560,11 +1581,22 @@
         }
 
         // Event handlers - بهینه‌سازی شده برای محیط درمانی
+        // ✅ Debouncing برای جستجو (500ms) - بهبود Performance
         $('#btnSearch').on('click', function(e) {
             e.preventDefault();
-            if (!isLoading) {
-                loadReceptionList(1);
+            
+            // Clear previous debounce timer
+            if (searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
             }
+            
+            // Debounce: 500ms delay
+            searchDebounceTimer = setTimeout(function() {
+                searchDebounceTimer = null;
+                if (!isLoading) {
+                    loadReceptionList(1);
+                }
+            }, 500);
         });
 
         // 🏥 MEDICAL: Reset filters - شامل فیلترهای جدید

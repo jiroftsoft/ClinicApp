@@ -516,6 +516,7 @@
     warnDraftMissing: warnDraftMissing,
     getCurrentDraftId: () => currentDraftId,
     isDraftCreated: () => isDraftCreated,
+    get draftCreationPromise() { return draftCreationPromise; }, // ✅ برای بررسی اینکه آیا Draft creation در حال انجام است
     forceSave: () => {
       if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);

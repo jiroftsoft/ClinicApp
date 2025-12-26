@@ -17,7 +17,14 @@
     suppPlanName: null
   };
   
+  // ✅ CRITICAL: Lock Manager برای جلوگیری از درخواست‌های همزمان SetInsurances
+  let isPersisting = false;
+  let persistLock = false;
+  let persistQueue = null;
+  let persistDebounceTimeout = null;
+  
   // 🚨 PROFESSIONAL: لیسنر برای تغییر ReceptionId (برای persist خودکار بیمه‌ها)
+  // ✅ با Debounce و Lock برای جلوگیری از Concurrency Error
   $(document).on('receptionId:updated', function(e, receptionId) {
     console.log('🏥 V2: ReceptionId updated event received:', receptionId);
     if (receptionId && receptionId > 0) {
@@ -26,9 +33,34 @@
       const suppPlanId = $('#SuppPlanId').val();
       if (basePlanId || suppPlanId) {
         console.log('🏥 V2: Auto-persisting insurances after ReceptionId update - BasePlanId:', basePlanId, 'SuppPlanId:', suppPlanId);
-        persist().catch(function(err) {
-          console.warn('🏥 V2: Error auto-persisting insurances:', err);
-        });
+        
+        // ✅ CRITICAL: Debounce برای جلوگیری از درخواست‌های همزمان
+        // Clear previous timeout
+        if (persistDebounceTimeout) {
+          clearTimeout(persistDebounceTimeout);
+          persistDebounceTimeout = null;
+        }
+        
+        // ✅ تاخیر 300ms برای اطمینان از کامل شدن Draft creation
+        persistDebounceTimeout = setTimeout(function() {
+          persistDebounceTimeout = null;
+          
+          // ✅ بررسی Lock - اگر در حال persist است، صبر کن
+          if (isPersisting || persistLock) {
+            console.log('⏳ V2: SetInsurances در حال انجام است - در صف قرار می‌گیرد');
+            persistQueue = function() {
+              persist().catch(function(err) {
+                console.warn('🏥 V2: Error auto-persisting insurances:', err);
+              });
+            };
+            return;
+          }
+          
+          // ✅ اجرای persist
+          persist().catch(function(err) {
+            console.warn('🏥 V2: Error auto-persisting insurances:', err);
+          });
+        }, 300); // 300ms delay برای اطمینان از کامل شدن Draft creation
       }
     }
   });
@@ -194,22 +226,56 @@
    * اگر ReceptionId وجود ندارد، ابتدا draft ایجاد می‌کند
    */
   async function persist() {
+    // ✅ CRITICAL: Lock Manager - جلوگیری از درخواست‌های همزمان
+    if (isPersisting || persistLock) {
+      console.warn('⏳ V2: SetInsurances در حال انجام است - درخواست جدید در صف قرار می‌گیرد');
+      // Queue this request
+      persistQueue = function() {
+        persist().catch(function(err) {
+          console.warn('🏥 V2: Error auto-persisting insurances (queued):', err);
+        });
+      };
+      return Promise.resolve();
+    }
+    
+    // ✅ Set Lock
+    isPersisting = true;
+    persistLock = true;
+    
     // ✅ Bugfix: بررسی وجود AutoDraftManager و ensureDraftOrSkip
     if (!window.AutoDraftManager) {
       console.error('🏥 V2: AutoDraftManager not available');
       toastr.error('سیستم پیش‌نویس در دسترس نیست. لطفاً صفحه را نوسازی کنید.');
+      isPersisting = false;
+      persistLock = false;
       return Promise.resolve();
     }
     
     if (typeof window.AutoDraftManager.ensureDraftOrSkip !== 'function') {
       console.error('🏥 V2: ensureDraftOrSkip is not a function', window.AutoDraftManager);
       toastr.error('خطا در سیستم پیش‌نویس. لطفاً صفحه را نوسازی کنید.');
+      isPersisting = false;
+      persistLock = false;
       return Promise.resolve();
     }
     
-    // ✅ استفاده از ensureDraftOrSkip برای اطمینان از وجود Draft
+    // ✅ استفاده از async/await برای اطمینان از وجود Draft
     let receptionId;
     try {
+      // ✅ بررسی اینکه آیا Draft creation در حال انجام است یا نه
+      // بررسی از طریق draftCreationPromise (اگر موجود باشد)
+      if (window.AutoDraftManager && window.AutoDraftManager.draftCreationPromise) {
+        console.log('⏳ V2: Draft creation در حال انجام است - منتظر می‌مانیم...');
+        try {
+          // منتظر بمان تا Draft creation تمام شود
+          await window.AutoDraftManager.draftCreationPromise;
+          console.log('✅ V2: Draft creation تمام شد - ادامه persist...');
+        } catch (err) {
+          console.warn('⚠️ V2: Draft creation با خطا مواجه شد:', err);
+          // ادامه می‌دهیم حتی اگر Draft creation با خطا مواجه شد
+        }
+      }
+      
       receptionId = await window.AutoDraftManager.ensureDraftOrSkip({
         patientId: $('#Patient_PatientId').val(),
         clinicId: $('#ClinicId').val(),
@@ -221,11 +287,15 @@
       if (!receptionId || receptionId <= 0) {
         console.warn('🏥 V2: Cannot persist insurances, draft creation failed or missing required fields');
         window.AutoDraftManager?.warnDraftMissing();
+        isPersisting = false;
+        persistLock = false;
         return Promise.resolve();
       }
     } catch (err) {
       console.error('🏥 V2: ensureDraftOrSkip error:', err);
       toastr.error('خطا در ایجاد پیش‌نویس. لطفاً مجدداً تلاش کنید.');
+      isPersisting = false;
+      persistLock = false;
       return Promise.resolve();
     }
 
@@ -437,10 +507,51 @@
         });
         
         // ✅ Totals قبلاً با updateTotalsUI به‌روزرسانی شده است - نیازی به کد duplicate نیست
+        
+        // ✅ Release Lock و بررسی Queue
+        isPersisting = false;
+        persistLock = false;
+        
+        // ✅ اگر درخواستی در صف است، آن را اجرا کن
+        if (persistQueue && typeof persistQueue === 'function') {
+          console.log('🔄 V2: اجرای درخواست SetInsurances از صف...');
+          const queuedRequest = persistQueue;
+          persistQueue = null;
+          // تاخیر کوتاه قبل از اجرای درخواست بعدی
+          setTimeout(function() {
+            queuedRequest();
+          }, 200);
+        }
       })
       .catch(function(err) {
         console.error('🏥 V2: Persist insurances error:', err);
-        toastr.error('خطا در ذخیره بیمه‌ها');
+        
+        // ✅ Release Lock حتی در صورت خطا
+        isPersisting = false;
+        persistLock = false;
+        
+        // ✅ بررسی Queue حتی در صورت خطا
+        if (persistQueue && typeof persistQueue === 'function') {
+          console.log('🔄 V2: اجرای درخواست SetInsurances از صف (بعد از خطا)...');
+          const queuedRequest = persistQueue;
+          persistQueue = null;
+          // تاخیر بیشتر در صورت خطا
+          setTimeout(function() {
+            queuedRequest();
+          }, 500);
+        }
+        
+        // ✅ بررسی Concurrency Error
+        const errorMsg = err?.responseJSON?.Message || err?.responseJSON?.message || err?.message || 'خطا در ذخیره بیمه‌ها';
+        if (errorMsg.indexOf('جای دیگری تغییر کرده') > -1 || err?.responseJSON?.Code === 'CONCURRENCY_ERROR') {
+          // خطای Concurrency - فقط warning نمایش بده (نه error)
+          toastr.warning('⚠️ ' + errorMsg, 'تغییر همزمان', {
+            timeOut: 5000,
+            closeButton: true
+          });
+        } else {
+          toastr.error('خطا در ذخیره بیمه‌ها');
+        }
       });
   }
 

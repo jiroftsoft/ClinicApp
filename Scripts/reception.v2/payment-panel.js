@@ -189,30 +189,60 @@
           },
           
           onConfirm: function() {
-            console.log('✅ V2: POS Payment - Confirm clicked (برای چاپ قبض)');
-            // ✅ این دکمه فقط برای چاپ قبض است - Finalize قبلاً انجام شده است
-            // اگر Finalize انجام نشده باشد، دوباره انجام می‌دهیم (Fallback)
-            if (currentReceptionId && currentAmountIRR && window.posPaymentData) {
-              // بررسی اینکه آیا Finalize قبلاً انجام شده است یا نه
-              // اگر نشده باشد، انجام می‌دهیم
-              console.log('🏥 V2: بررسی نیاز به Finalize مجدد...');
-              finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+            console.log('✅ V2: POS Payment - Confirm clicked');
+            console.log('🔍 V2: Checking finalization state:', {
+              _receptionFinalized: window._receptionFinalized,
+              _finalizingReceptionId: window._finalizingReceptionId,
+              currentReceptionId: currentReceptionId,
+              posPaymentData: window.posPaymentData ? 'exists' : 'null'
+            });
+            
+            // ✅ CRITICAL: بررسی اینکه آیا Finalize قبلاً انجام شده است یا نه
+            // اگر انجام شده باشد، فقط Modal را ببند (بدون Finalize مجدد و بدون Popup)
+            if (window._receptionFinalized === true) {
+              console.log('✅ V2: Finalize قبلاً انجام شده است - فقط Modal را می‌بندیم (بدون Popup)');
+              closePosPaymentModal();
+              return;
             }
             
-            // ✅ نمایش گزینه چاپ قبض
-            if (currentReceptionId) {
-              setTimeout(function() {
-                if (confirm('آیا می‌خواهید قبض پرداخت را چاپ کنید؟')) {
-                  window.open(`/ReceptionV2/Print/${currentReceptionId}`, '_blank');
-                }
-              }, 500);
+            // ✅ بررسی اینکه آیا Finalize در حال انجام است یا نه
+            if (window._finalizingReceptionId !== null && window._finalizingReceptionId === currentReceptionId) {
+              console.log('⏳ V2: Finalize در حال انجام است - منتظر می‌مانیم');
+              toastr.info('در حال نهایی‌سازی پذیرش... لطفاً صبر کنید.', 'در حال پردازش', {
+                timeOut: 3000,
+                positionClass: 'toast-top-center'
+              });
+              return;
+            }
+            
+            // ✅ CRITICAL: بررسی از DOM - اگر ReceptionId در DOM موجود نیست یا Status Finalized است، Finalize انجام نشود
+            var receptionIdFromDOM = $("#ReceptionId").val();
+            var receptionStatusFromDOM = $("#ReceptionStatus").val() || $("#receptionStatus").val();
+            
+            if (receptionIdFromDOM && parseInt(receptionIdFromDOM, 10) > 0) {
+              // اگر Status Finalized است، فقط Modal را ببند
+              if (receptionStatusFromDOM === 'Finalized' || receptionStatusFromDOM === 'finalized') {
+                console.log('✅ V2: Reception قبلاً نهایی شده است (از DOM) - فقط Modal را می‌بندیم');
+                window._receptionFinalized = true; // ✅ Set flag برای جلوگیری از Finalize مجدد
+                closePosPaymentModal();
+                return;
+              }
+            }
+            
+            // ✅ Fallback: اگر Finalize انجام نشده باشد، انجام می‌دهیم
+            if (currentReceptionId && currentAmountIRR && window.posPaymentData) {
+              console.log('🏥 V2: Finalize انجام نشده - انجام Finalize...');
+              finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+            } else {
+              console.log('⚠️ V2: اطلاعات لازم برای Finalize موجود نیست - فقط Modal را می‌بندیم');
+              closePosPaymentModal();
             }
           },
           
           onPrint: function() {
             console.log('🖨️ V2: POS Payment - Print clicked');
             if (currentReceptionId) {
-              window.open(`/ReceptionV2/Print/${currentReceptionId}`, '_blank');
+              printPaymentReceipt(currentReceptionId);
             }
           },
           
@@ -259,41 +289,82 @@
         
         // ✅ CRITICAL: Fallback mechanism - اگر Modal بسته شد و Finalize انجام نشده، انجام می‌دهیم
         // منطق دامین: اگر پرداخت موفق است، پذیرش باید نهایی شود حتی اگر کاربر پنجره را ببندد
+        // ✅ جلوگیری از Event Handler تکراری
         var modalElement = document.getElementById('posPaymentModal');
         if (modalElement) {
-          // ✅ Bootstrap 5 event
-          modalElement.addEventListener('hidden.bs.modal', function() {
-            console.log('🔔 V2: POS Payment Modal closed');
-            
-            // اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
-            if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
-              // تاخیر برای اطمینان از بسته شدن کامل Modal
-              setTimeout(function() {
-                if (window._finalizingReceptionId !== currentReceptionId) {
-                  console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
-                  finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
-                } else {
-                  console.log('✅ V2: Finalize قبلاً انجام شده است');
-                }
-              }, 500);
-            }
-          });
+          // ✅ Cleanup Event Handlers قبلی (جلوگیری از چند بار attach)
+          $(modalElement).off('hidden.bs.modal');
           
-          // ✅ Bootstrap 4 fallback
-          $(modalElement).on('hidden.bs.modal', function() {
+          // ✅ Bootstrap 5 event (یک بار attach با once)
+          if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var modalCloseHandler = function() {
+              console.log('🔔 V2: POS Payment Modal closed (Bootstrap 5)');
+              
+              // ✅ حذف Event Handler بعد از یک بار استفاده (جلوگیری از چند بار اجرا)
+              modalElement.removeEventListener('hidden.bs.modal', modalCloseHandler);
+              
+              // اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
+              if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
+                // تاخیر برای اطمینان از بسته شدن کامل Modal
+                setTimeout(function() {
+                  // ✅ بررسی اینکه آیا Finalize قبلاً انجام شده است یا نه
+                  if (window._finalizingReceptionId !== null && window._finalizingReceptionId === currentReceptionId) {
+                    console.log('✅ V2: Finalize قبلاً انجام شده است - ReceptionId:', window._finalizingReceptionId);
+                    return;
+                  }
+                  
+                  // ✅ بررسی اینکه آیا Reception قبلاً نهایی شده است یا نه (از DOM)
+                  const receptionIdFromDOM = $("#ReceptionId").val();
+                  if (receptionIdFromDOM && parseInt(receptionIdFromDOM, 10) > 0) {
+                    // برای جلوگیری از Finalize تکراری، فقط اگر flag وجود نداشته باشد، Finalize می‌کنیم
+                    if (!window._finalizingReceptionId) {
+                      console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
+                      finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                    } else {
+                      console.log('✅ V2: Finalize در حال انجام است - منتظر می‌مانیم');
+                    }
+                  } else {
+                    console.log('ℹ️ V2: ReceptionId در DOM موجود نیست - Finalize انجام نمی‌شود');
+                  }
+                }, 500);
+              } else {
+                console.log('ℹ️ V2: پرداخت موفق نبوده یا داده‌های لازم موجود نیست');
+              }
+            };
+            
+            modalElement.addEventListener('hidden.bs.modal', modalCloseHandler, { once: true });
+          }
+          
+          // ✅ Bootstrap 4 fallback (یک بار attach با one)
+          $(modalElement).one('hidden.bs.modal', function() {
             console.log('🔔 V2: POS Payment Modal closed (Bootstrap 4)');
             
             // اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
             if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
               // تاخیر برای اطمینان از بسته شدن کامل Modal
               setTimeout(function() {
-                if (window._finalizingReceptionId !== currentReceptionId) {
-                  console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
-                  finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                // ✅ بررسی اینکه آیا Finalize قبلاً انجام شده است یا نه
+                if (window._finalizingReceptionId !== null && window._finalizingReceptionId === currentReceptionId) {
+                  console.log('✅ V2: Finalize قبلاً انجام شده است - ReceptionId:', window._finalizingReceptionId);
+                  return;
+                }
+                
+                // ✅ بررسی اینکه آیا Reception قبلاً نهایی شده است یا نه (از DOM)
+                const receptionIdFromDOM = $("#ReceptionId").val();
+                if (receptionIdFromDOM && parseInt(receptionIdFromDOM, 10) > 0) {
+                  // برای جلوگیری از Finalize تکراری، فقط اگر flag وجود نداشته باشد، Finalize می‌کنیم
+                  if (!window._finalizingReceptionId) {
+                    console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
+                    finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                  } else {
+                    console.log('✅ V2: Finalize در حال انجام است - منتظر می‌مانیم');
+                  }
                 } else {
-                  console.log('✅ V2: Finalize قبلاً انجام شده است');
+                  console.log('ℹ️ V2: ReceptionId در DOM موجود نیست - Finalize انجام نمی‌شود');
                 }
               }, 500);
+            } else {
+              console.log('ℹ️ V2: پرداخت موفق نبوده یا داده‌های لازم موجود نیست');
             }
           });
         }
@@ -484,7 +555,8 @@
               }
             };
             
-            finalizeReception(payload, false);
+            const receptionIdForFinalize = $("#ReceptionId").val() ? parseInt($("#ReceptionId").val(), 10) : null;
+            finalizeReception(payload, false, receptionIdForFinalize);
           } else {
             // ✅ مبلغ صفر - بیمه 100% پوشش می‌دهد
             toastr.info('مبلغ قابل پرداخت صفر است زیرا بیمه 100% هزینه را پوشش می‌دهد. می‌توانید پذیرش را نهایی کنید.', 'اطلاع', {
@@ -500,7 +572,8 @@
               }
             };
             
-            finalizeReception(payload, false);
+            const receptionIdForFinalize = $("#ReceptionId").val() ? parseInt($("#ReceptionId").val(), 10) : null;
+            finalizeReception(payload, false, receptionIdForFinalize);
           }
         });
       })
@@ -713,7 +786,8 @@
           if (gross > 0 && (baseCovered + suppCovered) >= gross) {
             // بیمه 100% پوشش می‌دهد - می‌توانیم بدون پرداخت نهایی کنیم
             payload.pos = null; // بدون پرداخت POS
-            finalizeReception(payload, false); // به عنوان نقدی نهایی کن
+            const receptionIdForFinalize = $("#ReceptionId").val() ? parseInt($("#ReceptionId").val(), 10) : null;
+            finalizeReception(payload, false, receptionIdForFinalize); // به عنوان نقدی نهایی کن
             return;
           } else {
             toastr.warning('مبلغ قابل پرداخت صفر است. لطفاً ابتدا خدمت اضافه کنید یا بیمه را تنظیم کنید.');
@@ -734,7 +808,8 @@
       }
       
       // ✅ گام 7: ارسال درخواست نهایی‌سازی
-      finalizeReception(payload, isPOS);
+      const receptionIdForFinalize = $("#ReceptionId").val() ? parseInt($("#ReceptionId").val(), 10) : null;
+      finalizeReception(payload, isPOS, receptionIdForFinalize);
     });
   }
   
@@ -784,42 +859,35 @@
     console.log('📦 FRONTEND: Finalize Payload (برای Model Binding):');
     console.log(JSON.stringify(payload, null, 2));
     
-    // ✅ بستن Modal قبل از Finalize (پشتیبانی از Bootstrap 5 و 4)
-    console.log('🚪 FRONTEND: بستن Modal قبل از Finalize...');
-    var modalElement = document.getElementById('posPaymentModal');
-    if (modalElement) {
-        // ✅ Bootstrap 5 API
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            var modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-                console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 5)');
-            }
-        }
-        // ✅ Fallback: Bootstrap 4 API (jQuery)
-        else if ($ && $.fn.modal) {
-            $(modalElement).modal('hide');
-            console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 4)');
-        }
-    } else {
-        console.warn('⚠️ FRONTEND: Modal element یافت نشد');
-    }
+    // ✅ CRITICAL: Modal را باز نگه می‌داریم تا منشی بتواند قبض را چاپ بگیرد
+    // Modal فقط زمانی بسته می‌شود که کاربر دکمه "بستن" را بزند
+    console.log('✅ FRONTEND: Modal باز نگه داشته می‌شود برای چاپ قبض');
     
     console.log('🚀 FRONTEND: فراخوانی finalizeReception...');
-    finalizeReception(payload, true);
+    finalizeReception(payload, true, receptionId); // ✅ اضافه کردن receptionId برای چاپ
     console.log('═══════════════════════════════════════════════════════════');
   }
   
   /**
    * ✅ نهایی‌سازی پذیرش
+   * @param {Object} payload - Payload برای Finalize
+   * @param {boolean} isPOS - آیا پرداخت POS است یا نقدی
+   * @param {number} receptionId - شناسه پذیرش (برای چاپ قبض)
    */
-  function finalizeReception(payload, isPOS) {
+  function finalizeReception(payload, isPOS, receptionId) {
     console.log('═══════════════════════════════════════════════════════════');
     console.log('🏥 FRONTEND: Finalize Reception - شروع');
     console.log('═══════════════════════════════════════════════════════════');
     console.log('📋 Payload:', JSON.stringify(payload, null, 2));
     console.log('💳 IsPOS:', isPOS);
+    console.log('📋 ReceptionId:', receptionId);
     console.log('⏰ Timestamp:', new Date().toISOString());
+    
+    // ✅ Fallback: اگر receptionId پاس نشده، از payload بگیر
+    if (!receptionId && payload && payload.ReceptionId) {
+      receptionId = parseInt(payload.ReceptionId, 10);
+      console.log('✅ FRONTEND: ReceptionId از Payload استخراج شد:', receptionId);
+    }
     
     // ✅ علامت‌گذاری Draft به عنوان در حال نهایی شدن
     if (window.AutoDraftManager && window.AutoDraftManager.markDraftAsFinalizing) {
@@ -844,6 +912,39 @@
         console.log('⏱️ Request Duration:', requestDuration + 'ms');
         console.log('📊 Response:', JSON.stringify(response, null, 2));
         console.log('⏰ Timestamp:', new Date().toISOString());
+        
+        // ✅ CRITICAL: بررسی Success از Response قبل از Extract
+        const isSuccess = response && (response.Success === true || response.success === true);
+        if (!isSuccess) {
+          const errorMsg = response?.Message || response?.message || 'خطا در نهایی‌سازی پذیرش';
+          const errorCode = response?.Code || response?.code || 'GENERAL_ERROR';
+          console.error('❌ FRONTEND: Finalize failed - Message:', errorMsg, 'Code:', errorCode);
+          
+        // ✅ پاک کردن flag در صورت خطا
+        window._finalizingReceptionId = null;
+        window._receptionFinalized = false; // ✅ Reset flag در صورت خطا
+        
+        // ✅ در صورت خطا، flag را بردار (Draft هنوز نهایی نشده)
+        if (window.AutoDraftManager && window.AutoDraftManager.unmarkDraftAsFinalizing) {
+          window.AutoDraftManager.unmarkDraftAsFinalizing();
+          console.log('🔄 FRONTEND: Draft unmarked as finalizing (error)');
+        }
+          
+          toastr.error(errorMsg, 'خطا', {
+            timeOut: 7000,
+            positionClass: 'toast-top-center',
+            closeButton: true
+          });
+          
+          // ✅ اگر خطا بود، Promise را reject کن
+          return Promise.reject({
+            message: errorMsg,
+            code: errorCode,
+            response: response
+          });
+        }
+        
+        // ✅ Extract data از Response (فقط اگر Success بود)
         return API.ok(response);
       })
       .then(function(d){ 
@@ -855,39 +956,131 @@
         
         // ✅ پاک کردن flag برای جلوگیری از Finalize تکراری
         window._finalizingReceptionId = null;
+        // ✅ CRITICAL: ذخیره flag برای بررسی در onConfirm (جلوگیری از Finalize تکراری)
+        window._receptionFinalized = true;
         console.log('🔓 FRONTEND: Finalize flag cleared');
+        console.log('✅ FRONTEND: Reception Finalized flag set - ReceptionId:', receptionId);
         
         toastr.success("پذیرش با موفقیت نهایی شد", 'موفق', {
           timeOut: 5000
         });
         
-        // ✅ نمایش گزینه چاپ
-        if(d.receipt && d.receipt.printedUrl) {
+        // ✅ CRITICAL: اگر پرداخت POS است، Modal را باز نگه می‌داریم و دکمه‌های چاپ را فعال می‌کنیم
+        if (isPOS && receptionId && posPaymentUI) {
+          console.log('🖨️ FRONTEND: فعال کردن دکمه‌های چاپ در Modal - ReceptionId:', receptionId);
+          
+          // ذخیره ReceptionId برای استفاده در دکمه‌های چاپ
+          window._currentReceptionIdForPrint = receptionId;
+          
+          // ✅ بررسی وجود بیمه تکمیلی از Response یا Form
+          var hasSupplementaryInsurance = false;
+          if (d && (d.SupplementaryPlanId || d.SupplementaryPlanName)) {
+            hasSupplementaryInsurance = true;
+            console.log('✅ FRONTEND: بیمه تکمیلی یافت شد - PlanId:', d.SupplementaryPlanId, 'PlanName:', d.SupplementaryPlanName);
+          } else {
+            // Fallback: بررسی از Form
+            var suppPlanId = $('#SupplementaryPlanId').val() || $('#supplementaryPlanId').val();
+            if (suppPlanId && parseInt(suppPlanId) > 0) {
+              hasSupplementaryInsurance = true;
+              console.log('✅ FRONTEND: بیمه تکمیلی از Form یافت شد - PlanId:', suppPlanId);
+            }
+          }
+          
+          // ✅ Cleanup Event Handlers قبل از attach جدید (جلوگیری از چند بار attach)
+          $('#posPaymentPrintBtn').off('click');
+          $('#posPaymentPrintInsuranceBtn').off('click');
+          $('#posPaymentConfirmBtn').off('click');
+          
+          // فعال کردن دکمه چاپ قبض پرداخت
+          $('#posPaymentPrintBtn').on('click', function() {
+            console.log('🖨️ FRONTEND: چاپ قبض پرداخت - ReceptionId:', receptionId);
+            printPaymentReceipt(receptionId);
+          });
+          
+          // ✅ اضافه کردن دکمه چاپ قبض بیمه تکمیلی (اگر وجود ندارد)
+          if (!$('#posPaymentPrintInsuranceBtn').length) {
+            var $printInsuranceBtn = $('<button>', {
+              type: 'button',
+              class: 'btn btn-warning d-none',
+              id: 'posPaymentPrintInsuranceBtn',
+              html: '<i class="fas fa-file-invoice me-2"></i>چاپ قبض بیمه تکمیلی'
+            });
+            $('#posPaymentPrintBtn').after($printInsuranceBtn);
+          }
+          
+          // فعال کردن دکمه چاپ قبض بیمه تکمیلی
+          $('#posPaymentPrintInsuranceBtn').on('click', function() {
+            console.log('🖨️ FRONTEND: چاپ قبض بیمه تکمیلی - ReceptionId:', receptionId);
+            printInsuranceReceipt(receptionId);
+          });
+          
+          // ✅ نمایش دکمه‌های چاپ
+          $('#posPaymentPrintBtn').removeClass('d-none');
+          if (hasSupplementaryInsurance) {
+            $('#posPaymentPrintInsuranceBtn').removeClass('d-none');
+            console.log('✅ FRONTEND: دکمه چاپ بیمه تکمیلی فعال شد');
+          } else {
+            $('#posPaymentPrintInsuranceBtn').addClass('d-none');
+            console.log('ℹ️ FRONTEND: بیمه تکمیلی وجود ندارد - دکمه چاپ بیمه تکمیلی مخفی شد');
+          }
+          
+          // ✅ تغییر متن و استایل دکمه "تأیید" به "بستن" (Finalize خودکار انجام شده است)
+          $('#posPaymentConfirmBtn')
+            .html('<i class="fas fa-times me-2"></i>بستن')
+            .removeClass('btn-success')
+            .addClass('btn-secondary')
+            .removeClass('d-none')
+            .on('click', function() {
+              console.log('🚪 FRONTEND: بستن Modal توسط کاربر');
+              closePosPaymentModal();
+            });
+          
+          // ✅ مخفی کردن دکمه‌های غیرضروری
+          $('#posPaymentStartBtn').addClass('d-none');
+          $('#posPaymentRetryBtn').addClass('d-none');
+          
+          // ✅ جلوگیری از بستن Modal با ESC یا Backdrop بعد از موفقیت
+          var modalElement = document.getElementById('posPaymentModal');
+          if (modalElement) {
+            // جلوگیری از بستن با ESC
+            $(modalElement).off('keydown.dismiss.bs.modal');
+            // جلوگیری از بستن با Backdrop
+            $(modalElement).data('bs.modal', null);
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+              var modalInstance = bootstrap.Modal.getInstance(modalElement);
+              if (modalInstance) {
+                modalInstance._config.keyboard = false;
+                modalInstance._config.backdrop = 'static';
+              }
+            }
+            console.log('🔒 FRONTEND: Modal قفل شد - فقط با دکمه "بستن" قابل بستن است');
+          }
+          
+          // ❌ برای پرداخت POS، reload نمی‌کنیم - Modal باز می‌ماند
+          console.log('✅ FRONTEND: Modal باز نگه داشته می‌شود برای چاپ قبض');
+        } else {
+          // ✅ برای پرداخت نقدی، نمایش گزینه چاپ به صورت معمول
+          if(d.receipt && d.receipt.printedUrl) {
+            setTimeout(function() {
+              if (confirm('آیا می‌خواهید قبض پرداخت را چاپ کنید؟')) {
+                window.open(d.receipt.printedUrl, '_blank');
+              }
+            }, 1000);
+          }
+          
+          // Reset form and auto-draft system
+          if (window.FormDirty) {
+            window.FormDirty.clean();
+          }
+          if (window.AutoDraftManager) {
+            window.AutoDraftManager.reset();
+          }
+          
+          // ✅ کمی تاخیر قبل از reload برای نمایش پیام موفقیت
           setTimeout(function() {
-            if (confirm('آیا می‌خواهید قبض پرداخت را چاپ کنید؟')) {
-              window.open(d.receipt.printedUrl, '_blank');
-            }
-            
-            // ✅ نمایش گزینه چاپ قبض بیمه تکمیلی (اگر وجود دارد)
-            if (confirm('آیا می‌خواهید قبض بیمه تکمیلی را چاپ کنید؟')) {
-              // TODO: اضافه کردن URL چاپ قبض بیمه تکمیلی
-              // window.open(`/ReceptionV2/PrintInsurance/${payload.receptionId}`, '_blank');
-            }
-          }, 1000);
+            location.reload();
+          }, 2000);
         }
-        
-        // Reset form and auto-draft system
-        if (window.FormDirty) {
-          window.FormDirty.clean();
-        }
-        if (window.AutoDraftManager) {
-          window.AutoDraftManager.reset();
-        }
-        
-        // ✅ کمی تاخیر قبل از reload برای نمایش پیام موفقیت
-        setTimeout(function() {
-          location.reload();
-        }, 2000);
       })
       .catch(function(err) {
         console.error('═══════════════════════════════════════════════════════════');
@@ -903,6 +1096,7 @@
         
         // ✅ پاک کردن flag در صورت خطا
         window._finalizingReceptionId = null;
+        window._receptionFinalized = false; // ✅ Reset flag در صورت خطا
         console.log('🔓 FRONTEND: Finalize flag cleared (error)');
         
         // ✅ در صورت خطا، flag را بردار (Draft هنوز نهایی نشده)
@@ -934,6 +1128,14 @@
    */
   function openPosPaymentModal(receptionId, amountIRR) {
     console.log('🏥 V2: Opening POS Payment Modal - ReceptionId:', receptionId, 'AmountIRR:', amountIRR);
+    
+    // ✅ ذخیره ReceptionId و Amount برای استفاده در Callbacks
+    currentReceptionId = receptionId;
+    currentAmountIRR = amountIRR;
+    
+    // ✅ Reset flag برای پذیرش جدید (قبل از باز کردن Modal)
+    window._receptionFinalized = false;
+    console.log('🔄 FRONTEND: Reception Finalized flag reset for new payment');
     
     // ✅ بررسی Lock Manager - جلوگیری از پرداخت همزمان
     if (posPaymentLockManager && posPaymentLockManager.isLocked()) {
@@ -1471,8 +1673,329 @@
     console.log('🏥 V2: BtnResetForm clicked');
     
     // نمایش تایید از کاربر
-    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید؟\n\nتمام اطلاعات وارد شده حذف می‌شود و فرم آماده پذیرش بیمار بعدی می‌شود.')) {
+    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید？\n\nتمام اطلاعات وارد شده حذف می‌شود و فرم آماده پذیرش بیمار بعدی می‌شود.')) {
       resetForm();
     }
   });
+  
+  /**
+   * ✅ چاپ قبض پرداخت برای فیش پرینتر - Production-Grade
+   * فرمت مناسب برای دستگاه‌های فیش پرینتر مثل SRP-330II (58mm)
+   * با مدیریت حرفه‌ای Popup Blocker و Error Handling
+   */
+  function printPaymentReceipt(receptionId) {
+    if (!receptionId) {
+      console.error('❌ FRONTEND: ReceptionId برای چاپ قبض موجود نیست');
+      toastr.error('شناسه پذیرش برای چاپ قبض موجود نیست', 'خطا', {
+        timeOut: 5000,
+        positionClass: 'toast-top-center',
+        closeButton: true
+      });
+      return;
+    }
+    
+    console.log('🖨️ FRONTEND: چاپ قبض پرداخت - ReceptionId:', receptionId);
+    
+    // ✅ استفاده از Route صحیح برای چاپ قبض پرداخت (فیش پرینتر)
+    var printUrl = `/ReceptionV2/PrintReceipt/${receptionId}?type=payment&printer=thermal`;
+    console.log('🔗 FRONTEND: Print URL:', printUrl);
+    
+    // ✅ Production-Grade: استفاده از iframe برای جلوگیری از Popup Blocker
+    var printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = 'none';
+    printFrame.src = printUrl;
+    
+    // ✅ اضافه کردن iframe به DOM
+    document.body.appendChild(printFrame);
+    
+    // ✅ Event Handler برای بارگذاری iframe
+    printFrame.onload = function() {
+      console.log('✅ FRONTEND: Print iframe loaded successfully');
+      
+      try {
+        // ✅ تاخیر کوتاه برای اطمینان از بارگذاری کامل
+        setTimeout(function() {
+          try {
+            // ✅ چاپ از iframe
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+            console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (iframe)');
+            
+            // ✅ حذف iframe بعد از چاپ (با تاخیر)
+            setTimeout(function() {
+              if (printFrame && printFrame.parentNode) {
+                printFrame.parentNode.removeChild(printFrame);
+                console.log('✅ FRONTEND: Print iframe removed');
+              }
+            }, 2000);
+          } catch (printErr) {
+            console.error('❌ FRONTEND: خطا در چاپ از iframe:', printErr);
+            // Fallback: استفاده از window.open
+            fallbackPrintWindow(printUrl);
+          }
+        }, 500);
+      } catch (err) {
+        console.error('❌ FRONTEND: Exception در onload handler:', err);
+        // Fallback: استفاده از window.open
+        fallbackPrintWindow(printUrl);
+      }
+    };
+    
+    // ✅ Error Handling برای iframe
+    printFrame.onerror = function() {
+      console.error('❌ FRONTEND: خطا در بارگذاری iframe');
+      // حذف iframe در صورت خطا
+      if (printFrame && printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+      // Fallback: استفاده از window.open
+      fallbackPrintWindow(printUrl);
+    };
+    
+    // ✅ Timeout برای iframe (اگر بارگذاری نشد)
+    setTimeout(function() {
+      if (printFrame && printFrame.parentNode && !printFrame.contentWindow) {
+        console.warn('⚠️ FRONTEND: Print iframe timeout - using fallback');
+        printFrame.parentNode.removeChild(printFrame);
+        fallbackPrintWindow(printUrl);
+      }
+    }, 5000);
+    
+    // ✅ Helper Function: Fallback به window.open
+    function fallbackPrintWindow(url) {
+      try {
+        var printWindow = window.open(url, '_blank', 'width=400,height=600,menubar=no,toolbar=no,location=no,status=no');
+        
+        if (printWindow) {
+          printWindow.onload = function() {
+            setTimeout(function() {
+              printWindow.print();
+              console.log('✅ FRONTEND: چاپ قبض پرداخت شروع شد (fallback window.open)');
+            }, 500);
+          };
+          
+          printWindow.onerror = function() {
+            console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ (fallback)');
+            toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا', {
+              timeOut: 7000,
+              positionClass: 'toast-top-center',
+              closeButton: true
+            });
+          };
+        } else {
+          console.error('❌ FRONTEND: window.open returned null - Popup blocker فعال است');
+          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید و دوباره تلاش کنید.', 'خطا', {
+            timeOut: 7000,
+            positionClass: 'toast-top-center',
+            closeButton: true
+          });
+        }
+      } catch (ex) {
+        console.error('❌ FRONTEND: Exception در fallbackPrintWindow:', ex);
+        toastr.error('خطا در چاپ قبض پرداخت: ' + (ex.message || 'خطای نامشخص'), 'خطا', {
+          timeOut: 7000,
+          positionClass: 'toast-top-center',
+          closeButton: true
+        });
+      }
+    }
+  }
+  
+  /**
+   * ✅ چاپ قبض بیمه تکمیلی برای فیش پرینتر
+   * استفاده از iframe برای جلوگیری از Popup Blocker (مشابه printPaymentReceipt)
+   */
+  function printInsuranceReceipt(receptionId) {
+    if (!receptionId) {
+      console.error('❌ FRONTEND: ReceptionId برای چاپ قبض بیمه تکمیلی موجود نیست');
+      toastr.error('شناسه پذیرش برای چاپ قبض بیمه تکمیلی موجود نیست', 'خطا');
+      return;
+    }
+    
+    console.log('🖨️ FRONTEND: چاپ قبض بیمه تکمیلی - ReceptionId:', receptionId);
+    
+    var printUrl = `/ReceptionV2/PrintInsurance/${receptionId}`;
+    console.log('🔗 FRONTEND: Print URL:', printUrl);
+    
+    // Helper function for fallback to window.open
+    function fallbackPrintWindow(url) {
+      try {
+        var printWindow = window.open(url, '_blank', 'width=400,height=600');
+        if (printWindow) {
+          printWindow.onload = function() {
+            setTimeout(function() {
+              printWindow.print();
+              console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (fallback)');
+            }, 500);
+          };
+          printWindow.onerror = function() {
+            console.error('❌ FRONTEND: خطا در باز کردن پنجره چاپ (fallback)');
+            toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا');
+          };
+        } else {
+          console.error('❌ FRONTEND: window.open returned null (fallback) - Popup blocker فعال است');
+          toastr.error('نمی‌توان پنجره چاپ را باز کرد. لطفاً popup blocker را غیرفعال کنید.', 'خطا');
+        }
+      } catch (ex) {
+        console.error('❌ FRONTEND: Exception در fallbackPrintWindow:', ex);
+        toastr.error('خطا در چاپ قبض بیمه تکمیلی: ' + (ex.message || 'خطای نامشخص'), 'خطا');
+      }
+    }
+    
+    try {
+      // ✅ استفاده از iframe برای چاپ (کنترل بیشتر و جلوگیری از Popup Blocker)
+      var printFrame = document.createElement('iframe');
+      printFrame.style.cssText = 'position:absolute;width:0;height:0;left:-9999px;top:-9999px;';
+      printFrame.src = printUrl;
+      document.body.appendChild(printFrame);
+      
+      printFrame.onload = function() {
+        try {
+          // ✅ تاخیر کوتاه برای اطمینان از بارگذاری کامل
+          setTimeout(function() {
+            try {
+              // ✅ چاپ از iframe
+              printFrame.contentWindow.focus();
+              printFrame.contentWindow.print();
+              console.log('✅ FRONTEND: چاپ قبض بیمه تکمیلی شروع شد (iframe)');
+              
+              // ✅ حذف iframe بعد از چاپ (با تاخیر)
+              setTimeout(function() {
+                if (printFrame && printFrame.parentNode) {
+                  printFrame.parentNode.removeChild(printFrame);
+                  console.log('✅ FRONTEND: Print iframe removed');
+                }
+              }, 2000);
+            } catch (printErr) {
+              console.error('❌ FRONTEND: خطا در چاپ از iframe:', printErr);
+              // Fallback: استفاده از window.open
+              fallbackPrintWindow(printUrl);
+            }
+          }, 500);
+        } catch (err) {
+          console.error('❌ FRONTEND: Exception در onload handler:', err);
+          // Fallback: استفاده از window.open
+          fallbackPrintWindow(printUrl);
+        }
+      };
+      
+      // ✅ Error Handling برای iframe
+      printFrame.onerror = function() {
+        console.error('❌ FRONTEND: خطا در بارگذاری iframe');
+        // حذف iframe در صورت خطا
+        if (printFrame && printFrame.parentNode) {
+          printFrame.parentNode.removeChild(printFrame);
+        }
+        // Fallback: استفاده از window.open
+        fallbackPrintWindow(printUrl);
+      };
+      
+      // ✅ Timeout برای iframe (اگر بارگذاری نشد)
+      setTimeout(function() {
+        if (printFrame && printFrame.parentNode && !printFrame.contentWindow) {
+          console.warn('⚠️ FRONTEND: Print iframe timeout - using fallback');
+          printFrame.parentNode.removeChild(printFrame);
+          fallbackPrintWindow(printUrl);
+        }
+      }, 5000);
+      
+    } catch (ex) {
+      console.error('❌ FRONTEND: Exception در printInsuranceReceipt (initial):', ex);
+      toastr.error('خطا در چاپ قبض بیمه تکمیلی: ' + (ex.message || 'خطای نامشخص'), 'خطا');
+      fallbackPrintWindow(printUrl); // Fallback if initial iframe creation fails
+    }
+  }
+  
+  /**
+   * ✅ بستن Modal پرداخت POS - Production-Grade
+   * با Cleanup کامل و Reset فرم
+   */
+  function closePosPaymentModal() {
+    console.log('🚪 FRONTEND: بستن Modal پرداخت POS');
+    
+    var modalElement = document.getElementById('posPaymentModal');
+    if (modalElement) {
+      // ✅ Bootstrap 5 API
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        var modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+          modal.hide();
+          console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 5)');
+        }
+      }
+      // ✅ Fallback: Bootstrap 4 API (jQuery)
+      else if ($ && $.fn.modal) {
+        $(modalElement).modal('hide');
+        console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 4)');
+      }
+    }
+    
+    // ✅ Cleanup کامل: پاک کردن داده‌های پرداخت
+    window.posPaymentData = null;
+    window._currentReceptionIdForPrint = null;
+    window._finalizingReceptionId = null;
+    window._receptionFinalized = false; // ✅ Reset flag برای پذیرش بعدی
+    currentReceptionId = null;
+    currentAmountIRR = null;
+    
+    // ✅ Cleanup Event Handlers
+    $('#posPaymentPrintBtn').off('click');
+    $('#posPaymentPrintInsuranceBtn').off('click');
+    $('#posPaymentConfirmBtn').off('click');
+    
+    // ✅ Reset Modal State
+    if (posPaymentUI && typeof posPaymentUI.showReady === 'function') {
+      posPaymentUI.showReady();
+    }
+    
+    // ✅ CRITICAL: Reset فرم بعد از بستن Modal
+    console.log('🔄 FRONTEND: Reset فرم بعد از بستن Modal...');
+    if (typeof resetForm === 'function') {
+      resetForm().then(function() {
+        console.log('✅ FRONTEND: فرم با موفقیت Reset شد');
+      }).catch(function(err) {
+        console.error('❌ FRONTEND: خطا در Reset فرم:', err);
+        // Fallback: Reset دستی
+        if (window.FormDirty && window.FormDirty.clean) {
+          window.FormDirty.clean();
+        }
+        if (window.AutoDraftManager && window.AutoDraftManager.reset) {
+          window.AutoDraftManager.reset();
+        }
+        // Fallback: Reload صفحه
+        setTimeout(function() {
+          console.log('🔄 FRONTEND: Reload صفحه (Fallback)...');
+          location.reload();
+        }, 1000);
+      });
+    } else {
+      // Fallback: Reset دستی
+      console.log('⚠️ FRONTEND: resetForm function موجود نیست - استفاده از Fallback');
+      
+      // Reset form and auto-draft system
+      if (window.FormDirty && window.FormDirty.clean) {
+        window.FormDirty.clean();
+      }
+      if (window.AutoDraftManager && window.AutoDraftManager.reset) {
+        window.AutoDraftManager.reset();
+      }
+      
+      // ✅ Reload صفحه برای نمایش پذیرش جدید (بعد از تاخیر کوتاه)
+      setTimeout(function() {
+        console.log('🔄 FRONTEND: Reload صفحه...');
+        location.reload();
+      }, 500);
+    }
+  }
+  
+  // Export functions to global scope
+  window.printPaymentReceipt = printPaymentReceipt;
+  window.printInsuranceReceipt = printInsuranceReceipt;
+  window.closePosPaymentModal = closePosPaymentModal;
+  
 })(window.ReceptionAPI, window.RxUtils);

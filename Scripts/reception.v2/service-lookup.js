@@ -14,8 +14,13 @@
     
     console.log('🏥 V2: Loading services for department:', deptId);
     
-    API.get("/services/by-department", { deptId: deptId })
+    // ✅ Store request for cancellation
+    currentServiceRequest = API.get("/services/by-department", { deptId: deptId });
+    
+    currentServiceRequest
       .then(function(fullResponse) {
+        currentServiceRequest = null; // ✅ Clear request reference
+        
         console.log('🏥 V2: Services raw response:', fullResponse);
         
         // Extract data using API.ok (handles ServiceResult structure)
@@ -35,35 +40,103 @@
         
         console.log('🏥 V2: Services parsed:', services.length);
         
-        const $serviceSelect = $("#ServiceId");
-        $serviceSelect.empty().append('<option value="">انتخاب کنید</option>');
+        // ✅ Cache services
+        serviceCache.set(deptId, services);
         
-        if (services && services.length > 0) {
-          services.forEach(function(service) {
-            const serviceId = service.serviceId || service.ServiceId;
-            const serviceName = service.serviceName || service.ServiceName || service.name || service.Name || '';
-            const price = service.price || service.Price || service.unitPriceIRR || service.UnitPriceIRR || 0;
-            $serviceSelect.append(`<option value="${serviceId}">${serviceName} - ${U.toIRR(price)}</option>`);
-          });
-          console.log('🏥 V2: Services filled:', services.length);
-        } else {
-          console.warn('🏥 V2: No services found for department:', deptId);
-          $serviceSelect.append('<option value="">خدمتی یافت نشد</option>');
-        }
+        // ✅ Populate select
+        populateServiceSelect(services);
       })
       .catch(function(err) {
+        currentServiceRequest = null; // ✅ Clear request reference
+        
+        // ✅ Ignore aborted requests
+        if (err && err.status === 'abort') {
+          console.log('ℹ️ V2: Service load request was aborted');
+          return;
+        }
+        
         console.error('🏥 V2: Services load error:', err);
         toastr.error('خطا در بارگذاری خدمات');
         $("#ServiceId").empty().append('<option value="">خطا در بارگذاری</option>');
       });
   }
   
-  // Load services when department changes
+  // ✅ Performance: Cache برای Service List (10 دقیقه)
+  const serviceCache = {
+    data: {},
+    get: function(deptId) {
+      const cached = this.data[deptId];
+      if (cached && Date.now() - cached.timestamp < 600000) { // 10 minutes
+        return cached.data;
+      }
+      return null;
+    },
+    set: function(deptId, data) {
+      this.data[deptId] = {
+        data: data,
+        timestamp: Date.now()
+      };
+    }
+  };
+  
+  let currentServiceRequest = null; // ✅ برای Cancel کردن Request های قبلی
+  let serviceLoadDebounceTimer = null; // ✅ برای Debouncing
+  
+  // ✅ Performance: Load services with Cache, Debouncing, and Request Cancellation
+  function loadServicesOptimized(deptId) {
+    // Cancel previous request
+    if (currentServiceRequest && currentServiceRequest.abort) {
+      console.log('🔄 V2: Canceling previous service load request...');
+      currentServiceRequest.abort();
+      currentServiceRequest = null;
+    }
+    
+    // Clear debounce timer
+    if (serviceLoadDebounceTimer) {
+      clearTimeout(serviceLoadDebounceTimer);
+      serviceLoadDebounceTimer = null;
+    }
+    
+    // Check cache first
+    const cached = serviceCache.get(deptId);
+    if (cached) {
+      console.log('✅ V2: Using cached services for department:', deptId);
+      populateServiceSelect(cached);
+      return;
+    }
+    
+    // Debounce: 300ms delay
+    serviceLoadDebounceTimer = setTimeout(function() {
+      serviceLoadDebounceTimer = null;
+      loadServices(deptId);
+    }, 300);
+  }
+  
+  // ✅ Helper: Populate service select
+  function populateServiceSelect(services) {
+    const $serviceSelect = $("#ServiceId");
+    $serviceSelect.empty().append('<option value="">انتخاب کنید</option>');
+    
+    if (services && services.length > 0) {
+      services.forEach(function(service) {
+        const serviceId = service.serviceId || service.ServiceId;
+        const serviceName = service.serviceName || service.ServiceName || service.name || service.Name || '';
+        const price = service.price || service.Price || service.unitPriceIRR || service.UnitPriceIRR || 0;
+        $serviceSelect.append(`<option value="${serviceId}">${serviceName} - ${U.toIRR(price)}</option>`);
+      });
+      console.log('✅ V2: Services filled:', services.length);
+    } else {
+      console.warn('🏥 V2: No services found');
+      $serviceSelect.append('<option value="">خدمتی یافت نشد</option>');
+    }
+  }
+  
+  // Load services when department changes - ✅ با بهینه‌سازی
   $("#DepartmentId").on('change', function() {
     const deptId = $(this).val();
     console.log('🏥 V2: Department changed, loading services for:', deptId);
     if (deptId) {
-      loadServices(deptId);
+      loadServicesOptimized(deptId);
       // Reset service selection when department changes
       $("#ServiceId").val('').trigger('change');
     } else {

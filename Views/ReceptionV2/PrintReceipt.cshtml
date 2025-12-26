@@ -1,0 +1,299 @@
+@model ClinicApp.ViewModels.Reception.ReceptionDetailsFullDto
+@{
+    ViewBag.Title = "چاپ قبض پرداخت";
+    Layout = "~/Views/Shared/_ThermalPrintLayout.cshtml";
+    
+    var receiptType = ViewBag.ReceiptType as string ?? "payment";
+    var printerType = ViewBag.PrinterType as string ?? "thermal";
+    var receptionId = ViewBag.ReceptionId as int? ?? 0;
+    
+    // محاسبه مبالغ
+    var baseInsuranceShare = Model?.BasePay ?? 0;
+    var supplementaryInsuranceShare = Model?.SuppPay ?? 0;
+    var patientShare = Model?.PatientPay ?? 0;
+    var totalAmount = Model?.TotalAmount ?? 0;
+    var paidAmount = Model?.PaidAmount ?? 0;
+    var remainingAmount = Model?.RemainingAmount ?? 0;
+    
+    // دریافت آخرین تراکنش پرداخت POS
+    var lastPosTransaction = Model?.Transactions?.Where(t => t.Method == ClinicApp.Models.Enums.PaymentMethod.POS && t.Status == ClinicApp.Models.Enums.PaymentStatus.Success)
+        .OrderByDescending(t => t.CreatedAt)
+        .FirstOrDefault();
+}
+
+@* ✅ فرمت مناسب برای فیش پرینتر 58mm (SRP-330II) *@
+<div class="thermal-receipt" data-printer-width="58mm">
+    @* Header *@
+    <div class="receipt-header text-center">
+        <h1 class="receipt-title">کلینیک شفا</h1>
+        <p class="receipt-subtitle">@(receiptType == "payment" ? "رسید پرداخت" : "رسید بیمه تکمیلی")</p>
+        <hr class="receipt-divider">
+    </div>
+    
+    @* Reception Info *@
+    <div class="receipt-section">
+        <div class="receipt-row">
+            <span class="receipt-label">شماره پذیرش:</span>
+            <span class="receipt-value">@(Model?.ReceptionNo ?? Model?.ElectronicReceptionNumber ?? "-")</span>
+        </div>
+        <div class="receipt-row">
+            <span class="receipt-label">تاریخ:</span>
+            <span class="receipt-value">@(Model?.ReceptionDateShamsi ?? Model?.ReceptionDate.ToString("yyyy/MM/dd") ?? "-")</span>
+        </div>
+        <div class="receipt-row">
+            <span class="receipt-label">ساعت:</span>
+            <span class="receipt-value">@(Model?.ReceptionDate.ToString("HH:mm") ?? "-")</span>
+        </div>
+    </div>
+    
+    <hr class="receipt-divider">
+    
+    @* Patient Info *@
+    <div class="receipt-section">
+        <h2 class="receipt-section-title">بیمار</h2>
+        <div class="receipt-row">
+            <span class="receipt-label">نام:</span>
+            <span class="receipt-value">@(Model?.PatientFullName ?? "-")</span>
+        </div>
+        <div class="receipt-row">
+            <span class="receipt-label">کد ملی:</span>
+            <span class="receipt-value">@(Model?.PatientNationalCode ?? "-")</span>
+        </div>
+    </div>
+    
+    <hr class="receipt-divider">
+    
+    @* Payment Info *@
+    <div class="receipt-section">
+        <h2 class="receipt-section-title">اطلاعات پرداخت</h2>
+        @if (receiptType == "payment")
+        {
+            <div class="receipt-row">
+                <span class="receipt-label">مبلغ کل:</span>
+                <span class="receipt-value">@totalAmount.ToString("N0") ریال</span>
+            </div>
+            if (baseInsuranceShare > 0)
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">سهم بیمه پایه:</span>
+                    <span class="receipt-value">@baseInsuranceShare.ToString("N0") ریال</span>
+                </div>
+            }
+            if (supplementaryInsuranceShare > 0)
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">سهم بیمه تکمیلی:</span>
+                    <span class="receipt-value">@supplementaryInsuranceShare.ToString("N0") ریال</span>
+                </div>
+            }
+            <div class="receipt-row">
+                <span class="receipt-label">سهم بیمار:</span>
+                <span class="receipt-value">@patientShare.ToString("N0") ریال</span>
+            </div>
+            <div class="receipt-row receipt-total">
+                <span class="receipt-label">پرداخت شده:</span>
+                <span class="receipt-value">@paidAmount.ToString("N0") ریال</span>
+            </div>
+            if (remainingAmount > 0)
+            {
+                <div class="receipt-row">
+                    <span class="receipt-label">باقی‌مانده:</span>
+                    <span class="receipt-value">@remainingAmount.ToString("N0") ریال</span>
+                </div>
+            }
+            
+            @* اطلاعات تراکنش POS *@
+            if (lastPosTransaction != null)
+            {
+                <hr class="receipt-divider">
+                <div class="receipt-section">
+                    <h2 class="receipt-section-title">اطلاعات کارتخوان</h2>
+                    @if (!string.IsNullOrEmpty(lastPosTransaction.ReferenceCode))
+                    {
+                        <div class="receipt-row">
+                            <span class="receipt-label">RRN:</span>
+                            <span class="receipt-value">@lastPosTransaction.ReferenceCode</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lastPosTransaction.TransactionId))
+                    {
+                        <div class="receipt-row">
+                            <span class="receipt-label">Trace No:</span>
+                            <span class="receipt-value">@lastPosTransaction.TransactionId</span>
+                        </div>
+                    }
+                    <div class="receipt-row">
+                        <span class="receipt-label">مبلغ:</span>
+                        <span class="receipt-value">@lastPosTransaction.Amount.ToString("N0") ریال</span>
+                    </div>
+                </div>
+            }
+        }
+        else if (receiptType == "insurance")
+        {
+            @* اطلاعات بیمه تکمیلی *@
+            <div class="receipt-row">
+                <span class="receipt-label">بیمه تکمیلی:</span>
+                <span class="receipt-value">@(Model?.SupplementaryPlanName ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">مبلغ:</span>
+                <span class="receipt-value">@supplementaryInsuranceShare.ToString("N0") ریال</span>
+            </div>
+        }
+    </div>
+    
+    <hr class="receipt-divider">
+    
+    @* Footer *@
+    <div class="receipt-footer text-center">
+        <p class="receipt-thanks">با تشکر از انتخاب کلینیک شفا</p>
+        <p class="receipt-contact">تلفن: 034-12345678</p>
+        <p class="receipt-date">@DateTime.Now.ToString("yyyy/MM/dd HH:mm")</p>
+    </div>
+</div>
+
+@* ✅ CSS برای فیش پرینتر 58mm *@
+<style>
+    /* Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        width: 58mm;
+        max-width: 58mm;
+        margin: 0 auto;
+        padding: 5mm;
+        background: white;
+    }
+    
+    .thermal-receipt {
+        width: 100%;
+        max-width: 58mm;
+    }
+    
+    .receipt-header {
+        margin-bottom: 10px;
+    }
+    
+    .receipt-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .receipt-subtitle {
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+    
+    .receipt-divider {
+        border: none;
+        border-top: 1px dashed #000;
+        margin: 8px 0;
+    }
+    
+    .receipt-section {
+        margin-bottom: 10px;
+    }
+    
+    .receipt-section-title {
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+    
+    .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        font-size: 11px;
+    }
+    
+    .receipt-label {
+        font-weight: normal;
+    }
+    
+    .receipt-value {
+        font-weight: bold;
+        text-align: left;
+    }
+    
+    .receipt-total {
+        font-size: 13px;
+        font-weight: bold;
+        margin-top: 5px;
+        padding-top: 5px;
+        border-top: 1px solid #000;
+    }
+    
+    .receipt-footer {
+        margin-top: 15px;
+        font-size: 10px;
+    }
+    
+    .receipt-thanks {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .receipt-contact {
+        margin-bottom: 3px;
+    }
+    
+    .receipt-date {
+        font-size: 9px;
+        color: #666;
+    }
+    
+    /* Print Styles */
+    @@media print {
+        @@page {
+            size: 58mm auto;
+            margin: 0;
+        }
+        
+        body {
+            width: 58mm;
+            max-width: 58mm;
+            padding: 0;
+        }
+        
+        .thermal-receipt {
+            width: 58mm;
+            max-width: 58mm;
+        }
+        
+        /* حذف دکمه‌ها و عناصر غیرضروری */
+        button, .no-print {
+            display: none !important;
+        }
+    }
+</style>
+
+@* ✅ JavaScript برای چاپ خودکار *@
+<script>
+    (function() {
+        // چاپ خودکار بعد از بارگذاری صفحه
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        });
+        
+        // بستن پنجره بعد از چاپ
+        window.addEventListener('afterprint', function() {
+            setTimeout(function() {
+                window.close();
+            }, 500);
+        });
+    })();
+</script>
+
