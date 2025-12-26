@@ -3150,16 +3150,38 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // 🏥 MEDICAL: دریافت جلسه نقدی باز برای CashSessionId
-                var sessionResult = await _posManagementService.GetOpenCashSessionAsync(_currentUserService.UserId);
+                // ✅ CRITICAL: استفاده از Fallback برای UserId در صورت null یا empty
+                var userId = GetUserIdWithFallback();
+                _logger.Information("🔍 FACADE: استفاده از UserId برای GetOpenCashSessionAsync - ReceptionId: {ReceptionId}, UserId: {UserId}, Source: {Source}",
+                    request.ReceptionId, userId, GetUserIdSource(userId));
+                
+                var sessionResult = await _posManagementService.GetOpenCashSessionAsync(userId);
                 if (!sessionResult.Success)
                 {
                     _logger.Warning("⚠️ FACADE: جلسه نقدی باز یافت نشد (POS) - ReceptionId: {ReceptionId}, UserId: {UserId}", 
-                        request.ReceptionId, _currentUserService?.UserId);
+                        request.ReceptionId, userId);
                     return ServiceResult<FinalizeResponse>.Failed(
                         "⚠️ جلسه نقدی باز یافت نشد.\n\n" +
                         "لطفاً ابتدا جلسه صندوق را باز کنید و سپس مجدداً تلاش کنید.",
                         "NO_CASH_SESSION");
                 }
+                
+                // ✅ CRITICAL: بررسی وجود CashSession در دیتابیس قبل از استفاده
+                var cashSessionExists = await _context.CashSessions
+                    .AnyAsync(cs => cs.CashSessionId == sessionResult.Data.CashSessionId && !cs.IsDeleted);
+                
+                if (!cashSessionExists)
+                {
+                    _logger.Error("❌ CRITICAL: CashSession در دیتابیس وجود ندارد! CashSessionId: {CashSessionId}, ReceptionId: {ReceptionId}, UserId: {UserId}",
+                        sessionResult.Data.CashSessionId, request.ReceptionId, _currentUserService?.UserId);
+                    return ServiceResult<FinalizeResponse>.Failed(
+                        "❌ خطای بحرانی: جلسه صندوق در دیتابیس یافت نشد.\n\n" +
+                        "لطفاً ابتدا جلسه صندوق را باز کنید و سپس مجدداً تلاش کنید.",
+                        "CASH_SESSION_NOT_FOUND");
+                }
+                
+                _logger.Information("✅ FACADE: CashSession تأیید شد - CashSessionId: {CashSessionId}, ReceptionId: {ReceptionId}",
+                    sessionResult.Data.CashSessionId, request.ReceptionId);
 
                 // 🏥 MEDICAL: پیدا کردن PosTerminal از TerminalId
                 int? posTerminalId = null;
@@ -3199,9 +3221,23 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // 🏥 MEDICAL: Reload draft entity برای اطمینان از به‌روزرسانی BasePay, SuppPay, PatientPay
-                await _context.Entry(draft).ReloadAsync();
+                // ⚠️ CRITICAL: ReloadAsync می‌تواند باعث Concurrency Exception شود اگر Entity در جای دیگری تغییر کرده باشد
+                // بنابراین فقط در صورت نیاز Reload می‌کنیم
+                try
+                {
+                    await _context.Entry(draft).ReloadAsync();
+                    _logger.Information("✅ FACADE: Draft entity reloaded - ReceptionId: {ReceptionId}", request.ReceptionId);
+                }
+                catch (Exception reloadEx)
+                {
+                    _logger.Warning(reloadEx, "⚠️ FACADE: Failed to reload draft entity - ReceptionId: {ReceptionId}, Continuing with current state", request.ReceptionId);
+                    // ادامه می‌دهیم با state فعلی
+                }
 
                 // ثبت پرداخت
+                _logger.Information("💳 FACADE: ایجاد PaymentTransaction - ReceptionId: {ReceptionId}, Amount: {Amount}, IdempotencyKey: {IdempotencyKey}, RRN: {RRN}, TraceNo: {TraceNo}",
+                    request.ReceptionId, request.AmountIRR, request.IdempotencyKey, request.Pos?.RRN, request.Pos?.TraceNo);
+                
                 var payment = new Models.Entities.Payment.PaymentTransaction
                 {
                     ReceptionId = request.ReceptionId,
@@ -3220,16 +3256,29 @@ namespace ClinicApp.Services.Reception
                 };
 
                 _context.PaymentTransactions.Add(payment);
+                _logger.Information("✅ FACADE: PaymentTransaction به Context اضافه شد - ReceptionId: {ReceptionId}, Amount: {Amount}",
+                    request.ReceptionId, request.AmountIRR);
 
                 // 🏥 MEDICAL: به‌روزرسانی مانده POS در CashSession
-                var cashSession = await _context.CashSessions.FindAsync(sessionResult.Data.CashSessionId);
+                // ✅ CRITICAL: استفاده از FirstOrDefaultAsync به جای FindAsync برای جلوگیری از Concurrency Exception
+                var cashSession = await _context.CashSessions
+                    .FirstOrDefaultAsync(cs => cs.CashSessionId == sessionResult.Data.CashSessionId && !cs.IsDeleted);
+                
                 if (cashSession != null)
                 {
+                    // ✅ CRITICAL: بررسی State قبل از تغییر
+                    var cashSessionEntry = _context.Entry(cashSession);
+                    if (cashSessionEntry.State == System.Data.Entity.EntityState.Detached)
+                    {
+                        _logger.Warning("⚠️ FACADE: CashSession detached - Attaching... SessionId: {SessionId}", cashSession.CashSessionId);
+                        _context.CashSessions.Attach(cashSession);
+                    }
+                    
                     cashSession.PosBalance += request.AmountIRR;
                     cashSession.UpdatedAt = DateTime.Now;
                     cashSession.UpdatedByUserId = _currentUserService?.UserId;
-                    _logger.Information("✅ FACADE: CashSession.PosBalance به‌روزرسانی شد - SessionId: {SessionId}, New PosBalance: {PosBalance}, Amount: {Amount}",
-                        cashSession.CashSessionId, cashSession.PosBalance, request.AmountIRR);
+                    _logger.Information("✅ FACADE: CashSession.PosBalance به‌روزرسانی شد - SessionId: {SessionId}, New PosBalance: {PosBalance}, Amount: {Amount}, State: {State}",
+                        cashSession.CashSessionId, cashSession.PosBalance, request.AmountIRR, _context.Entry(cashSession).State);
                 }
                 else
                 {
@@ -3238,10 +3287,119 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // نهایی‌سازی پیش‌نویس
+                _logger.Information("📝 FACADE: به‌روزرسانی Draft Status به Completed - ReceptionId: {ReceptionId}",
+                    request.ReceptionId);
                 draft.Status = ReceptionStatus.Completed;
                 draft.UpdatedAt = DateTime.Now;
+                _logger.Information("✅ FACADE: Draft Status به‌روزرسانی شد - ReceptionId: {ReceptionId}, Status: {Status}",
+                    request.ReceptionId, draft.Status);
 
-                await _context.SaveChangesAsync();
+                // ✅ CRITICAL: ذخیره تغییرات با Transaction Management و Verification
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        _logger.Information("💾 FACADE: شروع Transaction برای ذخیره PaymentTransaction و Finalize - ReceptionId: {ReceptionId}, IdempotencyKey: {IdempotencyKey}", 
+                            request.ReceptionId, request.IdempotencyKey);
+                        
+                        // ✅ CRITICAL: Log Entity States قبل از SaveChangesAsync
+                        var paymentEntryBefore = _context.Entry(payment);
+                        var draftEntryBefore = _context.Entry(draft);
+                        var cashSessionEntryBefore = cashSession != null ? _context.Entry(cashSession) : null;
+                        
+                        _logger.Information("🔍 FACADE: Entity States قبل از SaveChangesAsync - PaymentState: {PaymentState}, DraftState: {DraftState}, CashSessionState: {CashSessionState}", 
+                            paymentEntryBefore.State, draftEntryBefore.State, cashSessionEntryBefore?.State);
+                        
+                        // ✅ CRITICAL: Log تعداد تغییرات
+                        var changeCount = await _context.SaveChangesAsync();
+                        _logger.Information("💾 FACADE: SaveChangesAsync انجام شد - تعداد تغییرات: {ChangeCount}, ReceptionId: {ReceptionId}", 
+                            changeCount, request.ReceptionId);
+                        
+                        if (changeCount == 0)
+                        {
+                            _logger.Error("❌ CRITICAL: SaveChangesAsync هیچ تغییری ذخیره نکرد! ReceptionId: {ReceptionId}", request.ReceptionId);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: هیچ تغییری ذخیره نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "NO_CHANGES_SAVED");
+                        }
+                        
+                        // ✅ CRITICAL: Verify PaymentTransaction was saved
+                        var savedPayment = await _context.PaymentTransactions
+                            .FirstOrDefaultAsync(pt => pt.ReceptionId == request.ReceptionId && 
+                                                          pt.IdempotencyKey == request.IdempotencyKey &&
+                                                          !pt.IsDeleted);
+                        
+                        if (savedPayment == null)
+                        {
+                            _logger.Error("❌ CRITICAL: PaymentTransaction ذخیره نشد! ReceptionId: {ReceptionId}, IdempotencyKey: {IdempotencyKey}", 
+                                request.ReceptionId, request.IdempotencyKey);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: تراکنش پرداخت ذخیره نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "PAYMENT_SAVE_FAILED");
+                        }
+                        
+                        _logger.Information("✅ FACADE: PaymentTransaction با موفقیت ذخیره شد - PaymentTransactionId: {PaymentTransactionId}, ReceptionId: {ReceptionId}, Amount: {Amount}", 
+                            savedPayment.PaymentTransactionId, request.ReceptionId, savedPayment.Amount);
+                        
+                        // ✅ CRITICAL: Verify Draft status was updated (بدون ReloadAsync - بررسی از Context)
+                        var draftEntry = _context.Entry(draft);
+                        var draftStatus = draftEntry.Property(x => x.Status).CurrentValue;
+                        
+                        if (draftStatus != ReceptionStatus.Completed)
+                        {
+                            _logger.Error("❌ CRITICAL: Draft Status به‌روزرسانی نشد! ReceptionId: {ReceptionId}, Expected: {Expected}, Actual: {Actual}", 
+                                request.ReceptionId, ReceptionStatus.Completed, draftStatus);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: وضعیت پذیرش به‌روزرسانی نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "DRAFT_STATUS_UPDATE_FAILED");
+                        }
+                        
+                        // ✅ CRITICAL: Verify Entity States before Commit
+                        var paymentEntry = _context.Entry(payment);
+                        var paymentState = paymentEntry.State;
+                        var draftState = draftEntry.State;
+                        
+                        _logger.Information("🔍 FACADE: Entity States قبل از Commit - PaymentState: {PaymentState}, DraftState: {DraftState}, PaymentTransactionId: {PaymentTransactionId}", 
+                            paymentState, draftState, savedPayment.PaymentTransactionId);
+                        
+                        if (paymentState != System.Data.Entity.EntityState.Unchanged && paymentState != System.Data.Entity.EntityState.Added)
+                        {
+                            _logger.Warning("⚠️ FACADE: PaymentTransaction State غیرعادی - State: {State}, PaymentTransactionId: {PaymentTransactionId}", 
+                                paymentState, savedPayment.PaymentTransactionId);
+                        }
+                        
+                        transaction.Commit();
+                        _logger.Information("✅ FACADE: Transaction با موفقیت Commit شد - ReceptionId: {ReceptionId}, PaymentTransactionId: {PaymentTransactionId}", 
+                            request.ReceptionId, savedPayment.PaymentTransactionId);
+                        
+                        // ✅ CRITICAL: Verify بعد از Commit (از دیتابیس)
+                        var verifiedPayment = await _context.PaymentTransactions
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(pt => pt.PaymentTransactionId == savedPayment.PaymentTransactionId && !pt.IsDeleted);
+                        
+                        if (verifiedPayment == null)
+                        {
+                            _logger.Error("❌ CRITICAL: PaymentTransaction بعد از Commit یافت نشد! PaymentTransactionId: {PaymentTransactionId}", 
+                                savedPayment.PaymentTransactionId);
+                            // این یک خطای بحرانی است اما Transaction قبلاً Commit شده است
+                        }
+                        else
+                        {
+                            _logger.Information("✅ FACADE: PaymentTransaction بعد از Commit تأیید شد - PaymentTransactionId: {PaymentTransactionId}, Amount: {Amount}", 
+                                verifiedPayment.PaymentTransactionId, verifiedPayment.Amount);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        _logger.Error(ex, "❌ CRITICAL: خطا در Transaction - ReceptionId: {ReceptionId}, Exception: {Exception}", 
+                            request.ReceptionId, ex.Message);
+                        throw;
+                    }
+                }
 
                 // شماره رسید
                 var receiptNo = $"R{DateTime.Now:yyyyMMddHHmmss}-{request.ReceptionId}";
@@ -3371,6 +3529,23 @@ namespace ClinicApp.Services.Reception
                     _logger.Warning("⚠️ FACADE: جلسه نقدی باز یافت نشد (Cash) - ReceptionId: {ReceptionId}", request.ReceptionId);
                     return ServiceResult<FinalizeResponse>.Failed("جلسه نقدی باز یافت نشد. لطفاً ابتدا جلسه صندوق را باز کنید.", "NO_CASH_SESSION");
                 }
+                
+                // ✅ CRITICAL: بررسی وجود CashSession در دیتابیس قبل از استفاده
+                var cashSessionExists = await _context.CashSessions
+                    .AnyAsync(cs => cs.CashSessionId == sessionResult.Data.CashSessionId && !cs.IsDeleted);
+                
+                if (!cashSessionExists)
+                {
+                    _logger.Error("❌ CRITICAL: CashSession در دیتابیس وجود ندارد! (Cash) CashSessionId: {CashSessionId}, ReceptionId: {ReceptionId}, UserId: {UserId}",
+                        sessionResult.Data.CashSessionId, request.ReceptionId, _currentUserService?.UserId);
+                    return ServiceResult<FinalizeResponse>.Failed(
+                        "❌ خطای بحرانی: جلسه صندوق در دیتابیس یافت نشد.\n\n" +
+                        "لطفاً ابتدا جلسه صندوق را باز کنید و سپس مجدداً تلاش کنید.",
+                        "CASH_SESSION_NOT_FOUND");
+                }
+                
+                _logger.Information("✅ FACADE: CashSession تأیید شد (Cash) - CashSessionId: {CashSessionId}, ReceptionId: {ReceptionId}",
+                    sessionResult.Data.CashSessionId, request.ReceptionId);
 
                 // 🏥 MEDICAL: Reload draft entity برای اطمینان از به‌روزرسانی BasePay, SuppPay, PatientPay
                 await _context.Entry(draft).ReloadAsync();
@@ -3410,7 +3585,112 @@ namespace ClinicApp.Services.Reception
                 draft.Status = ReceptionStatus.Completed;
                 draft.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                // ✅ CRITICAL: ذخیره تغییرات با Transaction Management و Verification
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        _logger.Information("💾 FACADE: شروع Transaction برای ذخیره PaymentTransaction و Finalize (Cash) - ReceptionId: {ReceptionId}, IdempotencyKey: {IdempotencyKey}", 
+                            request.ReceptionId, request.IdempotencyKey);
+                        
+                        // ✅ CRITICAL: Log Entity States قبل از SaveChangesAsync
+                        var paymentEntryBefore = _context.Entry(payment);
+                        var draftEntryBefore = _context.Entry(draft);
+                        var cashSessionEntryBefore = cashSession != null ? _context.Entry(cashSession) : null;
+                        
+                        _logger.Information("🔍 FACADE: Entity States قبل از SaveChangesAsync (Cash) - PaymentState: {PaymentState}, DraftState: {DraftState}, CashSessionState: {CashSessionState}", 
+                            paymentEntryBefore.State, draftEntryBefore.State, cashSessionEntryBefore?.State);
+                        
+                        // ✅ CRITICAL: Log تعداد تغییرات
+                        var changeCount = await _context.SaveChangesAsync();
+                        _logger.Information("💾 FACADE: SaveChangesAsync انجام شد (Cash) - تعداد تغییرات: {ChangeCount}, ReceptionId: {ReceptionId}", 
+                            changeCount, request.ReceptionId);
+                        
+                        if (changeCount == 0)
+                        {
+                            _logger.Error("❌ CRITICAL: SaveChangesAsync هیچ تغییری ذخیره نکرد! (Cash) ReceptionId: {ReceptionId}", request.ReceptionId);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: هیچ تغییری ذخیره نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "NO_CHANGES_SAVED");
+                        }
+                        
+                        // ✅ CRITICAL: Verify PaymentTransaction was saved
+                        var savedPayment = await _context.PaymentTransactions
+                            .FirstOrDefaultAsync(pt => pt.ReceptionId == request.ReceptionId && 
+                                                          pt.IdempotencyKey == request.IdempotencyKey &&
+                                                          !pt.IsDeleted);
+                        
+                        if (savedPayment == null)
+                        {
+                            _logger.Error("❌ CRITICAL: PaymentTransaction ذخیره نشد! (Cash) ReceptionId: {ReceptionId}, IdempotencyKey: {IdempotencyKey}", 
+                                request.ReceptionId, request.IdempotencyKey);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: تراکنش پرداخت ذخیره نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "PAYMENT_SAVE_FAILED");
+                        }
+                        
+                        _logger.Information("✅ FACADE: PaymentTransaction با موفقیت ذخیره شد (Cash) - PaymentTransactionId: {PaymentTransactionId}, ReceptionId: {ReceptionId}, Amount: {Amount}", 
+                            savedPayment.PaymentTransactionId, request.ReceptionId, savedPayment.Amount);
+                        
+                        // ✅ CRITICAL: Verify Draft status was updated (بدون ReloadAsync - بررسی از Context)
+                        var draftEntry = _context.Entry(draft);
+                        var draftStatus = draftEntry.Property(x => x.Status).CurrentValue;
+                        
+                        if (draftStatus != ReceptionStatus.Completed)
+                        {
+                            _logger.Error("❌ CRITICAL: Draft Status به‌روزرسانی نشد! (Cash) ReceptionId: {ReceptionId}, Expected: {Expected}, Actual: {Actual}", 
+                                request.ReceptionId, ReceptionStatus.Completed, draftStatus);
+                            transaction.Rollback();
+                            return ServiceResult<FinalizeResponse>.Failed(
+                                "❌ خطای بحرانی: وضعیت پذیرش به‌روزرسانی نشد. لطفاً با بخش فنی تماس بگیرید.",
+                                "DRAFT_STATUS_UPDATE_FAILED");
+                        }
+                        
+                        // ✅ CRITICAL: Verify Entity States before Commit
+                        var paymentEntry = _context.Entry(payment);
+                        var paymentState = paymentEntry.State;
+                        var draftState = draftEntry.State;
+                        
+                        _logger.Information("🔍 FACADE: Entity States قبل از Commit (Cash) - PaymentState: {PaymentState}, DraftState: {DraftState}, PaymentTransactionId: {PaymentTransactionId}", 
+                            paymentState, draftState, savedPayment.PaymentTransactionId);
+                        
+                        if (paymentState != System.Data.Entity.EntityState.Unchanged && paymentState != System.Data.Entity.EntityState.Added)
+                        {
+                            _logger.Warning("⚠️ FACADE: PaymentTransaction State غیرعادی (Cash) - State: {State}, PaymentTransactionId: {PaymentTransactionId}", 
+                                paymentState, savedPayment.PaymentTransactionId);
+                        }
+                        
+                        transaction.Commit();
+                        _logger.Information("✅ FACADE: Transaction با موفقیت Commit شد (Cash) - ReceptionId: {ReceptionId}, PaymentTransactionId: {PaymentTransactionId}", 
+                            request.ReceptionId, savedPayment.PaymentTransactionId);
+                        
+                        // ✅ CRITICAL: Verify بعد از Commit (از دیتابیس)
+                        var verifiedPayment = await _context.PaymentTransactions
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(pt => pt.PaymentTransactionId == savedPayment.PaymentTransactionId && !pt.IsDeleted);
+                        
+                        if (verifiedPayment == null)
+                        {
+                            _logger.Error("❌ CRITICAL: PaymentTransaction بعد از Commit یافت نشد! (Cash) PaymentTransactionId: {PaymentTransactionId}", 
+                                savedPayment.PaymentTransactionId);
+                            // این یک خطای بحرانی است اما Transaction قبلاً Commit شده است
+                        }
+                        else
+                        {
+                            _logger.Information("✅ FACADE: PaymentTransaction بعد از Commit تأیید شد (Cash) - PaymentTransactionId: {PaymentTransactionId}, Amount: {Amount}", 
+                                verifiedPayment.PaymentTransactionId, verifiedPayment.Amount);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        _logger.Error(ex, "❌ CRITICAL: خطا در Transaction (Cash) - ReceptionId: {ReceptionId}, Exception: {Exception}", 
+                            request.ReceptionId, ex.Message);
+                        throw;
+                    }
+                }
 
                 // شماره رسید
                 var receiptNo = $"R{DateTime.Now:yyyyMMddHHmmss}-{request.ReceptionId}";
@@ -5457,6 +5737,108 @@ namespace ClinicApp.Services.Reception
                 case PaymentMethod.Debt: return "بدهی";
                 default: return method.ToString();
             }
+        }
+
+        /// <summary>
+        /// دریافت UserId با Fallback Mechanism
+        /// این متد برای عملیات‌های مالی که نیاز به UserId معتبر دارند استفاده می‌شود
+        /// </summary>
+        private string GetUserIdWithFallback()
+        {
+            try
+            {
+                // ✅ اولویت 1: استفاده از _currentUserService.UserId
+                var currentUserId = _currentUserService?.UserId;
+                if (!string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    _logger.Debug("✅ FACADE: استفاده از _currentUserService.UserId: {UserId}", currentUserId);
+                    return currentUserId;
+                }
+
+                // ✅ اولویت 2: استفاده از SystemUsers.SystemUserId
+                if (SystemUsers.IsInitialized && !string.IsNullOrWhiteSpace(SystemUsers.SystemUserId))
+                {
+                    _logger.Information("✅ FACADE: استفاده از SystemUsers.SystemUserId (fallback): {UserId}", SystemUsers.SystemUserId);
+                    return SystemUsers.SystemUserId;
+                }
+
+                // ✅ اولویت 3: استفاده از SystemUsers.AdminUserId
+                if (SystemUsers.IsInitialized && !string.IsNullOrWhiteSpace(SystemUsers.AdminUserId))
+                {
+                    _logger.Information("✅ FACADE: استفاده از SystemUsers.AdminUserId (fallback): {UserId}", SystemUsers.AdminUserId);
+                    return SystemUsers.AdminUserId;
+                }
+
+                // ✅ اولویت 4: جستجوی مستقیم در دیتابیس برای کاربر System
+                try
+                {
+                    var systemUser = _context.Users
+                        .AsNoTracking()
+                        .FirstOrDefault(u => (u.UserName == "3031945451" || u.UserName == "system") && !u.IsDeleted);
+                    
+                    if (systemUser != null)
+                    {
+                        _logger.Information("✅ FACADE: استفاده از کاربر System از دیتابیس (fallback): {UserId}", systemUser.Id);
+                        return systemUser.Id;
+                    }
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.Warning(dbEx, "⚠️ FACADE: خطا در جستجوی کاربر System از دیتابیس");
+                }
+
+                // ✅ اولویت 5: جستجوی مستقیم در دیتابیس برای کاربر Admin
+                try
+                {
+                    var adminUser = _context.Users
+                        .AsNoTracking()
+                        .FirstOrDefault(u => (u.UserName == "3020347998" || u.UserName == "admin") && !u.IsDeleted);
+                    
+                    if (adminUser != null)
+                    {
+                        _logger.Information("✅ FACADE: استفاده از کاربر Admin از دیتابیس (fallback): {UserId}", adminUser.Id);
+                        return adminUser.Id;
+                    }
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.Warning(dbEx, "⚠️ FACADE: خطا در جستجوی کاربر Admin از دیتابیس");
+                }
+
+                // ✅ اولویت 6: شناسه پیش‌فرض (hardcoded)
+                var fallbackUserId = "6f999f4d-24b8-4142-a97e-20077850278b";
+                _logger.Warning("⚠️ FACADE: استفاده از شناسه پیش‌فرض (fallback): {UserId}", fallbackUserId);
+                return fallbackUserId;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACADE: خطا در GetUserIdWithFallback. استفاده از شناسه پیش‌فرض");
+                return "6f999f4d-24b8-4142-a97e-20077850278b";
+            }
+        }
+
+        /// <summary>
+        /// تشخیص منبع UserId برای لاگ‌گیری
+        /// </summary>
+        private string GetUserIdSource(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return "NULL";
+
+            var currentUserId = _currentUserService?.UserId;
+            if (!string.IsNullOrWhiteSpace(currentUserId) && currentUserId == userId)
+                return "CurrentUserService";
+
+            if (SystemUsers.IsInitialized && SystemUsers.SystemUserId == userId)
+                return "SystemUsers.SystemUserId";
+
+            if (SystemUsers.IsInitialized && SystemUsers.AdminUserId == userId)
+                return "SystemUsers.AdminUserId";
+
+            if (userId == "6f999f4d-24b8-4142-a97e-20077850278b")
+                return "HardcodedFallback";
+
+            return "Database";
         }
 
         #endregion

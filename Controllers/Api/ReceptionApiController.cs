@@ -641,6 +641,7 @@ namespace ClinicApp.Controllers.Api
         /// GET: /Api/ReceptionApi/GetReceptionDetails?id=123
         /// </summary>
         [HttpGet]
+        [Route("GetReceptionDetails")]
         public async Task<ActionResult> GetReceptionDetails(int id)
         {
             try

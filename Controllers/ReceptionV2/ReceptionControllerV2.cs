@@ -86,7 +86,8 @@ namespace ClinicApp.Controllers.ReceptionV2
         /// چاپ رسید پذیرش
         /// </summary>
         [HttpGet]
-        [Route("reception/print/{id:int}", Name = "ReceptionV2_Print")]
+        [Route("Print/{id:int}", Name = "ReceptionV2_Print")]
+        [Route("reception/print/{id:int}", Name = "ReceptionV2_Print_Legacy")] // Legacy route برای سازگاری
         public ActionResult Print(int id)
         {
             try
@@ -107,7 +108,8 @@ namespace ClinicApp.Controllers.ReceptionV2
         /// 🏥 MEDICAL: چاپ قبض بیمه تکمیلی
         /// </summary>
         [HttpGet]
-        [Route("reception/print-insurance/{id:int}", Name = "ReceptionV2_PrintInsurance")]
+        [Route("PrintInsurance/{id:int}", Name = "ReceptionV2_PrintInsurance")]
+        [Route("reception/print-insurance/{id:int}", Name = "ReceptionV2_PrintInsurance_Legacy")] // Legacy route برای سازگاری
         public ActionResult PrintInsurance(int id)
         {
             try

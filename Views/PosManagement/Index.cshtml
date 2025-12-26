@@ -18,11 +18,17 @@
   <!-- ✅ Header Section - Single Instance -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="m-0">مدیریت دستگاه‌های پوز</h5>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-success" href="@Url.Action("StartSession","PosManagement")" title="شروع جلسه صندوق جدید">
+        <i class="fas fa-cash-register me-2"></i>شروع جلسه صندوق
+      </a>
+      <a class="btn btn-warning" href="@Url.Action("Sessions","PosManagement")" title="لیست جلسات صندوق">
+        <i class="fas fa-list me-2"></i>لیست جلسات
+      </a>
       <a class="btn btn-primary" href="@Url.Action("CreateTerminal","PosManagement")">
         <i class="fas fa-plus me-2"></i>ایجاد ترمینال
       </a>
-      <a class="btn btn-success" href="@Url.Action("Index","PosTest")" title="تست اتصال و عملکرد دستگاه‌های POS">
+      <a class="btn btn-info" href="@Url.Action("Index","PosTest")" title="تست اتصال و عملکرد دستگاه‌های POS">
         <i class="fas fa-vial me-2"></i>تست POS
       </a>
       <button id="btnRefresh" class="btn btn-outline-secondary">

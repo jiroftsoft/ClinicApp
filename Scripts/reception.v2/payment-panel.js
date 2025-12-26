@@ -86,7 +86,13 @@
           },
           
           onSuccess: function(response) {
-            console.log('✅ V2: POS Payment - Success:', response);
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('✅ FRONTEND: POS Payment Success Callback');
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('📊 Payment Response:', JSON.stringify(response, null, 2));
+            console.log('📋 Current ReceptionId:', currentReceptionId);
+            console.log('💰 Current AmountIRR:', currentAmountIRR);
+            console.log('⏰ Timestamp:', new Date().toISOString());
             
             // ✅ Unlock payment (success)
             if (posPaymentLockManager) {
@@ -94,8 +100,39 @@
               console.log('🔓 Payment unlocked (success)');
             }
             
-            // نمایش موفقیت در Modal
+            // ذخیره اطلاعات برای Finalize (قبل از نمایش Modal)
+            window.posPaymentData = {
+              rrn: response.rrn,
+              traceNo: response.traceNo,
+              terminalId: response.terminalId,
+              cardLast4: response.cardLast4
+            };
+            console.log('💾 POS Payment Data saved:', JSON.stringify(window.posPaymentData, null, 2));
+            
+            // ✅ CRITICAL: منطق دامین - وقتی پرداخت موفق است، پذیرش باید به صورت خودکار نهایی شود
+            // دکمه "تأیید و نهایی‌سازی" فقط برای چاپ قبض است (اختیاری)
+            console.log('🏥 FRONTEND: پرداخت موفق - شروع نهایی‌سازی خودکار پذیرش...');
+            
+            // ✅ نهایی‌سازی خودکار پس از پرداخت موفق
+            if (currentReceptionId && currentAmountIRR && window.posPaymentData) {
+              console.log('✅ FRONTEND: تمام اطلاعات لازم برای Finalize موجود است');
+              console.log('⏳ FRONTEND: تاخیر 500ms قبل از شروع Finalize...');
+              // تاخیر کوتاه برای نمایش پیام موفقیت به کاربر
+              setTimeout(function() {
+                console.log('🚀 FRONTEND: اجرای نهایی‌سازی خودکار - ReceptionId:', currentReceptionId);
+                finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+              }, 500); // 500ms delay برای UX بهتر
+            } else {
+              console.error('❌ FRONTEND: اطلاعات لازم برای Finalize موجود نیست:', {
+                receptionId: currentReceptionId,
+                amountIRR: currentAmountIRR,
+                posData: window.posPaymentData
+              });
+            }
+            
+            // نمایش موفقیت در Modal (بعد از شروع Finalize)
             if (posPaymentUI) {
+              console.log('🎨 FRONTEND: نمایش Modal موفقیت...');
               posPaymentUI.showSuccess({
                 rrn: response.rrn,
                 traceNo: response.traceNo,
@@ -105,14 +142,7 @@
                 txnDate: new Date().toLocaleDateString('fa-IR')
               });
             }
-            
-            // ذخیره اطلاعات برای Finalize
-            window.posPaymentData = {
-              rrn: response.rrn,
-              traceNo: response.traceNo,
-              terminalId: response.terminalId,
-              cardLast4: response.cardLast4
-            };
+            console.log('═══════════════════════════════════════════════════════════');
           },
           
           onCancel: function(response) {
@@ -159,9 +189,23 @@
           },
           
           onConfirm: function() {
-            console.log('✅ V2: POS Payment - Confirm clicked');
+            console.log('✅ V2: POS Payment - Confirm clicked (برای چاپ قبض)');
+            // ✅ این دکمه فقط برای چاپ قبض است - Finalize قبلاً انجام شده است
+            // اگر Finalize انجام نشده باشد، دوباره انجام می‌دهیم (Fallback)
             if (currentReceptionId && currentAmountIRR && window.posPaymentData) {
+              // بررسی اینکه آیا Finalize قبلاً انجام شده است یا نه
+              // اگر نشده باشد، انجام می‌دهیم
+              console.log('🏥 V2: بررسی نیاز به Finalize مجدد...');
               finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+            }
+            
+            // ✅ نمایش گزینه چاپ قبض
+            if (currentReceptionId) {
+              setTimeout(function() {
+                if (confirm('آیا می‌خواهید قبض پرداخت را چاپ کنید؟')) {
+                  window.open(`/ReceptionV2/Print/${currentReceptionId}`, '_blank');
+                }
+              }, 500);
             }
           },
           
@@ -183,6 +227,18 @@
           onCancel: function() {
             console.log('❌ V2: POS Payment - Cancel clicked');
             
+            // ✅ CRITICAL: اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
+            // منطق دامین: اگر پرداخت موفق است، پذیرش باید نهایی شود حتی اگر کاربر پنجره را ببندد
+            if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
+              console.log('⚠️ V2: Modal بسته شد اما پرداخت موفق بوده - انجام Finalize خودکار...');
+              // تاخیر کوتاه برای اطمینان از بسته شدن Modal
+              setTimeout(function() {
+                if (window._finalizingReceptionId !== currentReceptionId) {
+                  finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                }
+              }, 300);
+            }
+            
             // ✅ Cancel payment via client
             if (posPaymentClient) {
               posPaymentClient.cancelPayment('USER_CANCELLED');
@@ -194,12 +250,53 @@
             }
             
             posPaymentUI.close();
-            // Reset payment data
-            window.posPaymentData = null;
+            // ❌ Reset payment data را حذف کردیم - برای Fallback Finalize نیاز داریم
+            // window.posPaymentData = null;
           }
         });
         
         console.log('✅ V2: PosPaymentUI initialized');
+        
+        // ✅ CRITICAL: Fallback mechanism - اگر Modal بسته شد و Finalize انجام نشده، انجام می‌دهیم
+        // منطق دامین: اگر پرداخت موفق است، پذیرش باید نهایی شود حتی اگر کاربر پنجره را ببندد
+        var modalElement = document.getElementById('posPaymentModal');
+        if (modalElement) {
+          // ✅ Bootstrap 5 event
+          modalElement.addEventListener('hidden.bs.modal', function() {
+            console.log('🔔 V2: POS Payment Modal closed');
+            
+            // اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
+            if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
+              // تاخیر برای اطمینان از بسته شدن کامل Modal
+              setTimeout(function() {
+                if (window._finalizingReceptionId !== currentReceptionId) {
+                  console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
+                  finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                } else {
+                  console.log('✅ V2: Finalize قبلاً انجام شده است');
+                }
+              }, 500);
+            }
+          });
+          
+          // ✅ Bootstrap 4 fallback
+          $(modalElement).on('hidden.bs.modal', function() {
+            console.log('🔔 V2: POS Payment Modal closed (Bootstrap 4)');
+            
+            // اگر پرداخت موفق بوده اما Finalize انجام نشده، انجام می‌دهیم
+            if (window.posPaymentData && currentReceptionId && currentAmountIRR) {
+              // تاخیر برای اطمینان از بسته شدن کامل Modal
+              setTimeout(function() {
+                if (window._finalizingReceptionId !== currentReceptionId) {
+                  console.log('⚠️ V2: Modal بسته شد اما Finalize انجام نشده - انجام Finalize خودکار...');
+                  finalizeAfterPayment(currentReceptionId, currentAmountIRR, window.posPaymentData);
+                } else {
+                  console.log('✅ V2: Finalize قبلاً انجام شده است');
+                }
+              }, 500);
+            }
+          });
+        }
       } else {
         console.warn('⚠️ V2: PosPaymentUI not found - make sure pos-payment-ui.js is loaded');
       }
@@ -643,23 +740,52 @@
   
   /**
    * ✅ نهایی‌سازی پس از پرداخت موفق
+   * منطق دامین: وقتی پرداخت موفق است، پذیرش باید به صورت خودکار نهایی شود
    */
   function finalizeAfterPayment(receptionId, amountIRR, posData) {
-    console.log('🏥 V2: Finalizing after successful payment:', { receptionId, amountIRR, posData });
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🏥 FRONTEND: Finalize After Payment - شروع');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📋 ReceptionId:', receptionId);
+    console.log('💰 AmountIRR:', amountIRR);
+    console.log('💳 POS Data:', JSON.stringify(posData, null, 2));
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
+    // ✅ جلوگیری از Finalize تکراری
+    if (window._finalizingReceptionId === receptionId) {
+      console.warn('⚠️ FRONTEND: Finalize در حال انجام است برای ReceptionId:', receptionId);
+      console.log('═══════════════════════════════════════════════════════════');
+      return;
+    }
+    
+    // ✅ علامت‌گذاری برای جلوگیری از Finalize تکراری
+    window._finalizingReceptionId = receptionId;
+    console.log('🔒 FRONTEND: Finalize flag set - ReceptionId:', receptionId);
+    
+    // ✅ CRITICAL: Model Binding - باید با Controllers.Api.FinalizePosRequest مطابقت داشته باشد
+    // Backend انتظار دارد: ReceptionId (PascalCase), Amount (نه AmountIRR!), PosPayment (نه pos!)
+    // توجه: PosPaymentDto نیاز به Amount ندارد (فقط RRN, TraceNo, TerminalId, CardLast4)
+    const idempotencyKey = U.guid();
+    console.log('🔑 FRONTEND: IdempotencyKey generated:', idempotencyKey);
     
     const payload = {
-      receptionId: receptionId,
-      amountIRR: amountIRR,
-      idempotencyKey: U.guid(),
-      pos: {
-        rrn: posData.rrn,
-        traceNo: posData.traceNo,
-        terminalId: posData.terminalId,
-        cardLast4: posData.cardLast4 || null
+      ReceptionId: receptionId,  // ✅ PascalCase برای Model Binding
+      Amount: amountIRR,          // ✅ Amount (نه amountIRR!)
+      IdempotencyKey: idempotencyKey,
+      PosPayment: {                // ✅ PosPayment (نه pos!)
+        Amount: amountIRR,         // ✅ Amount در PosPaymentDto (از کد Backend خط 1688)
+        RRN: posData.rrn,          // ✅ PascalCase
+        TraceNo: posData.traceNo,  // ✅ PascalCase
+        TerminalId: posData.terminalId,  // ✅ PascalCase
+        CardLast4: posData.cardLast4 || null  // ✅ PascalCase
       }
     };
     
+    console.log('📦 FRONTEND: Finalize Payload (برای Model Binding):');
+    console.log(JSON.stringify(payload, null, 2));
+    
     // ✅ بستن Modal قبل از Finalize (پشتیبانی از Bootstrap 5 و 4)
+    console.log('🚪 FRONTEND: بستن Modal قبل از Finalize...');
     var modalElement = document.getElementById('posPaymentModal');
     if (modalElement) {
         // ✅ Bootstrap 5 API
@@ -667,34 +793,70 @@
             var modal = bootstrap.Modal.getInstance(modalElement);
             if (modal) {
                 modal.hide();
+                console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 5)');
             }
         }
         // ✅ Fallback: Bootstrap 4 API (jQuery)
         else if ($ && $.fn.modal) {
             $(modalElement).modal('hide');
+            console.log('✅ FRONTEND: Modal بسته شد (Bootstrap 4)');
         }
+    } else {
+        console.warn('⚠️ FRONTEND: Modal element یافت نشد');
     }
     
+    console.log('🚀 FRONTEND: فراخوانی finalizeReception...');
     finalizeReception(payload, true);
+    console.log('═══════════════════════════════════════════════════════════');
   }
   
   /**
    * ✅ نهایی‌سازی پذیرش
    */
   function finalizeReception(payload, isPOS) {
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🏥 FRONTEND: Finalize Reception - شروع');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📋 Payload:', JSON.stringify(payload, null, 2));
+    console.log('💳 IsPOS:', isPOS);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     // ✅ علامت‌گذاری Draft به عنوان در حال نهایی شدن
     if (window.AutoDraftManager && window.AutoDraftManager.markDraftAsFinalizing) {
       window.AutoDraftManager.markDraftAsFinalizing();
+      console.log('✅ FRONTEND: Draft marked as finalizing');
     }
     
     const endpoint = isPOS ? "/finalize/pos" : "/finalize/cash";
+    const fullUrl = '/api/v1/reception' + endpoint;
+    console.log('🌐 FRONTEND: Endpoint:', endpoint);
+    console.log('🔗 FRONTEND: Full URL:', fullUrl);
     
-    console.log('🏥 V2: Finalizing reception:', payload);
+    console.log('📤 FRONTEND: ارسال درخواست Finalize به Backend...');
+    const requestStartTime = Date.now();
     
     API.post(endpoint, payload)
-      .then(API.ok)
+      .then(function(response) {
+        const requestDuration = Date.now() - requestStartTime;
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('📥 FRONTEND: Response received from Backend');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('⏱️ Request Duration:', requestDuration + 'ms');
+        console.log('📊 Response:', JSON.stringify(response, null, 2));
+        console.log('⏰ Timestamp:', new Date().toISOString());
+        return API.ok(response);
+      })
       .then(function(d){ 
-        console.log('🏥 V2: Reception finalized:', d);
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('✅ FRONTEND: Reception Finalized Successfully');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('📊 Finalize Result:', JSON.stringify(d, null, 2));
+        console.log('⏰ Timestamp:', new Date().toISOString());
+        
+        // ✅ پاک کردن flag برای جلوگیری از Finalize تکراری
+        window._finalizingReceptionId = null;
+        console.log('🔓 FRONTEND: Finalize flag cleared');
+        
         toastr.success("پذیرش با موفقیت نهایی شد", 'موفق', {
           timeOut: 5000
         });
@@ -728,11 +890,25 @@
         }, 2000);
       })
       .catch(function(err) {
-        console.error('🏥 V2: Finalize error:', err);
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('❌ FRONTEND: Finalize Error');
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('📊 Error Object:', err);
+        console.error('📋 Error Message:', err?.message);
+        console.error('📋 Error Status:', err?.status);
+        console.error('📋 Error StatusText:', err?.statusText);
+        console.error('📋 Response JSON:', err?.responseJSON);
+        console.error('📋 Response Text:', err?.responseText);
+        console.error('⏰ Timestamp:', new Date().toISOString());
+        
+        // ✅ پاک کردن flag در صورت خطا
+        window._finalizingReceptionId = null;
+        console.log('🔓 FRONTEND: Finalize flag cleared (error)');
         
         // ✅ در صورت خطا، flag را بردار (Draft هنوز نهایی نشده)
         if (window.AutoDraftManager && window.AutoDraftManager.unmarkDraftAsFinalizing) {
           window.AutoDraftManager.unmarkDraftAsFinalizing();
+          console.log('🔄 FRONTEND: Draft unmarked as finalizing (error)');
         }
         
         // ✅ نمایش پیام خطای دقیق‌تر
@@ -740,6 +916,9 @@
                         err?.responseJSON?.message || 
                         err?.message || 
                         'خطا در نهایی‌سازی پذیرش';
+        
+        console.error('💬 Error Message to User:', errorMsg);
+        console.error('═══════════════════════════════════════════════════════════');
         
         toastr.error(errorMsg, 'خطا', {
           timeOut: 7000,

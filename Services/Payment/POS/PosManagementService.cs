@@ -563,9 +563,80 @@ namespace ClinicApp.Services.Payment.POS
             throw new NotImplementedException("StartCashSessionAsync will be implemented in next part");
         }
 
-        public Task<ServiceResult<CashSession>> StartCashSessionAsync(string userId, decimal initialAmount, string description)
+        /// <summary>
+        /// شروع جلسه نقدی جدید (ساده)
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
+        public async Task<ServiceResult<CashSession>> StartCashSessionAsync(string userId, decimal initialAmount, string description)
         {
-            return _posManagementServiceImplementation.StartCashSessionAsync(userId, initialAmount, description);
+            try
+            {
+                _logger.Information("🏦 Starting cash session - UserId: {UserId}, InitialAmount: {InitialAmount}", userId, initialAmount);
+                
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("⚠️ UserId is null or empty");
+                    return ServiceResult<CashSession>.Failed("شناسه کاربر نامعتبر است.");
+                }
+                
+                if (initialAmount < 0)
+                {
+                    _logger.Warning("⚠️ InitialAmount is negative: {InitialAmount}", initialAmount);
+                    return ServiceResult<CashSession>.Failed("مبلغ اولیه نمی‌تواند منفی باشد.");
+                }
+                
+                // ✅ بررسی اینکه آیا جلسه فعالی وجود دارد یا نه
+                var hasActiveSession = await _cashSessionRepository.HasActiveSessionAsync(userId);
+                if (hasActiveSession)
+                {
+                    _logger.Warning("⚠️ User already has an active session - UserId: {UserId}", userId);
+                    return ServiceResult<CashSession>.Failed(
+                        "شما در حال حاضر یک جلسه صندوق باز دارید. لطفاً ابتدا جلسه قبلی را ببندید.",
+                        "ACTIVE_SESSION_EXISTS");
+                }
+                
+                // ✅ ایجاد جلسه جدید
+                var newSession = new CashSession
+                {
+                    UserId = userId,
+                    Status = CashSessionStatus.Active, // یا Open (هر دو = 1)
+                    OpenedAt = DateTime.Now,
+                    OpeningBalance = initialAmount,
+                    CashBalance = initialAmount, // مانده اولیه = مانده فعلی
+                    PosBalance = 0, // مانده POS در ابتدا صفر است
+                    CreatedAt = DateTime.Now,
+                    CreatedByUserId = userId,
+                    UpdatedAt = DateTime.Now,
+                    UpdatedByUserId = userId,
+                    IsDeleted = false
+                };
+                
+                // ✅ تولید شماره جلسه (اگر SessionNumber property وجود دارد)
+                // در صورت نیاز می‌توان از یک Service برای تولید شماره استفاده کرد
+                // فعلاً از CashSessionId استفاده می‌شود که بعد از ذخیره تولید می‌شود
+                
+                _logger.Information("💾 Saving new cash session to database - UserId: {UserId}, InitialAmount: {InitialAmount}",
+                    userId, initialAmount);
+                
+                var savedSession = await _cashSessionRepository.AddAsync(newSession);
+                
+                if (savedSession == null)
+                {
+                    _logger.Error("❌ Failed to save cash session - UserId: {UserId}", userId);
+                    return ServiceResult<CashSession>.Failed("خطا در ذخیره جلسه صندوق در دیتابیس.");
+                }
+                
+                _logger.Information("✅ Cash session started successfully - SessionId: {SessionId}, UserId: {UserId}, InitialAmount: {InitialAmount}",
+                    savedSession.CashSessionId, userId, initialAmount);
+                
+                return ServiceResult<CashSession>.Successful(savedSession, "جلسه صندوق با موفقیت شروع شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error starting cash session - UserId: {UserId}, InitialAmount: {InitialAmount}",
+                    userId, initialAmount);
+                return ServiceResult<CashSession>.Failed("خطا در شروع جلسه صندوق: " + ex.Message);
+            }
         }
 
         public async Task<ServiceResult<CashSession>> EndCashSessionAsync(int sessionId, EndCashSessionRequest request)
@@ -574,27 +645,217 @@ namespace ClinicApp.Services.Payment.POS
             throw new NotImplementedException("EndCashSessionAsync will be implemented in next part");
         }
 
-        public Task<ServiceResult<CashSession>> EndCashSessionAsync(int sessionId, decimal finalAmount, string description, string endedByUserId)
+        /// <summary>
+        /// پایان جلسه نقدی (ساده)
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
+        public async Task<ServiceResult<CashSession>> EndCashSessionAsync(int sessionId, decimal finalAmount, string description, string endedByUserId)
         {
-            return _posManagementServiceImplementation.EndCashSessionAsync(sessionId, finalAmount, description, endedByUserId);
+            try
+            {
+                _logger.Information("🏦 Ending cash session - SessionId: {SessionId}, FinalAmount: {FinalAmount}, EndedByUserId: {EndedByUserId}",
+                    sessionId, finalAmount, endedByUserId);
+                
+                if (sessionId <= 0)
+                {
+                    _logger.Warning("⚠️ SessionId is invalid: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("شناسه جلسه نامعتبر است.");
+                }
+                
+                if (string.IsNullOrWhiteSpace(endedByUserId))
+                {
+                    _logger.Warning("⚠️ EndedByUserId is null or empty");
+                    return ServiceResult<CashSession>.Failed("شناسه کاربر پایان‌دهنده نامعتبر است.");
+                }
+                
+                if (finalAmount < 0)
+                {
+                    _logger.Warning("⚠️ FinalAmount is negative: {FinalAmount}", finalAmount);
+                    return ServiceResult<CashSession>.Failed("مبلغ نهایی نمی‌تواند منفی باشد.");
+                }
+                
+                // ✅ دریافت جلسه از دیتابیس
+                var session = await _cashSessionRepository.GetByIdAsync(sessionId);
+                if (session == null)
+                {
+                    _logger.Warning("⚠️ Cash session not found - SessionId: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("جلسه صندوق یافت نشد.");
+                }
+                
+                // ✅ بررسی اینکه جلسه قبلاً بسته نشده باشد
+                if (session.Status == CashSessionStatus.Closed || session.ClosedAt.HasValue)
+                {
+                    _logger.Warning("⚠️ Cash session already closed - SessionId: {SessionId}, Status: {Status}",
+                        sessionId, session.Status);
+                    return ServiceResult<CashSession>.Failed("این جلسه قبلاً بسته شده است.");
+                }
+                
+                // ✅ به‌روزرسانی جلسه
+                session.Status = CashSessionStatus.Closed;
+                session.ClosedAt = DateTime.Now;
+                session.CashBalance = finalAmount; // مبلغ نهایی نقدی
+                session.UpdatedAt = DateTime.Now;
+                session.UpdatedByUserId = endedByUserId;
+                
+                _logger.Information("💾 Updating cash session - SessionId: {SessionId}, FinalAmount: {FinalAmount}, ExpectedBalance: {ExpectedBalance}, Difference: {Difference}",
+                    sessionId, finalAmount, session.ExpectedBalance, session.Difference);
+                
+                var updatedSession = await _cashSessionRepository.UpdateAsync(session);
+                
+                if (updatedSession == null)
+                {
+                    _logger.Error("❌ Failed to update cash session - SessionId: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("خطا در به‌روزرسانی جلسه صندوق در دیتابیس.");
+                }
+                
+                _logger.Information("✅ Cash session ended successfully - SessionId: {SessionId}, FinalAmount: {FinalAmount}, Difference: {Difference}",
+                    sessionId, finalAmount, updatedSession.Difference);
+                
+                return ServiceResult<CashSession>.Successful(updatedSession, "جلسه صندوق با موفقیت بسته شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error ending cash session - SessionId: {SessionId}, FinalAmount: {FinalAmount}",
+                    sessionId, finalAmount);
+                return ServiceResult<CashSession>.Failed("خطا در بستن جلسه صندوق: " + ex.Message);
+            }
         }
 
+        /// <summary>
+        /// دریافت جلسه نقدی فعال/باز برای کاربر
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
         public async Task<ServiceResult<CashSession>> GetActiveCashSessionAsync(string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetActiveCashSessionAsync will be implemented in next part");
+            try
+            {
+                _logger.Information("🔍 Getting active cash session for user {UserId}", userId);
+                
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("⚠️ UserId is null or empty");
+                    return ServiceResult<CashSession>.Failed("شناسه کاربر نامعتبر است.");
+                }
+                
+                // ✅ دریافت جلسات کاربر و پیدا کردن جلسه فعال/باز
+                var userSessions = await _cashSessionRepository.GetByUserIdAsync(userId);
+                var userSessionsList = userSessions?.ToList() ?? new List<CashSession>();
+                
+                _logger.Information("🔍 Found {Count} cash sessions for user {UserId}", userSessionsList.Count, userId);
+                
+                // ✅ Log تمام جلسات برای Debug
+                foreach (var session in userSessionsList)
+                {
+                    _logger.Information("📋 Session - Id: {SessionId}, Status: {Status}, IsDeleted: {IsDeleted}, ClosedAt: {ClosedAt}, UserId: {UserId}",
+                        session.CashSessionId, session.Status, session.IsDeleted, session.ClosedAt, session.UserId);
+                }
+                
+                var activeSession = userSessionsList
+                    .FirstOrDefault(cs => !cs.IsDeleted && 
+                                         (cs.Status == CashSessionStatus.Active || cs.Status == CashSessionStatus.Open) &&
+                                         cs.ClosedAt == null);
+                
+                if (activeSession == null)
+                {
+                    _logger.Warning("⚠️ No active/open cash session found for user {UserId}. Total sessions: {Count}, Filtered: {FilteredCount}",
+                        userId, userSessionsList.Count, 
+                        userSessionsList.Count(cs => !cs.IsDeleted && (cs.Status == CashSessionStatus.Active || cs.Status == CashSessionStatus.Open) && cs.ClosedAt == null));
+                    return ServiceResult<CashSession>.Failed(
+                        "جلسه صندوق باز/فعالی برای شما یافت نشد.",
+                        "NO_ACTIVE_SESSION");
+                }
+                
+                _logger.Information("✅ Found active/open cash session - SessionId: {SessionId}, UserId: {UserId}, Status: {Status}",
+                    activeSession.CashSessionId, userId, activeSession.Status);
+                
+                return ServiceResult<CashSession>.Successful(activeSession);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting active cash session for user {UserId}", userId);
+                return ServiceResult<CashSession>.Failed("خطا در دریافت جلسه نقدی فعال: " + ex.Message);
+            }
         }
 
+        /// <summary>
+        /// دریافت جلسات نقدی کاربر
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
         public async Task<ServiceResult<IEnumerable<CashSession>>> GetUserCashSessionsAsync(string userId, int pageNumber = 1, int pageSize = 50)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetUserCashSessionsAsync will be implemented in next part");
+            try
+            {
+                _logger.Information("🔍 Getting user cash sessions - UserId: {UserId}, Page: {PageNumber}, PageSize: {PageSize}",
+                    userId, pageNumber, pageSize);
+                
+                // ✅ اگر UserId null یا empty است، از دیتابیس جلسات را بدون فیلتر UserId بگیریم
+                // این برای حالتی است که کاربر لاگین نشده یا UserId در دسترس نیست
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Warning("⚠️ UserId is null or empty - returning all sessions");
+                    // دریافت تمام جلسات (بدون فیلتر UserId)
+                    var allSessions = await _cashSessionRepository.GetAllAsync(pageNumber, pageSize);
+                    return ServiceResult<IEnumerable<CashSession>>.Successful(allSessions);
+                }
+                
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 50;
+                
+                var sessions = await _cashSessionRepository.GetByUserIdAsync(userId);
+                var pagedSessions = sessions
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                
+                _logger.Information("✅ Found {Count} cash sessions for user {UserId}",
+                    pagedSessions.Count, userId);
+                
+                return ServiceResult<IEnumerable<CashSession>>.Successful(pagedSessions);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting user cash sessions - UserId: {UserId}", userId);
+                return ServiceResult<IEnumerable<CashSession>>.Failed("خطا در دریافت جلسات نقدی کاربر: " + ex.Message);
+            }
         }
 
+        /// <summary>
+        /// دریافت جلسات نقدی بر اساس تاریخ
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
         public async Task<ServiceResult<IEnumerable<CashSession>>> GetCashSessionsByDateRangeAsync(DateTime startDate, DateTime endDate, int pageNumber = 1, int pageSize = 50)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetCashSessionsByDateRangeAsync will be implemented in next part");
+            try
+            {
+                _logger.Information("🔍 Getting cash sessions by date range - StartDate: {StartDate}, EndDate: {EndDate}, Page: {PageNumber}",
+                    startDate, endDate, pageNumber);
+                
+                if (startDate > endDate)
+                {
+                    _logger.Warning("⚠️ StartDate is after EndDate");
+                    return ServiceResult<IEnumerable<CashSession>>.Failed("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.");
+                }
+                
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 50;
+                
+                var sessions = await _cashSessionRepository.GetByDateRangeAsync(startDate, endDate);
+                var pagedSessions = sessions
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                
+                _logger.Information("✅ Found {Count} cash sessions in date range",
+                    pagedSessions.Count);
+                
+                return ServiceResult<IEnumerable<CashSession>>.Successful(pagedSessions);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting cash sessions by date range - StartDate: {StartDate}, EndDate: {EndDate}",
+                    startDate, endDate);
+                return ServiceResult<IEnumerable<CashSession>>.Failed("خطا در دریافت جلسات نقدی: " + ex.Message);
+            }
         }
 
         public async Task<ServiceResult<CashBalance>> CalculateCashBalanceAsync(int sessionId)
@@ -697,9 +958,39 @@ namespace ClinicApp.Services.Payment.POS
             return _posManagementServiceImplementation.DeleteTerminalAsync(terminalId, userId);
         }
 
-        public Task<ServiceResult<CashSession>> GetSessionByIdAsync(int sessionId)
+        /// <summary>
+        /// دریافت جلسه نقدی بر اساس شناسه
+        /// ✅ پیاده‌سازی واقعی برای Production
+        /// </summary>
+        public async Task<ServiceResult<CashSession>> GetSessionByIdAsync(int sessionId)
         {
-            return _posManagementServiceImplementation.GetSessionByIdAsync(sessionId);
+            try
+            {
+                _logger.Information("🔍 Getting cash session by ID - SessionId: {SessionId}", sessionId);
+                
+                if (sessionId <= 0)
+                {
+                    _logger.Warning("⚠️ SessionId is invalid: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("شناسه جلسه نامعتبر است.");
+                }
+                
+                var session = await _cashSessionRepository.GetByIdAsync(sessionId);
+                if (session == null)
+                {
+                    _logger.Warning("⚠️ Cash session not found - SessionId: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("جلسه صندوق یافت نشد.");
+                }
+                
+                _logger.Information("✅ Found cash session - SessionId: {SessionId}, Status: {Status}, UserId: {UserId}",
+                    sessionId, session.Status, session.UserId);
+                
+                return ServiceResult<CashSession>.Successful(session);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting cash session by ID - SessionId: {SessionId}", sessionId);
+                return ServiceResult<CashSession>.Failed("خطا در دریافت جلسه صندوق: " + ex.Message);
+            }
         }
 
         public async Task<ServiceResult<IEnumerable<CashSession>>> GetActiveSessionsAsync()
@@ -792,30 +1083,57 @@ namespace ClinicApp.Services.Payment.POS
         }
 
         /// <summary>
-        /// دریافت جلسه نقدی باز
+        /// دریافت جلسه نقدی باز/فعال برای کاربر
+        /// ✅ پیاده‌سازی واقعی برای Production
         /// </summary>
         public async Task<ServiceResult<CashSession>> GetOpenCashSessionAsync(string userId)
         {
             try
             {
-                _logger.Information("Getting open cash session for user {UserId}", userId);
+                _logger.Information("🔍 Getting open/active cash session for user {UserId}", userId);
                 
-                // TODO: Implement actual cash session retrieval logic
-                // This is a placeholder implementation
-                var cashSession = new CashSession
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    CashSessionId = 1,
-                    UserId = userId,
-                    Status = CashSessionStatus.Open,
-                    OpenedAt = DateTime.Now
-                };
+                    _logger.Warning("⚠️ UserId is null or empty");
+                    return ServiceResult<CashSession>.Failed("شناسه کاربر نامعتبر است.");
+                }
                 
-                return ServiceResult<CashSession>.Successful(cashSession);
+                // ✅ بررسی وجود جلسه فعال/باز برای کاربر
+                var hasActiveSession = await _cashSessionRepository.HasActiveSessionAsync(userId);
+                if (!hasActiveSession)
+                {
+                    _logger.Warning("⚠️ No active/open cash session found for user {UserId}", userId);
+                    return ServiceResult<CashSession>.Failed(
+                        "جلسه صندوق باز/فعالی برای شما یافت نشد.\n\n" +
+                        "لطفاً ابتدا جلسه صندوق را باز کنید.",
+                        "NO_ACTIVE_SESSION");
+                }
+                
+                // ✅ دریافت جلسات کاربر و پیدا کردن جلسه فعال/باز
+                var userSessions = await _cashSessionRepository.GetByUserIdAsync(userId);
+                var activeSession = userSessions
+                    .FirstOrDefault(cs => !cs.IsDeleted && 
+                                         (cs.Status == CashSessionStatus.Active || cs.Status == CashSessionStatus.Open) &&
+                                         cs.ClosedAt == null);
+                
+                if (activeSession == null)
+                {
+                    _logger.Warning("⚠️ Active session check passed but session not found for user {UserId}", userId);
+                    return ServiceResult<CashSession>.Failed(
+                        "جلسه صندوق باز/فعالی برای شما یافت نشد.\n\n" +
+                        "لطفاً ابتدا جلسه صندوق را باز کنید.",
+                        "NO_ACTIVE_SESSION");
+                }
+                
+                _logger.Information("✅ Found active/open cash session - SessionId: {SessionId}, UserId: {UserId}, Status: {Status}, OpenedAt: {OpenedAt}",
+                    activeSession.CashSessionId, userId, activeSession.Status, activeSession.OpenedAt);
+                
+                return ServiceResult<CashSession>.Successful(activeSession);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Error getting open cash session for user {UserId}", userId);
-                return ServiceResult<CashSession>.Failed("خطا در دریافت جلسه نقدی باز");
+                _logger.Error(ex, "❌ Error getting open cash session for user {UserId}", userId);
+                return ServiceResult<CashSession>.Failed("خطا در دریافت جلسه نقدی باز: " + ex.Message);
             }
         }
 

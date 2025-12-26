@@ -93,6 +93,14 @@ namespace ClinicApp
                 namespaces: new[] { "ClinicApp.Controllers.Api" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ جلوگیری از fallback به namespace های دیگر
             
+            // 🏥 API ReceptionApi Controller Route - برای Legacy API endpoints
+            routes.MapRoute(
+                name: "ApiReceptionApiController",
+                url: "Api/ReceptionApi/{action}/{id}",
+                defaults: new { controller = "ReceptionApi", action = "GetReceptionDetails", area = "", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ جلوگیری از fallback به namespace های دیگر
+            
             // 🏥 V2: Reception V2 Route
             routes.MapRoute(
                 name: "ReceptionV2",

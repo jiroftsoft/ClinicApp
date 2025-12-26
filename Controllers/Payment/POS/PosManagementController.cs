@@ -61,6 +61,49 @@ namespace ClinicApp.Controllers.Payment.POS
             return View();
         }
 
+        /// <summary>
+        /// لیست جلسات صندوق
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> Sessions()
+        {
+            try
+            {
+                _logger.Information("درخواست لیست جلسات صندوق - کاربر: {UserName}", _currentUserService?.UserName ?? "Unknown");
+
+                // ✅ دریافت UserId (می‌تواند null باشد - Service خودش handle می‌کند)
+                var userId = _currentUserService?.UserId;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.Information("UserId از CurrentUserService null یا empty است - نمایش تمام جلسات");
+                }
+                else
+                {
+                    _logger.Information("دریافت جلسات برای UserId: {UserId}", userId);
+                }
+
+                // دریافت جلسات کاربر فعلی (یا تمام جلسات اگر UserId null باشد)
+                var result = await _posManagementService.GetUserCashSessionsAsync(userId, 1, 50);
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message ?? "خطا در دریافت جلسات صندوق";
+                    return View(new List<CashSession>());
+                }
+
+                // ✅ اگر UserId null بود، پیام اطلاع‌رسانی نمایش دهیم
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    TempData["InfoMessage"] = "در حال نمایش تمام جلسات صندوق (کاربر لاگین نشده است)";
+                }
+
+                return View(result.Data);
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "نمایش لیست جلسات صندوق");
+            }
+        }
+
         #endregion
 
         #region POS Terminal CRUD Actions
@@ -419,6 +462,11 @@ namespace ClinicApp.Controllers.Payment.POS
                     return HandleServiceError(result);
                 }
 
+                // ✅ محاسبه تعداد تراکنش‌ها
+                var totalTransactions = result.Data.TotalTransactions;
+                var cashTransactions = result.Data.CashTransactions?.Count() ?? 0;
+                var posTransactions = result.Data.PosTransactions?.Count() ?? 0;
+                
                 var viewModel = new CashSessionDetailsViewModel
                 {
                     Id = result.Data.CashSessionId,
@@ -438,9 +486,9 @@ namespace ClinicApp.Controllers.Payment.POS
                     Description = result.Data.Description,
                     EndedByUserId = result.Data.EndedByUserId,
                     EndedByUserName = result.Data.EndedByUserName,
-                    TotalTransactions = 0, // CashSession entity doesn't have this property
-                    CashTransactions = 0, // CashSession entity doesn't have this property
-                    PosTransactions = 0, // CashSession entity doesn't have this property
+                    TotalTransactions = totalTransactions,
+                    CashTransactions = cashTransactions,
+                    PosTransactions = posTransactions,
                     Duration = result.Data.Duration
                 };
 
@@ -449,6 +497,36 @@ namespace ClinicApp.Controllers.Payment.POS
             catch (Exception ex)
             {
                 return HandleException(ex, "نمایش جزئیات جلسه نقدی");
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم شروع جلسه نقدی
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> StartSession()
+        {
+            try
+            {
+                // بررسی اینکه آیا جلسه فعالی وجود دارد یا نه
+                var activeSessionResult = await _posManagementService.GetActiveCashSessionAsync(_currentUserService.UserId);
+                if (activeSessionResult.Success && activeSessionResult.Data != null)
+                {
+                    TempData["Warning"] = "شما در حال حاضر یک جلسه صندوق باز دارید. لطفاً ابتدا جلسه قبلی را ببندید.";
+                    return RedirectToAction("SessionDetails", new { id = activeSessionResult.Data.CashSessionId });
+                }
+
+                var model = new CashSessionStartViewModel
+                {
+                    InitialCashAmount = 0,
+                    Description = string.Empty
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "نمایش فرم شروع جلسه");
             }
         }
 

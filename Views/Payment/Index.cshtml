@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.Payment.PaymentTransactionListViewModel
+@model ClinicApp.ViewModels.Payment.PaymentIndexViewModel
 
 @{
     ViewBag.Title = "مدیریت تراکنش‌های پرداخت";
@@ -53,7 +53,7 @@
                                 <span class="input-group-text">
                                     <i class="fa fa-search"></i>
                                 </span>
-                                @Html.TextBoxFor(m => m.Search.SearchTerm, new { 
+                                @Html.TextBoxFor(m => m.SearchModel.SearchTerm, new { 
                                     @class = "form-control", 
                                     @placeholder = "کد تراکنش، کد مرجع، شماره رسید...",
                                     @autocomplete = "off"
@@ -62,27 +62,27 @@
                         </div>
                         <div class="col-md-2">
                             <label for="PaymentMethod" class="form-label">روش پرداخت</label>
-                            @Html.DropDownListFor(m => m.Search.PaymentMethod, 
+                            @Html.DropDownListFor(m => m.SearchModel.Method, 
                                 new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Enums.PaymentMethod))
                                     .Cast<ClinicApp.Models.Enums.PaymentMethod>()
                                     .Select(x => new { Value = x, Text = x.ToString() }), 
-                                    "Value", "Text", Model.Search.PaymentMethod), 
+                                    "Value", "Text", Model.SearchModel.Method), 
                                 "همه روش‌ها", 
                                 new { @class = "form-select" })
                         </div>
                         <div class="col-md-2">
                             <label for="Status" class="form-label">وضعیت</label>
-                            @Html.DropDownListFor(m => m.Search.Status, 
+                            @Html.DropDownListFor(m => m.SearchModel.Status, 
                                 new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Enums.PaymentStatus))
                                     .Cast<ClinicApp.Models.Enums.PaymentStatus>()
                                     .Select(x => new { Value = x, Text = x.ToString() }), 
-                                    "Value", "Text", Model.Search.Status), 
+                                    "Value", "Text", Model.SearchModel.Status), 
                                 "همه وضعیت‌ها", 
                                 new { @class = "form-select" })
                         </div>
                         <div class="col-md-2">
                             <label for="StartDate" class="form-label">از تاریخ</label>
-                            @Html.TextBoxFor(m => m.Search.StartDate, "{0:yyyy-MM-dd}", new { 
+                            @Html.TextBoxFor(m => m.SearchModel.StartDate, "{0:yyyy-MM-dd}", new { 
                                 @class = "form-control", 
                                 @type = "date",
                                 @title = "تاریخ شروع"
@@ -90,7 +90,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="EndDate" class="form-label">تا تاریخ</label>
-                            @Html.TextBoxFor(m => m.Search.EndDate, "{0:yyyy-MM-dd}", new { 
+                            @Html.TextBoxFor(m => m.SearchModel.EndDate, "{0:yyyy-MM-dd}", new { 
                                 @class = "form-control", 
                                 @type = "date",
                                 @title = "تاریخ پایان"
@@ -137,7 +137,7 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label for="MinAmount" class="form-label">حداقل مبلغ</label>
-                            @Html.TextBoxFor(m => m.Search.MinAmount, new { 
+                            @Html.TextBoxFor(m => m.SearchModel.MinAmount, new { 
                                 @class = "form-control", 
                                 @type = "number",
                                 @step = "0.01",
@@ -146,7 +146,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="MaxAmount" class="form-label">حداکثر مبلغ</label>
-                            @Html.TextBoxFor(m => m.Search.MaxAmount, new { 
+                            @Html.TextBoxFor(m => m.SearchModel.MaxAmount, new { 
                                 @class = "form-control", 
                                 @type = "number",
                                 @step = "0.01",
@@ -155,7 +155,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="ReceptionId" class="form-label">شناسه پذیرش</label>
-                            @Html.TextBoxFor(m => m.Search.ReceptionId, new { 
+                            @Html.TextBoxFor(m => m.SearchModel.ReceptionId, new { 
                                 @class = "form-control", 
                                 @type = "number",
                                 @placeholder = "شناسه پذیرش"
@@ -163,7 +163,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="PatientId" class="form-label">شناسه بیمار</label>
-                            @Html.TextBoxFor(m => m.Search.PatientId, new { 
+                            @Html.TextBoxFor(m => m.SearchModel.PatientId, new { 
                                 @class = "form-control", 
                                 @type = "number",
                                 @placeholder = "شناسه بیمار"
@@ -264,9 +264,9 @@
                                                     }
                                                 </td>
                                                 <td>
-                                                    @if (transaction.Patient != null)
+                                                    @if (!string.IsNullOrEmpty(transaction.PatientName))
                                                     {
-                                                        <small>@transaction.Patient.FirstName @transaction.Patient.LastName</small>
+                                                        <small>@transaction.PatientName</small>
                                                     }
                                                     else
                                                     {
@@ -363,7 +363,7 @@
                             </div>
 
                             <!-- Pagination -->
-                            @if (Model.PagedResult.TotalPages > 1)
+                            if (Model.PagedResult.TotalPages > 1)
                             {
                                 <div class="card-footer bg-light">
                                     <nav aria-label="صفحه‌بندی تراکنش‌ها">

@@ -35,6 +35,7 @@ namespace ClinicApp.Repositories.Payment.POS
                 return await _context.CashSessions
                     .Include(cs => cs.User)
                     .Include(cs => cs.UpdatedByUser)
+                    .Include(cs => cs.Transactions) // ✅ Include Transactions برای محاسبه تعداد
                     .FirstOrDefaultAsync(cs => cs.CashSessionId == sessionId && !cs.IsDeleted);
             }
             catch (Exception ex)
@@ -52,7 +53,7 @@ namespace ClinicApp.Repositories.Payment.POS
                     .Include(cs => cs.User)
                     .Include(cs => cs.UpdatedByUser)
                     .Where(cs => !cs.IsDeleted)
-                    .OrderByDescending(cs => cs.StartTime)
+                    .OrderByDescending(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -131,7 +132,7 @@ namespace ClinicApp.Repositories.Payment.POS
                 return await _context.CashSessions
                     .Include(cs => cs.User)
                     .Where(cs => !cs.IsDeleted && cs.Status == CashSessionStatus.Active)
-                    .OrderBy(cs => cs.StartTime)
+                    .OrderBy(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -149,7 +150,7 @@ namespace ClinicApp.Repositories.Payment.POS
                     .Include(cs => cs.User)
                     .Include(cs => cs.UpdatedByUser)
                     .Where(cs => !cs.IsDeleted && cs.UserId == userId)
-                    .OrderByDescending(cs => cs.StartTime)
+                    .OrderByDescending(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -167,9 +168,9 @@ namespace ClinicApp.Repositories.Payment.POS
                     .Include(cs => cs.User)
                     .Include(cs => cs.UpdatedByUser)
                     .Where(cs => !cs.IsDeleted && 
-                               cs.StartTime >= startDate && 
-                               cs.StartTime <= endDate)
-                    .OrderByDescending(cs => cs.StartTime)
+                               cs.OpenedAt >= startDate && // ✅ استفاده از OpenedAt به جای StartTime (computed property)
+                               cs.OpenedAt <= endDate)
+                    .OrderByDescending(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -187,7 +188,7 @@ namespace ClinicApp.Repositories.Payment.POS
                     .Include(cs => cs.User)
                     .Include(cs => cs.UpdatedByUser)
                     .Where(cs => !cs.IsDeleted && cs.Status == status)
-                    .OrderByDescending(cs => cs.StartTime)
+                    .OrderByDescending(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -215,7 +216,7 @@ namespace ClinicApp.Repositories.Payment.POS
                 }
 
                 return await query
-                    .OrderByDescending(cs => cs.StartTime)
+                    .OrderByDescending(cs => cs.OpenedAt) // ✅ استفاده از OpenedAt به جای StartTime (computed property)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -249,10 +250,12 @@ namespace ClinicApp.Repositories.Payment.POS
         {
             try
             {
+                // ✅ چک کردن هم Open و هم Active (هر دو مقدار 1 دارند اما برای وضوح هر دو را چک می‌کنیم)
                 return await _context.CashSessions
                     .AnyAsync(cs => !cs.IsDeleted && 
                                cs.UserId == userId && 
-                               cs.Status == CashSessionStatus.Active);
+                               (cs.Status == CashSessionStatus.Active || cs.Status == CashSessionStatus.Open) &&
+                               cs.ClosedAt == null); // ✅ همچنین باید ClosedAt null باشد
             }
             catch (Exception ex)
             {
@@ -315,8 +318,8 @@ namespace ClinicApp.Repositories.Payment.POS
             {
                 var sessions = await _context.CashSessions
                     .Where(cs => !cs.IsDeleted && 
-                               cs.StartTime >= startDate && 
-                               cs.StartTime <= endDate)
+                               cs.OpenedAt >= startDate && // ✅ استفاده از OpenedAt به جای StartTime (computed property)
+                               cs.OpenedAt <= endDate)
                     .ToListAsync();
 
                 return new CashSessionStatistics

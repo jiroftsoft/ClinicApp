@@ -414,6 +414,9 @@ namespace ClinicApp.ViewModels.Payment
     /// </summary>
     public class PaymentTransactionSearchViewModel
     {
+        [Display(Name = "جستجو")]
+        public string SearchTerm { get; set; }
+
         [Display(Name = "شناسه پذیرش")]
         public int? ReceptionId { get; set; }
 

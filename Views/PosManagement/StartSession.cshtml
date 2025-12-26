@@ -1,0 +1,176 @@
+@model ClinicApp.ViewModels.Payment.POS.CashSessionStartViewModel
+@using ClinicApp.ViewModels.Shared
+@{
+    ViewBag.Title = "شروع جلسه صندوق";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus", Tooltip = "بازگشت به صفحه اصلی پذیرش" },
+        new BreadcrumbItem { Title = "مدیریت POS", Url = Url.Action("Index", "PosManagement"), Icon = "fas fa-credit-card", Tooltip = "لیست ترمینال‌های POS" },
+        new BreadcrumbItem { Title = "شروع جلسه صندوق", Icon = "fas fa-cash-register", IsActive = true }
+    };
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cash-register me-2"></i>
+                        شروع جلسه صندوق جدید
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Warning"] != null)
+                    {
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @TempData["Warning"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-times-circle me-2"></i>
+                            @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @using (Html.BeginForm("StartSession", "PosManagement", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate", id = "startSessionForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>راهنما:</strong> برای شروع جلسه صندوق، مبلغ اولیه نقدی موجود در صندوق را وارد کنید.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="InitialCashAmount" class="form-label fw-bold">
+                                @Html.DisplayNameFor(m => m.InitialCashAmount)
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </span>
+                                @Html.TextBoxFor(m => m.InitialCashAmount, new { 
+                                    @class = "form-control text-end", 
+                                    @type = "number", 
+                                    @step = "1000",
+                                    @min = "0",
+                                    @placeholder = "0",
+                                    @required = "required",
+                                    @id = "InitialCashAmount"
+                                })
+                                <span class="input-group-text">ریال</span>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.InitialCashAmount, "", new { @class = "text-danger" })
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                مبلغ اولیه نقدی موجود در صندوق را وارد کنید (به ریال)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Description" class="form-label fw-bold">
+                                @Html.DisplayNameFor(m => m.Description)
+                                <span class="text-muted">(اختیاری)</span>
+                            </label>
+                            @Html.TextAreaFor(m => m.Description, new { 
+                                @class = "form-control", 
+                                @rows = "3",
+                                @placeholder = "توضیحات اختیاری در مورد جلسه صندوق...",
+                                @id = "Description"
+                            })
+                            @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                می‌توانید توضیحات اختیاری در مورد این جلسه وارد کنید
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="@Url.Action("Index", "PosManagement")" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                انصراف
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="btnSubmit">
+                                <i class="fas fa-check me-2"></i>
+                                شروع جلسه صندوق
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- ✅ اطلاعات مهم -->
+            <div class="card mt-3 border-info">
+                <div class="card-body">
+                    <h6 class="card-title text-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        نکات مهم:
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>پس از شروع جلسه، تمام تراکنش‌های پرداخت به این جلسه مرتبط می‌شوند</li>
+                        <li>برای انجام پرداخت، باید جلسه صندوق باز باشد</li>
+                        <li>در پایان شیفت، حتماً جلسه را ببندید</li>
+                        <li>مبلغ اولیه باید دقیق و صحیح باشد</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+    
+    // ✅ Format مبلغ به فارسی
+    var amountInput = document.getElementById('InitialCashAmount');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            var value = this.value.replace(/[^0-9]/g, '');
+            if (value) {
+                this.value = parseInt(value, 10);
+            }
+        });
+        
+        amountInput.addEventListener('blur', function() {
+            var value = parseInt(this.value, 10);
+            if (isNaN(value) || value < 0) {
+                this.value = 0;
+            }
+        });
+    }
+    
+    // ✅ Form Validation
+    var form = document.getElementById('startSessionForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            } else {
+                var btnSubmit = document.getElementById('btnSubmit');
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال شروع جلسه...';
+                }
+            }
+            form.classList.add('was-validated');
+        });
+    }
+})();
+</script>
+

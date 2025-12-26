@@ -65,50 +65,50 @@ namespace ClinicApp
 
                     var startTime = DateTime.UtcNow;
 
-                    // 0. مقداردهی اولیه SystemUsers (بسیار مهم!)
-                    Log.Information("📍 مرحله 0: مقداردهی اولیه SystemUsers");
-                    SystemUsers.Initialize(context);
-
-                    // 1. ایجاد نقش‌ها
+                    // 1. ایجاد نقش‌ها (اول باید نقش‌ها ایجاد شوند)
                     Log.Information("📍 مرحله 1: ایجاد نقش‌های سیستم");
                     var roleSeedService = new RoleSeedService(context, Log.Logger);
                     await roleSeedService.SeedAsync();
 
-                    // 2. ایجاد کاربران سیستمی (Admin و System)
+                    // 2. ایجاد کاربران سیستمی (Admin و System) - باید قبل از SystemUsers.Initialize باشد
                     Log.Information("📍 مرحله 2: ایجاد کاربران سیستمی");
                     var userSeedService = new UserSeedService(context, Log.Logger);
                     await userSeedService.SeedAsync();
 
-                    // 3. ایجاد سیستم بیمه (Providers, Plans, PlanServices)
-                    Log.Information("📍 مرحله 3: ایجاد سیستم بیمه");
+                    // 3. مقداردهی اولیه SystemUsers (بعد از seed شدن کاربران!)
+                    Log.Information("📍 مرحله 3: مقداردهی اولیه SystemUsers");
+                    SystemUsers.Initialize(context);
+
+                    // 4. ایجاد سیستم بیمه (Providers, Plans, PlanServices)
+                    Log.Information("📍 مرحله 4: ایجاد سیستم بیمه");
                     var insuranceSeedService = new InsuranceSeedService(context, Log.Logger);
                     await insuranceSeedService.SeedAsync();
 
-                    // 4. ایجاد کلینیک پیش‌فرض
-                    Log.Information("📍 مرحله 4: ایجاد کلینیک پیش‌فرض");
+                    // 5. ایجاد کلینیک پیش‌فرض
+                    Log.Information("📍 مرحله 5: ایجاد کلینیک پیش‌فرض");
                     var clinicSeedService = new ClinicSeedService(context, Log.Logger);
                     await clinicSeedService.SeedAsync();
 
-                    // 5. ایجاد دپارتمان‌های کلینیک
-                    Log.Information("📍 مرحله 5: ایجاد دپارتمان‌های کلینیک");
+                    // 6. ایجاد دپارتمان‌های کلینیک
+                    Log.Information("📍 مرحله 6: ایجاد دپارتمان‌های کلینیک");
                     var departmentSeedService = new DepartmentSeedService(context, Log.Logger);
                     await departmentSeedService.SeedAsync();
 
-                    // 6. ایجاد تخصص‌ها
-                    Log.Information("📍 مرحله 6: ایجاد تخصص‌ها");
+                    // 7. ایجاد تخصص‌ها
+                    Log.Information("📍 مرحله 7: ایجاد تخصص‌ها");
                     var specializationSeedService = new SpecializationSeedService(context, Log.Logger);
                     await specializationSeedService.SeedAsync();
 
-                    // 7. ایجاد الگوهای اطلاع‌رسانی
-                    Log.Information("📍 مرحله 7: ایجاد الگوهای اطلاع‌رسانی");
+                    // 8. ایجاد الگوهای اطلاع‌رسانی
+                    Log.Information("📍 مرحله 8: ایجاد الگوهای اطلاع‌رسانی");
                     var notificationSeedService = new NotificationSeedService(context, Log.Logger);
                     await notificationSeedService.SeedAsync();
 
-                    // 8. ذخیره تمام تغییرات (یک بار!)
+                    // 9. ذخیره تمام تغییرات (یک بار!)
                     Log.Information("💾 ذخیره تغییرات در دیتابیس...");
                     await context.SaveChangesAsync();
 
-                    // 9. Commit Transaction
+                    // 10. Commit Transaction
                     transaction.Commit();
 
                     var duration = DateTime.UtcNow - startTime;
@@ -118,7 +118,7 @@ namespace ClinicApp
                     Log.Information($"⏱️ مدت زمان: {duration.TotalSeconds:F2} ثانیه");
                     Log.Information("═══════════════════════════════════════════════");
 
-                    // 10. اعتبارسنجی (اختیاری)
+                    // 11. اعتبارسنجی (اختیاری)
                     await ValidateSeededDataAsync(context);
                 }
                 catch (Exception ex)

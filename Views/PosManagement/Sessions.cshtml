@@ -1,0 +1,186 @@
+@model IEnumerable<ClinicApp.Models.Entities.Payment.CashSession>
+@using ClinicApp.ViewModels.Shared
+@using ClinicApp.Models.Enums
+@{
+    ViewBag.Title = "لیست جلسات صندوق";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    
+    // تنظیم Breadcrumb Navigation
+    ViewBag.Breadcrumbs = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem { Title = "پذیرش", Url = Url.Action("Index", "ReceptionV2"), Icon = "fas fa-user-plus", Tooltip = "بازگشت به صفحه اصلی پذیرش" },
+        new BreadcrumbItem { Title = "مدیریت POS", Url = Url.Action("Index", "PosManagement"), Icon = "fas fa-credit-card", Tooltip = "لیست ترمینال‌های POS" },
+        new BreadcrumbItem { Title = "لیست جلسات صندوق", Icon = "fas fa-cash-register", IsActive = true }
+    };
+    
+    // Helper function برای دریافت Display Name از Enum
+    Func<Enum, string> getDisplayName = (enumValue) => {
+        var field = enumValue.GetType().GetField(enumValue.ToString());
+        if (field == null) return enumValue.ToString();
+        var displayAttr = field.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+            .FirstOrDefault() as System.ComponentModel.DataAnnotations.DisplayAttribute;
+        return displayAttr?.Name ?? enumValue.ToString();
+    };
+}
+
+<div class="container-fluid" dir="rtl">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">
+                    <i class="fas fa-cash-register me-2"></i>
+                    لیست جلسات صندوق
+                </h5>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-success" href="@Url.Action("StartSession", "PosManagement")" title="شروع جلسه صندوق جدید">
+                        <i class="fas fa-plus me-2"></i>شروع جلسه جدید
+                    </a>
+                    <a class="btn btn-outline-secondary" href="@Url.Action("Index", "PosManagement")">
+                        <i class="fas fa-arrow-right me-2"></i>بازگشت
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            
+            @if (TempData["InfoMessage"] != null)
+            {
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    @TempData["InfoMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-body p-0">
+                    @if (Model == null || !Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">هیچ جلسه صندوقی یافت نشد.</p>
+                            <a href="@Url.Action("StartSession", "PosManagement")" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>شروع جلسه جدید
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover m-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>شماره جلسه</th>
+                                        <th>کاربر</th>
+                                        <th>وضعیت</th>
+                                        <th>زمان شروع</th>
+                                        <th>زمان پایان</th>
+                                        <th>مبلغ اولیه</th>
+                                        <th>موجودی فعلی</th>
+                                        <th>کل درآمد</th>
+                                        <th>اختلاف</th>
+                                        <th style="width:150px">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var session in Model)
+                                    {
+                                        var isOpen = session.Status == CashSessionStatus.Open || session.Status == CashSessionStatus.Active;
+                                        var difference = session.Difference;
+                                        <tr>
+                                            <td>
+                                                <strong>@session.SessionNumber</strong>
+                                            </td>
+                                            <td>@session.UserName</td>
+                                            <td>
+                                                @if (isOpen)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check-circle me-1"></i>@getDisplayName(session.Status)
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-times-circle me-1"></i>@getDisplayName(session.Status)
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>@session.StartTime.ToString("yyyy/MM/dd HH:mm")</td>
+                                            <td>
+                                                @if (session.EndTime.HasValue)
+                                                {
+                                                    @session.EndTime.Value.ToString("yyyy/MM/dd HH:mm")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">@session.InitialCashAmount.ToString("N0")</td>
+                                            <td class="text-end">@session.CurrentBalance.ToString("N0")</td>
+                                            <td class="text-end">@session.TotalIncome.ToString("N0")</td>
+                                            <td class="text-end">
+                                                @if (session.EndTime.HasValue)
+                                                {
+                                                    if (difference == 0)
+                                                    {
+                                                        <span class="badge bg-success">@difference.ToString("N0")</span>
+                                                    }
+                                                    else if (difference > 0)
+                                                    {
+                                                        <span class="badge bg-warning">+@difference.ToString("N0")</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">@difference.ToString("N0")</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <a href="@Url.Action("SessionDetails", "PosManagement", new { id = session.CashSessionId })" 
+                                                       class="btn btn-sm btn-outline-primary" title="جزئیات">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </a>
+                                                    @if (isOpen)
+                                                    {
+                                                        <a href="@Url.Action("SessionDetails", "PosManagement", new { id = session.CashSessionId })" 
+                                                           class="btn btn-sm btn-outline-danger" title="پایان جلسه">
+                                                            <i class="fas fa-stop-circle"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

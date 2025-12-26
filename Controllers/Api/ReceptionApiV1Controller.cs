@@ -1678,6 +1678,9 @@ namespace ClinicApp.Controllers.Api
 
                 if (_facade != null)
                 {
+                    _logger?.Information("📦 CONTROLLER: ساخت Facade Request - ReceptionId: {ReceptionId}, Amount: {Amount}, PosPayment: {PosPayment}",
+                        request.ReceptionId, request.Amount, request.PosPayment != null ? "Present" : "Null");
+                    
                     var facadeRequest = new ViewModels.Reception.FinalizePosRequest
                     {
                         ReceptionId = request.ReceptionId,
@@ -1693,7 +1696,8 @@ namespace ClinicApp.Controllers.Api
                         } : null
                     };
 
-                    _logger?.Information("🔄 POS PAYMENT PROCESSING - CorrelationId: {CorrelationId}, Calling Facade...", correlationId);
+                    _logger?.Information("🔄 CONTROLLER: فراخوانی Facade.FinalizePosAsync - CorrelationId: {CorrelationId}, ReceptionId: {ReceptionId}, AmountIRR: {AmountIRR}, RRN: {RRN}, TraceNo: {TraceNo}",
+                        correlationId, facadeRequest.ReceptionId, facadeRequest.AmountIRR, facadeRequest.Pos?.RRN, facadeRequest.Pos?.TraceNo);
 
                     var result = await _facade.FinalizePosAsync(facadeRequest);
                     
