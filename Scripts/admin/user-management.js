@@ -375,13 +375,27 @@ var UserManagement = {
             }
         });
 
+        // ✅ دریافت AntiForgeryToken
+        var token = $('input[name="__RequestVerificationToken"]').first().val();
+        if (!token) {
+            console.error('❌ UserManagement: AntiForgeryToken یافت نشد');
+            Swal.fire({
+                title: 'خطا',
+                text: 'خطا در دریافت توکن امنیتی. لطفاً صفحه را نوسازی کنید.',
+                icon: 'error',
+                confirmButtonText: 'باشه',
+                confirmButtonColor: '#dc3545'
+            });
+            return;
+        }
+
         // ✅ AJAX Call
         $.ajax({
             url: self.config.apiBaseUrl + '/Restore',
             type: 'POST',
             data: {
                 id: userId,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                __RequestVerificationToken: token
             },
             dataType: 'json',
             success: function(response) {

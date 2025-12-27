@@ -12,6 +12,7 @@ using ClinicApp.Models;
 using ClinicApp.Models.Core;
 using ClinicApp.ViewModels.Shared;
 using ClinicApp.ViewModels.UserManagement;
+using EntityFramework.DynamicFilters;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Serilog;
@@ -1036,13 +1037,26 @@ namespace ClinicApp.Services.UserManagement
                 // ✅ اعمال فیلتر Role
                 if (!string.IsNullOrWhiteSpace(filter?.RoleName))
                 {
-                    var usersInRole = await _userManager.Users
-                        .Where(u => u.Roles.Any(r => r.RoleId == _roleManager.Roles
-                            .FirstOrDefault(role => role.Name == filter.RoleName).Id))
-                        .Select(u => u.Id)
-                        .ToListAsync();
-                    
-                    deletedUsers = deletedUsers.Where(u => usersInRole.Contains(u.Id)).ToList();
+                    // ✅ دریافت نقش
+                    var role = await _roleManager.FindByNameAsync(filter.RoleName);
+                    if (role != null)
+                    {
+                        // ✅ دریافت کاربران با نقش خاص (با غیرفعال کردن فیلتر)
+                        _context.DisableFilter("IsDeletedFilter");
+                        try
+                        {
+                            var usersInRole = await _context.Users
+                                .Where(u => u.Roles.Any(r => r.RoleId == role.Id))
+                                .Select(u => u.Id)
+                                .ToListAsync();
+                            
+                            deletedUsers = deletedUsers.Where(u => usersInRole.Contains(u.Id)).ToList();
+                        }
+                        finally
+                        {
+                            _context.EnableFilter("IsDeletedFilter");
+                        }
+                    }
                 }
 
                 // ✅ Pagination
@@ -1053,12 +1067,13 @@ namespace ClinicApp.Services.UserManagement
                     .Take(pageSize)
                     .ToList();
 
-                // ✅ تبدیل به ViewModel
-                var users = pagedUsers.Select(u =>
+                // ✅ تبدیل به ViewModel (با await برای جلوگیری از deadlock)
+                var users = new List<UserListItemViewModel>();
+                foreach (var u in pagedUsers)
                 {
                     // ✅ دریافت نقش‌ها از Repository (برای کاربران حذف شده)
-                    var userRoles = _userRepository.GetUserRolesAsync(u.Id).Result ?? new List<string>();
-                    return new UserListItemViewModel
+                    var userRoles = await _userRepository.GetUserRolesAsync(u.Id);
+                    users.Add(new UserListItemViewModel
                     {
                         UserId = u.Id,
                         FirstName = u.FirstName,
@@ -1075,8 +1090,8 @@ namespace ClinicApp.Services.UserManagement
                         LastLoginDateShamsi = u.LastLoginDate.HasValue ? u.LastLoginDate.Value.ToPersianDateTime() : null,
                         DeletedAt = u.DeletedAt,
                         DeletedAtShamsi = u.DeletedAt.HasValue ? u.DeletedAt.Value.ToPersianDateTime() : null
-                    };
-                }).ToList();
+                    });
+                }
 
                 // ✅ ساخت ViewModel
                 var viewModel = new UserIndexViewModel
