@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title - کلینیک شفا</title>
     
-    @* ✅ فرمت مناسب برای فیش پرینتر 58mm *@
+    @* ✅ لود فونت‌های محلی فارسی (Vazir, Shabnam, Yekan) *@
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    
+    @* ✅ فرمت مناسب برای فیش پرینتر (58mm/80mm) - Dynamic *@
+    @{
+        var printerType = ViewBag.PrinterType as string ?? "thermal";
+        var printerWidth = printerType == "thermal" ? "80mm" : "58mm";
+        var is80mm = printerWidth == "80mm";
+    }
     <style>
         /* Reset */
         * {
@@ -15,26 +23,38 @@
         }
         
         html, body {
-            width: 58mm;
-            max-width: 58mm;
+            width: @printerWidth;
+            max-width: @printerWidth;
             margin: 0;
-            padding: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            padding: @(is80mm ? "1mm 0.5mm" : "0.5mm 0");
+            @* ✅ استفاده از فونت فارسی Vazir برای قبض چاپ *@
+            font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+            @if (is80mm)
+            {
+                <text>font-size: 12px;</text>
+            }
+            else
+            {
+                <text>font-size: 10px;</text>
+            }
+            line-height: 1.2;
             background: white;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         @* Print Styles *@
         @@media print {
             @@page {
-                size: 58mm auto;
+                size: @printerWidth auto;
                 margin: 0;
             }
             
             body {
-                width: 58mm;
-                max-width: 58mm;
-                padding: 0;
+                width: @printerWidth;
+                max-width: @printerWidth;
+                padding: @(is80mm ? "1mm 0.5mm" : "0.5mm 0");
+                margin: 0;
             }
             
             /* حذف دکمه‌ها و عناصر غیرضروری */

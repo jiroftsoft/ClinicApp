@@ -119,7 +119,9 @@ namespace ClinicApp.Controllers.ReceptionV2
 
         /// <summary>
         /// 🖨️ چاپ قبض پرداخت برای فیش پرینتر (58mm/80mm)
-        /// فرمت مناسب برای دستگاه‌های فیش پرینتر مثل SRP-330II
+        /// فرمت مناسب برای دستگاه‌های فیش پرینتر:
+        /// - Bixolon SRP-350III (80mm) - وقتی printer=thermal
+        /// - SRP-330II (58mm) - وقتی printer=normal
         /// </summary>
         [HttpGet]
         [Route("PrintReceipt/{id:int}", Name = "ReceptionV2_PrintReceipt")]

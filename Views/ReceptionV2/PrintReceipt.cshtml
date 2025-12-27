@@ -7,6 +7,11 @@
     var printerType = ViewBag.PrinterType as string ?? "thermal";
     var receptionId = ViewBag.ReceptionId as int? ?? 0;
     
+    // ✅ تشخیص نوع پرینتر (80mm برای Bixolon SRP-350III، 58mm برای SRP-330II)
+    // اگر printer=thermal باشد، از 80mm استفاده می‌کنیم (Bixolon SRP-350III)
+    var printerWidth = printerType == "thermal" ? "80mm" : "58mm";
+    var is80mm = printerWidth == "80mm";
+    
     // محاسبه مبالغ
     var baseInsuranceShare = Model?.BasePay ?? 0;
     var supplementaryInsuranceShare = Model?.SuppPay ?? 0;
@@ -21,139 +26,106 @@
         .FirstOrDefault();
 }
 
-@* ✅ فرمت مناسب برای فیش پرینتر 58mm (SRP-330II) *@
-<div class="thermal-receipt" data-printer-width="58mm">
-    @* Header *@
+@* ✅ فرمت بهینه و فشرده برای فیش پرینتر @printerWidth (Bixolon SRP-350III = 80mm) *@
+@* الگوی رایج: Header کوچک، اطلاعات فشرده، Footer کوچک *@
+<div class="thermal-receipt" data-printer-width="@printerWidth">
+    @* Header - فشرده *@
     <div class="receipt-header text-center">
-        <h1 class="receipt-title">کلینیک شفا</h1>
-        <p class="receipt-subtitle">@(receiptType == "payment" ? "رسید پرداخت" : "رسید بیمه تکمیلی")</p>
-        <hr class="receipt-divider">
+        <div class="receipt-title">کلینیک شفا</div>
+        <div class="receipt-subtitle">@(receiptType == "payment" ? "رسید پرداخت" : "رسید بیمه تکمیلی")</div>
     </div>
     
-    @* Reception Info *@
-    <div class="receipt-section">
-        <div class="receipt-row">
-            <span class="receipt-label">شماره پذیرش:</span>
-            <span class="receipt-value">@(Model?.ReceptionNo ?? Model?.ElectronicReceptionNumber ?? "-")</span>
-        </div>
-        <div class="receipt-row">
-            <span class="receipt-label">تاریخ:</span>
-            <span class="receipt-value">@(Model?.ReceptionDateShamsi ?? Model?.ReceptionDate.ToString("yyyy/MM/dd") ?? "-")</span>
-        </div>
-        <div class="receipt-row">
-            <span class="receipt-label">ساعت:</span>
-            <span class="receipt-value">@(Model?.ReceptionDate.ToString("HH:mm") ?? "-")</span>
-        </div>
+    @* Reception Info - فشرده *@
+    <div class="receipt-row">
+        <span class="receipt-label">شماره پذیرش:</span>
+        <span class="receipt-value">@(Model?.ReceptionNo ?? Model?.ElectronicReceptionNumber ?? "-")</span>
+    </div>
+    <div class="receipt-row">
+        <span class="receipt-label">تاریخ:</span>
+        <span class="receipt-value">@(Model?.ReceptionDateShamsi ?? Model?.ReceptionDate.ToString("yyyy/MM/dd") ?? "-") @(Model?.ReceptionDate.ToString("HH:mm") ?? "-")</span>
     </div>
     
-    <hr class="receipt-divider">
-    
-    @* Patient Info *@
-    <div class="receipt-section">
-        <h2 class="receipt-section-title">بیمار</h2>
-        <div class="receipt-row">
-            <span class="receipt-label">نام:</span>
-            <span class="receipt-value">@(Model?.PatientFullName ?? "-")</span>
-        </div>
-        <div class="receipt-row">
-            <span class="receipt-label">کد ملی:</span>
-            <span class="receipt-value">@(Model?.PatientNationalCode ?? "-")</span>
-        </div>
+    @* Patient Info - فشرده *@
+    <div class="receipt-row">
+        <span class="receipt-label">بیمار:</span>
+        <span class="receipt-value">@(Model?.PatientFullName ?? "-")</span>
+    </div>
+    <div class="receipt-row">
+        <span class="receipt-label">کد ملی:</span>
+        <span class="receipt-value">@(Model?.PatientNationalCode ?? "-")</span>
     </div>
     
-    <hr class="receipt-divider">
-    
-    @* Payment Info *@
-    <div class="receipt-section">
-        <h2 class="receipt-section-title">اطلاعات پرداخت</h2>
-        @if (receiptType == "payment")
+    @* Payment Info - فشرده *@
+    @if (receiptType == "payment")
+    {
+        <div class="receipt-row">
+            <span class="receipt-label">مبلغ کل:</span>
+            <span class="receipt-value">@totalAmount.ToString("N0") ریال</span>
+        </div>
+        if (baseInsuranceShare > 0)
         {
             <div class="receipt-row">
-                <span class="receipt-label">مبلغ کل:</span>
-                <span class="receipt-value">@totalAmount.ToString("N0") ریال</span>
+                <span class="receipt-label">بیمه پایه:</span>
+                <span class="receipt-value">@baseInsuranceShare.ToString("N0") ریال</span>
             </div>
-            if (baseInsuranceShare > 0)
-            {
-                <div class="receipt-row">
-                    <span class="receipt-label">سهم بیمه پایه:</span>
-                    <span class="receipt-value">@baseInsuranceShare.ToString("N0") ریال</span>
-                </div>
-            }
-            if (supplementaryInsuranceShare > 0)
-            {
-                <div class="receipt-row">
-                    <span class="receipt-label">سهم بیمه تکمیلی:</span>
-                    <span class="receipt-value">@supplementaryInsuranceShare.ToString("N0") ریال</span>
-                </div>
-            }
-            <div class="receipt-row">
-                <span class="receipt-label">سهم بیمار:</span>
-                <span class="receipt-value">@patientShare.ToString("N0") ریال</span>
-            </div>
-            <div class="receipt-row receipt-total">
-                <span class="receipt-label">پرداخت شده:</span>
-                <span class="receipt-value">@paidAmount.ToString("N0") ریال</span>
-            </div>
-            if (remainingAmount > 0)
-            {
-                <div class="receipt-row">
-                    <span class="receipt-label">باقی‌مانده:</span>
-                    <span class="receipt-value">@remainingAmount.ToString("N0") ریال</span>
-                </div>
-            }
-            
-            @* اطلاعات تراکنش POS *@
-            if (lastPosTransaction != null)
-            {
-                <hr class="receipt-divider">
-                <div class="receipt-section">
-                    <h2 class="receipt-section-title">اطلاعات کارتخوان</h2>
-                    @if (!string.IsNullOrEmpty(lastPosTransaction.ReferenceCode))
-                    {
-                        <div class="receipt-row">
-                            <span class="receipt-label">RRN:</span>
-                            <span class="receipt-value">@lastPosTransaction.ReferenceCode</span>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(lastPosTransaction.TransactionId))
-                    {
-                        <div class="receipt-row">
-                            <span class="receipt-label">Trace No:</span>
-                            <span class="receipt-value">@lastPosTransaction.TransactionId</span>
-                        </div>
-                    }
-                    <div class="receipt-row">
-                        <span class="receipt-label">مبلغ:</span>
-                        <span class="receipt-value">@lastPosTransaction.Amount.ToString("N0") ریال</span>
-                    </div>
-                </div>
-            }
         }
-        else if (receiptType == "insurance")
+        if (supplementaryInsuranceShare > 0)
         {
-            @* اطلاعات بیمه تکمیلی *@
             <div class="receipt-row">
                 <span class="receipt-label">بیمه تکمیلی:</span>
-                <span class="receipt-value">@(Model?.SupplementaryPlanName ?? "-")</span>
-            </div>
-            <div class="receipt-row">
-                <span class="receipt-label">مبلغ:</span>
                 <span class="receipt-value">@supplementaryInsuranceShare.ToString("N0") ریال</span>
             </div>
         }
-    </div>
+        <div class="receipt-row">
+            <span class="receipt-label">سهم بیمار:</span>
+            <span class="receipt-value">@patientShare.ToString("N0") ریال</span>
+        </div>
+        <div class="receipt-row receipt-total">
+            <span class="receipt-label">پرداخت شده:</span>
+            <span class="receipt-value">@paidAmount.ToString("N0") ریال</span>
+        </div>
+        if (remainingAmount > 0)
+        {
+            <div class="receipt-row">
+                <span class="receipt-label">باقی‌مانده:</span>
+                <span class="receipt-value">@remainingAmount.ToString("N0") ریال</span>
+            </div>
+        }
+        
+        @* اطلاعات تراکنش POS - فشرده *@
+        if (lastPosTransaction != null)
+        {
+            <div class="receipt-row">
+                <span class="receipt-label">RRN:</span>
+                <span class="receipt-value">@(lastPosTransaction.ReferenceCode ?? "-")</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-label">Trace:</span>
+                <span class="receipt-value">@(lastPosTransaction.TransactionId ?? "-")</span>
+            </div>
+        }
+    }
+    else if (receiptType == "insurance")
+    {
+        <div class="receipt-row">
+            <span class="receipt-label">بیمه تکمیلی:</span>
+            <span class="receipt-value">@(Model?.SupplementaryPlanName ?? "-")</span>
+        </div>
+        <div class="receipt-row">
+            <span class="receipt-label">مبلغ:</span>
+            <span class="receipt-value">@supplementaryInsuranceShare.ToString("N0") ریال</span>
+        </div>
+    }
     
-    <hr class="receipt-divider">
-    
-    @* Footer *@
+    @* Footer - فشرده *@
     <div class="receipt-footer text-center">
-        <p class="receipt-thanks">با تشکر از انتخاب کلینیک شفا</p>
-        <p class="receipt-contact">تلفن: 034-12345678</p>
-        <p class="receipt-date">@DateTime.Now.ToString("yyyy/MM/dd HH:mm")</p>
+        <div class="receipt-thanks">با تشکر از انتخاب کلینیک شفا</div>
+        <div class="receipt-contact">تلفن: 034-12345678</div>
+        <div class="receipt-date">@DateTime.Now.ToString("yyyy/MM/dd HH:mm")</div>
     </div>
 </div>
 
-@* ✅ CSS برای فیش پرینتر 58mm *@
+@* ✅ CSS برای فیش پرینتر @printerWidth (Bixolon SRP-350III = 80mm) *@
 <style>
     /* Reset */
     * {
@@ -163,112 +135,224 @@
     }
     
     body {
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
+        @* ✅ استفاده از فونت فارسی Vazir برای قبض چاپ (بهترین انتخاب برای محیط واقعی) *@
+        font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+        @if (is80mm)
+        {
+            <text>font-size: 12px;</text>
+        }
+        else
+        {
+            <text>font-size: 10px;</text>
+        }
         line-height: 1.4;
-        width: 58mm;
-        max-width: 58mm;
-        margin: 0 auto;
-        padding: 5mm;
+        width: @printerWidth;
+        max-width: @printerWidth;
+        margin: 0;
+        padding: @(is80mm ? "3mm 4mm 3mm 2mm" : "2mm 3mm 2mm 1.5mm");
         background: white;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        direction: rtl;
+        text-align: right;
     }
     
     .thermal-receipt {
         width: 100%;
-        max-width: 58mm;
+        max-width: @printerWidth;
+        margin: 0;
+        padding: 0;
+        direction: rtl;
     }
     
     .receipt-header {
-        margin-bottom: 10px;
+        margin-bottom: @(is80mm ? "8px" : "6px");
+        padding-bottom: @(is80mm ? "6px" : "4px");
+        border-bottom: 2px solid #000;
+        text-align: center;
+        width: 100%;
     }
     
     .receipt-title {
-        font-size: 16px;
+        @if (is80mm)
+        {
+            <text>font-size: 18px;</text>
+        }
+        else
+        {
+            <text>font-size: 16px;</text>
+        }
         font-weight: bold;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
+        letter-spacing: 0.5px;
+        text-align: center;
+        width: 100%;
     }
     
     .receipt-subtitle {
-        font-size: 12px;
-        margin-bottom: 5px;
-    }
-    
-    .receipt-divider {
-        border: none;
-        border-top: 1px dashed #000;
-        margin: 8px 0;
-    }
-    
-    .receipt-section {
-        margin-bottom: 10px;
-    }
-    
-    .receipt-section-title {
-        font-size: 13px;
-        font-weight: bold;
-        margin-bottom: 5px;
+        @if (is80mm)
+        {
+            <text>font-size: 12px;</text>
+        }
+        else
+        {
+            <text>font-size: 11px;</text>
+        }
+        margin-bottom: 0;
         text-align: center;
+        width: 100%;
     }
     
     .receipt-row {
         display: flex;
+        flex-direction: row;
         justify-content: space-between;
-        margin-bottom: 3px;
-        font-size: 11px;
+        align-items: flex-start;
+        margin-bottom: @(is80mm ? "4px" : "3px");
+        @if (is80mm)
+        {
+            <text>font-size: 11px;</text>
+        }
+        else
+        {
+            <text>font-size: 10px;</text>
+        }
+        line-height: 1.5;
+        padding: 0;
+        width: 100%;
+        gap: @(is80mm ? "6px" : "4px");
     }
     
     .receipt-label {
         font-weight: normal;
+        flex-shrink: 0;
+        @if (is80mm)
+        {
+            <text>min-width: 75px;</text>
+            <text>max-width: 85px;</text>
+        }
+        else
+        {
+            <text>min-width: 65px;</text>
+            <text>max-width: 75px;</text>
+        }
+        text-align: right;
+        padding-right: @(is80mm ? "2px" : "1px");
     }
     
     .receipt-value {
         font-weight: bold;
-        text-align: left;
+        text-align: right;
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        padding-left: @(is80mm ? "4px" : "3px");
     }
     
     .receipt-total {
-        font-size: 13px;
+        @if (is80mm)
+        {
+            <text>font-size: 13px;</text>
+        }
+        else
+        {
+            <text>font-size: 12px;</text>
+        }
         font-weight: bold;
-        margin-top: 5px;
-        padding-top: 5px;
-        border-top: 1px solid #000;
+        margin-top: @(is80mm ? "5px" : "4px");
+        padding-top: @(is80mm ? "5px" : "4px");
+        border-top: 2px solid #000;
     }
     
     .receipt-footer {
-        margin-top: 15px;
-        font-size: 10px;
+        margin-top: @(is80mm ? "4px" : "3px");
+        padding-top: @(is80mm ? "3px" : "2px");
+        border-top: 1px dashed #000;
+        text-align: center;
+        @if (is80mm)
+        {
+            <text>font-size: 10px;</text>
+        }
+        else
+        {
+            <text>font-size: 9px;</text>
+        }
     }
     
     .receipt-thanks {
         font-weight: bold;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
+        text-align: center;
     }
     
     .receipt-contact {
-        margin-bottom: 3px;
+        margin-bottom: 1px;
+        text-align: center;
     }
     
     .receipt-date {
-        font-size: 9px;
+        @if (is80mm)
+        {
+            <text>font-size: 9px;</text>
+        }
+        else
+        {
+            <text>font-size: 8px;</text>
+        }
         color: #666;
+        text-align: center;
     }
     
     /* Print Styles */
     @@media print {
         @@page {
-            size: 58mm auto;
+            size: @printerWidth auto;
             margin: 0;
         }
         
         body {
-            width: 58mm;
-            max-width: 58mm;
-            padding: 0;
+            width: @printerWidth;
+            max-width: @printerWidth;
+            padding: @(is80mm ? "3mm 4mm 3mm 2mm" : "2mm 3mm 2mm 1.5mm");
+            margin: 0;
+            direction: rtl;
         }
         
         .thermal-receipt {
-            width: 58mm;
-            max-width: 58mm;
+            width: @printerWidth;
+            max-width: @printerWidth;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+        }
+        
+        .receipt-row {
+            width: 100%;
+            max-width: 100%;
+            gap: @(is80mm ? "6px" : "4px");
+        }
+        
+        .receipt-label {
+            @if (is80mm)
+            {
+                <text>min-width: 75px;</text>
+                <text>max-width: 85px;</text>
+            }
+            else
+            {
+                <text>min-width: 65px;</text>
+                <text>max-width: 75px;</text>
+            }
+            padding-right: @(is80mm ? "2px" : "1px");
+        }
+        
+        .receipt-value {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-left: @(is80mm ? "4px" : "3px");
         }
         
         /* حذف دکمه‌ها و عناصر غیرضروری */
