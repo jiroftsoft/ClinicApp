@@ -48,11 +48,16 @@
         
         // 6️⃣ مدیریت مالی
         new { Name = "CashierDashboard", Title = "داشبورد منشی‌ها", Icon = "fa-tachometer-alt", Controller = "CashierDashboard", Action = (string)null, Category = "مدیریت مالی" },
+        new { Name = "CashierReport", Title = "گزارشات صندوق", Icon = "fa-chart-bar", Controller = "CashierReport", Action = (string)null, Category = "مدیریت مالی" },
         
         // 7️⃣ تنظیمات سیستم
         new { Name = "FactorSetting", Title = "تنظیمات ضرایب", Icon = "fa-sliders-h", Controller = "FactorSetting", Action = (string)null, Category = "تنظیمات سیستم" },
         new { Name = "InsuranceTypeUpdate", Title = "به‌روزرسانی بیمه", Icon = "fa-sync-alt", Controller = "InsuranceTypeUpdate", Action = (string)null, Category = "تنظیمات سیستم" },
-        new { Name = "SystemSeed", Title = "داده‌های اولیه", Icon = "fa-database", Controller = "SystemSeed", Action = (string)null, Category = "تنظیمات سیستم" }
+        new { Name = "SystemSeed", Title = "داده‌های اولیه", Icon = "fa-database", Controller = "SystemSeed", Action = (string)null, Category = "تنظیمات سیستم" },
+        
+        // 8️⃣ مدیریت کاربران
+        new { Name = "UserManagement", Title = "مدیریت کاربران", Icon = "fa-users-cog", Controller = "UserManagement", Action = (string)null, Category = "مدیریت کاربران" },
+        new { Name = "DeletedUsers", Title = "کاربران حذف شده", Icon = "fa-trash-restore", Controller = "UserManagement", Action = "DeletedUsers", Category = "مدیریت کاربران" }
     };
     
     // دسته‌بندی ماژول‌ها
@@ -107,6 +112,9 @@
                         case "تنظیمات سیستم":
                             <i class="fas fa-cog"></i>
                             break;
+                        case "مدیریت کاربران":
+                            <i class="fas fa-users-cog"></i>
+                            break;
                         default:
                             <i class="fas fa-folder"></i>
                             break;
@@ -122,8 +130,8 @@
                                       (string.IsNullOrEmpty(module.Action) || actionName.Equals(module.Action, StringComparison.OrdinalIgnoreCase));
                         
                         var moduleUrl = string.IsNullOrEmpty(module.Action) 
-                            ? (module.Controller == "CashierDashboard" 
-                                ? Url.Action("Index", "CashierDashboard", new { area = "" }) 
+                            ? (module.Controller == "CashierDashboard" || module.Controller == "CashierReport"
+                                ? Url.Action("Index", module.Controller, new { area = "" }) 
                                 : Url.Action("Index", module.Controller, new { area = "Admin" }))
                             : Url.Action(module.Action, module.Controller, new { area = "Admin" });
                         

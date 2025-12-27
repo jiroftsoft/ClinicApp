@@ -1,0 +1,321 @@
+@model ClinicApp.ViewModels.UserManagement.UserIndexViewModel
+@{
+    ViewBag.Title = "کاربران حذف شده";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    :root {
+        --deleted-primary: #dc3545;
+        --deleted-secondary: #f8d7da;
+        --deleted-border: #f5c6cb;
+        --deleted-text: #721c24;
+    }
+
+    .medical-header {
+        background: linear-gradient(135deg, var(--deleted-primary) 0%, #c82333 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
+    }
+
+    .medical-header h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .medical-header .subtitle {
+        margin-top: 0.5rem;
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+
+    .medical-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border: 1px solid var(--deleted-border);
+        margin-bottom: 1.5rem;
+    }
+
+    .medical-search {
+        background: #f8f9fa;
+        padding: 1.25rem;
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    .medical-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .medical-table thead {
+        background: linear-gradient(135deg, var(--deleted-primary) 0%, #c82333 100%);
+        color: white;
+    }
+
+    .medical-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-align: right;
+        border: none;
+        font-size: 0.9rem;
+    }
+
+    .medical-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
+    }
+
+    .medical-table tbody tr:hover {
+        background: #fff5f5;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
+    }
+
+    .badge-deleted {
+        background: var(--deleted-primary);
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-role {
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    .btn-restore {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-restore:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-restore:active {
+        transform: translateY(0);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .info-badge {
+        background: #e7f3ff;
+        color: #004085;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border-right: 4px solid #0066cc;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="medical-header">
+    <h2>
+        <i class="fas fa-trash-alt"></i>
+        کاربران حذف شده
+    </h2>
+    <div class="subtitle">
+        <i class="fas fa-info-circle"></i>
+        در این بخش می‌توانید کاربران حذف شده را مشاهده و در صورت نیاز بازگردانی کنید.
+    </div>
+</div>
+
+<div class="info-badge">
+    <i class="fas fa-shield-alt"></i>
+    <strong>امنیت:</strong> تمام عملیات بازگردانی در سیستم ثبت و قابل ردیابی هستند.
+</div>
+
+<div class="medical-card">
+    <div class="medical-search">
+        @using (Html.BeginForm("DeletedUsers", "UserManagement", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3" }))
+        {
+            <div class="col-md-6">
+                <label for="SearchTerm" class="form-label">
+                    <i class="fas fa-search"></i> جستجو
+                </label>
+                @Html.TextBoxFor(m => m.Filter.SearchTerm, new { @class = "form-control", placeholder = "نام، نام خانوادگی، کد ملی، ایمیل یا شماره تلفن..." })
+            </div>
+            <div class="col-md-4">
+                <label for="RoleName" class="form-label">
+                    <i class="fas fa-user-tag"></i> نقش
+                </label>
+                @Html.DropDownListFor(m => m.Filter.RoleName, Model?.Filter?.AvailableRoles ?? new List<SelectListItem>(), "همه نقش‌ها", new { @class = "form-control" })
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> جستجو
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="medical-card">
+    @if (Model?.Users != null && Model.Users.Any())
+    {
+        <div class="table-responsive">
+            <table class="medical-table">
+                <thead>
+                    <tr>
+                        <th>نام و نام خانوادگی</th>
+                        <th>کد ملی</th>
+                        <th>ایمیل</th>
+                        <th>شماره تماس</th>
+                        <th>نقش‌ها</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ حذف</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@user.FullName</strong>
+                            </td>
+                            <td>
+                                <code>@user.NationalCodeMasked</code>
+                            </td>
+                            <td>@user.Email</td>
+                            <td>@user.PhoneNumberMasked</td>
+                            <td>
+                                @if (user.Roles != null && user.Roles.Any())
+                                {
+                                    <div class="d-flex flex-wrap" style="gap: 0.25rem;">
+                                        @foreach (var role in user.Roles)
+                                        {
+                                            <span class="badge badge-role badge-primary">@role</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted"><i class="fas fa-user-tag me-1"></i>بدون نقش</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge badge-deleted">
+                                    <i class="fas fa-trash"></i> حذف شده
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    @(user.DeletedAtShamsi ?? "نامشخص")
+                                </small>
+                            </td>
+                            <td>
+                                <button type="button" 
+                                        class="btn-restore btn-restore-user" 
+                                        data-user-id="@user.UserId"
+                                        data-user-name="@user.FullName"
+                                        title="بازگردانی کاربر">
+                                    <i class="fas fa-undo"></i> بازگردانی
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        if (Model?.PagingInfo != null && Model.PagingInfo.TotalPages > 1)
+        {
+            <div class="pagination-wrapper">
+                @if (Model.PagingInfo.CurrentPage > 1)
+                {
+                    <a href="@Url.Action("DeletedUsers", "UserManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage - 1, filter = Model.Filter })" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-right"></i> قبلی
+                    </a>
+                }
+                
+                <span class="text-muted">
+                    صفحه @Model.PagingInfo.CurrentPage از @Model.PagingInfo.TotalPages 
+                    (@Model.PagingInfo.TotalCount مورد)
+                </span>
+                
+                @if (Model.PagingInfo.CurrentPage < Model.PagingInfo.TotalPages)
+                {
+                    <a href="@Url.Action("DeletedUsers", "UserManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage + 1, filter = Model.Filter })" 
+                       class="btn btn-outline-primary">
+                        بعدی <i class="fas fa-chevron-left"></i>
+                    </a>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>هیچ کاربر حذف شده‌ای یافت نشد</h4>
+            <p class="text-muted">در حال حاضر هیچ کاربر حذف شده‌ای در سیستم وجود ندارد.</p>
+            <a href="@Url.Action("Index", "UserManagement", new { area = "Admin" })" class="btn btn-primary mt-3">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست کاربران
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/admin/user-management.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize restore functionality
+            UserManagement.initRestore();
+        });
+    </script>
+}
+

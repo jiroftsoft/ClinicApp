@@ -60,6 +60,15 @@ namespace ClinicApp
                 constraints: new { area = @"Admin|Patient" }
             );
 
+            // Redirect route for incorrect View URLs (non-Area Views)
+            // مثال: /Views/Payment/CashierReport/Index.cshtml -> /Payment/CashierReport/Index
+            // مثال: /Views/Payment/Index.cshtml -> /Payment/Index
+            routes.MapRoute(
+                name: "Redirect_ViewsToController",
+                url: "Views/{*path}",
+                defaults: new { controller = "Redirect", action = "ViewsToController" }
+            );
+
             // Specific routes for dashed paths that don't map to action names directly
             routes.MapRoute(
                 name: "ReceptionApiV1_DraftCreate",
@@ -525,6 +534,18 @@ namespace ClinicApp
 
             // 🏥 Patient Controller Route - برای جلوگیری از تداخل با Api.PatientController
             // این route باید قبل از route پیش‌فرض قرار بگیرد تا اولویت داشته باشد
+            
+            // 🏥 Payment Controllers Route - برای Controllers در namespace Payment
+            // مثال: /Payment/CashierReport -> CashierReportController.Index
+            // مثال: /Payment/CashierReport/DailyReport -> CashierReportController.DailyReport
+            // مثال: /Payment/Payment -> PaymentController.Index
+            routes.MapRoute(
+                name: "Payment_Controllers",
+                url: "Payment/{controller}/{action}/{id}",
+                defaults: new { action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers.Payment" }
+            ).DataTokens["UseNamespaceFallback"] = false; // ❌ جلوگیری از fallback به namespace های دیگر
+            
             // 📚 Blog Routes - برای نمایش عمومی مقالات
             routes.MapRoute(
                 name: "BlogPost",
@@ -548,9 +569,10 @@ namespace ClinicApp
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { 
                     "ClinicApp.Controllers",                    // ✅ اولویت 1: MVC Controllers
-                    "ClinicApp.Controllers.ReceptionV2",       // ✅ اولویت 2
-                    "ClinicApp.Controllers.Reception",         // ✅ اولویت 3
-                    "ClinicApp.Controllers.Payment.POS"        // ✅ اولویت 4
+                    "ClinicApp.Controllers.Payment",            // ✅ اولویت 2: Payment Controllers (CashierReport, CashierDashboard, Payment)
+                    "ClinicApp.Controllers.ReceptionV2",       // ✅ اولویت 3
+                    "ClinicApp.Controllers.Reception",         // ✅ اولویت 4
+                    "ClinicApp.Controllers.Payment.POS"        // ✅ اولویت 5
                     // ❌ REMOVED: "ClinicApp.Controllers.Api" - باعث conflict با Patient/Index می‌شد
                 }
             );

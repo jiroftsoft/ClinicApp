@@ -112,6 +112,57 @@ namespace ClinicApp
                     return;
                 }
             }
+            else if (path.StartsWith("/Views/", StringComparison.OrdinalIgnoreCase))
+            {
+                // برای non-Area Views (مثل /Views/Payment/CashierReport/Index.cshtml)
+                var pathAfterViews = path.Substring("/Views/".Length);
+                var pathParts = pathAfterViews.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                if (pathParts.Length >= 1)
+                {
+                    // حذف پسوند .cshtml از آخرین بخش
+                    var lastPart = pathParts[pathParts.Length - 1];
+                    if (lastPart.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
+                    {
+                        lastPart = lastPart.Replace(".cshtml", "");
+                        pathParts[pathParts.Length - 1] = lastPart;
+                    }
+                    
+                    // ساخت redirect URL
+                    // مثال: Payment/CashierReport/Index -> /Payment/CashierReport
+                    // مثال: Payment/Index -> /Payment/Index
+                    var redirectUrl = "/" + string.Join("/", pathParts);
+                    
+                    // اگر آخرین بخش Index باشد، آن را حذف می‌کنیم (مطابق با MVC conventions)
+                    if (pathParts.Length > 0 && pathParts[pathParts.Length - 1].Equals("Index", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (pathParts.Length > 1)
+                        {
+                            // حذف آخرین بخش (Index)
+                            var partsWithoutIndex = new string[pathParts.Length - 1];
+                            Array.Copy(pathParts, 0, partsWithoutIndex, 0, pathParts.Length - 1);
+                            redirectUrl = "/" + string.Join("/", partsWithoutIndex);
+                        }
+                        else
+                        {
+                            // فقط Index بود، به Home redirect کن
+                            Response.RedirectPermanent("/", true);
+                            return;
+                        }
+                    }
+                    
+                    // Security: بررسی path traversal و invalid characters
+                    if (redirectUrl.Contains("..") || redirectUrl.Contains("//") || redirectUrl.Contains("\\"))
+                    {
+                        // Invalid path - redirect to home
+                        Response.RedirectPermanent("/", true);
+                        return;
+                    }
+                    
+                    Response.RedirectPermanent(redirectUrl, true);
+                    return;
+                }
+            }
         }
 
         /// <summary>

@@ -1,0 +1,329 @@
+@using ClinicApp.ViewModels.Payment
+@model ClinicApp.ViewModels.Payment.CashierReportIndexViewModel
+@{
+    ViewBag.Title = "گزارشات صندوق";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/cashier-reports.css" rel="stylesheet" />
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        گزارشات صندوق
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i>
+                        فیلتر گزارش
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Index", "CashierReport", FormMethod.Get, new { @class = "row g-3", @id = "filter-form" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <!-- نوع گزارش -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">نوع گزارش</label>
+                            <div class="btn-group w-100" role="group">
+                                @{
+                                    var reportTypes = new[] {
+                                        new { Value = (int)ReportType.Daily, Text = "روزانه" },
+                                        new { Value = (int)ReportType.Monthly, Text = "ماهانه" },
+                                        new { Value = (int)ReportType.Range, Text = "بازه زمانی" },
+                                        new { Value = (int)ReportType.AllCashiers, Text = "همه منشی‌ها" },
+                                        new { Value = (int)ReportType.Compare, Text = "مقایسه" }
+                                    };
+                                }
+                                @foreach (var reportType in reportTypes)
+                                {
+                                    var isSelected = (int)Model.SelectedReportType == reportType.Value;
+                                    <input type="radio" 
+                                           class="btn-check" 
+                                           name="reportType" 
+                                           id="reportType_@reportType.Value" 
+                                           value="@reportType.Value" 
+                                           @(isSelected ? "checked" : "") 
+                                           autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="reportType_@reportType.Value">
+                                        @reportType.Text
+                                    </label>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- منشی -->
+                        <div class="col-md-3">
+                            <label for="CashierId" class="form-label">منشی</label>
+                            @Html.DropDownListFor(m => m.Filter.CashierId, 
+                                new SelectList(Model.Cashiers, "Value", "Text", Model.Filter.CashierId), 
+                                "همه منشی‌ها", 
+                                new { @class = "form-select", @id = "CashierId" })
+                        </div>
+
+                        <!-- تاریخ شروع -->
+                        <div class="col-md-3">
+                            <label class="form-label">از تاریخ</label>
+                            @{
+                                ViewBag.PersianDatePickerId = "StartDatePicker";
+                                ViewBag.PersianDatePickerName = "StartDate";
+                                ViewBag.PersianDatePickerValue = Model.Filter.StartDate;
+                                ViewBag.PersianDatePickerLabel = "از تاریخ";
+                                ViewBag.PersianDatePickerPlaceholder = "از تاریخ را انتخاب کنید";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+
+                        <!-- تاریخ پایان -->
+                        <div class="col-md-3">
+                            <label class="form-label">تا تاریخ</label>
+                            @{
+                                ViewBag.PersianDatePickerId = "EndDatePicker";
+                                ViewBag.PersianDatePickerName = "EndDate";
+                                ViewBag.PersianDatePickerValue = Model.Filter.EndDate;
+                                ViewBag.PersianDatePickerLabel = "تا تاریخ";
+                                ViewBag.PersianDatePickerPlaceholder = "تا تاریخ را انتخاب کنید";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+
+                        <!-- دکمه‌های عملیات -->
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    جستجو
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i>
+                        دسترسی سریع
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100" id="btn-today-report">
+                                <i class="fas fa-calendar-day"></i>
+                                گزارش امروز
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100" id="btn-this-week-report">
+                                <i class="fas fa-calendar-week"></i>
+                                گزارش هفته جاری
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100" id="btn-this-month-report">
+                                <i class="fas fa-calendar-alt"></i>
+                                گزارش این ماه
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100" id="btn-all-cashiers-summary">
+                                <i class="fas fa-users"></i>
+                                خلاصه تمام منشی‌ها
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4" id="summary-cards">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">تعداد کل تراکنش‌ها</h6>
+                            <h3 class="mb-0" id="total-transactions">-</h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-receipt fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">مبلغ کل</h6>
+                            <h3 class="mb-0" id="total-amount">-</h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">تعداد منشی‌ها</h6>
+                            <h3 class="mb-0" id="total-cashiers">-</h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">نرخ موفقیت</h6>
+                            <h3 class="mb-0" id="success-rate">-</h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Navigation -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i>
+                        انواع گزارش‌ها
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card border-primary h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-day fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">گزارش روزانه</h5>
+                                    <p class="card-text text-muted">گزارش عملکرد یک منشی در یک روز خاص</p>
+                                    <a href="@Url.Action("DailyReport", "CashierReport")" class="btn btn-primary">
+                                        <i class="fas fa-arrow-left"></i>
+                                        مشاهده گزارش
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-success h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">گزارش ماهانه</h5>
+                                    <p class="card-text text-muted">گزارش عملکرد یک منشی در یک ماه</p>
+                                    <a href="@Url.Action("MonthlyReport", "CashierReport")" class="btn btn-success">
+                                        <i class="fas fa-arrow-left"></i>
+                                        مشاهده گزارش
+                                    </a>
+                                </div>
+                            </div>
+        </div>
+                        <div class="col-md-4">
+                            <div class="card border-info h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-week fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">گزارش بازه زمانی</h5>
+                                    <p class="card-text text-muted">گزارش عملکرد در بازه زمانی دلخواه</p>
+                                    <a href="@Url.Action("RangeReport", "CashierReport")" class="btn btn-info">
+                                        <i class="fas fa-arrow-left"></i>
+                                        مشاهده گزارش
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-warning h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">خلاصه تمام منشی‌ها</h5>
+                                    <p class="card-text text-muted">مقایسه عملکرد تمام منشی‌ها</p>
+                                    <a href="@Url.Action("AllCashiersSummary", "CashierReport")" class="btn btn-warning">
+                                        <i class="fas fa-arrow-left"></i>
+                                        مشاهده گزارش
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-danger h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-balance-scale fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">مقایسه منشی‌ها</h5>
+                                    <p class="card-text text-muted">مقایسه عملکرد چند منشی با هم</p>
+                                    <a href="@Url.Action("CompareCashiers", "CashierReport")" class="btn btn-danger">
+                                        <i class="fas fa-arrow-left"></i>
+                                        مشاهده گزارش
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    
+    <script src="~/Scripts/payment/cashier-reports.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Cashier Reports
+            if (typeof CashierReports !== 'undefined') {
+                CashierReports.init();
+            }
+        });
+    </script>
+}
+

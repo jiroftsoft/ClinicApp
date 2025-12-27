@@ -1,0 +1,276 @@
+@model ClinicApp.ViewModels.UserManagement.UserCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد کاربر جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .medical-form-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        .form-actions {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 2rem;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+        }
+
+        .validation-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .role-checkbox-group {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .role-checkbox-item {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+        }
+    </style>
+}
+
+<div class="container-fluid px-0">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="medical-form-header">
+            <h1 class="mb-2">
+                <i class="fas fa-user-plus me-3"></i>
+                @ViewBag.Title
+            </h1>
+            <p class="mb-0 opacity-75">ایجاد کاربر جدید در سیستم مدیریت کلینیک شفا</p>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-4">
+            @using (Html.BeginForm("Create", "UserManagement", new { area = "Admin" }, FormMethod.Post, new { 
+                role = "form", 
+                @class = "needs-validation",
+                novalidate = "novalidate",
+                id = "userForm"
+            }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <!-- First Name -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.FirstName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", required = "required", maxlength = "100" })
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "validation-message" })
+                        </div>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.LastName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", required = "required", maxlength = "100" })
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "validation-message" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- National Code -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.NationalCode, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", required = "required", maxlength = "10", minlength = "10", pattern = "[0-9]{10}" })
+                            @Html.ValidationMessageFor(m => m.NationalCode, "", new { @class = "validation-message" })
+                            <small class="form-text text-muted" id="nationalCodeValidation"></small>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", required = "required", maxlength = "256" })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "validation-message" })
+                            <small class="form-text text-muted" id="emailValidation"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Phone Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", type = "tel", required = "required", maxlength = "20" })
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "validation-message" })
+                        </div>
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Gender, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.Gender, 
+                                new SelectList(new[] {
+                                    new SelectListItem { Value = "0", Text = "مرد" },
+                                    new SelectListItem { Value = "1", Text = "زن" }
+                                }, "Value", "Text"), 
+                                "انتخاب کنید...", 
+                                new { @class = "form-control", required = "required" })
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "validation-message" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Address, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.Address, new { @class = "form-control", rows = "3", maxlength = "500" })
+                            @Html.ValidationMessageFor(m => m.Address, "", new { @class = "validation-message" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Is Active -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label">نقش‌ها</label>
+                            <div class="role-checkbox-group">
+                                @if (Model.AvailableRoles != null && Model.AvailableRoles.Any())
+                                {
+                                    foreach (var role in Model.AvailableRoles)
+                                    {
+                                        <div class="role-checkbox-item">
+                                            <div class="form-check">
+                                                <input type="checkbox" 
+                                                       class="form-check-input" 
+                                                       name="SelectedRoles" 
+                                                       value="@role.Value" 
+                                                       id="role_@role.Value"
+                                                       @(role.Selected ? "checked" : "")>
+                                                <label class="form-check-label" for="role_@role.Value">
+                                                    @role.Text
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">نقشی در سیستم تعریف نشده است</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="@Url.Action("Index", "UserManagement", new { area = "Admin" })" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            انصراف
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i>
+                            ایجاد کاربر
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/admin/user-management.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Real-time Validation
+            $('#@Html.IdFor(m => m.NationalCode)').on('blur', function() {
+                var nationalCode = $(this).val();
+                if (nationalCode && nationalCode.length === 10) {
+                    validateNationalCode(nationalCode);
+                }
+            });
+
+            $('#@Html.IdFor(m => m.Email)').on('blur', function() {
+                var email = $(this).val();
+                if (email) {
+                    validateEmail(email);
+                }
+            });
+
+            function validateNationalCode(nationalCode) {
+                $.post('@Url.Action("ValidateNationalCode", "UserManagement", new { area = "Admin" })', {
+                    nationalCode: nationalCode
+                }, function(response) {
+                    var $msg = $('#nationalCodeValidation');
+                    if (response.valid) {
+                        $msg.removeClass('text-danger').addClass('text-success').text('کد ملی معتبر است');
+                    } else {
+                        $msg.removeClass('text-success').addClass('text-danger').text(response.message);
+                    }
+                });
+            }
+
+            function validateEmail(email) {
+                $.post('@Url.Action("ValidateEmail", "UserManagement", new { area = "Admin" })', {
+                    email: email
+                }, function(response) {
+                    var $msg = $('#emailValidation');
+                    if (response.valid) {
+                        $msg.removeClass('text-danger').addClass('text-success').text('ایمیل معتبر است');
+                    } else {
+                        $msg.removeClass('text-success').addClass('text-danger').text(response.message);
+                    }
+                });
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,315 @@
+@model ClinicApp.ViewModels.Payment.CashierCompareCashiersViewModel
+@{
+    ViewBag.Title = "مقایسه منشی‌ها";
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/cashier-reports.css" rel="stylesheet" />
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-balance-scale"></i>
+                                مقایسه منشی‌ها
+                            </h3>
+                            <small class="text-muted">
+                                @if (Model.Filter.StartDate.HasValue && Model.Filter.EndDate.HasValue)
+                                {
+                                    <text>
+                                        از @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Filter.StartDate.Value) 
+                                        تا @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Filter.EndDate.Value)
+                                    </text>
+                                }
+                            </small>
+                        </div>
+                        <div class="btn-group">
+                            <a href="@Url.Action("Index", "CashierReport")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i>
+                                بازگشت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i>
+                        انتخاب منشی‌ها و بازه زمانی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CompareCashiers", "CashierReport", FormMethod.Post, new { @class = "row g-3", @id = "compare-form" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <!-- تاریخ شروع -->
+                        <div class="col-md-3">
+                            <label class="form-label">از تاریخ</label>
+                            @{
+                                ViewBag.PersianDatePickerId = "StartDatePicker";
+                                ViewBag.PersianDatePickerName = "StartDate";
+                                ViewBag.PersianDatePickerValue = Model.Filter.StartDate;
+                                ViewBag.PersianDatePickerLabel = "از تاریخ";
+                                ViewBag.PersianDatePickerPlaceholder = "از تاریخ را انتخاب کنید";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+
+                        <!-- تاریخ پایان -->
+                        <div class="col-md-3">
+                            <label class="form-label">تا تاریخ</label>
+                            @{
+                                ViewBag.PersianDatePickerId = "EndDatePicker";
+                                ViewBag.PersianDatePickerName = "EndDate";
+                                ViewBag.PersianDatePickerValue = Model.Filter.EndDate;
+                                ViewBag.PersianDatePickerLabel = "تا تاریخ";
+                                ViewBag.PersianDatePickerPlaceholder = "تا تاریخ را انتخاب کنید";
+                                ViewBag.PersianDatePickerRequired = false;
+                            }
+                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                        </div>
+
+                        <!-- انتخاب منشی‌ها -->
+                        <div class="col-md-6">
+                            <label class="form-label">منشی‌ها (می‌توانید چند منشی انتخاب کنید)</label>
+                            <select multiple class="form-select" name="SelectedCashierIds" id="SelectedCashierIds" size="5">
+                                @foreach (var cashier in Model.AvailableCashiers)
+                                {
+                                    var isSelected = Model.SelectedCashierIds != null && Model.SelectedCashierIds.Contains(cashier.Value);
+                                    <option value="@cashier.Value" @(isSelected ? "selected" : "")>@cashier.Text</option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">
+                                برای انتخاب چند منشی، کلید Ctrl را نگه دارید و کلیک کنید
+                            </small>
+                        </div>
+
+                        <!-- دکمه جستجو -->
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                مقایسه
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Results -->
+    @if (Model.Comparison != null && Model.Comparison.Cashiers != null && Model.Comparison.Cashiers.Any())
+    {
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">میانگین تراکنش‌ها</h6>
+                                <h3 class="mb-0">@Model.Comparison.AverageTransactionCount.ToString("N0")</h3>
+                            </div>
+                            <div>
+                                <i class="fas fa-receipt fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">میانگین مبلغ</h6>
+                                <h3 class="mb-0">@Model.Comparison.AverageTotalAmount.ToString("N0")</h3>
+                                <small>ریال</small>
+                            </div>
+                            <div>
+                                <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">میانگین نرخ موفقیت</h6>
+                                <h3 class="mb-0">@Model.Comparison.AverageSuccessRate.ToString("F2")%</h3>
+                            </div>
+                            <div>
+                                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">بهترین منشی</h6>
+                                <h5 class="mb-0">@(Model.Comparison.TopPerformer?.CashierName ?? "-")</h5>
+                            </div>
+                            <div>
+                                <i class="fas fa-trophy fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Charts -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar"></i>
+                            مقایسه Side-by-Side
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="comparisonChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i>
+                            جدول مقایسه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>نام منشی</th>
+                                        <th>تعداد جلسات</th>
+                                        <th>تعداد تراکنش‌ها</th>
+                                        <th>مبلغ کل</th>
+                                        <th>نرخ موفقیت</th>
+                                        <th>تعداد اختلاف‌ها</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cashier in Model.Comparison.Cashiers.OrderByDescending(c => c.TransactionCount))
+                                    {
+                                        <tr>
+                                            <td>@cashier.CashierName</td>
+                                            <td>@cashier.SessionCount</td>
+                                            <td>@cashier.TransactionCount.ToString("N0")</td>
+                                            <td>@cashier.TotalAmount.ToString("N0") ریال</td>
+                                            <td>
+                                                <span class="badge @(cashier.SuccessRate >= 95 ? "badge-success" : cashier.SuccessRate >= 90 ? "badge-warning" : "badge-danger")">
+                                                    @cashier.SuccessRate.ToString("F2")%
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (cashier.DiscrepancyCount > 0)
+                                                {
+                                                    <span class="badge badge-danger">@cashier.DiscrepancyCount</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-success">0</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="@Url.Action("DailyReport", "CashierReport", new { cashierId = cashier.CashierId, date = Model.Filter.StartDate ?? DateTime.Today })" 
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                    مشاهده
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.SelectedCashierIds != null && Model.SelectedCashierIds.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    داده‌ای برای منشی‌های انتخاب شده یافت نشد.
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="~/Scripts/payment/cashier-reports-charts.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Charts
+            if (typeof CashierReportsCharts !== 'undefined' && @(Model.Comparison?.Cashiers?.Count ?? 0) > 0) {
+                var cashiers = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Comparison.Cashiers));
+                
+                // Comparison Chart (Side-by-Side Bar)
+                var comparisonLabels = cashiers.map(function(c) { return c.CashierName; });
+                var transactionData = cashiers.map(function(c) { return c.TransactionCount; });
+                var amountData = cashiers.map(function(c) { return c.TotalAmount; });
+                
+                var comparisonChartData = {
+                    labels: comparisonLabels,
+                    datasets: [
+                        {
+                            label: 'تعداد تراکنش‌ها',
+                            data: transactionData,
+                            backgroundColor: '#007bff'
+                        },
+                        {
+                            label: 'مبلغ (ریال)',
+                            data: amountData,
+                            backgroundColor: '#28a745'
+                        }
+                    ]
+                };
+                CashierReportsCharts.createBarChart('comparisonChart', comparisonChartData);
+            }
+        });
+    </script>
+}
+

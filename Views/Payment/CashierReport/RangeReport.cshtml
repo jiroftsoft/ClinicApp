@@ -1,0 +1,218 @@
+@model ClinicApp.ViewModels.Payment.CashierRangeReportViewModel
+@{
+    ViewBag.Title = "گزارش بازه زمانی - " + (Model.Report?.CashierName ?? "نامشخص");
+    Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/cashier-reports.css" rel="stylesheet" />
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-calendar-week"></i>
+                                گزارش بازه زمانی
+                            </h3>
+                            <small class="text-muted">
+                                @if (Model.Filter.StartDate.HasValue && Model.Filter.EndDate.HasValue)
+                                {
+                                    <text>
+                                        از @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Filter.StartDate.Value) 
+                                        تا @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Filter.EndDate.Value)
+                                    </text>
+                                }
+                            </small>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-success" onclick="exportToExcel()">
+                                <i class="fas fa-file-excel"></i>
+                                Export Excel
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="exportToPdf()">
+                                <i class="fas fa-file-pdf"></i>
+                                Export PDF
+                            </button>
+                            <a href="@Url.Action("Index", "CashierReport")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i>
+                                بازگشت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Report != null)
+    {
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">تعداد جلسات</h6>
+                                <h3 class="mb-0">@Model.Report.SessionsOpened</h3>
+                            </div>
+                            <div>
+                                <i class="fas fa-door-open fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">تعداد تراکنش‌ها</h6>
+                                <h3 class="mb-0">@Model.Report.TotalTransactions</h3>
+                            </div>
+                            <div>
+                                <i class="fas fa-receipt fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">مبلغ کل</h6>
+                                <h3 class="mb-0">@Model.Report.TotalAmount.ToString("N0")</h3>
+                                <small>ریال</small>
+                            </div>
+                            <div>
+                                <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">نرخ موفقیت</h6>
+                                <h3 class="mb-0">@Model.Report.SuccessRate.ToString("F2")%</h3>
+                            </div>
+                            <div>
+                                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions Table -->
+        @if (Model.Report.Sessions != null && Model.Report.Sessions.Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list"></i>
+                                جلسات (@Model.Report.Sessions.Count)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="bg-primary text-white">
+                                        <tr>
+                                            <th>شماره جلسه</th>
+                                            <th>زمان باز شدن</th>
+                                            <th>زمان بسته شدن</th>
+                                            <th>مدت زمان (دقیقه)</th>
+                                            <th>موجودی اولیه</th>
+                                            <th>موجودی نقدی</th>
+                                            <th>موجودی POS</th>
+                                            <th>تعداد تراکنش‌ها</th>
+                                            <th>وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var session in Model.Report.Sessions)
+                                        {
+                                            <tr>
+                                                <td>@session.SessionNumber</td>
+                                                <td>@ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(session.OpenedAt)</td>
+                                                <td>@(session.ClosedAt.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDateTime(session.ClosedAt.Value) : "-")</td>
+                                                <td>@(session.DurationMinutes?.ToString("N0") ?? "-")</td>
+                                                <td>@session.OpeningBalance.ToString("N0") ریال</td>
+                                                <td>@session.CashBalance.ToString("N0") ریال</td>
+                                                <td>@session.PosBalance.ToString("N0") ریال</td>
+                                                <td>@session.TransactionCount</td>
+                                                <td>
+                                                    <span class="badge @(session.Status == "Closed" ? "badge-success" : "badge-warning")">
+                                                        @session.Status
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    داده‌ای برای نمایش وجود ندارد.
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function exportToExcel() {
+            var cashierId = '@(Model.Filter?.CashierId ?? "")';
+            var fromDate = '@(Model.Filter?.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd"))';
+            var toDate = '@(Model.Filter?.EndDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))';
+            var url = '@Url.Action("ExportToExcel", "CashierReport")' + 
+                '?cashierId=' + cashierId + 
+                '&fromDate=' + fromDate + 
+                '&toDate=' + toDate + 
+                '&reportType=Range';
+            
+            window.location.href = url;
+        }
+
+        function exportToPdf() {
+            var cashierId = '@(Model.Filter?.CashierId ?? "")';
+            var fromDate = '@(Model.Filter?.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd"))';
+            var toDate = '@(Model.Filter?.EndDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))';
+            var url = '@Url.Action("ExportToPdf", "CashierReport")' + 
+                '?cashierId=' + cashierId + 
+                '&fromDate=' + fromDate + 
+                '&toDate=' + toDate + 
+                '&reportType=Range';
+            
+            window.location.href = url;
+        }
+    </script>
+}
+

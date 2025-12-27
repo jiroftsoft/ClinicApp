@@ -34,6 +34,7 @@ using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.SpecializationManagementVM;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces.Payment;
+using ClinicApp.Interfaces.Payment.Reporting;
 using ClinicApp.Models.Core;
 using ClinicApp.Repositories.Insurance;
 using ClinicApp.Repositories.Payment;
@@ -339,6 +340,19 @@ namespace ClinicApp
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 
+                // ✅ ثبت User Management Repository و Service
+                container.RegisterType<Interfaces.UserManagement.IUserRepository, Repositories.UserManagement.UserRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<Interfaces.UserManagement.IUserManagementService, Services.UserManagement.UserManagementService>(new PerRequestLifetimeManager());
+                
+                // ✅ ثبت RoleManager برای User Management
+                container.RegisterType<RoleManager<IdentityRole>>(new HierarchicalLifetimeManager(),
+                    new InjectionFactory(c =>
+                    {
+                        var context = c.Resolve<ApplicationDbContext>();
+                        var roleStore = new RoleStore<IdentityRole>(context);
+                        return new RoleManager<IdentityRole>(roleStore);
+                    }));
+                
                 // Register HomePage Service
                 // Note: IAboutPageService و IStoryService optional هستند
                 // Unity به صورت خودکار optional parameters را resolve می‌کند اگر در container ثبت شده باشند
@@ -639,8 +653,16 @@ namespace ClinicApp
                 // ثبت سرویس‌های پرداخت
                 container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());
                 
+                // ثبت ریپازیتوری‌های Payment (برای PaymentService)
+                container.RegisterType<Interfaces.Payment.Gateway.IPaymentGatewayRepository, Repositories.Payment.Gateway.PaymentGatewayRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<Interfaces.Payment.IOnlinePaymentRepository, Repositories.Payment.OnlinePaymentRepository>(new PerRequestLifetimeManager());
+                
                 // ثبت سرویس‌های پرداخت آنلاین
                 container.RegisterType<Interfaces.Payment.Gateway.IPaymentGatewayService, Services.Payment.Gateway.PaymentGatewayService>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس اصلی پرداخت (IPaymentService)
+                container.RegisterType<Interfaces.Payment.IPaymentService, Services.Payment.PaymentService>(new PerRequestLifetimeManager());
+                
                 // ثبت ریپازیتوری‌های POS
                 container.RegisterType<IPosTerminalRepository, PosTerminalRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashSessionRepository, CashSessionRepository>(new PerRequestLifetimeManager());
@@ -660,6 +682,9 @@ namespace ClinicApp
                 container.RegisterType<ICashSessionAuditService, CashSessionAuditService>(new PerRequestLifetimeManager());
                 container.RegisterType<IPaymentReconciliationService, PaymentReconciliationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashierPerformanceService, CashierPerformanceService>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس گزارش‌گیری پرداخت‌ها
+                container.RegisterType<Interfaces.Payment.Reporting.IPaymentReportingService, Services.Payment.Reporting.PaymentReportingService>(new PerRequestLifetimeManager());
 
                 // Register Supplementary Tariff Seeder Service
                 container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());
@@ -680,6 +705,14 @@ namespace ClinicApp
                     ClinicApp.Validators.Insurance.SupplementarySettingsValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<ViewModels.Insurance.Supplementary.SupplementaryCalculationResult>, 
                     ClinicApp.Validators.Insurance.SupplementaryCalculationResultValidator>(new PerRequestLifetimeManager());
+
+                // Register Payment Transaction Validators
+                container.RegisterType<IValidator<ViewModels.Payment.PaymentTransactionCreateViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.PaymentTransactionCreateViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.PaymentTransactionEditViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.PaymentTransactionEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.PaymentTransactionSearchViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.PaymentTransactionSearchViewModelValidator>(new PerRequestLifetimeManager());
 
                 // Register POS Validators
                 container.RegisterType<IValidator<ViewModels.Payment.POS.PosTerminalCreateViewModel>, 

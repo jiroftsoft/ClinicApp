@@ -92,8 +92,7 @@ namespace ClinicApp.Helpers
             }
             else
             {
-                var urlHelper = new UrlHelper(htmlHelper.ViewContext.RequestContext);
-                scriptTag.Attributes.Add("src", urlHelper.Content("~/Content/plugins/ckeditor/ckeditor.js"));
+                scriptTag.Attributes.Add("src", System.Web.VirtualPathUtility.ToAbsolute("~/Content/plugins/ckeditor/ckeditor.js"));
             }
             
             return new MvcHtmlString(scriptTag.ToString(TagRenderMode.SelfClosing));
@@ -115,8 +114,7 @@ namespace ClinicApp.Helpers
             }
             
             var scriptTag = new TagBuilder("script");
-            var urlHelper = new UrlHelper(htmlHelper.ViewContext.RequestContext);
-            scriptTag.Attributes.Add("src", urlHelper.Content("~/Content/plugins/ckeditor/config.js"));
+            scriptTag.Attributes.Add("src", System.Web.VirtualPathUtility.ToAbsolute("~/Content/plugins/ckeditor/config.js"));
             
             return new MvcHtmlString(scriptTag.ToString(TagRenderMode.SelfClosing));
         }

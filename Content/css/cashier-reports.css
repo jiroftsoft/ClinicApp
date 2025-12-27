@@ -1,0 +1,423 @@
+/**
+ * Cashier Reports Styles
+ * استایل‌های گزارشات صندوق
+ * 
+ * طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md, DEVELOPMENT_CONTRACT.md
+ * 
+ * ویژگی‌های کلیدی:
+ * - RTL Support
+ * - Responsive Design
+ * - Medical Environment Standards
+ * - Vazir Font Support
+ * - Standard Colors
+ */
+
+/* ============================================
+   General Styles
+   ============================================ */
+
+.cashier-reports-container {
+    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+    direction: rtl;
+    text-align: right;
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+}
+
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: #343a40;
+}
+
+.card-title i {
+    margin-left: 0.5rem;
+    color: #007bff;
+}
+
+/* ============================================
+   Summary Cards
+   ============================================ */
+
+.card.text-white {
+    border: none;
+    color: #fff !important;
+}
+
+.card.text-white .card-title {
+    color: #fff !important;
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.card.text-white h3 {
+    color: #fff !important;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.card.text-white small {
+    color: #fff !important;
+    opacity: 0.8;
+    font-size: 0.75rem;
+}
+
+.card.text-white .opacity-50 {
+    opacity: 0.5;
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* ============================================
+   Badges
+   ============================================ */
+
+.badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.875em;
+    font-weight: 600;
+    border-radius: 0.25rem;
+}
+
+.badge i {
+    margin-left: 0.25rem;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.badge-light {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* ============================================
+   Charts
+   ============================================ */
+
+.card-body canvas {
+    max-height: 400px;
+    width: 100% !important;
+    height: auto !important;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* ============================================
+   Forms
+   ============================================ */
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.btn {
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn i {
+    margin-left: 0.25rem;
+}
+
+.btn-group .btn {
+    margin-left: 0.25rem;
+}
+
+.btn-group .btn:first-child {
+    margin-left: 0;
+}
+
+.btn-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.btn-check:checked + .btn-outline-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+/* ============================================
+   Quick Actions
+   ============================================ */
+
+.btn-group.w-100 {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.btn-group.w-100 .btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* ============================================
+   Loading Overlay
+   ============================================ */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* ============================================
+   Alerts
+   ============================================ */
+
+.alert {
+    border-radius: 4px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid transparent;
+}
+
+.alert i {
+    margin-left: 0.5rem;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .card.text-white h3 {
+        font-size: 1.5rem;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 0.5rem;
+    }
+    
+    .btn-group.w-100 .btn {
+        min-width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    .btn,
+    .btn-group,
+    .card-header .btn-group {
+        display: none !important;
+    }
+    
+    .card {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .chart-container {
+        page-break-inside: avoid;
+    }
+}
+
+/* ============================================
+   RTL Support
+   ============================================ */
+
+[dir="rtl"] .table {
+    text-align: right;
+}
+
+[dir="rtl"] .btn i {
+    margin-left: 0.25rem;
+    margin-right: 0;
+}
+
+[dir="rtl"] .card-title i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+

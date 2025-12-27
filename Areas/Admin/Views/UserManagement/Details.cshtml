@@ -1,0 +1,248 @@
+@model ClinicApp.ViewModels.UserManagement.UserDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات کاربر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .details-header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+
+        .details-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        .info-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-section:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #212529;
+        }
+
+        .badge-role {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 0.25rem;
+        }
+
+        .audit-trail {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-right: 4px solid #17a2b8;
+        }
+    </style>
+}
+
+<div class="container-fluid px-0">
+    <div class="details-card">
+        <!-- Header -->
+        <div class="details-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-user-circle me-3"></i>
+                        @ViewBag.Title
+                    </h1>
+                    <p class="mb-0 opacity-75">@Model.FullName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Edit", "UserManagement", new { area = "Admin", id = Model.UserId })" class="btn btn-light me-2">
+                        <i class="fas fa-edit"></i>
+                        ویرایش
+                    </a>
+                    <a href="@Url.Action("Index", "UserManagement", new { area = "Admin" })" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Information -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-user text-primary me-2"></i>
+                اطلاعات کاربر
+            </h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">نام</div>
+                    <div class="info-value">@Model.FirstName</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">نام خانوادگی</div>
+                    <div class="info-value">@Model.LastName</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">کد ملی</div>
+                    <div class="info-value">
+                        <code>@Model.NationalCodeMasked</code>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">ایمیل</div>
+                    <div class="info-value">@Model.Email</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">شماره تلفن</div>
+                    <div class="info-value">@Model.PhoneNumberMasked</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">جنسیت</div>
+                    <div class="info-value">@Model.GenderDisplay</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <div class="col-md-12 mb-3">
+                        <div class="info-label">آدرس</div>
+                        <div class="info-value">@Model.Address</div>
+                    </div>
+                }
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">وضعیت</div>
+                    <div class="info-value">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge badge-role badge-active">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-role badge-inactive">غیرفعال</span>
+                        }
+                    </div>
+                </div>
+                @if (Model.LastLoginDate.HasValue)
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">آخرین ورود</div>
+                        <div class="info-value">@Model.LastLoginDateShamsi</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Roles -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-user-shield text-primary me-2"></i>
+                نقش‌ها
+            </h4>
+            @if (Model.Roles != null && Model.Roles.Any())
+            {
+                foreach (var role in Model.Roles)
+                {
+                    <span class="badge badge-role badge-primary">@role.DisplayName</span>
+                }
+            }
+            else
+            {
+                <p class="text-muted mb-0">بدون نقش</p>
+            }
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-history text-primary me-2"></i>
+                ردیابی تغییرات
+            </h4>
+            <div class="audit-trail">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">تاریخ ایجاد</div>
+                        <div class="info-value">@Model.CreatedAtShamsi</div>
+                        <small class="text-muted">توسط: @Model.CreatedByUser</small>
+                    </div>
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="col-md-6 mb-3">
+                            <div class="info-label">آخرین ویرایش</div>
+                            <div class="info-value">@Model.UpdatedAtShamsi</div>
+                            <small class="text-muted">توسط: @(Model.UpdatedByUser ?? "ناشناس")</small>
+                        </div>
+                    }
+                    @if (Model.IsDeleted && Model.DeletedAt.HasValue)
+                    {
+                        <div class="col-md-12 mb-3">
+                            <div class="info-label text-danger">تاریخ حذف</div>
+                            <div class="info-value text-danger">@Model.DeletedAtShamsi</div>
+                            <small class="text-muted">توسط: @(Model.DeletedByUser ?? "ناشناس")</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="info-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    @Html.AntiForgeryToken()
+                    @if (Model.IsActive)
+                    {
+                        <button type="button" class="btn btn-secondary btn-deactivate" data-user-id="@Model.UserId">
+                            <i class="fas fa-ban"></i>
+                            غیرفعال‌سازی
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-success btn-activate" data-user-id="@Model.UserId">
+                            <i class="fas fa-check"></i>
+                            فعال‌سازی
+                        </button>
+                    }
+                </div>
+                <div>
+                    @if (!Model.IsDeleted)
+                    {
+                        using (Html.BeginForm("Delete", "UserManagement", new { area = "Admin", id = Model.UserId }, FormMethod.Post, new { @class = "d-inline", id = $"deleteForm_{Model.UserId}" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="btn btn-danger btn-delete" data-user-id="@Model.UserId" data-user-name="@Model.FullName">
+                                <i class="fas fa-trash"></i>
+                                حذف
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/admin/user-management.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (typeof window.UserManagement !== 'undefined') {
+                window.UserManagement.init();
+            }
+        });
+    </script>
+}
+

@@ -315,6 +315,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // ✅ UserManagement Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_UserManagement_Routes",
+                url: "Admin/UserManagement/{action}/{id}",
+                defaults: new { controller = "UserManagement", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
             // CMS Routes - مسیرهای CMS (باید قبل از Admin default باشد تا اولویت داشته باشد)
             context.MapRoute(
                 name: "Admin_CMS_Default",

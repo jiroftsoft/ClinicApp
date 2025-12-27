@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 namespace ClinicApp.Filters
 {

@@ -22,7 +22,13 @@
         { "EmergencyContact", "تماس اضطراری" },
         { "ClinicWorkingHours", "ساعات کاری" },
         { "Dashboard", "داشبورد" },
-        { "Home", "صفحه اصلی" }
+        { "Home", "صفحه اصلی" },
+        { "UserManagement", "مدیریت کاربران" },
+        { "Clinic", "کلینیک‌ها" },
+        { "Department", "دپارتمان‌ها" },
+        { "Doctor", "پزشکان" },
+        { "Service", "خدمات پزشکی" },
+        { "InsurancePlan", "پلن‌های بیمه" }
     };
     
     // تعریف نام‌های فارسی برای Action ها
@@ -34,7 +40,8 @@
         { "Details", "جزئیات" },
         { "Delete", "حذف" },
         { "Reply", "پاسخ" },
-        { "Pending", "در انتظار تایید" }
+        { "Pending", "در انتظار تایید" },
+        { "DeletedUsers", "کاربران حذف شده" }
     };
     
     // ساخت Breadcrumb
@@ -56,14 +63,49 @@
         Icon = "fa-tachometer-alt"
     });
     
-    // CMS Area
+    // Category based on Controller
     if (areaName == "Admin" && controllerName != "Dashboard")
     {
+        string categoryText = "";
+        string categoryIcon = "";
+        
+        // تعیین دسته بر اساس Controller
+        if (controllerName == "UserManagement")
+        {
+            categoryText = "مدیریت کاربران";
+            categoryIcon = "fa-users-cog";
+        }
+        else if (controllerName == "Clinic" || controllerName == "Department" || controllerName == "ClinicBankAccount")
+        {
+            categoryText = "مدیریت کلینیک";
+            categoryIcon = "fa-hospital-alt";
+        }
+        else if (controllerName == "Doctor" || controllerName == "Specialization" || controllerName == "DoctorSchedule" || controllerName == "DoctorAssignment")
+        {
+            categoryText = "مدیریت پزشکان";
+            categoryIcon = "fa-user-md";
+        }
+        else if (controllerName == "Service" || controllerName == "ServiceCategory" || controllerName == "ServiceComponent")
+        {
+            categoryText = "مدیریت خدمات";
+            categoryIcon = "fa-stethoscope";
+        }
+        else if (controllerName == "InsurancePlan" || controllerName == "InsuranceProvider" || controllerName == "InsuranceTariff")
+        {
+            categoryText = "مدیریت بیمه";
+            categoryIcon = "fa-shield-alt";
+        }
+        else
+        {
+            categoryText = "مدیریت محتوا";
+            categoryIcon = "fa-sitemap";
+        }
+        
         breadcrumbItems.Add(new BreadcrumbItem
         {
-            Text = "مدیریت محتوا",
+            Text = categoryText,
             Url = "#",
-            Icon = "fa-sitemap",
+            Icon = categoryIcon,
             IsActive = false
         });
     }
@@ -76,11 +118,45 @@
             ? "#" 
             : Url.Action("Index", controllerName, new { area = "Admin" });
         
+        // تعیین آیکون بر اساس Controller
+        string controllerIcon = "fa-folder";
+        if (controllerName == "UserManagement")
+        {
+            if (actionName == "DeletedUsers")
+            {
+                controllerIcon = "fa-trash-alt";
+            }
+            else
+            {
+                controllerIcon = "fa-users-cog";
+            }
+        }
+        else if (controllerName == "Clinic")
+        {
+            controllerIcon = "fa-hospital";
+        }
+        else if (controllerName == "Department")
+        {
+            controllerIcon = "fa-building";
+        }
+        else if (controllerName == "Doctor")
+        {
+            controllerIcon = "fa-user-md";
+        }
+        else if (controllerName == "Service")
+        {
+            controllerIcon = "fa-stethoscope";
+        }
+        else if (controllerName == "InsurancePlan")
+        {
+            controllerIcon = "fa-shield-alt";
+        }
+        
         breadcrumbItems.Add(new BreadcrumbItem
         {
             Text = controllerText,
             Url = controllerUrl,
-            Icon = "fa-folder",
+            Icon = controllerIcon,
             IsActive = actionName.Equals("Index", StringComparison.OrdinalIgnoreCase)
         });
     }
@@ -88,11 +164,34 @@
     // Action (اگر Index نباشد)
     if (!actionName.Equals("Index", StringComparison.OrdinalIgnoreCase) && actionNames.ContainsKey(actionName))
     {
+        // تعیین آیکون بر اساس Action
+        string actionIcon = "fa-file";
+        if (actionName == "Create")
+        {
+            actionIcon = "fa-plus-circle";
+        }
+        else if (actionName == "Edit")
+        {
+            actionIcon = "fa-edit";
+        }
+        else if (actionName == "Details")
+        {
+            actionIcon = "fa-eye";
+        }
+        else if (actionName == "Delete")
+        {
+            actionIcon = "fa-trash";
+        }
+        else if (actionName == "DeletedUsers")
+        {
+            actionIcon = "fa-trash-restore";
+        }
+        
         breadcrumbItems.Add(new BreadcrumbItem
         {
             Text = actionNames[actionName],
             Url = "#",
-            Icon = "fa-file",
+            Icon = actionIcon,
             IsActive = true
         });
     }
