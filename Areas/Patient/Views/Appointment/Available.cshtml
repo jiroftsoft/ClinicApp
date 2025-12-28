@@ -885,7 +885,9 @@ else if (Model.SelectedDoctorId.HasValue)
                 return result;
             }
 
-            // ✅ تابع helper مرکزی برای دریافت تاریخ شمسی از datepicker (ضد گلوله)
+            // ✅ تابع helper مرکزی برای دریافت تاریخ شمسی از datepicker (ضد گلوله و timezone-safe)
+            // ⚠️ مهم: این تابع از selected.jy/jm/jd استفاده می‌کند که مستقیماً تاریخ شمسی است و از timezone مستقل است
+            // ✅ این روش حرفه‌ای از مشکل timezone جلوگیری می‌کند که در مراحل قبلی پیاده‌سازی شده بود
             function getPersianDateFromPicker(datePickerInstance, useDelay) {
                 if (!datePickerInstance) {
                     console.error('getPersianDateFromPicker: datePickerInstance is null');
@@ -895,6 +897,8 @@ else if (Model.SelectedDoctorId.HasValue)
                 var persianDateStr = null;
                 
                 // ✅ روش 1: استفاده مستقیم از selected object (jy, jm, jd) - بهترین و قابل اعتمادترین روش
+                // ⚠️ مهم: این روش از timezone مستقل است چون مستقیماً تاریخ شمسی را می‌دهد
+                // ✅ این روش در پایگاه دانش به عنوان "روش حرفه‌ای" شناخته می‌شود
                 try {
                     var selected = datePickerInstance.selected;
                     if (selected && 
@@ -911,15 +915,21 @@ else if (Model.SelectedDoctorId.HasValue)
                         persianDateStr = year + '/' + month + '/' + day;
                         
                         if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            console.log('✅ [Method 1] Got date from selected object (jy/jm/jd):', persianDateStr);
+                            console.log('✅ [Method 1] Got date from selected object (jy/jm/jd) - timezone-safe:', persianDateStr);
                             return persianDateStr;
+                        }
+                    } else {
+                        // ✅ اگر selected هنوز به‌روز نشده، log می‌کنیم
+                        if (useDelay) {
+                            console.log('⚠️ [Method 1] selected object not ready yet - will retry in onSelect timeout');
                         }
                     }
                 } catch (e) {
                     console.warn('getPersianDateFromPicker [Method 1] failed:', e);
                 }
                 
-                // ✅ روش 2: استفاده از getFormattedDate
+                // ✅ روش 2: استفاده از getFormattedDate (timezone-safe)
+                // ⚠️ مهم: getFormattedDate همیشه تاریخ شمسی را برمی‌گرداند و از timezone مستقل است
                 try {
                     var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
                     if (formattedDate && 
@@ -927,23 +937,26 @@ else if (Model.SelectedDoctorId.HasValue)
                         formattedDate.includes('/') && 
                         formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
                         persianDateStr = formattedDate;
-                        console.log('✅ [Method 2] Got date from getFormattedDate:', persianDateStr);
+                        console.log('✅ [Method 2] Got date from getFormattedDate - timezone-safe:', persianDateStr);
                         return persianDateStr;
                     }
                 } catch (e) {
                     console.warn('getPersianDateFromPicker [Method 2] failed:', e);
                 }
                 
-                // ✅ روش 3: استفاده از input value
+                // ✅ روش 3: استفاده از input value (fallback)
+                // ⚠️ توجه: این روش ممکن است هنوز به‌روز نشده باشد، پس اولویت با Method 1 و 2 است
                 try {
                     var inputValue = $("#date").val();
                     if (inputValue && 
                         typeof inputValue === 'string' && 
                         inputValue.includes('/') && 
                         inputValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                        persianDateStr = inputValue;
-                        console.log('✅ [Method 3] Got date from input value:', persianDateStr);
-                        return persianDateStr;
+                        persianDateStr = convertPersianToEnglishNumbers(inputValue);
+                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            console.log('✅ [Method 3] Got date from input value:', persianDateStr);
+                            return persianDateStr;
+                        }
                     }
                 } catch (e) {
                     console.warn('getPersianDateFromPicker [Method 3] failed:', e);
@@ -1059,9 +1072,41 @@ else if (Model.SelectedDoctorId.HasValue)
                             UIModule.showLoading();
                         },
                         success: function(response) {
-                            if (response && response.success && response.data) {
-                                AppState.lastUpdateTime = new Date();
-                                UIModule.updateUI(response.data);
+                            if (response && response.success) {
+                                // ✅ بررسی اینکه آیا نوبتی در تاریخ انتخابی وجود ندارد
+                                if (response.hasNoAppointments === true) {
+                                    // ✅ نمایش پیام جذاب و مینیمال با toastr
+                                    var persianDate = response.data && response.data.selectedDate ? response.data.selectedDate : '';
+                                    var message = response.message || 'در تاریخ انتخابی نوبتی در دسترس نیست';
+                                    
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.info(
+                                            '<div style="text-align: right; direction: rtl; font-family: \'Vazir\', \'Tahoma\', sans-serif;">' +
+                                            '<i class="fas fa-calendar-times me-2" style="font-size: 1.2rem;"></i>' +
+                                            '<strong>' + message + '</strong>' +
+                                            (persianDate ? '<br><small style="color: #6c757d;">تاریخ: ' + persianDate + '</small>' : '') +
+                                            '</div>',
+                                            'اطلاعات',
+                                            {
+                                                timeOut: 5000,
+                                                closeButton: true,
+                                                progressBar: true,
+                                                positionClass: 'toast-top-left'
+                                            }
+                                        );
+                                    }
+                                    
+                                    // ✅ به‌روزرسانی UI با لیست خالی
+                                    if (response.data) {
+                                        AppState.lastUpdateTime = new Date();
+                                        UIModule.updateUI(response.data);
+                                    }
+                                } else if (response.data) {
+                                    AppState.lastUpdateTime = new Date();
+                                    UIModule.updateUI(response.data);
+                                } else {
+                                    UIModule.showError(response.message || 'خطا در دریافت داده‌ها');
+                                }
                             } else {
                                 UIModule.showError(response.message || 'خطا در دریافت داده‌ها');
                             }
@@ -1189,6 +1234,39 @@ else if (Model.SelectedDoctorId.HasValue)
                         if (doctor.hasActiveSchedule && doctor.scheduleInfo) {
                             html += '<div class="schedule-info"><i class="fas fa-calendar-alt"></i><span class="schedule-info-text">' + doctor.scheduleInfo + '</span></div>';
                         }
+                        
+                        // ✅ نمایش تاریخ‌های نوبت موجود - حرفه‌ای و جذاب
+                        // ⚠️ مهم: این بخش حیاتی است و باید اطلاعات کامل (تاریخ، روز، زمان) را نمایش دهد
+                        if (doctor.availableDates && doctor.availableDates.length > 0) {
+                            html += '<div class="available-dates-section" style="margin-top: 1rem; padding: 1.25rem; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--medical-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">';
+                            html += '<div style="display: flex; align-items: center; margin-bottom: 1rem;">';
+                            html += '<i class="fas fa-calendar-check" style="color: var(--medical-primary); font-size: 1.5rem; margin-left: 0.75rem;"></i>';
+                            html += '<strong style="color: var(--medical-primary); font-size: 1.1rem; font-weight: 700;">نوبت‌های موجود:</strong>';
+                            html += '</div>';
+                            html += '<div class="available-dates-list" style="display: flex; flex-direction: column; gap: 0.75rem;">';
+                            doctor.availableDates.forEach(function(dateInfo) {
+                                // ✅ فرمت حرفه‌ای: "08/10 یکشنبه ساعت 7:00 تا 11:00"
+                                var displayText = '';
+                                if (dateInfo.shortDate && dateInfo.dayName && dateInfo.timeRange) {
+                                    displayText = dateInfo.shortDate + ' ' + dateInfo.dayName + ' ساعت ' + dateInfo.timeRange;
+                                } else if (dateInfo.persianDate) {
+                                    // Fallback: اگر اطلاعات کامل نبود، فقط تاریخ را نمایش می‌دهیم
+                                    displayText = dateInfo.persianDate;
+                                }
+                                
+                                if (displayText) {
+                                    html += '<div class="available-date-item" style="display: flex; align-items: center; padding: 0.875rem 1rem; background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-right: 4px solid var(--medical-primary); transition: all 0.3s ease;">';
+                                    html += '<i class="fas fa-clock" style="color: var(--medical-primary); font-size: 1rem; margin-left: 0.75rem; min-width: 20px;"></i>';
+                                    html += '<span style="color: var(--medical-text); font-size: 0.95rem; font-weight: 600; line-height: 1.5; flex: 1;">';
+                                    html += displayText;
+                                    html += '</span>';
+                                    html += '</div>';
+                                }
+                            });
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                        
                         html += '<div class="row g-2">';
                         html += '<div class="col-12 col-sm-6">';
                         html += '<button type="button" class="btn btn-medical-primary btn-sm btn-block btn-select-doctor" data-doctor-id="' + doctor.doctorId + '" ' + (!doctor.hasActiveSchedule ? 'disabled' : '') + '>';
@@ -1202,11 +1280,19 @@ else if (Model.SelectedDoctorId.HasValue)
                     
                     $container.html(html);
                     
-                    // ✅ به‌روزرسانی select box پزشک با لیست جدید
+                    // ✅ به‌روزرسانی select box پزشک با لیست جدید - ضد گلوله
                     // ⚠️ مهم: باید select box را با لیست جدید به‌روزرسانی کنیم
                     var $doctorSelect = $('#doctorId');
                     if ($doctorSelect.length > 0) {
+                        // ✅ ذخیره مقدار فعلی قبل از به‌روزرسانی
                         var currentValue = $doctorSelect.val();
+                        var shouldResetToAll = false;
+                        
+                        // ✅ اگر مقدار فعلی null یا خالی است، باید به "همه پزشکان" تنظیم شود
+                        if (!currentValue || currentValue === '' || currentValue === '0') {
+                            shouldResetToAll = true;
+                        }
+                        
                         $doctorSelect.empty();
                         $doctorSelect.append('<option value="">همه پزشکان</option>');
                         
@@ -1222,9 +1308,26 @@ else if (Model.SelectedDoctorId.HasValue)
                             $doctorSelect.append(option);
                         });
                         
-                        // ✅ اگر selectedDoctorId وجود دارد، آن را set کنیم
-                        if (selectedDoctorId) {
-                            $doctorSelect.val(selectedDoctorId);
+                        // ✅ تنظیم مقدار select box - ضد گلوله
+                        if (shouldResetToAll) {
+                            // ✅ اگر باید به "همه پزشکان" تنظیم شود
+                            $doctorSelect.val('');
+                            console.log('✅ Doctor select reset to "همه پزشکان"');
+                        } else if (selectedDoctorId) {
+                            // ✅ اگر selectedDoctorId وجود دارد، آن را set کنیم
+                            var optionExists = $doctorSelect.find('option[value="' + selectedDoctorId + '"]').length > 0;
+                            if (optionExists) {
+                                $doctorSelect.val(selectedDoctorId);
+                                console.log('✅ Doctor select value set to:', selectedDoctorId);
+                            } else {
+                                // ✅ اگر selectedDoctorId در لیست جدید نیست، به "همه پزشکان" تنظیم می‌کنیم
+                                $doctorSelect.val('');
+                                console.log('✅ Doctor select value not found in new list, reset to "همه پزشکان"');
+                            }
+                        } else {
+                            // ✅ اگر selectedDoctorId null است، به "همه پزشکان" تنظیم می‌کنیم
+                            $doctorSelect.val('');
+                            console.log('✅ Doctor select value set to "همه پزشکان" (selectedDoctorId is null)');
                         }
                     }
                     
@@ -1606,10 +1709,26 @@ else if (Model.SelectedDoctorId.HasValue)
                         }, 500); // 500ms debounce
                     });
                     
-                    // ✅ Doctor filter change
+                    // ✅ Doctor filter change - ضد گلوله برای حالت "همه پزشکان"
                     $('#doctorId').off('change.doctorFilter').on('change.doctorFilter', function() {
                         var doctorId = $(this).val();
                         console.log('✅ Doctor filter changed:', doctorId);
+                        
+                        // ✅ Normalize doctorId - ضد گلوله
+                        if (doctorId === '' || doctorId === '0' || doctorId === null || doctorId === undefined) {
+                            doctorId = null;
+                            console.log('✅ Doctor filter: همه پزشکان انتخاب شد');
+                        } else {
+                            // تبدیل به عدد برای اطمینان
+                            doctorId = parseInt(doctorId, 10);
+                            if (isNaN(doctorId) || doctorId <= 0) {
+                                doctorId = null;
+                                console.log('✅ Doctor filter: مقدار نامعتبر، تنظیم به همه پزشکان');
+                            }
+                        }
+                        
+                        // ✅ به‌روزرسانی state
+                        AppState.selectedDoctorId = doctorId;
                         
                         // ✅ دریافت تاریخ از date picker
                         var date = null;
@@ -1634,6 +1753,12 @@ else if (Model.SelectedDoctorId.HasValue)
                             }
                         }
                         
+                        // ✅ Normalize date - اگر تاریخ معتبر نیست، null می‌کنیم
+                        if (date && !date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            console.warn('⚠️ Invalid date format, setting to null:', date);
+                            date = null;
+                        }
+                        
                         // ✅ دریافت searchTerm
                         var searchTerm = $('#searchTerm').val();
                         if (searchTerm) {
@@ -1645,8 +1770,77 @@ else if (Model.SelectedDoctorId.HasValue)
                             searchTerm = null;
                         }
                         
-                        // ✅ اعمال فیلتر
+                        console.log('✅ [Doctor Filter Change] Applying filters - doctorId:', doctorId, 'date:', date, 'searchTerm:', searchTerm);
+                        
+                        // ✅ اعمال فیلتر - ضد گلوله
                         FilterModule.applyFilters(date, doctorId, searchTerm);
+                    });
+                    
+                    // ✅ Clear Filter Button - ضد گلوله
+                    $('#btnClearFilter').off('click.clearFilter').on('click.clearFilter', function(e) {
+                        e.preventDefault();
+                        console.log('✅ Clear filter button clicked');
+                        
+                        // ✅ 1. پاک کردن فیلترهای فرم
+                        $('#doctorId').val('');
+                        $('#searchTerm').val('');
+                        
+                        // ✅ 2. Reset date picker به تاریخ امروز (نه خالی کردن)
+                        var $dateInput = $("#date");
+                        var todayDate = null;
+                        if ($dateInput.length > 0) {
+                            try {
+                                var datePickerInstance = $dateInput.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    // ✅ Reset date picker به تاریخ امروز
+                                    var today = new Date();
+                                    datePickerInstance.setDate(today);
+                                    
+                                    // ✅ دریافت تاریخ شمسی امروز از date picker
+                                    setTimeout(function() {
+                                        var todayPersian = getPersianDateFromPicker(datePickerInstance, false);
+                                        if (todayPersian) {
+                                            $dateInput.val(todayPersian);
+                                            todayDate = todayPersian;
+                                            console.log('✅ Date picker reset to today:', todayPersian);
+                                        } else {
+                                            // Fallback: استفاده از getFormattedDate
+                                            var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                            if (formattedDate) {
+                                                $dateInput.val(formattedDate);
+                                                todayDate = formattedDate;
+                                                console.log('✅ Date picker reset to today (fallback):', formattedDate);
+                                            }
+                                        }
+                                        
+                                        // ✅ اعمال فیلتر با تاریخ امروز
+                                        applyClearFilter(todayDate);
+                                    }, 100); // تاخیر کوتاه برای اطمینان از به‌روزرسانی date picker
+                                    return; // خروج از تابع تا setTimeout اجرا شود
+                                } else {
+                                    // اگر date picker instance موجود نیست، فقط input را خالی می‌کنیم
+                                    $dateInput.val('');
+                                }
+                            } catch (e) {
+                                console.warn('Error resetting date picker:', e);
+                                $dateInput.val('');
+                            }
+                        }
+                        
+                        // ✅ اگر date picker instance موجود نبود، مستقیماً فیلتر را اعمال می‌کنیم
+                        applyClearFilter(todayDate);
+                        
+                        // ✅ تابع helper برای اعمال فیلتر پاک شده
+                        function applyClearFilter(date) {
+                            // ✅ 3. Reset state
+                            AppState.selectedDoctorId = null;
+                            AppState.selectedDate = date;
+                            lastProcessedDate = date;
+                            
+                            // ✅ 4. اعمال فیلتر با تاریخ امروز (بدون فیلتر پزشک و جستجو)
+                            console.log('✅ [Clear Filter] Applying filters - doctorId: null, date:', date, 'searchTerm: null');
+                            FilterModule.applyFilters(date, null, null);
+                        }
                     });
                     
                     // ✅ Form submit
@@ -1721,101 +1915,90 @@ else if (Model.SelectedDoctorId.HasValue)
                         // ذخیره onSelect قبلی
                         var originalOnSelect = datePickerInstance.config.onSelect;
                         
-                        // تنظیم onSelect handler جدید
+                        // ✅ تنظیم onSelect handler جدید - روش حرفه‌ای برای جلوگیری از مشکل timezone
                         datePickerInstance.config.onSelect = function(selectedDateValue) {
-                    console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
+                            console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
                             
                             // فراخوانی onSelect قبلی (اگر وجود داشته باشد)
                             if (originalOnSelect && typeof originalOnSelect === 'function') {
                                 originalOnSelect.call(this, selectedDateValue);
                             }
                     
-                    // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
-                    if (!pollingEnabled) {
-                        pollingEnabled = true;
-                        startDatePolling();
-                    }
+                            // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
+                            if (!pollingEnabled) {
+                                pollingEnabled = true;
+                                startDatePolling();
+                            }
                             AppState.isInitialLoad = false;
                             isInitialLoad = false; // Legacy compatibility
                     
-                            // ✅ پردازش تاریخ - استفاده مستقیم از تاریخ انتخاب شده
-                    if (dateChangeTimeout) {
-                        clearTimeout(dateChangeTimeout);
-                    }
-                    
-                    dateChangeTimeout = setTimeout(function() {
-                                // ✅ استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
-                                var persianDateStr = null;
-                                
-                                // روش 1: استفاده از selected object (jy, jm, jd)
-                                try {
-                                    var selected = datePickerInstance.selected;
-                                    if (selected && 
-                                        typeof selected.jy === 'number' && 
-                                        typeof selected.jm === 'number' && 
-                                        typeof selected.jd === 'number' &&
-                                        selected.jy > 0 && 
-                                        selected.jm >= 1 && selected.jm <= 12 && 
-                                        selected.jd >= 1 && selected.jd <= 31) {
-                                        
-                                        var year = String(selected.jy).padStart(4, '0');
-                                        var month = String(selected.jm).padStart(2, '0');
-                                        var day = String(selected.jd).padStart(2, '0');
-                                        persianDateStr = year + '/' + month + '/' + day;
-                                        
-                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            console.log('✅ [onSelect] Got date from selected object:', persianDateStr);
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.warn('onSelect [Method 1] failed:', e);
-                                }
-                                
-                                // روش 2: استفاده از getFormattedDate
-                                if (!persianDateStr) {
-                                    try {
-                                        var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
-                                        if (formattedDate && 
-                                            typeof formattedDate === 'string' && 
-                                            formattedDate.includes('/') && 
-                                            formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            persianDateStr = formattedDate;
-                                            console.log('✅ [onSelect] Got date from getFormattedDate:', persianDateStr);
-                                        }
-                                    } catch (e) {
-                                        console.warn('onSelect [Method 2] failed:', e);
-                                    }
-                                }
-                                
-                                // روش 3: استفاده از input value (fallback)
-                                if (!persianDateStr) {
-                                    var inputValue = $("#date").val();
-                                    if (inputValue) {
-                                        inputValue = convertPersianToEnglishNumbers(inputValue);
-                                        if (inputValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            persianDateStr = inputValue;
-                                            console.log('✅ [onSelect] Got date from input value:', persianDateStr);
-                                        }
-                                    }
-                                }
-                                
+                            // ✅ پردازش تاریخ - استفاده مستقیم از تاریخ شمسی (بدون تبدیل unix timestamp)
+                            // ⚠️ مهم: استفاده از unix timestamp باعث مشکل timezone می‌شود
+                            // ✅ راه حل حرفه‌ای: استفاده مستقیم از selected.jy/jm/jd که مستقیماً تاریخ شمسی است
+                            if (dateChangeTimeout) {
+                                clearTimeout(dateChangeTimeout);
+                            }
+                            
+                            // ✅ تابع helper برای پردازش تاریخ انتخاب شده (تعریف قبل از setTimeout برای دسترسی)
+                            function processSelectedDate(persianDateStr) {
                                 // ✅ اگر تاریخ معتبر پیدا شد، اعمال فیلتر
-                                if (persianDateStr && persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                    lastProcessedDate = persianDateStr;
-                                    console.log('✅ [onSelect] Processing selected date:', persianDateStr);
-                                    
-                                    // ✅ اعمال فیلتر به صورت خودکار (فقط اگر بارگذاری اولیه نباشد)
-                                    if (!AppState.isInitialLoad) {
-                                        var doctorId = $('#doctorId').val();
-                                        console.log('✅ [onSelect] Applying filters with date:', persianDateStr, 'doctorId:', doctorId);
-                                        FilterModule.applyFilters(persianDateStr, doctorId);
+                                lastProcessedDate = persianDateStr;
+                                console.log('✅ [onSelect] Processing selected date (timezone-safe):', persianDateStr);
+                                
+                                // ✅ اعمال فیلتر به صورت خودکار (فقط اگر بارگذاری اولیه نباشد)
+                                if (!AppState.isInitialLoad) {
+                                    var doctorId = $('#doctorId').val();
+                                    var searchTerm = $('#searchTerm').val();
+                                    if (searchTerm) {
+                                        searchTerm = searchTerm.trim();
+                                        if (searchTerm === '') {
+                                            searchTerm = null;
+                                        }
+                                    } else {
+                                        searchTerm = null;
                                     }
+                                    console.log('✅ [onSelect] Applying filters with date:', persianDateStr, 'doctorId:', doctorId, 'searchTerm:', searchTerm);
+                                    FilterModule.applyFilters(persianDateStr, doctorId, searchTerm);
                                 } else {
-                                    // Fallback: استفاده از processDateFromInput
-                                    console.warn('⚠️ [onSelect] Could not get date from datePicker, using processDateFromInput');
-                                    processDateFromInput(true);
+                                    // در بارگذاری اولیه، فقط تاریخ را ذخیره می‌کنیم
+                                    AppState.selectedDate = persianDateStr;
+                                    console.log('✅ [onSelect] Initial load - Date set:', persianDateStr);
                                 }
-                            }, 50);
+                            }
+                            
+                            // ✅ تاخیر برای اطمینان از به‌روزرسانی datePicker instance (مخصوصاً برای دکمه "امروز")
+                            // ⚠️ مهم: این delay برای اطمینان از به‌روزرسانی selected.jy/jm/jd است
+                            dateChangeTimeout = setTimeout(function() {
+                                // ✅ استفاده از تابع helper مرکزی که از timezone مستقل است
+                                // ⚠️ مهم: استفاده از useDelay=true برای اطمینان از به‌روزرسانی selected object
+                                var persianDateStr = getPersianDateFromPicker(datePickerInstance, true);
+                                
+                                // ✅ اگر تابع helper تاریخ نداد، یک بار دیگر با delay بیشتر تلاش می‌کنیم
+                                // این مخصوصاً برای دکمه "امروز" مهم است
+                                if (!persianDateStr) {
+                                    setTimeout(function() {
+                                        persianDateStr = getPersianDateFromPicker(datePickerInstance, false);
+                                        if (!persianDateStr) {
+                                            // Fallback: استفاده از processDateFromInput
+                                            console.warn('⚠️ [onSelect] Could not get date from datePicker helper after retry, using processDateFromInput');
+                                            processDateFromInput(true);
+                                            return;
+                                        }
+                                        processSelectedDate(persianDateStr);
+                                    }, 50); // delay بیشتر برای retry
+                                    return;
+                                }
+                                
+                                // ✅ Validation: بررسی فرمت تاریخ
+                                if (!persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                    console.warn('⚠️ [onSelect] Invalid date format from helper:', persianDateStr);
+                                    processDateFromInput(true);
+                                    return;
+                                }
+                                
+                                // ✅ پردازش تاریخ انتخاب شده
+                                processSelectedDate(persianDateStr);
+                            }, 100); // ✅ تاخیر اولیه برای اطمینان از به‌روزرسانی datePicker instance
                         };
                     }
                 }

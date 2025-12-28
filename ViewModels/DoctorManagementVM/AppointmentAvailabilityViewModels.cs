@@ -101,7 +101,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// تاریخ‌های در دسترس
         /// </summary>
         [Display(Name = "تاریخ‌های در دسترس")]
-        public List<AvailableDateInfo> AvailableDates { get; set; } = new List<AvailableDateInfo>();
+        public List<AppointmentAvailabilityDateInfo> AvailableDates { get; set; } = new List<AppointmentAvailabilityDateInfo>();
 
         /// <summary>
         /// تعداد کل تاریخ‌های در دسترس
@@ -137,9 +137,10 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     }
 
     /// <summary>
-    /// اطلاعات تاریخ در دسترس
+    /// اطلاعات تاریخ در دسترس برای Admin Area
+    /// ⚠️ توجه: این کلاس با AvailableDateInfo در Models/DTOs/Appointment/DoctorSearchResultDto.cs متفاوت است
     /// </summary>
-    public class AvailableDateInfo
+    public class AppointmentAvailabilityDateInfo
     {
         /// <summary>
         /// تاریخ

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace ClinicApp.Models.DTOs.Appointment
 {
     /// <summary>
@@ -29,6 +31,52 @@ namespace ClinicApp.Models.DTOs.Appointment
         /// سال‌های تجربه
         /// </summary>
         public int? ExperienceYears { get; set; }
+        
+        /// <summary>
+        /// تاریخ‌های نوبت موجود با اطلاعات کامل (حداکثر 5 تاریخ آینده)
+        /// </summary>
+        public List<AvailableDateInfo> AvailableDates { get; set; } = new List<AvailableDateInfo>();
+    }
+    
+    /// <summary>
+    /// اطلاعات تاریخ نوبت موجود برای نمایش روی کارت پزشک
+    /// </summary>
+    public class AvailableDateInfo
+    {
+        /// <summary>
+        /// تاریخ شمسی (مثلاً: "1404/10/08")
+        /// </summary>
+        public string PersianDate { get; set; }
+        
+        /// <summary>
+        /// تاریخ کوتاه برای نمایش (مثلاً: "08/10")
+        /// </summary>
+        public string ShortDate { get; set; }
+        
+        /// <summary>
+        /// نام روز هفته (مثلاً: "یکشنبه", "دوشنبه")
+        /// </summary>
+        public string DayName { get; set; }
+        
+        /// <summary>
+        /// نام کوتاه روز هفته (مثلاً: "ی", "د")
+        /// </summary>
+        public string DayNameShort { get; set; }
+        
+        /// <summary>
+        /// زمان شروع (مثلاً: "7:00 قبل از ظهر")
+        /// </summary>
+        public string StartTime { get; set; }
+        
+        /// <summary>
+        /// زمان پایان (مثلاً: "11:00 قبل از ظهر")
+        /// </summary>
+        public string EndTime { get; set; }
+        
+        /// <summary>
+        /// محدوده زمانی کامل (مثلاً: "7:00 قبل از ظهر - 11:00 قبل از ظهر")
+        /// </summary>
+        public string TimeRange { get; set; }
     }
 }
 
