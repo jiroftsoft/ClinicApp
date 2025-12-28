@@ -1,0 +1,282 @@
+@model ClinicApp.ViewModels.Admin.PaymentManagement.PaymentDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات پرداخت";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --payment-primary: #2c5aa0;
+            --payment-success: #28a745;
+            --payment-info: #17a2b8;
+            --payment-warning: #ffc107;
+            --payment-danger: #dc3545;
+        }
+
+        .details-header {
+            background: linear-gradient(135deg, var(--payment-primary) 0%, #3d6fb0 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+
+        .details-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-section:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: #212529;
+        }
+
+        .status-badge-large {
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .timeline-item {
+            padding: 1rem;
+            border-right: 3px solid var(--payment-primary);
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .timeline-date {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+}
+
+<div class="container-fluid px-0">
+    <div class="details-card">
+        <!-- Header -->
+        <div class="details-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-credit-card me-3"></i>
+                        @ViewBag.Title
+                    </h1>
+                    <p class="mb-0 opacity-75">شناسه پرداخت: #@Model.OnlinePaymentId</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "PaymentManagement", new { area = "Admin" })" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="info-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="info-label">وضعیت پرداخت</div>
+                    <span class="status-badge-large status-@Model.Status.ToString().ToLower()">
+                        @Model.StatusDisplay
+                    </span>
+                </div>
+                <div class="text-left">
+                    <div class="info-label">مبلغ</div>
+                    <div class="info-value" style="font-size: 1.5rem; font-weight: 700; color: var(--payment-primary);">
+                        @Model.AmountDisplay
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                اطلاعات پرداخت
+            </h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">نوع پرداخت</div>
+                    <div class="info-value">@Model.PaymentTypeDisplay</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">درگاه پرداخت</div>
+                    <div class="info-value">@Model.GatewayName (@Model.GatewayTypeDisplay)</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">کد پیگیری</div>
+                    <div class="info-value">@Model.PaymentToken</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">کد مرجع درگاه</div>
+                    <div class="info-value">@(Model.GatewayReferenceCode ?? "نامشخص")</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">تاریخ ایجاد</div>
+                    <div class="info-value">@Model.CreatedAtDisplay</div>
+                </div>
+                @if (Model.PaymentCompletionDate.HasValue)
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">تاریخ تکمیل</div>
+                        <div class="info-value">@Model.PaymentCompletionDateDisplay</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-user text-primary me-2"></i>
+                اطلاعات بیمار
+            </h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">نام بیمار</div>
+                    <div class="info-value">@Model.PatientName</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-label">کد ملی</div>
+                    <div class="info-value">@Model.PatientNationalCode</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.PatientPhoneNumber))
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">شماره تماس</div>
+                        <div class="info-value">@Model.PatientPhoneNumber</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Doctor Information -->
+        @if (Model.AppointmentId.HasValue && !string.IsNullOrEmpty(Model.DoctorName))
+        {
+            <div class="info-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-user-md text-primary me-2"></i>
+                    اطلاعات پزشک
+                </h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">نام پزشک</div>
+                        <div class="info-value">@Model.DoctorName</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.DoctorSpecialization))
+                    {
+                        <div class="col-md-6 mb-3">
+                            <div class="info-label">تخصص</div>
+                            <div class="info-value">@Model.DoctorSpecialization</div>
+                        </div>
+                    }
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">شناسه نوبت</div>
+                        <div class="info-value">#@Model.AppointmentId</div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Timeline -->
+        @if (Model.Timeline != null && Model.Timeline.Any())
+        {
+            <div class="info-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-history text-primary me-2"></i>
+                    Timeline رویدادها
+                </h4>
+                @foreach (var item in Model.Timeline.OrderByDescending(t => t.Date))
+                {
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="info-value">@item.Event</div>
+                                <div class="text-muted">@item.Description</div>
+                                @if (!string.IsNullOrEmpty(item.UserName))
+                                {
+                                    <small class="text-muted">توسط: @item.UserName</small>
+                                }
+                            </div>
+                            <div class="timeline-date">@item.DateDisplay</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="info-section">
+            <h4 class="mb-3">
+                <i class="fas fa-cog text-primary me-2"></i>
+                عملیات
+            </h4>
+            @Html.AntiForgeryToken()
+            <div class="action-buttons">
+                @if (Model.CanRetry)
+                {
+                    <button type="button" class="btn btn-warning btn-retry" data-payment-id="@Model.OnlinePaymentId">
+                        <i class="fas fa-redo"></i>
+                        Retry
+                    </button>
+                }
+                @if (Model.CanCancel)
+                {
+                    <button type="button" class="btn btn-secondary btn-cancel" data-payment-id="@Model.OnlinePaymentId">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                }
+                @if (Model.CanRefund)
+                {
+                    <button type="button" class="btn btn-danger btn-refund" data-payment-id="@Model.OnlinePaymentId" data-amount="@Model.Amount">
+                        <i class="fas fa-undo"></i>
+                        Refund
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/admin/payment-management.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (typeof window.PaymentManagement !== 'undefined') {
+                window.PaymentManagement.initDetails();
+            }
+        });
+    </script>
+}
+

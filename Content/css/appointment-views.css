@@ -1,0 +1,417 @@
+/* ============================================
+   🎨 Appointment Views CSS - طبق پرامپت طراحی
+   ============================================
+   پالت رنگ و استایل‌های مشترک برای ویوهای Appointment
+   طبق Docs/Knowledge-Base/14041007/appointment_views_design_prompt.md
+   ============================================ */
+
+/* ✅ 1️⃣ پالت رنگ استاندارد (الزامی - طبق پرامپت) */
+:root {
+    /* Primary Colors */
+    --medical-primary: #2c5aa0;      /* آبی تیره - اعتماد */
+    --medical-secondary: #6c757d;    /* خاکستری */
+    
+    /* Status Colors */
+    --medical-success: #28a745;      /* سبز ملایم */
+    --medical-danger: #dc3545;       /* قرمز ملایم */
+    --medical-warning: #ffc107;      /* زرد */
+    --medical-info: #17a2b8;        /* آبی روشن */
+    
+    /* Background & Text */
+    --medical-bg: #ffffff;
+    --medical-bg-light: #f8f9fa;
+    --medical-text: #212529;
+    --medical-text-muted: #6c757d;
+    --medical-border: #dee2e6;
+    
+    /* Button Hover */
+    --medical-primary-hover: #1e4178;
+    --medical-success-hover: #1e7e34;
+    
+    /* Font Sizes */
+    --font-size-base: 14px;
+    --font-size-lg: 16px;
+    --font-size-sm: 12px;
+    --font-size-xs: 11px;
+    
+    /* Font Weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+}
+
+/* ✅ 2️⃣ فونت‌های حرفه‌ای فارسی */
+.appointment-views-container,
+.appointment-views-container * {
+    font-family: 'Vazir', 'Tahoma', sans-serif !important;
+}
+
+/* ✅ 3️⃣ Page Header (Mobile-Optimized) */
+.appointment-page-header {
+    background: var(--medical-bg-light);
+    border-bottom: 2px solid var(--medical-border);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.appointment-page-header h1,
+.appointment-page-header h2,
+.appointment-page-header h3 {
+    color: var(--medical-primary);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: 0.5rem;
+}
+
+.appointment-page-header h1 {
+    font-size: 1.5rem;
+}
+
+.appointment-page-header h2 {
+    font-size: 1.25rem;
+}
+
+.appointment-page-header h3 {
+    font-size: 1.1rem;
+}
+
+@media (min-width: 768px) {
+    .appointment-page-header {
+        padding: 1.5rem 2rem;
+    }
+    
+    .appointment-page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .appointment-page-header h2 {
+        font-size: 1.75rem;
+    }
+}
+
+/* ✅ 4️⃣ Filter Section (Sticky در موبایل) */
+.appointment-filter-section {
+    background: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 767.98px) {
+    .appointment-filter-section.sticky-top-mobile {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: white;
+    }
+}
+
+@media (min-width: 768px) {
+    .appointment-filter-section {
+        padding: 1.5rem;
+    }
+}
+
+/* ✅ 5️⃣ Form Controls */
+.form-control-medical {
+    border: 1px solid var(--medical-border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: var(--font-size-base);
+    transition: all 0.2s ease;
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+}
+
+.form-control-medical:focus {
+    border-color: var(--medical-primary);
+    box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+    outline: none;
+}
+
+/* ✅ 6️⃣ Button Styles */
+.btn-medical-primary {
+    background-color: var(--medical-primary);
+    border-color: var(--medical-primary);
+    color: white;
+    font-weight: var(--font-weight-medium);
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+}
+
+.btn-medical-primary:hover {
+    background-color: var(--medical-primary-hover);
+    border-color: var(--medical-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(44, 90, 160, 0.2);
+    color: white;
+}
+
+.btn-medical-primary:active {
+    transform: translateY(0);
+}
+
+.btn-outline-medical-info {
+    border-color: var(--medical-info);
+    color: var(--medical-info);
+    background: transparent;
+}
+
+.btn-outline-medical-info:hover {
+    background-color: var(--medical-info);
+    color: white;
+    border-color: var(--medical-info);
+}
+
+/* ✅ 7️⃣ Doctor Card */
+.doctor-card-medical {
+    border: 1px solid var(--medical-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: var(--medical-bg);
+    height: 100%;
+}
+
+.doctor-card-medical:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: var(--medical-primary);
+}
+
+.doctor-avatar-medical {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.available-badge-medical {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--medical-success);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ✅ 8️⃣ Time Slots */
+.btn-time-slot-medical {
+    padding: 1rem 0.5rem;
+    border-radius: 8px;
+    border: 2px solid var(--medical-border);
+    transition: all 0.2s ease;
+    text-align: center;
+    background: var(--medical-bg);
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+    font-weight: var(--font-weight-medium);
+}
+
+.btn-time-slot-medical:not(:disabled):hover {
+    border-color: var(--medical-primary);
+    background-color: rgba(44, 90, 160, 0.05);
+    transform: scale(1.05);
+}
+
+.btn-time-slot-medical:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.time-text-medical {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--medical-primary);
+}
+
+.duration-text-medical {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: var(--medical-text-muted);
+}
+
+/* ✅ 9️⃣ Text Colors */
+.text-medical-primary {
+    color: var(--medical-primary) !important;
+}
+
+.text-medical-text {
+    color: var(--medical-text) !important;
+}
+
+.text-medical-text-muted {
+    color: var(--medical-text-muted) !important;
+}
+
+.bg-medical-light {
+    background-color: var(--medical-bg-light) !important;
+}
+
+/* ✅ 🔟 Responsive Grid */
+.appointment-doctors-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 576px) {
+    .appointment-doctors-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .appointment-doctors-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.appointment-time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+@media (min-width: 576px) {
+    .appointment-time-slots-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .appointment-time-slots-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ✅ 1️⃣1️⃣ Empty State */
+.appointment-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--medical-text-muted);
+}
+
+.appointment-empty-state i {
+    font-size: 4rem;
+    color: var(--medical-border);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.appointment-empty-state h4 {
+    font-size: 1.25rem;
+    color: var(--medical-text);
+    margin-bottom: 0.5rem;
+}
+
+/* ✅ 1️⃣2️⃣ Line Clamp */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2; /* Standard property for compatibility */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: 3em;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3; /* Standard property for compatibility */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: 4.5em;
+}
+
+/* ✅ 1️⃣3️⃣ Full Width در موبایل */
+@media (max-width: 991.98px) {
+    .btn-block-mobile {
+        width: 100%;
+    }
+}
+
+@media (min-width: 992px) {
+    .btn-lg-auto {
+        width: auto;
+    }
+}
+
+/* ✅ 1️⃣4️⃣ Touch-friendly Buttons (min 44×44px) */
+@media (max-width: 767.98px) {
+    .btn-medical-primary,
+    .btn-time-slot-medical {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ✅ 1️⃣5️⃣ Loading State */
+.appointment-loading-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.appointment-loading-state .spinner-border {
+    color: var(--medical-primary);
+}
+
+/* ✅ 1️⃣6️⃣ Card Styles */
+.appointment-card-medical {
+    border: 1px solid var(--medical-border);
+    border-radius: 12px;
+    background: var(--medical-bg);
+    transition: all 0.3s ease;
+}
+
+.appointment-card-medical:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* ✅ 1️⃣7️⃣ Badge Styles */
+.badge-medical-success {
+    background-color: var(--medical-success);
+    color: white;
+}
+
+.badge-medical-danger {
+    background-color: var(--medical-danger);
+    color: white;
+}
+
+.badge-medical-warning {
+    background-color: var(--medical-warning);
+    color: var(--medical-text);
+}
+
+.badge-medical-info {
+    background-color: var(--medical-info);
+    color: white;
+}
+
+/* ✅ 1️⃣8️⃣ Accessibility - Focus States */
+.btn-medical-primary:focus,
+.form-control-medical:focus,
+.btn-time-slot-medical:focus {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 2px;
+}
+
+/* ✅ 1️⃣9️⃣ Print Styles */
+@media print {
+    .appointment-filter-section,
+    .btn-medical-primary,
+    .btn-time-slot-medical {
+        display: none;
+    }
+}
+

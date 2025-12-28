@@ -512,6 +512,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
@@ -531,6 +532,7 @@
     <Compile Include="Areas\Patient\Controllers\Api\PatientAppointmentApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentBookingController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Base\BasePatientController.cs" />
     <Compile Include="Areas\Patient\PatientAreaRegistration.cs" />
     <Compile Include="Constants\ReceptionConstants.cs" />
     <Compile Include="Constants\ReceptionFormConstants.cs" />
@@ -603,6 +605,7 @@
     <Compile Include="Dtos\Reception\ReceptionApiDtos.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
     <Compile Include="Extensions\CollectionExtensions.cs" />
+    <Compile Include="Extensions\ControllerDateExtensions.cs" />
     <Compile Include="Extensions\CultureExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
@@ -674,12 +677,14 @@
     <Compile Include="Helpers\UrlHelper.cs" />
     <Compile Include="Helpers\ValidationHelper.cs" />
     <Compile Include="Helpers\Validation\IdentityValidators.cs" />
+    <Compile Include="Helpers\ZarinPalHelper.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\ITimeProvider.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
     <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
     <Compile Include="Interfaces\Appointment\IAppointmentBookingService.cs" />
     <Compile Include="Interfaces\Appointment\IAppointmentRepository.cs" />
+    <Compile Include="Interfaces\Appointment\IDoctorMappingService.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountRepository.cs" />
@@ -808,6 +813,7 @@
     <Compile Include="Interfaces\IServiceRepository.cs" />
     <Compile Include="Interfaces\IVideoUploadService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
+    <Compile Include="Interfaces\Payment\Gateway\Drivers\IGatewayDriver.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
     <Compile Include="Interfaces\Payment\ICashierPerformanceService.cs" />
@@ -817,6 +823,8 @@
     <Compile Include="Interfaces\Payment\IPaymentReconciliationService.cs" />
     <Compile Include="Interfaces\Payment\IPaymentService.cs" />
     <Compile Include="Interfaces\Payment\IPaymentTransactionRepository.cs" />
+    <Compile Include="Interfaces\Payment\Management\IPaymentManagementRepository.cs" />
+    <Compile Include="Interfaces\Payment\Management\IPaymentManagementService.cs" />
     <Compile Include="Interfaces\Payment\POS\ICashSessionRepository.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosDeviceService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosManagementService.cs" />
@@ -931,6 +939,10 @@
     <Compile Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.cs" />
     <Compile Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.Designer.cs">
       <DependentUpon>202512261144179_AddCashierAuditAndPerformanceEnt.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202512281420296_AddRowVersionToOnlinePayment.cs" />
+    <Compile Include="Migrations\202512281420296_AddRowVersionToOnlinePayment.Designer.cs">
+      <DependentUpon>202512281420296_AddRowVersionToOnlinePayment.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
@@ -1327,6 +1339,7 @@
     <Compile Include="Models\Statistics\PaymentStatistics.cs" />
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Models\SystemSettings\SystemSetting.cs" />
+    <Compile Include="Repositories\Payment\Management\PaymentManagementRepository.cs" />
     <Compile Include="Repositories\Reception\ClinicManagementRepository.cs" />
     <Compile Include="Repositories\Reception\DoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IClinicManagementRepository.cs" />
@@ -1338,6 +1351,7 @@
     <Compile Include="Services\Appointment\AppointmentNotificationService.cs" />
     <Compile Include="Services\Appointment\AppointmentPricingService.cs" />
     <Compile Include="Services\Appointment\AppointmentValidationService.cs" />
+    <Compile Include="Services\Appointment\DoctorMappingService.cs" />
     <Compile Include="Services\ClinicAdmin\ClinicBankAccountService.cs" />
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Helpers\RecommendationGenerator.cs" />
     <Compile Include="Services\ClinicAdmin\ScheduleOptimization\Helpers\TimeSlotGenerator.cs" />
@@ -1383,6 +1397,8 @@
     <Compile Include="Services\Payment\CashierPerformanceService.cs" />
     <Compile Include="Services\Payment\CashierReportService.cs" />
     <Compile Include="Services\Payment\CashSessionAuditService.cs" />
+    <Compile Include="Services\Payment\Gateway\Drivers\ZarinPalDriver.cs" />
+    <Compile Include="Services\Payment\Management\PaymentManagementService.cs" />
     <Compile Include="Services\Payment\PaymentReconciliationService.cs" />
     <Compile Include="Services\Payment\POS\Drivers\BehpardakhtMelatDriver.cs" />
     <Compile Include="Services\Payment\POS\Drivers\SamanKishDriver.cs" />
@@ -1560,6 +1576,8 @@
     <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="Validators\Reception\EnhancedReceptionValidators.cs" />
     <Compile Include="ViewModels\AboutPageViewModel.cs" />
+    <Compile Include="ViewModels\Admin\PaymentManagement\PaymentDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Admin\PaymentManagement\PaymentIndexViewModel.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
     <Compile Include="ViewModels\CMS\AboutPageViewModels.cs" />
@@ -1686,6 +1704,8 @@
     <Compile Include="ViewModels\Patient\DoctorDetailsViewModel.cs" />
     <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
+    <Compile Include="ViewModels\Patient\PaymentErrorViewModel.cs" />
+    <Compile Include="ViewModels\Patient\PaymentSuccessViewModel.cs" />
     <Compile Include="ViewModels\Patient\TimeSlotSelectionViewModel.cs" />
     <Compile Include="ViewModels\Payment\CashierDashboardViewModel.cs" />
     <Compile Include="ViewModels\Payment\CashierReportViewModels.cs" />
@@ -1898,6 +1918,7 @@
     <Content Include="Content\css\about-page.css" />
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\announcements-section.css" />
+    <Content Include="Content\css\appointment-views.css" />
     <Content Include="Content\css\blog-section.css" />
     <Content Include="Content\css\breadcrumb-medical.css" />
     <Content Include="Content\css\cashier-reports.css" />
@@ -4724,6 +4745,32 @@
     <Content Include="Areas\Admin\Views\UserManagement\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\UserManagement\Index.cshtml" />
     <Content Include="Areas\Admin\Views\UserManagement\DeletedUsers.cshtml" />
+    <Content Include="Docs\Knowledge-Base\AI_ASSISTANT_MASTER_CONTRACT.md" />
+    <Content Include="Docs\LOGO_STANDARDS.md" />
+    <Content Include="Docs\MEDICAL_SERVICES_SECTION_REDESIGN.md" />
+    <Content Include="Docs\MODERN_SERVICES_SECTION_DESIGN.md" />
+    <Content Include="Docs\NEWSLETTER_SUBSCRIPTION_ANALYSIS.md" />
+    <Content Include="Docs\NEWSLETTER_SUBSCRIPTION_TODO.md" />
+    <Content Include="Docs\NEWSLETTER_TEMPLATES.md" />
+    <Content Include="Docs\PATIENT_EDUCATION_MATERIALS_TODO.md" />
+    <Content Include="Docs\PAYMENT_TRACE_BREAKPOINT_GUIDE.md" />
+    <Content Include="Docs\PERFORMANCE_OPTIMIZATION.md" />
+    <Content Include="Docs\PRINT_SYSTEM_DEEP_ANALYSIS.md" />
+    <Content Include="Docs\PRINT_SYSTEM_OPTIMIZATION_COMPLETE.md" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\PaymentError.cshtml" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\PaymentSuccess.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentManagement\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentManagement\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentManagement\_PaymentsList.cshtml" />
+    <Content Include="Docs\Knowledge-Base\14041007\walkthrough.md" />
+    <Content Include="Docs\Knowledge-Base\payment_appointment_review_prompt.md" />
+    <Content Include="Docs\Knowledge-Base\14041007\payment_appointment_review_prompt.md" />
+    <Content Include="Docs\Knowledge-Base\14041007\appointment_controller_cursor_prompt.md" />
+    <Content Include="Docs\Knowledge-Base\14041007\appointment_controller_review.md" />
+    <Content Include="Docs\Knowledge-Base\PAYMENT_APPOINTMENT_COMPREHENSIVE_REVIEW_REPORT.md" />
+    <Content Include="Docs\Knowledge-Base\PAYMENT_APPOINTMENT_OPTIMIZATION_REPORT.md" />
+    <Content Include="Docs\Knowledge-Base\14041007\appointment_views_design_prompt.md.metadata.json" />
+    <Content Include="Docs\Knowledge-Base\14041007\APPOINTMENT_CONTROLLER_REFACTORING_REPORT.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -4746,6 +4793,7 @@
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.2.2.min.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.min.js" />
+    <Content Include="Scripts\admin\payment-management.js" />
     <Content Include="Scripts\admin\user-management.js" />
     <Content Include="Scripts\anti-forgery-ajax.js" />
     <Content Include="Scripts\aos.js" />
@@ -5726,6 +5774,7 @@
     <Content Include="Scripts\medical-environment.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Scripts\patient-insurance-management.js" />
+    <Content Include="Scripts\patient\appointment-payment.js" />
     <Content Include="Scripts\patient\appointments.js" />
     <Content Include="Scripts\patient\confirm-booking.js" />
     <Content Include="Scripts\patient\date-selection.js" />
@@ -6421,6 +6470,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512261144179_AddCashierAuditAndPerformanceEnt.resx">
       <DependentUpon>202512261144179_AddCashierAuditAndPerformanceEnt.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512281420296_AddRowVersionToOnlinePayment.resx">
+      <DependentUpon>202512281420296_AddRowVersionToOnlinePayment.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

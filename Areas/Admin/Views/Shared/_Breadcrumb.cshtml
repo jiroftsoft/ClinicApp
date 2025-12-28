@@ -24,6 +24,7 @@
         { "Dashboard", "داشبورد" },
         { "Home", "صفحه اصلی" },
         { "UserManagement", "مدیریت کاربران" },
+        { "PaymentManagement", "مدیریت پرداخت‌ها" },
         { "Clinic", "کلینیک‌ها" },
         { "Department", "دپارتمان‌ها" },
         { "Doctor", "پزشکان" },
@@ -74,6 +75,11 @@
         {
             categoryText = "مدیریت کاربران";
             categoryIcon = "fa-users-cog";
+        }
+        else if (controllerName == "PaymentManagement")
+        {
+            categoryText = "مدیریت پرداخت‌ها";
+            categoryIcon = "fa-credit-card";
         }
         else if (controllerName == "Clinic" || controllerName == "Department" || controllerName == "ClinicBankAccount")
         {
@@ -130,6 +136,10 @@
             {
                 controllerIcon = "fa-users-cog";
             }
+        }
+        else if (controllerName == "PaymentManagement")
+        {
+            controllerIcon = "fa-credit-card";
         }
         else if (controllerName == "Clinic")
         {

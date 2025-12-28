@@ -14,33 +14,36 @@ using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities.Doctor;
 using Serilog;
 using static ClinicApp.Helpers.NotificationHelper;
+using ClinicApp.Areas.Patient.Controllers.Base;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
     /// <summary>
     /// Controller برای مدیریت نوبت‌های بیمار
+    /// بهینه‌سازی شده طبق appointment_controller_review.md
     /// </summary>
     [AllowAnonymous] // اجازه دسترسی عمومی برای مشاهده نوبت‌ها
-    public class AppointmentController : Controller
+    public class AppointmentController : BasePatientController
     {
         private readonly IAppointmentBookingService _bookingService;
-        private readonly ICurrentUserService _currentUserService;
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly IDoctorScheduleRepository _scheduleRepository;
-        private readonly ILogger _logger;
+        private readonly IDoctorMappingService _mappingService;
 
         public AppointmentController(
             IAppointmentBookingService bookingService,
             ICurrentUserService currentUserService,
             IDoctorCrudService doctorCrudService,
             IDoctorScheduleRepository scheduleRepository,
+            IDoctorMappingService mappingService,
             ILogger logger)
+            : base(logger, currentUserService) // ✅ Base Constructor
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
-            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _scheduleRepository = scheduleRepository ?? throw new ArgumentNullException(nameof(scheduleRepository));
-            _logger = logger?.ForContext<AppointmentController>() ?? throw new ArgumentNullException(nameof(logger));
+            _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
         }
 
         /// <summary>
@@ -72,31 +75,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
-                // ✅ تبدیل دستی تاریخ شمسی به میلادی
-                DateTime selectedDate;
-                if (string.IsNullOrWhiteSpace(date))
-                {
-                    selectedDate = DateTime.Today;
-                    _logger.Information("تاریخ خالی است، استفاده از امروز: {Today}", selectedDate.ToString("yyyy/MM/dd"));
-                }
-                else
-                {
-                    try
-                    {
-                        // ✅ تبدیل صحیح تاریخ شمسی به میلادی با PersianDateHelper
-                        selectedDate = PersianDateHelper.ToGregorianDate(date).Date;
-                        _logger.Information("تاریخ شمسی '{PersianDate}' به میلادی '{GregorianDate}' تبدیل شد",
-                            date, selectedDate.ToString("yyyy/MM/dd"));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Warning(ex, "خطا در تبدیل تاریخ شمسی '{PersianDate}'، استفاده از امروز", date);
-                        selectedDate = DateTime.Today;
-                        NotificationHelper.SetWarning(TempData, $"تاریخ '{date}' نامعتبر است. از تاریخ امروز استفاده شد.");
-                    }
-                }
-
-                // بررسی اینکه تاریخ در گذشته نباشد
+                // ✅ استفاده از Extension Method برای Date Parsing (حذف کد تکراری)
+                var selectedDate = this.ParsePersianDateSafe(date, _logger);
+                
                 if (selectedDate < DateTime.Today)
                 {
                     _logger.Warning("تاریخ انتخاب شده '{Date}' در گذشته است، تنظیم به امروز", 
@@ -171,30 +152,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                     }, JsonRequestBehavior.AllowGet);
                 }
 
-                // ✅ تبدیل دستی تاریخ شمسی به میلادی
-                DateTime selectedDate;
-                if (string.IsNullOrWhiteSpace(date))
-                {
-                    selectedDate = DateTime.Today;
-                }
-                else
-                {
-                    try
-                    {
-                        selectedDate = PersianDateHelper.ToGregorianDate(date).Date;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Warning(ex, "خطا در تبدیل تاریخ شمسی '{PersianDate}'", date);
-                        selectedDate = DateTime.Today;
-                    }
-                }
-
-                // بررسی اینکه تاریخ در گذشته نباشد
-                if (selectedDate < DateTime.Today)
-                {
-                    selectedDate = DateTime.Today;
-                }
+                // ✅ استفاده از Extension Method برای Date Parsing (حذف کد تکراری)
+                var selectedDate = this.ParsePersianDateSafe(date, _logger);
 
                 var availableSlots = new List<AvailableTimeSlotDto>();
 
@@ -300,7 +259,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     var scheduleEntity = await _scheduleRepository.GetDoctorScheduleWithDetailsAsync(doctorId);
                     if (scheduleEntity != null)
                     {
-                        scheduleDetails = MapToScheduleDisplayDto(scheduleEntity);
+                        scheduleDetails = _mappingService.MapToScheduleDisplayDto(scheduleEntity); // ✅ استفاده از Service
                     }
                 }
                 catch (Exception ex)
@@ -339,62 +298,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             }
         }
 
-        /// <summary>
-        /// تبدیل Entity به DTO برای نمایش برنامه کاری
-        /// </summary>
-        private DoctorScheduleDisplayDto MapToScheduleDisplayDto(DoctorSchedule schedule)
-        {
-            if (schedule == null) return null;
-
-            var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
-            var dayNamesShort = new[] { "ی", "د", "س", "چ", "پ", "ج", "ش" };
-
-            var dto = new DoctorScheduleDisplayDto
-            {
-                ScheduleId = schedule.ScheduleId,
-                DoctorId = schedule.DoctorId,
-                AppointmentDuration = schedule.AppointmentDuration,
-                ConsultationFee = schedule.ConsultationFee,
-                IsActive = schedule.IsActive
-            };
-
-            // تبدیل WorkDays
-            if (schedule.WorkDays != null)
-            {
-                foreach (var workDay in schedule.WorkDays.Where(wd => wd.IsActive && !wd.IsDeleted).OrderBy(wd => wd.DayOfWeek))
-                {
-                    var workDayDto = new WorkDayDisplayDto
-                    {
-                        WorkDayId = workDay.WorkDayId,
-                        DayOfWeek = workDay.DayOfWeek,
-                        DayName = dayNames[workDay.DayOfWeek],
-                        DayNameShort = dayNamesShort[workDay.DayOfWeek],
-                        IsActive = workDay.IsActive
-                    };
-
-                    // تبدیل TimeRanges
-                    if (workDay.TimeRanges != null)
-                    {
-                        foreach (var timeRange in workDay.TimeRanges.Where(tr => tr.IsActive && !tr.IsDeleted).OrderBy(tr => tr.StartTime))
-                        {
-                            workDayDto.TimeRanges.Add(new TimeRangeDisplayDto
-                            {
-                                TimeRangeId = timeRange.TimeRangeId,
-                                StartTime = timeRange.StartTime.ToString(@"hh\:mm"),
-                                EndTime = timeRange.EndTime.ToString(@"hh\:mm"),
-                                DisplayTime = TimeFormatHelper.FormatTimeToPersian(timeRange.StartTime),
-                                DisplayRange = TimeFormatHelper.FormatTimeRangeToPersian(timeRange.StartTime, timeRange.EndTime),
-                                IsActive = timeRange.IsActive
-                            });
-                        }
-                    }
-
-                    dto.WorkDays.Add(workDayDto);
-                }
-            }
-
-            return dto;
-        }
+        // ✅ حذف MapToScheduleDisplayDto - جابجایی به IDoctorMappingService
 
         /// <summary>
         /// دریافت اسلات‌های زمانی برای پزشک و تاریخ مشخص
@@ -402,161 +306,115 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// </summary>
         [HttpGet]
         [AllowAnonymous]
+        /// <summary>
+        /// دریافت اسلات‌های زمانی برای پزشک و تاریخ مشخص
+        /// بهینه‌سازی شده: تقسیم به Helper Methods (155 خط → 40 خط)
+        /// </summary>
         public async Task<JsonResult> GetTimeSlots(int doctorId, string date)
         {
             try
             {
-                // تبدیل تاریخ از فرمت شمسی به میلادی
-                DateTime appointmentDate;
-                if (string.IsNullOrEmpty(date))
-                {
-                    appointmentDate = DateTime.Today; // ✅ استفاده از Today به جای Now
-                }
-                else
-                {
-                    try
-                    {
-                        // persian-datepicker تاریخ را به فرمت YYYY/MM/DD ارسال می‌کند
-                        // اما ممکن است به صورت timestamp هم ارسال شود
-                        
-                        // ✅ اول: بررسی تاریخ شمسی (YYYY/MM/DD) - اولویت با تاریخ شمسی
-                        // این مهم است چون اگر تاریخ به صورت "2" یا "02" ارسال شود، نباید به عنوان timestamp در نظر گرفته شود
-                        if (date.Contains("/") && date.Split('/').Length == 3)
-                        {
-                            var parts = date.Split('/');
-                            var year = int.Parse(parts[0]);
-                            var month = int.Parse(parts[1]);
-                            var day = int.Parse(parts[2]);
-                            
-                            var persianCalendar = new System.Globalization.PersianCalendar();
-                            appointmentDate = persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
-                            appointmentDate = appointmentDate.Date; // فقط تاریخ، بدون زمان
-                            _logger.Information("تاریخ شمسی تبدیل شد: {PersianDate} -> {Date}, DayOfWeek: {DayOfWeek}", 
-                                date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
-                        }
-                        // ✅ دوم: بررسی timestamp (فقط اگر تاریخ شمسی نباشد)
-                        // فقط timestamp های معتبر (بزرگتر از 1000000000 که معادل سال 2001 است) را در نظر می‌گیریم
-                        else if (long.TryParse(date, out long timestamp) && timestamp > 1000000000)
-                        {
-                            // تبدیل timestamp به DateTime
-                            // توجه: persian-datepicker ممکن است timestamp را به صورت milliseconds ارسال کند
-                            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                            
-                            // اگر timestamp خیلی بزرگ است (بیش از 10 رقم)، احتمالاً milliseconds است
-                            // اگر کوچک است (کمتر از 10 رقم)، احتمالاً seconds است
-                            if (timestamp > 9999999999)
-                            {
-                                // milliseconds
-                                appointmentDate = epoch.AddMilliseconds(timestamp).ToLocalTime();
-                            }
-                            else
-                            {
-                                // seconds
-                                appointmentDate = epoch.AddSeconds(timestamp).ToLocalTime();
-                            }
-                            
-                            // تنظیم زمان به 00:00:00 برای مقایسه دقیق
-                            appointmentDate = appointmentDate.Date;
-                            
-                            _logger.Information("تاریخ از timestamp تبدیل شد: {Timestamp} -> {Date}, DayOfWeek: {DayOfWeek}", 
-                                timestamp, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
-                        }
-                        // ✅ سوم: استفاده از PersianDateHelper
-                        else
-                        {
-                            try
-                            {
-                                appointmentDate = PersianDateHelper.ToGregorianDate(date);
-                                _logger.Information("تاریخ با PersianDateHelper تبدیل شد: {PersianDate} -> {Date}", date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"));
-                            }
-                            catch
-                            {
-                                // آخرین تلاش: parse مستقیم
-                                if (DateTime.TryParse(date, out appointmentDate))
-                                {
-                                    _logger.Information("تاریخ به صورت مستقیم parse شد: {Date}", appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"));
-                                }
-                                else
-                                {
-                                    throw new FormatException($"فرمت تاریخ نامعتبر: {date}");
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex, "خطا در تبدیل تاریخ {Date}، استفاده از تاریخ امروز. Exception: {ExceptionMessage}", date, ex.Message);
-                        appointmentDate = DateTime.Now.Date; // فقط تاریخ، بدون زمان
-                    }
-                }
-
-                _logger.Information("درخواست دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, ConvertedDate: {ConvertedDate}, DayOfWeek: {DayOfWeek}",
-                    doctorId, date, appointmentDate.ToString("yyyy/MM/dd HH:mm:ss"), appointmentDate.DayOfWeek);
-                
-                System.Diagnostics.Debug.WriteLine($"[GetTimeSlots] 🔍 DoctorId: {doctorId}, Date Input: {date}, Converted: {appointmentDate:yyyy/MM/dd}, DayOfWeek: {appointmentDate.DayOfWeek} ({(int)appointmentDate.DayOfWeek})");
-
-                var result = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, appointmentDate);
-                
-                if (result.Success && result.Data != null && result.Data.Any())
-                {
-                    _logger.Information("اسلات‌های زمانی با موفقیت دریافت شد - DoctorId: {DoctorId}, Count: {Count}",
-                        doctorId, result.Data.Count);
-                    
-                    return Json(new
-                    {
-                        success = true,
-                        slots = result.Data.Select(s => new
-                        {
-                            startTime = s.StartTime.ToString(@"hh\:mm"),
-                            endTime = s.EndTime.ToString(@"hh\:mm"),
-                            displayTime = s.DisplayTime,
-                            displayRange = s.DisplayRange,
-                            isAvailable = s.IsAvailable,
-                            duration = s.Duration
-                        })
-                    }, JsonRequestBehavior.AllowGet);
-                }
-                else if (result.Success && result.Data != null && !result.Data.Any())
-                {
-                    // اگر اسلات‌ها خالی است، پیام مناسب برگردان
-                    _logger.Information("هیچ اسلاتی برای این تاریخ یافت نشد - DoctorId: {DoctorId}, Date: {Date}, DayOfWeek: {DayOfWeek}",
-                        doctorId, appointmentDate.ToString("yyyy/MM/dd"), appointmentDate.DayOfWeek);
-                    return Json(new
-                    {
-                        success = true,
-                        slots = new object[0],
-                        message = "برای این تاریخ زمانی در دسترس نیست. لطفاً یکی از روزهای کاری پزشک را انتخاب کنید."
-                    }, JsonRequestBehavior.AllowGet);
-                }
-                else
-                {
-                    _logger.Warning("خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, Message: {Message}",
-                        doctorId, appointmentDate.ToString("yyyy/MM/dd"), result?.Message ?? "Unknown error");
-                    return Json(new
-                    {
-                        success = false,
-                        message = result?.Message ?? "خطا در دریافت اسلات‌های در دسترس"
-                    }, JsonRequestBehavior.AllowGet);
-                }
+                var appointmentDate = ParseAppointmentDate(date); // ✅ جدا شد
+                var slotsResult = await GetSlotsForDate(doctorId, appointmentDate); // ✅ جدا شد
+                return CreateSlotsJsonResponse(slotsResult, doctorId, appointmentDate); // ✅ جدا شد
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
-                    doctorId, date ?? "null", ex.GetType().Name, ex.Message, ex.StackTrace);
-                
-                // بررسی InnerException
-                if (ex.InnerException != null)
-                {
-                    _logger.Error(ex.InnerException, "InnerException در دریافت اسلات‌های زمانی - Message: {Message}",
-                        ex.InnerException.Message);
-                }
+                return HandleTimeSlotsError(ex, doctorId, date); // ✅ جدا شد
+            }
+        }
+
+        /// <summary>
+        /// Parse کردن تاریخ برای GetTimeSlots
+        /// پشتیبانی از فرمت شمسی، timestamp و ISO
+        /// </summary>
+        private DateTime ParseAppointmentDate(string date)
+        {
+            // ✅ استفاده از Extension Method
+            return this.ParsePersianDateSafe(date, _logger);
+        }
+
+        /// <summary>
+        /// دریافت اسلات‌ها از Service
+        /// </summary>
+        private async Task<ServiceResult<List<AvailableTimeSlotDto>>> GetSlotsForDate(int doctorId, DateTime appointmentDate)
+        {
+            _logger.Information("درخواست دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}",
+                doctorId, appointmentDate.ToString("yyyy/MM/dd"));
+            
+            return await _bookingService.GetAvailableTimeSlotsAsync(doctorId, appointmentDate);
+        }
+
+        /// <summary>
+        /// ایجاد JSON Response برای Slots
+        /// </summary>
+        private JsonResult CreateSlotsJsonResponse(
+            ServiceResult<List<AvailableTimeSlotDto>> result,
+            int doctorId,
+            DateTime appointmentDate)
+        {
+            if (result.Success && result.Data != null && result.Data.Any())
+            {
+                _logger.Information("اسلات‌های زمانی با موفقیت دریافت شد - DoctorId: {DoctorId}, Count: {Count}",
+                    doctorId, result.Data.Count);
                 
                 return Json(new
                 {
-                    success = false,
-                    message = $"خطا در دریافت اسلات‌های در دسترس: {ex.Message}"
+                    success = true,
+                    slots = result.Data.Select(s => new
+                    {
+                        startTime = s.StartTime.ToString(@"hh\:mm"),
+                        endTime = s.EndTime.ToString(@"hh\:mm"),
+                        displayTime = s.DisplayTime,
+                        displayRange = s.DisplayRange,
+                        isAvailable = s.IsAvailable,
+                        duration = s.Duration
+                    })
                 }, JsonRequestBehavior.AllowGet);
             }
+            
+            if (result.Success && result.Data != null && !result.Data.Any())
+            {
+                _logger.Information("هیچ اسلاتی برای این تاریخ یافت نشد - DoctorId: {DoctorId}, Date: {Date}",
+                    doctorId, appointmentDate.ToString("yyyy/MM/dd"));
+                
+                return Json(new
+                {
+                    success = true,
+                    slots = new object[0],
+                    message = "برای این تاریخ زمانی در دسترس نیست. لطفاً یکی از روزهای کاری پزشک را انتخاب کنید."
+                }, JsonRequestBehavior.AllowGet);
+            }
+            
+            _logger.Warning("خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}, Message: {Message}",
+                doctorId, appointmentDate.ToString("yyyy/MM/dd"), result?.Message ?? "Unknown error");
+            
+            return Json(new
+            {
+                success = false,
+                message = result?.Message ?? "خطا در دریافت اسلات‌های در دسترس"
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// Error Handling برای GetTimeSlots
+        /// </summary>
+        private JsonResult HandleTimeSlotsError(Exception ex, int doctorId, string date)
+        {
+            _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - DoctorId: {DoctorId}, Date: {Date}",
+                doctorId, date ?? "null");
+            
+            if (ex.InnerException != null)
+            {
+                _logger.Error(ex.InnerException, "InnerException: {Message}",
+                    ex.InnerException.Message);
+            }
+            
+            return Json(new
+            {
+                success = false,
+                message = $"خطا در دریافت اسلات‌های در دسترس: {ex.Message}"
+            }, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>
@@ -663,20 +521,20 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
-                var patientId = await GetCurrentPatientIdAsync();
+                var patientId = await GetCurrentPatientIdAsync(); // ✅ از Base
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد" }, JsonRequestBehavior.AllowGet);
+                    return ErrorJsonResult("اطلاعات بیمار یافت نشد"); // ✅ از Base
                 }
 
                 var result = await _bookingService.GetAppointmentDetailsAsync(id, patientId.Value);
 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return ErrorJsonResult(result.Message); // ✅ از Base
                 }
 
-                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                return SuccessJsonResult(result.Data); // ✅ از Base
             }
             catch (Exception ex)
             {
@@ -696,21 +554,21 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
-                var patientId = await GetCurrentPatientIdAsync();
+                var patientId = await GetCurrentPatientIdAsync(); // ✅ از Base
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد" });
+                    return ErrorJsonResult("اطلاعات بیمار یافت نشد"); // ✅ از Base
                 }
 
                 var result = await _bookingService.CancelAppointmentAsync(id, patientId.Value);
 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return ErrorJsonResult(result.Message); // ✅ از Base
                 }
 
                 NotificationHelper.SetSuccess(TempData, "نوبت با موفقیت لغو شد");
-                return Json(new { success = true, message = result.Message });
+                return SuccessJsonResult(null, result.Message); // ✅ از Base
             }
             catch (Exception ex)
             {
@@ -719,26 +577,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             }
         }
 
-        #region Helper Methods
-
-        /// <summary>
-        /// دریافت شناسه بیمار از کاربر فعلی
-        /// </summary>
-        private async Task<int?> GetCurrentPatientIdAsync()
-        {
-            try
-            {
-                var patient = await _currentUserService.GetPatientInfoAsync();
-                return patient?.PatientId;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت شناسه بیمار");
-                return null;
-            }
-        }
-
-        #endregion
+        // ✅ حذف GetCurrentPatientIdAsync - از BasePatientController استفاده می‌شود
     }
 
 }

@@ -537,12 +537,23 @@ namespace ClinicApp
             
             // 🏥 Payment Controllers Route - برای Controllers در namespace Payment
             // مثال: /Payment/CashierReport -> CashierReportController.Index
+            // 🏥 Account Controller Route - باید قبل از Payment route باشد
+            // جلوگیری از conflict با Payment namespace
+            routes.MapRoute(
+                name: "Account",
+                url: "Account/{action}/{id}",
+                defaults: new { controller = "Account", action = "Login", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // مثال: /Payment/CashierReport/DailyReport -> CashierReportController.DailyReport
             // مثال: /Payment/Payment -> PaymentController.Index
+            // ⚠️ محدود به controller های خاص Payment برای جلوگیری از conflict با AccountController
             routes.MapRoute(
                 name: "Payment_Controllers",
                 url: "Payment/{controller}/{action}/{id}",
                 defaults: new { action = "Index", id = UrlParameter.Optional },
+                constraints: new { controller = @"^(CashierReport|CashierDashboard|Payment)$" },
                 namespaces: new[] { "ClinicApp.Controllers.Payment" }
             ).DataTokens["UseNamespaceFallback"] = false; // ❌ جلوگیری از fallback به namespace های دیگر
             

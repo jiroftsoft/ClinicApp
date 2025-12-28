@@ -486,6 +486,7 @@ namespace ClinicApp
                 
                 // Register Appointment Booking Service
                 container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
+                container.RegisterType<ClinicApp.Interfaces.Appointment.IDoctorMappingService, ClinicApp.Services.Appointment.DoctorMappingService>(new PerRequestLifetimeManager());
 
                 // Register Schedule Optimization Service and Strategies
                 container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());
@@ -660,8 +661,47 @@ namespace ClinicApp
                 // ثبت سرویس‌های پرداخت آنلاین
                 container.RegisterType<Interfaces.Payment.Gateway.IPaymentGatewayService, Services.Payment.Gateway.PaymentGatewayService>(new PerRequestLifetimeManager());
                 
+                // ✅ ثبت Gateway Drivers (ZarinPal)
+                container.RegisterType<Interfaces.Payment.Gateway.Drivers.IGatewayDriver, Services.Payment.Gateway.Drivers.ZarinPalDriver>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(new ResolvedParameter<Serilog.ILogger>())
+                );
+                
+                // ✅ ثبت WebPaymentService (یکپارچه‌سازی با ZarinPal Driver)
+                container.RegisterType<Interfaces.Payment.Web.IWebPaymentService, Services.Payment.Web.WebPaymentService>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<Interfaces.Payment.Gateway.IPaymentGatewayRepository>(),
+                        new ResolvedParameter<Interfaces.Payment.IOnlinePaymentRepository>(),
+                        new ResolvedParameter<Interfaces.Payment.IPaymentTransactionRepository>(),
+                        new ResolvedParameter<Interfaces.Payment.IPaymentService>(),
+                        new ResolvedParameter<Interfaces.Payment.Gateway.Drivers.IGatewayDriver>(), // ✅ ZarinPal Driver
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
+                
                 // ثبت سرویس اصلی پرداخت (IPaymentService)
                 container.RegisterType<Interfaces.Payment.IPaymentService, Services.Payment.PaymentService>(new PerRequestLifetimeManager());
+                
+                // ✅ ثبت Payment Management (Admin)
+                container.RegisterType<Interfaces.Payment.Management.IPaymentManagementRepository, Repositories.Payment.Management.PaymentManagementRepository>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<ApplicationDbContext>(),
+                        new ResolvedParameter<Interfaces.Payment.IOnlinePaymentRepository>(),
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
+                container.RegisterType<Interfaces.Payment.Management.IPaymentManagementService, Services.Payment.Management.PaymentManagementService>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<Interfaces.Payment.Management.IPaymentManagementRepository>(),
+                        new ResolvedParameter<Interfaces.Payment.Web.IWebPaymentService>(),
+                        new ResolvedParameter<Interfaces.Payment.IOnlinePaymentRepository>(),
+                        new ResolvedParameter<ICurrentUserService>(),
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
                 
                 // ثبت ریپازیتوری‌های POS
                 container.RegisterType<IPosTerminalRepository, PosTerminalRepository>(new PerRequestLifetimeManager());

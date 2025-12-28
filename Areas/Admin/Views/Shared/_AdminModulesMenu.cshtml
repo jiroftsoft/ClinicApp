@@ -57,7 +57,10 @@
         
         // 8️⃣ مدیریت کاربران
         new { Name = "UserManagement", Title = "مدیریت کاربران", Icon = "fa-users-cog", Controller = "UserManagement", Action = (string)null, Category = "مدیریت کاربران" },
-        new { Name = "DeletedUsers", Title = "کاربران حذف شده", Icon = "fa-trash-restore", Controller = "UserManagement", Action = "DeletedUsers", Category = "مدیریت کاربران" }
+        new { Name = "DeletedUsers", Title = "کاربران حذف شده", Icon = "fa-trash-restore", Controller = "UserManagement", Action = "DeletedUsers", Category = "مدیریت کاربران" },
+        
+        // 9️⃣ مدیریت پرداخت‌ها
+        new { Name = "PaymentManagement", Title = "مدیریت پرداخت‌ها", Icon = "fa-credit-card", Controller = "PaymentManagement", Action = (string)null, Category = "مدیریت پرداخت‌ها" }
     };
     
     // دسته‌بندی ماژول‌ها
@@ -114,6 +117,9 @@
                             break;
                         case "مدیریت کاربران":
                             <i class="fas fa-users-cog"></i>
+                            break;
+                        case "مدیریت پرداخت‌ها":
+                            <i class="fas fa-credit-card"></i>
                             break;
                         default:
                             <i class="fas fa-folder"></i>

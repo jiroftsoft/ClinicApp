@@ -175,7 +175,7 @@ namespace ClinicApp.Interfaces.Payment.Web
         /// <param name="startDate">تاریخ شروع</param>
         /// <param name="endDate">تاریخ پایان</param>
         /// <returns>آمار درگاه‌ها</returns>
-        Task<ServiceResult<PaymentGatewayStatistics>> GetPaymentGatewayStatisticsAsync(DateTime startDate, DateTime endDate);
+        Task<ServiceResult<Gateway.PaymentGatewayStatistics>> GetPaymentGatewayStatisticsAsync(DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// دریافت آمار روزانه پرداخت‌های آنلاین
@@ -387,6 +387,42 @@ namespace ClinicApp.Interfaces.Payment.Web
         public decimal PendingAmount { get; set; }
         public Dictionary<PaymentGatewayType, int> PaymentsByGateway { get; set; }
         public Dictionary<OnlinePaymentType, int> PaymentsByType { get; set; }
+    }
+
+    /// <summary>
+    /// وضعیت پرداخت در درگاه
+    /// </summary>
+    public class PaymentStatus
+    {
+        /// <summary>
+        /// شناسه تراکنش در درگاه (Authority)
+        /// </summary>
+        public string TransactionId { get; set; }
+
+        /// <summary>
+        /// شماره مرجع از درگاه (RefId)
+        /// </summary>
+        public string RefId { get; set; }
+
+        /// <summary>
+        /// مبلغ پرداخت
+        /// </summary>
+        public decimal Amount { get; set; }
+
+        /// <summary>
+        /// وضعیت پرداخت
+        /// </summary>
+        public OnlinePaymentStatus Status { get; set; }
+
+        /// <summary>
+        /// کد خطا
+        /// </summary>
+        public string ErrorCode { get; set; }
+
+        /// <summary>
+        /// پیام خطا
+        /// </summary>
+        public string ErrorMessage { get; set; }
     }
 
     #endregion

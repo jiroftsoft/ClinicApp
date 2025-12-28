@@ -77,6 +77,14 @@
         },
 
         processPayment: async function (appointmentId) {
+            // ✅ استفاده از AppointmentPayment Module (اگر موجود باشد)
+            if (window.AppointmentPayment) {
+                console.log('✅ ConfirmBooking: Using AppointmentPayment module');
+                window.AppointmentPayment.processPayment(appointmentId);
+                return;
+            }
+
+            // ✅ Fallback: استفاده از کد قبلی
             showLoading();
 
             try {

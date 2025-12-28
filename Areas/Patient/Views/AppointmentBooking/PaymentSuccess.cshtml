@@ -1,0 +1,245 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.Patient.PaymentSuccessViewModel
+@{
+    ViewBag.Title = "پرداخت موفق";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
+    <style>
+        /* ✅ Mobile-First Design - 90% کاربران از موبایل استفاده می‌کنند */
+        .payment-success-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .success-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @@keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-message {
+            font-size: 1rem;
+            opacity: 0.95;
+            margin-bottom: 1rem;
+        }
+
+        .appointment-info-card {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--medical-border-light);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--medical-text-light);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            color: var(--medical-text);
+            font-weight: 400;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .ref-id-badge {
+            background: var(--medical-bg-light);
+            border: 1px solid var(--medical-border);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .ref-id-label {
+            font-size: 0.85rem;
+            color: var(--medical-text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .ref-id-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary-action {
+            background: var(--medical-primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary-action {
+            background: var(--medical-bg);
+            color: var(--medical-text);
+            border: 1px solid var(--medical-border);
+        }
+
+        /* ✅ Tablet & Desktop */
+        @@media (min-width: 768px) {
+            .payment-success-container {
+                max-width: 600px;
+                padding: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+            }
+
+            .btn-action {
+                flex: 1;
+            }
+        }
+    </style>
+}
+
+<div class="payment-success-container">
+    <!-- ✅ Success Card -->
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1 class="success-title">پرداخت با موفقیت انجام شد</h1>
+        <p class="success-message">نوبت شما با موفقیت رزرو شد. اطلاعات نوبت به ایمیل و پیامک شما ارسال خواهد شد.</p>
+    </div>
+
+    <!-- ✅ RefId Badge -->
+    @if (!string.IsNullOrEmpty(Model.RefId))
+    {
+        <div class="ref-id-badge">
+            <div class="ref-id-label">شماره مرجع پرداخت</div>
+            <div class="ref-id-value">@Model.RefId</div>
+        </div>
+    }
+
+    <!-- ✅ Appointment Info -->
+    @if (Model.AppointmentId.HasValue)
+    {
+        <div class="appointment-info-card">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--medical-text);">
+                <i class="fas fa-calendar-check me-2"></i>
+                اطلاعات نوبت
+            </h3>
+
+            @if (!string.IsNullOrEmpty(Model.DoctorName))
+            {
+                <div class="info-item">
+                    <span class="info-label">پزشک</span>
+                    <span class="info-value">@Model.DoctorName</span>
+                </div>
+            }
+
+            @if (Model.AppointmentDate.HasValue)
+            {
+                <div class="info-item">
+                    <span class="info-label">تاریخ و زمان</span>
+                    <span class="info-value">@Model.AppointmentDate.Value.ToPersianDateTime()</span>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.PatientName))
+            {
+                <div class="info-item">
+                    <span class="info-label">بیمار</span>
+                    <span class="info-value">@Model.PatientName</span>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ✅ Action Buttons -->
+    <div class="action-buttons">
+        <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="btn-action btn-primary-action">
+            <i class="fas fa-list"></i>
+            مشاهده نوبت‌های من
+        </a>
+        <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="btn-action btn-secondary-action">
+            <i class="fas fa-calendar-plus"></i>
+            رزرو نوبت جدید
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ✅ Auto-scroll to top on mobile
+        if (window.innerWidth < 768) {
+            window.scrollTo(0, 0);
+        }
+
+        // ✅ Log success for analytics
+        console.log('✅ Payment Success - AppointmentId: @Model.AppointmentId, RefId: @Model.RefId');
+    </script>
+}
+

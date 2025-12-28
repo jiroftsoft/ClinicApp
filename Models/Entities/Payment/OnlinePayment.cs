@@ -252,6 +252,13 @@ public class OnlinePayment : ISoftDelete, ITrackable
     /// ارجاع به کاربر ویرایش کننده
     /// </summary>
     public virtual ApplicationUser UpdatedByUser { get; set; }
+
+    /// <summary>
+    /// RowVersion برای Optimistic Concurrency Control
+    /// طبق CRITICAL-FINANCIAL-MODULE-CONTRACT.md
+    /// </summary>
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
     #endregion
 
     #region Properties برای سازگاری با ViewModels
@@ -489,6 +496,11 @@ public class OnlinePaymentConfig : EntityTypeConfiguration<OnlinePayment>
             .HasMaxLength(128)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_OnlinePayment_UpdatedByUserId")));
+
+        // ✅ RowVersion برای Optimistic Concurrency Control
+        Property(op => op.RowVersion)
+            .IsRowVersion()
+            .IsRequired();
 
         // روابط
         HasRequired(op => op.PaymentGateway)

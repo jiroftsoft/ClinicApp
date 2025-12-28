@@ -1,0 +1,116 @@
+@model ClinicApp.ViewModels.Admin.PaymentManagement.PaymentIndexViewModel
+
+@if (Model?.Payments != null && Model.Payments.Any())
+{
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>شناسه</th>
+                <th>بیمار</th>
+                <th>پزشک</th>
+                <th>مبلغ</th>
+                <th>وضعیت</th>
+                <th>درگاه</th>
+                <th>تاریخ</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in Model.Payments)
+            {
+                <tr>
+                    <td>@payment.OnlinePaymentId</td>
+                    <td>
+                        <div>@payment.PatientName</div>
+                        <small class="text-muted">@payment.PatientNationalCode</small>
+                    </td>
+                    <td>@payment.DoctorName</td>
+                    <td>
+                        <strong>@payment.AmountDisplay</strong>
+                    </td>
+                    <td>
+                        <span class="status-badge status-@payment.Status.ToString().ToLower()">
+                            @payment.StatusDisplay
+                        </span>
+                    </td>
+                    <td>@payment.GatewayName</td>
+                    <td>
+                        <div>@payment.CreatedAtDisplay</div>
+                        @if (payment.PaymentCompletionDate.HasValue)
+                        {
+                            <small class="text-muted">تکمیل: @payment.PaymentCompletionDateDisplay</small>
+                        }
+                    </td>
+                    <td>
+                        <a href="@Url.Action("Details", "PaymentManagement", new { area = "Admin", id = payment.OnlinePaymentId })" 
+                           class="btn btn-sm btn-info btn-action">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (Model?.PagingInfo != null)
+    {
+        <div class="p-3 border-top">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    @if (Model.PagingInfo.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "PaymentManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage - 1 })">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </li>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PagingInfo.CurrentPage - 2); i <= Math.Min(Model.PagingInfo.TotalPages, Model.PagingInfo.CurrentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.PagingInfo.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", "PaymentManagement", new { area = "Admin", page = i })">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.PagingInfo.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "PaymentManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage + 1 })">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-chevron-left"></i>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </nav>
+            <div class="text-center mt-2 text-muted">
+                نمایش @((Model.PagingInfo.CurrentPage - 1) * Model.PagingInfo.PageSize + 1) تا @(Math.Min(Model.PagingInfo.CurrentPage * Model.PagingInfo.PageSize, Model.PagingInfo.TotalCount)) از @Model.PagingInfo.TotalCount نتیجه
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="p-5 text-center">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <p class="text-muted">هیچ پرداختی یافت نشد</p>
+    </div>
+}
+

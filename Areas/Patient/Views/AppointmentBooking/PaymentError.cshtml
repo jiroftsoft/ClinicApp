@@ -1,0 +1,278 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.Patient.PaymentErrorViewModel
+@{
+    ViewBag.Title = "خطا در پرداخت";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
+    <style>
+        /* ✅ Mobile-First Design */
+        .payment-error-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .error-card {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: shake 0.5s ease-out;
+        }
+
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            font-size: 1rem;
+            opacity: 0.95;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .appointment-info-card {
+            background: var(--medical-bg);
+            border: 1px solid var(--medical-border-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--medical-border-light);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--medical-text-light);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            color: var(--medical-text);
+            font-weight: 400;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .help-section {
+            background: var(--medical-bg-light);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .help-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--medical-text);
+        }
+
+        .help-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .help-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-icon {
+            color: var(--medical-primary);
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+
+        .help-text {
+            color: var(--medical-text);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary-action {
+            background: var(--medical-primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary-action {
+            background: var(--medical-bg);
+            color: var(--medical-text);
+            border: 1px solid var(--medical-border);
+        }
+
+        .btn-danger-action {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        /* ✅ Tablet & Desktop */
+        @@media (min-width: 768px) {
+            .payment-error-container {
+                max-width: 600px;
+                padding: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+            }
+
+            .btn-action {
+                flex: 1;
+            }
+        }
+    </style>
+}
+
+<div class="payment-error-container">
+    <!-- ✅ Error Card -->
+    <div class="error-card">
+        <div class="error-icon">
+            <i class="fas fa-times-circle"></i>
+        </div>
+        <h1 class="error-title">پرداخت ناموفق بود</h1>
+        <div class="error-message">
+            @Model.ErrorMessage
+        </div>
+    </div>
+
+    <!-- ✅ Appointment Info -->
+    @if (Model.AppointmentId.HasValue)
+    {
+        <div class="appointment-info-card">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--medical-text);">
+                <i class="fas fa-calendar-times me-2"></i>
+                اطلاعات نوبت
+            </h3>
+
+            @if (!string.IsNullOrEmpty(Model.DoctorName))
+            {
+                <div class="info-item">
+                    <span class="info-label">پزشک</span>
+                    <span class="info-value">@Model.DoctorName</span>
+                </div>
+            }
+
+            @if (Model.AppointmentDate.HasValue)
+            {
+                <div class="info-item">
+                    <span class="info-label">تاریخ و زمان</span>
+                    <span class="info-value">@Model.AppointmentDate.Value.ToPersianDateTime()</span>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ✅ Help Section -->
+    <div class="help-section">
+        <h3 class="help-title">
+            <i class="fas fa-question-circle me-2"></i>
+            راهنمای رفع مشکل
+        </h3>
+        <div class="help-item">
+            <i class="fas fa-check-circle help-icon"></i>
+            <div class="help-text">اطمینان حاصل کنید که موجودی حساب بانکی شما کافی است</div>
+        </div>
+        <div class="help-item">
+            <i class="fas fa-check-circle help-icon"></i>
+            <div class="help-text">اطلاعات کارت بانکی را به درستی وارد کنید</div>
+        </div>
+        <div class="help-item">
+            <i class="fas fa-check-circle help-icon"></i>
+            <div class="help-text">در صورت تکرار خطا، با پشتیبانی تماس بگیرید</div>
+        </div>
+    </div>
+
+    <!-- ✅ Action Buttons -->
+    <div class="action-buttons">
+        @if (Model.AppointmentId.HasValue)
+        {
+            <a href="@Url.Action("ProcessPayment", "AppointmentBooking", new { area = "Patient", appointmentId = Model.AppointmentId })" class="btn-action btn-primary-action">
+                <i class="fas fa-redo"></i>
+                تلاش مجدد
+            </a>
+        }
+        <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="btn-action btn-secondary-action">
+            <i class="fas fa-list"></i>
+            مشاهده نوبت‌های من
+        </a>
+        <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="btn-action btn-secondary-action">
+            <i class="fas fa-calendar-plus"></i>
+            رزرو نوبت جدید
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ✅ Auto-scroll to top on mobile
+        if (window.innerWidth < 768) {
+            window.scrollTo(0, 0);
+        }
+
+        // ✅ Log error for analytics
+        console.error('❌ Payment Error - AppointmentId: @Model.AppointmentId, Message: @Model.ErrorMessage');
+    </script>
+}
+

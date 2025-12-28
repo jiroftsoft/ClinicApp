@@ -1,3 +1,4 @@
+@using ClinicApp.Extensions
 @using ClinicApp.Helpers
 @model ClinicApp.ViewModels.Patient.AppointmentBookingViewModel
 @{
@@ -186,7 +187,8 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/confirm-booking.js"></script>
+    <script src="~/Scripts/patient/appointment-payment.js"></script>
 }
 

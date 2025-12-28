@@ -27,8 +27,8 @@
                         <div class="day-name">@workDay.DayName</div>
                         <div class="day-name-short">@workDay.DayNameShort</div>
                     </div>
-                    <div class="day-date-preview" style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem; text-align: center; font-style: italic;">
-                        <i class="fas fa-calendar-alt" style="margin-left: 0.25rem;"></i>
+                    <div class="day-date-preview">
+                        <i class="fas fa-calendar-alt"></i>
                         <span class="day-date-text" data-day-of-week="@workDay.DayOfWeek">در حال محاسبه...</span>
                     </div>
                     
@@ -75,16 +75,15 @@ else
 }
 
 <style>
-    /* ========== Doctor Schedule Styles ========== */
+    /* ✅ Doctor Schedule Styles - طبق پرامپت (بدون گرادینت فانتزی) */
     .doctor-schedule-container {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border-radius: 16px;
-        padding: 2rem;
-        margin: 2rem 0;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        animation: fadeInUp 0.6s ease-out;
+        background-color: var(--medical-bg);
+        border: 1px solid var(--medical-border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         position: relative;
-        overflow: hidden;
     }
 
     .doctor-schedule-container::before {
@@ -94,15 +93,14 @@ else
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, #2c5aa0 0%, #4a90e2 50%, #2c5aa0 100%);
-        animation: slideInLeft 0.8s ease-out;
+        background-color: var(--medical-primary);
     }
 
     /* Header */
     .schedule-header {
         margin-bottom: 2rem;
         padding-bottom: 1.5rem;
-        border-bottom: 2px solid #e9ecef;
+        border-bottom: 2px solid var(--medical-border);
     }
 
     .schedule-header-content {
@@ -114,30 +112,28 @@ else
 
     .schedule-icon {
         font-size: 2rem;
-        color: #2c5aa0;
-        animation: pulse 2s infinite;
+        color: var(--medical-primary);
     }
 
     .schedule-title {
         font-size: 1.5rem;
-        font-weight: 700;
-        color: #2c3e50;
+        font-weight: var(--font-weight-bold);
+        color: var(--medical-text);
         margin: 0;
         flex: 1;
     }
 
     .appointment-duration-badge {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background-color: var(--medical-info);
         color: white;
         padding: 0.5rem 1rem;
-        border-radius: 25px;
+        border-radius: 12px;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: var(--font-weight-medium);
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        animation: slideInRight 0.6s ease-out 0.2s both;
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
     }
 
     /* Schedule Grid */
@@ -150,15 +146,13 @@ else
 
     /* Day Card */
     .schedule-day-card {
-        background: white;
+        background-color: var(--medical-bg);
+        border: 1px solid var(--medical-border);
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        animation: fadeInScale 0.5s ease-out;
-        animation-fill-mode: both;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
         position: relative;
-        overflow: hidden;
         cursor: pointer;
     }
     
@@ -167,7 +161,10 @@ else
     }
     
     .schedule-day-card.clickable:hover {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        background-color: #e3f2fd;
+        border-color: var(--medical-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
     }
 
     .schedule-day-card::before {
@@ -177,14 +174,9 @@ else
         left: 0;
         width: 4px;
         height: 100%;
-        background: linear-gradient(180deg, #2c5aa0 0%, #4a90e2 100%);
+        background-color: var(--medical-primary);
         transform: scaleY(0);
         transition: transform 0.3s ease;
-    }
-
-    .schedule-day-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(44, 90, 160, 0.15);
     }
 
     .schedule-day-card:hover::before {
@@ -192,12 +184,25 @@ else
     }
     
     .schedule-day-card.clickable:active {
-        transform: translateY(-2px) scale(0.98);
+        transform: translateY(0);
     }
     
     .day-date-preview {
+        font-size: 0.85rem;
+        color: var(--medical-text-muted);
+        margin-top: 0.5rem;
+        text-align: center;
+        font-style: italic;
         transition: all 0.3s ease;
         min-height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+    
+    .day-date-preview i {
+        margin-left: 0.25rem;
     }
     
     .schedule-day-card.clickable:hover .day-date-preview {
@@ -210,9 +215,9 @@ else
     }
     
     .schedule-day-card.selected-day {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        background-color: #e3f2fd;
         border: 2px solid var(--medical-primary);
-        box-shadow: 0 4px 20px rgba(44, 90, 160, 0.25);
+        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2);
     }
     
     .schedule-day-card.selected-day::before {
@@ -220,13 +225,7 @@ else
         width: 6px;
     }
 
-    .schedule-day-card:nth-child(1) { animation-delay: 0.1s; }
-    .schedule-day-card:nth-child(2) { animation-delay: 0.2s; }
-    .schedule-day-card:nth-child(3) { animation-delay: 0.3s; }
-    .schedule-day-card:nth-child(4) { animation-delay: 0.4s; }
-    .schedule-day-card:nth-child(5) { animation-delay: 0.5s; }
-    .schedule-day-card:nth-child(6) { animation-delay: 0.6s; }
-    .schedule-day-card:nth-child(7) { animation-delay: 0.7s; }
+    /* ✅ Animation delays حذف شد - برای محیط درمانی مناسب نیست */
 
     /* Day Header */
     .day-header {
@@ -235,19 +234,19 @@ else
         align-items: center;
         margin-bottom: 1rem;
         padding-bottom: 0.75rem;
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid var(--medical-border);
     }
 
     .day-name {
         font-size: 1.1rem;
-        font-weight: 600;
-        color: #2c3e50;
+        font-weight: var(--font-weight-bold);
+        color: var(--medical-text);
     }
 
     .day-name-short {
         font-size: 0.85rem;
-        color: #6c757d;
-        background: #f8f9fa;
+        color: var(--medical-text-muted);
+        background-color: var(--medical-bg-light);
         padding: 0.25rem 0.5rem;
         border-radius: 6px;
     }
@@ -260,22 +259,17 @@ else
     }
 
     .time-range-item {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background-color: var(--medical-bg-light);
+        border: 1px solid var(--medical-border);
         border-radius: 8px;
         padding: 0.75rem;
-        transition: all 0.3s ease;
-        animation: slideInLeft 0.4s ease-out;
-        animation-fill-mode: both;
+        transition: all 0.2s ease;
     }
 
-    .time-range-item:nth-child(1) { animation-delay: 0.1s; }
-    .time-range-item:nth-child(2) { animation-delay: 0.2s; }
-    .time-range-item:nth-child(3) { animation-delay: 0.3s; }
-    .time-range-item:nth-child(4) { animation-delay: 0.4s; }
-
     .time-range-item:hover {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        transform: translateX(5px);
+        background-color: #e3f2fd;
+        border-color: var(--medical-primary);
+        transform: translateX(3px);
         box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1);
     }
 
@@ -286,14 +280,14 @@ else
     }
 
     .time-icon {
-        color: #2c5aa0;
+        color: var(--medical-primary);
         font-size: 0.9rem;
     }
 
     .time-display {
         font-size: 0.95rem;
-        color: #495057;
-        font-weight: 500;
+        color: var(--medical-text);
+        font-weight: var(--font-weight-medium);
     }
 
     /* No Time Ranges */
@@ -314,16 +308,16 @@ else
 
     /* Consultation Fee */
     .consultation-fee-info {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        border-radius: 10px;
+        background-color: #fff3cd;
+        border: 1px solid var(--medical-warning);
+        border-radius: 8px;
         padding: 1rem;
         margin-top: 1.5rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        font-weight: 600;
+        font-weight: var(--font-weight-bold);
         color: #856404;
-        animation: fadeIn 0.6s ease-out 0.5s both;
     }
 
     .consultation-fee-info i {
@@ -334,14 +328,14 @@ else
     .no-schedule-message {
         text-align: center;
         padding: 3rem 2rem;
-        color: #6c757d;
-        animation: fadeIn 0.6s ease-out;
+        color: var(--medical-text-muted);
     }
 
     .no-schedule-message i {
         font-size: 4rem;
         margin-bottom: 1rem;
         opacity: 0.5;
+        color: var(--medical-border);
     }
 
     .no-schedule-message p {
@@ -349,68 +343,7 @@ else
         margin: 0;
     }
 
-    /* ========== Animations ========== */
-    @@keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes fadeInScale {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    @@keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    @@keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @@keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.1);
-        }
-    }
+    /* ✅ Animations حذف شد - برای محیط درمانی مناسب نیست */
 
     /* ========== Responsive Design ========== */
     @@media (max-width: 768px) {

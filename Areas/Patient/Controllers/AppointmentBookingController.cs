@@ -14,6 +14,7 @@ using ClinicApp.Models.Entities.Appointment;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.Appointment;
 using ClinicApp.Services;
+using ClinicApp.Services.Idempotency; // ✅ Idempotency
 using System.Data.Entity;
 using ClinicApp.Filters;
 using Serilog;
@@ -25,13 +26,14 @@ namespace ClinicApp.Areas.Patient.Controllers
     /// <summary>
     /// Controller برای رزرو نوبت آنلاین
     /// </summary>
-    //[Authorize]
+    [Authorize] // ✅ فعال برای امنیت
     public class AppointmentBookingController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IWebPaymentService _webPaymentService;
         private readonly IPaymentGatewayService _paymentGatewayService;
+        private readonly IIdempotencyService _idempotencyService; // ✅ Idempotency
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -40,6 +42,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             ICurrentUserService currentUserService,
             IWebPaymentService webPaymentService,
             IPaymentGatewayService paymentGatewayService,
+            IIdempotencyService idempotencyService, // ✅ Idempotency
             ApplicationDbContext context,
             ILogger logger)
         {
@@ -47,6 +50,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _webPaymentService = webPaymentService ?? throw new ArgumentNullException(nameof(webPaymentService));
             _paymentGatewayService = paymentGatewayService ?? throw new ArgumentNullException(nameof(paymentGatewayService));
+            _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger?.ForContext<AppointmentBookingController>() ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -79,7 +83,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 {
                     // ذخیره URL فعلی برای redirect بعد از ثبت‌نام
                     Session["ReturnUrl"] = Request.Url?.ToString();
-                    TempData["Info"] = "برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید یا وارد شوید.";
+                    NotificationHelper.SetInfo(TempData, "برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید یا وارد شوید.");
                     return RedirectToAction("Register", "Account", new { area = "" });
                 }
 
@@ -87,7 +91,7 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message ?? "خطا در دریافت لیست پزشکان";
+                    NotificationHelper.SetError(TempData, result.Message ?? "خطا در دریافت لیست پزشکان");
                     return View(new DoctorSelectionViewModel
                     {
                         Doctors = new List<DoctorSearchResultDto>(),
@@ -109,7 +113,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه انتخاب پزشک");
-                TempData["Error"] = "خطا در بارگذاری صفحه";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
                 return View(new DoctorSelectionViewModel
                 {
                     Doctors = new List<DoctorSearchResultDto>(),
@@ -132,7 +136,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var doctorResult = await _bookingService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
-                    TempData["Error"] = "پزشک یافت نشد";
+                    NotificationHelper.SetError(TempData, "پزشک یافت نشد");
                     return RedirectToAction("SelectDoctor");
                 }
 
@@ -148,7 +152,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه انتخاب تاریخ");
-                TempData["Error"] = "خطا در بارگذاری صفحه";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
                 return RedirectToAction("SelectDoctor");
             }
         }
@@ -167,21 +171,21 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (date.Date < DateTime.Today)
                 {
-                    TempData["Error"] = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید";
+                    NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
                     return RedirectToAction("SelectDate", new { doctorId });
                 }
 
                 var doctorResult = await _bookingService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
-                    TempData["Error"] = "پزشک یافت نشد";
+                    NotificationHelper.SetError(TempData, "پزشک یافت نشد");
                     return RedirectToAction("SelectDoctor");
                 }
 
                 var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, date);
                 if (!slotsResult.Success)
                 {
-                    TempData["Error"] = slotsResult.Message ?? "خطا در دریافت اسلات‌های زمانی";
+                    NotificationHelper.SetError(TempData, slotsResult.Message ?? "خطا در دریافت اسلات‌های زمانی");
                     return RedirectToAction("SelectDate", new { doctorId });
                 }
 
@@ -199,7 +203,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه انتخاب زمان");
-                TempData["Error"] = "خطا در بارگذاری صفحه";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
                 return RedirectToAction("SelectDate", new { doctorId });
             }
         }
@@ -225,7 +229,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    TempData["Error"] = "اطلاعات بیمار یافت نشد";
+                    NotificationHelper.SetError(TempData, "اطلاعات بیمار یافت نشد");
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
 
@@ -235,21 +239,21 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (!availabilityCheck.Success || !availabilityCheck.Data)
                 {
-                    TempData["Error"] = "این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید";
+                    NotificationHelper.SetError(TempData, "این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید");
                     return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
                 }
 
                 var doctorResult = await _bookingService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
-                    TempData["Error"] = "پزشک یافت نشد";
+                    NotificationHelper.SetError(TempData, "پزشک یافت نشد");
                     return RedirectToAction("SelectDoctor");
                 }
 
                 var priceResult = await _bookingService.GetAppointmentPriceAsync(doctorId, serviceCategoryId);
                 if (!priceResult.Success)
                 {
-                    TempData["Error"] = priceResult.Message ?? "خطا در محاسبه قیمت";
+                    NotificationHelper.SetError(TempData, priceResult.Message ?? "خطا در محاسبه قیمت");
                     return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
                 }
 
@@ -271,7 +275,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه تایید رزرو");
-                TempData["Error"] = "خطا در بارگذاری صفحه";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
                 return RedirectToAction("SelectDoctor");
             }
         }
@@ -292,7 +296,7 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    NotificationHelper.SetError(TempData, "اطلاعات وارد شده نامعتبر است");
                     return RedirectToAction("SelectDoctor");
                 }
 
@@ -322,7 +326,7 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 // TODO: در آینده پرداخت را از اینجا انجام می‌دهیم
                 // فعلاً نوبت رزرو می‌شود و پرداخت بعداً انجام می‌شود
-                TempData["Success"] = "نوبت با موفقیت رزرو شد. لطفاً برای تکمیل رزرو، پرداخت را انجام دهید.";
+                NotificationHelper.SetSuccess(TempData, "نوبت با موفقیت رزرو شد. لطفاً برای تکمیل رزرو، پرداخت را انجام دهید.");
                 return Json(new
                 {
                     success = true,
@@ -346,15 +350,53 @@ namespace ClinicApp.Areas.Patient.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AppointmentRateLimit(10, 60)] // حداکثر 10 درخواست پرداخت در ساعت
-        public async Task<ActionResult> ProcessPayment(int appointmentId, string paymentMethod = "online")
+        public async Task<ActionResult> ProcessPayment(int appointmentId, string paymentMethod = "online", string idempotencyKey = null)
         {
             try
             {
-                _logger.Information("درخواست پردازش پرداخت - AppointmentId: {AppointmentId}, Method: {Method}",
-                    appointmentId, paymentMethod);
+                _logger.Information("💰 PAYMENT REQUEST: درخواست پردازش پرداخت - AppointmentId: {AppointmentId}, Method: {Method}, IdempotencyKey: {IdempotencyKey}",
+                    appointmentId, paymentMethod, idempotencyKey);
 
-                // 1. دریافت نوبت و بررسی دسترسی
+                // ✅ 0. Idempotency Check (جلوگیری از درخواست‌های تکراری)
+                if (string.IsNullOrEmpty(idempotencyKey))
+                {
+                    idempotencyKey = $"payment_{appointmentId}_{_currentUserService.UserId}_{DateTime.UtcNow:yyyyMMddHHmm}";
+                }
+
+                var idempotencyKeyFull = $"appointment_payment_{idempotencyKey}";
+                var canProcess = await _idempotencyService.TryUseKeyAsync(idempotencyKeyFull, ttlMinutes: 30, scope: "appointment_payment");
+
+                if (!canProcess)
+                {
+                    _logger.Warning("⚠️ PAYMENT REQUEST: درخواست تکراری - AppointmentId: {AppointmentId}, IdempotencyKey: {IdempotencyKey}",
+                        appointmentId, idempotencyKey);
+
+                    // ✅ بررسی اینکه آیا OnlinePayment قبلاً ایجاد شده است
+                    var existingPayment = await _context.OnlinePayments
+                        .FirstOrDefaultAsync(op => op.AppointmentId == appointmentId && 
+                                                   op.Status == OnlinePaymentStatus.Pending && 
+                                                   !op.IsDeleted);
+
+                    if (existingPayment != null && !string.IsNullOrEmpty(existingPayment.PaymentUrl))
+                    {
+                        _logger.Information("✅ PAYMENT REQUEST: بازگرداندن PaymentUrl موجود - OnlinePaymentId: {OnlinePaymentId}",
+                            existingPayment.OnlinePaymentId);
+
+                        return Json(new
+                        {
+                            success = true,
+                            paymentUrl = existingPayment.PaymentUrl,
+                            paymentToken = existingPayment.PaymentToken,
+                            message = "در حال هدایت به درگاه پرداخت..."
+                        });
+                    }
+
+                    return Json(new { success = false, message = "درخواست پرداخت در حال پردازش است. لطفاً صبر کنید." });
+                }
+
+                // 1. دریافت نوبت و بررسی دسترسی (Read-Only Query)
                 var appointment = await _context.Appointments
+                    .AsNoTracking() // ✅ برای Read-Only Query
                     .Include(a => a.Doctor)
                     .Include(a => a.Patient)
                     .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId && !a.IsDeleted);
@@ -398,95 +440,149 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return Json(new { success = false, message = "نوبت معتبر نیست" });
                 }
 
-                // 5. ایجاد OnlinePayment record
-                var onlinePayment = new OnlinePayment
+                // ✅ 5. استفاده از Transaction برای اطمینان از یکپارچگی داده‌ها
+                using (var transaction = _context.Database.BeginTransaction())
                 {
-                    PaymentGatewayId = gateway.PaymentGatewayId,
-                    AppointmentId = appointmentId,
-                    PatientId = appointment.PatientId.Value,
-                    PaymentType = OnlinePaymentType.Appointment,
-                    Status = OnlinePaymentStatus.Pending,
-                    Amount = appointment.Price,
-                    Description = $"پرداخت نوبت - پزشک: {appointment.Doctor?.FullName ?? "نامشخص"}",
-                    CreatedByUserId = _currentUserService.UserId,
-                    CreatedAt = DateTime.Now,
-                    IsDeleted = false
-                };
-
-                _context.OnlinePayments.Add(onlinePayment);
-                await _context.SaveChangesAsync();
-
-                _logger.Information("OnlinePayment ایجاد شد - OnlinePaymentId: {OnlinePaymentId}, Amount: {Amount}",
-                    onlinePayment.OnlinePaymentId, onlinePayment.Amount);
-
-                // 6. ایجاد درخواست پرداخت
-                var callbackUrl = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" }, Request.Url.Scheme);
-                var userIpAddress = Request.UserHostAddress;
-                var userAgent = Request.UserAgent;
-
-                var paymentRequest = new CreatePaymentRequest
-                {
-                    OnlinePaymentId = onlinePayment.OnlinePaymentId,
-                    GatewayType = gateway.GatewayType,
-                    Amount = appointment.Price,
-                    Description = $"پرداخت نوبت - {appointment.Doctor?.FullName ?? "نامشخص"}",
-                    CallbackUrl = callbackUrl,
-                    UserIpAddress = userIpAddress,
-                    UserAgent = userAgent,
-                    AdditionalData = new Dictionary<string, string>
+                    try
                     {
-                        { "AppointmentId", appointmentId.ToString() },
-                        { "PatientId", appointment.PatientId.Value.ToString() },
-                        { "DoctorId", appointment.DoctorId.ToString() }
+                        // 5.1. ایجاد OnlinePayment record
+                        var onlinePayment = new OnlinePayment
+                        {
+                            PaymentGatewayId = gateway.PaymentGatewayId,
+                            AppointmentId = appointmentId,
+                            PatientId = appointment.PatientId.Value,
+                            PaymentType = OnlinePaymentType.Appointment,
+                            Status = OnlinePaymentStatus.Pending,
+                            Amount = appointment.Price,
+                            Description = $"پرداخت نوبت - پزشک: {appointment.Doctor?.FullName ?? "نامشخص"}",
+                            CreatedByUserId = _currentUserService.UserId,
+                            CreatedAt = DateTime.UtcNow, // ✅ استفاده از UtcNow
+                            IsDeleted = false
+                        };
+
+                        _context.OnlinePayments.Add(onlinePayment);
+                        await _context.SaveChangesAsync();
+
+                        // ✅ Post-Save Verification
+                        var saved = await _context.OnlinePayments
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePayment.OnlinePaymentId);
+
+                        if (saved == null)
+                        {
+                            _logger.Error("❌ VERIFY: OnlinePayment ذخیره نشد! - OnlinePaymentId: {OnlinePaymentId}",
+                                onlinePayment.OnlinePaymentId);
+                            transaction.Rollback();
+                            return Json(new { success = false, message = "خطا در ذخیره اطلاعات پرداخت" });
+                        }
+
+                        _logger.Information("✅ VERIFY: OnlinePayment با موفقیت ذخیره شد - OnlinePaymentId: {OnlinePaymentId}, Amount: {Amount}",
+                            saved.OnlinePaymentId, saved.Amount);
+
+                        // 6. ایجاد درخواست پرداخت
+                        var callbackUrl = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" }, Request.Url.Scheme);
+                        var userIpAddress = Request.UserHostAddress;
+                        var userAgent = Request.UserAgent;
+
+                        var paymentRequest = new CreatePaymentRequest
+                        {
+                            OnlinePaymentId = onlinePayment.OnlinePaymentId,
+                            GatewayType = gateway.GatewayType,
+                            Amount = appointment.Price,
+                            Description = $"پرداخت نوبت - {appointment.Doctor?.FullName ?? "نامشخص"}",
+                            CallbackUrl = callbackUrl,
+                            UserIpAddress = userIpAddress,
+                            UserAgent = userAgent,
+                            AdditionalData = new Dictionary<string, string>
+                            {
+                                { "AppointmentId", appointmentId.ToString() },
+                                { "PatientId", appointment.PatientId.Value.ToString() },
+                                { "DoctorId", appointment.DoctorId.ToString() }
+                            }
+                        };
+
+                        // 7. فراخوانی سرویس پرداخت (خارج از Transaction - API Call)
+                        var paymentResult = await _webPaymentService.CreatePaymentRequestAsync(paymentRequest);
+
+                        if (!paymentResult.Success || paymentResult.Data == null)
+                        {
+                            _logger.Error("❌ PAYMENT REQUEST: خطا در ایجاد درخواست پرداخت - {ErrorMessage}",
+                                paymentResult.Message);
+
+                            // ✅ به‌روزرسانی وضعیت OnlinePayment به Failed
+                            onlinePayment.Status = OnlinePaymentStatus.Failed;
+                            onlinePayment.ErrorMessage = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت";
+                            onlinePayment.UpdatedAt = DateTime.UtcNow;
+                            onlinePayment.UpdatedByUserId = _currentUserService.UserId;
+                            await _context.SaveChangesAsync();
+                            transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
+
+                            return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت" });
+                        }
+
+                        var gatewayResponse = paymentResult.Data;
+
+                        if (!gatewayResponse.Success || string.IsNullOrEmpty(gatewayResponse.PaymentUrl))
+                        {
+                            _logger.Error("❌ PAYMENT REQUEST: درگاه پرداخت پاسخ نامعتبر داد - ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}",
+                                gatewayResponse.ErrorCode, gatewayResponse.ErrorMessage);
+
+                            // ✅ به‌روزرسانی وضعیت OnlinePayment به Failed
+                            onlinePayment.Status = OnlinePaymentStatus.Failed;
+                            onlinePayment.ErrorMessage = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت";
+                            onlinePayment.ErrorCode = gatewayResponse.ErrorCode;
+                            onlinePayment.UpdatedAt = DateTime.UtcNow;
+                            onlinePayment.UpdatedByUserId = _currentUserService.UserId;
+                            await _context.SaveChangesAsync();
+                            transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
+
+                            return Json(new { success = false, message = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت" });
+                        }
+
+                        // 8. به‌روزرسانی OnlinePayment با PaymentToken
+                        onlinePayment.PaymentToken = gatewayResponse.PaymentToken;
+                        onlinePayment.GatewayTransactionId = gatewayResponse.GatewayTransactionId;
+                        onlinePayment.PaymentUrl = gatewayResponse.PaymentUrl;
+                        onlinePayment.PaymentStartDate = DateTime.UtcNow;
+                        onlinePayment.UpdatedAt = DateTime.UtcNow;
+                        onlinePayment.UpdatedByUserId = _currentUserService.UserId;
+                        await _context.SaveChangesAsync();
+
+                        // ✅ Post-Save Verification
+                        var verified = await _context.OnlinePayments
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePayment.OnlinePaymentId && 
+                                                       op.PaymentToken == gatewayResponse.PaymentToken);
+
+                        if (verified == null)
+                        {
+                            _logger.Error("❌ VERIFY: OnlinePayment به‌روزرسانی نشد! - OnlinePaymentId: {OnlinePaymentId}",
+                                onlinePayment.OnlinePaymentId);
+                            transaction.Rollback();
+                            return Json(new { success = false, message = "خطا در به‌روزرسانی اطلاعات پرداخت" });
+                        }
+
+                        transaction.Commit(); // ✅ Commit موفق
+
+                        _logger.Information("✅ PAYMENT REQUEST: درخواست پرداخت با موفقیت ایجاد شد - OnlinePaymentId: {OnlinePaymentId}, PaymentUrl: {PaymentUrl}",
+                            verified.OnlinePaymentId, verified.PaymentUrl);
+
+                        // 9. هدایت به درگاه پرداخت
+                        return Json(new
+                        {
+                            success = true,
+                            paymentUrl = gatewayResponse.PaymentUrl,
+                            paymentToken = gatewayResponse.PaymentToken,
+                            message = "در حال هدایت به درگاه پرداخت..."
+                        });
                     }
-                };
-
-                // 7. فراخوانی سرویس پرداخت
-                var paymentResult = await _webPaymentService.CreatePaymentRequestAsync(paymentRequest);
-
-                if (!paymentResult.Success || paymentResult.Data == null)
-                {
-                    _logger.Error("خطا در ایجاد درخواست پرداخت - {ErrorMessage}",
-                        paymentResult.Message);
-                    
-                    // به‌روزرسانی وضعیت OnlinePayment
-                    onlinePayment.Status = OnlinePaymentStatus.Failed;
-                    onlinePayment.Description = $"خطا در ایجاد درخواست پرداخت: {paymentResult.Message}";
-                    await _context.SaveChangesAsync();
-
-                    return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت" });
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        _logger.Error(ex, "❌ PAYMENT REQUEST: خطا در Transaction - AppointmentId: {AppointmentId}", appointmentId);
+                        throw; // Re-throw برای catch block اصلی
+                    }
                 }
-
-                var gatewayResponse = paymentResult.Data;
-
-                if (!gatewayResponse.Success || string.IsNullOrEmpty(gatewayResponse.PaymentUrl))
-                {
-                    _logger.Error("درگاه پرداخت پاسخ نامعتبر داد - ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}",
-                        gatewayResponse.ErrorCode, gatewayResponse.ErrorMessage);
-
-                    onlinePayment.Status = OnlinePaymentStatus.Failed;
-                    onlinePayment.Description = $"خطا در درگاه: {gatewayResponse.ErrorMessage}";
-                    await _context.SaveChangesAsync();
-
-                    return Json(new { success = false, message = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت" });
-                }
-
-                // 8. به‌روزرسانی OnlinePayment با PaymentToken
-                onlinePayment.PaymentToken = gatewayResponse.PaymentToken;
-                onlinePayment.GatewayTransactionId = gatewayResponse.GatewayTransactionId;
-                await _context.SaveChangesAsync();
-
-                _logger.Information("درخواست پرداخت با موفقیت ایجاد شد - OnlinePaymentId: {OnlinePaymentId}, PaymentUrl: {PaymentUrl}",
-                    onlinePayment.OnlinePaymentId, gatewayResponse.PaymentUrl);
-
-                // 9. هدایت به درگاه پرداخت
-                return Json(new
-                {
-                    success = true,
-                    paymentUrl = gatewayResponse.PaymentUrl,
-                    paymentToken = gatewayResponse.PaymentToken,
-                    message = "در حال هدایت به درگاه پرداخت..."
-                });
             }
             catch (Exception ex)
             {
@@ -496,40 +592,51 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
-        /// Callback از درگاه پرداخت
-        /// GET: /Patient/Appointment/Book/PaymentCallback
+        /// Callback از درگاه پرداخت (ZarinPal Format)
+        /// GET: /Patient/Appointment/Book/PaymentCallback?Status=OK&Authority=xxx
         /// </summary>
         [HttpGet]
         [AllowAnonymous] // درگاه ممکن است از خارج از سیستم فراخوانی شود
         public async Task<ActionResult> PaymentCallback(
-            string token,
-            string status,
-            string authority,
-            string refId = null)
+            string Status, // ZarinPal: Status (OK/NOK)
+            string Authority) // ZarinPal: Authority (PaymentToken)
         {
             try
             {
-                _logger.Information("دریافت Callback از درگاه - Token: {Token}, Status: {Status}, Authority: {Authority}",
-                    token, status, authority);
+                _logger.Information("💰 PAYMENT CALLBACK: دریافت Callback از درگاه - Status: {Status}, Authority: {Authority}",
+                    Status, Authority);
 
-                // 1. دریافت OnlinePayment بر اساس PaymentToken
-                if (string.IsNullOrEmpty(token))
+                // ✅ ZarinPal Callback Format: ?Status=OK&Authority=xxx
+                // اگر Status یا Authority خالی باشد، از QueryString بخوان
+                if (string.IsNullOrEmpty(Status))
                 {
-                    _logger.Warning("PaymentToken در Callback موجود نیست");
-                    TempData["Error"] = "اطلاعات پرداخت نامعتبر است";
-                    return RedirectToAction("MyAppointments", "Appointment");
+                    Status = Request.QueryString["Status"];
+                }
+                if (string.IsNullOrEmpty(Authority))
+                {
+                    Authority = Request.QueryString["Authority"];
+                }
+
+                // 1. دریافت OnlinePayment بر اساس Authority (PaymentToken)
+                if (string.IsNullOrEmpty(Authority))
+                {
+                    _logger.Warning("⚠️ PAYMENT CALLBACK: Authority در Callback موجود نیست");
+                    NotificationHelper.SetError(TempData, "اطلاعات پرداخت نامعتبر است");
+                    return RedirectToAction("PaymentError", new { message = "اطلاعات پرداخت نامعتبر است" });
                 }
 
                 var onlinePayment = await _context.OnlinePayments
                     .Include(op => op.Appointment)
+                    .Include("Appointment.Doctor")
                     .Include(op => op.PaymentGateway)
-                    .FirstOrDefaultAsync(op => op.PaymentToken == token && !op.IsDeleted);
+                    .Include(op => op.Patient)
+                    .FirstOrDefaultAsync(op => op.PaymentToken == Authority && !op.IsDeleted);
 
                 if (onlinePayment == null)
                 {
-                    _logger.Warning("OnlinePayment با PaymentToken {Token} یافت نشد", token);
-                    TempData["Error"] = "پرداخت یافت نشد";
-                    return RedirectToAction("MyAppointments", "Appointment");
+                    _logger.Warning("⚠️ PAYMENT CALLBACK: OnlinePayment با Authority {Authority} یافت نشد", Authority);
+                    NotificationHelper.SetError(TempData, "پرداخت یافت نشد");
+                    return RedirectToAction("PaymentError", new { message = "پرداخت یافت نشد" });
                 }
 
                 // 2. بررسی دسترسی بیمار (اگر کاربر لاگین کرده است)
@@ -538,20 +645,20 @@ namespace ClinicApp.Areas.Patient.Controllers
                     var patient = await _currentUserService.GetPatientInfoAsync();
                     if (patient == null || patient.PatientId != onlinePayment.PatientId)
                     {
-                        _logger.Warning("دسترسی غیرمجاز به OnlinePayment {OnlinePaymentId} توسط بیمار {PatientId}",
+                        _logger.Warning("⚠️ PAYMENT CALLBACK: دسترسی غیرمجاز به OnlinePayment {OnlinePaymentId} توسط بیمار {PatientId}",
                             onlinePayment.OnlinePaymentId, patient?.PatientId);
-                        TempData["Error"] = "شما اجازه دسترسی به این پرداخت را ندارید";
-                        return RedirectToAction("MyAppointments", "Appointment");
+                        NotificationHelper.SetError(TempData, "شما اجازه دسترسی به این پرداخت را ندارید");
+                        return RedirectToAction("PaymentError", new { message = "دسترسی غیرمجاز" });
                     }
                 }
 
-                // 3. ساخت PaymentCallbackData از QueryString
+                // 3. ✅ ساخت PaymentCallbackData از ZarinPal Callback Format
                 var callbackData = new PaymentCallbackData
                 {
-                    PaymentToken = token,
-                    TransactionId = authority,
-                    ReferenceCode = refId,
-                    Status = status,
+                    PaymentToken = Authority, // Authority = PaymentToken در ZarinPal
+                    TransactionId = Authority, // Authority = TransactionId
+                    ReferenceCode = Request.QueryString["RefId"], // RefId (اختیاری)
+                    Status = Status, // OK یا NOK
                     AdditionalData = new Dictionary<string, string>()
                 };
 
@@ -564,6 +671,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                     }
                 }
 
+                _logger.Debug("📋 PAYMENT CALLBACK: CallbackData ساخته شد - PaymentToken: {PaymentToken}, Status: {Status}",
+                    callbackData.PaymentToken, callbackData.Status);
+
                 // 4. پردازش Callback
                 var callbackResult = await _webPaymentService.ProcessPaymentCallbackAsync(
                     onlinePayment.PaymentGateway.GatewayType,
@@ -574,80 +684,273 @@ namespace ClinicApp.Areas.Patient.Controllers
                     _logger.Error("خطا در پردازش Callback - {ErrorMessage}",
                         callbackResult.Message);
 
-                    TempData["Error"] = callbackResult.Message ?? "خطا در پردازش پرداخت";
+                    NotificationHelper.SetError(TempData, callbackResult.Message ?? "خطا در پردازش پرداخت");
                     return RedirectToAction("MyAppointments", "Appointment");
                 }
 
                 var result = callbackResult.Data;
 
-                // 5. به‌روزرسانی Appointment.Status
-                if (result.Success && result.Status == OnlinePaymentStatus.Success)
+                // 5. ✅ به‌روزرسانی Appointment.Status و OnlinePayment
+                if (result.Success && result.Status == OnlinePaymentStatus.Successful)
                 {
-                    var appointment = await _context.Appointments
-                        .FirstOrDefaultAsync(a => a.AppointmentId == onlinePayment.AppointmentId && !a.IsDeleted);
+                    // ✅ دریافت مجدد OnlinePayment برای Update (نه AsNoTracking)
+                    var onlinePaymentForUpdate = await _context.OnlinePayments
+                        .Include(op => op.Appointment)
+                        .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePayment.OnlinePaymentId && !op.IsDeleted);
 
-                    if (appointment != null)
+                    if (onlinePaymentForUpdate == null)
                     {
-                        appointment.Status = AppointmentStatus.Scheduled;
-                        appointment.PaymentTransactionId = result.PaymentTransactionId;
-                        appointment.UpdatedAt = DateTime.Now;
-                        appointment.UpdatedByUserId = _currentUserService.UserId;
+                        _logger.Error("❌ PAYMENT CALLBACK: OnlinePayment برای Update یافت نشد - OnlinePaymentId: {OnlinePaymentId}",
+                            onlinePayment.OnlinePaymentId);
+                        NotificationHelper.SetError(TempData, "پرداخت یافت نشد");
+                        return RedirectToAction("PaymentError", new { message = "پرداخت یافت نشد" });
+                    }
 
-                        await _context.SaveChangesAsync();
-
-                        _logger.Information("نوبت {AppointmentId} با موفقیت پرداخت شد - OnlinePaymentId: {OnlinePaymentId}",
-                            appointment.AppointmentId, onlinePayment.OnlinePaymentId);
-
-                        // ارسال اعلان پرداخت موفق (به صورت Async - بدون انتظار)
+                    // استفاده از Transaction برای اطمینان از یکپارچگی داده‌ها
+                    using (var transaction = _context.Database.BeginTransaction())
+                    {
                         try
                         {
-                            var notificationService = new AppointmentNotificationService(
-                                _context,
-                                new EmailService(),
-                                new AsanakSmsService(),
-                                _logger);
+                            // به‌روزرسانی OnlinePayment
+                            onlinePaymentForUpdate.Status = OnlinePaymentStatus.Successful;
+                            onlinePaymentForUpdate.GatewayTransactionId = result.GatewayTransactionId; // RefId
+                            onlinePaymentForUpdate.GatewayReferenceCode = callbackData.ReferenceCode ?? result.GatewayTransactionId;
+                            onlinePaymentForUpdate.PaymentCompletionDate = DateTime.UtcNow;
+                            onlinePaymentForUpdate.UpdatedAt = DateTime.UtcNow;
+                            onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
 
-                            _ = Task.Run(async () =>
+                            // به‌روزرسانی Appointment
+                            var appointment = onlinePaymentForUpdate.Appointment;
+                            if (appointment != null)
                             {
-                                try
+                                appointment.Status = AppointmentStatus.Scheduled;
+                                appointment.PaymentTransactionId = result.PaymentTransactionId;
+                                appointment.UpdatedAt = DateTime.UtcNow;
+                                appointment.UpdatedByUserId = _currentUserService.UserId ?? "System";
+                            }
+
+                            await _context.SaveChangesAsync();
+
+                            // ✅ Post-Save Verification
+                            var verifiedPayment = await _context.OnlinePayments
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePaymentForUpdate.OnlinePaymentId && 
+                                                           op.Status == OnlinePaymentStatus.Successful);
+
+                            var verifiedAppointment = appointment != null
+                                ? await _context.Appointments
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(a => a.AppointmentId == appointment.AppointmentId && 
+                                                              a.Status == AppointmentStatus.Scheduled)
+                                : null;
+
+                            if (verifiedPayment == null)
+                            {
+                                _logger.Error("❌ VERIFY: OnlinePayment ذخیره نشد! - OnlinePaymentId: {OnlinePaymentId}",
+                                    onlinePaymentForUpdate.OnlinePaymentId);
+                                transaction.Rollback();
+                                NotificationHelper.SetError(TempData, "خطا در ذخیره اطلاعات پرداخت");
+                                return RedirectToAction("PaymentError", new { message = "خطا در ذخیره اطلاعات پرداخت" });
+                            }
+
+                            if (appointment != null && verifiedAppointment == null)
+                            {
+                                _logger.Error("❌ VERIFY: Appointment به‌روزرسانی نشد! - AppointmentId: {AppointmentId}",
+                                    appointment.AppointmentId);
+                                transaction.Rollback();
+                                NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی نوبت");
+                                return RedirectToAction("PaymentError", new { message = "خطا در به‌روزرسانی نوبت" });
+                            }
+
+                            transaction.Commit();
+
+                            _logger.Information("✅ VERIFY: OnlinePayment و Appointment با موفقیت ذخیره شدند - OnlinePaymentId: {OnlinePaymentId}, AppointmentId: {AppointmentId}, RefId: {RefId}",
+                                verifiedPayment.OnlinePaymentId, verifiedAppointment?.AppointmentId, result.GatewayTransactionId);
+
+                            // ارسال اعلان پرداخت موفق (به صورت Async - بدون انتظار)
+                            try
+                            {
+                                var notificationService = new AppointmentNotificationService(
+                                    _context,
+                                    new EmailService(),
+                                    new AsanakSmsService(),
+                                    _logger);
+
+                                _ = Task.Run(async () =>
                                 {
-                                    await notificationService.SendPaymentConfirmationAsync(appointment.AppointmentId);
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.Error(ex, "خطا در ارسال اعلان پرداخت - AppointmentId: {AppointmentId}",
-                                        appointment.AppointmentId);
-                                }
+                                    try
+                                    {
+                                        if (verifiedAppointment != null)
+                                        {
+                                            await notificationService.SendPaymentConfirmationAsync(verifiedAppointment.AppointmentId);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.Error(ex, "خطا در ارسال اعلان پرداخت - AppointmentId: {AppointmentId}",
+                                            verifiedAppointment?.AppointmentId);
+                                    }
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
+                                    verifiedAppointment?.AppointmentId);
+                            }
+
+                            // ✅ Redirect به صفحه موفقیت
+                            return RedirectToAction("PaymentSuccess", new 
+                            { 
+                                appointmentId = verifiedAppointment?.AppointmentId,
+                                onlinePaymentId = verifiedPayment.OnlinePaymentId,
+                                refId = result.GatewayTransactionId
                             });
                         }
                         catch (Exception ex)
                         {
-                            _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
-                                appointment.AppointmentId);
+                            transaction.Rollback();
+                            _logger.Error(ex, "❌ PAYMENT CALLBACK: خطا در ذخیره اطلاعات پرداخت");
+                            throw;
                         }
-
-                        TempData["Success"] = "پرداخت با موفقیت انجام شد. نوبت شما رزرو شد.";
-                        return RedirectToAction("MyAppointments", "Appointment");
                     }
                 }
                 else
                 {
-                    _logger.Warning("پرداخت ناموفق - OnlinePaymentId: {OnlinePaymentId}, Status: {Status}, Error: {Error}",
+                    // ✅ دریافت مجدد OnlinePayment برای Update
+                    var onlinePaymentForUpdate = await _context.OnlinePayments
+                        .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePayment.OnlinePaymentId && !op.IsDeleted);
+
+                    if (onlinePaymentForUpdate != null)
+                    {
+                        // ✅ به‌روزرسانی OnlinePayment به Failed
+                        onlinePaymentForUpdate.Status = OnlinePaymentStatus.Failed;
+                        onlinePaymentForUpdate.ErrorMessage = result.ErrorMessage;
+                        onlinePaymentForUpdate.ErrorCode = callbackData.ErrorCode;
+                        onlinePaymentForUpdate.PaymentCompletionDate = DateTime.UtcNow;
+                        onlinePaymentForUpdate.UpdatedAt = DateTime.UtcNow;
+                        onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
+                        await _context.SaveChangesAsync();
+
+                        // ✅ Post-Save Verification
+                        var verified = await _context.OnlinePayments
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(op => op.OnlinePaymentId == onlinePaymentForUpdate.OnlinePaymentId && 
+                                                       op.Status == OnlinePaymentStatus.Failed);
+
+                        if (verified == null)
+                        {
+                            _logger.Error("❌ VERIFY: OnlinePayment به‌روزرسانی نشد! - OnlinePaymentId: {OnlinePaymentId}",
+                                onlinePaymentForUpdate.OnlinePaymentId);
+                        }
+                        else
+                        {
+                            _logger.Information("✅ VERIFY: OnlinePayment به‌روزرسانی شد - OnlinePaymentId: {OnlinePaymentId}, Status: {Status}",
+                                verified.OnlinePaymentId, verified.Status);
+                        }
+                    }
+
+                    _logger.Warning("⚠️ PAYMENT CALLBACK: پرداخت ناموفق - OnlinePaymentId: {OnlinePaymentId}, Status: {Status}, Error: {Error}",
                         onlinePayment.OnlinePaymentId, result.Status, result.ErrorMessage);
 
-                    TempData["Error"] = result.ErrorMessage ?? "پرداخت ناموفق بود";
-                    return RedirectToAction("MyAppointments", "Appointment");
+                    // ✅ Redirect به صفحه خطا
+                    return RedirectToAction("PaymentError", new 
+                    { 
+                        message = result.ErrorMessage ?? "پرداخت ناموفق بود",
+                        appointmentId = onlinePayment.AppointmentId,
+                        onlinePaymentId = onlinePayment.OnlinePaymentId
+                    });
                 }
-
-                // Fallback
-                TempData["Error"] = "خطا در پردازش پرداخت";
-                return RedirectToAction("MyAppointments", "Appointment");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در پردازش Callback پرداخت");
-                TempData["Error"] = "خطا در پردازش پرداخت. لطفاً با پشتیبانی تماس بگیرید";
-                return RedirectToAction("MyAppointments", "Appointment");
+                _logger.Error(ex, "❌ PAYMENT CALLBACK: خطا در پردازش Callback پرداخت");
+                return RedirectToAction("PaymentError", new { message = "خطا در پردازش پرداخت. لطفاً با پشتیبانی تماس بگیرید" });
+            }
+        }
+
+        /// <summary>
+        /// ✅ صفحه موفقیت پرداخت
+        /// GET: /Patient/Appointment/Book/PaymentSuccess
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> PaymentSuccess(int? appointmentId, int? onlinePaymentId, string refId)
+        {
+            try
+            {
+                _logger.Information("✅ PAYMENT SUCCESS: نمایش صفحه موفقیت - AppointmentId: {AppointmentId}, OnlinePaymentId: {OnlinePaymentId}, RefId: {RefId}",
+                    appointmentId, onlinePaymentId, refId);
+
+                var viewModel = new PaymentSuccessViewModel
+                {
+                    AppointmentId = appointmentId,
+                    OnlinePaymentId = onlinePaymentId,
+                    RefId = refId
+                };
+
+                // دریافت اطلاعات نوبت (اگر موجود باشد)
+                if (appointmentId.HasValue)
+                {
+                    var appointment = await _context.Appointments
+                        .Include(a => a.Doctor)
+                        .Include(a => a.Patient)
+                        .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId.Value && !a.IsDeleted);
+
+                    if (appointment != null)
+                    {
+                        viewModel.DoctorName = appointment.Doctor?.FullName ?? "نامشخص";
+                        viewModel.AppointmentDate = appointment.AppointmentDate;
+                        viewModel.PatientName = appointment.Patient?.FullName ?? "نامشخص";
+                    }
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ PAYMENT SUCCESS: خطا در نمایش صفحه موفقیت");
+                return RedirectToAction("PaymentError", new { message = "خطا در نمایش اطلاعات" });
+            }
+        }
+
+        /// <summary>
+        /// ✅ صفحه خطای پرداخت
+        /// GET: /Patient/Appointment/Book/PaymentError
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> PaymentError(string message, int? appointmentId, int? onlinePaymentId)
+        {
+            try
+            {
+                _logger.Warning("⚠️ PAYMENT ERROR: نمایش صفحه خطا - Message: {Message}, AppointmentId: {AppointmentId}, OnlinePaymentId: {OnlinePaymentId}",
+                    message, appointmentId, onlinePaymentId);
+
+                var viewModel = new PaymentErrorViewModel
+                {
+                    ErrorMessage = message ?? "پرداخت ناموفق بود",
+                    AppointmentId = appointmentId,
+                    OnlinePaymentId = onlinePaymentId
+                };
+
+                // دریافت اطلاعات نوبت (اگر موجود باشد)
+                if (appointmentId.HasValue)
+                {
+                    var appointment = await _context.Appointments
+                        .Include(a => a.Doctor)
+                        .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId.Value && !a.IsDeleted);
+
+                    if (appointment != null)
+                    {
+                        viewModel.DoctorName = appointment.Doctor?.FullName ?? "نامشخص";
+                        viewModel.AppointmentDate = appointment.AppointmentDate;
+                    }
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ PAYMENT ERROR: خطا در نمایش صفحه خطا");
+                return View(new PaymentErrorViewModel { ErrorMessage = "خطا در نمایش اطلاعات" });
             }
         }
 
