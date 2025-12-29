@@ -463,6 +463,13 @@ namespace ClinicApp
                 container.RegisterType<IDoctorDepartmentRepository, DoctorDepartmentRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorServiceCategoryRepository, DoctorServiceCategoryRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorScheduleRepository, DoctorScheduleRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorTimeSlotRepository, DoctorTimeSlotRepository>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<ApplicationDbContext>(),
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
                 container.RegisterType<IDoctorReportingRepository, DoctorReportingRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentRepository, DoctorAssignmentRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentHistoryRepository, DoctorAssignmentHistoryRepository>(new PerRequestLifetimeManager());
@@ -474,6 +481,7 @@ namespace ClinicApp
                 container.RegisterType<IDoctorDepartmentService, DoctorDepartmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorServiceCategoryService, DoctorServiceCategoryService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorScheduleService, DoctorScheduleService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorTimeSlotService, DoctorTimeSlotService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentService, DoctorAssignmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentHistoryService, DoctorAssignmentHistoryService>(new PerRequestLifetimeManager());

@@ -183,7 +183,13 @@
                     if (response.code === 'USER_ALREADY_EXISTS') {
                         state.isRegistrationFlow = false;
                         toastr.info(response.message);
-                        sendLoginOtp();
+                        // ✅ اطمینان از اینکه spinner قبلی بسته شده است
+                        const button = form.find('button[type="submit"]');
+                        showButtonSpinner(button, false);
+                        // ✅ فراخوانی sendLoginOtp با کمی تاخیر برای اطمینان از بسته شدن spinner
+                        setTimeout(() => {
+                            sendLoginOtp();
+                        }, 100);
                     } else {
                         toastr.error(response.message);
                     }
@@ -244,27 +250,48 @@
 
         // --- HELPER FUNCTIONS ---
         function sendLoginOtp() {
+            // ✅ اطمینان از اینکه nationalCode تنظیم شده است
+            if (!state.nationalCode || state.nationalCode.length !== 10) {
+                toastr.error("کد ملی معتبر نیست. لطفاً دوباره تلاش کنید.");
+                return;
+            }
+
+            const token = ui.forms.checkUser.find('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                toastr.error("خطای امنیتی. لطفاً صفحه را رفرش کنید.");
+                return;
+            }
+
             const data = {
-                __RequestVerificationToken: ui.forms.checkUser.find('input[name="__RequestVerificationToken"]').val(),
+                __RequestVerificationToken: token,
                 NationalCode: state.nationalCode
             };
             const button = ui.panels.nationalCode.find('button[type="submit"]');
             showButtonSpinner(button, true);
 
-            $.post('@Url.Action("SendLoginOtp", "Account")', data)
-             .done(response => {
-                if(response.success) {
-                    $('#otp-prompt').text("کد ورود به شماره موبایل ثبت شده شما ارسال شد.");
-                    ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
-                    ui.showPanel(ui.panels.otp);
-                    ui.otpInputs.first().focus();
-                    startCountdown();
-                } else {
-                    toastr.error(response.message);
+            $.ajax({
+                url: '@Url.Action("SendLoginOtp", "Account")',
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    if(response && response.success) {
+                        $('#otp-prompt').text("کد ورود به شماره موبایل ثبت شده شما ارسال شد.");
+                        ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
+                        ui.showPanel(ui.panels.otp);
+                        ui.otpInputs.first().focus();
+                        startCountdown();
+                    } else {
+                        toastr.error(response && response.message ? response.message : "خطا در ارسال کد ورود.");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('SendLoginOtp Error:', {xhr: xhr, status: status, error: error});
+                    toastr.error("خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.");
+                },
+                complete: function() {
+                    showButtonSpinner(button, false);
                 }
-             })
-             .fail(() => toastr.error("خطا در ارسال کد ورود."))
-             .always(() => showButtonSpinner(button, false));
+            });
         }
 
         function submitAjax(form, onSuccess, onError) {

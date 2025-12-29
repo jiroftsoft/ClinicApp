@@ -56,11 +56,18 @@ namespace ClinicApp.Services.ClinicAdmin
         /// <summary>
         /// دریافت لیست تمام برنامه‌های کاری پزشکان با صفحه‌بندی
         /// </summary>
-        public async Task<ServiceResult<PagedResult<DoctorScheduleViewModel>>> GetAllDoctorSchedulesAsync(string searchTerm, int pageNumber, int pageSize)
+        public async Task<ServiceResult<PagedResult<DoctorScheduleViewModel>>> GetAllDoctorSchedulesAsync(
+            string searchTerm, 
+            int pageNumber, 
+            int pageSize, 
+            int? doctorId = null, 
+            string dayOfWeek = null, 
+            bool? isActive = null)
         {
             try
             {
-                _logger.Information("درخواست دریافت لیست برنامه‌های کاری پزشکان. Page: {Page}, PageSize: {PageSize}", pageNumber, pageSize);
+                _logger.Information("درخواست دریافت لیست برنامه‌های کاری پزشکان. Page: {Page}, PageSize: {PageSize}, DoctorId: {DoctorId}, DayOfWeek: {DayOfWeek}, IsActive: {IsActive}", 
+                    pageNumber, pageSize, doctorId, dayOfWeek, isActive);
 
                 // اعتبارسنجی پارامترها
                 if (pageNumber < 1) pageNumber = 1;
@@ -69,6 +76,20 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // ✅ دریافت تمام برنامه‌های کاری
                 var schedules = await _doctorScheduleRepository.GetAllDoctorSchedulesAsync();
+
+                // ✅ فیلتر بر اساس DoctorId
+                if (doctorId.HasValue && doctorId.Value > 0)
+                {
+                    schedules = schedules.Where(s => s.DoctorId == doctorId.Value).ToList();
+                    _logger.Debug("فیلتر DoctorId اعمال شد: {DoctorId}", doctorId.Value);
+                }
+
+                // ✅ فیلتر بر اساس IsActive
+                if (isActive.HasValue)
+                {
+                    schedules = schedules.Where(s => s.IsActive == isActive.Value).ToList();
+                    _logger.Debug("فیلتر IsActive اعمال شد: {IsActive}", isActive.Value);
+                }
 
                 // ✅ فیلتر بر اساس عبارت جستجو (با Null Safety)
                 if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -80,6 +101,7 @@ namespace ClinicApp.Services.ClinicAdmin
                             (!string.IsNullOrEmpty(s.Doctor.FullName) && s.Doctor.FullName.Contains(searchTerm))
                         ))
                     ).ToList();
+                    _logger.Debug("فیلتر SearchTerm اعمال شد: {SearchTerm}", searchTerm);
                 }
 
                 // ✅ تبدیل به ViewModel با Null Safety
@@ -91,6 +113,24 @@ namespace ClinicApp.Services.ClinicAdmin
                         var viewModel = DoctorScheduleViewModel.FromEntity(schedule);
                         if (viewModel != null)
                         {
+                            // ✅ فیلتر بر اساس DayOfWeek (بعد از تبدیل به ViewModel)
+                            if (!string.IsNullOrWhiteSpace(dayOfWeek))
+                            {
+                                // بررسی اینکه آیا برنامه کاری دارای WorkDay با DayName مشخص شده است یا نه
+                                var hasMatchingDay = viewModel.WorkDays != null && 
+                                    viewModel.WorkDays.Any(wd => wd != null && 
+                                        !string.IsNullOrEmpty(wd.DayName) && 
+                                        wd.DayName.Equals(dayOfWeek, StringComparison.OrdinalIgnoreCase));
+                                
+                                if (!hasMatchingDay)
+                                {
+                                    _logger.Debug("برنامه کاری {ScheduleId} فیلتر DayOfWeek را رد کرد. DayOfWeek: {DayOfWeek}", schedule.ScheduleId, dayOfWeek);
+                                    continue; // این برنامه کاری را اضافه نکن
+                                }
+                                
+                                _logger.Debug("برنامه کاری {ScheduleId} فیلتر DayOfWeek را گذراند. DayOfWeek: {DayOfWeek}", schedule.ScheduleId, dayOfWeek);
+                            }
+
                             viewModels.Add(viewModel);
                         }
                     }

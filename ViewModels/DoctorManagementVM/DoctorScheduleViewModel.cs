@@ -123,8 +123,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
 
         /// <summary>
         /// وضعیت فعال (برای سازگاری با View)
+        /// ✅ این مقدار باید از DoctorSchedule.IsActive گرفته شود، نه از WorkDays
         /// </summary>
-        public bool IsActive => WorkDays?.Any(w => w.IsActive) ?? false;
+        public bool IsActive { get; set; } = true;
 
         /// <summary>
         /// تاریخ شروع (برای سازگاری با View)
@@ -295,6 +296,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                     CreatedBy = doctorSchedule.CreatedByUserId,
                     UpdatedAt = doctorSchedule.UpdatedAt,
                     UpdatedBy = doctorSchedule.UpdatedByUserId,
+                    IsActive = doctorSchedule.IsActive, // ✅ استفاده از IsActive از DoctorSchedule
                     WorkDays = activeWorkDays, // ✅ استفاده از WorkDays فیلتر شده
                     // ✅ پر کردن اطلاعات پزشک با Null Safety
                     DoctorName = doctorSchedule.Doctor?.FullName ?? "نامشخص",

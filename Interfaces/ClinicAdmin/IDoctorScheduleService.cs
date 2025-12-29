@@ -65,8 +65,17 @@ public interface IDoctorScheduleService
     /// <param name="searchTerm">عبارت جستجو</param>
     /// <param name="pageNumber">شماره صفحه</param>
     /// <param name="pageSize">تعداد آیتم‌ها در هر صفحه</param>
+    /// <param name="doctorId">شناسه پزشک (اختیاری)</param>
+    /// <param name="dayOfWeek">روز هفته (اختیاری)</param>
+    /// <param name="isActive">وضعیت فعال/غیرفعال (اختیاری)</param>
     /// <returns>نتیجه حاوی لیست صفحه‌بندی شده برنامه‌های کاری</returns>
-    Task<ServiceResult<PagedResult<DoctorScheduleViewModel>>> GetAllDoctorSchedulesAsync(string searchTerm, int pageNumber, int pageSize);
+    Task<ServiceResult<PagedResult<DoctorScheduleViewModel>>> GetAllDoctorSchedulesAsync(
+        string searchTerm, 
+        int pageNumber, 
+        int pageSize, 
+        int? doctorId = null, 
+        string dayOfWeek = null, 
+        bool? isActive = null);
 
     #endregion
 

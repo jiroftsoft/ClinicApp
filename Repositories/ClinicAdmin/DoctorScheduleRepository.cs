@@ -1158,8 +1158,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
         /// <summary>
         /// تولید و ذخیره اسلات‌های زمانی در دیتابیس برای یک بازه زمانی مشخص
         /// این متد هنگام ایجاد یا به‌روزرسانی برنامه کاری فراخوانی می‌شود
+        /// 
+        /// ✅ منطق جدید: به صورت پیش‌فرض فقط برای همان روز خاص (روزی که برنامه ایجاد می‌شود) اسلات تولید می‌شود
+        /// اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
         /// </summary>
-        public async Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90)
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <param name="scheduleId">شناسه برنامه کاری</param>
+        /// <param name="daysAhead">تعداد روزهای آینده برای تولید اسلات (پیش‌فرض: 1 - فقط همان روز خاص)</param>
+        public async Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 1)
         {
             // ✅ Transaction Management: بررسی اینکه آیا از قبل یک transaction وجود دارد یا نه
             // ✅ اگر از داخل یک transaction فراخوانی شده باشد (مثل AddDoctorScheduleAsync)، از همان استفاده می‌کنیم
@@ -1249,88 +1255,108 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ برنامه کاری یافت شد - WorkDaysCount: {doctorSchedule.WorkDays?.Count(wd => wd.IsActive && !wd.IsDeleted) ?? 0}");
 
-                var startDate = DateTime.Today;
+                // ✅ منطق جدید: پیدا کردن اولین روز کاری برای تولید اسلات
+                // ✅ اگر امروز روز کاری است، برای امروز اسلات تولید می‌شود
+                // ✅ اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
+                var targetDate = await FindFirstWorkDayForScheduleAsync(doctorSchedule, DateTime.Today);
+                
+                if (targetDate == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ روز کاری فعالی در 7 روز آینده یافت نشد - اسلات تولید نمی‌شود");
+                    return;
+                }
+
+                var startDate = targetDate.Value;
                 var endDate = startDate.AddDays(daysAhead);
                 var generatedSlots = new List<DoctorTimeSlot>();
 
-                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 📅 تولید اسلات‌ها از {startDate:yyyy/MM/dd} تا {endDate:yyyy/MM/dd}");
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 📅 تولید اسلات‌ها برای تاریخ {startDate:yyyy/MM/dd} (روز کاری: {(DayOfWeek)startDate.DayOfWeek})");
 
-                // ✅ بهینه‌سازی: دریافت تمام ScheduleExceptions برای بازه زمانی به صورت batch (جلوگیری از N+1 Query)
+                // ✅ بهینه‌سازی: دریافت تمام ScheduleExceptions برای همان روز خاص به صورت batch (جلوگیری از N+1 Query)
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
+                var startDateOnly = startDate.Date; // برای استفاده در ToListAsync
                 var allScheduleExceptions = await _context.ScheduleExceptions
                     .Where(se => se.ScheduleId == scheduleId &&
-                                se.StartDate < endDate &&
-                                (se.EndDate == null || se.EndDate >= startDate) &&
+                                DbFunctions.TruncateTime(se.StartDate) <= DbFunctions.TruncateTime(startDate) &&
+                                (se.EndDate == null || DbFunctions.TruncateTime(se.EndDate.Value) >= DbFunctions.TruncateTime(startDate)) &&
                                 se.IsActive &&
                                 !se.IsDeleted)
                     .ToListAsync();
 
-                // ✅ بهینه‌سازی: دریافت تمام اسلات‌های موجود برای بازه زمانی به صورت batch
+                // ✅ بهینه‌سازی: دریافت تمام اسلات‌های موجود برای همان روز خاص به صورت batch
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 var existingSlotsInRange = await _context.DoctorTimeSlots
                     .Where(ts => ts.DoctorId == doctorId &&
-                               ts.AppointmentDate >= startDate &&
-                               ts.AppointmentDate < endDate &&
+                               DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(startDate) &&
                                !ts.IsDeleted)
                     .ToListAsync();
 
-                // ✅ بهینه‌سازی: دریافت تمام نوبت‌های رزرو شده برای بازه زمانی به صورت batch
+                // ✅ بهینه‌سازی: دریافت تمام نوبت‌های رزرو شده برای همان روز خاص به صورت batch
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 var bookedAppointmentsInRange = await _context.Appointments
                     .Where(a => a.DoctorId == doctorId &&
-                               a.AppointmentDate >= startDate &&
-                               a.AppointmentDate < endDate &&
+                               DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(startDate) &&
                                a.Status != AppointmentStatus.Cancelled &&
                                !a.IsDeleted)
                     .ToListAsync();
 
-                // تولید اسلات‌ها برای هر روز در بازه زمانی
-                for (var date = startDate; date < endDate; date = date.AddDays(1))
+                // ✅ منطق جدید: فقط برای همان روز خاص اسلات تولید می‌شود
+                var date = startDate;
+                
+                // ✅ بررسی تعطیلات رسمی
+                if (IsPersianHoliday(date))
                 {
-                    // ✅ بررسی تعطیلات رسمی
-                    if (IsPersianHoliday(date))
-                        continue;
-
-                    // ✅ بررسی ScheduleExceptions (استفاده از لیست از پیش بارگذاری شده)
-                    var hasScheduleException = allScheduleExceptions.Any(se =>
-                        se.StartDate.Date <= date.Date &&
-                        (se.EndDate == null || se.EndDate.Value.Date >= date.Date) &&
-                        (!se.StartTime.HasValue || !se.EndTime.HasValue)); // استثنای تمام روز
-
-                    if (hasScheduleException)
-                        continue;
-
-                    var dayOfWeek = (int)date.DayOfWeek;
-                    var workDays = doctorSchedule.WorkDays?
-                        .Where(wd => wd != null && wd.DayOfWeek == dayOfWeek && wd.IsActive && !wd.IsDeleted)
-                        .ToList() ?? new List<DoctorWorkDay>();
-
-                    // ✅ بررسی دقیق: اگر هیچ WorkDay فعالی برای این DayOfWeek وجود ندارد، اسلات تولید نکن
-                    if (!workDays.Any())
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ WorkDay فعالی برای DayOfWeek {dayOfWeek} ({(DayOfWeek)dayOfWeek}) در تاریخ {date:yyyy/MM/dd} یافت نشد - اسلات تولید نمی‌شود");
-                        continue; // به تاریخ بعدی برو
-                    }
-
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {workDays.Count} WorkDay فعال برای DayOfWeek {dayOfWeek} ({(DayOfWeek)dayOfWeek}) در تاریخ {date:yyyy/MM/dd} یافت شد");
-
-                    // ✅ تولید اسلات‌ها برای این تاریخ (با استفاده از متد جداگانه برای رعایت SRP)
-                    var slotsForDate = await GenerateSlotsForDateAsync(
-                        date, 
-                        workDays, 
-                        doctorSchedule, 
-                        scheduleId, 
-                        doctorId, 
-                        allScheduleExceptions, 
-                        existingSlotsInRange, 
-                        bookedAppointmentsInRange);
-
-                    generatedSlots.AddRange(slotsForDate);
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ تاریخ {date:yyyy/MM/dd} تعطیل رسمی است - اسلات تولید نمی‌شود");
+                    return;
                 }
 
-                // حذف اسلات‌های قدیمی که دیگر در برنامه کاری نیستند
+                // ✅ بررسی ScheduleExceptions (استفاده از لیست از پیش بارگذاری شده)
+                // ✅ مقایسه تاریخ‌ها در حافظه (پس از ToListAsync)
+                var dateOnly = date.Date;
+                var hasScheduleException = allScheduleExceptions.Any(se =>
+                    se.StartDate.Date <= dateOnly &&
+                    (se.EndDate == null || se.EndDate.Value.Date >= dateOnly) &&
+                    (!se.StartTime.HasValue || !se.EndTime.HasValue)); // استثنای تمام روز
+
+                if (hasScheduleException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ تاریخ {date:yyyy/MM/dd} دارای ScheduleException است - اسلات تولید نمی‌شود");
+                    return;
+                }
+
+                var dayOfWeek = (int)date.DayOfWeek;
+                var workDays = doctorSchedule.WorkDays?
+                    .Where(wd => wd != null && wd.DayOfWeek == dayOfWeek && wd.IsActive && !wd.IsDeleted)
+                    .ToList() ?? new List<DoctorWorkDay>();
+
+                // ✅ بررسی دقیق: اگر هیچ WorkDay فعالی برای این DayOfWeek وجود ندارد، اسلات تولید نکن
+                if (!workDays.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ WorkDay فعالی برای DayOfWeek {dayOfWeek} ({(DayOfWeek)dayOfWeek}) در تاریخ {date:yyyy/MM/dd} یافت نشد - اسلات تولید نمی‌شود");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {workDays.Count} WorkDay فعال برای DayOfWeek {dayOfWeek} ({(DayOfWeek)dayOfWeek}) در تاریخ {date:yyyy/MM/dd} یافت شد");
+
+                // ✅ تولید اسلات‌ها برای این تاریخ (با استفاده از متد جداگانه برای رعایت SRP)
+                var slotsForDate = await GenerateSlotsForDateAsync(
+                    date, 
+                    workDays, 
+                    doctorSchedule, 
+                    scheduleId, 
+                    doctorId, 
+                    allScheduleExceptions, 
+                    existingSlotsInRange, 
+                    bookedAppointmentsInRange);
+
+                generatedSlots.AddRange(slotsForDate);
+
+                // ✅ حذف اسلات‌های قدیمی که دیگر در برنامه کاری نیستند (فقط برای همان روز خاص)
                 // ✅ مهم: باید تمام اسلات‌های موجود را بررسی کنیم (نه فقط Available) تا اسلات‌های Booked که دیگر معتبر نیستند هم حذف شوند
+                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
                 var oldSlots = await _context.DoctorTimeSlots
                     .Where(ts => ts.DoctorId == doctorId &&
-                               ts.AppointmentDate >= startDate &&
-                               ts.AppointmentDate < endDate &&
+                               DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(startDate) &&
                                !ts.IsDeleted)
                     .ToListAsync();
 
@@ -1360,13 +1386,21 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 if (slotsToDelete.Any())
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🗑️ حذف {slotsToDelete.Count} اسلات قدیمی");
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🗑️ حذف {slotsToDelete.Count} اسلات قدیمی (Soft Delete)");
+                    var deletedByUserId = doctorSchedule.UpdatedByUserId ?? doctorSchedule.CreatedByUserId;
+                    var deletedAt = DateTime.Now;
+                    
+                    // ✅ بهینه‌سازی: Soft Delete برای تمام اسلات‌ها
+                    // ✅ در EF6، entity های خوانده شده از دیتابیس به صورت خودکار tracked می‌شوند
+                    // ✅ پس نیازی به Attach یا UpdateRange نیست - فقط تغییرات را اعمال می‌کنیم
                     foreach (var slot in slotsToDelete)
                     {
                         slot.IsDeleted = true;
-                        slot.DeletedAt = DateTime.Now;
-                        slot.DeletedByUserId = doctorSchedule.UpdatedByUserId ?? doctorSchedule.CreatedByUserId;
+                        slot.DeletedAt = deletedAt;
+                        slot.DeletedByUserId = deletedByUserId;
                     }
+                    
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {slotsToDelete.Count} اسلات قدیمی با Soft Delete علامت‌گذاری شدند (ذخیره در SaveChanges)");
                 }
 
                 // اضافه کردن اسلات‌های جدید
@@ -1460,17 +1494,20 @@ namespace ClinicApp.Repositories.ClinicAdmin
             }
 
             // ✅ بررسی ScheduleExceptions (استفاده از لیست از پیش بارگذاری شده - در memory)
+            // ✅ استانداردهای پزشکی: اطمینان از عدم تداخل با زمان‌های بلاک شده
             var slotDate = oldSlot.AppointmentDate.Date;
             var hasException = scheduleExceptions != null && scheduleExceptions.Any(se =>
                 se != null &&
+                !se.IsDeleted && // ✅ فقط استثناهای حذف نشده
                 se.StartDate.Date <= slotDate &&
                 (se.EndDate == null || se.EndDate.Value.Date >= slotDate) &&
                 (!se.StartTime.HasValue || !se.EndTime.HasValue || // استثنای تمام روز
-                 (se.StartTime.Value <= oldSlot.StartTime && se.EndTime.Value >= oldSlot.EndTime))); // استثنای جزئی
+                 (se.StartTime.Value <= oldSlot.StartTime && se.EndTime.Value >= oldSlot.EndTime))); // استثنای جزئی - اسلات باید کاملاً درون استثنا باشد
 
             if (hasException)
             {
-                return true; // حذف شود
+                System.Diagnostics.Debug.WriteLine($"[ShouldDeleteOldSlot] 🗑️ اسلات {oldSlot.TimeSlotId} حذف می‌شود - در زمان بلاک شده (ScheduleException) قرار دارد");
+                return true; // حذف شود - در زمان بلاک شده قرار دارد
             }
 
             // ✅ بررسی DayOfWeek
@@ -1535,6 +1572,53 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
+        /// پیدا کردن اولین روز کاری برای برنامه کاری
+        /// ✅ SRP: این متد فقط مسئولیت پیدا کردن اولین روز کاری را دارد
+        /// 
+        /// منطق:
+        /// - اگر امروز روز کاری است، امروز را برمی‌گرداند
+        /// - اگر امروز روز کاری نیست، اولین روز کاری آینده (در 7 روز آینده) را برمی‌گرداند
+        /// - اگر هیچ روز کاری فعالی در 7 روز آینده وجود نداشته باشد، null برمی‌گرداند
+        /// </summary>
+        /// <param name="doctorSchedule">برنامه کاری پزشک</param>
+        /// <param name="startDate">تاریخ شروع جستجو (معمولاً امروز)</param>
+        /// <returns>اولین روز کاری یا null اگر یافت نشد</returns>
+        private Task<DateTime?> FindFirstWorkDayForScheduleAsync(DoctorSchedule doctorSchedule, DateTime startDate)
+        {
+            if (doctorSchedule?.WorkDays == null)
+                return Task.FromResult<DateTime?>(null);
+
+            var activeWorkDays = doctorSchedule.WorkDays
+                .Where(wd => wd != null && wd.IsActive && !wd.IsDeleted)
+                .ToList();
+
+            if (!activeWorkDays.Any())
+                return Task.FromResult<DateTime?>(null);
+
+            // ✅ بررسی 7 روز آینده برای پیدا کردن اولین روز کاری
+            for (int i = 0; i < 7; i++)
+            {
+                var checkDate = startDate.AddDays(i);
+                
+                // ✅ بررسی تعطیلات رسمی
+                if (IsPersianHoliday(checkDate))
+                    continue;
+
+                var dayOfWeek = (int)checkDate.DayOfWeek;
+                var hasWorkDay = activeWorkDays.Any(wd => wd.DayOfWeek == dayOfWeek);
+
+                if (hasWorkDay)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[FindFirstWorkDayForScheduleAsync] ✅ اولین روز کاری یافت شد: {checkDate:yyyy/MM/dd} ({(DayOfWeek)dayOfWeek})");
+                    return Task.FromResult<DateTime?>(checkDate);
+                }
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[FindFirstWorkDayForScheduleAsync] ⚠️ هیچ روز کاری فعالی در 7 روز آینده یافت نشد");
+            return Task.FromResult<DateTime?>(null);
+        }
+
+        /// <summary>
         /// تولید اسلات‌های زمانی برای یک تاریخ خاص
         /// ✅ SRP: این متد فقط مسئولیت تولید اسلات‌ها برای یک تاریخ را دارد
         /// ✅ بهینه‌سازی: استفاده از لیست‌های از پیش بارگذاری شده برای جلوگیری از N+1 Query
@@ -1596,10 +1680,19 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     {
                         var slotEndTime = currentTime.Add(TimeSpan.FromMinutes(doctorSchedule.AppointmentDuration));
 
+                        // ✅ بررسی اولیه: اگر slotEndTime > endTime، حلقه را متوقف کن (جلوگیری از تولید اسلات خارج از بازه)
+                        if (slotEndTime > endTime)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[GenerateSlotsForDateAsync] ⚠️ اسلات خارج از TimeRange است - StartTime: {currentTime}, SlotEndTime: {slotEndTime}, TimeRangeEnd: {endTime} - حلقه متوقف می‌شود");
+                            break; // ✅ توقف حلقه به جای ادامه - این رفع باگ اصلی است
+                        }
+
                         // ✅ بررسی دقیق: اسلات باید کاملاً درون TimeRange باشد
                         if (slotEndTime <= endTime)
                         {
                             // ✅ بررسی ScheduleExceptions جزئی (استفاده از لیست از پیش بارگذاری شده)
+                            // ✅ استانداردهای پزشکی: اطمینان از عدم تداخل با زمان‌های بلاک شده
+                            // ✅ allScheduleExceptions قبلاً با فیلتر !se.IsDeleted بارگذاری شده است
                             var hasPartialException = allScheduleExceptions != null && allScheduleExceptions.Any(se =>
                                 se != null &&
                                 se.StartDate.Date == dateOnly &&
@@ -1659,11 +1752,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            // ✅ اسلات خارج از بازه است - نباید ایجاد شود
-                            System.Diagnostics.Debug.WriteLine($"[GenerateSlotsForDateAsync] ⚠️ اسلات خارج از TimeRange است - StartTime: {currentTime}, SlotEndTime: {slotEndTime}, TimeRangeEnd: {endTime} - ایجاد نمی‌شود");
                         }
 
                         currentTime = slotEndTime;
@@ -1909,24 +1997,51 @@ namespace ClinicApp.Repositories.ClinicAdmin
         /// <summary>
         /// دریافت تمام برنامه‌های کاری پزشکان
         /// ✅ بهینه‌سازی شده برای Production: استفاده از AsNoTracking
+        /// ✅ غیرفعال کردن فیلتر سراسری ActiveDoctorSchedules برای دریافت همه برنامه‌ها (فعال و غیرفعال)
+        /// طبق: AI_ASSISTANT_MASTER_CONTRACT.md, DEVELOPMENT_CONTRACT.md
         /// </summary>
         public async Task<List<DoctorSchedule>> GetAllDoctorSchedulesAsync()
         {
             try
             {
+                // ✅ غیرفعال کردن موقت فیلتر سراسری برای دریافت تمام برنامه‌ها (فعال و غیرفعال)
+                // این کار برای امکان فیلتر کردن در لایه Service بر اساس IsActive انجام می‌شود
+                _context.DisableFilter("ActiveDoctorSchedules");
+                _context.DisableFilter("ActiveDoctorWorkDays");
+                _context.DisableFilter("ActiveDoctorTimeRanges");
+
                 // ✅ استفاده از AsNoTracking برای بهبود Performance (Read-Only Query)
-                // توجه: فیلتر کردن WorkDays و TimeRanges در لایه Service انجام می‌شود
-                return await _context.DoctorSchedules
+                // توجه: فیلتر کردن IsActive در لایه Service انجام می‌شود
+                var result = await _context.DoctorSchedules
                     .AsNoTracking() // ✅ بهبود Performance برای Read-Only Query
-                    .Where(ds => !ds.IsDeleted)
+                    .Where(ds => !ds.IsDeleted) // ✅ فقط فیلتر IsDeleted (Soft Delete)
                     .Include(ds => ds.Doctor)
                     .Include(ds => ds.WorkDays)
                     .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
                     .OrderBy(ds => ds.CreatedAt)
                     .ToListAsync();
+
+                // ✅ فعال کردن مجدد فیلترهای سراسری
+                _context.EnableFilter("ActiveDoctorSchedules");
+                _context.EnableFilter("ActiveDoctorWorkDays");
+                _context.EnableFilter("ActiveDoctorTimeRanges");
+
+                return result;
             }
             catch (Exception ex)
             {
+                // ✅ اطمینان از فعال شدن مجدد فیلترها در صورت خطا
+                try
+                {
+                    _context.EnableFilter("ActiveDoctorSchedules");
+                    _context.EnableFilter("ActiveDoctorWorkDays");
+                    _context.EnableFilter("ActiveDoctorTimeRanges");
+                }
+                catch
+                {
+                    // Ignore errors in cleanup
+                }
+
                 throw new InvalidOperationException("خطا در دریافت تمام برنامه‌های کاری پزشکان", ex);
             }
         }
@@ -1942,9 +2057,15 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ غیرفعال کردن موقت فیلتر سراسری برای دریافت برنامه کاری (فعال یا غیرفعال)
+                // این کار برای امکان فعال/غیرفعال کردن برنامه‌های کاری انجام می‌شود
+                _context.DisableFilter("ActiveDoctorSchedules");
+                _context.DisableFilter("ActiveDoctorWorkDays");
+                _context.DisableFilter("ActiveDoctorTimeRanges");
+                
                 // ✅ حذف .Include(ds => ds.Doctor) به دلیل خطای SQL: Invalid column name 'Doctor_DoctorId'
                 // ✅ Navigation Property Doctor باید به صورت جداگانه در Service لود شود
-                return await _context.DoctorSchedules
+                var result = await _context.DoctorSchedules
                     .Where(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted)
                     // .Include(ds => ds.Doctor) // ❌ حذف شده: باعث خطای SQL می‌شود
                     .Include(ds => ds.WorkDays)
@@ -1953,9 +2074,25 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     .Include(ds => ds.UpdatedByUser)
                     .AsNoTracking() // ✅ بهبود Performance برای read-only query
                     .FirstOrDefaultAsync();
+                
+                // ✅ فعال کردن مجدد فیلترهای سراسری
+                _context.EnableFilter("ActiveDoctorSchedules");
+                _context.EnableFilter("ActiveDoctorWorkDays");
+                _context.EnableFilter("ActiveDoctorTimeRanges");
+                
+                return result;
             }
             catch (Exception ex)
             {
+                // ✅ فعال کردن مجدد فیلترهای سراسری در صورت خطا
+                try
+                {
+                    _context.EnableFilter("ActiveDoctorSchedules");
+                    _context.EnableFilter("ActiveDoctorWorkDays");
+                    _context.EnableFilter("ActiveDoctorTimeRanges");
+                }
+                catch { /* نادیده گرفتن خطاهای فعال‌سازی مجدد */ }
+                
                 throw new InvalidOperationException($"خطا در دریافت برنامه کاری {scheduleId}", ex);
             }
         }
@@ -2045,28 +2182,49 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] 🔍 شروع - ScheduleId: {scheduleId}");
+
                 var schedule = await _context.DoctorSchedules
+                    .Include(ds => ds.WorkDays) // ✅ بارگذاری WorkDays برای تغییر
                     .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted);
 
                 if (schedule == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ⚠️ برنامه کاری {scheduleId} یافت نشد");
                     return false;
+                }
 
-                // غیرفعال کردن تمام روزهای کاری
-                if (schedule.WorkDays != null)
+                // ✅ غیرفعال کردن خود برنامه کاری
+                schedule.IsActive = false;
+                schedule.UpdatedAt = DateTime.Now;
+                System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ✅ IsActive برنامه کاری {scheduleId} به false تغییر یافت");
+
+                // ✅ غیرفعال کردن تمام روزهای کاری
+                if (schedule.WorkDays != null && schedule.WorkDays.Any())
                 {
                     foreach (var workDay in schedule.WorkDays)
                     {
                         workDay.IsActive = false;
                         workDay.UpdatedAt = DateTime.Now;
+                        // ✅ اطمینان از track شدن WorkDay
+                        _context.Entry(workDay).State = EntityState.Modified;
                     }
+                    System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ✅ {schedule.WorkDays.Count} WorkDay غیرفعال شد");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ⚠️ هیچ WorkDay یافت نشد");
                 }
 
-                schedule.UpdatedAt = DateTime.Now;
+                // ✅ اطمینان از track شدن Schedule
+                _context.Entry(schedule).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ✅ تغییرات در دیتابیس ذخیره شد");
                 return true;
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[DeactivateDoctorScheduleAsync] ❌ خطا: {ex.Message}");
                 throw new InvalidOperationException($"خطا در غیرفعال کردن برنامه کاری {scheduleId}", ex);
             }
         }
@@ -2078,29 +2236,70 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] 🔍 شروع - ScheduleId: {scheduleId}");
+
+                // ✅ غیرفعال کردن موقت فیلتر سراسری برای دریافت برنامه کاری غیرفعال
+                _context.DisableFilter("ActiveDoctorSchedules");
+                _context.DisableFilter("ActiveDoctorWorkDays");
+                _context.DisableFilter("ActiveDoctorTimeRanges");
+
                 var schedule = await _context.DoctorSchedules
+                    .Include(ds => ds.WorkDays) // ✅ بارگذاری WorkDays برای تغییر
                     .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted);
 
                 if (schedule == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ⚠️ برنامه کاری {scheduleId} یافت نشد");
                     return false;
+                }
 
-                // فعال کردن تمام روزهای کاری
-                if (schedule.WorkDays != null)
+                // ✅ فعال کردن خود برنامه کاری
+                schedule.IsActive = true;
+                schedule.UpdatedAt = DateTime.Now;
+                System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ✅ IsActive برنامه کاری {scheduleId} به true تغییر یافت");
+
+                // ✅ فعال کردن تمام روزهای کاری
+                if (schedule.WorkDays != null && schedule.WorkDays.Any())
                 {
                     foreach (var workDay in schedule.WorkDays)
                     {
                         workDay.IsActive = true;
                         workDay.UpdatedAt = DateTime.Now;
+                        // ✅ اطمینان از track شدن WorkDay
+                        _context.Entry(workDay).State = EntityState.Modified;
                     }
+                    System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ✅ {schedule.WorkDays.Count} WorkDay فعال شد");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ⚠️ هیچ WorkDay یافت نشد");
                 }
 
-                schedule.UpdatedAt = DateTime.Now;
+                // ✅ اطمینان از track شدن Schedule
+                _context.Entry(schedule).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+                
+                // ✅ فعال کردن مجدد فیلترهای سراسری
+                _context.EnableFilter("ActiveDoctorSchedules");
+                _context.EnableFilter("ActiveDoctorWorkDays");
+                _context.EnableFilter("ActiveDoctorTimeRanges");
+                
+                System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ✅ تغییرات در دیتابیس ذخیره شد");
                 return true;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"خطا در فعال کردن مجدد برنامه کاری {scheduleId}", ex);
+                // ✅ فعال کردن مجدد فیلترهای سراسری در صورت خطا
+                try
+                {
+                    _context.EnableFilter("ActiveDoctorSchedules");
+                    _context.EnableFilter("ActiveDoctorWorkDays");
+                    _context.EnableFilter("ActiveDoctorTimeRanges");
+                }
+                catch { /* نادیده گرفتن خطاهای فعال‌سازی مجدد */ }
+                
+                System.Diagnostics.Debug.WriteLine($"[ActivateDoctorScheduleAsync] ❌ خطا: {ex.Message}");
+                throw new InvalidOperationException($"خطا در فعال کردن برنامه کاری {scheduleId}", ex);
             }
         }
 

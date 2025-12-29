@@ -264,6 +264,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // ✅ DoctorTimeSlot Routes - باید قبل از CMS باشد
+            context.MapRoute(
+                name: "Admin_DoctorTimeSlot_Routes",
+                url: "Admin/DoctorTimeSlot/{action}/{id}",
+                defaults: new { controller = "DoctorTimeSlot", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
             // ✅ Service Related Routes - باید قبل از CMS باشد
             context.MapRoute(
                 name: "Admin_ServiceComponent_Routes",

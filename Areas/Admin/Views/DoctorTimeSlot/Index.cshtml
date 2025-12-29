@@ -1,0 +1,202 @@
+@* صفحه مدیریت اسلات‌های زمانی پزشکان *@
+@using ClinicApp.Models.Enums
+@using ClinicApp.Constants
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.Admin.TimeSlotManagement.TimeSlotIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت اسلات‌های زمانی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/css/doctor-timeslot.css" rel="stylesheet" />
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">مدیریت اسلات‌های زمانی</h3>
+                </div>
+                <div class="card-body">
+                    @* فیلتر *@
+                    @using (Html.BeginForm("Index", "DoctorTimeSlot", FormMethod.Get, new { @class = "mb-4" }))
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>پزشک</label>
+                                @Html.DropDownList(DoctorTimeSlotConstants.QueryParameters.DoctorId, ViewBag.Doctors as SelectList, "همه پزشکان", new { @class = "form-control" })
+                            </div>
+                            <div class="col-md-2">
+                                @{
+                                    ViewBag.PersianDatePickerId = "startDatePicker";
+                                    ViewBag.PersianDatePickerName = "StartDate";
+                                    ViewBag.PersianDatePickerValue = ViewBag.Filter?.StartDate;
+                                    ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+                                    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع را انتخاب کنید";
+                                    ViewBag.PersianDatePickerRequired = false;
+                                }
+                                @Html.Partial("_PersianDatePicker")
+                            </div>
+                            <div class="col-md-2">
+                                @{
+                                    ViewBag.PersianDatePickerId = "endDatePicker";
+                                    ViewBag.PersianDatePickerName = "EndDate";
+                                    ViewBag.PersianDatePickerValue = ViewBag.Filter?.EndDate;
+                                    ViewBag.PersianDatePickerLabel = "تاریخ پایان";
+                                    ViewBag.PersianDatePickerPlaceholder = "تاریخ پایان را انتخاب کنید";
+                                    ViewBag.PersianDatePickerRequired = false;
+                                }
+                                @Html.Partial("_PersianDatePicker")
+                            </div>
+                            <div class="col-md-2">
+                                <label>وضعیت</label>
+                                @Html.DropDownList(DoctorTimeSlotConstants.QueryParameters.Status, ViewBag.Statuses as SelectList, "همه وضعیت‌ها", new { @class = "form-control" })
+                            </div>
+                            <div class="col-md-2">
+                                <label>جستجو</label>
+                                <input type="text" name="@DoctorTimeSlotConstants.QueryParameters.SearchTerm" value="@(ViewBag.Filter?.SearchTerm)" class="form-control" placeholder="جستجو..." />
+                            </div>
+                            <div class="col-md-1">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-block">جستجو</button>
+                            </div>
+                        </div>
+                    }
+
+                    @* آمار *@
+                    @if (ViewBag.Statistics != null)
+                    {
+                        var stats = ViewBag.Statistics as ClinicApp.ViewModels.Admin.TimeSlotManagement.TimeSlotStatisticsViewModel;
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <h5>کل اسلات‌ها</h5>
+                                        <h3>@stats.TotalSlots</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h5>در دسترس</h5>
+                                        <h3>@stats.AvailableSlots</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <h5>رزرو شده</h5>
+                                        <h3>@stats.BookedSlots</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-secondary text-white">
+                                    <div class="card-body">
+                                        <h5>انجام شده</h5>
+                                        <h3>@stats.CompletedSlots</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* جدول اسلات‌ها با DataTables *@
+                    <div class="table-responsive">
+                        <table id="timeSlotsTable" class="table table-striped table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>شناسه</th>
+                                    <th>پزشک</th>
+                                    <th>تاریخ</th>
+                                    <th>زمان</th>
+                                    <th>مدت (دقیقه)</th>
+                                    <th>وضعیت</th>
+                                    <th>بیمار</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Items != null && Model.Items.Any())
+                                {
+                                    foreach (var item in Model.Items)
+                                    {
+                                        <tr>
+                                            <td>@item.TimeSlotId</td>
+                                            <td>@item.DoctorName</td>
+                                            <td>@item.AppointmentDateShamsi (@item.DayOfWeekName)</td>
+                                            <td>@item.StartTimeText - @item.EndTimeText</td>
+                                            <td>@item.Duration</td>
+                                            <td>
+                                                <span class="status-badge status-@item.Status.ToString().ToLower()">
+                                                    @item.StatusName
+                                                </span>
+                                            </td>
+                                            <td>@(item.PatientName ?? "-")</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("Details", new { id = item.TimeSlotId })" class="btn btn-sm btn-info" title="مشاهده جزئیات">
+                                                        <i class="fa fa-eye"></i>
+                                                    </a>
+                                                    @if (item.Status == AppointmentStatus.Scheduled || item.Status == AppointmentStatus.Pending)
+                                                    {
+                                                        using (Html.BeginForm("Release", "DoctorTimeSlot", FormMethod.Post, new { @class = "d-inline release-form", @data_id = item.TimeSlotId }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.TimeSlotId" />
+                                                            <button type="button" class="btn btn-sm btn-warning btn-release" data-id="@item.TimeSlotId" title="آزاد کردن اسلات">
+                                                                <i class="fa fa-unlock"></i>
+                                                            </button>
+                                                        }
+                                                    }
+                                                    @if (!item.IsDeleted)
+                                                    {
+                                                        using (Html.BeginForm("Delete", "DoctorTimeSlot", FormMethod.Post, new { @class = "d-inline delete-form", @data_id = item.TimeSlotId }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.TimeSlotId" />
+                                                            <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="@item.TimeSlotId" title="حذف اسلات">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        }
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-center">هیچ اسلاتی یافت نشد</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* بارگذاری Script Persian DatePicker *@
+    @Html.Partial("_PersianDatePickerScript")
+    
+    @* بارگذاری DataTables Scripts *@
+    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js"></script>
+    
+    @* بارگذاری Script اختصاصی صفحه *@
+    <script src="~/Content/js/doctor-timeslot-index.js"></script>
+}
+

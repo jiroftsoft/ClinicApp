@@ -1,8 +1,15 @@
 @* صفحه مدیریت برنامه‌های کاری پزشکان - طراحی Ultimate برای محیط درمانی *@
+@using ClinicApp.Constants
 @model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel>
 @{
     ViewBag.Title = "مدیریت برنامه‌های کاری پزشکان";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // ✅ استفاده از Constants برای جلوگیری از Magic Strings
+    // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+    var isActiveParam = Request.QueryString[DoctorScheduleConstants.QueryParameters.IsActive];
+    var dayOfWeekParam = Request.QueryString[DoctorScheduleConstants.QueryParameters.DayOfWeek];
+    var doctorIdParam = Request.QueryString[DoctorScheduleConstants.QueryParameters.DoctorId];
 }
 
 @Html.AntiForgeryToken()
@@ -761,25 +768,25 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="text-white mb-2">روز هفته</label>
-                    <select id="dayOfWeekFilter" class="form-select">
+                    <select id="@DoctorScheduleConstants.ElementIds.DayOfWeekFilter" class="form-select">
                         <option value="">همه روزها</option>
-                        <option value="شنبه">شنبه</option>
-                        <option value="یکشنبه">یکشنبه</option>
-                        <option value="دوشنبه">دوشنبه</option>
-                        <option value="سه‌شنبه">سه‌شنبه</option>
-                        <option value="چهارشنبه">چهارشنبه</option>
-                        <option value="پنج‌شنبه">پنج‌شنبه</option>
-                        <option value="جمعه">جمعه</option>
+                        <option value="شنبه" @(dayOfWeekParam == "شنبه" ? "selected" : "")>شنبه</option>
+                        <option value="یکشنبه" @(dayOfWeekParam == "یکشنبه" ? "selected" : "")>یکشنبه</option>
+                        <option value="دوشنبه" @(dayOfWeekParam == "دوشنبه" ? "selected" : "")>دوشنبه</option>
+                        <option value="سه‌شنبه" @(dayOfWeekParam == "سه‌شنبه" ? "selected" : "")>سه‌شنبه</option>
+                        <option value="چهارشنبه" @(dayOfWeekParam == "چهارشنبه" ? "selected" : "")>چهارشنبه</option>
+                        <option value="پنج‌شنبه" @(dayOfWeekParam == "پنج‌شنبه" ? "selected" : "")>پنج‌شنبه</option>
+                        <option value="جمعه" @(dayOfWeekParam == "جمعه" ? "selected" : "")>جمعه</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="text-white mb-2">وضعیت</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">همه وضعیت‌ها</option>
-                        <option value="true">فعال</option>
-                        <option value="false">غیرفعال</option>
+                    <select id="@DoctorScheduleConstants.ElementIds.StatusFilter" class="form-select">
+                        <option value="@DoctorScheduleConstants.FilterValues.All">همه وضعیت‌ها</option>
+                        <option value="@DoctorScheduleConstants.FilterValues.Active" @(isActiveParam == DoctorScheduleConstants.FilterValues.Active ? "selected" : "")>فعال</option>
+                        <option value="@DoctorScheduleConstants.FilterValues.Inactive" @(isActiveParam == DoctorScheduleConstants.FilterValues.Inactive ? "selected" : "")>غیرفعال</option>
                     </select>
                 </div>
             </div>
@@ -800,23 +807,9 @@
         <div class="col-12">
             <div class="card schedule-card">
                 <div class="card-body">
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>
-                            @TempData["Success"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-
-                    @if (TempData["Error"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            @TempData["Error"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+                    @* ✅ حذف Alert های Bootstrap - استفاده از NotificationHelper (Toastr) *@
+                    @* طبق: DEVELOPMENT_CONTRACT.md - Notifications *@
+                    @* پیام‌ها به صورت خودکار توسط _AdminLayout.cshtml نمایش داده می‌شوند *@
 
                     <!-- ✅ پیام خالی بودن جدول (قبل از DataTable) -->
                     @if (Model == null || Model.Items == null || !Model.Items.Any())
@@ -1143,18 +1136,67 @@
                 applyFilters();
             }, 300);
 
-            // Add change event handlers for filters با Debouncing
-            $('#dayOfWeekFilter, #statusFilter').on('change', function() {
+            // ✅ Constants برای JavaScript (Strongly-typed)
+            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+            var DoctorScheduleConstants = {
+                QueryParameters: {
+                    DoctorId: '@DoctorScheduleConstants.QueryParameters.DoctorId',
+                    DayOfWeek: '@DoctorScheduleConstants.QueryParameters.DayOfWeek',
+                    IsActive: '@DoctorScheduleConstants.QueryParameters.IsActive',
+                    Page: '@DoctorScheduleConstants.QueryParameters.Page'
+                },
+                ElementIds: {
+                    DoctorFilter: '@DoctorScheduleConstants.ElementIds.DoctorFilter',
+                    DayOfWeekFilter: '@DoctorScheduleConstants.ElementIds.DayOfWeekFilter',
+                    StatusFilter: '@DoctorScheduleConstants.ElementIds.StatusFilter',
+                    SearchBtn: '@DoctorScheduleConstants.ElementIds.SearchBtn'
+                },
+                FilterValues: {
+                    Active: '@DoctorScheduleConstants.FilterValues.Active',
+                    Inactive: '@DoctorScheduleConstants.FilterValues.Inactive',
+                    All: '@DoctorScheduleConstants.FilterValues.All'
+                },
+                Defaults: {
+                    PageNumber: @DoctorScheduleConstants.Defaults.PageNumber
+                }
+            };
+
+            // ✅ مقداردهی فیلترها از QueryString (Strongly-typed)
+            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+            var urlParams = new URLSearchParams(window.location.search);
+            var doctorIdFromUrl = urlParams.get(DoctorScheduleConstants.QueryParameters.DoctorId);
+            var dayOfWeekFromUrl = urlParams.get(DoctorScheduleConstants.QueryParameters.DayOfWeek);
+            var isActiveFromUrl = urlParams.get(DoctorScheduleConstants.QueryParameters.IsActive);
+
+            // ✅ تنظیم فیلتر doctorId بعد از بارگذاری پزشکان
+            if (doctorIdFromUrl) {
+                loadDoctors().then(function() {
+                    $('#' + DoctorScheduleConstants.ElementIds.DoctorFilter).val(doctorIdFromUrl).trigger('change');
+                });
+            }
+
+            // ✅ تنظیم فیلتر dayOfWeek
+            if (dayOfWeekFromUrl) {
+                $('#' + DoctorScheduleConstants.ElementIds.DayOfWeekFilter).val(dayOfWeekFromUrl);
+            }
+
+            // ✅ تنظیم فیلتر isActive
+            if (isActiveFromUrl !== null && isActiveFromUrl !== DoctorScheduleConstants.FilterValues.All) {
+                $('#' + DoctorScheduleConstants.ElementIds.StatusFilter).val(isActiveFromUrl);
+            }
+
+            // Add change event handlers for filters با Debouncing (Strongly-typed)
+            $('#' + DoctorScheduleConstants.ElementIds.DayOfWeekFilter + ', #' + DoctorScheduleConstants.ElementIds.StatusFilter).on('change', function() {
                 debouncedApplyFilters();
             });
 
-            // Add change event handler for doctor filter با Debouncing
-            $(document).on('change', '#doctorFilter', function() {
+            // Add change event handler for doctor filter با Debouncing (Strongly-typed)
+            $(document).on('change', '#' + DoctorScheduleConstants.ElementIds.DoctorFilter, function() {
                 debouncedApplyFilters();
             });
 
-            // Search functionality
-            $('#searchBtn').click(function () {
+            // Search functionality (Strongly-typed)
+            $('#' + DoctorScheduleConstants.ElementIds.SearchBtn).click(function () {
                 applyFilters();
             });
 
@@ -1305,53 +1347,38 @@
         }
 
         function applyFilters() {
-            var doctorFilter = $('#doctorFilter').val();
-            var dayOfWeekFilter = $('#dayOfWeekFilter').val();
-            var statusFilter = $('#statusFilter').val();
+            // ✅ استفاده از Constants (Strongly-typed)
+            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+            var doctorFilter = $('#' + DoctorScheduleConstants.ElementIds.DoctorFilter).val();
+            var dayOfWeekFilter = $('#' + DoctorScheduleConstants.ElementIds.DayOfWeekFilter).val();
+            var statusFilter = $('#' + DoctorScheduleConstants.ElementIds.StatusFilter).val();
 
-            // ✅ Get DataTable instance (فقط اگر initialize شده باشد)
-            var $table = $('#schedulesTable');
-            if (!$table.length || !$.fn.DataTable.isDataTable('#schedulesTable')) {
-                console.log('DataTable not initialized, skipping filter');
-                return;
-            }
-
-            var table = $table.DataTable();
-
-            // Clear all filters first
-            table.search('').columns().search('').draw();
-
-            // Apply custom filtering
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-                var $row = $(table.row(dataIndex).node());
-
-                // Get values from data attributes
-                var doctorId = $row.data('doctor-id').toString();
-                var dayOfWeek = $row.data('day-of-week');
-                var isActive = $row.data('is-active') === 'true';
-
-                // Apply filters
-                if (doctorFilter && doctorId !== doctorFilter) return false;
-                if (dayOfWeekFilter && dayOfWeek !== dayOfWeekFilter) return false;
-                if (statusFilter !== '') {
-                    var statusValue = statusFilter === 'true';
-                    if (isActive !== statusValue) return false;
-                }
-
-                return true;
-            });
-
-            // Redraw table with filters
-            table.draw();
-
-            // Remove custom filter function
-            $.fn.dataTable.ext.search.pop();
-
-            console.log('Filters applied:', {
+            console.log('Applying filters:', {
                 doctor: doctorFilter,
                 dayOfWeek: dayOfWeekFilter,
                 status: statusFilter
             });
+
+            // ✅ ساخت URL با پارامترهای فیلتر (Strongly-typed)
+            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+            var url = '@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })?' + 
+                      DoctorScheduleConstants.QueryParameters.Page + '=' + DoctorScheduleConstants.Defaults.PageNumber;
+            
+            // ✅ اضافه کردن پارامترهای فیلتر به URL
+            if (doctorFilter) {
+                url += '&' + DoctorScheduleConstants.QueryParameters.DoctorId + '=' + encodeURIComponent(doctorFilter);
+            }
+            if (dayOfWeekFilter) {
+                url += '&' + DoctorScheduleConstants.QueryParameters.DayOfWeek + '=' + encodeURIComponent(dayOfWeekFilter);
+            }
+            if (statusFilter !== DoctorScheduleConstants.FilterValues.All) {
+                url += '&' + DoctorScheduleConstants.QueryParameters.IsActive + '=' + encodeURIComponent(statusFilter);
+            }
+
+            console.log('Redirecting to:', url);
+            
+            // ✅ ارسال درخواست جدید به سرور با فیلترها
+            window.location.href = url;
         }
 
         function validateTimeRange() {

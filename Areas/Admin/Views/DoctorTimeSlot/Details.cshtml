@@ -1,0 +1,226 @@
+@* صفحه جزئیات اسلات زمانی *@
+@using ClinicApp.Models.Enums
+@model ClinicApp.ViewModels.Admin.TimeSlotManagement.TimeSlotDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات اسلات زمانی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">جزئیات اسلات زمانی #@Model.TimeSlotId</h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">
+                            <i class="fa fa-arrow-right"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>اطلاعات اسلات</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>شناسه اسلات</th>
+                                    <td>@Model.TimeSlotId</td>
+                                </tr>
+                                <tr>
+                                    <th>تاریخ نوبت</th>
+                                    <td>@Model.AppointmentDateShamsi (@Model.DayOfWeekName)</td>
+                                </tr>
+                                <tr>
+                                    <th>زمان</th>
+                                    <td>@Model.StartTimeText - @Model.EndTimeText</td>
+                                </tr>
+                                <tr>
+                                    <th>مدت زمان</th>
+                                    <td>@Model.Duration دقیقه</td>
+                                </tr>
+                                <tr>
+                                    <th>وضعیت</th>
+                                    <td>
+                                        <span class="badge badge-@(Model.Status == AppointmentStatus.Available ? "success" : Model.Status == AppointmentStatus.Scheduled ? "primary" : "secondary")">
+                                            @Model.StatusName
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>اطلاعات پزشک</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>نام پزشک</th>
+                                    <td>@Model.DoctorName</td>
+                                </tr>
+                                <tr>
+                                    <th>کد ملی</th>
+                                    <td>@(Model.DoctorNationalCode ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <th>شماره تماس</th>
+                                    <td>@(Model.DoctorPhoneNumber ?? "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    @if (Model.AppointmentId.HasValue)
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5>اطلاعات نوبت</h5>
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>شناسه نوبت</th>
+                                        <td>@Model.AppointmentId</td>
+                                    </tr>
+                                    <tr>
+                                        <th>نام بیمار</th>
+                                        <td>@(Model.PatientName ?? "-")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>کد ملی بیمار</th>
+                                        <td>@(Model.PatientNationalCode ?? "-")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>شماره تماس بیمار</th>
+                                        <td>@(Model.PatientPhoneNumber ?? "-")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h5>اطلاعات ردیابی</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>تاریخ ایجاد</th>
+                                    <td>@Model.CreatedAtShamsi</td>
+                                </tr>
+                                <tr>
+                                    <th>کاربر ایجاد کننده</th>
+                                    <td>@(Model.CreatedByUserName ?? "-")</td>
+                                </tr>
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    <tr>
+                                        <th>تاریخ آخرین ویرایش</th>
+                                        <td>@Model.UpdatedAtShamsi</td>
+                                    </tr>
+                                    <tr>
+                                        <th>کاربر آخرین ویرایش کننده</th>
+                                        <td>@(Model.UpdatedByUserName ?? "-")</td>
+                                    </tr>
+                                }
+                                @if (Model.IsDeleted)
+                                {
+                                    <tr>
+                                        <th>تاریخ حذف</th>
+                                        <td>@Model.DeletedAtShamsi</td>
+                                    </tr>
+                                    <tr>
+                                        <th>کاربر حذف کننده</th>
+                                        <td>@(Model.DeletedByUserName ?? "-")</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+
+                    @* عملیات *@
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="btn-group">
+                                @if (Model.Status == AppointmentStatus.Scheduled || Model.Status == AppointmentStatus.Pending)
+                                {
+                                    using (Html.BeginForm("Release", "DoctorTimeSlot", FormMethod.Post, new { @class = "release-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.TimeSlotId" />
+                                        <button type="button" class="btn btn-warning btn-release" data-id="@Model.TimeSlotId">
+                                            <i class="fa fa-unlock"></i> آزاد کردن اسلات
+                                        </button>
+                                    }
+                                }
+                                @if (!Model.IsDeleted)
+                                {
+                                    using (Html.BeginForm("Delete", "DoctorTimeSlot", FormMethod.Post, new { @class = "delete-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.TimeSlotId" />
+                                        <button type="button" class="btn btn-danger btn-delete" data-id="@Model.TimeSlotId">
+                                            <i class="fa fa-trash"></i> حذف اسلات
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // پیام‌ها توسط _AdminLayout.cshtml مدیریت می‌شوند
+            
+            // SweetAlert2 برای تأیید آزاد کردن اسلات
+            $('.btn-release').on('click', function(e) {
+                e.preventDefault();
+                var form = $(this).closest('form');
+                var timeSlotId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'آیا از انجام این عملیات اطمینان دارید؟',
+                    text: 'این اسلات آزاد خواهد شد و قابل رزرو مجدد می‌شود',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، آزاد کن',
+                    cancelButtonText: 'خیر، انصراف',
+                    reverseButtons: true
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+            
+            // SweetAlert2 برای تأیید حذف اسلات
+            $('.btn-delete').on('click', function(e) {
+                e.preventDefault();
+                var form = $(this).closest('form');
+                var timeSlotId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'آیا از انجام این عملیات اطمینان دارید؟',
+                    text: 'این اسلات حذف خواهد شد و قابل بازگشت نیست',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، حذف کن',
+                    cancelButtonText: 'خیر، انصراف',
+                    reverseButtons: true
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}
+

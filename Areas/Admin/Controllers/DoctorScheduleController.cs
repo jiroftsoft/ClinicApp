@@ -12,6 +12,7 @@ using Serilog;
 using System.Linq;
 using System.Collections.Generic; // Added for List
 using System.Text.RegularExpressions;
+using ClinicApp.Constants;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -48,18 +49,41 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// نمایش لیست برنامه‌های کاری پزشکان
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Index(string searchTerm = "", int page = 1, int pageSize = 10)
+        public async Task<ActionResult> Index(
+            string searchTerm = "", 
+            int page = DoctorScheduleConstants.Defaults.PageNumber, 
+            int pageSize = DoctorScheduleConstants.Defaults.PageSize, 
+            int? doctorId = null, 
+            string dayOfWeek = null, 
+            string isActive = null)
         {
             try
             {
-                _logger.Information("درخواست نمایش لیست برنامه‌های کاری پزشکان. Page: {Page}, PageSize: {PageSize}", page, pageSize);
+                _logger.Information("درخواست نمایش لیست برنامه‌های کاری پزشکان. Page: {Page}, PageSize: {PageSize}, DoctorId: {DoctorId}, DayOfWeek: {DayOfWeek}, IsActive: {IsActive}", 
+                    page, pageSize, doctorId, dayOfWeek, isActive);
+
+                // ✅ تبدیل string isActive به bool? با استفاده از Constants (Strongly-typed)
+                // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
+                bool? isActiveFilter = null;
+                if (!string.IsNullOrWhiteSpace(isActive))
+                {
+                    if (isActive == DoctorScheduleConstants.FilterValues.Active)
+                    {
+                        isActiveFilter = true;
+                    }
+                    else if (isActive == DoctorScheduleConstants.FilterValues.Inactive)
+                    {
+                        isActiveFilter = false;
+                    }
+                }
 
                 // دریافت لیست برنامه‌های کاری
-                var result = await _doctorScheduleService.GetAllDoctorSchedulesAsync(searchTerm, page, pageSize);
+                var result = await _doctorScheduleService.GetAllDoctorSchedulesAsync(searchTerm, page, pageSize, doctorId, dayOfWeek, isActiveFilter);
 
                 if (!result.Success)
                 {
-                    TempData["Error"] = result.Message;
+                    _logger.Warning("خطا در دریافت لیست برنامه‌های کاری: {ErrorMessage}", result.Message);
+                    NotificationHelper.SetError(TempData, result.Message, "خطا در دریافت لیست");
                     return View(new PagedResult<DoctorScheduleViewModel>(new List<DoctorScheduleViewModel>(), 0, page, pageSize));
                 }
 
@@ -70,7 +94,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست برنامه‌های کاری پزشکان");
-                TempData["Error"] = "خطا در بارگذاری لیست برنامه‌های کاری";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری لیست برنامه‌های کاری", "خطا");
                 return View(new PagedResult<DoctorScheduleViewModel>(new List<DoctorScheduleViewModel>(), 0, page, pageSize));
             }
         }
@@ -91,7 +115,8 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 if (doctorId <= 0)
                 {
-                    TempData["Error"] = "شناسه پزشک نامعتبر است.";
+                    _logger.Warning("شناسه پزشک نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است.", "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -99,7 +124,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
-                    TempData["Error"] = "پزشک مورد نظر یافت نشد.";
+                    _logger.Warning("پزشک یافت نشد: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "پزشک مورد نظر یافت نشد.", "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -134,7 +160,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش برنامه کاری پزشک {DoctorId}", doctorId);
-                TempData["Error"] = "خطا در بارگذاری برنامه کاری پزشک";
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری برنامه کاری پزشک", "خطا");
                 return RedirectToAction("Index", "DoctorSchedule");
             }
         }
@@ -307,7 +333,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش نمای کلی برنامه‌های کاری");
-                TempData["Error"] = "خطا در بارگذاری نمای کلی برنامه‌های کاری";
+                _logger.Error("خطا در بارگذاری نمای کلی برنامه‌های کاری");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری نمای کلی برنامه‌های کاری", "خطا");
                 return View(new ScheduleOverviewViewModel());
             }
         }
@@ -404,7 +431,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!doctorId.HasValue || doctorId.Value <= 0)
                 {
                     _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
-                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    _logger.Warning("شناسه پزشک نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است", "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -413,7 +441,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!doctorResult.Success)
                 {
                     _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
-                    TempData["Error"] = doctorResult.Message;
+                    _logger.Warning("خطا در دریافت اطلاعات پزشک: {ErrorMessage}", doctorResult.Message);
+                    NotificationHelper.SetError(TempData, doctorResult.Message, "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -439,7 +468,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                         System.Diagnostics.Debug.WriteLine($"[AssignSchedule GET] ❌ خطا در دریافت: {scheduleResult.Message}");
                         
                         // ✅ نمایش پیغام خطا به کاربر
-                        TempData["Error"] = scheduleResult.Message ?? "خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.";
+                        _logger.Warning("خطا در دریافت برنامه کاری: {ErrorMessage}", scheduleResult.Message);
+                        NotificationHelper.SetError(TempData, scheduleResult.Message ?? "خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.", "خطا");
                         
                         // ✅ ایجاد مدل جدید برای ادامه کار
                         model = new DoctorScheduleViewModel
@@ -475,7 +505,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                     _logger.Warning(ex, "خطای عملیاتی در دریافت برنامه کاری پزشک {DoctorId}: {Message}", doctorId.Value, ex.Message);
                     
                     // ✅ نمایش پیغام خطا به کاربر
-                    TempData["Error"] = $"خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.";
+                    _logger.Error("خطا در دریافت برنامه کاری پزشک");
+                    NotificationHelper.SetError(TempData, "خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.", "خطا");
                     
                     model = new DoctorScheduleViewModel
                     {
@@ -497,7 +528,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                     }
                     
                     // ✅ نمایش پیغام خطا به کاربر (بدون نمایش جزئیات فنی)
-                    TempData["Error"] = $"خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.";
+                    _logger.Error("خطا در دریافت برنامه کاری پزشک");
+                    NotificationHelper.SetError(TempData, "خطا در دریافت برنامه کاری پزشک. لطفاً دوباره تلاش کنید.", "خطا");
                     
                     model = new DoctorScheduleViewModel
                     {
@@ -560,7 +592,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم تنظیم برنامه کاری پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["Error"] = "خطا در بارگذاری فرم تنظیم برنامه کاری";
+                _logger.Error("خطا در بارگذاری فرم تنظیم برنامه کاری");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم تنظیم برنامه کاری", "خطا");
                 return RedirectToAction("Index", "DoctorSchedule");
             }
         }
@@ -695,7 +728,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                         if (isAjax)
                             return Json(new { success = false, message = errorMessage });
                         
-                        TempData["Error"] = $"خطا در اعتبارسنجی: {errorMessage}";
+                        _logger.Warning("خطا در اعتبارسنجی: {ErrorMessage}", errorMessage);
+                        NotificationHelper.SetError(TempData, $"خطا در اعتبارسنجی: {errorMessage}", "خطای اعتبارسنجی");
                         return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                     }
                 }
@@ -753,7 +787,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     if (isAjax)
                         return Json(new { success = false, message = errorMessage });
                     
-                    TempData["Error"] = errorMessage;
+                    NotificationHelper.SetError(TempData, errorMessage, "خطا");
                     return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
                 
@@ -791,7 +825,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                         if (isAjax)
                             return Json(new { success = false, message = errorMessage });
                         
-                        TempData["Error"] = errorMessage;
+                        NotificationHelper.SetError(TempData, errorMessage, "خطا");
                         return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                     }
                 }
@@ -827,7 +861,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                     if (isAjax)
                         return Json(new { success = false, message = result.Message });
                     
-                    TempData["Error"] = result.Message;
+                    _logger.Error("خطا در ذخیره برنامه کاری: {ErrorMessage}", result.Message);
+                    NotificationHelper.SetError(TempData, result.Message, "خطا");
                     return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
 
@@ -840,7 +875,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (isAjax)
                     return Json(new { success = true, message = successMessage });
                 
-                TempData["Success"] = successMessage;
+                NotificationHelper.SetSuccess(TempData, successMessage, "موفقیت");
                 // ✅ Redirect به Index به جای Schedule برای جلوگیری از خطای GetDoctorScheduleAsync
                 return RedirectToAction("Index", "DoctorSchedule");
             }
@@ -852,7 +887,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (isAjax)
                     return Json(new { success = false, message = errorMessage });
                 
-                TempData["Error"] = errorMessage;
+                NotificationHelper.SetError(TempData, errorMessage, "خطا");
                 return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
             }
         }
@@ -870,7 +905,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!doctorId.HasValue || doctorId.Value <= 0)
                 {
                     _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
-                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    _logger.Warning("شناسه پزشک نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است", "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -879,7 +915,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!doctorResult.Success)
                 {
                     _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
-                    TempData["Error"] = doctorResult.Message;
+                    _logger.Warning("خطا در دریافت اطلاعات پزشک: {ErrorMessage}", doctorResult.Message);
+                    NotificationHelper.SetError(TempData, doctorResult.Message, "خطا");
                     return RedirectToAction("Index", "DoctorSchedule");
                 }
 
@@ -904,7 +941,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش فرم مسدود کردن بازه زمانی پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["Error"] = "خطا در بارگذاری فرم مسدود کردن بازه زمانی";
+                _logger.Error(ex, "خطا در بارگذاری فرم مسدود کردن بازه زمانی");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری فرم مسدود کردن بازه زمانی", "خطا");
                 return RedirectToAction("Index", "DoctorSchedule");
             }
         }
@@ -924,7 +962,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("مدل مسدود کردن بازه زمانی نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    _logger.Warning("اطلاعات وارد شده نامعتبر");
+                    NotificationHelper.SetError(TempData, "اطلاعات وارد شده نامعتبر است", "خطای اعتبارسنجی");
                     return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
                 }
 
@@ -935,7 +974,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 // بررسی منطقی بودن بازه زمانی
                 if (startDateTime >= endDateTime)
                 {
-                    TempData["Error"] = "زمان شروع باید قبل از زمان پایان باشد";
+                    _logger.Warning("زمان شروع باید قبل از زمان پایان باشد");
+                    NotificationHelper.SetError(TempData, "زمان شروع باید قبل از زمان پایان باشد", "خطای اعتبارسنجی");
                     return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
                 }
 
@@ -946,18 +986,20 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!result.Success)
                 {
                     _logger.Warning("مسدود کردن بازه زمانی پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
-                    TempData["Error"] = result.Message;
+                    _logger.Error("خطا در ذخیره برنامه کاری: {ErrorMessage}", result.Message);
+                    NotificationHelper.SetError(TempData, result.Message, "خطا");
                     return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
                 }
 
                 _logger.Information("مسدود کردن بازه زمانی پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
-                TempData["Success"] = "بازه زمانی با موفقیت مسدود شد";
+                NotificationHelper.SetSuccess(TempData, "بازه زمانی با موفقیت مسدود شد", "موفقیت");
                 return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در مسدود کردن بازه زمانی پزشک {DoctorId}", model.DoctorId);
-                TempData["Error"] = "خطا در انجام عملیات مسدود کردن بازه زمانی";
+                _logger.Error(ex, "خطا در انجام عملیات مسدود کردن بازه زمانی");
+                NotificationHelper.SetError(TempData, "خطا در انجام عملیات مسدود کردن بازه زمانی", "خطا");
                 return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
             }
         }
@@ -990,10 +1032,11 @@ namespace ClinicApp.Areas.Admin.Controllers
                             var deleteResult = await _doctorScheduleService.DeleteDoctorScheduleAsync(model.Id);
                             if (deleteResult.Success)
                             {
-                                TempData["Success"] = "برنامه کاری با موفقیت حذف شد";
+                                NotificationHelper.SetSuccess(TempData, "برنامه کاری با موفقیت حذف شد", "موفقیت");
                                 return RedirectToAction("Index");
                             }
-                            TempData["Error"] = deleteResult.Message;
+                            _logger.Error("خطا در حذف برنامه کاری: {ErrorMessage}", deleteResult.Message);
+                            NotificationHelper.SetError(TempData, deleteResult.Message, "خطا");
                             return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                         }
                         break;
@@ -1004,10 +1047,11 @@ namespace ClinicApp.Areas.Admin.Controllers
                             var activateResult = await _doctorScheduleService.ActivateDoctorScheduleAsync(model.Id);
                             if (activateResult.Success)
                             {
-                                TempData["Success"] = "برنامه کاری با موفقیت فعال شد";
+                                NotificationHelper.SetSuccess(TempData, "برنامه کاری با موفقیت فعال شد", "موفقیت");
                                 return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
                             }
-                            TempData["Error"] = activateResult.Message;
+                            _logger.Error("خطا در فعال کردن برنامه کاری: {ErrorMessage}", activateResult.Message);
+                            NotificationHelper.SetError(TempData, activateResult.Message, "خطا");
                             return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                         }
                         break;
@@ -1018,26 +1062,30 @@ namespace ClinicApp.Areas.Admin.Controllers
                             var deactivateResult = await _doctorScheduleService.DeactivateDoctorScheduleAsync(model.Id);
                             if (deactivateResult.Success)
                             {
-                                TempData["Success"] = "برنامه کاری با موفقیت غیرفعال شد";
+                                NotificationHelper.SetSuccess(TempData, "برنامه کاری با موفقیت غیرفعال شد", "موفقیت");
                                 return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
                             }
-                            TempData["Error"] = deactivateResult.Message;
+                            _logger.Error("خطا در غیرفعال کردن برنامه کاری: {ErrorMessage}", deactivateResult.Message);
+                            NotificationHelper.SetError(TempData, deactivateResult.Message, "خطا");
                             return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                         }
                         break;
                     
                     default:
-                        TempData["Error"] = "عملیات نامعتبر است";
+                        _logger.Warning("عملیات نامعتبر: {Action}", action);
+                        NotificationHelper.SetError(TempData, "عملیات نامعتبر است", "خطا");
                         return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
 
-                TempData["Error"] = "خطا در انجام عملیات";
+                _logger.Error("خطا در انجام عملیات");
+                NotificationHelper.SetError(TempData, "خطا در انجام عملیات", "خطا");
                 return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در مدیریت برنامه کاری برای پزشک {DoctorId} - عملیات: {Action}", model.DoctorId, action);
-                TempData["Error"] = "خطا در انجام عملیات";
+                _logger.Error("خطا در انجام عملیات");
+                NotificationHelper.SetError(TempData, "خطا در انجام عملیات", "خطا");
                 return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
             }
         }
@@ -1080,7 +1128,8 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 if (scheduleId <= 0)
                 {
-                    TempData["Error"] = "شناسه برنامه کاری نامعتبر است.";
+                    _logger.Warning("شناسه برنامه کاری نامعتبر: {ScheduleId}", scheduleId);
+                    NotificationHelper.SetError(TempData, "شناسه برنامه کاری نامعتبر است.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1088,7 +1137,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var result = await _doctorScheduleService.GetDoctorScheduleByIdAsync(scheduleId);
                 if (!result.Success || result.Data == null)
                 {
-                    TempData["Error"] = "برنامه کاری مورد نظر یافت نشد.";
+                    _logger.Warning("برنامه کاری یافت نشد: {ScheduleId}", scheduleId);
+                    NotificationHelper.SetError(TempData, "برنامه کاری مورد نظر یافت نشد.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1097,7 +1147,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ویرایش برنامه کاری {ScheduleId}", scheduleId);
-                TempData["Error"] = "خطا در بارگذاری برنامه کاری";
+                _logger.Error(ex, "خطا در بارگذاری برنامه کاری");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری برنامه کاری", "خطا");
                 return RedirectToAction("Index");
             }
         }
@@ -1155,9 +1206,9 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 // بررسی وجود برنامه کاری
                 var schedule = await _doctorScheduleService.GetDoctorScheduleByIdAsync(scheduleId);
-                if (schedule == null)
+                if (!schedule.Success || schedule.Data == null)
                 {
-                    return Json(new { success = false, message = "برنامه کاری مورد نظر یافت نشد." });
+                    return Json(new { success = false, message = schedule.Message ?? "برنامه کاری مورد نظر یافت نشد." });
                 }
 
                 // غیرفعال کردن برنامه کاری
@@ -1197,9 +1248,9 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 // بررسی وجود برنامه کاری
                 var schedule = await _doctorScheduleService.GetDoctorScheduleByIdAsync(scheduleId);
-                if (schedule == null)
+                if (!schedule.Success || schedule.Data == null)
                 {
-                    return Json(new { success = false, message = "برنامه کاری مورد نظر یافت نشد." });
+                    return Json(new { success = false, message = schedule.Message ?? "برنامه کاری مورد نظر یافت نشد." });
                 }
 
                 // فعال کردن مجدد برنامه کاری
@@ -1237,7 +1288,8 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 if (id <= 0)
                 {
-                    TempData["Error"] = "شناسه برنامه کاری نامعتبر است.";
+                    _logger.Warning("شناسه برنامه کاری نامعتبر: {ScheduleId}", id);
+                    NotificationHelper.SetError(TempData, "شناسه برنامه کاری نامعتبر است.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1245,7 +1297,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var result = await _doctorScheduleService.GetDoctorScheduleByIdAsync(id);
                 if (!result.Success || result.Data == null)
                 {
-                    TempData["Error"] = "برنامه کاری مورد نظر یافت نشد.";
+                    _logger.Warning("برنامه کاری یافت نشد: {ScheduleId}", id);
+                    NotificationHelper.SetError(TempData, "برنامه کاری مورد نظر یافت نشد.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1261,7 +1314,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش جزئیات برنامه کاری {ScheduleId}", id);
-                TempData["Error"] = "خطا در بارگذاری جزئیات برنامه کاری";
+                _logger.Error(ex, "خطا در بارگذاری جزئیات برنامه کاری");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری جزئیات برنامه کاری", "خطا");
                 return RedirectToAction("Index");
             }
         }
@@ -1278,7 +1332,8 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 if (id <= 0)
                 {
-                    TempData["Error"] = "شناسه برنامه کاری نامعتبر است.";
+                    _logger.Warning("شناسه برنامه کاری نامعتبر: {ScheduleId}", id);
+                    NotificationHelper.SetError(TempData, "شناسه برنامه کاری نامعتبر است.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1286,7 +1341,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var result = await _doctorScheduleService.GetDoctorScheduleByIdAsync(id);
                 if (!result.Success || result.Data == null)
                 {
-                    TempData["Error"] = "برنامه کاری مورد نظر یافت نشد.";
+                    _logger.Warning("برنامه کاری یافت نشد: {ScheduleId}", id);
+                    NotificationHelper.SetError(TempData, "برنامه کاری مورد نظر یافت نشد.", "خطا");
                     return RedirectToAction("Index");
                 }
 
@@ -1302,7 +1358,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ویرایش برنامه کاری {ScheduleId}", id);
-                TempData["Error"] = "خطا در بارگذاری برنامه کاری";
+                _logger.Error(ex, "خطا در بارگذاری برنامه کاری");
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری برنامه کاری", "خطا");
                 return RedirectToAction("Index");
             }
         }

@@ -1,0 +1,131 @@
+/* استایل‌های ماژول مدیریت اسلات‌های زمانی پزشکان */
+/* طبق قرارداد DEVELOPMENT_CONTRACT.md - رنگ‌های استاندارد پزشکی */
+
+.time-slot-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+}
+
+.time-slot-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* رنگ‌های وضعیت - طبق پالت رنگ استاندارد پزشکی */
+.status-available {
+    background-color: var(--medical-success, #28a745);
+    color: white;
+}
+
+.status-scheduled {
+    background-color: var(--medical-primary, #007bff);
+    color: white;
+}
+
+.status-completed {
+    background-color: var(--medical-secondary, #6c757d);
+    color: white;
+}
+
+.status-cancelled {
+    background-color: var(--medical-danger, #dc3545);
+    color: white;
+}
+
+.status-pending {
+    background-color: var(--medical-warning, #ffc107);
+    color: #212529;
+}
+
+.status-noshow {
+    background-color: var(--medical-info, #17a2b8);
+    color: white;
+}
+
+/* ✅ استایل‌های DataTables - بهبود UX */
+#timeSlotsTable {
+    width: 100% !important;
+}
+
+#timeSlotsTable thead th {
+    background-color: var(--medical-primary, #2c5aa0);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    padding: 12px 8px;
+}
+
+#timeSlotsTable tbody td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 10px 8px;
+}
+
+#timeSlotsTable tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+/* ✅ بهبود دکمه‌های عملیات */
+#timeSlotsTable .btn-group {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+#timeSlotsTable .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* ✅ بهبود DataTables Controls */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    margin-right: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    margin: 0 0.5rem;
+    padding: 0.375rem 1.75rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+/* ✅ بهبود Responsive Design */
+@media (max-width: 768px) {
+    #timeSlotsTable {
+        font-size: 0.875rem;
+    }
+    
+    #timeSlotsTable .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
