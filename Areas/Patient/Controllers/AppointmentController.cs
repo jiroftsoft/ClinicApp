@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.DTOs.Appointment;
 using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Patient;
 using ClinicApp.ViewModels.DoctorManagementVM;
@@ -32,6 +33,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly IDoctorScheduleRepository _scheduleRepository;
         private readonly IDoctorMappingService _mappingService;
+        private readonly IAppSettings _appSettings;
 
         public AppointmentController(
             IAppointmentBookingService bookingService,
@@ -39,13 +41,15 @@ namespace ClinicApp.Areas.Patient.Controllers
             IDoctorCrudService doctorCrudService,
             IDoctorScheduleRepository scheduleRepository,
             IDoctorMappingService mappingService,
-            ILogger logger)
+            ILogger logger,
+            IAppSettings appSettings = null)
             : base(logger, currentUserService) // ✅ Base Constructor
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _scheduleRepository = scheduleRepository ?? throw new ArgumentNullException(nameof(scheduleRepository));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
+            _appSettings = appSettings ?? AppSettings.Instance; // ✅ استفاده از Singleton pattern
         }
 
         /// <summary>
@@ -58,12 +62,24 @@ namespace ClinicApp.Areas.Patient.Controllers
             int? doctorId = null,
             string date = null,  // ✅ تغییر از DateTime? به string برای دریافت تاریخ شمسی
             int page = 1,
-            int pageSize = 20)
+            int pageSize = 0) // ✅ 0 = استفاده از مقدار پیش‌فرض از config
         {
             try
             {
-                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}",
-                    doctorId, date ?? "همه");
+                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, Page: {Page}",
+                    doctorId, date ?? "همه", page);
+
+                // ✅ استفاده از config برای pageSize
+                if (pageSize <= 0)
+                {
+                    pageSize = _appSettings.AppointmentDoctorsPageSize;
+                }
+                
+                // ✅ Validation برای page
+                if (page < 1)
+                {
+                    page = 1;
+                }
 
                 // دریافت لیست پزشکان
                 var doctorsResult = await _bookingService.GetAvailableDoctorsAsync();
@@ -73,7 +89,10 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return View(new AvailableAppointmentsViewModel
                     {
                         Doctors = new List<DoctorSearchResultDto>(),
-                        AvailableSlots = new List<AvailableTimeSlotDto>()
+                        AvailableSlots = new List<AvailableTimeSlotDto>(),
+                        PageNumber = page,
+                        PageSize = pageSize,
+                        TotalCount = 0
                     });
                 }
 
@@ -88,12 +107,59 @@ namespace ClinicApp.Areas.Patient.Controllers
                     NotificationHelper.SetWarning(TempData, "تاریخ انتخاب شده در گذشته است. لطفاً تاریخ معتبری انتخاب کنید.");
                 }
                 
+                // ✅ فیلتر بر اساس doctorId (اگر انتخاب شده باشد)
+                var allDoctors = doctorsResult.Data ?? new List<DoctorSearchResultDto>();
+                if (doctorId.HasValue)
+                {
+                    allDoctors = allDoctors.Where(d => d.DoctorId == doctorId.Value).ToList();
+                }
+                
+                // ✅ Pagination
+                var totalCount = allDoctors.Count;
+                var pagedDoctors = allDoctors
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                
+                // ✅ دریافت تاریخ‌های نوبت موجود برای هر پزشک به صورت موازی (بهینه‌سازی عملکرد)
+                // ⚠️ مهم: باید قبل از ساخت ViewModel انجام شود
+                var maxDates = _appSettings.AppointmentAvailableDatesMaxCount;
+                var doctorsWithDates = await Task.WhenAll(pagedDoctors.Select(async doctor =>
+                {
+                    if (doctor.HasActiveSchedule)
+                    {
+                        try
+                        {
+                            var availableDates = await GetAvailableDatesForDoctorAsync(doctor.DoctorId, maxDates: maxDates);
+                            doctor.AvailableDates = availableDates ?? new List<AppointmentDateInfo>();
+                            _logger.Debug("دریافت {Count} تاریخ نوبت موجود برای پزشک {DoctorId}", 
+                                doctor.AvailableDates.Count, doctor.DoctorId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warning(ex, "خطا در دریافت تاریخ‌های نوبت موجود برای پزشک {DoctorId}", doctor.DoctorId);
+                            doctor.AvailableDates = new List<AppointmentDateInfo>();
+                        }
+                    }
+                    else
+                    {
+                        doctor.AvailableDates = new List<AppointmentDateInfo>();
+                    }
+                    return doctor;
+                }));
+                
+                // ✅ تبدیل به لیست (Task.WhenAll یک array برمی‌گرداند)
+                pagedDoctors = doctorsWithDates.ToList();
+                
                 var viewModel = new AvailableAppointmentsViewModel
                 {
-                    Doctors = doctorsResult.Data ?? new List<DoctorSearchResultDto>(),
+                    Doctors = pagedDoctors,
                     SelectedDoctorId = doctorId,
                     SelectedDate = selectedDate,  // ✅ حالا این تاریخ صحیح است
-                    AvailableSlots = new List<AvailableTimeSlotDto>()
+                    AvailableSlots = new List<AvailableTimeSlotDto>(),
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    TotalCount = totalCount
                 };
 
                 // اگر پزشک انتخاب شده، اسلات‌های موجود را دریافت کن
@@ -123,7 +189,10 @@ namespace ClinicApp.Areas.Patient.Controllers
                 return View(new AvailableAppointmentsViewModel
                 {
                     Doctors = new List<DoctorSearchResultDto>(),
-                    AvailableSlots = new List<AvailableTimeSlotDto>()
+                    AvailableSlots = new List<AvailableTimeSlotDto>(),
+                    PageNumber = 1,
+                    PageSize = _appSettings.AppointmentDoctorsPageSize,
+                    TotalCount = 0
                 });
             }
         }
@@ -238,10 +307,27 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (filteredDoctors != null && filteredDoctors.Any())
                 {
                     // ✅ دریافت تاریخ‌های نوبت موجود برای همه پزشکان به صورت موازی
+                    // ⚠️ توجه: این هنوز N+1 query است اما با Task.WhenAll بهینه شده
+                    // برای بهینه‌سازی بیشتر، می‌توان batch query ایجاد کرد
+                    var maxDates = _appSettings.AppointmentAvailableDatesMaxCount;
                     var doctorsWithDates = await Task.WhenAll(filteredDoctors.Select(async d =>
                     {
-                        // ✅ دریافت تاریخ‌های نوبت موجود برای این پزشک (حداکثر 5 تاریخ آینده)
-                        var availableDates = await GetAvailableDatesForDoctorAsync(d.DoctorId, maxDates: 5);
+                        // ✅ استفاده از config برای maxDates
+                        var availableDates = await GetAvailableDatesForDoctorAsync(d.DoctorId, maxDates: maxDates);
+                        
+                        // ✅ تبدیل AvailableDateInfo به anonymous object با camelCase property names
+                        var availableDatesJson = availableDates != null && availableDates.Any()
+                            ? availableDates.Select(ad => new
+                            {
+                                persianDate = ad.PersianDate,
+                                shortDate = ad.ShortDate,
+                                dayName = ad.DayName,
+                                dayNameShort = ad.DayNameShort,
+                                startTime = ad.StartTime,
+                                endTime = ad.EndTime,
+                                timeRange = ad.TimeRange
+                            }).Cast<object>().ToList()
+                            : new List<object>();
                         
                         return new
                         {
@@ -255,7 +341,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             departmentName = d.DepartmentName,
                             hasActiveSchedule = d.HasActiveSchedule,
                             scheduleInfo = d.ScheduleInfo,
-                            availableDates = availableDates, // ✅ تاریخ‌های نوبت موجود
+                            availableDates = availableDatesJson, // ✅ تاریخ‌های نوبت موجود با camelCase
                             isSelected = doctorId.HasValue && d.DoctorId == doctorId.Value
                         };
                     }));
@@ -491,31 +577,39 @@ namespace ClinicApp.Areas.Patient.Controllers
 
         /// <summary>
         /// دریافت تاریخ‌های نوبت موجود برای یک پزشک با اطلاعات کامل (حداکثر maxDates تاریخ آینده)
-        /// ✅ برای نمایش جذاب و حرفه‌ای روی کارت پزشک
+        /// ✅ بازنویسی کامل و حرفه‌ای برای محیط واقعی
         /// ⚠️ مهم: فقط روزهای کاری پزشک را بررسی می‌کند و اطلاعات کامل (تاریخ، روز، زمان) را برمی‌گرداند
         /// </summary>
-        private async Task<List<AppointmentDateInfo>> GetAvailableDatesForDoctorAsync(int doctorId, int maxDates = 5)
+        private async Task<List<AppointmentDateInfo>> GetAvailableDatesForDoctorAsync(int doctorId, int? maxDates = null)
         {
             try
             {
+                // ✅ استفاده از config برای maxDates و daysToCheck
+                var maxDatesValue = maxDates ?? _appSettings.AppointmentAvailableDatesMaxCount;
+                var daysToCheck = _appSettings.AppointmentAvailableDatesDaysToCheck;
+                
+                _logger.Information("🔍 شروع دریافت تاریخ‌های نوبت موجود - DoctorId: {DoctorId}, MaxDates: {MaxDates}, DaysToCheck: {DaysToCheck}", 
+                    doctorId, maxDatesValue, daysToCheck);
+
                 // ✅ دریافت برنامه کاری پزشک برای بررسی روزهای کاری
                 var schedule = await _scheduleRepository.GetDoctorScheduleWithDetailsAsync(doctorId);
                 if (schedule == null || schedule.WorkDays == null || !schedule.WorkDays.Any(wd => wd.IsActive && !wd.IsDeleted))
                 {
-                    _logger.Debug("پزشک {DoctorId} برنامه کاری فعال ندارد", doctorId);
+                    _logger.Warning("⚠️ پزشک {DoctorId} برنامه کاری فعال ندارد", doctorId);
                     return new List<AppointmentDateInfo>();
                 }
 
-                // ✅ نام روزهای هفته
-                var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
-                var dayNamesShort = new[] { "ی", "د", "س", "چ", "پ", "ج", "ش" };
+                // ✅ نام روزهای هفته برای نمایش (شنبه اولین روز هفته در ایران)
+                // در سیستم نمایش ایران: شنبه=0, یکشنبه=1, دوشنبه=2, سه‌شنبه=3, چهارشنبه=4, پنج‌شنبه=5, جمعه=6
+                var dayNames = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه" };
+                var dayNamesShort = new[] { "ش", "ی", "د", "س", "چ", "پ", "ج" };
 
                 // ✅ دریافت روزهای کاری فعال با اطلاعات TimeRange
                 var workDaysWithTimes = schedule.WorkDays
                     .Where(wd => wd.IsActive && !wd.IsDeleted && wd.TimeRanges != null && wd.TimeRanges.Any(tr => tr.IsActive && !tr.IsDeleted))
                     .Select(wd => new
                     {
-                        DayOfWeek = wd.DayOfWeek,
+                        DayOfWeek = wd.DayOfWeek, // در دیتابیس: یکشنبه=0, دوشنبه=1, ..., شنبه=6
                         TimeRanges = wd.TimeRanges
                             .Where(tr => tr.IsActive && !tr.IsDeleted)
                             .OrderBy(tr => tr.StartTime)
@@ -523,37 +617,108 @@ namespace ClinicApp.Areas.Patient.Controllers
                     })
                     .ToList();
 
+                _logger.Information("📋 روزهای کاری فعال پیدا شد: {Count} روز", workDaysWithTimes.Count);
+                foreach (var wd in workDaysWithTimes)
+                {
+                    _logger.Debug("  - DayOfWeek: {DayOfWeek}, TimeRanges: {Count}", wd.DayOfWeek, wd.TimeRanges.Count);
+                }
+
                 if (!workDaysWithTimes.Any())
                 {
-                    _logger.Debug("پزشک {DoctorId} روز کاری فعال با TimeRange ندارد", doctorId);
+                    _logger.Warning("⚠️ پزشک {DoctorId} روز کاری فعال با TimeRange ندارد", doctorId);
                     return new List<AppointmentDateInfo>();
                 }
 
                 var availableDates = new List<AppointmentDateInfo>();
                 var startDate = DateTime.Today;
-                var endDate = startDate.AddDays(60); // بررسی 60 روز آینده
+                var endDate = startDate.AddDays(daysToCheck); // ✅ استفاده از config
                 var currentDate = startDate;
                 var foundCount = 0;
+                var checkedDays = 0;
 
-                while (currentDate <= endDate && foundCount < maxDates)
+                _logger.Information("🔍 شروع بررسی از تاریخ {StartDate} تا {EndDate}", startDate.ToString("yyyy/MM/dd"), endDate.ToString("yyyy/MM/dd"));
+
+                while (currentDate <= endDate && foundCount < maxDatesValue)
                 {
-                    // ✅ بررسی اینکه آیا این تاریخ یکی از روزهای کاری پزشک است
-                    var dayOfWeek = (int)currentDate.DayOfWeek;
-                    var workDayInfo = workDaysWithTimes.FirstOrDefault(wd => wd.DayOfWeek == dayOfWeek);
+                    checkedDays++;
+                    var cSharpDayOfWeek = (int)currentDate.DayOfWeek; // در C#: Sunday=0, Monday=1, ..., Saturday=6
+                    
+                    // ✅ تبدیل C# DayOfWeek به دیتابیس DayOfWeek
+                    // در C#: Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6
+                    // در دیتابیس: یکشنبه=0, دوشنبه=1, سه‌شنبه=2, چهارشنبه=3, پنج‌شنبه=4, جمعه=5, شنبه=6
+                    // تبدیل: Sunday(0) → یکشنبه(0), Monday(1) → دوشنبه(1), ..., Saturday(6) → شنبه(6)
+                    // پس: dayOfWeek در C# = dayOfWeek در دیتابیس (بدون تبدیل)
+                    var dbDayOfWeek = cSharpDayOfWeek;
+                    
+                    _logger.Debug("📅 بررسی تاریخ: {Date}, CSharpDayOfWeek: {CSharpDayOfWeek} ({(DayOfWeek)cSharpDayOfWeek}), DbDayOfWeek: {DbDayOfWeek}", 
+                        currentDate.ToString("yyyy/MM/dd"), cSharpDayOfWeek, (DayOfWeek)cSharpDayOfWeek, dbDayOfWeek);
+
+                    var workDayInfo = workDaysWithTimes.FirstOrDefault(wd => wd.DayOfWeek == dbDayOfWeek);
                     
                     if (workDayInfo != null)
                     {
+                        _logger.Debug("✅ این تاریخ یکی از روزهای کاری پزشک است - DayOfWeek: {DayOfWeek}, TimeRanges: {Count}", 
+                            dbDayOfWeek, workDayInfo.TimeRanges.Count);
+
                         // ✅ بررسی اینکه آیا در این تاریخ نوبت موجود است
+                        // ⚠️ مهم: باید واقعاً نوبت موجود باشد، نه فقط اسلات‌های ممکن
                         var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, currentDate);
+                        
+                        // ✅ لاگ کامل برای دیباگ
+                        var totalSlots = slotsResult?.Data?.Count ?? 0;
+                        var availableSlotsCount = slotsResult?.Data?.Count(s => s.IsAvailable) ?? 0;
+                        var bookedSlotsCount = slotsResult?.Data?.Count(s => !s.IsAvailable) ?? 0;
+                        _logger.Debug("🔍 بررسی نوبت‌های موجود - Date: {Date}, Success: {Success}, HasData: {HasData}, TotalSlots: {TotalSlots}, AvailableSlots: {AvailableSlots}, BookedSlots: {BookedSlots}", 
+                            currentDate.ToString("yyyy/MM/dd"), 
+                            slotsResult?.Success ?? false,
+                            slotsResult?.Data != null,
+                            totalSlots,
+                            availableSlotsCount,
+                            bookedSlotsCount);
+                        
+                        // ⚠️ مهم: فقط زمانی تاریخ را اضافه می‌کنیم که واقعاً نوبت موجود باشد
+                        // یعنی حداقل یک اسلات با IsAvailable = true وجود داشته باشد
+                        // ✅ بررسی دقیق: باید واقعاً نوبت موجود باشد (نه فقط اسلات‌های ممکن)
                         if (slotsResult.Success && slotsResult.Data != null && slotsResult.Data.Any(s => s.IsAvailable))
                         {
-                            // ✅ دریافت اولین اسلات موجود برای نمایش زمان
-                            var firstAvailableSlot = slotsResult.Data.FirstOrDefault(s => s.IsAvailable);
+                            var availableSlots = slotsResult.Data.Where(s => s.IsAvailable).ToList();
+                            
+                            // ✅ بررسی اضافی: اطمینان از اینکه واقعاً نوبت موجود است
+                            if (availableSlots == null || availableSlots.Count == 0)
+                            {
+                                _logger.Warning("⚠️ هیچ نوبت موجودی در این تاریخ پیدا نشد (با وجود Any(s => s.IsAvailable) = true) - Date: {Date}, TotalSlots: {TotalSlots}", 
+                                    currentDate.ToString("yyyy/MM/dd"), totalSlots);
+                                currentDate = currentDate.AddDays(1);
+                                continue; // به تاریخ بعدی برو
+                            }
+                            
+                            // ✅ بررسی نهایی: اطمینان از اینکه حداقل یک اسلات واقعاً موجود است
+                            // (نه فقط اسلات‌های ممکن که ممکن است همه رزرو شده باشند)
+                            var trulyAvailableSlots = availableSlots.Where(s => s.IsAvailable).ToList();
+                            if (trulyAvailableSlots.Count == 0)
+                            {
+                                _logger.Warning("⚠️ هیچ اسلات واقعاً موجودی در این تاریخ پیدا نشد - Date: {Date}, TotalSlots: {TotalSlots}, AvailableSlots: {AvailableSlots}", 
+                                    currentDate.ToString("yyyy/MM/dd"), totalSlots, availableSlots.Count);
+                                currentDate = currentDate.AddDays(1);
+                                continue; // به تاریخ بعدی برو
+                            }
+                            
+                            _logger.Debug("✅ نوبت موجود پیدا شد - {Count} اسلات", trulyAvailableSlots.Count);
+
+                            // ✅ دریافت اولین TimeRange واقعی که نوبت موجود دارد
+                            // ⚠️ مهم: باید از TimeRange واقعی نوبت موجود استفاده کنیم، نه اولین TimeRange روز کاری
+                            var firstAvailableSlot = trulyAvailableSlots.OrderBy(s => s.StartTime).FirstOrDefault();
                             if (firstAvailableSlot != null)
                             {
-                                // ✅ دریافت اولین TimeRange برای این روز کاری
-                                var firstTimeRange = workDayInfo.TimeRanges.FirstOrDefault();
-                                if (firstTimeRange != null)
+                                // ✅ پیدا کردن TimeRange متناظر با این اسلات
+                                var matchingTimeRange = workDayInfo.TimeRanges.FirstOrDefault(tr => 
+                                    tr.StartTime <= firstAvailableSlot.StartTime && 
+                                    tr.EndTime >= firstAvailableSlot.EndTime);
+                                
+                                // ✅ اگر TimeRange متناظر پیدا نشد، از اولین TimeRange استفاده می‌کنیم
+                                var timeRangeToUse = matchingTimeRange ?? workDayInfo.TimeRanges.FirstOrDefault();
+                                
+                                if (timeRangeToUse != null)
                                 {
                                     // تبدیل به تاریخ شمسی
                                     var persianDate = PersianDateHelper.ToPersianDate(currentDate);
@@ -563,44 +728,113 @@ namespace ClinicApp.Areas.Patient.Controllers
                                         var dateParts = persianDate.Split('/');
                                         var shortDate = dateParts.Length >= 3 ? $"{dateParts[2]}/{dateParts[1]}" : persianDate;
                                         
-                                        // ✅ فرمت زمان
-                                        var startTime = TimeFormatHelper.FormatTimeToPersian(firstTimeRange.StartTime);
-                                        var endTime = TimeFormatHelper.FormatTimeToPersian(firstTimeRange.EndTime);
-                                        var timeRange = TimeFormatHelper.FormatTimeRangeToPersian(firstTimeRange.StartTime, firstTimeRange.EndTime);
+                                        // ✅ فرمت زمان از TimeRange واقعی
+                                        var startTime = TimeFormatHelper.FormatTimeToPersian(timeRangeToUse.StartTime);
+                                        var endTime = TimeFormatHelper.FormatTimeToPersian(timeRangeToUse.EndTime);
+                                        var timeRange = TimeFormatHelper.FormatTimeRangeToPersian(timeRangeToUse.StartTime, timeRangeToUse.EndTime);
                                         
-                                        availableDates.Add(new AppointmentDateInfo
+                                        // ✅ تبدیل دیتابیس به ایران برای نمایش
+                                        // دیتابیس: یکشنبه=0, دوشنبه=1, سه‌شنبه=2, چهارشنبه=3, پنج‌شنبه=4, جمعه=5, شنبه=6
+                                        // ایران (شنبه اولین): شنبه=0, یکشنبه=1, دوشنبه=2, سه‌شنبه=3, چهارشنبه=4, پنج‌شنبه=5, جمعه=6
+                                        // تبدیل: یکشنبه(0) → یکشنبه(1), دوشنبه(1) → دوشنبه(2), ..., شنبه(6) → شنبه(0)
+                                        // فرمول: (dbDayOfWeek + 1) % 7
+                                        var iranDayOfWeek = (dbDayOfWeek + 1) % 7;
+                                        
+                                        // ✅ بررسی تکراری نبودن: اگر این تاریخ قبلاً اضافه شده باشد، اضافه نمی‌کنیم
+                                        var isDuplicate = availableDates.Any(ad => ad.PersianDate == persianDate);
+                                        if (isDuplicate)
                                         {
-                                            PersianDate = persianDate,
-                                            ShortDate = shortDate,
-                                            DayName = dayNames[dayOfWeek],
-                                            DayNameShort = dayNamesShort[dayOfWeek],
-                                            StartTime = startTime,
-                                            EndTime = endTime,
-                                            TimeRange = timeRange
-                                        });
-                                        
-                                        foundCount++;
-                                        
-                                        _logger.Debug("تاریخ نوبت موجود پیدا شد - DoctorId: {DoctorId}, Date: {Date}, PersianDate: {PersianDate}, Day: {Day}, Time: {Time}", 
-                                            doctorId, currentDate.ToString("yyyy/MM/dd"), persianDate, dayNames[dayOfWeek], timeRange);
+                                            _logger.Debug("⚠️ تاریخ تکراری پیدا شد - Date: {Date}, PersianDate: {PersianDate}", 
+                                                currentDate.ToString("yyyy/MM/dd"), persianDate);
+                                        }
+                                        else
+                                        {
+                                            availableDates.Add(new AppointmentDateInfo
+                                            {
+                                                PersianDate = persianDate,
+                                                ShortDate = shortDate,
+                                                DayName = dayNames[iranDayOfWeek],
+                                                DayNameShort = dayNamesShort[iranDayOfWeek],
+                                                StartTime = startTime,
+                                                EndTime = endTime,
+                                                TimeRange = timeRange
+                                            });
+                                            
+                                            foundCount++;
+                                            
+                                            _logger.Information("✅ تاریخ نوبت موجود پیدا شد - DoctorId: {DoctorId}, Date: {Date}, PersianDate: {PersianDate}, DbDayOfWeek: {DbDayOfWeek}, IranDayOfWeek: {IranDayOfWeek}, Day: {Day}, Time: {Time}", 
+                                                doctorId, currentDate.ToString("yyyy/MM/dd"), persianDate, dbDayOfWeek, iranDayOfWeek, dayNames[iranDayOfWeek], timeRange);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        _logger.Warning("⚠️ تبدیل تاریخ شمسی نامعتبر - Date: {Date}, PersianDate: {PersianDate}", 
+                                            currentDate.ToString("yyyy/MM/dd"), persianDate);
                                     }
                                 }
+                                else
+                                {
+                                    _logger.Warning("⚠️ TimeRange برای این روز کاری پیدا نشد - DayOfWeek: {DayOfWeek}", dbDayOfWeek);
+                                }
+                            }
+                            else
+                            {
+                                _logger.Warning("⚠️ هیچ اسلات موجودی پیدا نشد - Date: {Date}", currentDate.ToString("yyyy/MM/dd"));
                             }
                         }
+                        else
+                        {
+                            _logger.Debug("ℹ️ در این تاریخ نوبت موجود نیست - Date: {Date}, Success: {Success}, HasData: {HasData}, HasAvailable: {HasAvailable}", 
+                                currentDate.ToString("yyyy/MM/dd"), slotsResult?.Success ?? false, 
+                                slotsResult?.Data != null, slotsResult?.Data?.Any(s => s.IsAvailable) ?? false);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Debug("ℹ️ این تاریخ روز کاری پزشک نیست - Date: {Date}, DayOfWeek: {DayOfWeek}", 
+                            currentDate.ToString("yyyy/MM/dd"), dbDayOfWeek);
                     }
                     
                     currentDate = currentDate.AddDays(1);
                 }
 
-                _logger.Debug("تاریخ‌های نوبت موجود برای پزشک {DoctorId}: {Count} تاریخ از {TotalDays} روز بررسی شده", 
-                    doctorId, availableDates.Count, (endDate - startDate).Days);
+                // ✅ مرتب‌سازی نوبت‌ها بر اساس تاریخ (از قدیمی‌ترین به جدیدترین)
+                availableDates = availableDates
+                    .OrderBy(ad => 
+                    {
+                        // تبدیل تاریخ شمسی به DateTime برای مقایسه
+                        if (!string.IsNullOrEmpty(ad.PersianDate))
+                        {
+                            try
+                            {
+                                var parts = ad.PersianDate.Split('/');
+                                if (parts.Length >= 3 && int.TryParse(parts[0], out int year) && 
+                                    int.TryParse(parts[1], out int month) && int.TryParse(parts[2], out int day))
+                                {
+                                    // تبدیل تاریخ شمسی به میلادی برای مقایسه
+                                    var persianCalendar = new PersianCalendar();
+                                    var dateTime = persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
+                                    return dateTime;
+                                }
+                            }
+                            catch
+                            {
+                                // در صورت خطا، از تاریخ امروز استفاده می‌کنیم
+                            }
+                        }
+                        return DateTime.MaxValue; // نوبت‌های بدون تاریخ در آخر
+                    })
+                    .ToList();
+                
+                _logger.Information("✅ دریافت تاریخ‌های نوبت موجود تکمیل شد - DoctorId: {DoctorId}, Found: {Found}, Checked: {Checked}, TotalDays: {TotalDays}", 
+                    doctorId, availableDates.Count, checkedDays, (endDate - startDate).Days);
                 
                 return availableDates;
             }
             catch (Exception ex)
             {
-                _logger.Warning(ex, "خطا در دریافت تاریخ‌های نوبت موجود برای پزشک {DoctorId}", doctorId);
-                return new List<AvailableDateInfo>(); // در صورت خطا، لیست خالی برمی‌گردانیم
+                _logger.Error(ex, "❌ خطا در دریافت تاریخ‌های نوبت موجود برای پزشک {DoctorId}", doctorId);
+                return new List<AppointmentDateInfo>(); // در صورت خطا، لیست خالی برمی‌گردانیم
             }
         }
 

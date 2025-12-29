@@ -47,6 +47,24 @@ public interface IAppSettings
 
     #endregion
 
+    #region Appointment Settings
+    /// <summary>
+    /// حداکثر تعداد تاریخ‌های نوبت موجود برای نمایش در کارت پزشک
+    /// </summary>
+    int AppointmentAvailableDatesMaxCount { get; }
+    
+    /// <summary>
+    /// تعداد روزهای آینده برای بررسی نوبت‌های موجود
+    /// </summary>
+    int AppointmentAvailableDatesDaysToCheck { get; }
+    
+    /// <summary>
+    /// اندازه پیش‌فرض صفحه‌بندی برای لیست پزشکان
+    /// </summary>
+    int AppointmentDoctorsPageSize { get; }
+
+    #endregion
+
     #region Application Information Settings
     /// <summary>
     /// نسخه برنامه

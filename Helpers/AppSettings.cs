@@ -78,6 +78,14 @@ namespace ClinicApp.Helpers
 
         #endregion
 
+        #region Appointment Settings (تنظیمات نوبت‌دهی)
+
+        public int AppointmentAvailableDatesMaxCount { get; set; }
+        public int AppointmentAvailableDatesDaysToCheck { get; set; }
+        public int AppointmentDoctorsPageSize { get; set; }
+
+        #endregion
+
         #region Application Information Settings (تنظیمات اطلاعات برنامه)
 
         public string ApplicationVersion { get; set; }
@@ -93,6 +101,7 @@ namespace ClinicApp.Helpers
             LoadSecuritySettings();
             LoadNotificationSettings();
             LoadMedicalSystemSettings();
+            LoadAppointmentSettings();
             LoadApplicationInformationSettings();
 
             _log.Information("تنظیمات سیستم با موفقیت بارگذاری شدند");
@@ -286,6 +295,27 @@ namespace ClinicApp.Helpers
                 0, 18);
         }
 
+        private void LoadAppointmentSettings()
+        {
+            // AppointmentAvailableDatesMaxCount
+            AppointmentAvailableDatesMaxCount = GetIntSetting("Appointment:AvailableDatesMaxCount",
+                5,
+                "حداکثر تعداد تاریخ‌های نوبت موجود برای نمایش",
+                1, 20);
+
+            // AppointmentAvailableDatesDaysToCheck
+            AppointmentAvailableDatesDaysToCheck = GetIntSetting("Appointment:AvailableDatesDaysToCheck",
+                60,
+                "تعداد روزهای آینده برای بررسی نوبت‌های موجود",
+                7, 180);
+
+            // AppointmentDoctorsPageSize
+            AppointmentDoctorsPageSize = GetIntSetting("Appointment:DoctorsPageSize",
+                20,
+                "اندازه پیش‌فرض صفحه‌بندی برای لیست پزشکان",
+                5, 100);
+        }
+
         private void LoadApplicationInformationSettings()
         {
             // ApplicationVersion
@@ -418,6 +448,7 @@ namespace ClinicApp.Helpers
             LoadSecuritySettings();
             LoadNotificationSettings();
             LoadMedicalSystemSettings();
+            LoadAppointmentSettings();
             _log.Information("تنظیمات با موفقیت به‌روزرسانی شدند");
         }
 

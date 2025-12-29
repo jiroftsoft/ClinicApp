@@ -631,7 +631,7 @@
         </div>
         
         <!-- Doctors Grid -->
-        <div id="doctors-container">
+        <div id="doctors-container" style="position: relative;">
 @if (Model?.Doctors != null && Model.Doctors.Any())
 {
     <div class="appointment-doctors-grid">
@@ -639,34 +639,45 @@
         {
             <div class="doctor-card-medical @(Model.SelectedDoctorId == doctor.DoctorId ? "selected" : "")" 
                  data-doctor-id="@doctor.DoctorId">
-                <div class="doctor-card-header">
-                    <div class="doctor-avatar-container">
-                        @if (!string.IsNullOrEmpty(doctor.ProfileImageUrl))
-                        {
-                            <img src="@doctor.ProfileImageUrl" alt="@doctor.FullName" class="doctor-avatar-medical" />
-                        }
-                        else
-                        {
-                            <div class="doctor-avatar-medical" style="display: flex; align-items: center; justify-content: center; background: var(--medical-primary); color: white; font-size: 3rem; font-weight: bold;">
-                                @doctor.FullName.Substring(0, 1)
-                            </div>
-                        }
-                        @if (doctor.HasActiveSchedule)
-                        {
-                            <span class="available-badge-medical">
-                                <i class="fas fa-check-circle ml-1"></i>
-                                قابل رزرو
-                            </span>
-                        }
-                    </div>
-                    <div class="flex-grow-1">
-                        <h3 class="doctor-name">@doctor.FullName</h3>
-                        <div class="doctor-specialization">
-                            <i class="fas fa-stethoscope"></i>
-                            <span>@doctor.Specialization</span>
+                <!-- ✅ Avatar Section - تصویر در بالا با Error Handling حرفه‌ای -->
+                <div class="doctor-avatar-container">
+                    @if (!string.IsNullOrEmpty(doctor.ProfileImageUrl))
+                    {
+                        <img src="@doctor.ProfileImageUrl" 
+                             alt="@(doctor.FullName ?? "پزشک")" 
+                             class="doctor-avatar-medical"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             data-doctor-id="@doctor.DoctorId" />
+                        <div class="doctor-avatar-placeholder" style="display: none;">
+                            @(doctor.FullName != null && doctor.FullName.Length > 0 ? doctor.FullName.Substring(0, 1) : "پ")
                         </div>
+                    }
+                    else
+                    {
+                        <div class="doctor-avatar-placeholder">
+                            @(doctor.FullName != null && doctor.FullName.Length > 0 ? doctor.FullName.Substring(0, 1) : "پ")
+                        </div>
+                    }
+                    @if (doctor.HasActiveSchedule)
+                    {
+                        <span class="available-badge-medical">
+                            <i class="fas fa-check-circle"></i>
+                            <span>قابل رزرو</span>
+                        </span>
+                    }
+                </div>
+                
+                <!-- ✅ Header Section - نام و تخصص -->
+                <div class="doctor-card-header">
+                    <h3 class="doctor-name">@doctor.FullName</h3>
+                    <div class="doctor-specialization">
+                        <i class="fas fa-stethoscope"></i>
+                        <span>@doctor.Specialization</span>
                     </div>
                 </div>
+                
+                <!-- ✅ Body Section -->
                 <div class="doctor-card-body">
                     @if (!string.IsNullOrEmpty(doctor.Bio))
                     {
@@ -705,25 +716,59 @@
                         </div>
                     }
 
-                    <div class="row g-2">
-                        <!-- رزرو نوبت -->
-                        <div class="col-12 col-sm-6">
-                            <button type="button" 
-                                    class="btn btn-medical-primary btn-sm btn-block btn-select-doctor"
-                                    data-doctor-id="@doctor.DoctorId"
-                                    @(!doctor.HasActiveSchedule ? "disabled" : "")>
-                                <i class="fas fa-calendar-plus ml-1"></i>
-                                رزرو نوبت
-                            </button>
+                    @if (doctor.AvailableDates != null && doctor.AvailableDates.Any())
+                    {
+                        <div class="available-dates-section">
+                            <div class="available-dates-section-header">
+                                <i class="fas fa-calendar-check"></i>
+                                <strong>نوبت‌های موجود:</strong>
+                            </div>
+                            <div class="available-dates-list">
+                                @foreach (var dateInfo in doctor.AvailableDates)
+                                {
+                                    var displayText = "";
+                                    if (!string.IsNullOrEmpty(dateInfo.ShortDate) && !string.IsNullOrEmpty(dateInfo.DayName) && !string.IsNullOrEmpty(dateInfo.TimeRange))
+                                    {
+                                        displayText = dateInfo.ShortDate + " " + dateInfo.DayName + " ساعت " + dateInfo.TimeRange;
+                                    }
+                                    else if (!string.IsNullOrEmpty(dateInfo.PersianDate))
+                                    {
+                                        displayText = dateInfo.PersianDate;
+                                    }
+                                    
+                                    if (!string.IsNullOrEmpty(displayText))
+                                    {
+                                        <div class="available-date-item">
+                                            <i class="fas fa-clock"></i>
+                                            <span>@displayText</span>
+                                        </div>
+                                    }
+                                }
+                            </div>
                         </div>
-                        
-                        <!-- جزئیات -->
-                        <div class="col-12 col-sm-6">
-                            <a href="@Url.Action("DoctorDetails", new { doctorId = doctor.DoctorId })"
-                               class="btn btn-outline-medical-info btn-sm btn-block">
-                                <i class="fas fa-info-circle ml-1"></i>
-                                مشاهده رزومه
-                            </a>
+                    }
+
+                    <div class="doctor-card-actions">
+                        <div class="row g-2">
+                            <!-- رزرو نوبت -->
+                            <div class="col-12 col-sm-6">
+                                <button type="button" 
+                                        class="btn btn-medical-primary btn-sm btn-block btn-select-doctor"
+                                        data-doctor-id="@doctor.DoctorId"
+                                        @(!doctor.HasActiveSchedule ? "disabled" : "")>
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <span>رزرو نوبت</span>
+                                </button>
+                            </div>
+                            
+                            <!-- جزئیات -->
+                            <div class="col-12 col-sm-6">
+                                <a href="@Url.Action("DoctorDetails", new { doctorId = doctor.DoctorId })"
+                                   class="btn btn-outline-medical-info btn-sm btn-block">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>مشاهده رزومه</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -871,7 +916,6 @@ else if (Model.SelectedDoctorId.HasValue)
             var isProcessingDate = false;
             var filterFormSubmitting = false;
             var isInitialLoad = true;
-            var pollingEnabled = false;
 
             // ✅ تابع helper برای تبدیل اعداد فارسی به انگلیسی
             function convertPersianToEnglishNumbers(str) {
@@ -1053,10 +1097,26 @@ else if (Model.SelectedDoctorId.HasValue)
                 lastUpdateTime: null
             };
             
-            // ✅ Data Module (SRP: Data Fetching)
+            // ✅ Data Module (SRP: Data Fetching) - ضد گلوله و تست شده
             var DataModule = {
                 fetchAvailableData: function(date, doctorId, searchTerm) {
                     var self = this;
+                    
+                    // ✅ جلوگیری از درخواست‌های همزمان
+                    if (AppState.isLoading) {
+                        console.log('⚠️ Request already in progress, skipping...');
+                        return;
+                    }
+                    
+                    // ✅ Timeout برای جلوگیری از درخواست‌های طولانی
+                    var requestTimeout = setTimeout(function() {
+                        if (AppState.isLoading) {
+                            console.warn('⚠️ Request timeout');
+                            AppState.isLoading = false;
+                            UIModule.hideLoading();
+                            UIModule.showError('زمان درخواست به پایان رسید. لطفاً دوباره تلاش کنید.');
+                        }
+                    }, 30000); // 30 ثانیه
                     
                     return $.ajax({
                         url: '@Url.Action("GetAvailableData", "Appointment", new { area = "Patient" })',
@@ -1067,11 +1127,20 @@ else if (Model.SelectedDoctorId.HasValue)
                             searchTerm: searchTerm || null
                         },
                         dataType: 'json',
+                        timeout: 25000, // 25 ثانیه timeout
                         beforeSend: function() {
                             AppState.isLoading = true;
                             UIModule.showLoading();
                         },
                         success: function(response) {
+                            clearTimeout(requestTimeout);
+                            
+                            // ✅ Validation response
+                            if (!response) {
+                                UIModule.showError('پاسخ نامعتبر از سرور دریافت شد.');
+                                return;
+                            }
+                            
                             if (response && response.success) {
                                 // ✅ بررسی اینکه آیا نوبتی در تاریخ انتخابی وجود ندارد
                                 if (response.hasNoAppointments === true) {
@@ -1112,10 +1181,31 @@ else if (Model.SelectedDoctorId.HasValue)
                             }
                         },
                         error: function(xhr, status, error) {
-                            console.error('Error fetching data:', error);
-                            UIModule.showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                            clearTimeout(requestTimeout);
+                            console.error('Error fetching data:', { status: status, error: error, xhr: xhr });
+                            
+                            var errorMessage = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
+                            
+                            // ✅ تشخیص نوع خطا
+                            if (status === 'timeout') {
+                                errorMessage = 'زمان درخواست به پایان رسید. لطفاً دوباره تلاش کنید.';
+                            } else if (status === 'abort') {
+                                errorMessage = 'درخواست لغو شد.';
+                                return; // نیازی به نمایش پیام نیست
+                            } else if (xhr.status === 0) {
+                                errorMessage = 'ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                            } else if (xhr.status >= 500) {
+                                errorMessage = 'خطای سرور. لطفاً بعداً تلاش کنید.';
+                            } else if (xhr.status === 404) {
+                                errorMessage = 'صفحه مورد نظر یافت نشد.';
+                            } else if (xhr.status === 403) {
+                                errorMessage = 'دسترسی غیرمجاز.';
+                            }
+                            
+                            UIModule.showError(errorMessage);
                         },
                         complete: function() {
+                            clearTimeout(requestTimeout);
                             AppState.isLoading = false;
                             UIModule.hideLoading();
                         }
@@ -1123,29 +1213,57 @@ else if (Model.SelectedDoctorId.HasValue)
                 }
             };
             
-            // ✅ UI Module (SRP: UI Updates)
+            // ✅ UI Module (SRP: UI Updates) - ضد گلوله و حرفه‌ای
             var UIModule = {
                 showLoading: function() {
                     // ✅ نمایش loading overlay
-                    if (typeof LoadingState !== 'undefined' && typeof LoadingState.show === 'function') {
-                        LoadingState.show();
-                    } else if (typeof showLoading === 'function') {
-                        showLoading();
+                    var $loadingState = $('#loadingState');
+                    if ($loadingState.length > 0) {
+                        $loadingState.removeClass('d-none');
+                    }
+                    
+                    // ✅ Disable فیلترها در حین loading
+                    $('#filterForm input, #filterForm select, #filterForm button').prop('disabled', true);
+                    
+                    // ✅ نمایش loading در container
+                    var $container = $('#doctors-container');
+                    if ($container.length > 0 && !$container.find('.appointment-loading-overlay').length) {
+                        $container.prepend('<div class="appointment-loading-overlay"><div class="spinner-border text-medical-primary" role="status"><span class="sr-only">در حال بارگذاری...</span></div><p class="text-muted mt-3">در حال جستجوی پزشکان...</p></div>');
                     }
                 },
                 
                 hideLoading: function() {
                     // ✅ مخفی کردن loading overlay
-                    if (typeof LoadingState !== 'undefined' && typeof LoadingState.hide === 'function') {
-                        LoadingState.hide();
-                    } else if (typeof hideLoading === 'function') {
-                        hideLoading();
+                    var $loadingState = $('#loadingState');
+                    if ($loadingState.length > 0) {
+                        $loadingState.addClass('d-none');
                     }
+                    
+                    // ✅ Enable فیلترها
+                    $('#filterForm input, #filterForm select, #filterForm button').prop('disabled', false);
+                    
+                    // ✅ حذف loading overlay از container
+                    $('.appointment-loading-overlay').remove();
                 },
                 
                 showError: function(message) {
                     if (typeof toastr !== 'undefined') {
-                        toastr.error(message, 'خطا');
+                        toastr.error(
+                            '<div style="text-align: right; direction: rtl; font-family: \'Vazir\', \'Tahoma\', sans-serif;">' +
+                            '<i class="fas fa-exclamation-circle me-2"></i>' +
+                            '<strong>' + message + '</strong>' +
+                            '</div>',
+                            'خطا',
+                            {
+                                timeOut: 6000,
+                                closeButton: true,
+                                progressBar: true,
+                                positionClass: 'toast-top-left'
+                            }
+                        );
+                    } else {
+                        // Fallback: نمایش alert
+                        alert('خطا: ' + message);
                     }
                 },
                 
@@ -1194,57 +1312,88 @@ else if (Model.SelectedDoctorId.HasValue)
                     return;
                 }
                 
-                    var html = '<div class="doctors-grid">';
+                    var html = '<div class="appointment-doctors-grid">';
                     doctors.forEach(function(doctor) {
                         var isSelected = selectedDoctorId && doctor.doctorId === selectedDoctorId;
-                        html += '<div class="doctor-card' + (isSelected ? ' selected' : '') + '" data-doctor-id="' + doctor.doctorId + '">';
-                        html += '<div class="doctor-card-header">';
+                        html += '<div class="doctor-card-medical' + (isSelected ? ' selected' : '') + '" data-doctor-id="' + doctor.doctorId + '">';
+                        
+                        // ✅ Avatar Section - تصویر در بالا با Error Handling حرفه‌ای
                         html += '<div class="doctor-avatar-container">';
+                        var doctorInitial = doctor.fullName && doctor.fullName.length > 0 ? doctor.fullName.substring(0, 1) : 'پ';
                         if (doctor.profileImageUrl) {
-                            html += '<img src="' + doctor.profileImageUrl + '" alt="' + doctor.fullName + '" class="doctor-avatar" />';
+                            html += '<img src="' + doctor.profileImageUrl + '" alt="' + (doctor.fullName || 'پزشک') + '" class="doctor-avatar-medical" loading="lazy" data-doctor-id="' + doctor.doctorId + '" onerror="this.onerror=null; this.style.display=\'none\'; var placeholder = this.nextElementSibling; if(placeholder) placeholder.style.display=\'flex\';" />';
+                            html += '<div class="doctor-avatar-placeholder" style="display: none;">' + doctorInitial + '</div>';
                         } else {
-                            html += '<div class="doctor-avatar-placeholder">' + (doctor.fullName ? doctor.fullName.substring(0, 1) : '') + '</div>';
+                            html += '<div class="doctor-avatar-placeholder">' + doctorInitial + '</div>';
                         }
-                        html += '<span class="status-badge ' + (doctor.hasActiveSchedule ? 'available' : 'unavailable') + '">';
                         if (doctor.hasActiveSchedule) {
-                            html += '<i class="fas fa-check-circle me-1"></i><span>در دسترس</span>';
-                        } else {
-                            html += '<i class="fas fa-times-circle me-1"></i><span>غیرفعال</span>';
+                            html += '<span class="available-badge-medical">';
+                            html += '<i class="fas fa-check-circle"></i>';
+                            html += '<span>قابل رزرو</span>';
+                            html += '</span>';
                         }
-                        html += '</span></div>';
-                        html += '<div class="flex-grow-1">';
-                        html += '<h3 class="doctor-name">' + (doctor.fullName || '') + '</h3>';
-                        html += '<div class="doctor-specialization"><i class="fas fa-stethoscope"></i><span>' + (doctor.specialization || '') + '</span></div>';
-                        html += '</div></div>';
+                        html += '</div>';
+                        
+                        // ✅ Header Section - نام و تخصص
+                        html += '<div class="doctor-card-header">';
+                        html += '<h3 class="doctor-name">' + (doctor.fullName || 'نام نامشخص') + '</h3>';
+                        html += '<div class="doctor-specialization">';
+                        html += '<i class="fas fa-stethoscope"></i>';
+                        html += '<span>' + (doctor.specialization || 'تخصص نامشخص') + '</span>';
+                        html += '</div>';
+                        html += '</div>';
+                        
+                        // ✅ Body Section
                         html += '<div class="doctor-card-body">';
+                        
+                        // Bio
                         if (doctor.bio) {
                             html += '<p class="doctor-bio">' + doctor.bio + '</p>';
                         }
+                        
+                        // Meta Information
                         html += '<div class="doctor-meta">';
                         if (doctor.medicalCouncilCode) {
-                            html += '<div class="meta-item"><i class="fas fa-id-card"></i><span>کد نظام: ' + doctor.medicalCouncilCode + '</span></div>';
+                            html += '<div class="meta-item">';
+                            html += '<i class="fas fa-id-card"></i>';
+                            html += '<span>کد نظام: ' + doctor.medicalCouncilCode + '</span>';
+                            html += '</div>';
                         }
                         if (doctor.experienceYears && doctor.experienceYears > 0) {
-                            html += '<div class="meta-item"><i class="fas fa-briefcase"></i><span>' + doctor.experienceYears + ' سال تجربه</span></div>';
+                            html += '<div class="meta-item">';
+                            html += '<i class="fas fa-briefcase"></i>';
+                            html += '<span>' + doctor.experienceYears + ' سال تجربه</span>';
+                            html += '</div>';
                         }
                         if (doctor.departmentName) {
-                            html += '<div class="meta-item"><i class="fas fa-building"></i><span>' + doctor.departmentName + '</span></div>';
+                            html += '<div class="meta-item">';
+                            html += '<i class="fas fa-building"></i>';
+                            html += '<span>' + doctor.departmentName + '</span>';
+                            html += '</div>';
                         }
                         html += '</div>';
+                        
+                        // Schedule Info
                         if (doctor.hasActiveSchedule && doctor.scheduleInfo) {
-                            html += '<div class="schedule-info"><i class="fas fa-calendar-alt"></i><span class="schedule-info-text">' + doctor.scheduleInfo + '</span></div>';
+                            html += '<div class="schedule-info">';
+                            html += '<i class="fas fa-calendar-alt"></i>';
+                            html += '<span class="schedule-info-text">' + doctor.scheduleInfo + '</span>';
+                            html += '</div>';
                         }
                         
                         // ✅ نمایش تاریخ‌های نوبت موجود - حرفه‌ای و جذاب
                         // ⚠️ مهم: این بخش حیاتی است و باید اطلاعات کامل (تاریخ، روز، زمان) را نمایش دهد
-                        if (doctor.availableDates && doctor.availableDates.length > 0) {
-                            html += '<div class="available-dates-section" style="margin-top: 1rem; padding: 1.25rem; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--medical-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">';
-                            html += '<div style="display: flex; align-items: center; margin-bottom: 1rem;">';
-                            html += '<i class="fas fa-calendar-check" style="color: var(--medical-primary); font-size: 1.5rem; margin-left: 0.75rem;"></i>';
-                            html += '<strong style="color: var(--medical-primary); font-size: 1.1rem; font-weight: 700;">نوبت‌های موجود:</strong>';
+                        console.log('🔍 بررسی نوبت‌های موجود برای پزشک:', doctor.fullName, 'availableDates:', doctor.availableDates);
+                        if (doctor.availableDates && Array.isArray(doctor.availableDates) && doctor.availableDates.length > 0) {
+                            console.log('✅ نوبت‌های موجود پیدا شد:', doctor.availableDates.length, 'تاریخ');
+                            html += '<div class="available-dates-section">';
+                            html += '<div class="available-dates-section-header">';
+                            html += '<i class="fas fa-calendar-check"></i>';
+                            html += '<strong>نوبت‌های موجود:</strong>';
                             html += '</div>';
-                            html += '<div class="available-dates-list" style="display: flex; flex-direction: column; gap: 0.75rem;">';
-                            doctor.availableDates.forEach(function(dateInfo) {
+                            html += '<div class="available-dates-list">';
+                            doctor.availableDates.forEach(function(dateInfo, index) {
+                                console.log('📅 تاریخ ' + (index + 1) + ':', dateInfo);
                                 // ✅ فرمت حرفه‌ای: "08/10 یکشنبه ساعت 7:00 تا 11:00"
                                 var displayText = '';
                                 if (dateInfo.shortDate && dateInfo.dayName && dateInfo.timeRange) {
@@ -1255,26 +1404,40 @@ else if (Model.SelectedDoctorId.HasValue)
                                 }
                                 
                                 if (displayText) {
-                                    html += '<div class="available-date-item" style="display: flex; align-items: center; padding: 0.875rem 1rem; background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-right: 4px solid var(--medical-primary); transition: all 0.3s ease;">';
-                                    html += '<i class="fas fa-clock" style="color: var(--medical-primary); font-size: 1rem; margin-left: 0.75rem; min-width: 20px;"></i>';
-                                    html += '<span style="color: var(--medical-text); font-size: 0.95rem; font-weight: 600; line-height: 1.5; flex: 1;">';
-                                    html += displayText;
-                                    html += '</span>';
+                                    html += '<div class="available-date-item">';
+                                    html += '<i class="fas fa-clock"></i>';
+                                    html += '<span>' + displayText + '</span>';
                                     html += '</div>';
+                                } else {
+                                    console.warn('⚠️ تاریخ بدون متن نمایش:', dateInfo);
                                 }
                             });
                             html += '</div>';
                             html += '</div>';
+                        } else {
+                            console.warn('⚠️ نوبت‌های موجود برای پزشک', doctor.fullName, 'پیدا نشد. availableDates:', doctor.availableDates);
                         }
                         
+                        // ✅ Actions Section
+                        html += '<div class="doctor-card-actions">';
                         html += '<div class="row g-2">';
                         html += '<div class="col-12 col-sm-6">';
                         html += '<button type="button" class="btn btn-medical-primary btn-sm btn-block btn-select-doctor" data-doctor-id="' + doctor.doctorId + '" ' + (!doctor.hasActiveSchedule ? 'disabled' : '') + '>';
-                        html += '<i class="fas fa-calendar-plus ml-1"></i> رزرو نوبت</button></div>';
+                        html += '<i class="fas fa-calendar-plus"></i>';
+                        html += '<span>رزرو نوبت</span>';
+                        html += '</button>';
+                        html += '</div>';
                         html += '<div class="col-12 col-sm-6">';
                         html += '<a href="@Url.Action("DoctorDetails", "Appointment", new { area = "Patient" })?doctorId=' + doctor.doctorId + '" class="btn btn-outline-medical-info btn-sm btn-block">';
-                        html += '<i class="fas fa-info-circle ml-1"></i> مشاهده رزومه</a></div></div>';
-                        html += '</div></div>';
+                        html += '<i class="fas fa-info-circle"></i>';
+                        html += '<span>مشاهده رزومه</span>';
+                        html += '</a>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '</div>';
+                        
+                        html += '</div>';
+                        html += '</div>';
                     });
                     html += '</div>';
                     
@@ -1388,84 +1551,178 @@ else if (Model.SelectedDoctorId.HasValue)
                 }
             };
             
-            // ✅ Filter Module (SRP: Filter Management)
+            // ✅ Filter Module (SRP: Filter Management) - ضد گلوله و تست شده
             var FilterModule = {
-                applyFilters: function(date, doctorId, searchTerm) {
-                    // ✅ جلوگیری از duplicate calls
-                    if (AppState.isLoading) {
-                        console.log('⚠️ Already loading, skipping filter application');
-                        return;
-                    }
-                    
-                    // ✅ دریافت searchTerm از input
-                    if (!searchTerm || searchTerm === '') {
-                        var $searchInput = $("#searchTerm");
-                        if ($searchInput.length > 0) {
-                            searchTerm = $searchInput.val();
-                            if (searchTerm) {
-                                searchTerm = searchTerm.trim();
-                                if (searchTerm === '') {
-                                    searchTerm = null;
-                                }
-                            } else {
-                                searchTerm = null;
-                            }
-                        }
-                    }
-                    
-                    // ✅ Normalize date - استفاده از روش‌های مختلف برای دریافت تاریخ
+                // ✅ Validation Helper برای تاریخ
+                validateDate: function(date) {
                     if (!date || date === '') {
-                        // اگر تاریخ خالی است، از date picker بگیر
-                        var $dateInput = $("#date");
-                        if ($dateInput.length > 0) {
-                            var dateValue = $dateInput.val();
-                            if (dateValue) {
-                                date = convertPersianToEnglishNumbers(dateValue);
-                            } else {
-                                // اگر input هم خالی است، از date picker instance بگیر
-                                try {
-                                    var datePickerInstance = $dateInput.data('pDatepicker');
-                                    if (datePickerInstance) {
-                                        var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
-                                        if (formattedDate) {
-                                            date = convertPersianToEnglishNumbers(formattedDate);
+                        return { valid: false, value: null, error: null };
+                    }
+                    
+                    // تبدیل اعداد فارسی به انگلیسی
+                    date = convertPersianToEnglishNumbers(date);
+                    
+                    // بررسی فرمت
+                    if (!date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        return { valid: false, value: null, error: 'فرمت تاریخ نامعتبر است. لطفاً تاریخ را به صورت YYYY/MM/DD وارد کنید.' };
+                    }
+                    
+                    // بررسی معتبر بودن تاریخ
+                    var parts = date.split('/');
+                    var year = parseInt(parts[0], 10);
+                    var month = parseInt(parts[1], 10);
+                    var day = parseInt(parts[2], 10);
+                    
+                    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                        return { valid: false, value: null, error: 'تاریخ نامعتبر است.' };
+                    }
+                    
+                    if (year < 1300 || year > 1500) {
+                        return { valid: false, value: null, error: 'سال باید بین 1300 تا 1500 باشد.' };
+                    }
+                    
+                    if (month < 1 || month > 12) {
+                        return { valid: false, value: null, error: 'ماه باید بین 1 تا 12 باشد.' };
+                    }
+                    
+                    if (day < 1 || day > 31) {
+                        return { valid: false, value: null, error: 'روز باید بین 1 تا 31 باشد.' };
+                    }
+                    
+                    return { valid: true, value: date, error: null };
+                },
+                
+                // ✅ Validation Helper برای doctorId
+                validateDoctorId: function(doctorId) {
+                    if (!doctorId || doctorId === '' || doctorId === '0' || doctorId === null || doctorId === undefined) {
+                        return { valid: true, value: null, error: null }; // null معتبر است (همه پزشکان)
+                    }
+                    
+                    var id = parseInt(doctorId, 10);
+                    if (isNaN(id) || id <= 0) {
+                        return { valid: false, value: null, error: 'شناسه پزشک نامعتبر است.' };
+                    }
+                    
+                    return { valid: true, value: id, error: null };
+                },
+                
+                // ✅ Validation Helper برای searchTerm
+                validateSearchTerm: function(searchTerm) {
+                    if (!searchTerm || searchTerm === '') {
+                        return { valid: true, value: null, error: null }; // null معتبر است
+                    }
+                    
+                    searchTerm = searchTerm.trim();
+                    
+                    if (searchTerm === '') {
+                        return { valid: true, value: null, error: null };
+                    }
+                    
+                    // بررسی طول
+                    if (searchTerm.length < 2) {
+                        return { valid: false, value: null, error: 'حداقل 2 کاراکتر برای جستجو لازم است.' };
+                    }
+                    
+                    if (searchTerm.length > 100) {
+                        return { valid: false, value: null, error: 'حداکثر 100 کاراکتر برای جستجو مجاز است.' };
+                    }
+                    
+                    // بررسی کاراکترهای خطرناک (XSS prevention)
+                    var dangerousChars = /[<>\"'&]/;
+                    if (dangerousChars.test(searchTerm)) {
+                        return { valid: false, value: null, error: 'کاراکترهای غیرمجاز در جستجو یافت شد.' };
+                    }
+                    
+                    return { valid: true, value: searchTerm, error: null };
+                },
+                
+                applyFilters: function(date, doctorId, searchTerm) {
+                    try {
+                        // ✅ جلوگیری از duplicate calls
+                        if (AppState.isLoading) {
+                            console.log('⚠️ Already loading, skipping filter application');
+                            return;
+                        }
+                        
+                        // ✅ دریافت searchTerm از input
+                        if (!searchTerm || searchTerm === '') {
+                            var $searchInput = $("#searchTerm");
+                            if ($searchInput.length > 0) {
+                                searchTerm = $searchInput.val();
+                            }
+                        }
+                        
+                        // ✅ Validation searchTerm
+                        var searchValidation = this.validateSearchTerm(searchTerm);
+                        if (!searchValidation.valid) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning(searchValidation.error, 'خطا در جستجو');
+                            }
+                            return;
+                        }
+                        searchTerm = searchValidation.value;
+                        
+                        // ✅ Normalize date - استفاده از روش‌های مختلف برای دریافت تاریخ
+                        if (!date || date === '') {
+                            // اگر تاریخ خالی است، از date picker بگیر
+                            var $dateInput = $("#date");
+                            if ($dateInput.length > 0) {
+                                var dateValue = $dateInput.val();
+                                if (dateValue) {
+                                    date = dateValue;
+                                } else {
+                                    // اگر input هم خالی است، از date picker instance بگیر
+                                    try {
+                                        var datePickerInstance = $dateInput.data('pDatepicker');
+                                        if (datePickerInstance) {
+                                            var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                            if (formattedDate) {
+                                                date = formattedDate;
+                                            }
                                         }
+                                    } catch (e) {
+                                        console.warn('Error getting date from datePicker:', e);
                                     }
-                                } catch (e) {
-                                    console.warn('Error getting date from datePicker:', e);
                                 }
                             }
                         }
-                    }
-                    
-                    // ✅ Normalize date format
-                    if (date) {
-                        date = convertPersianToEnglishNumbers(date);
-                        if (!date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            console.warn('⚠️ Invalid date format:', date);
+                        
+                        // ✅ Validation date
+                        var dateValidation = this.validateDate(date);
+                        if (!dateValidation.valid && date) { // فقط اگر تاریخ وارد شده باشد
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning(dateValidation.error || 'تاریخ نامعتبر است', 'خطا در تاریخ');
+                            }
+                            // تاریخ نامعتبر را null می‌کنیم و ادامه می‌دهیم
                             date = null;
+                        } else {
+                            date = dateValidation.value;
+                        }
+                        
+                        // ✅ Validation doctorId
+                        var doctorValidation = this.validateDoctorId(doctorId);
+                        if (!doctorValidation.valid) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning(doctorValidation.error, 'خطا در انتخاب پزشک');
+                            }
+                            return;
+                        }
+                        doctorId = doctorValidation.value;
+                        
+                        console.log('✅ Applying filters (validated):', { date: date, doctorId: doctorId, searchTerm: searchTerm });
+                        
+                        // ✅ Update state
+                        AppState.selectedDate = date;
+                        AppState.selectedDoctorId = doctorId;
+                        
+                        // ✅ Fetch data via AJAX
+                        DataModule.fetchAvailableData(date, doctorId, searchTerm);
+                    } catch (error) {
+                        console.error('❌ Error in applyFilters:', error);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در اعمال فیلترها. لطفاً دوباره تلاش کنید.', 'خطا');
                         }
                     }
-                    
-                    // ✅ Normalize doctorId
-                    if (doctorId === '' || doctorId === '0' || doctorId === null || doctorId === undefined) {
-                        doctorId = null;
-                    } else {
-                        // تبدیل به عدد برای اطمینان
-                        doctorId = parseInt(doctorId, 10);
-                        if (isNaN(doctorId) || doctorId <= 0) {
-                            doctorId = null;
-                        }
-                    }
-                    
-                    console.log('✅ Applying filters:', { date: date, doctorId: doctorId, searchTerm: searchTerm });
-                    
-                    // ✅ Update state
-                    AppState.selectedDate = date;
-                    AppState.selectedDoctorId = doctorId;
-                    
-                    // ✅ Fetch data via AJAX
-                    DataModule.fetchAvailableData(date, doctorId, searchTerm);
                 }
             };
             
@@ -1924,11 +2181,7 @@ else if (Model.SelectedDoctorId.HasValue)
                                 originalOnSelect.call(this, selectedDateValue);
                             }
                     
-                            // ✅ فعال کردن polling وقتی کاربر تاریخ را انتخاب می‌کند
-                            if (!pollingEnabled) {
-                                pollingEnabled = true;
-                                startDatePolling();
-                            }
+                            // ✅ Event-driven approach - نیازی به polling نیست
                             AppState.isInitialLoad = false;
                             isInitialLoad = false; // Legacy compatibility
                     
@@ -2009,30 +2262,20 @@ else if (Model.SelectedDoctorId.HasValue)
                 clearInterval(datePickerInitCheck);
             }, 5000);
 
-            // ✅ Event Listeners Enterprise-Level (مطمئن‌ترین روش در پروژه‌های enterprise)
+            // ✅ Event Listeners Enterprise-Level (Event-Driven Approach - بدون Polling)
             // 1. change event - وقتی کاربر تاریخ را انتخاب می‌کند
             $("#date").on('change', function() {
                 console.log('✅ [Enterprise] change event triggered');
-                // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
-                if (!pollingEnabled) {
-                    pollingEnabled = true;
-                    startDatePolling();
-                }
                 AppState.isInitialLoad = false;
                 isInitialLoad = false; // Legacy compatibility
                 processDateFromInput(true); // force process
             });
             
-            // 2. input event - برای تغییرات real-time
+            // 2. input event - برای تغییرات real-time (با debounce)
             $("#date").on('input', function() {
                 var inputValue = $(this).val();
                 var englishValue = convertPersianToEnglishNumbers(inputValue);
                 if (englishValue && englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
-                    if (!pollingEnabled) {
-                        pollingEnabled = true;
-                        startDatePolling();
-                    }
                     AppState.isInitialLoad = false;
                     isInitialLoad = false; // Legacy compatibility
                     
@@ -2048,57 +2291,10 @@ else if (Model.SelectedDoctorId.HasValue)
             // 3. blur event - وقتی کاربر از input خارج می‌شود
             $("#date").on('blur', function() {
                 console.log('✅ [Enterprise] blur event triggered');
-                // ✅ فعال کردن polling وقتی کاربر تاریخ را تغییر می‌دهد
-                if (!pollingEnabled) {
-                    pollingEnabled = true;
-                    startDatePolling();
-                }
                 AppState.isInitialLoad = false;
                 isInitialLoad = false; // Legacy compatibility
                 processDateFromInput(true); // force process
             });
-            
-            // 4. focus event - وقتی کاربر روی input کلیک می‌کند (فقط برای tracking)
-            $("#date").on('focus', function() {
-                console.log('✅ [Enterprise] focus event triggered');
-                // ✅ فعال کردن polling وقتی کاربر روی input کلیک می‌کند
-                if (!pollingEnabled) {
-                    pollingEnabled = true;
-                    startDatePolling();
-                }
-            });
-
-            // ✅ Polling Mechanism Enterprise-Level (برای اطمینان از پردازش تاریخ)
-            var pollingInterval = null;
-            var lastPolledValue = null;
-            
-            function startDatePolling() {
-                // ✅ فقط اگر polling فعال باشد
-                if (!pollingEnabled) {
-                    return;
-                }
-                
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                }
-                
-                pollingInterval = setInterval(function() {
-                    // ✅ فقط اگر polling فعال باشد
-                    if (!pollingEnabled) {
-                        return;
-                    }
-                    
-                    var currentValue = $("#date").val();
-                    if (currentValue && currentValue !== lastPolledValue) {
-                        var englishValue = convertPersianToEnglishNumbers(currentValue);
-                        if (englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            console.log('✅ [Polling] Date changed detected:', englishValue);
-                            lastPolledValue = currentValue;
-                            processDateFromInput(true); // force process
-                        }
-                    }
-                }, 500); // هر 500ms چک می‌کند
-            }
             
             // ✅ Initialize Module (SRP: Initialization)
             var InitModule = {
@@ -2146,9 +2342,8 @@ else if (Model.SelectedDoctorId.HasValue)
                 setTimeout(function() {
                             AppState.isInitialLoad = false;
                             isInitialLoad = false; // Legacy compatibility
-                            pollingEnabled = true;
                     datePickerInitialized = true;
-                            console.log('✅ DatePicker initialized by component, polling enabled');
+                            console.log('✅ DatePicker initialized by component');
                 }, 2000);
                     }, 1500); // تاخیر بیشتر برای اطمینان از initialize شدن کامپوننت
                 }

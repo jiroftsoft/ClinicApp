@@ -4771,6 +4771,7 @@
     <Content Include="Docs\Knowledge-Base\PAYMENT_APPOINTMENT_OPTIMIZATION_REPORT.md" />
     <Content Include="Docs\Knowledge-Base\14041007\appointment_views_design_prompt.md.metadata.json" />
     <Content Include="Docs\Knowledge-Base\14041007\APPOINTMENT_CONTROLLER_REFACTORING_REPORT.md" />
+    <Content Include="Docs\Knowledge-Base\14041008\doctor_schedule_bugfix_prompt.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
