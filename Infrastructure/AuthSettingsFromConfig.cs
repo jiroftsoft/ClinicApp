@@ -15,6 +15,7 @@ public class AuthSettingsFromConfig : IAuthSettings
     public int OtpMaxSendsPerIpPer5Min => GetInt("Otp.MaxSendsPerIpPer5Min", 10);
     public int OtpFailedMaxAttempts => GetInt("Otp.FailedMaxAttempts", 5);
     public int OtpLockoutMinutes => GetInt("Otp.LockoutMinutes", 15);
+    public int OtpMaxVerificationAttempts => GetInt("Otp.MaxVerificationAttempts", 5); // ✅ حداکثر تلاش برای تایید یک OTP
 
     private int GetInt(string key, int defaultValue) =>
         int.TryParse(ConfigurationManager.AppSettings[key], out var value) ? value : defaultValue;

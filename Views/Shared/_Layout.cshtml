@@ -136,6 +136,7 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/css/swiper-font-override.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
+    <link rel="stylesheet" href="~/Content/css/login.css" />
     @RenderSection("styles", required: false)
     <style>
         :root {
@@ -477,15 +478,42 @@
         </footer>
     }
 
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 shadow-lg" id="loginModalContent">
+    <!-- Login Modal - Professional Enterprise Design -->
+    <div class="login-modal-backdrop fade" id="loginModalBackdrop"></div>
+    <div class="login-modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-modal="true">
+        <div class="login-modal-dialog modal-dialog-centered" role="document">
+            <div class="login-modal-content" id="loginModalContent">
+                <!-- Modal Header with Branding -->
+                <div class="login-modal-header">
+                    <button type="button" class="login-modal-close" aria-label="بستن" id="loginModalCloseBtn">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <div class="login-branding">
+                        <div class="login-logo">
+                            <img src="~/Content/Images/shafa-logo.png" alt="کلینیک شفا" class="logo-img" />
+                        </div>
+                        <h2 class="login-brand-title" id="loginModalLabel">کلینیک درمانی شفا</h2>
+                        <p class="login-brand-subtitle">سیستم مدیریت نوبت‌دهی و خدمات درمانی</p>
+                    </div>
+                </div>
+                
+                <!-- Modal Body - Content loaded via AJAX -->
+                <div class="login-modal-body-content" id="loginModalBody">
+                    <div class="d-flex justify-content-center p-5">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <!-- jQuery Core - Load First (No Cache for Medical Environment) -->
     <script src="~/Scripts/jquery-3.7.1.min.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
     <script src="~/Content/js/jquery-protection.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+    
+    <!-- Login OTP Manager - Must load after jQuery -->
+    <script src="~/Content/js/login-otp-manager.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
     
     <!-- Force Cache Clear for Medical Environment -->
     <script>
@@ -907,30 +935,121 @@
                 });
             }
 
-            // --- 3. AJAX loading for Login Modal ---
-            const loginModal = document.getElementById('loginModal');
-            if(loginModal) {
-                 const loginModalContent = document.getElementById('loginModalContent');
-                 loginModal.addEventListener('show.bs.modal', function() {
-                     // Display a spinner while loading
-                     loginModalContent.innerHTML = `<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
-                     // Load content from the partial view
-                     fetch('@Url.Action("LoginModal", "Account")')
-                         .then(response => response.text())
-                         .then(html => {
-                             loginModalContent.innerHTML = html;
-                             // Re-attach AJAX form submission script after loading new content
-                             const form = loginModalContent.querySelector('#loginForm');
-                             if (form) {
-                                 attachLoginFormHandler(form);
-                             }
-                         })
-                         .catch(error => {
-                             loginModalContent.innerHTML = '<div class="alert alert-danger m-3">خطا در بارگذاری فرم. لطفاً دوباره تلاش کنید.</div>';
-                         });
-                 });
-            }
+            // --- 3. Professional Login Modal Manager ---
+            (function() {
+                const loginModal = document.getElementById('loginModal');
+                const loginModalBackdrop = document.getElementById('loginModalBackdrop');
+                const loginModalBody = document.getElementById('loginModalBody');
+                const loginModalCloseBtn = document.getElementById('loginModalCloseBtn');
+                const loginLink = document.getElementById('loginLink');
+                
+                if (!loginModal) return;
+                
+                // Load login content
+                function loadLoginContent() {
+                    loginModalBody.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">در حال بارگذاری...</span></div></div>';
+                    
+                    fetch('@Url.Action("LoginModal", "Account")')
+                        .then(response => response.text())
+                        .then(html => {
+                            loginModalBody.innerHTML = html;
+                            // Execute any scripts in the loaded content
+                            const scripts = loginModalBody.querySelectorAll('script');
+                            scripts.forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                Array.from(oldScript.attributes).forEach(attr => {
+                                    newScript.setAttribute(attr.name, attr.value);
+                                });
+                                newScript.textContent = oldScript.textContent || oldScript.innerHTML;
+                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                            });
+                            // Re-initialize jQuery handlers after scripts are executed
+                            if (typeof jQuery !== 'undefined') {
+                                $(document).ready(function() {
+                                    // Trigger a custom event to re-initialize
+                                    $(document).trigger('loginModalContentLoaded');
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            loginModalBody.innerHTML = '<div class="alert alert-danger m-3">خطا در بارگذاری فرم. لطفاً دوباره تلاش کنید.</div>';
+                        });
+                }
+                
+                // Open modal
+                function openModal() {
+                    loadLoginContent();
+                    document.body.classList.add('login-modal-open');
+                    loginModalBackdrop.classList.add('show');
+                    loginModal.classList.add('show');
+                    loginModal.setAttribute('aria-hidden', 'false');
+                    // Focus first input after content loads
+                    setTimeout(() => {
+                        const nationalCodeInput = loginModalBody.querySelector('#NationalCode');
+                        const firstOtpInput = loginModalBody.querySelector('#otp-inputs .otp-input:first-child');
+                        const firstInput = nationalCodeInput || firstOtpInput;
+                        if (firstInput) firstInput.focus();
+                    }, 500);
+                }
+                
+                // Close modal
+                function closeModal() {
+                    loginModal.classList.remove('show');
+                    loginModalBackdrop.classList.remove('show');
+                    document.body.classList.remove('login-modal-open');
+                    loginModal.setAttribute('aria-hidden', 'true');
+                    // Reset form state
+                    setTimeout(() => {
+                        loginModalBody.innerHTML = '';
+                    }, 300);
+                }
+                
+                // Event: Click login link
+                if (loginLink) {
+                    loginLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        openModal();
+                    });
+                }
+                
+                // Event: Close button
+                if (loginModalCloseBtn) {
+                    loginModalCloseBtn.addEventListener('click', closeModal);
+                }
+                
+                // Event: Click backdrop - Professional handling
+                if (loginModalBackdrop) {
+                    loginModalBackdrop.addEventListener('click', function(e) {
+                        // Only close if click is directly on backdrop (not on modal content)
+                        if (e.target === loginModalBackdrop) {
+                            closeModal();
+                        }
+                    });
+                }
+                
+                // Event: Click outside modal content (on modal container)
+                loginModal.addEventListener('click', function(e) {
+                    // If click is on modal container itself (not on dialog/content), close modal
+                    if (e.target === loginModal) {
+                        closeModal();
+                    }
+                });
+                
+                // Prevent modal dialog/content clicks from closing modal
+                const loginModalDialog = loginModal.querySelector('.login-modal-dialog');
+                if (loginModalDialog) {
+                    loginModalDialog.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+                
+                // Event: ESC key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && loginModal.classList.contains('show')) {
+                        closeModal();
+                    }
+                });
+            })();
 
             // Function to handle the login form submission via AJAX
             function attachLoginFormHandler(form) {

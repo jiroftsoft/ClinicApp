@@ -1,0 +1,141 @@
+@* صفحه جزئیات تاریخچه ورود *@
+@using ClinicApp.ViewModels.Admin.Security
+@model LoginHistoryIndexViewModel
+@{
+    ViewBag.Title = "جزئیات ورود";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa fa-info-circle"></i> جزئیات ورود
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">
+                            <i class="fa fa-arrow-right"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">اطلاعات کاربر</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th width="40%">نام کاربر</th>
+                                    <td>@Model.UserFullName</td>
+                                </tr>
+                                <tr>
+                                    <th>کد ملی</th>
+                                    <td>@Model.UserNationalCode</td>
+                                </tr>
+                                <tr>
+                                    <th>شناسه کاربر</th>
+                                    <td><code>@Model.UserId</code></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">اطلاعات ورود</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th width="40%">تاریخ ورود</th>
+                                    <td>@Model.LoginTimeShamsi</td>
+                                </tr>
+                                <tr>
+                                    <th>تاریخ خروج</th>
+                                    <td>@(Model.LogoutTimeShamsi ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <th>وضعیت</th>
+                                    <td>
+                                        @if (Model.IsSuccessful)
+                                        {
+                                            <span class="badge badge-success">
+                                                <i class="fa fa-check"></i> موفق
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger">
+                                                <i class="fa fa-times"></i> ناموفق
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                                @if (!string.IsNullOrWhiteSpace(Model.FailureReason))
+                                {
+                                    <tr>
+                                        <th>دلیل عدم موفقیت</th>
+                                        <td class="text-danger">@Model.FailureReason</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">اطلاعات شبکه</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th width="40%">IP Address</th>
+                                    <td><code>@Model.IpAddress</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Session ID</th>
+                                    <td><code>@(Model.SessionId ?? "-")</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Location</th>
+                                    <td>@(Model.Location ?? "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">اطلاعات دستگاه</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th width="40%">نوع دستگاه</th>
+                                    <td>
+                                        <span class="badge badge-info">@Model.DeviceType</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>مرورگر</th>
+                                    <td>@Model.BrowserName @Model.BrowserVersion</td>
+                                </tr>
+                                <tr>
+                                    <th>سیستم عامل</th>
+                                    <td>@Model.OSName @Model.OSVersion</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">User Agent</h5>
+                            <div class="alert alert-light">
+                                <code style="word-break: break-all;">@Model.UserAgent</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // هیچ اسکریپت خاصی نیاز نیست
+        });
+    </script>
+}
+

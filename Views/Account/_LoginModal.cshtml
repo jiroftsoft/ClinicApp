@@ -1,0 +1,679 @@
+@{
+    ViewBag.Title = "ورود / ثبت‌نام";
+    Layout = null;
+}
+
+<div class="login-form-container">
+    <p id="card-subtitle" class="text-center text-muted mb-4" style="font-size: 0.95rem;">برای ادامه لطفاً کد ملی خود را وارد کنید</p>
+
+    <div id="step-national-code">
+        @using (Html.BeginForm("CheckUser", "Account", FormMethod.Post, new { id = "form-check-user" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="NationalCode" class="form-label">کد ملی</label>
+                <input type="tel" id="NationalCode" name="NationalCode" class="form-control text-center" maxlength="10" autocomplete="off" placeholder="کد ملی ۱۰ رقمی خود را وارد کنید" />
+                <div class="text-danger d-block mt-1" data-valmsg-for="NationalCode"></div>
+            </div>
+            <div class="d-grid mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <span class="button-text">ادامه</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <div id="step-register-phone" style="display:none;">
+        <p id="register-prompt" class="text-center text-info mb-3"></p>
+        @using (Html.BeginForm("SendRegistrationOtp", "Account", FormMethod.Post, new { id = "form-send-reg-otp" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="NationalCode" />
+            <div class="form-group">
+                <label for="PhoneNumber" class="form-label">شماره موبایل</label>
+                <input type="tel" id="PhoneNumber" name="PhoneNumber" class="form-control" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" />
+                <div class="text-danger d-block mt-1" data-valmsg-for="PhoneNumber"></div>
+            </div>
+            <div class="d-grid mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <span class="button-text">ارسال کد تایید</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <div id="step-otp" style="display:none;">
+        <p id="otp-prompt" class="text-center text-success mb-3"></p>
+        @using (Html.BeginForm("VerifyLoginOtp", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "form-verify-otp" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="NationalCode" />
+            <input type="hidden" name="PhoneNumber" />
+            <input type="hidden" id="combined-otp-code" name="OtpCode" />
+            <div class="form-group text-center">
+                <label for="otp-input-1" class="form-label">کد تایید</label>
+                <div id="otp-inputs" class="d-flex justify-content-center gap-2" dir="ltr">
+                    <input type="tel" id="otp-input-1" class="form-control otp-input text-center" maxlength="1" />
+                    <input type="tel" id="otp-input-2" class="form-control otp-input text-center" maxlength="1" />
+                    <input type="tel" id="otp-input-3" class="form-control otp-input text-center" maxlength="1" />
+                    <input type="tel" id="otp-input-4" class="form-control otp-input text-center" maxlength="1" />
+                    <input type="tel" id="otp-input-5" class="form-control otp-input text-center" maxlength="1" />
+                    <input type="tel" id="otp-input-6" class="form-control otp-input text-center" maxlength="1" />
+                </div>
+                <div id="otp-error" class="text-danger mt-2"></div>
+            </div>
+            <div class="d-grid mt-3">
+                <button type="submit" class="btn btn-success">
+                    <span class="button-text">تایید و ورود</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+            <div class="text-center mt-3">
+                <span id="countdown-timer"></span>
+                <a href="#" id="resend-otp-link" style="display: none;">ارسال مجدد کد</a>
+            </div>
+        }
+    </div>
+</div>
+
+@Html.Partial("_ValidationToasts")
+<script>
+    (function ($) {
+        // --- CONFIG & STATE ---
+        var config = {
+            otpLength: 6,
+            countdownSeconds: 120
+        };
+        
+        var state = {
+            countdownInterval: null,
+            remainingSeconds: 0
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        function showButtonSpinner(button, show) {
+            var $button = $(button);
+            var $spinner = $button.find('.spinner');
+            var $text = $button.find('.button-text');
+            
+            if (show) {
+                $spinner.addClass('spinner-border spinner-border-sm');
+                $text.hide();
+                $button.prop('disabled', true);
+            } else {
+                $spinner.removeClass('spinner-border spinner-border-sm');
+                $text.show();
+                $button.prop('disabled', false);
+            }
+        }
+
+        function resetForm(formId) {
+            $('#' + formId)[0].reset();
+            $('#' + formId + ' .text-danger').text('');
+            $('#' + formId + ' [data-valmsg-for]').text('');
+        }
+
+        // --- STEP MANAGEMENT ---
+        function showStep(stepId) {
+            $('[id^="step-"]').hide();
+            $('#' + stepId).show();
+        }
+
+        // --- OTP HANDLING - Delegated to OTPManager (SRP Compliance) ---
+        function setupOtpInputs() {
+            // Use OTPManager if available (SRP: Single Responsibility)
+            if (typeof window.OTPManager !== 'undefined') {
+                window.OTPManager.init();
+                return;
+            }
+            
+            // Fallback: Basic implementation if OTPManager not loaded
+            var $inputs = $('#otp-inputs .otp-input');
+            $inputs.off('input keydown paste keyup focus');
+            
+            $inputs.on('input', function() {
+                var $this = $(this);
+                var value = $this.val().replace(/\D/g, '');
+                if (value.length > 1) value = value.charAt(0);
+                $this.val(value);
+                
+                if (value.length === 1) {
+                    var index = $inputs.index($this);
+                    if (index < $inputs.length - 1) {
+                        setTimeout(function() { $inputs.eq(index + 1).focus(); }, 50);
+                    } else {
+                        updateCombinedOtp();
+                    }
+                } else {
+                    updateCombinedOtp();
+                }
+            });
+            
+            $inputs.on('keydown', function(e) {
+                var $this = $(this);
+                var index = $inputs.index($this);
+                var value = $this.val();
+                
+                if (e.key === 'ArrowLeft' && index > 0) {
+                    e.preventDefault();
+                    $inputs.eq(index - 1).focus();
+                } else if (e.key === 'ArrowRight' && index < $inputs.length - 1) {
+                    e.preventDefault();
+                    $inputs.eq(index + 1).focus();
+                } else if (e.key === 'Backspace') {
+                    if (value === '' && index > 0) {
+                        e.preventDefault();
+                        $inputs.eq(index - 1).val('').focus();
+                        updateCombinedOtp();
+                    } else if (value !== '') {
+                        $this.val('');
+                        updateCombinedOtp();
+                    }
+                } else if (!/^\d$/.test(e.key) && !['Delete', 'Tab', 'Enter'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            
+            $inputs.on('paste', function(e) {
+                e.preventDefault();
+                var digits = (e.originalEvent.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').substring(0, config.otpLength);
+                if (digits.length > 0) {
+                    $inputs.val('');
+                    digits.split('').forEach(function(digit, i) {
+                        if (i < $inputs.length) $inputs.eq(i).val(digit);
+                    });
+                    $inputs.eq(Math.min(digits.length - 1, $inputs.length - 1)).focus();
+                    updateCombinedOtp();
+                }
+            });
+            
+            $inputs.on('keyup focus', function() {
+                updateCombinedOtp();
+                if ($(this).val()) $(this).select();
+            });
+        }
+
+        function updateCombinedOtp() {
+            var otp = $('#otp-inputs .otp-input').map(function() {
+                return $(this).val();
+            }).get().join('');
+            
+            // Ensure only digits
+            otp = otp.replace(/\D/g, '');
+            
+            $('#combined-otp-code').val(otp);
+            
+            // Auto-submit when complete (only if all 6 digits entered)
+            if (otp.length === config.otpLength) {
+                // Small delay to ensure value is set
+                setTimeout(function() {
+                    $('#form-verify-otp').submit();
+                }, 100);
+            }
+        }
+
+        // --- COUNTDOWN TIMER ---
+        function startCountdown() {
+            state.remainingSeconds = config.countdownSeconds;
+            $('#countdown-timer').text('ارسال مجدد کد تا ' + state.remainingSeconds + ' ثانیه');
+            $('#resend-otp-link').hide();
+            
+            if (state.countdownInterval) {
+                clearInterval(state.countdownInterval);
+            }
+            
+            state.countdownInterval = setInterval(function() {
+                state.remainingSeconds--;
+                
+                if (state.remainingSeconds > 0) {
+                    $('#countdown-timer').text('ارسال مجدد کد تا ' + state.remainingSeconds + ' ثانیه');
+                } else {
+                    clearInterval(state.countdownInterval);
+                    $('#countdown-timer').text('');
+                    $('#resend-otp-link').show();
+                }
+            }, 1000);
+        }
+
+        // --- FORM SUBMISSIONS ---
+        // Use event delegation to ensure handler works even after dynamic content load
+        $(document).off('submit', '#form-check-user').on('submit', '#form-check-user', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $button = $form.find('button[type="submit"]');
+            
+            // Clear previous errors
+            $form.find('.text-danger').text('');
+            $form.find('[data-valmsg-for]').text('');
+            
+            showButtonSpinner($button, true);
+            
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                dataType: 'json', // Ensure JSON parsing
+                success: function(response) {
+                    // Handle USER_ALREADY_EXISTS even if success: false (MUST be first check)
+                    if (response && response.code === 'USER_ALREADY_EXISTS') {
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                        sendLoginOtp();
+                        return;
+                    }
+                    
+                    // Handle USER_IS_NEW (success: true)
+                    if (response.success && response.code === 'USER_IS_NEW') {
+                        showStep('step-register-phone');
+                        $('#register-prompt').text(response.message || 'برای ثبت‌نام شماره موبایل خود را وارد کنید');
+                        $('input[name="NationalCode"]').val($('#NationalCode').val());
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                        return;
+                    }
+                    
+                    // Handle validation errors
+                    if (response.errors && Object.keys(response.errors).length > 0) {
+                        $.each(response.errors, function(field, messages) {
+                            var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
+                            if ($errorContainer.length) {
+                                $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                            }
+                        });
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                        return;
+                    }
+                    
+                    // Handle other errors
+                    if (!response.success) {
+                        toastr.error(response.message || 'خطا در بررسی کد ملی');
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                        return;
+                    }
+                    
+                    showButtonSpinner($button, false);
+                    $button.prop('disabled', false);
+                },
+                error: function(xhr, status, error) {
+                    console.error('CheckUser AJAX Error:', { xhr: xhr, status: status, error: error });
+                    if (xhr.status === 400) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            if (errorResponse.errors) {
+                                $.each(errorResponse.errors, function(field, messages) {
+                                    var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
+                                    if ($errorContainer.length) {
+                                        $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                                    }
+                                });
+                            } else {
+                                toastr.error(errorResponse.message || 'خطا در بررسی کد ملی');
+                            }
+                        } catch (e) {
+                            toastr.error('خطا در بررسی کد ملی');
+                        }
+                    } else {
+                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                    }
+                    showButtonSpinner($button, false);
+                    $button.prop('disabled', false);
+                },
+                complete: function() {
+                    // Spinner handled in each branch
+                }
+            });
+        });
+
+        // Rate limiting state for sendLoginOtp
+        var sendOtpCooldown = false;
+        var sendOtpCooldownTimer = null;
+
+        function sendLoginOtp() {
+            var nationalCode = $('#NationalCode').val();
+            
+            if (!nationalCode || nationalCode.length !== 10) {
+                toastr.error('کد ملی معتبر نیست');
+                return;
+            }
+            
+            // Check cooldown
+            if (sendOtpCooldown) {
+                toastr.warning('لطفاً چند لحظه صبر کنید و دوباره تلاش کنید.');
+                return;
+            }
+            
+            // Disable button and set cooldown (5 seconds minimum)
+            var $checkUserButton = $('#form-check-user button[type="submit"]');
+            var originalText = $checkUserButton.find('.button-text').text();
+            $checkUserButton.prop('disabled', true);
+            sendOtpCooldown = true;
+            
+            // Show loading state
+            toastr.info('در حال ارسال کد تایید...', '', { timeOut: 2000 });
+            
+            $.ajax({
+                url: '@Url.Action("SendLoginOtp", "Account")',
+                method: 'POST',
+                dataType: 'json', // Ensure JSON parsing
+                data: { 
+                    NationalCode: nationalCode,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    // Ensure response is an object
+                    if (typeof response === 'string') {
+                        try {
+                            response = JSON.parse(response);
+                        } catch (e) {
+                            console.error('Failed to parse response:', e);
+                            toastr.error('پاسخ نامعتبر از سرور');
+                            resetSendOtpButton($checkUserButton, originalText);
+                            return;
+                        }
+                    }
+                    
+                    if (response && response.success === true) {
+                        // Success: Show OTP step
+                        showStep('step-otp');
+                        $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
+                        // Set hidden fields for verify form
+                        $('#form-verify-otp input[name="NationalCode"]').val(nationalCode);
+                        // PhoneNumber is not needed for login OTP verification (only for registration)
+                        // Clear OTP inputs
+                        $('#otp-inputs .otp-input').val('');
+                        $('#combined-otp-code').val('');
+                        $('#otp-error').text('');
+                        setupOtpInputs();
+                        startCountdown();
+                        // Focus first OTP input
+                        setTimeout(function() {
+                            $('#otp-inputs .otp-input:first').focus();
+                        }, 100);
+                        // Reset button state
+                        resetSendOtpButton($checkUserButton, originalText);
+                    } else {
+                        // Error: Show message and stay on national code step
+                        var errorMessage = (response && response.message) ? response.message : 'خطا در ارسال کد تایید';
+                        toastr.error(errorMessage);
+                        showStep('step-national-code');
+                        resetSendOtpButton($checkUserButton, originalText);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('SendLoginOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                    var errorMessage = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
+                    
+                    if (xhr.status === 400) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || 'خطا در ارسال کد تایید';
+                        } catch (e) {
+                            errorMessage = 'خطا در ارسال کد تایید';
+                        }
+                    } else if (xhr.status === 429) {
+                        errorMessage = 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.';
+                        // Extended cooldown for rate limit
+                        setSendOtpCooldown(30);
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                    }
+                    
+                    toastr.error(errorMessage);
+                    showStep('step-national-code');
+                    resetSendOtpButton($checkUserButton, originalText);
+                }
+            });
+        }
+        
+        function resetSendOtpButton($button, originalText) {
+            $button.prop('disabled', false);
+            // Set cooldown for 5 seconds after any attempt
+            setSendOtpCooldown(5);
+        }
+        
+        function setSendOtpCooldown(seconds) {
+            if (sendOtpCooldownTimer) {
+                clearTimeout(sendOtpCooldownTimer);
+            }
+            sendOtpCooldown = true;
+            sendOtpCooldownTimer = setTimeout(function() {
+                sendOtpCooldown = false;
+                sendOtpCooldownTimer = null;
+            }, seconds * 1000);
+        }
+
+        $('#form-send-reg-otp').on('submit', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $button = $form.find('button[type="submit"]');
+            
+            // Clear previous errors
+            $form.find('.text-danger').text('');
+            $form.find('[data-valmsg-for]').text('');
+            
+            showButtonSpinner($button, true);
+            
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        showStep('step-otp');
+                        $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
+                        // Clear OTP inputs
+                        $('#otp-inputs .otp-input').val('');
+                        $('#combined-otp-code').val('');
+                        $('#otp-error').text('');
+                        setupOtpInputs();
+                        startCountdown();
+                        // Focus first OTP input
+                        setTimeout(function() {
+                            $('#otp-inputs .otp-input:first').focus();
+                        }, 100);
+                    } else {
+                        // Handle validation errors
+                        if (response.errors && Object.keys(response.errors).length > 0) {
+                            $.each(response.errors, function(field, messages) {
+                                var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
+                                if ($errorContainer.length) {
+                                    $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                                }
+                            });
+                        } else {
+                            toastr.error(response.message || 'خطا در ارسال کد تایید');
+                        }
+                    }
+                    showButtonSpinner($button, false);
+                },
+                error: function(xhr, status, error) {
+                    console.error('SendRegistrationOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                    if (xhr.status === 400) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            if (errorResponse.errors) {
+                                $.each(errorResponse.errors, function(field, messages) {
+                                    var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
+                                    if ($errorContainer.length) {
+                                        $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                                    }
+                                });
+                            } else {
+                                toastr.error(errorResponse.message || 'خطا در ارسال کد تایید');
+                            }
+                        } catch (e) {
+                            toastr.error('خطا در ارسال کد تایید');
+                        }
+                    } else if (xhr.status === 429) {
+                        toastr.error('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                    } else {
+                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                    }
+                    showButtonSpinner($button, false);
+                }
+            });
+        });
+
+        $('#form-verify-otp').on('submit', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $button = $form.find('button[type="submit"]');
+            
+            // Prevent multiple submissions
+            if ($button.prop('disabled')) {
+                return;
+            }
+            
+            // Get OTP from combined field or rebuild from inputs
+            var otp = $('#combined-otp-code').val();
+            if (!otp || otp.length !== config.otpLength) {
+                // Rebuild from inputs
+                otp = $('#otp-inputs .otp-input').map(function() {
+                    return $(this).val();
+                }).get().join('').replace(/\D/g, '');
+                
+                if (!otp || otp.length !== config.otpLength) {
+                    $('#otp-error').text('لطفاً کد تایید ۶ رقمی را کامل وارد کنید');
+                    $('#otp-inputs .otp-input:first').focus();
+                    return;
+                }
+                
+                // Update combined field
+                $('#combined-otp-code').val(otp);
+            }
+            
+            // Ensure NationalCode is set
+            var nationalCode = $form.find('input[name="NationalCode"]').val();
+            if (!nationalCode) {
+                // Try to get from step-national-code
+                nationalCode = $('#NationalCode').val();
+                if (nationalCode) {
+                    $form.find('input[name="NationalCode"]').val(nationalCode);
+                } else {
+                    $('#otp-error').text('خطا: کد ملی یافت نشد. لطفاً دوباره تلاش کنید.');
+                    return;
+                }
+            }
+            
+            showButtonSpinner($button, true);
+            $button.prop('disabled', true);
+            $('#otp-error').text('');
+            
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                dataType: 'json', // Ensure JSON parsing
+                data: $form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message before redirect
+                        toastr.success('ورود با موفقیت انجام شد', '', { timeOut: 1500 });
+                        // Small delay for better UX
+                        setTimeout(function() {
+                            if (response.redirectUrl) {
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                window.location.reload();
+                            }
+                        }, 500);
+                    } else {
+                        var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';
+                        $('#otp-error').text(errorMessage);
+                        // Clear and focus first input
+                        $('#otp-inputs .otp-input').val('');
+                        $('#combined-otp-code').val('');
+                        $('#otp-inputs .otp-input:first').focus();
+                        updateCombinedOtp();
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('VerifyOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                    if (xhr.status === 400) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            $('#otp-error').text(errorResponse.message || 'کد تایید نامعتبر است');
+                        } catch (e) {
+                            $('#otp-error').text('کد تایید نامعتبر است');
+                        }
+                    } else if (xhr.status === 429) {
+                        $('#otp-error').text('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                    } else {
+                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                    }
+                    // Clear and focus first input
+                    $('#otp-inputs .otp-input').val('');
+                    $('#combined-otp-code').val('');
+                    $('#otp-inputs .otp-input:first').focus();
+                    updateCombinedOtp();
+                    showButtonSpinner($button, false);
+                    $button.prop('disabled', false);
+                }
+            });
+        });
+
+        $('#resend-otp-link').on('click', function(e) {
+            e.preventDefault();
+            var $link = $(this);
+            var nationalCode = $('input[name="NationalCode"]').val();
+            var phoneNumber = $('input[name="PhoneNumber"]').val();
+            
+            // Disable link during request
+            $link.prop('disabled', true).css('opacity', '0.6');
+            
+            if (phoneNumber) {
+                // Resend registration OTP
+                $.ajax({
+                    url: '@Url.Action("SendRegistrationOtp", "Account")',
+                    method: 'POST',
+                    data: { 
+                        NationalCode: nationalCode, 
+                        PhoneNumber: phoneNumber,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('کد تایید مجدداً ارسال شد');
+                            // Clear OTP inputs
+                            $('#otp-inputs .otp-input').val('');
+                            $('#combined-otp-code').val('');
+                            $('#otp-error').text('');
+                            startCountdown();
+                            // Focus first OTP input
+                            setTimeout(function() {
+                                $('#otp-inputs .otp-input:first').focus();
+                            }, 100);
+                        } else {
+                            toastr.error(response.message || 'خطا در ارسال مجدد کد');
+                        }
+                        $link.prop('disabled', false).css('opacity', '1');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('ResendRegistrationOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                        if (xhr.status === 429) {
+                            toastr.error('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                        } else {
+                            toastr.error('خطا در ارسال مجدد کد. لطفاً دوباره تلاش کنید.');
+                        }
+                        $link.prop('disabled', false).css('opacity', '1');
+                    }
+                });
+            } else {
+                // Resend login OTP
+                sendLoginOtp();
+                $link.prop('disabled', false).css('opacity', '1');
+            }
+        });
+
+        // Initialize when DOM is ready
+        $(document).ready(function() {
+            setupOtpInputs();
+        });
+    })(jQuery);
+</script>
+

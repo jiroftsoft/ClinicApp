@@ -1,15 +1,10 @@
 ﻿@{
     ViewBag.Title = "ورود / ثبت‌نام";
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-header text-center">
-                <h3 class="mb-0">@ViewBag.Title</h3>
-                <p id="card-subtitle" class="mb-0 text-muted">برای ادامه لطفاً کد ملی خود را وارد کنید</p>
-            </div>
-            <div class="card-body p-4">
+<div class="login-form-container">
+                <p id="card-subtitle" class="text-center text-muted mb-4" style="font-size: 0.95rem;">برای ادامه لطفاً کد ملی خود را وارد کنید</p>
 
                 <div id="step-national-code">
                     @using (Html.BeginForm("CheckUser", "Account", FormMethod.Post, new { id = "form-check-user" }))
@@ -83,12 +78,9 @@
                 </div>
 
             </div>
-        </div>
-    </div>
 </div>
 
 @section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
     @Html.Partial("_ValidationToasts")
     <script>
     (function ($) {

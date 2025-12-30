@@ -1,0 +1,44 @@
+/**
+ * Login History Module Styles
+ * Single Responsibility: استایل‌های اختصاصی صفحه Login History
+ * 
+ * طبق: LOGIN_SECURITY_AUDIT_ROADMAP.md
+ */
+
+/* Status Badges */
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+/* Table Styles */
+#loginHistoryTable {
+    font-size: 0.9rem;
+}
+
+#loginHistoryTable td {
+    vertical-align: middle;
+}
+
+#loginHistoryTable .badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #loginHistoryTable {
+        font-size: 0.8rem;
+    }
+}
+

@@ -1,0 +1,723 @@
+/* Mobile-First Login Modal Styles - Healthcare Formal Design - Enterprise Production */
+:root {
+    --login-primary: #2c5aa0;
+    --login-primary-light: #3d6bb3;
+    --login-primary-dark: #1e3f73;
+    --login-text: #2d3748;
+    --login-text-muted: #6c757d;
+    --login-border: #e2e8f0;
+    --login-bg: #f7fafc;
+    --login-success: #28a745;
+    --login-danger: #dc3545;
+    --login-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --login-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+    --login-card-bg: #ffffff;
+    --login-backdrop-bg: rgba(0, 0, 0, 0.5);
+    --login-backdrop-blur: blur(8px);
+}
+
+/* Body when modal is open */
+body.login-modal-open {
+    overflow: hidden !important;
+    padding-right: 0 !important;
+    position: fixed;
+    width: 100%;
+}
+
+/* Modal Backdrop - Professional with blur */
+.login-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--login-backdrop-bg);
+    backdrop-filter: var(--login-backdrop-blur);
+    -webkit-backdrop-filter: var(--login-backdrop-blur);
+    z-index: 1040;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.login-modal-backdrop.fade {
+    opacity: 0;
+}
+
+.login-modal-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Login Modal Container */
+.login-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
+    pointer-events: none;
+}
+
+.login-modal.fade {
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-modal.show {
+    opacity: 1;
+    display: flex;
+    pointer-events: auto;
+}
+
+/* Modal Dialog */
+.login-modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: auto;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 2rem);
+}
+
+.login-modal.fade .login-modal-dialog {
+    transform: scale(0.95) translateY(-30px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+}
+
+.login-modal.show .login-modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Modal Content - Professional Enterprise Size */
+.login-modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 600px; /* ✅ بزرگتر برای فضای بیشتر */
+    margin: 0 auto;
+    background: var(--login-card-bg);
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--login-shadow-lg);
+    outline: 0;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.login-branding {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.login-logo {
+    margin-bottom: 1rem;
+}
+
+.logo-img {
+    max-width: 120px;
+    height: auto;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.login-brand-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--login-primary);
+    margin: 0.5rem 0;
+    letter-spacing: -0.5px;
+}
+
+.login-brand-subtitle {
+    font-size: 0.95rem;
+    color: var(--login-text-muted);
+    margin: 0;
+    font-weight: 400;
+}
+
+@media (min-width: 768px) {
+    .login-branding {
+        margin-bottom: 2.5rem;
+    }
+    
+    .logo-img {
+        max-width: 140px;
+    }
+    
+    .login-brand-title {
+        font-size: 2rem;
+    }
+    
+    .login-brand-subtitle {
+        font-size: 1rem;
+    }
+}
+
+/* Modal Header */
+.login-modal-header {
+    background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-light) 100%);
+    padding: 2rem 1.5rem 1.5rem;
+    border-bottom: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-modal-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.5; }
+}
+
+.login-modal-header .login-branding {
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.login-modal-header .login-brand-title {
+    color: white;
+    font-size: 1.5rem;
+    margin: 0.75rem 0 0.5rem 0;
+}
+
+.login-modal-header .login-brand-subtitle {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9rem;
+}
+
+.login-modal-header .logo-img {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+/* Modal Body Content */
+.login-modal-body-content {
+    padding: 2rem 1.5rem;
+    background: var(--login-card-bg);
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
+}
+
+/* Remove card wrapper - modal-content is the card */
+.login-form-container .card {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    border-radius: 0;
+}
+
+.login-form-container .card-header {
+    display: none; /* Header is in modal-header */
+}
+
+.login-form-container .card-body {
+    padding: 0;
+}
+
+/* Form styling inside modal */
+.login-modal-body-content .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-modal-body-content .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Form controls - Touch friendly (iOS minimum 44px) - Enterprise Design */
+.login-modal-body-content .form-control {
+    min-height: 48px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border: 2px solid var(--login-border);
+    border-radius: 10px;
+    padding: 0.875rem 1.25rem;
+    transition: all 0.2s ease-in-out;
+    background: #ffffff;
+    color: var(--login-text);
+}
+
+.login-modal-body-content .form-control:hover {
+    border-color: var(--login-primary-light);
+}
+
+.login-modal-body-content .form-control:focus {
+    border-color: var(--login-primary);
+    box-shadow: 0 0 0 4px rgba(44, 90, 160, 0.1);
+    outline: 0;
+    background: #ffffff;
+}
+
+.login-modal-body-content .form-label {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--login-text);
+    font-size: 1rem;
+    letter-spacing: -0.2px;
+}
+
+.login-modal-body-content .btn {
+    min-height: 48px;
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.2s ease-in-out;
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-modal-body-content .btn-primary {
+    background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-light) 100%);
+    border: none;
+    color: white;
+}
+
+.login-modal-body-content .btn-primary:hover {
+    background: linear-gradient(135deg, var(--login-primary-light) 0%, var(--login-primary) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.login-modal-body-content .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(44, 90, 160, 0.2);
+}
+
+.login-modal-body-content .btn-success {
+    background: linear-gradient(135deg, var(--login-success) 0%, #34ce57 100%);
+    border: none;
+    color: white;
+}
+
+.login-modal-body-content .btn-success:hover {
+    background: linear-gradient(135deg, #34ce57 0%, var(--login-success) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* OTP Inputs - Professional Enterprise Design (Smaller, Elegant, Real-World Style) */
+#otp-inputs {
+    gap: 0.6rem; /* ✅ فاصله کمتر برای ظاهر حرفه‌ای‌تر */
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin: 1.5rem 0;
+    padding: 0 0.5rem;
+}
+
+#otp-inputs .otp-input {
+    /* ✅ Professional Size - Smaller and Elegant */
+    width: 2.8rem; /* ✅ کوچکتر از قبل (3.5rem → 2.8rem) */
+    min-width: 2.8rem;
+    height: 3.2rem; /* ✅ کوچکتر از قبل (4rem → 3.2rem) */
+    min-height: 3.2rem;
+    font-size: 1.5rem; /* ✅ کوچکتر برای ظاهر حرفه‌ای‌تر */
+    font-weight: 700;
+    text-align: center;
+    border: 2px solid var(--login-border);
+    border-radius: 10px; /* ✅ کمی کوچکتر برای ظاهر رسمی‌تر */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--login-text);
+    /* Prevent zoom on iOS */
+    font-size: 18px !important; /* ✅ کوچکتر از 20px */
+    /* Ensure numbers are fully visible */
+    box-sizing: border-box;
+    /* High contrast for healthcare */
+    border-width: 2px;
+    /* ✅ Professional shadow for depth */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#otp-inputs .otp-input:hover {
+    border-color: var(--login-primary-light);
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1); /* ✅ سایه بهتر در hover */
+}
+
+#otp-inputs .otp-input:focus {
+    border-color: var(--login-primary);
+    border-width: 2.5px; /* ✅ کمی نازک‌تر برای ظاهر حرفه‌ای‌تر */
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.12), 0 2px 8px rgba(44, 90, 160, 0.15); /* ✅ سایه دو لایه حرفه‌ای */
+    outline: 0;
+    background: #ffffff;
+    transform: scale(1.05); /* ✅ scale کمتر برای ظاهر رسمی‌تر */
+}
+
+#otp-inputs .otp-input:disabled {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Ensure numbers are centered and visible */
+#otp-inputs .otp-input::-webkit-input-placeholder {
+    color: transparent;
+}
+
+#otp-inputs .otp-input::-moz-placeholder {
+    color: transparent;
+}
+
+#otp-inputs .otp-input:-ms-input-placeholder {
+    color: transparent;
+}
+
+#otp-inputs .otp-input::placeholder {
+    color: transparent;
+}
+
+/* Error messages */
+.text-danger {
+    color: var(--login-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+#otp-error {
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+/* Loading states */
+.spinner {
+    display: none;
+}
+
+.spinner.spinner-border,
+.spinner.spinner-border-sm {
+    display: inline-block;
+}
+
+.button-text {
+    display: inline-block;
+}
+
+/* Countdown timer */
+#countdown-timer {
+    font-size: 0.875rem;
+    color: var(--login-text-muted);
+}
+
+#resend-otp-link {
+    color: var(--login-primary);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#resend-otp-link:hover {
+    text-decoration: underline;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .login-modal-content {
+        max-width: 650px; /* ✅ بزرگتر از قبل (500px → 650px) */
+    }
+    
+    .login-modal-header {
+        padding: 2.5rem 2rem 2rem;
+    }
+    
+    .login-modal-header .login-brand-title {
+        font-size: 1.75rem;
+    }
+    
+    .login-modal-header .login-brand-subtitle {
+        font-size: 1rem;
+    }
+    
+    .login-modal-body-content {
+        padding: 2.5rem;
+    }
+    
+    #otp-inputs {
+        gap: 0.8rem; /* ✅ فاصله کمتر */
+        padding: 0 1rem;
+    }
+    
+    #otp-inputs .otp-input {
+        width: 3.2rem; /* ✅ کوچکتر از قبل (4rem → 3.2rem) */
+        min-width: 3.2rem;
+        height: 3.6rem; /* ✅ کوچکتر از قبل (4.5rem → 3.6rem) */
+        min-height: 3.6rem;
+        font-size: 1.6rem; /* ✅ کوچکتر از قبل (2rem → 1.6rem) */
+        border-width: 2px;
+    }
+    
+    #otp-inputs .otp-input:focus {
+        border-width: 2.5px; /* ✅ نازک‌تر */
+        transform: scale(1.05); /* ✅ scale کمتر */
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .login-modal-content {
+        max-width: 700px; /* ✅ بزرگتر از قبل (480px → 700px) */
+    }
+    
+    .login-modal-header .login-brand-title {
+        font-size: 2rem;
+    }
+    
+    .login-modal-body-content {
+        padding: 3rem;
+    }
+    
+    #otp-inputs {
+        gap: 0.9rem; /* ✅ فاصله کمتر */
+    }
+    
+    #otp-inputs .otp-input {
+        width: 3.4rem; /* ✅ کوچکتر از قبل (4.5rem → 3.4rem) */
+        min-width: 3.4rem;
+        height: 3.8rem; /* ✅ کوچکتر از قبل (5rem → 3.8rem) */
+        min-height: 3.8rem;
+        font-size: 1.7rem; /* ✅ کوچکتر از قبل (2.25rem → 1.7rem) */
+    }
+}
+
+/* Large Desktop */
+@media (min-width: 1200px) {
+    .login-modal-content {
+        max-width: 750px; /* ✅ بزرگتر برای صفحه‌های بزرگ */
+    }
+    
+    #otp-inputs .otp-input {
+        width: 3.6rem; /* ✅ کوچکتر از قبل (5rem → 3.6rem) */
+        min-width: 3.6rem;
+        height: 4rem; /* ✅ کوچکتر از قبل (5.5rem → 4rem) */
+        min-height: 4rem;
+        font-size: 1.8rem; /* ✅ کوچکتر از قبل (2.5rem → 1.8rem) */
+    }
+}
+
+/* Small Mobile (320px - 375px) */
+@media (max-width: 375px) {
+    #otp-inputs {
+        gap: 0.5rem;
+        padding: 0 0.25rem;
+    }
+    
+    #otp-inputs .otp-input {
+        width: 2.5rem; /* ✅ کوچکتر برای موبایل کوچک */
+        min-width: 2.5rem;
+        height: 3rem; /* ✅ کوچکتر */
+        min-height: 3rem;
+        font-size: 1.4rem; /* ✅ کوچکتر */
+    }
+}
+
+/* Extra Small Mobile (below 320px) */
+@media (max-width: 320px) {
+    #otp-inputs {
+        gap: 0.4rem;
+        padding: 0;
+    }
+    
+    #otp-inputs .otp-input {
+        width: 2.3rem; /* ✅ کوچکتر */
+        min-width: 2.3rem;
+        height: 2.8rem; /* ✅ کوچکتر */
+        min-height: 2.8rem;
+        font-size: 1.3rem; /* ✅ کوچکتر */
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .login-modal-content {
+        border-width: 2px;
+        border-color: var(--login-primary);
+    }
+    
+    .login-modal-body-content .form-control {
+        border-width: 2px;
+    }
+}
+
+/* Close button - Professional Design */
+.login-modal-close {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.9;
+}
+
+.login-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1) rotate(90deg);
+    opacity: 1;
+}
+
+.login-modal-close:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
+.login-modal-close span {
+    display: block;
+    font-weight: 300;
+}
+
+/* Branding Section */
+.login-branding {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+    padding: 0 1rem;
+}
+
+.login-logo {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-img {
+    max-width: 120px;
+    height: auto;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    transition: transform 0.3s ease;
+}
+
+.logo-img:hover {
+    transform: scale(1.05);
+}
+
+.login-brand-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--login-primary);
+    margin: 0.75rem 0 0.5rem 0;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+}
+
+.login-brand-subtitle {
+    font-size: 0.95rem;
+    color: var(--login-text-muted);
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+/* Card improvements */
+.login-wrapper .card {
+    position: relative;
+    z-index: 1;
+}
+
+/* Form group spacing */
+.login-wrapper .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-wrapper .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Info text styling */
+.login-wrapper .text-info,
+.login-wrapper .text-success,
+.login-wrapper .text-muted {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .login-modal-body-content .form-control,
+    .login-modal-body-content .btn,
+    #otp-inputs .otp-input,
+    .logo-img,
+    .login-modal-content {
+        transition: none;
+        animation: none;
+    }
+    
+    .login-modal-header::before {
+        animation: none;
+    }
+    
+    .login-modal.fade .login-modal-dialog {
+        transition: none;
+    }
+}
+
+/* Tablet and up - Branding */
+@media (min-width: 768px) {
+    .login-branding {
+        margin-bottom: 3rem;
+    }
+    
+    .logo-img {
+        max-width: 140px;
+    }
+    
+    .login-brand-title {
+        font-size: 2.25rem;
+    }
+    
+    .login-brand-subtitle {
+        font-size: 1.05rem;
+    }
+}
+
+/* Desktop - Branding */
+@media (min-width: 992px) {
+    .login-brand-title {
+        font-size: 2.5rem;
+    }
+    
+    .login-brand-subtitle {
+        font-size: 1.1rem;
+    }
+}
+

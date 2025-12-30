@@ -26,7 +26,7 @@ namespace ClinicApp.Areas.Patient.Controllers
     /// <summary>
     /// Controller برای رزرو نوبت آنلاین
     /// </summary>
-    [Authorize] // ✅ فعال برای امنیت
+    //[Authorize] // ✅ فعال برای امنیت
     public class AppointmentBookingController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

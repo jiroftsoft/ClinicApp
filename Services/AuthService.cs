@@ -3,6 +3,7 @@ using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.OTP;
+using ClinicApp.Interfaces.Security;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
@@ -41,6 +42,7 @@ namespace ClinicApp.Services
         private readonly IRateLimiter _rateLimiter;
         private readonly IClientInfoProvider _clientProvider;
         private readonly IAuthSettings _authSettings;
+        private readonly ILoginHistoryService _loginHistoryService;
 
         public AuthService(
             ApplicationUserManager userManager,
@@ -50,7 +52,8 @@ namespace ClinicApp.Services
             IOtpStateStore otpStateStore,
             IRateLimiter rateLimiter,
             IClientInfoProvider clientProvider,
-            IAuthSettings authSettings)
+            IAuthSettings authSettings,
+            ILoginHistoryService loginHistoryService)
         {
             _userManager = userManager;
             _context = context;
@@ -60,6 +63,7 @@ namespace ClinicApp.Services
             _rateLimiter = rateLimiter;
             _clientProvider = clientProvider;
             _authSettings = authSettings;
+            _loginHistoryService = loginHistoryService;
 
             _userManager.UserLockoutEnabledByDefault = true;
             _userManager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(_authSettings.OtpLockoutMinutes);
@@ -117,6 +121,13 @@ namespace ClinicApp.Services
                 var otp = GenerateSecureOtp(_authSettings.OtpLength);
                 var otpHash = HashOtp(otp, user.PhoneNumber); // Salt with phone number for login
 
+                // ✅ باطل کردن OTP قبلی (اگر وجود داشته باشد) و ثبت در لاگ
+                var oldState = _otpStateStore.GetState();
+                if (oldState != null && oldState.NationalCode == normalizedCode)
+                {
+                    _log.Information("OTP قبلی برای کد ملی {NationalCode} باطل شد (OTP جدید ارسال شد)", normalizedCode);
+                }
+
                 var state = new OtpState
                 {
                     NationalCode = normalizedCode,
@@ -124,7 +135,8 @@ namespace ClinicApp.Services
                     OtpHash = otpHash,
                     ExpiryUtc = DateTime.UtcNow.AddMinutes(_authSettings.OtpExpiryMinutes),
                     IpAddress = clientIp,
-                    UserAgent = _clientProvider.GetUserAgent()
+                    UserAgent = _clientProvider.GetUserAgent(),
+                    AttemptCount = 0 // ✅ شمارنده تلاش‌ها
                 };
                 _otpStateStore.SetState(state);
 
@@ -168,17 +180,35 @@ namespace ClinicApp.Services
                     var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user.Id);
                     var lockoutPersianTime = lockoutEnd.UtcDateTime.ToPersianDateTime() ?? " دقایقی دیگر";
                     _log.Warning("تلاش برای ورود به حساب قفل شده: {UserId}", user.Id);
+                    
+                    // ثبت تاریخچه ورود ناموفق (Account Locked)
+                    await _loginHistoryService.LogFailedLoginAsync(
+                        userId: user.Id,
+                        ipAddress: _clientProvider.GetClientIpAddress(),
+                        userAgent: _clientProvider.GetUserAgent(),
+                        failureReason: $"Account Locked until {lockoutPersianTime}"
+                    );
+                    
                     return ServiceResult.Failed($"حساب شما به دلیل تلاش‌های ناموفق تا {lockoutPersianTime} قفل شده است.", "ACCOUNT_LOCKED", ErrorCategory.Security);
                 }
 
                 // مرحله ۳: اعتبارسنجی OTP
                 var state = _otpStateStore.GetState();
                 var incomingHash = HashOtp(otpCode, user.PhoneNumber); // هش کردن با شماره موبایل کاربر
-                var validationResult = ValidateOtpState(state, normalizedCode, incomingHash);
+                var validationResult = ValidateOtpState(state, normalizedCode, incomingHash, user.PhoneNumber); // ✅ ارسال phoneNumber برای بررسی
 
                 if (!validationResult.Success)
                 {
                     await _userManager.AccessFailedAsync(user.Id); // ثبت تلاش ناموفق که منجر به قفل شدن حساب می‌شود
+                    
+                    // ثبت تاریخچه ورود ناموفق
+                    await _loginHistoryService.LogFailedLoginAsync(
+                        userId: user.Id,
+                        ipAddress: _clientProvider.GetClientIpAddress(),
+                        userAgent: _clientProvider.GetUserAgent(),
+                        failureReason: validationResult.Message ?? "Invalid OTP"
+                    );
+                    
                     return validationResult;
                 }
 
@@ -210,6 +240,15 @@ namespace ClinicApp.Services
                 // مرحله ۷: ذخیره تمام تغییرات در دیتابیس (آپدیت OtpRequest و LastLoginDate) در یک تراکنش
                 await _context.SaveChangesAsync();
 
+                // مرحله ۸: ثبت تاریخچه ورود (Login History)
+                var sessionId = HttpContext.Current?.Session?.SessionID;
+                await _loginHistoryService.LogLoginAsync(
+                    userId: user.Id,
+                    ipAddress: _clientProvider.GetClientIpAddress(),
+                    userAgent: _clientProvider.GetUserAgent(),
+                    sessionId: sessionId
+                );
+
                 _log.Information("ورود موفق کاربر {UserId} با کد ملی {NationalCode}. لاگ OTP با شناسه {OtpLogId} تایید شد.", user.Id, normalizedCode, otpLog?.OtpRequestId);
                 return ServiceResult.Successful("ورود با موفقیت انجام شد.");
             }
@@ -236,6 +275,16 @@ namespace ClinicApp.Services
                     return ServiceResultFactory.Error("حساب کاربری شما غیرفعال است.", "ACCOUNT_DELETED");
 
                 await SignInUserAsync(user, isPersistent: false);
+                
+                // ثبت تاریخچه ورود (Login History)
+                var sessionId = HttpContext.Current?.Session?.SessionID;
+                await _loginHistoryService.LogLoginAsync(
+                    userId: user.Id,
+                    ipAddress: _clientProvider.GetClientIpAddress(),
+                    userAgent: _clientProvider.GetUserAgent(),
+                    sessionId: sessionId
+                );
+                
                 _log.Information("ورود مستقیم موفق کاربر {UserId}", user.Id);
                 return ServiceResultFactory.Success("ورود با موفقیت انجام شد.");
             }
@@ -338,6 +387,13 @@ namespace ClinicApp.Services
                 // مرحله ۴: تولید کد امن و ذخیره موقت آن در سشن کاربر
                 var otp = GenerateSecureOtp(_authSettings.OtpLength);
                 var otpHash = HashOtp(otp, normalizedPhone); // هش کردن کد با شماره موبایل به عنوان "نمک"
+                // ✅ باطل کردن OTP قبلی (اگر وجود داشته باشد) و ثبت در لاگ
+                var oldState = _otpStateStore.GetState();
+                if (oldState != null && oldState.NationalCode == nationalCode)
+                {
+                    _log.Information("OTP قبلی برای کد ملی {NationalCode} باطل شد (OTP جدید ارسال شد)", nationalCode);
+                }
+
                 var state = new OtpState
                 {
                     NationalCode = nationalCode,
@@ -345,7 +401,8 @@ namespace ClinicApp.Services
                     OtpHash = otpHash,
                     ExpiryUtc = DateTime.UtcNow.AddMinutes(_authSettings.OtpExpiryMinutes),
                     IpAddress = clientIp,
-                    UserAgent = _clientProvider.GetUserAgent()
+                    UserAgent = _clientProvider.GetUserAgent(),
+                    AttemptCount = 0 // ✅ شمارنده تلاش‌ها
                 };
                 _otpStateStore.SetState(state);
 
@@ -392,7 +449,7 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
         var incomingHash = HashOtp(otpCode, normalizedPhone);
 
         // Step 1: Validate the OTP state from the session
-        var validationResult = ValidateOtpState(state, nationalCode, incomingHash);
+        var validationResult = ValidateOtpState(state, nationalCode, incomingHash, normalizedPhone); // ✅ ارسال phoneNumber برای بررسی
         if (!validationResult.Success)
         {
             return validationResult;
@@ -471,10 +528,25 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
 
         #region Private Helper Methods
 
-        private ServiceResult ValidateOtpState(OtpState state, string nationalCode, string incomingHash)
+        private ServiceResult ValidateOtpState(OtpState state, string nationalCode, string incomingHash, string phoneNumber = null)
         {
             if (state == null || state.NationalCode != nationalCode || state.ExpiryUtc < DateTime.UtcNow)
                 return ServiceResult.Failed("کد نامعتبر یا منقضی شده است.", "OTP_INVALID_OR_EXPIRED");
+
+            // ✅ بررسی تطابق phoneNumber (برای Login flow)
+            if (!string.IsNullOrEmpty(phoneNumber) && state.PhoneNumber != phoneNumber)
+            {
+                _log.Warning("PhoneNumber mismatch during OTP validation | State: {StatePhone} | Provided: {ProvidedPhone}", state.PhoneNumber, phoneNumber);
+                return ServiceResult.Failed("اطلاعات تایید نامعتبر است.", "PHONE_MISMATCH", ErrorCategory.Security);
+            }
+
+            // ✅ بررسی محدودیت تلاش‌های ناموفق برای این OTP
+            var maxOtpAttempts = _authSettings.OtpMaxVerificationAttempts > 0 ? _authSettings.OtpMaxVerificationAttempts : 5;
+            if (state.AttemptCount >= maxOtpAttempts)
+            {
+                _log.Warning("OTP verification attempts exceeded | NationalCode: {NationalCode} | Attempts: {Attempts}", nationalCode, state.AttemptCount);
+                return ServiceResult.Failed("تعداد تلاش‌های ناموفق برای این کد بیش از حد مجاز است. لطفاً کد جدید درخواست کنید.", "OTP_ATTEMPTS_EXCEEDED", ErrorCategory.Security);
+            }
 
             if (state.IpAddress != _clientProvider.GetClientIpAddress() || state.UserAgent != _clientProvider.GetUserAgent())
             {
@@ -483,7 +555,13 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
 
             // ✅ مقایسه مستقیم هش‌ها
             if (!SlowEquals(state.OtpHash, incomingHash))
+            {
+                // ✅ افزایش شمارنده تلاش‌های ناموفق
+                state.AttemptCount++;
+                _otpStateStore.SetState(state); // ✅ ذخیره state به‌روز شده
+                _log.Warning("OTP verification failed | NationalCode: {NationalCode} | Attempt: {Attempt}/{Max}", nationalCode, state.AttemptCount, maxOtpAttempts);
                 return ServiceResult.Failed("کد وارد شده صحیح نمی‌باشد.", "OTP_INVALID");
+            }
 
             return ServiceResult.Successful();
         }
@@ -499,12 +577,15 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             return sb.ToString();
         }
 
-        private string HashOtp(string otp, string nationalCode)
+        /// <summary>
+        /// هش کردن OTP با استفاده از salt (phoneNumber یا nationalCode)
+        /// </summary>
+        private string HashOtp(string otp, string salt)
         {
             var key = Encoding.UTF8.GetBytes(_authSettings.OtpHashKey);
             using (var hmac = new HMACSHA256(key))
             {
-                var data = Encoding.UTF8.GetBytes($"{nationalCode}|{otp}");
+                var data = Encoding.UTF8.GetBytes($"{salt}|{otp}"); // ✅ استفاده از مقدار واقعی salt
                 return Convert.ToBase64String(hmac.ComputeHash(data));
             }
         }

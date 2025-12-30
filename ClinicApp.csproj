@@ -515,6 +515,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Security\LoginHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
@@ -665,6 +666,7 @@
     <Compile Include="Helpers\RoleHelper.cs" />
     <Compile Include="Helpers\SafeSqlBuilder.cs" />
     <Compile Include="Helpers\SecurityHelper.cs" />
+    <Compile Include="Helpers\Security\DeviceDetectionHelper.cs" />
     <Compile Include="Helpers\Security\SecurityLogger.cs" />
     <Compile Include="Helpers\Security\SensitiveDataMaskingHelper.cs" />
     <Compile Include="Helpers\ServiceResultExtensions.cs" />
@@ -855,6 +857,7 @@
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
+    <Compile Include="Interfaces\Security\ILoginHistoryService.cs" />
     <Compile Include="Interfaces\UserManagement\IUserManagementService.cs" />
     <Compile Include="Interfaces\UserManagement\IUserRepository.cs" />
     <Compile Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs" />
@@ -949,6 +952,10 @@
     <Compile Include="Migrations\202512281420296_AddRowVersionToOnlinePayment.Designer.cs">
       <DependentUpon>202512281420296_AddRowVersionToOnlinePayment.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202512292007438_ADDUserLoginHistory.cs" />
+    <Compile Include="Migrations\202512292007438_ADDUserLoginHistory.Designer.cs">
+      <DependentUpon>202512292007438_ADDUserLoginHistory.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -993,6 +1000,7 @@
     <Compile Include="Models\Entities\Payment\CashierPerformanceMetrics.cs" />
     <Compile Include="Models\Entities\Payment\CashSessionAuditLog.cs" />
     <Compile Include="Models\Entities\Payment\PaymentDiscrepancy.cs" />
+    <Compile Include="Models\Entities\Security\UserLoginHistory.cs" />
     <Compile Include="Models\Enums\ContactFormCategory.cs" />
     <Compile Include="Models\Enums\ContactFormStatus.cs" />
     <Compile Include="Models\Enums\DepartmentType.cs" />
@@ -1557,6 +1565,7 @@
     <Compile Include="Services\Reception\ReceptionValidationOrchestrator.cs" />
     <Compile Include="Services\Reception\ReceptionWorkflowService.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
+    <Compile Include="Services\Security\LoginHistoryService.cs" />
     <Compile Include="Services\ServiceCalculationService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
     <Compile Include="Services\ServiceManagementService.cs" />
@@ -1585,6 +1594,7 @@
     <Compile Include="ViewModels\AboutPageViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentDetailsViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentIndexViewModel.cs" />
+    <Compile Include="ViewModels\Admin\Security\LoginHistoryIndexViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotDetailsViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotFilterViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotIndexViewModel.cs" />
@@ -1962,6 +1972,8 @@
     <Content Include="Content\css\insurance\supplementary-tariff-index.css" />
     <Content Include="Content\css\insurance\supplementary-tariff-views.css" />
     <Content Include="Content\css\local-fonts.css" />
+    <Content Include="Content\css\login-history.css" />
+    <Content Include="Content\css\login.css" />
     <Content Include="Content\css\medical-environment-styles.css" />
     <Content Include="Content\css\medical-environment.css" />
     <Content Include="Content\css\medical-equipment-section.css" />
@@ -2111,6 +2123,9 @@
     <Content Include="Content\js\image-optimization.js" />
     <Content Include="Content\js\insurance-carousel.js" />
     <Content Include="Content\js\jquery-protection.js" />
+    <Content Include="Content\js\login-history-index.js" />
+    <Content Include="Content\js\login-modal.js" />
+    <Content Include="Content\js\login-otp-manager.js" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-sidebar.js" />
     <Content Include="Content\js\medical-toast.js" />
@@ -4676,7 +4691,6 @@
     <Content Include="Docs\FOOTER_FIX_VERIFICATION.md" />
     <Content Include="Docs\FOOTER_OPTIMIZATION_REPORT.md" />
     <Content Include="Docs\FOOTER_ROADMAP.md" />
-    <Content Include="Docs\RECEPTION_LAYOUT_IMPLEMENTATION_REPORT.md" />
     <Content Include="Docs\SMART_TEMPLATE_ANALYSIS.md" />
     <Content Include="Docs\SMART_TEMPLATE_PRODUCTION_CHECKLIST.md" />
     <Content Include="Docs\SMART_TEMPLATE_USAGE_GUIDE.md" />
@@ -4809,6 +4823,17 @@
     <Content Include="Docs\Knowledge-Base\Master\CLINICAPP_MODULE_REVIEW_PROMPT.md" />
     <Content Include="Docs\Knowledge-Base\AI\CLINICAPP_MODULE_REVIEW_PROMPT.md" />
     <Content Include="Docs\Knowledge-Base\AI\REVIEWS\CLINICAPP_VIEW_REVIEW_CHECKLIST.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PROMPTS\CLINICAPP_LOGIN_UI_UPGRADE_PROMPT.md" />
+    <Content Include="Docs\RECEPTION_LIST_DUPLICATE_PRINT_FIX.md" />
+    <Content Include="Docs\RECEPTION_LIST_PRINT_OPTIMIZATION.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CHECKLISTS\CLINICAPP_OTP_LOGIN_REGISTRATION_CHECKLIST.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PROMPTS\CLINICAPP_SECURITY_AUDIT_LOGIN_OTP_PROMPT.md" />
+    <Content Include="Docs\Knowledge-Base\LOGIN_MODULE_IMPLEMENTATION_MAP.md" />
+    <Content Include="Docs\Knowledge-Base\LOGIN_SECURITY_AUDIT_ROADMAP.md" />
+    <Content Include="Docs\DOCTORTIMESLOTS_OPTIMIZATION_REPORT.md" />
+    <Content Include="Areas\Admin\Views\Security\LoginHistory\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Security\LoginHistory\Index.cshtml" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_BEAST_MODE_LOGIN_OTP_PACK.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6264,6 +6289,8 @@
     <Content Include="Views\Payment\CashierReport\Index.cshtml" />
     <Content Include="Views\Payment\CashierReport\MonthlyReport.cshtml" />
     <Content Include="Views\Payment\CashierReport\RangeReport.cshtml" />
+    <Content Include="Views\Shared\_LoginLayout.cshtml" />
+    <Content Include="Views\Account\_LoginModal.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6511,6 +6538,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512281420296_AddRowVersionToOnlinePayment.resx">
       <DependentUpon>202512281420296_AddRowVersionToOnlinePayment.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202512292007438_ADDUserLoginHistory.resx">
+      <DependentUpon>202512292007438_ADDUserLoginHistory.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

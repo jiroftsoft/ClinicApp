@@ -34,6 +34,7 @@ public class OtpState
     public string IpAddress { get; set; }
     public string UserAgent { get; set; }
     public string PhoneNumber { get; set; }
+    public int AttemptCount { get; set; } // ✅ شمارنده تلاش‌های ناموفق برای این OTP
 }
 // پیاده‌سازی با HttpSession
 public class HttpSessionOtpStateStore : IOtpStateStore
@@ -52,8 +53,8 @@ public class MemoryCacheRateLimiter : IRateLimiter
     public bool IsRateLimited(string key, int maxAttempts, TimeSpan period)
     {
         int count = (int?)(_cache.Get(key)) ?? 0;
-        if (count >= maxAttempts) return true;
-        _cache.Set(key, count + 1, DateTimeOffset.UtcNow.Add(period));
+        if (count >= maxAttempts) return true; // ✅ ابتدا بررسی می‌کنیم
+        _cache.Set(key, count + 1, DateTimeOffset.UtcNow.Add(period)); // ✅ فقط اگر محدود نشده باشد، افزایش می‌دهیم
         return false;
     }
 }
@@ -80,4 +81,5 @@ public class HttpContextClientInfoProvider : IClientInfoProvider
         int OtpMaxSendsPerIpPer5Min { get; }
         int OtpFailedMaxAttempts { get; }
         int OtpLockoutMinutes { get; }
+        int OtpMaxVerificationAttempts { get; } // ✅ حداکثر تلاش برای تایید یک OTP (پیش‌فرض: 5)
     }

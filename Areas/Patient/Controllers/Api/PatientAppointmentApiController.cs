@@ -14,7 +14,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
     /// <summary>
     /// API Controller برای مدیریت نوبت‌های بیمار
     /// </summary>
-    [Authorize]
+    //[Authorize]
     public class PatientAppointmentApiController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

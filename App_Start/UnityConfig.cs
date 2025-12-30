@@ -731,6 +731,15 @@ namespace ClinicApp
                 container.RegisterType<IPaymentReconciliationService, PaymentReconciliationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashierPerformanceService, CashierPerformanceService>(new PerRequestLifetimeManager());
                 
+                // ========== ثبت سرویس‌های جدید برای Security & Login Audit - 2025-01-XX ==========
+                container.RegisterType<Interfaces.Security.ILoginHistoryService, Services.Security.LoginHistoryService>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<ApplicationDbContext>(),
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
+                
                 // ثبت سرویس گزارش‌گیری پرداخت‌ها
                 container.RegisterType<Interfaces.Payment.Reporting.IPaymentReportingService, Services.Payment.Reporting.PaymentReportingService>(new PerRequestLifetimeManager());
 

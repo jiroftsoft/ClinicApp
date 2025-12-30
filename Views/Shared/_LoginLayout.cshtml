@@ -1,0 +1,65 @@
+@using ClinicApp.Helpers
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>@(ViewBag.Title ?? "ورود / ثبت‌نام") - کلینیک شفا</title>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Minimal CSS - Only what login needs -->
+    <link rel="stylesheet" href="~/Content/bootstrap.css" />
+    <link rel="stylesheet" href="~/Content/bootstrap.rtl.css" />
+    <link rel="stylesheet" href="~/Content/toastr.min.css" />
+    <link rel="stylesheet" href="~/Content/css/local-fonts.css" />
+    <link rel="stylesheet" href="~/Content/css/login.css" />
+    
+    @RenderSection("Styles", required: false)
+</head>
+<body class="login-modal-body">
+    <!-- Modal Backdrop -->
+    <div class="login-modal-backdrop fade show"></div>
+    
+    <!-- Login Modal -->
+    <div class="login-modal fade show" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-modal="true">
+        <div class="login-modal-dialog modal-dialog-centered" role="document">
+            <div class="login-modal-content">
+                <!-- Modal Header with Branding -->
+                <div class="login-modal-header">
+                    <div class="login-branding">
+                        <div class="login-logo">
+                            <img src="~/Content/Images/shafa-logo.png" alt="کلینیک شفا" class="logo-img" />
+                        </div>
+                        <h2 class="login-brand-title" id="loginModalLabel">کلینیک درمانی شفا</h2>
+                        <p class="login-brand-subtitle">سیستم مدیریت نوبت‌دهی و خدمات درمانی</p>
+                    </div>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="login-modal-body-content">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Minimal JS - Only what login needs -->
+    <script src="~/Scripts/jquery-3.7.1.min.js"></script>
+    <script src="~/Content/js/jquery-protection.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/Scripts/toastr.min.js"></script>
+    <script src="~/Content/js/login-modal.js"></script>
+    
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+

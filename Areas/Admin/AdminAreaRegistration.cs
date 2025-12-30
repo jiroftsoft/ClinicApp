@@ -272,6 +272,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // ✅ LoginHistory Routes - Security Module
+            context.MapRoute(
+                name: "Admin_LoginHistory_Routes",
+                url: "Admin/Security/LoginHistory/{action}/{id}",
+                defaults: new { controller = "LoginHistory", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Security" }
+            );
+
             // ✅ Service Related Routes - باید قبل از CMS باشد
             context.MapRoute(
                 name: "Admin_ServiceComponent_Routes",

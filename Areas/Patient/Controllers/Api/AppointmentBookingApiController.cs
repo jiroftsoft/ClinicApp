@@ -12,7 +12,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
     /// <summary>
     /// API Controller برای رزرو نوبت
     /// </summary>
-    [Authorize]
+    //[Authorize]
     public class AppointmentBookingApiController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

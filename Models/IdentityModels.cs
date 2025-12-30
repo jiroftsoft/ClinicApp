@@ -37,6 +37,7 @@ using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Receipt;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Entities.Report;
+using ClinicApp.Models.Entities.Security;
 using ClinicApp.Models.Entities.Triage;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services;
@@ -114,6 +115,9 @@ namespace ClinicApp.Models
         public DbSet<CashSessionAuditLog> CashSessionAuditLogs { get; set; }
         public DbSet<PaymentDiscrepancy> PaymentDiscrepancies { get; set; }
         public DbSet<CashierPerformanceMetrics> CashierPerformanceMetrics { get; set; }
+        
+        // ========== موجودیت‌های جدید برای Security & Login Audit - 2025-01-XX ==========
+        public DbSet<Entities.Security.UserLoginHistory> UserLoginHistories { get; set; }
         
         // ========== موجودیت‌های جدید برای پرداخت‌های آنلاین ==========
         public DbSet<PaymentGateway> PaymentGateways { get; set; }

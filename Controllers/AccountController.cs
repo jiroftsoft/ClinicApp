@@ -1,6 +1,7 @@
 ﻿using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Security;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
@@ -24,17 +25,20 @@ namespace ClinicApp.Controllers
         private readonly IPatientService _patientService;
         private readonly ApplicationUserManager _userManager;
         private readonly ILogger _log;
+        private readonly ILoginHistoryService _loginHistoryService;
 
         public AccountController(
             IAuthService authService,
             IPatientService patientService,
             ApplicationUserManager userManager,
-            ILogger logger)
+            ILogger logger,
+            ILoginHistoryService loginHistoryService)
         {
             _authService = authService;
             _patientService = patientService;
             _userManager = userManager;
             _log = logger.ForContext<AccountController>();
+            _loginHistoryService = loginHistoryService;
         }
 
         #endregion
@@ -42,6 +46,13 @@ namespace ClinicApp.Controllers
         // -------------------------------------------------------------------
         #region Login & Registration Flow (ورود و ثبت‌نام)
         // -------------------------------------------------------------------
+
+        [AllowAnonymous]
+        public ActionResult LoginModal(string returnUrl)
+        {
+            ViewBag.ReturnUrl = returnUrl;
+            return PartialView("_LoginModal");
+        }
 
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
@@ -239,9 +250,25 @@ namespace ClinicApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult LogOff()
+        public async Task<ActionResult> LogOff()
         {
             var userId = User.Identity.GetUserId();
+            var sessionId = Session?.SessionID;
+
+            // ثبت تاریخچه خروج (قبل از SignOut)
+            if (!string.IsNullOrWhiteSpace(userId) && !string.IsNullOrWhiteSpace(sessionId))
+            {
+                try
+                {
+                    await _loginHistoryService.LogLogoutAsync(userId, sessionId);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but don't prevent logout
+                    _log.Warning(ex, "Failed to log logout for UserId: {UserId}", userId);
+                }
+            }
+
             _authService.SignOut();
             _log.Information("User {UserId} logged off.", userId);
             return RedirectToAction("Index", "Home");
