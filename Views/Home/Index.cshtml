@@ -6,107 +6,140 @@
 <div class="container body-content py-5">
     <div class="homepage-layout">
         <main class="animate-section homepage-main-content" id="mainContent">
-            <!-- Announcements Section (Important Announcements) -->
+            <!-- Announcements Section (Important Announcements) - Lazy Load -->
             @if (Model.Announcements != null && Model.Announcements.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
+                <section class="announcements-section" data-lazy-load="true" data-section-type="announcements" data-section-id="announcements">
+                    @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
+                </section>
             }
 
-            <!-- Hero Section -->
+            <!-- Hero Section (Critical - Above-the-fold) -->
             @if (Model.Hero != null)
             {
-                @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
+                <section class="hero-section">
+                    @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
+                </section>
             }
 
-            <!-- Value Proposition Section -->
+            <!-- Value Proposition Section (Critical - Above-the-fold) -->
             @if (Model.ValueProposition != null)
             {
-                @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
+                <section class="value-proposition-section">
+                    @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
+                </section>
             }
 
-            <!-- Services Section -->
+            <!-- Services Section - Lazy Load -->
             @if (Model.Services != null && Model.Services.Services != null && Model.Services.Services.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
+                <section class="services-section" data-lazy-load="true" data-section-type="services" data-section-id="services">
+                    @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
+                </section>
             }
 
-            <!-- Medical Services Info Section -->
+            <!-- Medical Services Info Section - Lazy Load -->
             @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
+                <section class="medical-services-section" data-lazy-load="true" data-section-type="medical-services" data-section-id="medical-services">
+                    @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
+                </section>
             }
 
-            <!-- Medical Equipment Section (بعد از خدمات، قبل از بیمه) -->
+            <!-- Medical Equipment Section - Lazy Load -->
             @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
+                <section class="medical-equipment-section" data-lazy-load="true" data-section-type="medical-equipment" data-section-id="medical-equipment">
+                    @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
+                </section>
             }
 
-            <!-- Insurance Info Section (بعد از تجهیزات، قبل از نظرات) -->
+            <!-- Insurance Info Section - Lazy Load -->
             @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
+                <section class="insurance-carousel-section" data-lazy-load="true" data-section-type="insurance" data-section-id="insurance">
+                    @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
+                </section>
             }
 
-            <!-- Doctors Section -->
+            <!-- Doctors Section - Lazy Load -->
             @if (Model.Doctors != null && Model.Doctors.Doctors != null && Model.Doctors.Doctors.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
+                <section class="doctors-section" data-lazy-load="true" data-section-type="doctors" data-section-id="doctors">
+                    @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
+                </section>
             }
 
-            <!-- Quick Appointment Section -->
+            <!-- Quick Appointment Section (Critical - Above-the-fold) -->
             @if (Model.QuickAppointment != null)
             {
-                @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
+                <section class="quick-appointment-section">
+                    @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
+                </section>
             }
 
-            <!-- Testimonials Section -->
+            <!-- Testimonials Section - Lazy Load -->
             @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
+                <section class="testimonials-section" data-lazy-load="true" data-section-type="testimonials" data-section-id="testimonials">
+                    @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
+                </section>
             }
 
-            <!-- Gallery Section -->
+            <!-- Gallery Section - Lazy Load -->
             @if (Model.Gallery != null && Model.Gallery.Items != null && Model.Gallery.Items.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
+                <section class="gallery-section" data-lazy-load="true" data-section-type="gallery" data-section-id="gallery">
+                    @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
+                </section>
             }
 
-            <!-- Blog Section -->
+            <!-- Blog Section - Lazy Load -->
             @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
+                <section class="blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog">
+                    @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
+                </section>
             }
 
-            <!-- Health Tips Section (بعد از مقالات، قبل از نظرات) -->
+            <!-- Health Tips Section - Lazy Load -->
             @if (Model.HealthTips != null && Model.HealthTips.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
+                <section class="health-tips-section" data-lazy-load="true" data-section-type="health-tips" data-section-id="health-tips">
+                    @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
+                </section>
             }
 
-            <!-- Video Section -->
+            <!-- Video Section - Lazy Load -->
             @if (Model.Videos != null)
             {
-                @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
+                <section class="video-section" data-lazy-load="true" data-section-type="video" data-section-id="video">
+                    @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
+                </section>
             }
 
-            <!-- Stories Section -->
+            <!-- Stories Section - Lazy Load -->
             @if (Model.Stories != null && Model.Stories.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", Model.Stories)
+                <section class="stories-section" data-lazy-load="true" data-section-type="stories" data-section-id="stories">
+                    @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", Model.Stories)
+                </section>
             }
 
-            <!-- FAQ Section -->
+            <!-- FAQ Section - Lazy Load -->
             @if (Model.FAQs != null && Model.FAQs.Any())
             {
-                @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
+                <section class="faq-section" data-lazy-load="true" data-section-type="faq" data-section-id="faq">
+                    @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
+                </section>
             }
 
-
-            <!-- Contact Section -->
+            <!-- Contact Section - Lazy Load -->
             @if (Model.Contact != null)
             {
-                @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
+                <section class="contact-section" data-lazy-load="true" data-section-type="contact" data-section-id="contact">
+                    @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
+                </section>
             }
 
         </main>
@@ -134,82 +167,19 @@
     }
 
     @section Styles {
+        @* CSS برای main-menu-quick-actions حذف شد - بخش "دسترسی سریع" حذف شده است (چون sidebar navigation دارد) *@
         <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-layout.css")" />
         <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage-sections-spacing.css")" />
-        @* CSS برای Medical Services Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-services-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Doctors Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.Doctors != null && Model.Doctors.Doctors != null && Model.Doctors.Doctors.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/doctors-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Testimonials Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Blog Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Health Tips Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.HealthTips != null && Model.HealthTips.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Medical Equipment Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-equipment-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Insurance Info Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Contact Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.Contact != null)
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
-        @* CSS برای Sidebar Section - باید در Index لود شود چون Partial View نمی‌تواند @section استفاده کند *@
-        @if (Model.Sidebar != null)
-        {
-            <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-sidebar.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-        }
+        <link rel="stylesheet" href="@Url.Content("~/Content/css/section-states.css")" />
+        <link rel="stylesheet" href="@Url.Content("~/Content/css/section-header.css")" />
+        @* CSS Bundle برای تمام Section ها - بهینه‌سازی Performance (کاهش HTTP Requests از 11+ به 1) *@
+        @Styles.Render("~/Content/css/homepage-sections")
     }
 
     @section Scripts {
-        <script>document.addEventListener('DOMContentLoaded', function() {
-            // فعال کردن انیمیشن‌ها برای بخش اصلی
-            const mainContent = document.getElementById('mainContent');
-            if (mainContent) {
-                setTimeout(() => {
-                    mainContent.style.opacity = '1';
-                    mainContent.style.transform = 'translateY(0)';
-                }, 200);
-            }
-
-            // اضافه کردن انیمیشن به بخش‌های مختلف هنگام اسکرول
-            const animatedSections = document.querySelectorAll('.animate-section');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animated');
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-
-            animatedSections.forEach(section => {
-                observer.observe(section);
-            });
-        });</script>
+        <script src="@Url.Content("~/Content/js/homepage-animations.js")"></script>
+        <script src="@Url.Content("~/Content/js/homepage-lazy-load.js")"></script>
+        <script src="@Url.Content("~/Content/js/homepage-section-manager.js")"></script>
     }
 
 </div>

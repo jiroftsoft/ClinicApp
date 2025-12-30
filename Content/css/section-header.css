@@ -1,0 +1,137 @@
+/**
+ * Section Header - Consistent styling for all section headers
+ * 
+ * Single Responsibility: استایل یکپارچه برای Header های Sections
+ * طبق: DEVELOPMENT_CONTRACT.md, Healthcare UI Standards
+ */
+
+/* ============================================
+   SECTION HEADER - Header اصلی Section
+   ============================================ */
+
+.section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xxl, 3rem);
+    padding: 0 var(--spacing-md, 1rem);
+}
+
+.section-header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(44, 90, 160, 0.05) 100%);
+    border-radius: var(--radius-full, 50%);
+    margin-bottom: var(--spacing-md, 1rem);
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.section-header-icon i {
+    font-size: var(--font-size-2xl, 1.5rem);
+    color: var(--medical-primary, #2c5aa0);
+}
+
+.section-header:hover .section-header-icon {
+    transform: scale(1.1);
+}
+
+.section-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-2xl, 1.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--medical-text, #1a365d);
+    margin: 0 0 var(--spacing-sm, 0.5rem) 0;
+    line-height: var(--line-height-tight, 1.3);
+}
+
+.section-subtitle {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    color: var(--medical-text-secondary, #6c757d);
+    margin: 0;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: var(--line-height-normal, 1.6);
+}
+
+/* ============================================
+   RESPONSIVE - واکنش‌گرا
+   ============================================ */
+
+@media (max-width: 991.98px) {
+    .section-header {
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .section-header-icon {
+        width: 56px;
+        height: 56px;
+        margin-bottom: var(--spacing-sm, 0.5rem);
+    }
+
+    .section-header-icon i {
+        font-size: var(--font-size-xl, 1.25rem);
+    }
+
+    .section-title {
+        font-size: var(--font-size-xl, 1.25rem);
+    }
+
+    .section-subtitle {
+        font-size: var(--font-size-sm, 0.875rem);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .section-header {
+        margin-bottom: var(--spacing-lg, 1.5rem);
+        padding: 0 var(--spacing-sm, 0.5rem);
+    }
+
+    .section-header-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .section-header-icon i {
+        font-size: var(--font-size-lg, 1.125rem);
+    }
+
+    .section-title {
+        font-size: var(--font-size-lg, 1.125rem);
+    }
+
+    .section-subtitle {
+        font-size: var(--font-size-sm, 0.875rem);
+        max-width: 100%;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY - دسترسی‌پذیری
+   ============================================ */
+
+.section-title {
+    /* Ensure proper heading hierarchy */
+    outline: none;
+}
+
+.section-title:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm, 4px);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .section-header-icon {
+        transition: none;
+    }
+
+    .section-header:hover .section-header-icon {
+        transform: none;
+    }
+}
+

@@ -134,6 +134,19 @@ namespace ClinicApp
             bundles.Add(new ScriptBundle("~/bundles/reception-main").Include(
                 "~/Scripts/reception/reception-main.js"));
 
+            // Homepage CSS Bundle - All section CSS files combined
+            bundles.Add(new StyleBundle("~/Content/css/homepage-sections").Include(
+                "~/Content/css/medical-services-section.css",
+                "~/Content/css/doctors-section.css",
+                "~/Content/css/testimonials-section.css",
+                "~/Content/css/blog-section.css",
+                "~/Content/css/health-tips-section.css",
+                "~/Content/css/medical-equipment-section.css",
+                "~/Content/css/insurance-info-section.css",
+                "~/Content/css/contact-section.css",
+                "~/Content/css/medical-sidebar.css"
+            ));
+
             // FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - اضافه کردن Bundle های پزشکی
             // Medical Environment CSS Bundle
             bundles.Add(new StyleBundle("~/Content/css/medical-environment").Include(

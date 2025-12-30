@@ -389,13 +389,30 @@
                         </a>
                     </li>
                     @* CTA نوبت‌دهی - برجسته و قابل توجه *@
+                    @{
+                        var isAuthenticatedNav = Request.IsAuthenticated;
+                        var appointmentUrlNav = Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" });
+                    }
                     <li class="nav-item-modern">
-                        <a href="@Url.Action("Book", "AppointmentBooking", new { area = "Patient" })" 
-                           class="nav-link-modern nav-link-cta-appointment"
-                           aria-label="رزرو نوبت آنلاین">
-                            <i class="fas fa-calendar-check" aria-hidden="true"></i>
-                            <span>رزرو نوبت</span>
-                        </a>
+                        @if (isAuthenticatedNav)
+                        {
+                            <a href="@appointmentUrlNav" 
+                               class="nav-link-modern nav-link-cta-appointment"
+                               aria-label="رزرو نوبت آنلاین">
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <span>رزرو نوبت</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="#" 
+                               class="nav-link-modern nav-link-cta-appointment"
+                               onclick="if (window.openLoginModal) { window.openLoginModal('@appointmentUrlNav'); } else { window.location.href = '@appointmentUrlNav'; } return false;"
+                               aria-label="رزرو نوبت آنلاین">
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <span>رزرو نوبت</span>
+                            </a>
+                        }
                     </li>
                     @* تماس اضطراری - مینیمال و زیبا *@
                     @{

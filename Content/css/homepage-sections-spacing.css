@@ -6,6 +6,43 @@
  */
 
 /* ============================================
+   LAZY LOADING - Lazy Load States
+   ============================================ */
+
+/* Sections marked for lazy loading - initially hidden */
+.homepage-main-content > section[data-lazy-load="true"] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                transform 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+/* Sections that have been lazy-loaded */
+.homepage-main-content > section[data-lazy-load="true"].lazy-loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Loading placeholder for lazy-load sections */
+.homepage-main-content > section[data-lazy-load="true"]:not(.lazy-loaded)::before {
+    content: '';
+    display: block;
+    min-height: 200px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: var(--radius-lg, 12px);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* ============================================
    SECTION SPACING - فاصله‌گذاری بین بخش‌ها
    ============================================ */
 
@@ -138,25 +175,45 @@
 */
 
 /* ============================================
-   BACKGROUND ALTERNATION - پس‌زمینه متناوب
+   BACKGROUND ALTERNATION - پس‌زمینه متناوب (Subtle Surfaces)
    ============================================ */
 
-/* پس‌زمینه متناوب برای بخش‌ها (غیرفعال - برای طراحی ساده‌تر) */
-/* 
-.homepage-main-content > section:nth-child(even) {
-    background-color: var(--medical-light, #f8f9fa);
+/* Subtle Surfaces برای حل مشکل "Too White" - Healthcare Formal */
+.homepage-main-content > section {
+    background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+    border: 1px solid rgba(44, 90, 160, 0.05);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-.homepage-main-content > section:nth-child(odd) {
-    background-color: var(--medical-bg, #ffffff);
+/* استثنا برای بخش‌های خاص - پس‌زمینه شفاف یا خاص */
+.homepage-main-content > section.hero-section {
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
-*/
 
-/* استثنا برای بخش‌های خاص - پس‌زمینه شفاف */
-.homepage-main-content > section.hero-section,
-.homepage-main-content > section.value-proposition-section,
+.homepage-main-content > section.value-proposition-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid rgba(44, 90, 160, 0.08);
+}
+
 .homepage-main-content > section.quick-appointment-section {
-    background-color: transparent;
+    background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+    border: 1px solid rgba(44, 90, 160, 0.1);
+}
+
+/* Section Separators - جداسازی بصری ملایم */
+.homepage-main-content > section + section {
+    margin-top: var(--spacing-xl, 2rem);
+    border-top: 1px solid rgba(44, 90, 160, 0.08);
+    padding-top: var(--spacing-xxl, 3rem);
+}
+
+/* حذف border-top برای اولین section بعد از Quick Actions */
+.homepage-main-content > section.main-menu-quick-actions + section {
+    border-top: none;
+    padding-top: var(--spacing-xl, 2rem);
 }
 
 /* ============================================
@@ -209,6 +266,29 @@
 }
 
 /* ============================================
+   TOUCH TARGETS - دسترسی‌پذیری موبایل
+   ============================================ */
+
+/* Ensure all action links are touch-friendly (≥ 44px) */
+.homepage-main-content a[href],
+.homepage-main-content button,
+.homepage-main-content .btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+}
+
+/* Card-based actions should have adequate touch area */
+.homepage-main-content .card,
+.homepage-main-content .service-card,
+.homepage-main-content .doctor-card {
+    min-height: 120px; /* Touch-friendly card height */
+}
+
+/* ============================================
    ACCESSIBILITY - دسترسی‌پذیری
    ============================================ */
 
@@ -223,5 +303,15 @@
 @media (prefers-reduced-motion: reduce) {
     .homepage-main-content > section {
         animation: none;
+    }
+    
+    .quick-action-card,
+    .quick-action-icon,
+    .quick-action-icon i {
+        transition: none;
+    }
+    
+    .quick-action-card:hover {
+        transform: none;
     }
 }

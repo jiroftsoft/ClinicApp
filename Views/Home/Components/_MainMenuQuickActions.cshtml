@@ -1,0 +1,155 @@
+@using Microsoft.AspNet.Identity
+@{
+    var isAuthenticated = Request.IsAuthenticated;
+    var appointmentUrl = Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" });
+    var returnUrl = Request.Url?.ToString() ?? "/";
+}
+
+<section class="main-menu-quick-actions" aria-label="عملیات سریع">
+    <div class="container">
+        <div class="quick-actions-header">
+            <h2 class="quick-actions-title">دسترسی سریع</h2>
+            <p class="quick-actions-subtitle">انتخاب سریع خدمات مورد نیاز</p>
+        </div>
+        
+        <div class="quick-actions-grid">
+            <!-- Primary CTA: Reserve Appointment -->
+            @if (isAuthenticated)
+            {
+                <a href="@appointmentUrl" 
+                   class="quick-action-card quick-action-primary"
+                   data-ajax="true"
+                   aria-label="رزرو نوبت آنلاین">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">رزرو نوبت</h3>
+                        <p class="quick-action-description">رزرو آنلاین نوبت پزشک</p>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <a href="#" 
+                   class="quick-action-card quick-action-primary"
+                   onclick="if (window.openLoginModal) { window.openLoginModal('@appointmentUrl'); } else { window.location.href = '@appointmentUrl'; } return false;"
+                   aria-label="رزرو نوبت آنلاین">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">رزرو نوبت</h3>
+                        <p class="quick-action-description">رزرو آنلاین نوبت پزشک</p>
+                    </div>
+                </a>
+            }
+            
+            <!-- View Doctors -->
+            <a href="@Url.Action("Index", "Doctors")" 
+               class="quick-action-card"
+               data-ajax="true"
+               aria-label="مشاهده لیست پزشکان">
+                <div class="quick-action-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="quick-action-content">
+                    <h3 class="quick-action-title">پزشکان</h3>
+                    <p class="quick-action-description">لیست پزشکان کلینیک</p>
+                </div>
+            </a>
+            
+            <!-- Services -->
+            <a href="@Url.Action("Index", "MedicalServiceInfo")" 
+               class="quick-action-card"
+               data-ajax="true"
+               aria-label="مشاهده خدمات درمانی">
+                <div class="quick-action-icon">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <div class="quick-action-content">
+                    <h3 class="quick-action-title">خدمات</h3>
+                    <p class="quick-action-description">خدمات درمانی کلینیک</p>
+                </div>
+            </a>
+            
+            @if (isAuthenticated)
+            {
+                <!-- Dashboard -->
+                <a href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" 
+                   class="quick-action-card"
+                   data-ajax="true"
+                   aria-label="داشبورد بیمار">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">داشبورد</h3>
+                        <p class="quick-action-description">داشبورد شخصی شما</p>
+                    </div>
+                </a>
+                
+                <!-- Profile -->
+                <a href="@Url.Action("Profile", "Account")" 
+                   class="quick-action-card"
+                   data-ajax="true"
+                   aria-label="پروفایل کاربری">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">پروفایل</h3>
+                        <p class="quick-action-description">اطلاعات شخصی</p>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <!-- Dashboard (Not Logged In) -->
+                var dashboardUrl = Url.Action("Index", "Dashboard", new { area = "Patient" });
+                <a href="#" 
+                   class="quick-action-card"
+                   onclick="if (window.openLoginModal) { window.openLoginModal('@dashboardUrl'); } else { window.location.href = '@dashboardUrl'; } return false;"
+                   aria-label="داشبورد بیمار">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">داشبورد</h3>
+                        <p class="quick-action-description">داشبورد شخصی شما</p>
+                    </div>
+                </a>
+                
+                <!-- Profile (Not Logged In) -->
+                var profileUrl = Url.Action("Profile", "Account");
+                <a href="#" 
+                   class="quick-action-card"
+                   onclick="if (window.openLoginModal) { window.openLoginModal('@profileUrl'); } else { window.location.href = '@profileUrl'; } return false;"
+                   aria-label="پروفایل کاربری">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h3 class="quick-action-title">پروفایل</h3>
+                        <p class="quick-action-description">اطلاعات شخصی</p>
+                    </div>
+                </a>
+            }
+            
+            <!-- Blog -->
+            <a href="@Url.Action("Index", "Blog")" 
+               class="quick-action-card"
+               data-ajax="true"
+               aria-label="مقالات پزشکی">
+                <div class="quick-action-icon">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="quick-action-content">
+                    <h3 class="quick-action-title">مقالات</h3>
+                    <p class="quick-action-description">مقالات و مطالب پزشکی</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+

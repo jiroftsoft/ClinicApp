@@ -1,0 +1,59 @@
+@*
+    _SectionWrapper.cshtml
+    Reusable wrapper for homepage sections with loading/empty/error states
+    
+    Single Responsibility: Wrapper component for consistent section structure
+    طبق: DEVELOPMENT_CONTRACT.md, Componentization Rules
+*@
+@model dynamic
+
+@{
+    var sectionId = ViewBag.SectionId ?? "section";
+    var sectionClass = ViewBag.SectionClass as string ?? "";
+    var sectionType = ViewBag.SectionType as string ?? "";
+    var isLoading = ViewBag.IsLoading ?? false;
+    var isEmpty = ViewBag.IsEmpty ?? false;
+    var errorMessage = ViewBag.ErrorMessage as string;
+    var isLazyLoad = ViewBag.IsLazyLoad ?? false;
+}
+
+<section class="homepage-section @sectionClass" 
+         data-section-id="@sectionId"
+         @if (isLazyLoad) { <text>data-lazy-load="true"</text> }
+         @if (!string.IsNullOrEmpty(sectionType)) { <text>data-section-type="@sectionType"</text> }>
+    
+    @if (isLoading)
+    {
+        <div class="section-loading">
+            <div class="spinner-border text-primary" role="status" aria-label="در حال بارگذاری">
+                <span class="sr-only">در حال بارگذاری...</span>
+            </div>
+            <p class="section-loading-text">در حال بارگذاری...</p>
+        </div>
+    }
+    else if (isEmpty)
+    {
+        <div class="section-empty">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            <p>محتوایی برای نمایش وجود ندارد.</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="section-error">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <p class="error-message">@errorMessage</p>
+            <button class="btn btn-sm btn-outline-danger mt-2" 
+                    onclick="HomePage.reloadSection('@sectionId')"
+                    aria-label="تلاش مجدد">
+                <i class="fas fa-redo" aria-hidden="true"></i>
+                تلاش مجدد
+            </button>
+        </div>
+    }
+    else
+    {
+        @RenderBody()
+    }
+</section>
+

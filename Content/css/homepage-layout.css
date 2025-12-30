@@ -77,15 +77,31 @@
     }
 }
 
-/* Mobile Layout: Stack vertically */
+/* Mobile Layout: Stack vertically - Optimized for Above-the-Fold */
 @media (max-width: 991.98px) {
     .homepage-layout {
         grid-template-columns: 1fr;
-        gap: var(--spacing-xl, 2rem);
+        gap: var(--spacing-lg, 1.5rem); /* Reduced from 2rem for above-the-fold */
     }
     
     .homepage-sidebar {
         order: -1; /* Show sidebar first on mobile */
+    }
+    
+    /* Ensure Quick Actions is visible above-the-fold */
+    .homepage-main-content {
+        gap: var(--spacing-lg, 1.5rem); /* Reduced from 4rem */
+    }
+    
+    .main-menu-quick-actions {
+        margin-top: 0;
+        padding-top: var(--spacing-lg, 1.5rem);
+    }
+    
+    /* Reduce Hero Section height on mobile for better above-the-fold visibility */
+    .homepage-main-content > section.hero-section {
+        padding: var(--spacing-lg, 1.5rem) 0;
+        min-height: auto;
     }
 }
 

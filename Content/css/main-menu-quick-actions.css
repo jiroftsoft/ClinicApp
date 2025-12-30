@@ -1,0 +1,248 @@
+/**
+ * Main Menu Quick Actions - Mobile-First
+ * Healthcare Formal Design
+ * 
+ * Purpose: حل مشکل "Too White" با Subtle Surfaces و Quick Actions Grid
+ * Mobile-First: 2 columns mobile → 3 tablet → 4 desktop
+ */
+
+.main-menu-quick-actions {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: var(--spacing-xl, 2rem) 0;
+    margin-bottom: var(--spacing-xl, 2rem);
+    border-bottom: 1px solid rgba(44, 90, 160, 0.08);
+}
+
+.quick-actions-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.quick-actions-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-2xl, 1.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1a365d;
+    margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+.quick-actions-subtitle {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base, 1rem);
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Mobile-First Grid: 2 columns */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md, 1rem);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Quick Action Card - Subtle Surface */
+.quick-action-card {
+    background: #ffffff;
+    border: 1px solid rgba(44, 90, 160, 0.1);
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-lg, 1.5rem);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    min-height: 140px; /* Touch-friendly */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(44, 90, 160, 0.05) 100%);
+    transition: width var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    z-index: 0;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+    border-color: rgba(44, 90, 160, 0.2);
+}
+
+.quick-action-card:hover::before {
+    width: 100%;
+}
+
+.quick-action-card:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+    border-radius: var(--radius-lg, 12px);
+}
+
+/* Primary CTA Card - Prominent */
+.quick-action-primary {
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    color: #ffffff !important;
+    border-color: transparent;
+    grid-column: 1 / -1; /* Full width on mobile */
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.2);
+}
+
+.quick-action-primary .quick-action-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.quick-action-primary .quick-action-icon i {
+    color: #ffffff !important;
+}
+
+.quick-action-primary .quick-action-title,
+.quick-action-primary .quick-action-description {
+    color: #ffffff !important;
+}
+
+.quick-action-primary:hover {
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.3);
+    transform: translateY(-6px);
+}
+
+/* Icon - Touch-Friendly */
+.quick-action-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(44, 90, 160, 0.08);
+    border-radius: var(--radius-full, 50%);
+    position: relative;
+    z-index: 1;
+    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    flex-shrink: 0;
+}
+
+.quick-action-icon i {
+    font-size: var(--font-size-xl, 1.25rem);
+    color: var(--medical-primary, #2c5aa0);
+    transition: transform var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.quick-action-card:hover .quick-action-icon {
+    transform: scale(1.1);
+    background: rgba(44, 90, 160, 0.15);
+}
+
+.quick-action-card:hover .quick-action-icon i {
+    transform: scale(1.15);
+}
+
+/* Content */
+.quick-action-content {
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.quick-action-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: #1a365d;
+    margin: 0 0 var(--spacing-xs, 0.25rem) 0;
+}
+
+.quick-action-description {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-sm, 0.875rem);
+    color: #6c757d;
+    margin: 0;
+    line-height: var(--line-height-normal, 1.5);
+}
+
+/* Tablet: 3 columns */
+@media (min-width: 768px) {
+    .quick-actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .quick-action-primary {
+        grid-column: 1 / -1; /* Still full width on tablet */
+    }
+    
+    .quick-action-card {
+        min-height: 150px;
+        padding: var(--spacing-xl, 2rem);
+    }
+}
+
+/* Desktop: 4 columns, Primary CTA spans 2 columns */
+@media (min-width: 992px) {
+    .main-menu-quick-actions {
+        padding: var(--spacing-xxl, 3rem) 0;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .quick-action-primary {
+        grid-column: span 2; /* 2 columns wide */
+    }
+    
+    .quick-action-card {
+        min-height: 160px;
+    }
+}
+
+/* Large Desktop: Better spacing */
+@media (min-width: 1200px) {
+    .quick-actions-grid {
+        gap: var(--spacing-xl, 2rem);
+    }
+    
+    .quick-action-card {
+        min-height: 170px;
+        padding: var(--spacing-xl, 2rem) var(--spacing-xxl, 3rem);
+    }
+}
+
+/* Accessibility: High Contrast Mode */
+@media (prefers-contrast: high) {
+    .quick-action-card {
+        border-width: 2px;
+    }
+    
+    .quick-action-title {
+        font-weight: var(--font-weight-bold, 700);
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .quick-action-card,
+    .quick-action-icon,
+    .quick-action-icon i {
+        transition: none;
+    }
+    
+    .quick-action-card:hover {
+        transform: none;
+    }
+}
+
