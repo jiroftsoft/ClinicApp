@@ -79,6 +79,7 @@ namespace ClinicApp.Helpers
         /// </summary>
         public static ServiceResult Successful(
             string message = "عملیات با موفقیت انجام شد.",
+            string code = "SUCCESS",
             string operationName = null,
             string userId = null,
             string userName = null,
@@ -90,7 +91,7 @@ namespace ClinicApp.Helpers
             {
                 Success = true,
                 Message = message,
-                Code = "SUCCESS",
+                Code = code ?? "SUCCESS", // ✅ استفاده از code پاس شده
                 OperationName = operationName,
                 UserId = userId,
                 UserName = userName,

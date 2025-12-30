@@ -4834,6 +4834,8 @@
     <Content Include="Areas\Admin\Views\Security\LoginHistory\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Security\LoginHistory\Index.cshtml" />
     <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_BEAST_MODE_LOGIN_OTP_PACK.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PROMPTS\CLINICAPP_USER_PROFILE_MODULE_IMPLEMENTATION_PROMPT.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_BEAST_MODE_MODULE_REVIEW_BUILD_PROMPT.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

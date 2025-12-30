@@ -526,10 +526,12 @@
         }
         else
         {
-            <a href="@Url.Action("Register", "Account", new { area = "" })" class="btn btn-outline-medical-info btn-sm mt-2 mt-md-0">
+            <button type="button" 
+                    class="btn btn-outline-medical-info btn-sm mt-2 mt-md-0"
+                    onclick="if(typeof window.openLoginModal==='function'){window.openLoginModal(window.location.href);}else{window.location.href='@Url.Action("Login", "Account", new { area = "" })';}">
                 <i class="fas fa-user-plus ml-1"></i>
                 ثبت‌نام / ورود
-            </a>
+            </button>
         }
     </div>
 </section>
@@ -823,11 +825,15 @@ else
                     @if (!User.Identity.IsAuthenticated)
                     {
                         <div class="mt-4 text-center">
-                            <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" 
-                               class="btn btn-medical-primary btn-block-mobile">
+                            @{
+                                var selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.SelectedDoctorId });
+                            }
+                            <button type="button" 
+                                    class="btn btn-medical-primary btn-block-mobile"
+                                    onclick="if(typeof window.openLoginModal==='function'){window.openLoginModal('@selectDateUrl');}else{window.location.href='@Url.Action("Login", "Account", new { area = "", returnUrl = selectDateUrl })';}">
                                 <i class="fas fa-user-plus ml-1"></i>
                                 برای رزرو این نوبت، ثبت‌نام کنید
-                            </a>
+                            </button>
                         </div>
                     }
                     else
@@ -1526,8 +1532,9 @@ else if (Model.SelectedDoctorId.HasValue)
                     {
                         <text>
                         html += '<div class="mt-4 text-center">';
-                        html += '<a href="@Url.Action("Register", "Account", new { area = "" })?returnUrl=' + encodeURIComponent(window.location.href) + '" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 1rem 2rem; font-weight: 600;">';
-                        html += '<i class="fas fa-user-plus me-2"></i>برای رزرو این نوبت، ثبت‌نام کنید</a></div>';
+                        var returnUrl = '@Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient" })?doctorId=' + doctorId;
+                        html += '<button type="button" onclick="if(typeof window.openLoginModal===\'function\'){window.openLoginModal(\'' + returnUrl + '\');}else{window.location.href=\'@Url.Action("Login", "Account", new { area = "" })?returnUrl=\' + encodeURIComponent(\'' + returnUrl + '\');}" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 1rem 2rem; font-weight: 600;">';
+                        html += '<i class="fas fa-user-plus me-2"></i>برای رزرو این نوبت، ثبت‌نام کنید</button></div>';
                         </text>
                     }
                     else
@@ -1812,74 +1819,18 @@ else if (Model.SelectedDoctorId.HasValue)
                         @if (!User.Identity.IsAuthenticated)
                         {
                             <text>
-                            // ✅ نمایش Modal جذاب برای ترغیب به ثبت‌نام
-                            if (typeof Swal !== 'undefined') {
-                                var returnUrl = window.location.href;
-                                var registerUrl = '@Url.Action("Register", "Account", new { area = "", returnUrl = "" })' + '?returnUrl=' + encodeURIComponent(returnUrl);
-                                var loginUrl = '@Url.Action("Login", "Account", new { area = "", returnUrl = "" })' + '?returnUrl=' + encodeURIComponent(returnUrl);
-                                
-                                Swal.fire({
-                                    icon: 'info',
-                                    title: 'برای رزرو نوبت نیاز به ثبت‌نام دارید',
-                                    html: '<div style="text-align: right; direction: rtl; font-family: \'Vazir\', \'Tahoma\', sans-serif;">' +
-                                          '<p style="font-size: 1.1rem; margin-bottom: 1.5rem; color: #495057; line-height: 1.8;">' +
-                                          '👋 سلام! برای رزرو نوبت آنلاین و استفاده از خدمات ما، لطفاً ثبت‌نام کنید یا وارد حساب کاربری خود شوید.' +
-                                          '</p>' +
-                                          '<div style="background-color: #e3f2fd; border-right: 4px solid var(--medical-primary); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">' +
-                                          '<p style="margin: 0; color: #1976d2; font-weight: 600;">' +
-                                          '<i class="fas fa-check-circle me-2"></i>مزایای ثبت‌نام:' +
-                                          '</p>' +
-                                          '<ul style="margin: 0.75rem 0 0 0; padding-right: 1.5rem; color: #495057;">' +
-                                          '<li>رزرو نوبت آنلاین</li>' +
-                                          '<li>مشاهده تاریخچه نوبت‌ها</li>' +
-                                          '<li>دسترسی به پرونده پزشکی</li>' +
-                                          '<li>اطلاع‌رسانی‌های مهم</li>' +
-                                          '</ul>' +
-                                          '</div>' +
-                                          '</div>',
-                                    showCancelButton: true,
-                                    showDenyButton: true,
-                                    confirmButtonText: '<i class="fas fa-user-plus me-1"></i> ثبت‌نام',
-                                    denyButtonText: '<i class="fas fa-sign-in-alt me-1"></i> ورود',
-                                    cancelButtonText: '<i class="fas fa-times me-1"></i> بعداً',
-                                    confirmButtonColor: '#28a745',
-                                    denyButtonColor: '#17a2b8',
-                                    cancelButtonColor: '#6c757d',
-                                    reverseButtons: true,
-                                    customClass: {
-                                        popup: 'swal2-popup-rtl',
-                                        title: 'swal2-title-rtl',
-                                        htmlContainer: 'swal2-html-container-rtl',
-                                        confirmButton: 'swal2-confirm-rtl',
-                                        denyButton: 'swal2-deny-rtl',
-                                        cancelButton: 'swal2-cancel-rtl'
-                                    },
-                                    buttonsStyling: true,
-                                    allowOutsideClick: true,
-                                    allowEscapeKey: true
-                                }).then(function(result) {
-                                    if (result.isConfirmed) {
-                                        // ✅ ثبت‌نام
-                                        console.log('✅ User chose to register');
-                                        window.location.href = registerUrl;
-                                    } else if (result.isDenied) {
-                                        // ✅ ورود
-                                        console.log('✅ User chose to login');
-                                        window.location.href = loginUrl;
-                                    } else if (result.isDismissed) {
-                                        // ✅ بعداً
-                                        console.log('✅ User dismissed the modal');
-                                        // هیچ کاری انجام نمی‌دهیم
-                                    }
-                                });
+                            // ✅ باز کردن مودال لاگین حرفه‌ای با returnUrl
+                            var returnUrl = '@Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient" })?doctorId=' + doctorId;
+                            
+                            if (typeof window.openLoginModal === 'function') {
+                                // ✅ استفاده از مودال لاگین حرفه‌ای
+                                window.openLoginModal(returnUrl);
+                                console.log('✅ Login modal opened for appointment booking - DoctorId:', doctorId);
                             } else {
-                                // ✅ Fallback به toastr در صورت عدم وجود SweetAlert
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.warning('برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید', 'نیاز به ثبت‌نام');
-                                }
-                                // هدایت به صفحه ثبت‌نام
-                                var returnUrl = window.location.href;
-                                window.location.href = '@Url.Action("Register", "Account", new { area = "", returnUrl = "" })' + '?returnUrl=' + encodeURIComponent(returnUrl);
+                                // ✅ Fallback: هدایت به صفحه لاگین
+                                console.warn('⚠️ openLoginModal not available, redirecting to login page');
+                                var loginUrl = '@Url.Action("Login", "Account", new { area = "" })?returnUrl=' + encodeURIComponent(returnUrl);
+                                window.location.href = loginUrl;
                             }
                             return;
                             </text>

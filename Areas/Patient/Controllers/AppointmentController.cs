@@ -53,6 +53,17 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
+        /// صفحه Index - هدایت به Available (برای backward compatibility)
+        /// GET: /Patient/Appointment/Index
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public ActionResult Index()
+        {
+            return RedirectToAction("Available");
+        }
+
+        /// <summary>
         /// صفحه عمومی نمایش نوبت‌های موجود (بدون نیاز به لاگین)
         /// GET: /Patient/Appointment/Available
         /// </summary>

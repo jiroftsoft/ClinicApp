@@ -415,7 +415,7 @@ namespace ClinicApp.Services
                     SectionTitle = "نوبت خود را آنلاین رزرو کنید",
                     SectionSubtitle = "در کمتر از 2 دقیقه نوبت خود را آنلاین رزرو کنید",
                     Specializations = specializations,
-                    AppointmentUrl = "/Patient/Appointment/Index"
+                    AppointmentUrl = "/Patient/Appointment/Available" // ✅ اصلاح مسیر به Available
                 };
             }
             catch (Exception ex)
@@ -426,7 +426,7 @@ namespace ClinicApp.Services
                     SectionTitle = "نوبت خود را آنلاین رزرو کنید",
                     SectionSubtitle = "در کمتر از 2 دقیقه نوبت خود را آنلاین رزرو کنید",
                     Specializations = new List<SpecializationLookupViewModel>(),
-                    AppointmentUrl = "/Patient/Appointment/Index"
+                    AppointmentUrl = "/Patient/Appointment/Available" // ✅ اصلاح مسیر به Available
                 };
             }
         }

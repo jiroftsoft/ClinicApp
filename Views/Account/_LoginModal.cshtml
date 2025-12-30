@@ -46,12 +46,18 @@
 
     <div id="step-otp" style="display:none;">
         <p id="otp-prompt" class="text-center text-success mb-3"></p>
-        @using (Html.BeginForm("VerifyLoginOtp", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "form-verify-otp" }))
+        @using (Html.BeginForm("VerifyLoginOtp", "Account", FormMethod.Post, new { id = "form-verify-otp" }))
         {
             @Html.AntiForgeryToken()
             <input type="hidden" name="NationalCode" />
             <input type="hidden" name="PhoneNumber" />
             <input type="hidden" id="combined-otp-code" name="OtpCode" />
+            if (!string.IsNullOrEmpty(ViewBag.ReturnUrl))
+            {
+                <text>
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                </text>
+            }
             <div class="form-group text-center">
                 <label for="otp-input-1" class="form-label">کد تایید</label>
                 <div id="otp-inputs" class="d-flex justify-content-center gap-2" dir="ltr">
@@ -89,7 +95,10 @@
         
         var state = {
             countdownInterval: null,
-            remainingSeconds: 0
+            remainingSeconds: 0,
+            isRegistrationFlow: false, // ✅ Track whether we're in registration or login flow
+            nationalCode: null, // ✅ Store national code for registration
+            phoneNumber: null // ✅ Store phone number for registration
         };
 
         // --- UTILITY FUNCTIONS ---
@@ -107,6 +116,42 @@
                 $text.show();
                 $button.prop('disabled', false);
             }
+        }
+        
+        // ✅ Helper function for displaying user-friendly error messages (مکتب خونه style)
+        function showErrorMessage(response, defaultMessage) {
+            if (!response) {
+                toastr.error(defaultMessage || 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.');
+                return;
+            }
+            
+            var message = response.message || defaultMessage || 'خطایی رخ داده است.';
+            var code = response.code;
+            
+            // ✅ Map error codes to user-friendly messages (مکتب خونه style)
+            var errorMessages = {
+                'DUPLICATE_PHONE_NUMBER': 'این شماره موبایل قبلاً در سیستم ثبت شده است. لطفاً شماره دیگری وارد کنید یا با این شماره وارد شوید.',
+                'INVALID_PHONE_NUMBER': 'شماره موبایل وارد شده معتبر نیست. لطفاً شماره موبایل خود را به درستی وارد کنید.',
+                'INVALID_NATIONAL_CODE': 'کد ملی وارد شده معتبر نیست. لطفاً کد ملی ۱۰ رقمی خود را وارد کنید.',
+                'USER_NOT_FOUND': 'کاربری با این مشخصات یافت نشد. لطفاً اطلاعات خود را بررسی کنید.',
+                'OTP_INVALID_OR_EXPIRED': 'کد تایید نامعتبر یا منقضی شده است. لطفاً کد جدیدی دریافت کنید.',
+                'OTP_ATTEMPTS_EXCEEDED': 'تعداد تلاش‌های شما برای وارد کردن کد تایید بیش از حد مجاز است. لطفاً کد جدیدی دریافت کنید.',
+                'RATE_LIMIT_EXCEEDED': 'تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید و دوباره تلاش کنید.',
+                'ACCOUNT_LOCKED': 'حساب کاربری شما به دلیل تلاش‌های ناموفق متعدد قفل شده است. لطفاً بعداً تلاش کنید.',
+                'SYSTEM_ERROR': 'خطای سیستمی رخ داده است. لطفاً با پشتیبانی تماس بگیرید.',
+                'PHONE_MISMATCH': 'اطلاعات تایید نامعتبر است. لطفاً دوباره تلاش کنید.'
+            };
+            
+            // ✅ Use mapped message if available, otherwise use response message
+            var finalMessage = errorMessages[code] || message;
+            
+            // ✅ Display with appropriate styling (مکتب خونه style: clear, friendly, actionable)
+            toastr.error(finalMessage, '', {
+                timeOut: 5000, // ✅ Show longer for important errors
+                closeButton: true,
+                progressBar: true,
+                positionClass: 'toast-top-center'
+            });
         }
 
         function resetForm(formId) {
@@ -258,19 +303,50 @@
                 success: function(response) {
                     // Handle USER_ALREADY_EXISTS even if success: false (MUST be first check)
                     if (response && response.code === 'USER_ALREADY_EXISTS') {
+                        // ✅ Reset registration flow state for login
+                        state.isRegistrationFlow = false;
+                        state.nationalCode = $('#NationalCode').val();
+                        
                         showButtonSpinner($button, false);
                         $button.prop('disabled', false);
                         sendLoginOtp();
                         return;
                     }
                     
-                    // Handle USER_IS_NEW (success: true)
+                    // Handle USER_IS_NEW (success: true) - ✅ Start registration flow
                     if (response.success && response.code === 'USER_IS_NEW') {
+                        // ✅ Set registration flow state
+                        state.isRegistrationFlow = true;
+                        state.nationalCode = $('#NationalCode').val();
+                        
                         showStep('step-register-phone');
                         $('#register-prompt').text(response.message || 'برای ثبت‌نام شماره موبایل خود را وارد کنید');
-                        $('input[name="NationalCode"]').val($('#NationalCode').val());
+                        $('input[name="NationalCode"]').val(state.nationalCode);
                         showButtonSpinner($button, false);
                         $button.prop('disabled', false);
+                        
+                        // ✅ Focus phone number input
+                        setTimeout(function() {
+                            $('#PhoneNumber').focus();
+                        }, 100);
+                        return;
+                    }
+                    
+                    // ✅ Handle SUCCESS code (fallback for backward compatibility)
+                    if (response.success && response.code === 'SUCCESS' && response.message && response.message.indexOf('ثبت نام') !== -1) {
+                        // This is likely a registration flow response
+                        state.isRegistrationFlow = true;
+                        state.nationalCode = $('#NationalCode').val();
+                        
+                        showStep('step-register-phone');
+                        $('#register-prompt').text(response.message || 'برای ثبت‌نام شماره موبایل خود را وارد کنید');
+                        $('input[name="NationalCode"]').val(state.nationalCode);
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                        
+                        setTimeout(function() {
+                            $('#PhoneNumber').focus();
+                        }, 100);
                         return;
                     }
                     
@@ -287,9 +363,9 @@
                         return;
                     }
                     
-                    // Handle other errors
+                    // ✅ Handle other errors with user-friendly messages
                     if (!response.success) {
-                        toastr.error(response.message || 'خطا در بررسی کد ملی');
+                        showErrorMessage(response, 'خطا در بررسی کد ملی');
                         showButtonSpinner($button, false);
                         $button.prop('disabled', false);
                         return;
@@ -311,13 +387,13 @@
                                     }
                                 });
                             } else {
-                                toastr.error(errorResponse.message || 'خطا در بررسی کد ملی');
+                                showErrorMessage(errorResponse, 'خطا در بررسی کد ملی');
                             }
                         } catch (e) {
-                            toastr.error('خطا در بررسی کد ملی');
+                            showErrorMessage(null, 'خطا در بررسی کد ملی');
                         }
                     } else {
-                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                        showErrorMessage(null, 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
                     }
                     showButtonSpinner($button, false);
                     $button.prop('disabled', false);
@@ -333,12 +409,18 @@
         var sendOtpCooldownTimer = null;
 
         function sendLoginOtp() {
-            var nationalCode = $('#NationalCode').val();
+            // ✅ Reset registration flow state for login
+            state.isRegistrationFlow = false;
+            
+            var nationalCode = $('#NationalCode').val() || state.nationalCode;
             
             if (!nationalCode || nationalCode.length !== 10) {
-                toastr.error('کد ملی معتبر نیست');
+                showErrorMessage({ code: 'INVALID_NATIONAL_CODE', message: 'کد ملی معتبر نیست. لطفاً کد ملی ۱۰ رقمی خود را وارد کنید.' });
                 return;
             }
+            
+            // ✅ Store national code in state
+            state.nationalCode = nationalCode;
             
             // Check cooldown
             if (sendOtpCooldown) {
@@ -370,19 +452,23 @@
                             response = JSON.parse(response);
                         } catch (e) {
                             console.error('Failed to parse response:', e);
-                            toastr.error('پاسخ نامعتبر از سرور');
+                            showErrorMessage(null, 'پاسخ نامعتبر از سرور. لطفاً دوباره تلاش کنید.');
                             resetSendOtpButton($checkUserButton, originalText);
                             return;
                         }
                     }
                     
                     if (response && response.success === true) {
+                        // ✅ Update form action for login
+                        $('#form-verify-otp').attr('action', '@Url.Action("VerifyLoginOtp", "Account")');
+                        
                         // Success: Show OTP step
                         showStep('step-otp');
                         $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
                         // Set hidden fields for verify form
                         $('#form-verify-otp input[name="NationalCode"]').val(nationalCode);
-                        // PhoneNumber is not needed for login OTP verification (only for registration)
+                        // ✅ Clear PhoneNumber for login flow
+                        $('#form-verify-otp input[name="PhoneNumber"]').val('');
                         // Clear OTP inputs
                         $('#otp-inputs .otp-input').val('');
                         $('#combined-otp-code').val('');
@@ -396,9 +482,8 @@
                         // Reset button state
                         resetSendOtpButton($checkUserButton, originalText);
                     } else {
-                        // Error: Show message and stay on national code step
-                        var errorMessage = (response && response.message) ? response.message : 'خطا در ارسال کد تایید';
-                        toastr.error(errorMessage);
+                        // ✅ Error: Show user-friendly message and stay on national code step
+                        showErrorMessage(response, 'خطا در ارسال کد تایید');
                         showStep('step-national-code');
                         resetSendOtpButton($checkUserButton, originalText);
                     }
@@ -422,7 +507,7 @@
                         errorMessage = 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
                     }
                     
-                    toastr.error(errorMessage);
+                    showErrorMessage({ message: errorMessage }, 'خطا در ارسال کد تایید');
                     showStep('step-national-code');
                     resetSendOtpButton($checkUserButton, originalText);
                 }
@@ -460,9 +545,42 @@
             $.ajax({
                 url: $form.attr('action'),
                 method: 'POST',
+                dataType: 'json', // ✅ Ensure JSON parsing
                 data: $form.serialize(),
                 success: function(response) {
-                    if (response.success) {
+                    // ✅ Ensure response is an object (handle string responses)
+                    if (typeof response === 'string') {
+                        try {
+                            response = JSON.parse(response);
+                        } catch (e) {
+                            console.error('Failed to parse response:', e);
+                            showErrorMessage(null, 'پاسخ نامعتبر از سرور. لطفاً دوباره تلاش کنید.');
+                            showButtonSpinner($button, false);
+                            return;
+                        }
+                    }
+                    
+                    // ✅ Debug: Log response for troubleshooting
+                    if (!response.success && response.code) {
+                        console.log('SendRegistrationOtp Error Response:', response);
+                    }
+                    
+                    if (response && response.success === true) {
+                        // ✅ Store phone number for registration flow
+                        state.phoneNumber = $('#PhoneNumber').val();
+                        
+                        // ✅ Update form action based on flow type
+                        if (state.isRegistrationFlow) {
+                            // For registration: use VerifyRegistrationOtp
+                            $('#form-verify-otp').attr('action', '@Url.Action("VerifyRegistrationOtp", "Account")');
+                            // ✅ Ensure PhoneNumber is set in verify form
+                            $('#form-verify-otp input[name="PhoneNumber"]').val(state.phoneNumber);
+                            $('#form-verify-otp input[name="NationalCode"]').val(state.nationalCode);
+                        } else {
+                            // For login: use VerifyLoginOtp
+                            $('#form-verify-otp').attr('action', '@Url.Action("VerifyLoginOtp", "Account")');
+                        }
+                        
                         showStep('step-otp');
                         $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
                         // Clear OTP inputs
@@ -476,16 +594,28 @@
                             $('#otp-inputs .otp-input:first').focus();
                         }, 100);
                     } else {
-                        // Handle validation errors
-                        if (response.errors && Object.keys(response.errors).length > 0) {
+                        // ✅ Handle errors (response.success === false)
+                        // First, check for specific error codes that need special handling
+                        if (response && response.code === 'DUPLICATE_PHONE_NUMBER') {
+                            // ✅ Show user-friendly message for duplicate phone number
+                            showErrorMessage(response, 'خطا در ارسال کد تایید');
+                            // Also show field-level error if field exists
+                            var $phoneErrorContainer = $form.find('[data-valmsg-for="PhoneNumber"]');
+                            if ($phoneErrorContainer.length) {
+                                $phoneErrorContainer.text('این شماره موبایل قبلاً در سیستم ثبت شده است.');
+                            }
+                        } else if (response && response.errors && Object.keys(response.errors).length > 0) {
+                            // ✅ Handle validation errors with field-specific messages
                             $.each(response.errors, function(field, messages) {
                                 var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
                                 if ($errorContainer.length) {
-                                    $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                                    // ✅ Show user-friendly field-specific error
+                                    $errorContainer.text(messages[0] || 'لطفاً این فیلد را به درستی وارد کنید.');
                                 }
                             });
                         } else {
-                            toastr.error(response.message || 'خطا در ارسال کد تایید');
+                            // ✅ Use helper function for consistent error display
+                            showErrorMessage(response, 'خطا در ارسال کد تایید');
                         }
                     }
                     showButtonSpinner($button, false);
@@ -499,19 +629,22 @@
                                 $.each(errorResponse.errors, function(field, messages) {
                                     var $errorContainer = $form.find('[data-valmsg-for="' + field + '"]');
                                     if ($errorContainer.length) {
-                                        $errorContainer.text(messages[0] || 'خطا در این فیلد');
+                                        $errorContainer.text(messages[0] || 'لطفاً این فیلد را به درستی وارد کنید.');
                                     }
                                 });
                             } else {
-                                toastr.error(errorResponse.message || 'خطا در ارسال کد تایید');
+                                // ✅ Use helper function for consistent error display
+                                showErrorMessage(errorResponse, 'خطا در ارسال کد تایید');
                             }
                         } catch (e) {
-                            toastr.error('خطا در ارسال کد تایید');
+                            showErrorMessage(null, 'خطا در ارسال کد تایید');
                         }
                     } else if (xhr.status === 429) {
-                        toastr.error('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                        showErrorMessage({ code: 'RATE_LIMIT_EXCEEDED', message: 'تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید و دوباره تلاش کنید.' });
+                    } else if (xhr.status === 0) {
+                        showErrorMessage(null, 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
                     } else {
-                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                        showErrorMessage(null, 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
                     }
                     showButtonSpinner($button, false);
                 }
@@ -546,11 +679,11 @@
                 $('#combined-otp-code').val(otp);
             }
             
-            // Ensure NationalCode is set
+            // ✅ Ensure NationalCode is set
             var nationalCode = $form.find('input[name="NationalCode"]').val();
             if (!nationalCode) {
-                // Try to get from step-national-code
-                nationalCode = $('#NationalCode').val();
+                // Try to get from state or step-national-code
+                nationalCode = state.nationalCode || $('#NationalCode').val();
                 if (nationalCode) {
                     $form.find('input[name="NationalCode"]').val(nationalCode);
                 } else {
@@ -558,6 +691,26 @@
                     return;
                 }
             }
+            
+            // ✅ For registration flow, ensure PhoneNumber is set
+            if (state.isRegistrationFlow) {
+                var phoneNumber = $form.find('input[name="PhoneNumber"]').val();
+                if (!phoneNumber) {
+                    phoneNumber = state.phoneNumber || $('#PhoneNumber').val();
+                    if (phoneNumber) {
+                        $form.find('input[name="PhoneNumber"]').val(phoneNumber);
+                    } else {
+                        $('#otp-error').text('خطا: شماره موبایل یافت نشد. لطفاً دوباره تلاش کنید.');
+                        return;
+                    }
+                }
+            }
+            
+            // ✅ Update form action dynamically based on flow
+            var actionUrl = state.isRegistrationFlow 
+                ? '@Url.Action("VerifyRegistrationOtp", "Account")'
+                : '@Url.Action("VerifyLoginOtp", "Account")';
+            $form.attr('action', actionUrl);
             
             showButtonSpinner($button, true);
             $button.prop('disabled', true);
@@ -570,18 +723,38 @@
                 data: $form.serialize(),
                 success: function(response) {
                     if (response.success) {
-                        // Show success message before redirect
-                        toastr.success('ورود با موفقیت انجام شد', '', { timeOut: 1500 });
+                        // ✅ Show appropriate success message
+                        var successMessage = state.isRegistrationFlow 
+                            ? 'کد تایید با موفقیت تایید شد. در حال هدایت به صفحه تکمیل ثبت‌نام...'
+                            : 'ورود با موفقیت انجام شد';
+                        toastr.success(successMessage, '', { timeOut: 1500 });
+                        
                         // Small delay for better UX
                         setTimeout(function() {
                             if (response.redirectUrl) {
                                 window.location.href = response.redirectUrl;
                             } else {
-                                window.location.reload();
+                                // ✅ For registration, redirect to CompleteRegistration if no redirectUrl
+                                if (state.isRegistrationFlow) {
+                                    // The redirectUrl should be set by VerifyRegistrationOtp action
+                                    // If not, reload to show error
+                                    window.location.reload();
+                                } else {
+                                    window.location.reload();
+                                }
                             }
                         }, 500);
                     } else {
+                        // ✅ Show user-friendly error message
                         var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';
+                        
+                        // ✅ Map specific error codes to friendly messages
+                        if (response && response.code === 'OTP_INVALID_OR_EXPIRED') {
+                            errorMessage = 'کد تایید نامعتبر یا منقضی شده است. لطفاً کد جدیدی دریافت کنید.';
+                        } else if (response && response.code === 'OTP_ATTEMPTS_EXCEEDED') {
+                            errorMessage = 'تعداد تلاش‌های شما برای وارد کردن کد تایید بیش از حد مجاز است. لطفاً کد جدیدی دریافت کنید.';
+                        }
+                        
                         $('#otp-error').text(errorMessage);
                         // Clear and focus first input
                         $('#otp-inputs .otp-input').val('');
@@ -604,7 +777,7 @@
                     } else if (xhr.status === 429) {
                         $('#otp-error').text('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
                     } else {
-                        toastr.error('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                        showErrorMessage(null, 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
                     }
                     // Clear and focus first input
                     $('#otp-inputs .otp-input').val('');
@@ -620,17 +793,32 @@
         $('#resend-otp-link').on('click', function(e) {
             e.preventDefault();
             var $link = $(this);
-            var nationalCode = $('input[name="NationalCode"]').val();
-            var phoneNumber = $('input[name="PhoneNumber"]').val();
+            
+            // ✅ Get values from state or form
+            var nationalCode = state.nationalCode || $('input[name="NationalCode"]').val() || $('#NationalCode').val();
+            var phoneNumber = state.phoneNumber || $('input[name="PhoneNumber"]').val() || $('#PhoneNumber').val();
+            
+            if (!nationalCode) {
+                showErrorMessage(null, 'کد ملی یافت نشد. لطفاً دوباره تلاش کنید.');
+                return;
+            }
             
             // Disable link during request
             $link.prop('disabled', true).css('opacity', '0.6');
             
-            if (phoneNumber) {
+            // ✅ Determine flow type: registration if phoneNumber exists or state.isRegistrationFlow is true
+            if (state.isRegistrationFlow || phoneNumber) {
                 // Resend registration OTP
+                if (!phoneNumber) {
+                    showErrorMessage(null, 'شماره موبایل یافت نشد. لطفاً دوباره تلاش کنید.');
+                    $link.prop('disabled', false).css('opacity', '1');
+                    return;
+                }
+                
                 $.ajax({
                     url: '@Url.Action("SendRegistrationOtp", "Account")',
                     method: 'POST',
+                    dataType: 'json',
                     data: { 
                         NationalCode: nationalCode, 
                         PhoneNumber: phoneNumber,
@@ -649,16 +837,16 @@
                                 $('#otp-inputs .otp-input:first').focus();
                             }, 100);
                         } else {
-                            toastr.error(response.message || 'خطا در ارسال مجدد کد');
+                            showErrorMessage(response, 'خطا در ارسال مجدد کد');
                         }
                         $link.prop('disabled', false).css('opacity', '1');
                     },
                     error: function(xhr, status, error) {
                         console.error('ResendRegistrationOtp AJAX Error:', { xhr: xhr, status: status, error: error });
                         if (xhr.status === 429) {
-                            toastr.error('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                            showErrorMessage({ code: 'RATE_LIMIT_EXCEEDED', message: 'تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید و دوباره تلاش کنید.' });
                         } else {
-                            toastr.error('خطا در ارسال مجدد کد. لطفاً دوباره تلاش کنید.');
+                            showErrorMessage(null, 'خطا در ارسال مجدد کد. لطفاً دوباره تلاش کنید.');
                         }
                         $link.prop('disabled', false).css('opacity', '1');
                     }

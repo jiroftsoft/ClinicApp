@@ -30,6 +30,9 @@
 
     <!-- SweetAlert2 -->
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    
+    <!-- Login Modal CSS -->
+    <link rel="stylesheet" href="~/Content/css/login.css" />
 
     <!-- Custom Styles -->
     <style>
@@ -256,10 +259,43 @@
         <div class="loading-spinner"></div>
     </div>
 
+    <!-- Login Modal - Professional Enterprise Design -->
+    <div class="login-modal-backdrop fade" id="loginModalBackdrop"></div>
+    <div class="login-modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-modal="true">
+        <div class="login-modal-dialog modal-dialog-centered" role="document">
+            <div class="login-modal-content" id="loginModalContent">
+                <!-- Modal Header with Branding -->
+                <div class="login-modal-header">
+                    <button type="button" class="login-modal-close" aria-label="بستن" id="loginModalCloseBtn">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <div class="login-branding">
+                        <div class="login-logo">
+                            <img src="~/Content/Images/shafa-logo.png" alt="کلینیک شفا" class="logo-img" />
+                        </div>
+                        <h2 class="login-brand-title" id="loginModalLabel">کلینیک درمانی شفا</h2>
+                        <p class="login-brand-subtitle">سیستم مدیریت نوبت‌دهی و خدمات درمانی</p>
+                    </div>
+                </div>
+                
+                <!-- Modal Body - Content loaded via AJAX -->
+                <div class="login-modal-body-content" id="loginModalBody">
+                    <div class="d-flex justify-content-center p-5">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="~/Scripts/jquery-3.7.0.min.js"></script>
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
     <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    <script src="~/Content/js/login-otp-manager.js"></script>
 
     @RenderSection("Scripts", required: false)
 
@@ -283,7 +319,11 @@
                     icon: 'error',
                     confirmButtonText: 'باشه'
                 }).then(() => {
-                    window.location.href = '@Url.Action("Login", "Account")';
+                    if (typeof window.openLoginModal === 'function') {
+                        window.openLoginModal(window.location.href);
+                    } else {
+                        window.location.href = '@Url.Action("Login", "Account")';
+                    }
                 });
             } else if (xhr.status === 403) {
                 Swal.fire({
@@ -301,6 +341,121 @@
                 });
             }
         });
+
+        // --- Professional Login Modal Manager ---
+        (function() {
+            const loginModal = document.getElementById('loginModal');
+            const loginModalBackdrop = document.getElementById('loginModalBackdrop');
+            const loginModalBody = document.getElementById('loginModalBody');
+            const loginModalCloseBtn = document.getElementById('loginModalCloseBtn');
+            
+            if (!loginModal) return;
+            
+            // Load login content
+            function loadLoginContent() {
+                loginModalBody.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">در حال بارگذاری...</span></div></div>';
+                
+                // ✅ دریافت returnUrl از data attribute
+                var returnUrl = loginModal.getAttribute('data-return-url') || window.location.href;
+                var loginModalUrl = '@Url.Action("LoginModal", "Account", new { area = "" })' + (returnUrl ? '?returnUrl=' + encodeURIComponent(returnUrl) : '');
+                
+                fetch(loginModalUrl)
+                    .then(response => response.text())
+                    .then(html => {
+                        loginModalBody.innerHTML = html;
+                        // Execute any scripts in the loaded content
+                        const scripts = loginModalBody.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            Array.from(oldScript.attributes).forEach(attr => {
+                                newScript.setAttribute(attr.name, attr.value);
+                            });
+                            newScript.textContent = oldScript.textContent || oldScript.innerHTML;
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                        // Re-initialize jQuery handlers after scripts are executed
+                        if (typeof jQuery !== 'undefined') {
+                            $(document).ready(function() {
+                                // Trigger a custom event to re-initialize
+                                $(document).trigger('loginModalContentLoaded');
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        loginModalBody.innerHTML = '<div class="alert alert-danger m-3">خطا در بارگذاری فرم. لطفاً دوباره تلاش کنید.</div>';
+                    });
+            }
+            
+            // Open modal - ✅ Global function برای استفاده از صفحات دیگر
+            window.openLoginModal = function(returnUrl) {
+                // ✅ ذخیره returnUrl در data attribute برای استفاده بعد از لاگین
+                if (returnUrl) {
+                    loginModal.setAttribute('data-return-url', returnUrl);
+                }
+                loadLoginContent();
+                document.body.classList.add('login-modal-open');
+                loginModalBackdrop.classList.add('show');
+                loginModal.classList.add('show');
+                loginModal.setAttribute('aria-hidden', 'false');
+                // Focus first input after content loads
+                setTimeout(() => {
+                    const nationalCodeInput = loginModalBody.querySelector('#NationalCode');
+                    const firstOtpInput = loginModalBody.querySelector('#otp-inputs .otp-input:first-child');
+                    const firstInput = nationalCodeInput || firstOtpInput;
+                    if (firstInput) firstInput.focus();
+                }, 500);
+            };
+            
+            // Close modal
+            function closeModal() {
+                loginModal.classList.remove('show');
+                loginModalBackdrop.classList.remove('show');
+                document.body.classList.remove('login-modal-open');
+                loginModal.setAttribute('aria-hidden', 'true');
+                // Reset form state
+                setTimeout(() => {
+                    loginModalBody.innerHTML = '';
+                }, 300);
+            }
+            
+            // Event: Close button
+            if (loginModalCloseBtn) {
+                loginModalCloseBtn.addEventListener('click', closeModal);
+            }
+            
+            // Event: Click backdrop - Professional handling
+            if (loginModalBackdrop) {
+                loginModalBackdrop.addEventListener('click', function(e) {
+                    // Only close if click is directly on backdrop (not on modal content)
+                    if (e.target === loginModalBackdrop) {
+                        closeModal();
+                    }
+                });
+            }
+            
+            // Event: Click outside modal content (on modal container)
+            loginModal.addEventListener('click', function(e) {
+                // If click is on modal container itself (not on dialog/content), close modal
+                if (e.target === loginModal) {
+                    closeModal();
+                }
+            });
+            
+            // Prevent modal dialog/content clicks from closing modal
+            const loginModalDialog = loginModal.querySelector('.login-modal-dialog');
+            if (loginModalDialog) {
+                loginModalDialog.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            // Event: ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && loginModal.classList.contains('show')) {
+                    closeModal();
+                }
+            });
+        })();
     </script>
 </body>
 </html>

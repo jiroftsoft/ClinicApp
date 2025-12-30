@@ -949,7 +949,11 @@
                 function loadLoginContent() {
                     loginModalBody.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">در حال بارگذاری...</span></div></div>';
                     
-                    fetch('@Url.Action("LoginModal", "Account")')
+                    // ✅ دریافت returnUrl از data attribute
+                    var returnUrl = loginModal.getAttribute('data-return-url') || window.location.href;
+                    var loginModalUrl = '@Url.Action("LoginModal", "Account")' + (returnUrl ? '?returnUrl=' + encodeURIComponent(returnUrl) : '');
+                    
+                    fetch(loginModalUrl)
                         .then(response => response.text())
                         .then(html => {
                             loginModalBody.innerHTML = html;
@@ -976,8 +980,12 @@
                         });
                 }
                 
-                // Open modal
-                function openModal() {
+                // Open modal - ✅ Global function برای استفاده از صفحات دیگر
+                window.openLoginModal = function(returnUrl) {
+                    // ✅ ذخیره returnUrl در data attribute برای استفاده بعد از لاگین
+                    if (returnUrl) {
+                        loginModal.setAttribute('data-return-url', returnUrl);
+                    }
                     loadLoginContent();
                     document.body.classList.add('login-modal-open');
                     loginModalBackdrop.classList.add('show');
@@ -990,6 +998,11 @@
                         const firstInput = nationalCodeInput || firstOtpInput;
                         if (firstInput) firstInput.focus();
                     }, 500);
+                };
+                
+                // ✅ Alias برای backward compatibility
+                function openModal() {
+                    window.openLoginModal();
                 }
                 
                 // Close modal
