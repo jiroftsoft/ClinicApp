@@ -1,0 +1,101 @@
+@model ClinicApp.ViewModels.Account.UserProfileEditViewModel
+@using ClinicApp.Constants
+@{
+    // ✅ Reusable Component - Can be used in Dashboard, Modal, or any page
+    // ✅ Enterprise-Grade: Configurable via ViewBag/ViewData
+    var containerClass = ViewBag.ContainerClass ?? "col-12 col-sm-10 col-md-8 col-lg-7";
+    var showHeader = ViewBag.ShowHeader ?? true;
+    var formId = ViewBag.FormId ?? "profile-form";
+    var apiUrl = ViewBag.ApiUrl ?? Url.Action("Profile", "Account");
+    var cancelUrl = ViewBag.CancelUrl ?? Url.Action("Index", "Home");
+    var cancelButtonText = ViewBag.CancelButtonText ?? "انصراف";
+    var submitButtonText = ViewBag.SubmitButtonText ?? "ذخیره تغییرات";
+}
+
+<div class="row justify-content-center">
+    <div class="@containerClass">
+        <div class="card shadow-sm profile-card" data-profile-component="true">
+            @if (showHeader)
+            {
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user me-2"></i>@UserProfileConstants.ViewTitles.Profile</h4>
+                    <p class="mb-0">@UserProfileConstants.ViewTitles.ProfileDescription</p>
+                </div>
+            }
+            <div class="card-body p-3 p-sm-4">
+                @using (Html.BeginForm("Profile", "Account", FormMethod.Post, new { id = formId, role = "form", novalidate = "novalidate", data_api_url = apiUrl }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(model => model.UserId)
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.NationalCode, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;", @tabindex = "-1" })
+                            <small class="form-text text-muted">@UserProfileConstants.Messages.NationalCodeNotEditable</small>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;", @tabindex = "-1" })
+                            <small class="form-text text-muted">@UserProfileConstants.Messages.PhoneNumberNotEditable</small>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام" } })
+                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی" } })
+                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.Email, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", type = "email", placeholder = "example@email.com" } })
+                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            @Html.LabelFor(model => model.Gender, new { @class = "form-label" })
+                            @{
+                                var genderList = new SelectList(new[]
+                                {
+                                    new SelectListItem { Text = "مرد", Value = "1" },
+                                    new SelectListItem { Text = "زن", Value = "2" }
+                                }, "Value", "Text", Model != null ? ((int)Model.Gender).ToString() : "1");
+                            }
+                            @Html.DropDownListFor(model => model.Gender, genderList, new { @class = "form-select" })
+                            @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12">
+                            @Html.LabelFor(model => model.Address, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Address, new { @class = "form-control", rows = "3", placeholder = "آدرس کامل خود را وارد کنید" })
+                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>@submitButtonText
+                                </button>
+                                @if (!string.IsNullOrEmpty(cancelUrl))
+                                {
+                                    <a href="@cancelUrl" class="btn btn-secondary">
+                                        <i class="fas fa-times me-2"></i>@cancelButtonText
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

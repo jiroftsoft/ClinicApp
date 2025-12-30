@@ -1,34 +1,105 @@
 ﻿@using Microsoft.AspNet.Identity
-@using ClinicApp.Helpers 
+@using ClinicApp.Helpers
+@using ClinicApp.Constants
+@{
+    var isAuthenticated = Request.IsAuthenticated;
+    var userName = isAuthenticated ? User.Identity.GetUserName() : string.Empty;
+    var firstName = isAuthenticated ? User.Identity.GetFirstName() : string.Empty;
+    var lastName = isAuthenticated ? User.Identity.GetLastName() : string.Empty;
+    var fullName = !string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName) 
+        ? $"{firstName} {lastName}" 
+        : (!string.IsNullOrEmpty(firstName) ? firstName : userName);
+    var userInitials = !string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName)
+        ? $"{firstName[0]}{lastName[0]}"
+        : (!string.IsNullOrEmpty(firstName) ? firstName[0].ToString() : (!string.IsNullOrEmpty(userName) ? userName[0].ToString() : "U"));
+}
 
-@if (Request.IsAuthenticated)
+@if (isAuthenticated)
 {
-    // --- نمای کاربر احراز هویت شده: منوی کشویی مدرن ---
-    using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm" }))
-    {
-        @Html.AntiForgeryToken()
-
-        <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    سلام، @User.Identity.GetFirstName()!
-                </a>
-                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                    @Html.ActionLink("پروفایل من", "Index", "Manage", routeValues: null, htmlAttributes: new { @class = "dropdown-item" })
-                    @Html.ActionLink("نوبت‌های من", "Index", "Appointment", routeValues: null, htmlAttributes: new { @class = "dropdown-item" })
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="javascript:document.getElementById('logoutForm').submit()">خروج</a>
+    @* ✅ Enterprise-Grade User Profile Menu - مثل مکتب خونه *@
+    <div class="user-profile-menu">
+        <div class="dropdown">
+            <button class="user-profile-toggle" type="button" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="منوی پروفایل کاربر">
+                <div class="user-avatar">
+                    <span class="user-initials">@userInitials</span>
                 </div>
-            </li>
-        </ul>
-    }
+                <span class="user-name">@fullName</span>
+                <i class="fas fa-chevron-down user-dropdown-icon"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end user-profile-dropdown" aria-labelledby="userProfileDropdown">
+                @* Header Section *@
+                <li class="dropdown-header user-profile-header">
+                    <div class="user-info-header">
+                        <div class="user-avatar-large">
+                            <span class="user-initials-large">@userInitials</span>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name-large">@fullName</div>
+                            @if (!string.IsNullOrEmpty(userName))
+                            {
+                                <div class="user-email">@userName</div>
+                            }
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                
+                @* Menu Items - AJAX Navigation *@
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Profile", "Account")" data-ajax="true">
+                        <i class="fas fa-user-circle"></i>
+                        <span>پروفایل من</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" data-ajax="true">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>نوبت‌های من</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" data-ajax="true">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>داشبورد</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" data-ajax="true">
+                        <i class="fas fa-file-medical"></i>
+                        <span>پرونده الکترونیک</span>
+                        <span class="badge badge-new">به زودی</span>
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                
+                @* Settings & Logout *@
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Settings", new { area = "" })">
+                        <i class="fas fa-cog"></i>
+                        <span>تنظیمات</span>
+                    </a>
+                </li>
+                <li>
+                    @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item user-menu-item user-menu-logout" aria-label="خروج از حساب کاربری">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>خروج</span>
+                        </button>
+                    }
+                </li>
+            </ul>
+        </div>
+    </div>
 }
 else
 {
-    // --- نمای کاربر مهمان: یک دکمه روشن و ساده ---
-    <ul class="navbar-nav">
-        <li class="nav-item">
-            @Html.ActionLink("ورود / ثبت‌نام", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink", @class = "btn btn-primary" })
-        </li>
-    </ul>
+    @* ✅ Guest User: Login Button - Modern & Professional *@
+    <div class="user-profile-menu">
+        <button type="button" class="btn-login-modern" onclick="window.openLoginModal && window.openLoginModal()" aria-label="ورود یا ثبت‌نام">
+            <i class="fas fa-user"></i>
+            <span>ورود / ثبت‌نام</span>
+        </button>
+    </div>
 }

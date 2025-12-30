@@ -334,6 +334,7 @@ namespace ClinicApp
                 // ثبت سرویس‌های پزشکی با پشتیبانی از سیستم حذف نرم
                 container.RegisterType<IPatientService, PatientService>(new HierarchicalLifetimeManager());
                 container.RegisterType<Interfaces.Repositories.IPatientRepository, PatientRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientDashboardService, PatientDashboardService>(new PerRequestLifetimeManager());
                 container.RegisterType<IReceptionWorkflowService, ReceptionWorkflowService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
@@ -343,6 +344,9 @@ namespace ClinicApp
                 // ✅ ثبت User Management Repository و Service
                 container.RegisterType<Interfaces.UserManagement.IUserRepository, Repositories.UserManagement.UserRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<Interfaces.UserManagement.IUserManagementService, Services.UserManagement.UserManagementService>(new PerRequestLifetimeManager());
+                
+                // ✅ ثبت User Profile Service (برای ویرایش پروفایل خود کاربر)
+                container.RegisterType<IUserProfileService, UserProfileService>(new PerRequestLifetimeManager());
                 
                 // ✅ ثبت RoleManager برای User Management
                 container.RegisterType<RoleManager<IdentityRole>>(new HierarchicalLifetimeManager(),

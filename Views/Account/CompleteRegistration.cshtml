@@ -5,50 +5,50 @@
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-7">
         <div class="card shadow-sm">
             <div class="card-header bg-success text-white">
                 <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>@ViewBag.Title</h4>
                 <p class="mb-0">لطفاً اطلاعات خود را وارد کنید تا ثبت‌نام نهایی شود.</p>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body p-3 p-sm-4">
                 @using (Html.BeginForm("CompleteRegistration", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "complete-reg-form", role = "form", novalidate = "novalidate" }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
 
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
                             @Html.TextBoxFor(model => model.NationalCode, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
                             @Html.HiddenFor(model => model.NationalCode)
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
                             @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
                             @Html.HiddenFor(model => model.PhoneNumber)
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
                             @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام" } })
                             @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
                             @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی" } })
                             @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.BirthDatePersian, new { @class = "form-label" })
                             @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", placeholder = "مثال: ۱۳۷۰/۰۱/۱۵", autocomplete = "off" })
                             @Html.ValidationMessageFor(model => model.BirthDatePersian, "", new { @class = "text-danger" })
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.Gender, new { @class = "form-label" })
                             @Html.EnumDropDownListFor(model => model.Gender, "جنسیت خود را انتخاب کنید...", new { @class = "form-select" })
                             @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
@@ -66,7 +66,7 @@
                         </div>
                     </div>
 
-                    <hr class="my-4">
+                    <hr class="my-3 my-sm-4">
 
                     <div class="d-grid">
                         <button type="submit" id="submit-button" class="btn btn-lg btn-success">

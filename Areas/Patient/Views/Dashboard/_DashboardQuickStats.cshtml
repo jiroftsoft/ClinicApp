@@ -1,0 +1,50 @@
+@model ClinicApp.ViewModels.Patient.DashboardQuickStatsViewModel
+
+<!-- ✅ Quick Stats Component -->
+<div class="row g-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-card-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">@Model.TotalAppointments</div>
+                <div class="stat-card-label">کل نوبت‌ها</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-card-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">@Model.UpcomingAppointments</div>
+                <div class="stat-card-label">نوبت‌های آینده</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-card-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">@Model.CompletedAppointments</div>
+                <div class="stat-card-label">تکمیل شده</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-card-icon">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">@Model.TotalReceptions</div>
+                <div class="stat-card-label">پذیرش‌ها</div>
+            </div>
+        </div>
+    </div>
+</div>
+

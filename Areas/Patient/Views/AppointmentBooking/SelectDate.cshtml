@@ -1,180 +1,561 @@
 @model ClinicApp.ViewModels.Patient.DateSelectionViewModel
 @{
-    ViewBag.Title = "انتخاب تاریخ";
+    ViewBag.Title = "انتخاب تاریخ نوبت";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
 }
 
 @section Styles {
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
         :root {
             --medical-primary: #2c5aa0;
             --medical-primary-light: #3d6bb3;
             --medical-border: #dee2e6;
             --medical-text: #495057;
+            --medical-bg: #f8f9fa;
         }
 
+        /* ✅ Mobile-First: Base styles for mobile */
         .page-header {
             background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             color: white;
-            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0;
         }
 
         .doctor-info-card {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border-right: 4px solid var(--medical-primary);
+        }
+
+        .doctor-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .calendar-container {
             background: white;
             border-radius: 12px;
-            padding: 2rem;
+            padding: 1.5rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
         }
 
         .date-picker-wrapper {
             text-align: center;
         }
 
-        .available-dates-list {
-            margin-top: 2rem;
-        }
-
-        .date-item {
-            border: 2px solid var(--medical-border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            cursor: pointer;
+        .btn-continue {
+            min-width: 200px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 12px;
             transition: all 0.3s ease;
-            background: white;
         }
 
-        .date-item:hover {
-            border-color: var(--medical-primary);
-            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .date-item.selected {
-            border-color: var(--medical-primary);
-            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
-            color: white;
-        }
-
-        .date-item.unavailable {
-            opacity: 0.5;
+        .btn-continue:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
-            background: #f5f5f5;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
+        .btn-continue:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        }
+
+        .date-selected-feedback {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #e8f5e9;
+            border-radius: 8px;
+            color: #2e7d32;
+            font-weight: 600;
+            display: none;
+        }
+
+        .date-selected-feedback.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ✅ Tablet: 768px and up */
+        @@media (min-width: 768px) {
             .page-header {
-                padding: 1.5rem;
+                padding: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .page-header h2 {
+                font-size: 2rem;
+            }
+
+            .page-header p {
+                font-size: 1rem;
             }
 
             .doctor-info-card {
-                padding: 1rem;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .doctor-avatar {
+                width: 70px;
+                height: 70px;
             }
 
             .calendar-container {
-                padding: 1rem;
+                padding: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .btn-continue {
+                min-width: 250px;
+                padding: 1rem 2.5rem;
+            }
+        }
+
+        /* ✅ Desktop: 992px and up */
+        @@media (min-width: 992px) {
+            .page-header {
+                padding: 2.5rem;
+            }
+
+            .page-header h2 {
+                font-size: 2.25rem;
+            }
+
+            .calendar-container {
+                padding: 2.5rem;
             }
         }
 
         /* Animation */
-        @keyframes slideIn {
+        @@keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateX(-20px);
+                transform: translateY(-5px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
-        .date-item {
-            animation: slideIn 0.3s ease-in-out;
+        .calendar-container {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 }
 
-<div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h2 class="mb-1">
-                <i class="fas fa-calendar-alt me-2"></i>
-                انتخاب تاریخ نوبت
-            </h2>
-            <p class="mb-0 opacity-75">لطفاً تاریخ مورد نظر خود را انتخاب کنید</p>
-        </div>
-        <a href="@Url.Action("SelectDoctor")" class="btn btn-light">
-            <i class="fas fa-arrow-right me-1"></i>
-            بازگشت
-        </a>
-    </div>
-</div>
-
-<!-- اطلاعات پزشک -->
-<div class="doctor-info-card">
-    <div class="d-flex align-items-center">
-        <div class="doctor-avatar me-3">
-            <i class="fas fa-user-md text-white fs-2"></i>
-        </div>
-        <div>
-            <h5 class="mb-1">@Model.DoctorName</h5>
-            <p class="text-muted mb-0">
-                <i class="fas fa-stethoscope me-1"></i>
-                @Model.DoctorSpecialization
-            </p>
+<div class="container-fluid px-3 px-sm-4 px-md-5">
+    <!-- ✅ Page Header - Mobile-First -->
+    <div class="page-header">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+            <div class="mb-3 mb-sm-0">
+                <h2 class="mb-2 mb-sm-1">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    انتخاب تاریخ نوبت
+                </h2>
+                <p class="mb-0">لطفاً تاریخ مورد نظر خود را انتخاب کنید</p>
+            </div>
+            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" 
+               class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت
+            </a>
         </div>
     </div>
-</div>
 
-<!-- تقویم -->
-<div class="calendar-container">
-    <div class="date-picker-wrapper">
-        <label class="form-label mb-3">
-            <i class="fas fa-calendar me-1"></i>
-            انتخاب تاریخ
-        </label>
-        <input type="text" 
-               id="persianDatePicker" 
-               class="form-control form-control-lg text-center" 
-               placeholder="روی اینجا کلیک کنید" 
-               readonly />
+    <!-- ✅ Doctor Info Card - Mobile-First -->
+    <div class="doctor-info-card">
+        <div class="d-flex align-items-center">
+            <div class="doctor-avatar me-3">
+                <i class="fas fa-user-md text-white fs-4"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1 fw-bold">@Model.DoctorName</h5>
+                <p class="text-muted mb-0 small">
+                    <i class="fas fa-stethoscope me-1"></i>
+                    @Model.DoctorSpecialization
+                </p>
+            </div>
+        </div>
     </div>
 
-    <div class="available-dates-list" id="availableDatesList">
-        <!-- تاریخ‌های در دسترس از طریق JavaScript لود می‌شوند -->
+    <!-- ✅ Calendar Container - Mobile-First -->
+    <div class="calendar-container">
+        <div class="date-picker-wrapper">
+            @{
+                // ✅ مهم: initialValue را null می‌گذاریم تا تاریخ امروز به اشتباه نمایش داده نشود
+                ViewBag.PersianDatePickerId = "appointmentDatePicker";
+                ViewBag.PersianDatePickerName = "SelectedDate";
+                ViewBag.PersianDatePickerValue = (DateTime?)null; // ✅ No initial value - user must select
+                ViewBag.PersianDatePickerLabel = "انتخاب تاریخ";
+                ViewBag.PersianDatePickerPlaceholder = "روی اینجا کلیک کنید تا تاریخ را انتخاب کنید";
+                ViewBag.PersianDatePickerHelpText = "لطفاً تاریخ مورد نظر خود را از تقویم انتخاب کنید";
+                ViewBag.PersianDatePickerRequired = true;
+                ViewBag.PersianDatePickerCssClass = "form-control form-control-lg text-center";
+            }
+            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+        </div>
+
+        <!-- ✅ Feedback when date is selected -->
+        <div class="date-selected-feedback" id="dateSelectedFeedback">
+            <i class="fas fa-check-circle me-2"></i>
+            <span id="selectedDateDisplay"></span>
+        </div>
+    </div>
+
+    <!-- ✅ Continue Button - Mobile-First -->
+    <div class="text-center mb-4">
+        <button type="button" 
+                class="btn btn-primary btn-lg btn-continue" 
+                id="continueToTimeBtn" 
+                disabled>
+            <i class="fas fa-arrow-left me-2"></i>
+            ادامه به انتخاب زمان
+        </button>
     </div>
 </div>
 
-<!-- دکمه ادامه -->
-<div class="text-center mt-4">
-    <button type="button" class="btn btn-primary btn-lg" id="continueToTimeBtn" disabled>
-        <i class="fas fa-arrow-left me-1"></i>
-        ادامه به انتخاب زمان
-    </button>
-</div>
-
+<!-- ✅ Hidden Fields -->
 <input type="hidden" id="doctorId" value="@Model.DoctorId" />
-<input type="hidden" id="selectedDate" />
+<input type="hidden" id="selectedDateGregorian" />
 
 @section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
     <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
-    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
-    <script src="~/Scripts/patient/date-selection.js"></script>
-}
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    
+    <script>
+        (function ($) {
+            'use strict';
 
+            // ✅ Date Selection Module - Bulletproof & Production-Ready
+            const DateSelectionModule = {
+                doctorId: null,
+                selectedDatePersian: null,
+                selectedDateGregorian: null,
+                datePickerInstance: null,
+
+                init: function () {
+                    this.doctorId = parseInt($('#doctorId').val(), 10);
+                    if (!this.doctorId || isNaN(this.doctorId)) {
+                        this.showError('شناسه پزشک نامعتبر است');
+                        return;
+                    }
+
+                    // ✅ Wait for PersianDatePicker to initialize
+                    this.waitForDatePicker();
+                    this.bindEvents();
+                },
+
+                waitForDatePicker: function () {
+                    const self = this;
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds max
+
+                    const checkInterval = setInterval(function () {
+                        attempts++;
+                        const $datePicker = $('#appointmentDatePicker');
+                        
+                        if ($datePicker.length && $datePicker.data('pDatepicker-initialized')) {
+                            clearInterval(checkInterval);
+                            self.datePickerInstance = $datePicker.data('pDatepicker');
+                            self.initDatePickerHandlers();
+                            console.log('✅ DatePicker initialized successfully');
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                            console.error('❌ DatePicker failed to initialize after 5 seconds');
+                            self.showError('خطا در بارگذاری تقویم. لطفاً صفحه را رفرش کنید.');
+                        }
+                    }, 100);
+                },
+
+                initDatePickerHandlers: function () {
+                    const self = this;
+                    const $datePicker = $('#appointmentDatePicker');
+
+                    // ✅ Method 1: Listen for pDatepicker:select event (Primary)
+                    $datePicker.on('pDatepicker:select', function (e) {
+                        console.log('📅 pDatepicker:select event fired', e);
+                        self.handleDateSelection(e);
+                    });
+
+                    // ✅ Method 2: Listen for change event (Fallback)
+                    $datePicker.on('change', function () {
+                        const persianDate = $(this).val();
+                        if (persianDate && persianDate.trim() !== '') {
+                            console.log('📅 Change event fired', persianDate);
+                            self.handleDateSelectionFromPersian(persianDate);
+                        }
+                    });
+
+                    // ✅ Method 3: Direct access to datePicker instance (Ultimate Fallback)
+                    if (self.datePickerInstance && self.datePickerInstance.config) {
+                        const originalOnSelect = self.datePickerInstance.config.onSelect;
+                        if (originalOnSelect) {
+                            self.datePickerInstance.config.onSelect = function(unix) {
+                                // Call original handler
+                                if (typeof originalOnSelect === 'function') {
+                                    originalOnSelect.call(this, unix);
+                                }
+                                // Our custom handler
+                                console.log('📅 onSelect callback fired', unix);
+                                self.handleDateSelectionFromUnix(unix);
+                            };
+                        }
+                    }
+                },
+
+                bindEvents: function () {
+                    const self = this;
+                    $('#continueToTimeBtn').on('click', function () {
+                        self.handleContinue();
+                    });
+                },
+
+                handleDateSelection: function (event) {
+                    try {
+                        // ✅ Extract date from event
+                        if (event && event.unix) {
+                            const unixTimestamp = event.unix;
+                            this.handleDateSelectionFromUnix(unixTimestamp);
+                        } else if (event && event.selected) {
+                            // ✅ Use selected object (jy, jm, jd)
+                            const selected = event.selected;
+                            if (selected && selected.jy && selected.jm && selected.jd) {
+                                const persianDate = `${selected.jy}/${String(selected.jm).padStart(2, '0')}/${String(selected.jd).padStart(2, '0')}`;
+                                this.handleDateSelectionFromPersian(persianDate);
+                            }
+                        }
+                    } catch (ex) {
+                        console.error('❌ Error in handleDateSelection:', ex);
+                        this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
+                    }
+                },
+
+                handleDateSelectionFromUnix: function (unixTimestamp) {
+                    try {
+                        if (!unixTimestamp) return;
+
+                        // ✅ Convert Unix timestamp to Date (handle both seconds and milliseconds)
+                        const timestamp = unixTimestamp < 2e10 ? unixTimestamp * 1000 : unixTimestamp;
+                        const date = new Date(timestamp);
+                        
+                        if (date && date instanceof Date && !isNaN(date.getTime())) {
+                            this.selectedDateGregorian = date;
+                            $('#selectedDateGregorian').val(this.formatDateForInput(date));
+                            
+                            // ✅ Get Persian date from datePicker instance
+                            if (this.datePickerInstance) {
+                                const persianDate = this.datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                if (persianDate) {
+                                    this.selectedDatePersian = persianDate;
+                                    this.updateUI(persianDate);
+                                }
+                            }
+                            
+                            this.checkDateAvailability(date);
+                        }
+                    } catch (ex) {
+                        console.error('❌ Error in handleDateSelectionFromUnix:', ex);
+                        this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
+                    }
+                },
+
+                handleDateSelectionFromPersian: function (persianDate) {
+                    try {
+                        if (!persianDate || persianDate.trim() === '') return;
+
+                        // ✅ Convert Persian date to Gregorian
+                        const gregorianDate = this.convertPersianToGregorian(persianDate);
+                        if (gregorianDate) {
+                            this.selectedDatePersian = persianDate;
+                            this.selectedDateGregorian = gregorianDate;
+                            $('#selectedDateGregorian').val(this.formatDateForInput(gregorianDate));
+                            this.updateUI(persianDate);
+                            this.checkDateAvailability(gregorianDate);
+                        } else {
+                            console.error('❌ Failed to convert Persian date:', persianDate);
+                            this.showError('تاریخ انتخاب شده نامعتبر است. لطفاً دوباره تلاش کنید.');
+                        }
+                    } catch (ex) {
+                        console.error('❌ Error in handleDateSelectionFromPersian:', ex);
+                        this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
+                    }
+                },
+
+                updateUI: function (persianDate) {
+                    // ✅ Show feedback
+                    $('#selectedDateDisplay').text('تاریخ انتخاب شده: ' + persianDate);
+                    $('#dateSelectedFeedback').addClass('show');
+                },
+
+                convertPersianToGregorian: function (persianDate) {
+                    try {
+                        // ✅ Use jalaali library (loaded with PersianDatePicker)
+                        if (typeof jalaali !== 'undefined' && jalaali.toGregorian) {
+                            const parts = persianDate.split('/');
+                            if (parts.length === 3) {
+                                const year = parseInt(parts[0], 10);
+                                const month = parseInt(parts[1], 10);
+                                const day = parseInt(parts[2], 10);
+                                
+                                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                                    const gregorian = jalaali.toGregorian(year, month, day);
+                                    return new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
+                                }
+                            }
+                        }
+                        return null;
+                    } catch (ex) {
+                        console.error('❌ Error converting Persian to Gregorian:', ex);
+                        return null;
+                    }
+                },
+
+                checkDateAvailability: function (date) {
+                    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+                        $('#continueToTimeBtn').prop('disabled', true);
+                        return;
+                    }
+
+                    // ✅ Get today's date (server timezone aware)
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    const selectedDateOnly = new Date(date);
+                    selectedDateOnly.setHours(0, 0, 0, 0);
+
+                    // ✅ Check if date is in the past
+                    if (selectedDateOnly < today) {
+                        $('#continueToTimeBtn').prop('disabled', true);
+                        $('#dateSelectedFeedback').removeClass('show');
+                        this.showError('نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید');
+                        return;
+                    }
+
+                    // ✅ Date is valid - enable button
+                    $('#continueToTimeBtn').prop('disabled', false);
+                    console.log('✅ Date selected and validated:', this.formatDateForInput(date));
+                },
+
+                handleContinue: function () {
+                    if (!this.selectedDateGregorian) {
+                        this.showError('لطفاً تاریخ را انتخاب کنید');
+                        return;
+                    }
+
+                    const dateStr = this.formatDateForInput(this.selectedDateGregorian);
+                    const url = '@Url.Action("SelectTime", "AppointmentBooking", new { area = "Patient" })?doctorId=' + 
+                                encodeURIComponent(this.doctorId) + 
+                                '&date=' + encodeURIComponent(dateStr);
+                    
+                    // ✅ Show loading state
+                    const $btn = $('#continueToTimeBtn');
+                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال انتقال...');
+                    
+                    window.location.href = url;
+                },
+
+                formatDateForInput: function (date) {
+                    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+                        return '';
+                    }
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                },
+
+                showError: function (message) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'خطا',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonText: 'باشه',
+                            confirmButtonColor: '#2c5aa0'
+                        });
+                    } else if (typeof toastr !== 'undefined') {
+                        toastr.error(message);
+                    } else {
+                        alert(message);
+                    }
+                }
+            };
+
+            // ✅ Initialize on document ready
+            $(document).ready(function () {
+                // ✅ Wait for jQuery and PersianDatePicker to be ready
+                if (typeof window.whenJQ === 'function') {
+                    window.whenJQ(function () {
+                        setTimeout(function () {
+                            DateSelectionModule.init();
+                        }, 500); // ✅ Small delay to ensure datePicker is ready
+                    });
+                } else {
+                    // Fallback: Wait for jQuery
+                    var jqCheck = setInterval(function () {
+                        if (typeof jQuery !== 'undefined' && jQuery.fn.pDatepicker) {
+                            clearInterval(jqCheck);
+                            setTimeout(function () {
+                                DateSelectionModule.init();
+                            }, 500);
+                        }
+                    }, 100);
+
+                    // Timeout after 5 seconds
+                    setTimeout(function () {
+                        clearInterval(jqCheck);
+                        if (typeof jQuery !== 'undefined') {
+                            DateSelectionModule.init();
+                        }
+                    }, 5000);
+                }
+            });
+
+            // ✅ Export for global access
+            window.DateSelectionModule = DateSelectionModule;
+
+        })(jQuery);
+    </script>
+}

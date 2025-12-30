@@ -1,0 +1,420 @@
+/**
+ * User Profile Menu - Enterprise-Grade Professional Design
+ * ✅ مثل سایت مکتب خونه - حرفه‌ای و مدرن
+ * 
+ * Single Responsibility: استایل‌های منوی پروفایل کاربر در navbar
+ * Mobile-First, Healthcare Formal UI
+ * طبق: DEVELOPMENT_CONTRACT.md, AI_ASSISTANT_MASTER_CONTRACT.md
+ */
+
+/* ============================================
+   User Profile Menu Container
+   ============================================ */
+.user-profile-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+}
+
+/* ============================================
+   User Profile Toggle Button
+   ============================================ */
+.user-profile-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    outline: none;
+}
+
+.user-profile-toggle:hover,
+.user-profile-toggle:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-profile-toggle:active {
+    transform: translateY(0);
+}
+
+/* User Avatar */
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-initials {
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* User Name */
+.user-name {
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Dropdown Icon */
+.user-dropdown-icon {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    transition: transform 0.3s ease;
+}
+
+.user-profile-toggle[aria-expanded="true"] .user-dropdown-icon {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   Dropdown Menu
+   ============================================ */
+.user-profile-dropdown {
+    min-width: 280px;
+    max-width: 320px;
+    padding: 0;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    margin-top: 0.75rem;
+    overflow: hidden;
+    background: white;
+}
+
+/* ============================================
+   User Profile Header
+   ============================================ */
+.user-profile-header {
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    margin: 0;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-large {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.user-initials-large {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name-large {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-email {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   Menu Items
+   ============================================ */
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    color: #2d3748;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: right;
+    cursor: pointer;
+}
+
+.user-menu-item:hover,
+.user-menu-item:focus {
+    background-color: #f7fafc;
+    color: #2c6e7d;
+    transform: translateX(-4px);
+}
+
+.user-menu-item i {
+    width: 20px;
+    text-align: center;
+    color: #718096;
+    font-size: 1rem;
+}
+
+.user-menu-item:hover i,
+.user-menu-item:focus i {
+    color: #2c6e7d;
+}
+
+.user-menu-item span {
+    flex: 1;
+}
+
+/* Logout Item */
+.user-menu-logout {
+    color: #e53e3e;
+}
+
+.user-menu-logout:hover,
+.user-menu-logout:focus {
+    background-color: #fed7d7;
+    color: #c53030;
+}
+
+.user-menu-logout i {
+    color: #e53e3e;
+}
+
+.user-menu-logout:hover i,
+.user-menu-logout:focus i {
+    color: #c53030;
+}
+
+/* Badge for "Coming Soon" */
+.badge-new {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-right: auto;
+}
+
+/* ============================================
+   Login Button (Guest Users)
+   ============================================ */
+.btn-login-modern {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    outline: none;
+}
+
+.btn-login-modern:hover,
+.btn-login-modern:focus {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-login-modern:active {
+    transform: translateY(0);
+}
+
+.btn-login-modern i {
+    font-size: 1rem;
+}
+
+/* ============================================
+   Responsive Design - Mobile First
+   ============================================ */
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+    .user-name {
+        max-width: 150px;
+    }
+    
+    .user-profile-dropdown {
+        min-width: 300px;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .user-name {
+        max-width: 180px;
+    }
+    
+    .user-profile-dropdown {
+        min-width: 320px;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .user-name {
+        max-width: 200px;
+    }
+}
+
+/* Extra small devices (phones, less than 576px) */
+@media (max-width: 575.98px) {
+    .user-profile-menu {
+        margin-right: 0.5rem;
+    }
+    
+    .user-profile-toggle {
+        padding: 0.4rem 0.75rem;
+        gap: 0.5rem;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .user-initials {
+        font-size: 0.75rem;
+    }
+    
+    .user-name {
+        display: none; /* Hide name on very small screens */
+    }
+    
+    .user-dropdown-icon {
+        display: none; /* Hide dropdown icon on very small screens */
+    }
+    
+    .user-profile-dropdown {
+        min-width: 260px;
+        max-width: 90vw;
+    }
+    
+    .btn-login-modern span {
+        display: none; /* Hide text on very small screens */
+    }
+    
+    .btn-login-modern {
+        padding: 0.5rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        justify-content: center;
+    }
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-profile-dropdown {
+    animation: fadeInDown 0.3s ease;
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+.user-profile-toggle:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.user-menu-item:focus-visible {
+    outline: 2px solid #2c6e7d;
+    outline-offset: -2px;
+}
+
+/* ============================================
+   Dark Mode Support (Future)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    .user-profile-dropdown {
+        background: #1a202c;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .user-menu-item {
+        color: #e2e8f0;
+    }
+    
+    .user-menu-item:hover,
+    .user-menu-item:focus {
+        background-color: #2d3748;
+        color: #90cdf4;
+    }
+    
+    .user-menu-item i {
+        color: #a0aec0;
+    }
+    
+    .user-menu-item:hover i,
+    .user-menu-item:focus i {
+        color: #90cdf4;
+    }
+}
+

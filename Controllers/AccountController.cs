@@ -1,10 +1,14 @@
-﻿using ClinicApp.Core;
+﻿using ClinicApp.Constants;
+using ClinicApp.Core;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Security;
 using ClinicApp.Models;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Account;
 using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security.DataProtection;
 using Serilog;
@@ -16,7 +20,10 @@ using System.Web.Mvc;
 
 namespace ClinicApp.Controllers
 {
-    [Authorize]
+    /// <summary>
+    /// Account Controller - Login, Registration, Logout
+    /// ✅ Most actions are [AllowAnonymous] - only LogOff requires [Authorize]
+    /// </summary>
     public class AccountController : Controller
     {
         #region Dependencies & Constructor
@@ -26,19 +33,25 @@ namespace ClinicApp.Controllers
         private readonly ApplicationUserManager _userManager;
         private readonly ILogger _log;
         private readonly ILoginHistoryService _loginHistoryService;
+        private readonly IUserProfileService _userProfileService;
+        private readonly ICurrentUserService _currentUserService;
 
         public AccountController(
             IAuthService authService,
             IPatientService patientService,
             ApplicationUserManager userManager,
             ILogger logger,
-            ILoginHistoryService loginHistoryService)
+            ILoginHistoryService loginHistoryService,
+            IUserProfileService userProfileService,
+            ICurrentUserService currentUserService)
         {
             _authService = authService;
             _patientService = patientService;
             _userManager = userManager;
             _log = logger.ForContext<AccountController>();
             _loginHistoryService = loginHistoryService;
+            _userProfileService = userProfileService;
+            _currentUserService = currentUserService;
         }
 
         #endregion
@@ -145,7 +158,7 @@ namespace ClinicApp.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> VerifyRegistrationOtp(VerifyRegistrationOtpViewModel model)
+        public async Task<JsonResult> VerifyRegistrationOtp(VerifyRegistrationOtpViewModel model, string returnUrl)
         {
             if (!ModelState.IsValid) return CreateValidationErrorsJson();
 
@@ -161,7 +174,14 @@ namespace ClinicApp.Controllers
                     byte[] protectedBytes = dataProtector.Protect(Encoding.UTF8.GetBytes(payload));
                     string urlSafeToken = Convert.ToBase64String(protectedBytes);
 
-                    return CreateServiceResultJson(result, Url.Action("CompleteRegistration", new { token = urlSafeToken }));
+                    // ✅ Pass returnUrl as query parameter to preserve flow context
+                    var completeRegistrationUrl = Url.Action("CompleteRegistration", new { token = urlSafeToken });
+                    if (!string.IsNullOrEmpty(returnUrl))
+                    {
+                        completeRegistrationUrl += "&returnUrl=" + Uri.EscapeDataString(returnUrl);
+                    }
+
+                    return CreateServiceResultJson(result, completeRegistrationUrl);
                 }
 
                 return CreateServiceResultJson(result);
@@ -174,7 +194,7 @@ namespace ClinicApp.Controllers
         }
 
         [AllowAnonymous]
-        public ActionResult CompleteRegistration(string token)
+        public ActionResult CompleteRegistration(string token, string returnUrl)
         {
             if (string.IsNullOrEmpty(token))
             {
@@ -184,7 +204,7 @@ namespace ClinicApp.Controllers
 
             try
             {
-                var provider = new DpapiDataProtectionProvider("ClinicApp");
+                var provider = new DpapiDataProtectionProvider("ClinicApp"); // ✅ Fixed: Added 'var' keyword
                 var dataProtector = provider.Create("RegistrationToken");
                 byte[] protectedBytes = Convert.FromBase64String(token);
                 byte[] unprotectedBytes = dataProtector.Unprotect(protectedBytes);
@@ -205,6 +225,7 @@ namespace ClinicApp.Controllers
                 }
 
                 var model = new RegisterPatientViewModel { NationalCode = nationalCode, PhoneNumber = phoneNumber };
+                ViewBag.ReturnUrl = returnUrl; // ✅ Set returnUrl for View to preserve flow context
                 return View(model);
             }
             catch (Exception ex)
@@ -245,10 +266,252 @@ namespace ClinicApp.Controllers
         #endregion
 
         // -------------------------------------------------------------------
+        #region Profile Management (مدیریت پروفایل)
+        // -------------------------------------------------------------------
+
+        /// <summary>
+        /// نمایش پروفایل کاربر
+        /// GET: /Account/Profile
+        /// ✅ AJAX-Compatible: پشتیبانی از درخواست‌های AJAX بدون رفرش صفحه
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        [NoCache]
+        public async Task<ActionResult> Profile()
+        {
+            try
+            {
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    if (Request.IsAjaxRequest())
+                    {
+                        return Json(new { success = false, message = UserProfileConstants.Messages.PleaseLoginAgain, redirectUrl = Url.Action("Login", "Account") }, JsonRequestBehavior.AllowGet);
+                    }
+                    NotificationHelper.SetError(TempData, UserProfileConstants.Messages.PleaseLoginAgain);
+                    return RedirectToAction(UserProfileConstants.Actions.Login);
+                }
+
+                var result = await _userProfileService.GetMyProfileAsync(userId);
+                if (!result.Success)
+                {
+                    if (Request.IsAjaxRequest())
+                    {
+                        return Json(new { success = false, message = result.Message, redirectUrl = Url.Action("Login", "Account") }, JsonRequestBehavior.AllowGet);
+                    }
+                    NotificationHelper.SetError(TempData, result.Message);
+                    return RedirectToAction(UserProfileConstants.Actions.Login);
+                }
+
+                // ✅ AJAX Request: Return Partial View (بدون Layout)
+                if (Request.IsAjaxRequest())
+                {
+                    return PartialView("_UserProfileComponent", result.Data);
+                }
+
+                // ✅ Normal Request: Return Full View (با Layout)
+                return View(result.Data);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در نمایش پروفایل");
+                if (Request.IsAjaxRequest())
+                {
+                    return Json(new { success = false, message = UserProfileConstants.Messages.LoadProfileError }, JsonRequestBehavior.AllowGet);
+                }
+                NotificationHelper.SetError(TempData, UserProfileConstants.Messages.LoadProfileError);
+                return RedirectToAction(UserProfileConstants.Actions.Login);
+            }
+        }
+
+        /// <summary>
+        /// بارگذاری کامپوننت پروفایل به صورت Partial View (Reusable)
+        /// GET: /Account/LoadProfileComponent
+        /// ✅ Enterprise-Grade: قابل استفاده در Dashboard, Modal, یا هر صفحه‌ای
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        [NoCache]
+        public async Task<PartialViewResult> LoadProfileComponent(
+            string containerClass = null,
+            bool? showHeader = null,
+            string formId = null,
+            string apiUrl = null,
+            string cancelUrl = null,
+            string cancelButtonText = null,
+            string submitButtonText = null)
+        {
+            try
+            {
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return PartialView("_UserProfileComponent", null);
+                }
+
+                var result = await _userProfileService.GetMyProfileAsync(userId);
+                if (!result.Success)
+                {
+                    return PartialView("_UserProfileComponent", null);
+                }
+
+                // ✅ Configurable via ViewBag
+                ViewBag.ContainerClass = containerClass;
+                ViewBag.ShowHeader = showHeader;
+                ViewBag.FormId = formId;
+                ViewBag.ApiUrl = apiUrl;
+                ViewBag.CancelUrl = cancelUrl;
+                ViewBag.CancelButtonText = cancelButtonText;
+                ViewBag.SubmitButtonText = submitButtonText;
+
+                return PartialView("_UserProfileComponent", result.Data);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بارگذاری کامپوننت پروفایل");
+                return PartialView("_UserProfileComponent", null);
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات پروفایل به صورت JSON (API Endpoint)
+        /// GET: /Account/GetProfile
+        /// ✅ Enterprise-Grade: API-First Design
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        [NoCache]
+        public async Task<JsonResult> GetProfile()
+        {
+            try
+            {
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = UserProfileConstants.Messages.PleaseLoginAgain,
+                        code = UserProfileConstants.ErrorCodes.InvalidUserId
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _userProfileService.GetMyProfileAsync(userId);
+                if (!result.Success)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.Message,
+                        code = result.Code
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = "اطلاعات پروفایل با موفقیت دریافت شد.",
+                    code = "SUCCESS",
+                    data = result.Data
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت اطلاعات پروفایل");
+                return Json(new
+                {
+                    success = false,
+                    message = UserProfileConstants.Messages.GetProfileError,
+                    code = "SYSTEM_ERROR"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی پروفایل کاربر (AJAX - بدون رفرش صفحه)
+        /// POST: /Account/Profile
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        [NoCache]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> Profile(UserProfileEditViewModel model)
+        {
+            try
+            {
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = UserProfileConstants.Messages.PleaseLoginAgain,
+                        code = UserProfileConstants.ErrorCodes.InvalidUserId
+                    });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var validationErrors = ModelState
+                        .Where(x => x.Value.Errors.Count > 0)
+                        .SelectMany(x => x.Value.Errors.Select(e => new
+                        {
+                            field = x.Key,
+                            message = e.ErrorMessage
+                        }))
+                        .ToList();
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = UserProfileConstants.Messages.RequiredFieldsMissing,
+                        code = "VALIDATION_ERROR",
+                        validationErrors = validationErrors
+                    });
+                }
+
+                var result = await _userProfileService.UpdateMyProfileAsync(userId, model);
+                if (!result.Success)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.Message,
+                        code = result.Code
+                    });
+                }
+
+                // ✅ Reload profile data after successful update
+                var updatedProfile = await _userProfileService.GetMyProfileAsync(userId);
+                
+                return Json(new
+                {
+                    success = true,
+                    message = UserProfileConstants.Messages.ProfileUpdatedSuccessfully,
+                    code = "SUCCESS",
+                    data = updatedProfile.Success ? updatedProfile.Data : null
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در به‌روزرسانی پروفایل");
+                return Json(new
+                {
+                    success = false,
+                    message = UserProfileConstants.Messages.UpdateProfileError,
+                    code = "SYSTEM_ERROR"
+                });
+            }
+        }
+
+        #endregion
+
+        // -------------------------------------------------------------------
         #region LogOff & Helpers (خروج و متدهای کمکی)
         // -------------------------------------------------------------------
 
         [HttpPost]
+        [Authorize] // ✅ LogOff requires authentication
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> LogOff()
         {
@@ -285,7 +548,21 @@ namespace ClinicApp.Controllers
             {
                 return returnUrl;
             }
-            return Url.Action("Index", "Dashboard", new { area = "" });
+            
+            // ✅ Default redirect: If user is Patient, go to MyAppointments; otherwise Dashboard
+            if (User.Identity.IsAuthenticated)
+            {
+                // Check if user has Patient role
+                if (User.IsInRole(AppRoles.Patient))
+                {
+                    return Url.Action("MyAppointments", "Appointment", new { area = "Patient" });
+                }
+                // For Admin/Doctor users, go to Dashboard
+                return Url.Action("Index", "Dashboard", new { area = "" });
+            }
+            
+            // ✅ For anonymous users, go to home page
+            return Url.Action("Index", "Home", new { area = "" });
         }
 
         private void AddErrorsToModelState(ServiceResult result)

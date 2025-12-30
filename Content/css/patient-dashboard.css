@@ -1,0 +1,329 @@
+/**
+ * Patient Dashboard Styles - Enterprise-Grade
+ * 
+ * Single Responsibility: استایل‌های داشبورد بیمار
+ * Mobile-First, Healthcare Formal UI
+ * طبق: DEVELOPMENT_CONTRACT.md, AI_ASSISTANT_MASTER_CONTRACT.md
+ */
+
+/* ============================================
+   Dashboard Container
+   ============================================ */
+.dashboard-container {
+    min-height: 60vh;
+    padding: 1.5rem 0;
+}
+
+/* ============================================
+   Dashboard Header
+   ============================================ */
+.dashboard-header {
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.dashboard-subtitle {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+/* ============================================
+   Dashboard Stats Section
+   ============================================ */
+.dashboard-stats-section {
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.stat-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 1rem;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.stat-card-primary .stat-card-icon {
+    background: #0d6efd;
+}
+
+.stat-card-success .stat-card-icon {
+    background: #198754;
+}
+
+.stat-card-info .stat-card-icon {
+    background: #0dcaf0;
+}
+
+.stat-card-warning .stat-card-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.stat-card-content {
+    flex: 1;
+}
+
+.stat-card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1.2;
+}
+
+.stat-card-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   Dashboard Cards
+   ============================================ */
+.dashboard-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-card-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.dashboard-card-body {
+    padding: 1.25rem;
+    flex: 1;
+    min-height: 200px;
+}
+
+/* ============================================
+   Loading States
+   ============================================ */
+.dashboard-loading,
+.dashboard-section-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.dashboard-section-loading {
+    min-height: 150px;
+}
+
+/* ============================================
+   Empty States
+   ============================================ */
+.dashboard-section-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.dashboard-section-empty i {
+    opacity: 0.5;
+}
+
+/* ============================================
+   Error States
+   ============================================ */
+.dashboard-section-error {
+    padding: 1rem;
+}
+
+.dashboard-section-error .alert {
+    margin: 0;
+}
+
+/* ============================================
+   Appointments List
+   ============================================ */
+.appointments-list,
+.receptions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.appointment-item,
+.reception-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.appointment-item:hover,
+.reception-item:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: #0d6efd;
+}
+
+.appointment-item-header,
+.reception-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.appointment-doctor,
+.reception-doctor {
+    font-weight: 600;
+    color: #212529;
+}
+
+.appointment-item-body,
+.reception-item-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.appointment-date,
+.appointment-time,
+.appointment-price,
+.reception-date,
+.reception-amount {
+    display: flex;
+    align-items: center;
+}
+
+.appointment-item-footer,
+.reception-item-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ============================================
+   Status Badges
+   ============================================ */
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.badge-info {
+    background: #0dcaf0;
+    color: #212529;
+}
+
+.badge-success {
+    background: #198754;
+    color: #fff;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.badge-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 575.98px) {
+    .dashboard-title {
+        font-size: 1.25rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+        margin-left: 0.75rem;
+    }
+    
+    .stat-card-value {
+        font-size: 1.5rem;
+    }
+    
+    .dashboard-card-header {
+        padding: 1rem;
+    }
+    
+    .dashboard-card-body {
+        padding: 1rem;
+    }
+    
+    .appointment-item,
+    .reception-item {
+        padding: 0.75rem;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .dashboard-container {
+        padding: 1.25rem 0;
+    }
+}
+

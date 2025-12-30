@@ -1,0 +1,68 @@
+@model ClinicApp.ViewModels.Patient.DashboardReceptionsSectionViewModel
+
+@if (Model.Receptions != null && Model.Receptions.Any())
+{
+    <div class="receptions-list">
+        @foreach (var reception in Model.Receptions)
+        {
+            <div class="reception-item">
+                <div class="reception-item-header">
+                    <div class="reception-doctor">
+                        <i class="fas fa-user-md ml-2"></i>
+                        <strong>@reception.DoctorName</strong>
+                    </div>
+                    <span class="reception-status badge badge-@GetStatusBadgeClass(reception.Status)">
+                        @reception.StatusText
+                    </span>
+                </div>
+                <div class="reception-item-body">
+                    <div class="reception-date">
+                        <i class="fas fa-calendar ml-1"></i>
+                        <span>@reception.ReceptionDateShamsi</span>
+                    </div>
+                    @if (reception.TotalAmount.HasValue && reception.TotalAmount.Value > 0)
+                    {
+                        <div class="reception-amount">
+                            <i class="fas fa-money-bill-wave ml-1"></i>
+                            <span>@reception.TotalAmount.Value.ToString("N0") ریال</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (Model.HasMore)
+    {
+        <div class="text-center mt-3">
+            <a href="#" class="btn btn-sm btn-outline-primary">
+                مشاهده همه پذیرش‌ها
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </div>
+    }
+}
+
+@functions {
+    private string GetStatusBadgeClass(string status)
+    {
+        switch (status?.ToUpper())
+        {
+            case "PENDING":
+            case "در انتظار":
+                return "warning";
+            case "INPROGRESS":
+            case "در حال انجام":
+                return "info";
+            case "COMPLETED":
+            case "تکمیل شده":
+                return "success";
+            case "CANCELLED":
+            case "لغو شده":
+                return "danger";
+            default:
+                return "secondary";
+        }
+    }
+}
+

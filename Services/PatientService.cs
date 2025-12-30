@@ -308,13 +308,33 @@ namespace ClinicApp.Services
 
                 if (patientByPhone != null)
                 {
-                    _log.Warning("تلاش برای ثبت‌نام با شماره موبایل تکراری: {PhoneNumber}، آی‌پی: {UserIp}",
-                        normalizedPhoneNumber, userIp);
-                    return ServiceResult.Failed(
-                        "بیماری با این شماره موبایل قبلاً ثبت‌نام کرده است.",
-                        "DUPLICATE_PHONE_NUMBER",
-                        ErrorCategory.Validation,
-                        SecurityLevel.Low);
+                    // ✅ Check if Patient has ApplicationUserId
+                    if (string.IsNullOrEmpty(patientByPhone.ApplicationUserId))
+                    {
+                        // Orphaned Patient - will be handled in NationalCode check
+                        _log.Information("Patient exists with phone but no User. Will be handled in NationalCode check. PhoneNumber: {PhoneNumber}, PatientId: {PatientId}",
+                            normalizedPhoneNumber, patientByPhone.PatientId);
+                    }
+                    else
+                    {
+                        // Patient has User - check if NationalCode matches
+                        if (patientByPhone.NationalCode == normalizedNationalCode)
+                        {
+                            // Same person - will be handled in User check (line 253)
+                            _log.Information("Patient exists with matching NationalCode and phone. Will be handled in User check.");
+                        }
+                        else
+                        {
+                            // Different NationalCode - conflict
+                            _log.Warning("تلاش برای ثبت‌نام با شماره موبایل تکراری (کد ملی متفاوت): {PhoneNumber}، آی‌پی: {UserIp}",
+                                normalizedPhoneNumber, userIp);
+                            return ServiceResult.Failed(
+                                "این شماره موبایل قبلاً در سیستم ثبت شده است. لطفاً با این شماره وارد شوید یا شماره دیگری وارد کنید.",
+                                "DUPLICATE_PHONE_NUMBER",
+                                ErrorCategory.Validation,
+                                SecurityLevel.Low);
+                        }
+                    }
                 }
 
                 // 7. بررسی کد ملی تکراری در جدول Patients
@@ -323,13 +343,211 @@ namespace ClinicApp.Services
 
                 if (patientByNationalCode != null)
                 {
-                    _log.Warning("تلاش برای ثبت‌نام با کد ملی تکراری: {NationalCode}، آی‌پی: {UserIp}",
-                        normalizedNationalCode, userIp);
-                    return ServiceResult.Failed(
-                        "بیماری با این کد ملی قبلاً ثبت‌نام کرده است.",
-                        "DUPLICATE_NATIONAL_CODE",
-                        ErrorCategory.Validation,
-                        SecurityLevel.Low);
+                    // ✅ Patient با این کد ملی وجود دارد - استفاده از اطلاعات موجود و ایجاد/لینک User
+                    _log.Information("Patient با کد ملی {NationalCode} یافت شد. استفاده از اطلاعات موجود و ایجاد/لینک User. PatientId: {PatientId}",
+                        normalizedNationalCode, patientByNationalCode.PatientId);
+                    
+                    ApplicationUser targetUser = null;
+                    
+                    // ✅ بررسی وجود ApplicationUserId
+                    if (string.IsNullOrEmpty(patientByNationalCode.ApplicationUserId))
+                    {
+                        // ✅ Patient بدون User - ایجاد User جدید
+                        _log.Information("Patient بدون User یافت شد. ایجاد User جدید. NationalCode: {NationalCode}, PatientId: {PatientId}",
+                            normalizedNationalCode, patientByNationalCode.PatientId);
+                        
+                        // استفاده از اطلاعات موجود Patient برای User (اولویت با اطلاعات موجود)
+                        var newUserForPatient = new ApplicationUser
+                        {
+                            UserName = normalizedNationalCode,
+                            NationalCode = normalizedNationalCode,
+                            PhoneNumber = normalizedPhoneNumber, // استفاده از شماره جدید
+                            PhoneNumberConfirmed = true,
+                            FirstName = !string.IsNullOrWhiteSpace(patientByNationalCode.FirstName) 
+                                ? patientByNationalCode.FirstName 
+                                : model.FirstName, // اولویت با اطلاعات موجود
+                            LastName = !string.IsNullOrWhiteSpace(patientByNationalCode.LastName) 
+                                ? patientByNationalCode.LastName 
+                                : model.LastName,
+                            Gender = patientByNationalCode.Gender != 0 
+                                ? patientByNationalCode.Gender 
+                                : model.Gender,
+                            Email = !string.IsNullOrWhiteSpace(patientByNationalCode.Email) 
+                                ? patientByNationalCode.Email 
+                                : model.Email,
+                            Address = !string.IsNullOrWhiteSpace(patientByNationalCode.Address) 
+                                ? patientByNationalCode.Address 
+                                : model.Address,
+                            IsActive = true,
+                            IsDeleted = false,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedByUserId = _currentUserService.UserId
+                        };
+
+                        using (var transaction = _context.Database.BeginTransaction())
+                        {
+                            try
+                            {
+                                // Create User in Identity
+                                var identityResult = await _userManager.CreateAsync(newUserForPatient);
+                                if (!identityResult.Succeeded)
+                                {
+                                    transaction.Rollback();
+                                    _log.Warning("Failed to create User for existing Patient. NationalCode: {NationalCode}, Errors: {@Errors}",
+                                        normalizedNationalCode, identityResult.Errors);
+                                    return ServiceResult.FailedWithValidationErrors(
+                                        "خطا در ایجاد حساب کاربری. لطفاً دوباره تلاش کنید.",
+                                        identityResult.Errors.Select(e => new ValidationError("Identity", e)),
+                                        "IDENTITY_VALIDATION_ERROR");
+                                }
+
+                                // Assign Patient role
+                                await _userManager.AddToRoleAsync(newUserForPatient.Id, AppRoles.Patient);
+
+                                targetUser = newUserForPatient;
+                                
+                                // ✅ Link Patient to User
+                                patientByNationalCode.ApplicationUserId = newUserForPatient.Id;
+                                
+                                // ✅ به‌روزرسانی اطلاعات Patient با داده‌های جدید (اگر خالی بود)
+                                if (string.IsNullOrWhiteSpace(patientByNationalCode.FirstName))
+                                    patientByNationalCode.FirstName = model.FirstName;
+                                if (string.IsNullOrWhiteSpace(patientByNationalCode.LastName))
+                                    patientByNationalCode.LastName = model.LastName;
+                                if (string.IsNullOrWhiteSpace(patientByNationalCode.PhoneNumber))
+                                    patientByNationalCode.PhoneNumber = normalizedPhoneNumber;
+                                if (string.IsNullOrWhiteSpace(patientByNationalCode.Email) && !string.IsNullOrWhiteSpace(model.Email))
+                                    patientByNationalCode.Email = model.Email;
+                                if (patientByNationalCode.Gender == 0)
+                                    patientByNationalCode.Gender = model.Gender;
+                                if (string.IsNullOrWhiteSpace(patientByNationalCode.Address) && !string.IsNullOrWhiteSpace(model.Address))
+                                    patientByNationalCode.Address = model.Address;
+                                if (patientByNationalCode.BirthDate == null && !string.IsNullOrWhiteSpace(model.BirthDatePersian))
+                                {
+                                    patientByNationalCode.BirthDate = PersianDateHelper.ToGregorianDate(model.BirthDatePersian);
+                                }
+                                
+                                patientByNationalCode.UpdatedAt = DateTime.UtcNow;
+                                patientByNationalCode.UpdatedByUserId = _currentUserService.UserId;
+                                patientByNationalCode.LastLoginDate = DateTime.UtcNow;
+
+                                await _context.SaveChangesAsync();
+                                transaction.Commit();
+
+                                _log.Information("Successfully created User and linked to existing Patient. NationalCode: {NationalCode}, UserId: {UserId}, PatientId: {PatientId}",
+                                    normalizedNationalCode, newUserForPatient.Id, patientByNationalCode.PatientId);
+
+                                return ServiceResult.Successful(
+                                    "حساب کاربری شما با موفقیت ایجاد و به اطلاعات موجود متصل شد.",
+                                    operationName: "RegisterPatient",
+                                    userId: newUserForPatient.Id,
+                                    userFullName: newUserForPatient.FullName,
+                                    securityLevel: SecurityLevel.Medium);
+                            }
+                            catch (Exception ex)
+                            {
+                                transaction.Rollback();
+                                _log.Error(ex, "Transaction failed while creating User for existing Patient. NationalCode: {NationalCode}",
+                                    normalizedNationalCode);
+                                return ServiceResult.Failed(
+                                    "خطای سیستمی رخ داد. عملیات لغو شد.",
+                                    "TRANSACTION_ERROR",
+                                    ErrorCategory.General,
+                                    SecurityLevel.High);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // ✅ Patient دارای User است - استفاده از User موجود
+                        targetUser = await _userManager.FindByIdAsync(patientByNationalCode.ApplicationUserId);
+                        if (targetUser == null)
+                        {
+                            _log.Warning("Patient دارای ApplicationUserId است اما User یافت نشد. ApplicationUserId: {ApplicationUserId}, PatientId: {PatientId}",
+                                patientByNationalCode.ApplicationUserId, patientByNationalCode.PatientId);
+                            return ServiceResult.Failed(
+                                "خطا در یافتن حساب کاربری مرتبط. لطفاً با پشتیبانی تماس بگیرید.",
+                                "USER_NOT_FOUND",
+                                ErrorCategory.General,
+                                SecurityLevel.Medium);
+                        }
+                        
+                        _log.Information("Patient دارای User موجود است. استفاده از User موجود و به‌روزرسانی اطلاعات. NationalCode: {NationalCode}, UserId: {UserId}",
+                            normalizedNationalCode, targetUser.Id);
+                        
+                        // ✅ به‌روزرسانی اطلاعات Patient با داده‌های جدید (اولویت با اطلاعات موجود)
+                        if (string.IsNullOrWhiteSpace(patientByNationalCode.FirstName))
+                            patientByNationalCode.FirstName = model.FirstName;
+                        if (string.IsNullOrWhiteSpace(patientByNationalCode.LastName))
+                            patientByNationalCode.LastName = model.LastName;
+                        if (string.IsNullOrWhiteSpace(patientByNationalCode.PhoneNumber))
+                            patientByNationalCode.PhoneNumber = normalizedPhoneNumber;
+                        if (string.IsNullOrWhiteSpace(patientByNationalCode.Email) && !string.IsNullOrWhiteSpace(model.Email))
+                            patientByNationalCode.Email = model.Email;
+                        if (patientByNationalCode.Gender == 0)
+                            patientByNationalCode.Gender = model.Gender;
+                        if (string.IsNullOrWhiteSpace(patientByNationalCode.Address) && !string.IsNullOrWhiteSpace(model.Address))
+                            patientByNationalCode.Address = model.Address;
+                        if (patientByNationalCode.BirthDate == null && !string.IsNullOrWhiteSpace(model.BirthDatePersian))
+                        {
+                            patientByNationalCode.BirthDate = PersianDateHelper.ToGregorianDate(model.BirthDatePersian);
+                        }
+                        
+                        // ✅ به‌روزرسانی اطلاعات User (اگر خالی بود)
+                        bool userUpdated = false;
+                        if (string.IsNullOrWhiteSpace(targetUser.FirstName) && !string.IsNullOrWhiteSpace(patientByNationalCode.FirstName))
+                        {
+                            targetUser.FirstName = patientByNationalCode.FirstName;
+                            userUpdated = true;
+                        }
+                        if (string.IsNullOrWhiteSpace(targetUser.LastName) && !string.IsNullOrWhiteSpace(patientByNationalCode.LastName))
+                        {
+                            targetUser.LastName = patientByNationalCode.LastName;
+                            userUpdated = true;
+                        }
+                        if (string.IsNullOrWhiteSpace(targetUser.PhoneNumber))
+                        {
+                            targetUser.PhoneNumber = normalizedPhoneNumber;
+                            targetUser.PhoneNumberConfirmed = true;
+                            userUpdated = true;
+                        }
+                        if (string.IsNullOrWhiteSpace(targetUser.Email) && !string.IsNullOrWhiteSpace(patientByNationalCode.Email))
+                        {
+                            targetUser.Email = patientByNationalCode.Email;
+                            userUpdated = true;
+                        }
+                        if (targetUser.Gender == 0 && patientByNationalCode.Gender != 0)
+                        {
+                            targetUser.Gender = patientByNationalCode.Gender;
+                            userUpdated = true;
+                        }
+                        if (string.IsNullOrWhiteSpace(targetUser.Address) && !string.IsNullOrWhiteSpace(patientByNationalCode.Address))
+                        {
+                            targetUser.Address = patientByNationalCode.Address;
+                            userUpdated = true;
+                        }
+                        
+                        if (userUpdated)
+                        {
+                            await _userManager.UpdateAsync(targetUser);
+                        }
+                        
+                        patientByNationalCode.UpdatedAt = DateTime.UtcNow;
+                        patientByNationalCode.UpdatedByUserId = _currentUserService.UserId;
+                        patientByNationalCode.LastLoginDate = DateTime.UtcNow;
+                        
+                        await _context.SaveChangesAsync();
+                        
+                        _log.Information("Successfully updated existing Patient and User. NationalCode: {NationalCode}, UserId: {UserId}, PatientId: {PatientId}",
+                            normalizedNationalCode, targetUser.Id, patientByNationalCode.PatientId);
+                        
+                        return ServiceResult.Successful(
+                            "اطلاعات شما با موفقیت به‌روزرسانی شد.",
+                            operationName: "RegisterPatient",
+                            userId: targetUser.Id,
+                            userFullName: targetUser.FullName,
+                            securityLevel: SecurityLevel.Medium);
+                    }
                 }
 
                 // 8. ایجاد کاربر جدید در AspNetUsers

@@ -1,0 +1,54 @@
+@model ClinicApp.ViewModels.Account.UserProfileEditViewModel
+@using ClinicApp.Constants
+@{
+    ViewBag.Title = UserProfileConstants.ViewTitles.Profile;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/user-profile.css" rel="stylesheet" />
+}
+
+@* ✅ Enterprise-Grade: استفاده از Reusable Component *@
+@Html.Partial("_UserProfileComponent", Model)
+
+@section Scripts {
+    <script src="~/Content/js/user-profile-component.js"></script>
+    <script>
+        // ✅ Initialize component on page load
+        $(document).ready(function() {
+            var $component = $('[data-profile-component="true"]');
+            if ($component.length > 0) {
+                UserProfileComponent.init($component.closest('.row'), {
+                    apiUrl: '@Url.Action("Profile", "Account")',
+                    formId: 'profile-form'
+                });
+            }
+        });
+
+        // ✅ Display NotificationHelper messages (if any from redirect)
+        @if (TempData["Notification_Success"] != null)
+        {
+            <text>
+            if (window.toastr) {
+                toastr.success('@TempData["Notification_Success"]', '', {
+                    timeOut: 3000,
+                    progressBar: true
+                });
+            }
+            </text>
+        }
+        @if (TempData["Notification_Error"] != null)
+        {
+            <text>
+            if (window.toastr) {
+                toastr.error('@TempData["Notification_Error"]', '', {
+                    timeOut: 5000,
+                    progressBar: true
+                });
+            }
+            </text>
+        }
+    </script>
+}
+

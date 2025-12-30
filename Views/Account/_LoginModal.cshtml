@@ -712,15 +712,34 @@
                 : '@Url.Action("VerifyLoginOtp", "Account")';
             $form.attr('action', actionUrl);
             
+            // ✅ Get returnUrl from hidden input or modal data attribute
+            var returnUrl = $form.find('input[name="returnUrl"]').val();
+            if (!returnUrl) {
+                // Try to get from modal data attribute (set by openLoginModal)
+                var loginModal = document.getElementById('login-modal');
+                if (loginModal) {
+                    returnUrl = loginModal.getAttribute('data-return-url');
+                }
+            }
+            
             showButtonSpinner($button, true);
             $button.prop('disabled', true);
             $('#otp-error').text('');
+            
+            // ✅ Build data with returnUrl for registration flow
+            var formData = $form.serialize();
+            if (state.isRegistrationFlow && returnUrl) {
+                // Ensure returnUrl is included in the request
+                if (formData.indexOf('returnUrl=') === -1) {
+                    formData += '&returnUrl=' + encodeURIComponent(returnUrl);
+                }
+            }
             
             $.ajax({
                 url: $form.attr('action'),
                 method: 'POST',
                 dataType: 'json', // Ensure JSON parsing
-                data: $form.serialize(),
+                data: formData,
                 success: function(response) {
                     if (response.success) {
                         // ✅ Show appropriate success message

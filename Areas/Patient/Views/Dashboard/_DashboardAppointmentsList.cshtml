@@ -1,0 +1,80 @@
+@model ClinicApp.ViewModels.Patient.DashboardAppointmentsSectionViewModel
+
+@if (Model.Appointments != null && Model.Appointments.Any())
+{
+    <div class="appointments-list">
+        @foreach (var appointment in Model.Appointments)
+        {
+            <div class="appointment-item">
+                <div class="appointment-item-header">
+                    <div class="appointment-doctor">
+                        <i class="fas fa-user-md ml-2"></i>
+                        <strong>@appointment.DoctorName</strong>
+                    </div>
+                    <span class="appointment-status badge badge-@GetStatusBadgeClass(appointment.Status)">
+                        @appointment.StatusText
+                    </span>
+                </div>
+                <div class="appointment-item-body">
+                    <div class="appointment-date">
+                        <i class="fas fa-calendar ml-1"></i>
+                        <span>@appointment.AppointmentDateShamsi</span>
+                    </div>
+                    <div class="appointment-time">
+                        <i class="fas fa-clock ml-1"></i>
+                        <span>@appointment.AppointmentTime</span>
+                    </div>
+                    @if (appointment.Price.HasValue && appointment.Price.Value > 0)
+                    {
+                        <div class="appointment-price">
+                            <i class="fas fa-money-bill-wave ml-1"></i>
+                            <span>@appointment.Price.Value.ToString("N0") ریال</span>
+                        </div>
+                    }
+                </div>
+                <div class="appointment-item-footer">
+                    <a href="@Url.Action("Details", "Appointment", new { area = "Patient", id = appointment.AppointmentId })" 
+                       class="btn btn-sm btn-outline-primary" data-ajax="true">
+                        مشاهده جزئیات
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (Model.HasMore)
+    {
+        <div class="text-center mt-3">
+            <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" 
+               class="btn btn-sm btn-outline-primary" data-ajax="true">
+                مشاهده همه نوبت‌ها
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </div>
+    }
+}
+
+@functions {
+    private string GetStatusBadgeClass(string status)
+    {
+        switch (status?.ToUpper())
+        {
+            case "PENDING":
+            case "در انتظار":
+                return "warning";
+            case "CONFIRMED":
+            case "تایید شده":
+                return "info";
+            case "COMPLETED":
+            case "تکمیل شده":
+                return "success";
+            case "CANCELLED":
+            case "لغو شده":
+                return "danger";
+            default:
+                return "secondary";
+        }
+    }
+}
+

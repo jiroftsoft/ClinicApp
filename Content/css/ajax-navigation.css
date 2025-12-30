@@ -1,0 +1,132 @@
+/**
+ * AJAX Navigation Styles - Enterprise-Grade
+ * 
+ * Single Responsibility: استایل‌های navigation بدون رفرش صفحه
+ * Mobile-First, Healthcare Formal UI
+ */
+
+/* ============================================
+   Loading Overlay
+   ============================================ */
+.ajax-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+.ajax-loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   Content Container
+   ============================================ */
+#mainContent {
+    min-height: 60vh;
+    transition: opacity 0.3s ease;
+}
+
+#mainContent.fade-out {
+    opacity: 0;
+}
+
+#mainContent.fade-in {
+    opacity: 1;
+}
+
+/* ============================================
+   AJAX Links
+   ============================================ */
+a[data-ajax="true"] {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+a[data-ajax="true"]:hover {
+    transform: translateX(-2px);
+}
+
+a[data-ajax="true"].loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+a[data-ajax="true"].loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Error States
+   ============================================ */
+.ajax-error {
+    padding: 2rem;
+    text-align: center;
+    color: #e53e3e;
+}
+
+.ajax-error i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+/* ============================================
+   Success States
+   ============================================ */
+.ajax-success {
+    padding: 1rem;
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+    border-radius: 8px;
+    color: #22543d;
+    margin-bottom: 1rem;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 575.98px) {
+    .ajax-loading-overlay {
+        padding: 1rem;
+    }
+    
+    .ajax-loading-overlay .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+

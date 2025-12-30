@@ -137,6 +137,8 @@
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
     <link rel="stylesheet" href="~/Content/css/login.css" />
+    <link rel="stylesheet" href="~/Content/css/user-profile-menu.css" />
+    <link rel="stylesheet" href="~/Content/css/ajax-navigation.css" />
     @RenderSection("styles", required: false)
     <style>
         :root {
@@ -445,7 +447,8 @@
         @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", layoutData.Stories)
     }
 
-    <main role="main">
+    @* ✅ Main Content Container - برای AJAX Navigation *@
+    <main id="mainContent" role="main">
         @RenderBody()
     </main>
 
@@ -721,6 +724,9 @@
             }
         });
     </script>
+    
+    <!-- User Profile Menu - AJAX Navigation -->
+    <script src="~/Content/js/user-profile-menu.js"></script>
     
     <!-- jQuery Validation -->
     @Scripts.Render("~/bundles/jqueryval")

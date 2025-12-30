@@ -1,0 +1,241 @@
+/**
+ * User Profile Module Styles
+ * Single Responsibility: استایل‌های اختصاصی صفحه پروفایل کاربر
+ * 
+ * Mobile-First Design - Healthcare Formal UI
+ * طبق: DEVELOPMENT_CONTRACT.md, AI_ASSISTANT_MASTER_CONTRACT.md
+ */
+
+/* Mobile-First Base Styles (320px+) */
+.profile-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-card .card-header {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem;
+}
+
+.profile-card .card-body {
+    padding: 1rem;
+}
+
+.profile-card .form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.profile-card .form-control,
+.profile-card .form-select {
+    font-size: 0.95rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.profile-card .form-control:focus,
+.profile-card .form-select:focus {
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+    outline: 0;
+}
+
+.profile-card .form-control[readonly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.profile-card .form-text {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.profile-card .btn {
+    font-size: 0.95rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.profile-card .btn-primary {
+    background-color: #2c5aa0;
+    border-color: #2c5aa0;
+}
+
+.profile-card .btn-primary:hover {
+    background-color: #1e3f73;
+    border-color: #1e3f73;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.profile-card .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.profile-card .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Validation Messages */
+.profile-card .text-danger {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.profile-card .alert-danger {
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+}
+
+/* Tablet (768px+) */
+@media (min-width: 768px) {
+    .profile-card .card-header {
+        padding: 1.5rem;
+    }
+
+    .profile-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .profile-card .form-label {
+        font-size: 0.95rem;
+    }
+
+    .profile-card .form-control,
+    .profile-card .form-select {
+        font-size: 1rem;
+        padding: 0.7rem 0.85rem;
+    }
+
+    .profile-card .btn {
+        font-size: 1rem;
+        padding: 0.7rem 1.5rem;
+    }
+}
+
+/* Desktop (992px+) */
+@media (min-width: 992px) {
+    .profile-card .card-header {
+        padding: 2rem;
+    }
+
+    .profile-card .card-body {
+        padding: 2rem;
+    }
+
+    .profile-card .form-label {
+        font-size: 1rem;
+    }
+
+    .profile-card .form-control,
+    .profile-card .form-select {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Large Desktop (1200px+) */
+@media (min-width: 1200px) {
+    .profile-card {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+}
+
+/* Small Mobile (below 576px) */
+@media (max-width: 575.98px) {
+    .profile-card .card-header h4 {
+        font-size: 1.1rem;
+    }
+
+    .profile-card .card-header p {
+        font-size: 0.85rem;
+    }
+
+    .profile-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .profile-card .form-control,
+    .profile-card .form-select {
+        font-size: 0.9rem;
+        padding: 0.55rem 0.65rem;
+    }
+
+    .profile-card .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-card .d-md-flex {
+        flex-direction: column;
+    }
+}
+
+/* Extra Small Mobile (below 375px) */
+@media (max-width: 374.98px) {
+    .profile-card .card-header {
+        padding: 0.75rem;
+    }
+
+    .profile-card .card-body {
+        padding: 0.5rem;
+    }
+
+    .profile-card .form-label {
+        font-size: 0.85rem;
+    }
+
+    .profile-card .form-control,
+    .profile-card .form-select {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.6rem;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .profile-card {
+        border: 2px solid #2c5aa0;
+    }
+
+    .profile-card .form-control,
+    .profile-card .form-select {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .profile-card .form-control,
+    .profile-card .form-select,
+    .profile-card .btn {
+        transition: none;
+    }
+
+    .profile-card .btn-primary:hover {
+        transform: none;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .profile-card .btn {
+        display: none;
+    }
+
+    .profile-card .card-header {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+}
+

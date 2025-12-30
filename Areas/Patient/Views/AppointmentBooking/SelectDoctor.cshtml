@@ -1,6 +1,7 @@
 @model ClinicApp.ViewModels.Patient.DoctorSelectionViewModel
 @{
     ViewBag.Title = "انتخاب پزشک";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
 }
 
 @section Styles {
@@ -59,22 +60,46 @@
             border-width: 0.3rem;
         }
 
-        /* Responsive Design */
-        @@media (max-width: 768px) {
+        /* ✅ Mobile-First: Base styles for mobile */
+        .page-header {
+            padding: 1.5rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .search-card {
+            padding: 1rem;
+        }
+
+        .doctors-container {
+            min-height: 300px;
+        }
+
+        /* ✅ Tablet: 768px and up */
+        @@media (min-width: 768px) {
             .page-header {
-                padding: 1.5rem;
+                padding: 2rem;
             }
 
             .page-header h2 {
-                font-size: 1.5rem;
+                font-size: 2rem;
             }
 
             .search-card {
-                padding: 1rem;
+                padding: 1.5rem;
             }
 
             .doctors-container {
-                min-height: 300px;
+                min-height: 400px;
+            }
+        }
+
+        /* ✅ Desktop: 992px and up */
+        @@media (min-width: 992px) {
+            .page-header {
+                padding: 2.5rem;
             }
         }
 
@@ -180,7 +205,50 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/doctor-selection.js"></script>
+    <script>
+        // ✅ Display NotificationHelper messages
+        $(document).ready(function () {
+            @{
+                var successMsg = ClinicApp.Helpers.NotificationHelper.GetSuccess(TempData);
+                var errorMsg = ClinicApp.Helpers.NotificationHelper.GetError(TempData);
+                var warningMsg = ClinicApp.Helpers.NotificationHelper.GetWarning(TempData);
+                var infoMsg = ClinicApp.Helpers.NotificationHelper.GetInfo(TempData);
+            }
+            @if (successMsg != null)
+            {
+                <text>
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('@Html.Raw(successMsg.Message)', '@Html.Raw(successMsg.Title)');
+                }
+                </text>
+            }
+            @if (errorMsg != null)
+            {
+                <text>
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('@Html.Raw(errorMsg.Message)', '@Html.Raw(errorMsg.Title)');
+                }
+                </text>
+            }
+            @if (warningMsg != null)
+            {
+                <text>
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('@Html.Raw(warningMsg.Message)', '@Html.Raw(warningMsg.Title)');
+                }
+                </text>
+            }
+            @if (infoMsg != null)
+            {
+                <text>
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('@Html.Raw(infoMsg.Message)', '@Html.Raw(infoMsg.Title)');
+                }
+                </text>
+            }
+        });
+    </script>
 }
 

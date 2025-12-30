@@ -540,6 +540,7 @@
     <Compile Include="Constants\DoctorTimeSlotConstants.cs" />
     <Compile Include="Constants\ReceptionConstants.cs" />
     <Compile Include="Constants\ReceptionFormConstants.cs" />
+    <Compile Include="Constants\UserProfileConstants.cs" />
     <Compile Include="Controllers\Api\ClinicController.cs" />
     <Compile Include="Controllers\Api\DoctorController.cs" />
     <Compile Include="Controllers\Api\InsuranceController.cs" />
@@ -813,11 +814,13 @@
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceMonitoringService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\ITariffDomainValidationService.cs" />
+    <Compile Include="Interfaces\IPatientDashboardService.cs" />
     <Compile Include="Interfaces\IReceptionPatientService.cs" />
     <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\IServiceCalculationService.cs" />
     <Compile Include="Interfaces\IServiceRepository.cs" />
+    <Compile Include="Interfaces\IUserProfileService.cs" />
     <Compile Include="Interfaces\IVideoUploadService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Interfaces\Payment\Gateway\Drivers\IGatewayDriver.cs" />
@@ -1409,6 +1412,7 @@
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\NewsletterEmailService.cs" />
     <Compile Include="Services\NewsletterSmsService.cs" />
+    <Compile Include="Services\PatientDashboardService.cs" />
     <Compile Include="Services\Payment\CashierPerformanceService.cs" />
     <Compile Include="Services\Payment\CashierReportService.cs" />
     <Compile Include="Services\Payment\CashSessionAuditService.cs" />
@@ -1584,6 +1588,7 @@
     <Compile Include="Services\UserContext\IUserContextService.cs" />
     <Compile Include="Services\UserContext\UserContextService.cs" />
     <Compile Include="Services\UserManagement\UserManagementService.cs" />
+    <Compile Include="Services\UserProfileService.cs" />
     <Compile Include="Services\VideoUploadService.cs" />
     <Compile Include="Validators\InsuranceTariffValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
@@ -1592,6 +1597,7 @@
     <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="Validators\Reception\EnhancedReceptionValidators.cs" />
     <Compile Include="ViewModels\AboutPageViewModel.cs" />
+    <Compile Include="ViewModels\Account\UserProfileEditViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentDetailsViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentIndexViewModel.cs" />
     <Compile Include="ViewModels\Admin\Security\LoginHistoryIndexViewModel.cs" />
@@ -1720,6 +1726,7 @@
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Patient\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\Patient\AvailableAppointmentsViewModel.cs" />
+    <Compile Include="ViewModels\Patient\DashboardViewModel.cs" />
     <Compile Include="ViewModels\Patient\DateSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\DepartmentInfo.cs" />
     <Compile Include="ViewModels\Patient\DoctorDetailsViewModel.cs" />
@@ -1938,6 +1945,7 @@
     <Content Include="Content\cashier\cashier-dashboard.css" />
     <Content Include="Content\css\about-page.css" />
     <Content Include="Content\css\admin-layout.css" />
+    <Content Include="Content\css\ajax-navigation.css" />
     <Content Include="Content\css\announcements-section.css" />
     <Content Include="Content\css\appointment-views.css" />
     <Content Include="Content\css\blog-section.css" />
@@ -1986,6 +1994,7 @@
     <Content Include="Content\css\modern-services-section.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
+    <Content Include="Content\css\patient-dashboard.css" />
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\quick-appointment-section.css" />
@@ -2004,6 +2013,8 @@
     <Content Include="Content\css\supplementary-tariff-styles.css" />
     <Content Include="Content\css\swiper-font-override.css" />
     <Content Include="Content\css\testimonials-section.css" />
+    <Content Include="Content\css\user-profile-menu.css" />
+    <Content Include="Content\css\user-profile.css" />
     <Content Include="Content\css\value-proposition-section.css" />
     <Content Include="Content\css\video-section.css" />
     <Content Include="Content\favicon.ico" />
@@ -2131,11 +2142,15 @@
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\js\modern-navigation.js" />
     <Content Include="Content\js\notification-helper.js" />
+    <Content Include="Content\js\patient-dashboard.js" />
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
     <Content Include="Content\js\reception-error-handler.js" />
     <Content Include="Content\js\stories-component.js" />
+    <Content Include="Content\js\user-profile-component.js" />
+    <Content Include="Content\js\user-profile-menu.js" />
+    <Content Include="Content\js\user-profile.js" />
     <Content Include="Content\js\video-modal.js" />
     <Content Include="Content\medical-forms.css" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
@@ -4836,6 +4851,21 @@
     <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_BEAST_MODE_LOGIN_OTP_PACK.md" />
     <Content Include="Docs\Knowledge-Base\AI\PROMPTS\CLINICAPP_USER_PROFILE_MODULE_IMPLEMENTATION_PROMPT.md" />
     <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_BEAST_MODE_MODULE_REVIEW_BUILD_PROMPT.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_FLOW_DISCIPLINE_CONTRACT.md" />
+    <Content Include="Docs\Knowledge-Base\AI\QUALITY\CLINICAPP_SCENARIO_MATRIX_TEMPLATE.md" />
+    <Content Include="Docs\Knowledge-Base\AI\ARCH\CLINICAPP_SCENARIO_MATRIX_TEMPLATE.md" />
+    <Content Include="Docs\Knowledge-Base\AI\RELEASE\CLINICAPP_PRODUCTION_READINESS_CHECKLIST.md" />
+    <Content Include="Docs\Knowledge-Base\USER_PROFILE_MODULE_ROADMAP.md" />
+    <Content Include="Docs\Knowledge-Base\FLOW_INTEGRITY_ANALYSIS.md" />
+    <Content Include="Docs\Knowledge-Base\COMPLETE_REGISTRATION_REVIEW.md" />
+    <Content Include="Docs\Knowledge-Base\AI\REVIEW_TEMPLATE_AND_CHECKLIST_ANALYSIS.md" />
+    <Content Include="Docs\Knowledge-Base\USER_PROFILE_COMPONENT_USAGE.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_PATIENT_DASHBOARD_BEAST_ROADMAP_PROMPT.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_VIEW_UI_BEAST_MODE_PROMPT_FINAL.md" />
+    <Content Include="Docs\Knowledge-Base\PATIENT_DASHBOARD_IMPLEMENTATION_SUMMARY.md" />
+    <Content Include="Docs\Knowledge-Base\PATIENT_DASHBOARD_PHASE0_DISCOVERY.md" />
+    <Content Include="Docs\Knowledge-Base\PATIENT_DASHBOARD_PHASE1_SCENARIO_MATRIX.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_MAIN_MENU_MOBILE_OPTIMIZATION_PROMPT.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6293,6 +6323,8 @@
     <Content Include="Views\Payment\CashierReport\RangeReport.cshtml" />
     <Content Include="Views\Shared\_LoginLayout.cshtml" />
     <Content Include="Views\Account\_LoginModal.cshtml" />
+    <Content Include="Views\Account\Profile.cshtml" />
+    <Content Include="Views\Account\_UserProfileComponent.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

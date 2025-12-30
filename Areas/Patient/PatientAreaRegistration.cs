@@ -47,6 +47,22 @@ namespace ClinicApp.Areas.Patient
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             );
 
+            // ✅ Route برای Dashboard
+            context.MapRoute(
+                name: "Patient_Dashboard",
+                url: "Patient/Dashboard/{action}/{id}",
+                defaults: new { controller = "Dashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            );
+
+            // ✅ Route برای Dashboard API
+            context.MapRoute(
+                name: "Patient_API_Dashboard",
+                url: "Patient/Api/PatientDashboard/{action}/{id}",
+                defaults: new { controller = "PatientDashboardApi", action = "GetQuickStats", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
+            );
+
             // ✅ Route برای API Endpoints
             context.MapRoute(
                 name: "Patient_API_Appointments",
@@ -75,7 +91,7 @@ namespace ClinicApp.Areas.Patient
                 "Patient_default",
                 "Patient/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                new { controller = @"^(Appointment|AppointmentBooking)$" }, // ✅ CRITICAL: فقط controllers موجود
+                new { controller = @"^(Appointment|AppointmentBooking|Dashboard)$" }, // ✅ CRITICAL: فقط controllers موجود
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             );
         }
