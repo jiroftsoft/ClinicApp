@@ -68,9 +68,10 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// صفحه انتخاب پزشک
         /// GET: /Patient/Appointment/Book/SelectDoctor
+        /// ✅ CRITICAL FIX: Use [Authorize] instead of manual check to ensure authentication state is synchronized
         /// </summary>
         [HttpGet]
-        [AllowAnonymous] // اجازه دسترسی عمومی
+        [Authorize] // ✅ CRITICAL FIX: Let MVC authorization middleware handle authentication (ensures cookie is validated)
         public async Task<ActionResult> SelectDoctor(int? departmentId, string searchTerm)
         {
             try
@@ -78,14 +79,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Information("درخواست صفحه انتخاب پزشک - DepartmentId: {DepartmentId}, SearchTerm: {SearchTerm}",
                     departmentId, searchTerm);
 
-                // چک کردن اینکه آیا کاربر لاگین کرده است یا نه
-                if (!User.Identity.IsAuthenticated)
-                {
-                    // ذخیره URL فعلی برای redirect بعد از ثبت‌نام
-                    Session["ReturnUrl"] = Request.Url?.ToString();
-                    NotificationHelper.SetInfo(TempData, "برای رزرو نوبت، لطفاً ابتدا ثبت‌نام کنید یا وارد شوید.");
-                    return RedirectToAction("Register", "Account", new { area = "" });
-                }
+                // ✅ CRITICAL FIX: Removed manual authentication check
+                // [Authorize] attribute ensures User.Identity.IsAuthenticated is true before action executes
+                // This prevents race condition between cookie set and validation
 
                 var result = await _bookingService.GetAvailableDoctorsAsync(departmentId, searchTerm);
 
