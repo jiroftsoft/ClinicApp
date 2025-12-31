@@ -620,6 +620,7 @@
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
+    <Compile Include="Filters\AntiForgeryExceptionFilter.cs" />
     <Compile Include="Filters\AppointmentRateLimitAttribute.cs" />
     <Compile Include="Filters\ContactRateLimitAttribute.cs" />
     <Compile Include="Filters\CorrelationIdFilter.cs" />
@@ -4879,6 +4880,14 @@
     <Content Include="Docs\HOME_MODULE_REVIEW_REPORT.md" />
     <Content Include="Docs\Knowledge-Base\HOME_MODULE_BEAST_REVIEW.md" />
     <Content Include="Docs\Knowledge-Base\HOME_MODULE_FULL_REVIEW.md" />
+    <Content Include="Docs\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_MASTER_CONTEX.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PROMPTS\Google-Grade Root Cause Analysis Contract.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PreFlight\PREFLIGHT_CHECKLIST.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PreFlight\Bugfix-Master-Contract.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PreFlight\ClinicApp_Knowledge_Base.md" />
+    <Content Include="Docs\Knowledge-Base\AI\PreFlight\COMPREHENSIVE_DEEP_REVIEW_REPORT.md" />
+    <Content Include="Docs\Knowledge-Base\HOME_MODULE_FIXES_SUMMARY.md" />
+    <Content Include="Docs\HOME_MODULE_FULL_REVIEW_COMPLETE.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

@@ -609,6 +609,10 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             identity.AddClaim(new Claim("FullName", user.FullName ?? ""));
             identity.AddClaim(new Claim("NationalCode", user.NationalCode ?? ""));
 
+            // ✅ FIX: Add FirstName and LastName claims for UI display
+            identity.AddClaim(new Claim("FirstName", user.FirstName ?? ""));
+            identity.AddClaim(new Claim("LastName", user.LastName ?? ""));
+
             var roles = await _userManager.GetRolesAsync(user.Id);
             if (roles.Any())
             {
@@ -616,6 +620,11 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             }
 
             _authenticationManager.SignIn(new AuthenticationProperties { IsPersistent = isPersistent }, identity);
+
+            // ✅ REMOVED: Response.Flush() causes conflict with JsonResult
+            // OWIN manages cookie automatically and Application_PostAuthenticateRequest handles sync
+            // No need to flush - JsonResult will work correctly without it
+            // Cookie will be sent automatically by OWIN middleware
 
             user.LastLoginDate = DateTime.Now;
             await _userManager.UpdateAsync(user);

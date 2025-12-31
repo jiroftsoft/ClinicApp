@@ -1156,6 +1156,33 @@
         // Standardized jQuery Guard Functions (using whenJQ)
         window.jQueryReady = window.whenJQ;
         window.ensureJQuery = window.whenJQ;
+        
+        // ✅ DEBUG: Authentication State Check (برای رفع مشکل نمایش آیکون پروفایل)
+        $(document).ready(function() {
+            // Check if authentication cookie exists
+            var hasAuthCookie = document.cookie.indexOf('ClinicAppAuth=') !== -1;
+            var hasUserMenu = $('#userProfileDropdown').length > 0;
+            var hasLoginButton = $('.btn-login-modern').length > 0;
+            
+            // Log authentication state for debugging
+            if (typeof window.ClinicLogger !== 'undefined') {
+                window.ClinicLogger.log('Auth State Debug', {
+                    hasAuthCookie: hasAuthCookie,
+                    hasUserMenu: hasUserMenu,
+                    hasLoginButton: hasLoginButton,
+                    cookieExists: hasAuthCookie && !hasUserMenu
+                });
+            }
+            
+            // If cookie exists but UI shows login button, reload after short delay
+            // This handles cases where sync hasn't completed yet
+            if (hasAuthCookie && !hasUserMenu && hasLoginButton) {
+                console.warn('⚠️ Authentication cookie exists but UI not synced - reloading in 500ms...');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
+            }
+        });
     </script>
 </body>
 </html>

@@ -2,7 +2,30 @@
 @using ClinicApp.Helpers
 @using ClinicApp.Constants
 @{
+    // ✅ FIX: Multiple checks for authentication state
     var isAuthenticated = Request.IsAuthenticated;
+    
+    // ✅ FALLBACK: Check OWIN context if Request.IsAuthenticated is false
+    // This ensures UI reflects authentication state even if sync hasn't happened yet
+    if (!isAuthenticated && HttpContext.Current?.GetOwinContext() != null)
+    {
+        try
+        {
+            var owinContext = HttpContext.Current.GetOwinContext();
+            var owinUser = owinContext.Authentication?.User;
+            if (owinUser != null && owinUser.Identity.IsAuthenticated)
+            {
+                isAuthenticated = true;
+                // Sync for this request to ensure consistency
+                HttpContext.Current.User = owinUser;
+            }
+        }
+        catch
+        {
+            // Silent fail - fallback to Request.IsAuthenticated
+        }
+    }
+    
     var userName = isAuthenticated ? User.Identity.GetUserName() : string.Empty;
     var firstName = isAuthenticated ? User.Identity.GetFirstName() : string.Empty;
     var lastName = isAuthenticated ? User.Identity.GetLastName() : string.Empty;

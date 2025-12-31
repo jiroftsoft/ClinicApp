@@ -13,11 +13,16 @@ using Serilog.Sinks.SystemConsole.Themes; // ممکن است این using دیگ
 using System;
 using System.Configuration;
 using System.Linq;
+using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using Unity.AspNet.Mvc;
+using Microsoft.Owin;
+using Microsoft.AspNet.Identity.Owin;
+using Microsoft.AspNet.Identity;
+using System.Security.Claims;
 
 namespace ClinicApp
 {
@@ -161,6 +166,42 @@ namespace ClinicApp
                     
                     Response.RedirectPermanent(redirectUrl, true);
                     return;
+                }
+            }
+        }
+
+        protected void Application_PostAuthenticateRequest(object sender, EventArgs e)
+        {
+            // ✅ CRITICAL FIX: Ensure OWIN authentication state syncs with MVC HttpContext
+            // OWIN middleware sets IOwinContext.Authentication.User, but HttpContext.User may not be synced
+            // This is a known issue in ASP.NET MVC5 + OWIN integration
+            if (Request.IsAuthenticated == false && HttpContext.Current?.GetOwinContext() != null)
+            {
+                try
+                {
+                    var owinContext = HttpContext.Current.GetOwinContext();
+                    var owinUser = owinContext.Authentication?.User;
+                    if (owinUser != null && owinUser.Identity.IsAuthenticated)
+                    {
+                        // ✅ DEBUG: Log sync operation for troubleshooting
+                        // GetUserId() is an extension method that works on ClaimsIdentity
+                        var userId = owinUser.Identity is ClaimsIdentity claimsIdentity 
+                            ? claimsIdentity.GetUserId() 
+                            : owinUser.Identity.Name ?? "Unknown";
+                        Log.Information("🔄 Syncing OWIN user to HttpContext - UserId: {UserId}, IsAuthenticated: {IsAuth}", 
+                            userId, owinUser.Identity.IsAuthenticated);
+                        
+                        // Sync OWIN user to HttpContext
+                        HttpContext.Current.User = owinUser;
+                        
+                        // ✅ DEBUG: Verify sync completed
+                        Log.Information("✅ Sync complete - HttpContext.User.IsAuthenticated: {IsAuth}", 
+                            HttpContext.Current.User?.Identity?.IsAuthenticated ?? false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to sync OWIN authentication state to HttpContext");
                 }
             }
         }

@@ -11,6 +11,7 @@
 این پایگاه دانش شامل **تمام اطلاعات ضروری** برای توسعه در پروژه ClinicApp است.
 
 ### ✅ محتویات:
+0. **فایل پیش‌پرواز** 🛡️ - چک‌لیست اجباری قبل از هر پاسخ (جدید! الزامی!)
 1. **قرارداد توسعه** ⚡ - استانداردها و قواعد (الزامی!)
 2. **راهنمای TODO** ⚡ - پیاده‌سازی ماژول جدید (الزامی!)
 3. **متخصص دیباگر** 🔧 - فرآیند رفع خطا (الزامی!)
@@ -18,7 +19,7 @@
 5. **راهنمای کامل Helpers** - 50+ Helper با مثال
 6. **راهنمای کامل Extensions** - 6 Extension با مثال
 7. **Quick Reference** - دسترسی سریع به توابع
-8. **MVC Routing Best Practices** 🛣️ - درس‌های گرانبها از تجربه واقعی (جدید!)
+8. **MVC Routing Best Practices** 🛣️ - درس‌های گرانبها از تجربه واقعی
 
 ---
 
@@ -26,8 +27,18 @@
 
 ### ⚡ این فایل‌ها را باید حفظ باشید:
 
+#### 🛡️ **فوق‌العاده مهم (جدید!):**
+0. **[PREFLIGHT_CHECKLIST.md](../../PREFLIGHT_CHECKLIST.md)** 🛡️
+   - **الزامی قبل از هر پاسخ AI**
+   - STEP 0: AI Guard Check (15 قانون ممنوعه)
+   - STEP 1: 12 دروازه امنیتی
+   - STEP 2: چک‌لیست قبل از پاسخ
+   - STEP 3: Hard Stop در صورت تعارض
+   - STEP 4: ساختار اجباری پاسخ
+   - **این فایل باید قبل از هر پاسخ بررسی شود**
+
 #### 🚨 **فوق‌العاده مهم:**
-0. **[CRITICAL-FINANCIAL-MODULE-CONTRACT.md](CRITICAL-FINANCIAL-MODULE-CONTRACT.md)** 💰
+1. **[CRITICAL-FINANCIAL-MODULE-CONTRACT.md](CRITICAL-FINANCIAL-MODULE-CONTRACT.md)** 💰
    - **الزامی برای هر تغییر در صندوق، پرداخت، گزارش، محاسبات**
    - 10 قانون طلایی
    - **کوچکترین اشتباه = مشکل حقوقی!**
@@ -36,7 +47,7 @@
 
 #### ⚡ **کلیدی:**
 
-1. **[03-Development-Contract-Quick-Guide.md](03-Development-Contract-Quick-Guide.md)**
+2. **[03-Development-Contract-Quick-Guide.md](03-Development-Contract-Quick-Guide.md)**
    - استانداردهای توسعه
    - پالت رنگ
    - Strongly-Typed
@@ -44,13 +55,13 @@
    - SRP Architecture
    - **Checklist نهایی قبل از Commit**
 
-2. **[04-TODO-Implementation-Guide.md](04-TODO-Implementation-Guide.md)**
+3. **[04-TODO-Implementation-Guide.md](04-TODO-Implementation-Guide.md)**
    - 13 Phase پیاده‌سازی
    - Checklist هر Phase
    - زمان‌بندی (12-17 روز)
    - Template آماده
 
-3. **[05-Debugging-Specialist-Contract.md](05-Debugging-Specialist-Contract.md)** 🔧
+4. **[05-Debugging-Specialist-Contract.md](05-Debugging-Specialist-Contract.md)** 🔧
    - فرآیند 6 مرحله‌ای دیباگ
    - تحلیل علت ریشه‌ای (5 Whys)
    - رفع اتمیک (Atomic Fix)
@@ -72,8 +83,12 @@ Docs/Knowledge-Base/
 ├── 04-TODO-Implementation-Guide.md ⚡ الزامی
 ├── 05-Debugging-Specialist-Contract.md 🔧 الزامی
 ├── 06-Quick-Reference.md
-├── 08-MVC-Routing-Best-Practices.md 🛣️ جدید!
+├── 08-MVC-Routing-Best-Practices.md 🛣️
 └── HelperExtensionsGuide.md 🧰 جعبه ابزار (100+ متد)
+
+Root/
+├── PREFLIGHT_CHECKLIST.md 🛡️ الزامی قبل از هر پاسخ AI (جدید!)
+└── ...
 ```
 
 ---
@@ -81,6 +96,7 @@ Docs/Knowledge-Base/
 ## 🚀 نحوه استفاده
 
 ### **⚡ قبل از هر کاری (الزامی!):**
+0. ✅ **[PREFLIGHT_CHECKLIST.md](../../PREFLIGHT_CHECKLIST.md) را بررسی کن** 🛡️ (قبل از هر پاسخ AI)
 1. ✅ **[03-Development-Contract-Quick-Guide.md](03-Development-Contract-Quick-Guide.md) را بخوان**
 2. ✅ **[04-TODO-Implementation-Guide.md](04-TODO-Implementation-Guide.md) را بررسی کن**
 3. ✅ **[05-Debugging-Specialist-Contract.md](05-Debugging-Specialist-Contract.md) را مطالعه کن** 🔧
@@ -439,6 +455,7 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 ## 📝 چک‌لیست قبل از کد زدن
 
 ### ✅ **قبل از شروع:**
+- [ ] **فایل پیش‌پرواز (PREFLIGHT_CHECKLIST.md) را بررسی کردم** 🛡️
 - [ ] **قرارداد توسعه (03) را خواندم**
 - [ ] **راهنمای TODO (04) را بررسی کردم**
 - [ ] **متخصص دیباگر (05) را مطالعه کردم** 🔧
@@ -485,6 +502,7 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 
 ### **برای یادگیری:**
 ```
+0. PREFLIGHT_CHECKLIST.md 🛡️ (قبل از هر پاسخ AI - الزامی!)
 1. README (این فایل) ✅
 2. 03-Development-Contract-Quick-Guide.md ⚡
 3. 04-TODO-Implementation-Guide.md ⚡
@@ -534,6 +552,7 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 **اگر تا اینجا خواندی، آماده‌ای برای شروع! 🚀**
 
 **یادت باشه:**
+- 🛡️ فایل پیش‌پرواز (PREFLIGHT_CHECKLIST.md) = الزامی قبل از هر پاسخ AI!
 - ⚡ قرارداد توسعه (03) = الزامی!
 - ⚡ راهنمای TODO (04) = الزامی برای ماژول جدید!
 - 🔧 متخصص دیباگر (05) = الزامی برای رفع خطا!
@@ -542,8 +561,8 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 
 ---
 
-**نسخه:** 2.1.0  
-**آخرین به‌روزرسانی:** 1404/10/05 (اضافه شدن جعبه ابزار 🧰)  
+**نسخه:** 2.2.0  
+**آخرین به‌روزرسانی:** 1404/11/07 (اضافه شدن فایل پیش‌پرواز 🛡️)  
 **وضعیت:** ✅ **فعال و به‌روز**
 
 ---

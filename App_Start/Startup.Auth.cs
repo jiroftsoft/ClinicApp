@@ -34,7 +34,7 @@ namespace ClinicApp
                 CookieName = "ClinicAppAuth",
                 CookieSecure = cookieSecure, // HTTPS Only in Production, HTTP allowed in Development
                 CookieHttpOnly = true, // Prevent XSS - Security Requirement
-                CookieSameSite = SameSiteMode.Strict, // CSRF Protection - Security Requirement
+                CookieSameSite = isDevelopment ? Microsoft.Owin.SameSiteMode.Lax : Microsoft.Owin.SameSiteMode.Strict, // CSRF Protection - Security Requirement (Lax in Dev allows redirects, Strict in Production)
                 ExpireTimeSpan = TimeSpan.FromHours(8), // Session Timeout - Security Requirement
                 SlidingExpiration = true, // Extend session on activity - Security Requirement
                 Provider = new CookieAuthenticationProvider
