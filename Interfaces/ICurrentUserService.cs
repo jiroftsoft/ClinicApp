@@ -147,7 +147,7 @@ public interface ICurrentUserService
     /// دریافت اطلاعات بیمار کاربر جاری (در صورتی که کاربر بیمار باشد)
     /// </summary>
     /// <returns>اطلاعات بیمار یا null</returns>
-    Task<Patient> GetPatientInfoAsync();
+    Task<Models.Entities.Patient.Patient> GetPatientInfoAsync();
 
     /// <summary>
     /// دریافت شناسه کاربر سیستم برای استفاده در محیط‌های پس‌زمینه

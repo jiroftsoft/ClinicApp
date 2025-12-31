@@ -51,6 +51,7 @@ using ClinicApp.Services.Triage;
 using ClinicApp.Services;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Repositories.Patient;
+using ClinicApp.Interfaces.Repositories;
 using ClinicApp.Repositories.Reception;
 using ClinicApp.Services.Finance;
 using ClinicApp.Services.Reception;
@@ -335,6 +336,13 @@ namespace ClinicApp
                 container.RegisterType<IPatientService, PatientService>(new HierarchicalLifetimeManager());
                 container.RegisterType<Interfaces.Repositories.IPatientRepository, PatientRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IPatientDashboardService, PatientDashboardService>(new PerRequestLifetimeManager());
+                
+                // ✅ EMR Module - Medical Record Service & Repository
+                container.RegisterType<Interfaces.Repositories.IMedicalRecordRepository, Repositories.Patient.MedicalRecordRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientMedicalRecordService, Services.Patient.MedicalRecordService>(new PerRequestLifetimeManager());
+                
+                // ✅ Document Upload Service (for EMR attachments)
+                container.RegisterType<IDocumentUploadService, DocumentUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<IReceptionWorkflowService, ReceptionWorkflowService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());

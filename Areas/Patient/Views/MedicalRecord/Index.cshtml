@@ -1,0 +1,39 @@
+@model ClinicApp.ViewModels.Patient.MedicalRecord.MedicalRecordIndexViewModel
+@{
+    ViewBag.Title = "پرونده الکترونیک سلامت";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+}
+
+@section PageHeader {
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-file-medical-alt ml-2"></i>
+                        پرونده الکترونیک سلامت
+                    </h1>
+                    <p class="page-subtitle text-muted">
+                        مشاهده و مدیریت اطلاعات پزشکی شما
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div id="medicalRecordContainer" class="medical-record-container">
+    @Html.Partial("_MedicalRecordShell", Model)
+</div>
+
+<!-- ✅ Medical History Modal -->
+@Html.Partial("_MedicalHistoryModal", new ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryCreateEditViewModel())
+
+@section Styles {
+    <link href="~/Content/css/medical-record.css" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="~/Content/js/medical-record.js"></script>
+}
+

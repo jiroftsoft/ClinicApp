@@ -1,0 +1,194 @@
+@model ClinicApp.ViewModels.Patient.MedicalRecord.MedicalRecordIndexViewModel
+@{
+    Layout = null; // ✅ Partial View - No Layout
+}
+
+<!-- ✅ Medical Record Shell - Component-Based Architecture -->
+<div id="medicalRecordShell" class="medical-record-shell">
+    
+    <!-- ✅ Header Section -->
+    <section class="medical-record-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-8">
+                    <h2 class="medical-record-title">
+                        <i class="fas fa-file-medical-alt ml-2"></i>
+                        پرونده الکترونیک سلامت
+                    </h2>
+                    <p class="medical-record-subtitle text-muted">
+                        مشاهده و مدیریت اطلاعات پزشکی شما
+                    </p>
+                </div>
+                <div class="col-12 col-md-4 text-left text-md-right mt-3 mt-md-0">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary btn-sm refresh-medical-record">
+                            <i class="fas fa-sync-alt ml-1"></i>
+                            به‌روزرسانی
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="@Url.Action("ExportPdf", "MedicalRecord", new { area = "Patient" })" target="_blank">
+                                <i class="fas fa-file-pdf ml-1"></i>
+                                خروجی PDF
+                            </a>
+                            <a class="dropdown-item" href="@Url.Action("ExportExcel", "MedicalRecord", new { area = "Patient" })">
+                                <i class="fas fa-file-excel ml-1"></i>
+                                خروجی Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ✅ Medical History Section (AJAX Loaded) -->
+    <section class="medical-record-sections">
+        <div class="container-fluid">
+            <div class="row">
+                
+                <!-- ✅ Component: Medical History -->
+                <div class="col-12 mb-4">
+                    <div class="medical-record-card" data-medical-record-section="medicalHistory">
+                        <div class="medical-record-card-header">
+                            <h3 class="medical-record-card-title">
+                                <i class="fas fa-history ml-2"></i>
+                                تاریخچه پزشکی
+                            </h3>
+                            <button class="btn btn-link btn-sm add-medical-history" data-toggle="modal" data-target="#medicalHistoryModal">
+                                <i class="fas fa-plus ml-1"></i>
+                                افزودن
+                            </button>
+                        </div>
+                        <div class="medical-record-card-body">
+                            <!-- ✅ Loading State -->
+                            <div class="medical-record-section-loading">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <span class="ml-2">در حال بارگذاری تاریخچه پزشکی...</span>
+                            </div>
+                            <!-- ✅ Content will be loaded via AJAX -->
+                            <div class="medical-record-section-content" style="display: none;"></div>
+                            <!-- ✅ Empty State -->
+                            <div class="medical-record-section-empty" style="display: none;">
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-file-medical fa-2x mb-2"></i>
+                                    <br>
+                                    هیچ تاریخچه پزشکی ثبت نشده است
+                                    <br>
+                                    <button class="btn btn-primary btn-sm mt-3 add-medical-history" data-toggle="modal" data-target="#medicalHistoryModal">
+                                        <i class="fas fa-plus ml-1"></i>
+                                        افزودن تاریخچه پزشکی
+                                    </button>
+                                </p>
+                            </div>
+                            <!-- ✅ Error State -->
+                            <div class="medical-record-section-error" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    <span class="error-message">خطا در بارگذاری</span>
+                                    <button class="btn btn-sm btn-outline-danger mt-2 reload-section" data-section="medicalHistory">
+                                        تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✅ Component: Appointments (AJAX Loaded) -->
+                <div class="col-12 col-lg-6 mb-4">
+                    <div class="medical-record-card" data-medical-record-section="appointments">
+                        <div class="medical-record-card-header">
+                            <h3 class="medical-record-card-title">
+                                <i class="fas fa-calendar-check ml-2"></i>
+                                نوبت‌های پزشکی
+                            </h3>
+                            <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" 
+                               class="btn btn-link btn-sm" data-ajax="true">
+                                مشاهده همه
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </div>
+                        <div class="medical-record-card-body">
+                            <!-- ✅ Loading State -->
+                            <div class="medical-record-section-loading">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <span class="ml-2">در حال بارگذاری نوبت‌ها...</span>
+                            </div>
+                            <!-- ✅ Content will be loaded via AJAX -->
+                            <div class="medical-record-section-content" style="display: none;"></div>
+                            <!-- ✅ Empty State -->
+                            <div class="medical-record-section-empty" style="display: none;">
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                                    <br>
+                                    هیچ نوبتی یافت نشد
+                                </p>
+                            </div>
+                            <!-- ✅ Error State -->
+                            <div class="medical-record-section-error" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    <span class="error-message">خطا در بارگذاری</span>
+                                    <button class="btn btn-sm btn-outline-danger mt-2 reload-section" data-section="appointments">
+                                        تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✅ Component: Receptions (AJAX Loaded) -->
+                <div class="col-12 col-lg-6 mb-4">
+                    <div class="medical-record-card" data-medical-record-section="receptions">
+                        <div class="medical-record-card-header">
+                            <h3 class="medical-record-card-title">
+                                <i class="fas fa-file-medical ml-2"></i>
+                                پذیرش‌ها
+                            </h3>
+                        </div>
+                        <div class="medical-record-card-body">
+                            <!-- ✅ Loading State -->
+                            <div class="medical-record-section-loading">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <span class="ml-2">در حال بارگذاری پذیرش‌ها...</span>
+                            </div>
+                            <!-- ✅ Content will be loaded via AJAX -->
+                            <div class="medical-record-section-content" style="display: none;"></div>
+                            <!-- ✅ Empty State -->
+                            <div class="medical-record-section-empty" style="display: none;">
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-file-medical fa-2x mb-2"></i>
+                                    <br>
+                                    هیچ پذیرشی یافت نشد
+                                </p>
+                            </div>
+                            <!-- ✅ Error State -->
+                            <div class="medical-record-section-error" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    <span class="error-message">خطا در بارگذاری</span>
+                                    <button class="btn btn-sm btn-outline-danger mt-2 reload-section" data-section="receptions">
+                                        تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+

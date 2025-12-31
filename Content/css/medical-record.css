@@ -1,0 +1,342 @@
+/**
+ * Medical Record Styles
+ * ✅ رسمی و اداری - طبق قراردادهای طراحی درمانی
+ * Component-Based, Responsive, RTL Support
+ * ضد گلوله - بدون رنگ‌های جیق - بدون انیمیشن‌های سنگین
+ */
+
+/* ✅ Container */
+.medical-record-container {
+    min-height: 400px;
+}
+
+.medical-record-shell {
+    padding: 0;
+}
+
+/* ✅ Header - رسمی و اداری */
+.medical-record-header {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-bottom: 2px solid #495057;
+    color: #212529;
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+}
+
+.medical-record-title {
+    color: #212529;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.medical-record-subtitle {
+    color: #6c757d;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+/* ✅ Card - رسمی و اداری */
+.medical-record-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: 3px solid #495057;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.medical-record-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+}
+
+.medical-record-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+}
+
+.medical-record-card-body {
+    padding: 1.5rem;
+}
+
+/* ✅ Section States */
+.medical-record-section-loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.medical-record-section-content {
+    min-height: 50px;
+}
+
+.medical-record-section-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.medical-record-section-error {
+    padding: 1rem;
+}
+
+/* ✅ Medical History Item - رسمی و اداری */
+.medical-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.medical-history-item {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-right: 3px solid #495057;
+    padding: 1rem;
+}
+
+.medical-history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.medical-history-item-title h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.medical-history-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.medical-history-item-body {
+    margin-top: 1rem;
+}
+
+.medical-history-description {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.medical-history-details {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.medical-history-details .row > div {
+    margin-bottom: 0.5rem;
+}
+
+.medical-history-details strong {
+    color: #495057;
+    margin-left: 0.5rem;
+}
+
+.medical-history-meta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ✅ Badge - رسمی و اداری */
+.badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.875em;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+.badge-primary {
+    background-color: #495057;
+    color: white;
+    border: 1px solid #343a40;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid #5a6268;
+}
+
+/* ✅ Buttons - رسمی و اداری */
+.btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0;
+    border: 1px solid #dee2e6;
+}
+
+.btn-primary {
+    background-color: #495057;
+    border-color: #495057;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #343a40;
+    border-color: #343a40;
+    color: white;
+}
+
+.btn-outline-primary {
+    border: 1px solid #495057;
+    color: #495057;
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: #495057;
+    color: white;
+}
+
+.btn-outline-danger {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* ✅ Responsive */
+@media (max-width: 768px) {
+    .medical-record-header {
+        padding: 1.5rem 0;
+    }
+    
+    .medical-record-title {
+        font-size: 1.5rem;
+    }
+    
+    .medical-record-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .medical-history-item-header {
+        flex-direction: column;
+    }
+    
+    .medical-history-item-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* ✅ RTL Support */
+[dir="rtl"] .medical-record-card-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .medical-history-item-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .medical-history-item-actions {
+    flex-direction: row-reverse;
+}
+
+/* ✅ Loading Animation - ساده و رسمی */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-border {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    vertical-align: text-bottom;
+    border: 0.25em solid #dee2e6;
+    border-right-color: #495057;
+    border-radius: 0;
+    animation: spin 0.75s linear infinite;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+}
+
+/* ✅ Modal - رسمی و اداری */
+.modal-content {
+    border-radius: 0;
+    border: 1px solid #dee2e6;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #495057;
+    padding: 1rem 1.25rem;
+}
+
+.modal-title {
+    color: #212529;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.25rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+    background-color: #f8f9fa;
+}
+
+/* ✅ Form Controls - رسمی و اداری */
+.form-control {
+    border-radius: 0;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.custom-file-label {
+    border-radius: 0;
+    border: 1px solid #ced4da;
+}
+
+.custom-file-input:focus ~ .custom-file-label {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* ✅ Attachment Preview - رسمی */
+.attachment-preview-item {
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-right: 3px solid #495057;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+

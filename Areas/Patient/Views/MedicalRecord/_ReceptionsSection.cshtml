@@ -1,0 +1,80 @@
+@model List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalRecordReceptionViewModel>
+@{
+    Layout = null;
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="receptions-empty">
+        <p class="text-muted text-center py-4">
+            <i class="fas fa-file-medical fa-2x mb-2"></i>
+            <br>
+            هیچ پذیرشی یافت نشد
+        </p>
+    </div>
+}
+else
+{
+    <div class="receptions-list">
+        @foreach (var reception in Model)
+        {
+            <div class="reception-item" data-reception-id="@reception.ReceptionId">
+                <div class="reception-item-header">
+                    <div class="reception-item-title">
+                        <h4>
+                            <span class="badge badge-primary ml-2">@reception.StatusText</span>
+                            @reception.ReceptionNumber
+                        </h4>
+                        <small class="text-muted">@reception.DoctorName</small>
+                    </div>
+                </div>
+                <div class="reception-item-body">
+                    <div class="reception-details">
+                        <div class="row">
+                            <div class="col-12 col-md-6">
+                                <strong>تاریخ:</strong>
+                                <span>@reception.ReceptionDateShamsi</span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <strong>ساعت:</strong>
+                                <span>@reception.ReceptionTime</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(reception.DepartmentName))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>بخش:</strong>
+                                    <span>@reception.DepartmentName</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(reception.ClinicName))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>کلینیک:</strong>
+                                    <span>@reception.ClinicName</span>
+                                </div>
+                            }
+                            <div class="col-12 col-md-6">
+                                <strong>جمع کل:</strong>
+                                <span>@reception.TotalAmount.ToString("N0") تومان</span>
+                            </div>
+                            @if (reception.PatientShare > 0)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>سهم بیمار:</strong>
+                                    <span>@reception.PatientShare.ToString("N0") تومان</span>
+                                </div>
+                            }
+                            @if (reception.IsEmergency)
+                            {
+                                <div class="col-12">
+                                    <span class="badge badge-danger">اورژانس</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+

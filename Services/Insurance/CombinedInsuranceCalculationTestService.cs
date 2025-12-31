@@ -479,25 +479,25 @@ namespace ClinicApp.Services.Insurance
 
         #region Helper Methods
 
-        private async Task<Patient> GetTestPatientWithBothInsurances()
+        private async Task<Models.Entities.Patient.Patient> GetTestPatientWithBothInsurances()
         {
             return await _context.Patients
                 .FirstOrDefaultAsync(p => !p.IsDeleted && p.PatientInsurances.Any(pi => pi.IsPrimary && !pi.IsDeleted));
         }
 
-        private async Task<Patient> GetTestPatientWithPrimaryInsuranceOnly()
+        private async Task<Models.Entities.Patient.Patient> GetTestPatientWithPrimaryInsuranceOnly()
         {
             return await _context.Patients
                 .FirstOrDefaultAsync(p => !p.IsDeleted && p.PatientInsurances.Any(pi => pi.IsPrimary && !pi.IsDeleted));
         }
 
-        private async Task<Patient> GetTestPatientWithSupplementaryInsuranceOnly()
+        private async Task<Models.Entities.Patient.Patient> GetTestPatientWithSupplementaryInsuranceOnly()
         {
             return await _context.Patients
                 .FirstOrDefaultAsync(p => !p.IsDeleted && p.PatientInsurances.Any(pi => !pi.IsPrimary && !pi.IsDeleted));
         }
 
-        private async Task<Patient> GetTestPatientWithFreeAndSupplementaryInsurance()
+        private async Task<Models.Entities.Patient.Patient> GetTestPatientWithFreeAndSupplementaryInsurance()
         {
             return await _context.Patients
                 .FirstOrDefaultAsync(p => !p.IsDeleted && p.PatientInsurances.Any(pi => !pi.IsDeleted));

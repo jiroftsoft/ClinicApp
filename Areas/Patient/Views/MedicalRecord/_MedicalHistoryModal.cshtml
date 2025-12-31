@@ -1,0 +1,117 @@
+@model ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryCreateEditViewModel
+@{
+    Layout = null;
+}
+
+<!-- ✅ Medical History Modal - Create/Edit - رسمی و اداری -->
+<div class="modal fade" id="medicalHistoryModal" tabindex="-1" role="dialog" aria-labelledby="medicalHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="medicalHistoryModalLabel">
+                    <i class="fas fa-file-medical ml-2"></i>
+                    <span id="modalTitle">افزودن تاریخچه پزشکی</span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="بستن" style="opacity: 0.7;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="medicalHistoryForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="MedicalHistoryId" name="MedicalHistoryId" value="@(Model?.MedicalHistoryId)" />
+                    
+                    <div class="form-group">
+                        <label for="Type">نوع تاریخچه پزشکی <span class="text-danger">*</span></label>
+                        <select class="form-control" id="Type" name="Type" required>
+                            <option value="">-- انتخاب کنید --</option>
+                            <option value="0">بیماری</option>
+                            <option value="1">جراحی</option>
+                            <option value="2">آسیب</option>
+                            <option value="3">دارو</option>
+                            <option value="4">آلرژی</option>
+                            <option value="5">سابقه خانوادگی</option>
+                            <option value="6">سایر</option>
+                        </select>
+                        <span class="text-danger field-validation-error" data-valmsg-for="Type"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="Description">توضیحات</label>
+                        <textarea class="form-control" id="Description" name="Description" rows="4" maxlength="2000"></textarea>
+                        <span class="text-danger field-validation-error" data-valmsg-for="Description"></span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="StartDate">تاریخ شروع</label>
+                                <input type="date" class="form-control" id="StartDate" name="StartDate" />
+                                <span class="text-danger field-validation-error" data-valmsg-for="StartDate"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="EndDate">تاریخ پایان</label>
+                                <input type="date" class="form-control" id="EndDate" name="EndDate" />
+                                <span class="text-danger field-validation-error" data-valmsg-for="EndDate"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Severity">شدت</label>
+                                <input type="text" class="form-control" id="Severity" name="Severity" maxlength="50" />
+                                <span class="text-danger field-validation-error" data-valmsg-for="Severity"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" checked />
+                                    <label class="form-check-label" for="IsActive">فعال</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="DoctorName">نام پزشک معالج</label>
+                        <input type="text" class="form-control" id="DoctorName" name="DoctorName" maxlength="100" />
+                        <span class="text-danger field-validation-error" data-valmsg-for="DoctorName"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="MedicalCenter">مرکز درمانی</label>
+                        <input type="text" class="form-control" id="MedicalCenter" name="MedicalCenter" maxlength="200" />
+                        <span class="text-danger field-validation-error" data-valmsg-for="MedicalCenter"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="Attachments">فایل‌های ضمیمه</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="Attachments" name="Attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                            <label class="custom-file-label" for="Attachments">انتخاب فایل...</label>
+                        </div>
+                        <small class="form-text text-muted">حداکثر 5 فایل، هر فایل حداکثر 5 مگابایت</small>
+                        <div id="attachmentsPreview" class="mt-2"></div>
+                        <span class="text-danger field-validation-error" data-valmsg-for="Attachments"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times ml-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveMedicalHistoryBtn">
+                        <i class="fas fa-save ml-1"></i>
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

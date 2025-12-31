@@ -1,0 +1,101 @@
+@model List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryViewModel>
+@{
+    Layout = null;
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="medical-history-empty">
+        <p class="text-muted text-center py-4">
+            <i class="fas fa-file-medical fa-2x mb-2"></i>
+            <br>
+            هیچ تاریخچه پزشکی ثبت نشده است
+        </p>
+    </div>
+}
+else
+{
+    <div class="medical-history-list">
+        @foreach (var history in Model)
+        {
+            <div class="medical-history-item" data-medical-history-id="@history.MedicalHistoryId">
+                <div class="medical-history-item-header">
+                    <div class="medical-history-item-title">
+                        <h4>
+                            <span class="badge badge-primary ml-2">@history.TypeText</span>
+                            @history.Title
+                        </h4>
+                        @if (!history.IsActive)
+                        {
+                            <span class="badge badge-secondary">غیرفعال</span>
+                        }
+                    </div>
+                    <div class="medical-history-item-actions">
+                        <button class="btn btn-sm btn-outline-primary edit-medical-history" 
+                                data-medical-history-id="@history.MedicalHistoryId">
+                            <i class="fas fa-edit ml-1"></i>
+                            ویرایش
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-medical-history" 
+                                data-medical-history-id="@history.MedicalHistoryId">
+                            <i class="fas fa-trash ml-1"></i>
+                            حذف
+                        </button>
+                    </div>
+                </div>
+                <div class="medical-history-item-body">
+                    @if (!string.IsNullOrWhiteSpace(history.Description))
+                    {
+                        <p class="medical-history-description">@history.Description</p>
+                    }
+                    <div class="medical-history-details">
+                        <div class="row">
+                            @if (history.StartDate.HasValue)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>تاریخ شروع:</strong>
+                                    <span>@history.StartDateShamsi</span>
+                                </div>
+                            }
+                            @if (history.EndDate.HasValue)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>تاریخ پایان:</strong>
+                                    <span>@history.EndDateShamsi</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(history.DoctorName))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>پزشک معالج:</strong>
+                                    <span>@history.DoctorName</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(history.MedicalCenter))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>مرکز درمانی:</strong>
+                                    <span>@history.MedicalCenter</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(history.Severity))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>شدت:</strong>
+                                    <span>@history.Severity</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="medical-history-meta">
+                        <small class="text-muted">
+                            <i class="fas fa-clock ml-1"></i>
+                            ثبت شده در: @history.CreatedAtShamsi
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+

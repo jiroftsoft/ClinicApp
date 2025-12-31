@@ -535,6 +535,8 @@
     <Compile Include="Areas\Patient\Controllers\AppointmentBookingController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentController.cs" />
     <Compile Include="Areas\Patient\Controllers\Base\BasePatientController.cs" />
+    <Compile Include="Areas\Patient\Controllers\DashboardController.cs" />
+    <Compile Include="Areas\Patient\Controllers\MedicalRecordController.cs" />
     <Compile Include="Areas\Patient\PatientAreaRegistration.cs" />
     <Compile Include="Constants\DoctorScheduleConstants.cs" />
     <Compile Include="Constants\DoctorTimeSlotConstants.cs" />
@@ -619,6 +621,7 @@
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Factories\Patient\MedicalRecordFactory.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
     <Compile Include="Filters\AntiForgeryExceptionFilter.cs" />
     <Compile Include="Filters\AppointmentRateLimitAttribute.cs" />
@@ -816,6 +819,7 @@
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\ITariffDomainValidationService.cs" />
     <Compile Include="Interfaces\IPatientDashboardService.cs" />
+    <Compile Include="Interfaces\IPatientMedicalRecordService.cs" />
     <Compile Include="Interfaces\IReceptionPatientService.cs" />
     <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
@@ -860,6 +864,7 @@
     <Compile Include="Interfaces\Reception\IReceptionWorkflowService.cs" />
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IMedicalRecordRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
     <Compile Include="Interfaces\Security\ILoginHistoryService.cs" />
     <Compile Include="Interfaces\UserManagement\IUserManagementService.cs" />
@@ -1043,6 +1048,7 @@
     <Compile Include="Repositories\CMS\StoryRepository.cs" />
     <Compile Include="Repositories\CMS\TestimonialRepository.cs" />
     <Compile Include="Repositories\CMS\VideoRepository.cs" />
+    <Compile Include="Repositories\Patient\MedicalRecordRepository.cs" />
     <Compile Include="Repositories\Patient\PatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
@@ -1414,6 +1420,7 @@
     <Compile Include="Services\NewsletterEmailService.cs" />
     <Compile Include="Services\NewsletterSmsService.cs" />
     <Compile Include="Services\PatientDashboardService.cs" />
+    <Compile Include="Services\Patient\MedicalRecordService.cs" />
     <Compile Include="Services\Payment\CashierPerformanceService.cs" />
     <Compile Include="Services\Payment\CashierReportService.cs" />
     <Compile Include="Services\Payment\CashSessionAuditService.cs" />
@@ -1732,6 +1739,12 @@
     <Compile Include="ViewModels\Patient\DepartmentInfo.cs" />
     <Compile Include="ViewModels\Patient\DoctorDetailsViewModel.cs" />
     <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordAppointmentViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordIndexViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordReceptionViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordTriageViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
     <Compile Include="ViewModels\Patient\PaymentErrorViewModel.cs" />
     <Compile Include="ViewModels\Patient\PaymentSuccessViewModel.cs" />
@@ -1989,6 +2002,7 @@
     <Content Include="Content\css\medical-equipment-section.css" />
     <Content Include="Content\css\medical-footer.css" />
     <Content Include="Content\css\medical-forms.css" />
+    <Content Include="Content\css\medical-record.css" />
     <Content Include="Content\css\medical-select2.css" />
     <Content Include="Content\css\medical-services-section.css" />
     <Content Include="Content\css\medical-sidebar.css" />
@@ -2145,6 +2159,7 @@
     <Content Include="Content\js\login-modal.js" />
     <Content Include="Content\js\login-otp-manager.js" />
     <Content Include="Content\js\medical-debug.js" />
+    <Content Include="Content\js\medical-record.js" />
     <Content Include="Content\js\medical-sidebar.js" />
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\js\modern-navigation.js" />
@@ -4888,6 +4903,21 @@
     <Content Include="Docs\Knowledge-Base\AI\PreFlight\COMPREHENSIVE_DEEP_REVIEW_REPORT.md" />
     <Content Include="Docs\Knowledge-Base\HOME_MODULE_FIXES_SUMMARY.md" />
     <Content Include="Docs\HOME_MODULE_FULL_REVIEW_COMPLETE.md" />
+    <Content Include="Docs\EMR_MODULE_COMPREHENSIVE_REVIEW.md" />
+    <Content Include="Docs\EMR_MODULE_DETAILED_IMPLEMENTATION_PLAN.md" />
+    <Content Include="Areas\Patient\Views\Dashboard\Index.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_DashboardAppointmentsList.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_DashboardQuickStats.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_DashboardReceptionsList.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_DashboardShell.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\Index.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\_AppointmentsSection.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\_MedicalHistorySection.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\_MedicalRecordShell.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\_ReceptionsSection.cshtml" />
+    <Content Include="Areas\Patient\Views\MedicalRecord\_MedicalHistoryModal.cshtml" />
+    <Content Include="Docs\EMR_DATABASE_TABLES_VERIFICATION.md" />
+    <Content Include="Docs\EMR_PHASE4_EXPORT_AND_UI_UPDATE.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

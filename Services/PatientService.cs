@@ -69,7 +69,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// تبدیل مدل بیمار به PatientIndexViewModel با پشتیبانی کامل از تقویم شمسی
         /// </summary>
-        private PatientIndexViewModel ConvertToPatientIndexViewModel(Patient patient)
+        private PatientIndexViewModel ConvertToPatientIndexViewModel(Models.Entities.Patient.Patient patient)
         {
             if (patient == null)
                 return null;
@@ -97,7 +97,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// تبدیل مدل بیمار به PatientDetailsViewModel با پشتیبانی کامل از تقویم شمسی
         /// </summary>
-        private PatientDetailsViewModel ConvertToPatientDetailsViewModel(Patient patient)
+        private PatientDetailsViewModel ConvertToPatientDetailsViewModel(Models.Entities.Patient.Patient patient)
         {
             if (patient == null)
                 return null;
@@ -138,7 +138,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// تبدیل مدل بیمار به PatientCreateEditViewModel با پشتیبانی کامل از تقویم شمسی
         /// </summary>
-        private PatientCreateEditViewModel ConvertToPatientCreateEditViewModel(Patient patient)
+        private PatientCreateEditViewModel ConvertToPatientCreateEditViewModel(Models.Entities.Patient.Patient patient)
         {
             if (patient == null)
                 return null;
@@ -171,7 +171,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// تبدیل PatientCreateEditViewModel به مدل بیمار با پشتیبانی کامل از تقویم شمسی
         /// </summary>
-        private void UpdatePatientModel(Patient patient, PatientCreateEditViewModel model)
+        private void UpdatePatientModel(Models.Entities.Patient.Patient patient, PatientCreateEditViewModel model)
         {
             if (patient == null || model == null)
                 return;
@@ -591,7 +591,7 @@ namespace ClinicApp.Services
                         await _userManager.AddToRoleAsync(newUser.Id, AppRoles.Patient);
 
                         // ایجاد پروفایل بیمار و ذخیره در دیتابیس
-                        var newPatient = new Patient
+                        var newPatient = new Models.Entities.Patient.Patient
                         {
                             NationalCode = normalizedNationalCode,
                             FirstName = model.FirstName,
@@ -1091,7 +1091,7 @@ namespace ClinicApp.Services
                 };
 
                 // ایجاد بیمار جدید
-                var patient = new Patient
+                var patient = new Models.Entities.Patient.Patient
                 {
                     NationalCode = normalizedNationalCode,
                     FirstName = model.FirstName,
@@ -1860,7 +1860,7 @@ namespace ClinicApp.Services
         /// </summary>
         /// <param name="nationalCode">کد ملی بیمار</param>
         /// <returns>بیمار یا null اگر یافت نشود</returns>
-        public async Task<Patient> GetPatientByNationalCodeAsync(string nationalCode)
+        public async Task<Models.Entities.Patient.Patient> GetPatientByNationalCodeAsync(string nationalCode)
         {
             try
             {
@@ -2215,7 +2215,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// جستجوی بیمار بر اساس کد ملی
         /// </summary>
-        public async Task<ServiceResult<Patient>> FindByNationalCodeAsync(string nationalCode)
+        public async Task<ServiceResult<Models.Entities.Patient.Patient>> FindByNationalCodeAsync(string nationalCode)
         {
             try
             {
@@ -2224,22 +2224,22 @@ namespace ClinicApp.Services
                 var patient = await _patientRepository.GetPatientByNationalCodeAsync(nationalCode);
                 if (patient == null)
                 {
-                    return ServiceResult<Patient>.Failed("بیمار یافت نشد");
+                    return ServiceResult<Models.Entities.Patient.Patient>.Failed("بیمار یافت نشد");
                 }
                 
-                return ServiceResult<Patient>.Successful(patient);
+                return ServiceResult<Models.Entities.Patient.Patient>.Successful(patient);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
-                return ServiceResult<Patient>.Failed("خطا در جستجوی بیمار");
+                return ServiceResult<Models.Entities.Patient.Patient>.Failed("خطا در جستجوی بیمار");
             }
         }
 
         /// <summary>
         /// ایجاد بیمار جدید
         /// </summary>
-        public async Task<ServiceResult<Patient>> CreatePatientAsync(PatientCreateDto patientDto)
+        public async Task<ServiceResult<Models.Entities.Patient.Patient>> CreatePatientAsync(PatientCreateDto patientDto)
         {
             try
             {
@@ -2247,7 +2247,7 @@ namespace ClinicApp.Services
                 
                 // TODO: Implement actual patient creation logic
                 // This is a placeholder implementation
-                var patient = new Patient
+                var patient = new Models.Entities.Patient.Patient
                 {
                     NationalCode = patientDto.NationalCode,
                     FirstName = patientDto.FirstName,
@@ -2256,12 +2256,12 @@ namespace ClinicApp.Services
                     Email = patientDto.Email
                 };
                 
-                return ServiceResult<Patient>.Successful(patient);
+                return ServiceResult<Models.Entities.Patient.Patient>.Successful(patient);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در ایجاد بیمار جدید");
-                return ServiceResult<Patient>.Failed("خطا در ایجاد بیمار");
+                return ServiceResult<Models.Entities.Patient.Patient>.Failed("خطا در ایجاد بیمار");
             }
         }
     }

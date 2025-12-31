@@ -147,7 +147,7 @@ namespace ClinicApp.Services
                 }
 
                 // بررسی مالکیت موجودیت
-                if (entity is Patient patient)
+                if (entity is Models.Entities.Patient.Patient patient)
                 {
                     return patient.CreatedByUserId == UserId ||
                            patient.ApplicationUserId == UserId;
@@ -420,7 +420,7 @@ namespace ClinicApp.Services
             }
         }
 
-        public async Task<Patient> GetPatientInfoAsync()
+        public async Task<Models.Entities.Patient.Patient> GetPatientInfoAsync()
         {
             try
             {

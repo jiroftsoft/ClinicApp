@@ -1,0 +1,73 @@
+@model List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalRecordAppointmentViewModel>
+@{
+    Layout = null;
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="appointments-empty">
+        <p class="text-muted text-center py-4">
+            <i class="fas fa-calendar-times fa-2x mb-2"></i>
+            <br>
+            هیچ نوبتی یافت نشد
+        </p>
+    </div>
+}
+else
+{
+    <div class="appointments-list">
+        @foreach (var appointment in Model)
+        {
+            <div class="appointment-item" data-appointment-id="@appointment.AppointmentId">
+                <div class="appointment-item-header">
+                    <div class="appointment-item-title">
+                        <h4>
+                            <span class="badge badge-primary ml-2">@appointment.StatusText</span>
+                            @appointment.DoctorName
+                        </h4>
+                        @if (!string.IsNullOrWhiteSpace(appointment.DoctorSpecialization))
+                        {
+                            <small class="text-muted">@appointment.DoctorSpecialization</small>
+                        }
+                    </div>
+                </div>
+                <div class="appointment-item-body">
+                    <div class="appointment-details">
+                        <div class="row">
+                            <div class="col-12 col-md-6">
+                                <strong>تاریخ:</strong>
+                                <span>@appointment.AppointmentDateShamsi</span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <strong>ساعت:</strong>
+                                <span>@appointment.AppointmentTime</span>
+                            </div>
+                            @if (appointment.Price.HasValue)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>مبلغ:</strong>
+                                    <span>@appointment.Price.Value.ToString("N0") تومان</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(appointment.ServiceCategory))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <strong>خدمت:</strong>
+                                    <span>@appointment.ServiceCategory</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(appointment.Description))
+                            {
+                                <div class="col-12">
+                                    <strong>توضیحات:</strong>
+                                    <p class="text-muted">@appointment.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+

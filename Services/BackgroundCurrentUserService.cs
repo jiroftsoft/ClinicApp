@@ -180,10 +180,10 @@ namespace ClinicApp.Services
             return Task.FromResult<Doctor>(null);
         }
 
-        public Task<Patient> GetPatientInfoAsync()
+        public Task<Models.Entities.Patient.Patient> GetPatientInfoAsync()
         {
             _log.Warning("تلاش برای دریافت اطلاعات بیمار توسط BackgroundCurrentUserService");
-            return Task.FromResult<Patient>(null);
+            return Task.FromResult<Models.Entities.Patient.Patient>(null);
         }
 
         public string GetSystemUserId()
