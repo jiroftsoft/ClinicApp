@@ -171,55 +171,62 @@ namespace ClinicApp
         }
 
         protected void Application_PostAuthenticateRequest(object sender, EventArgs e)
+    {
+        // ✅ CRITICAL FIX: Ensure OWIN authentication state syncs with MVC HttpContext
+        // OWIN middleware sets IOwinContext.Authentication.User, but HttpContext.User may not be synced
+        // This is a known issue in ASP.NET MVC5 + OWIN integration
+        
+        try
         {
-            // ✅ CRITICAL FIX: Ensure OWIN authentication state syncs with MVC HttpContext
-            // OWIN middleware sets IOwinContext.Authentication.User, but HttpContext.User may not be synced
-            // This is a known issue in ASP.NET MVC5 + OWIN integration
-            // ✅ ENHANCED: Also check for cookie existence to handle redirect timing issues
-            var hasAuthCookie = Request.Cookies["ClinicAppAuth"] != null;
-            var needsSync = Request.IsAuthenticated == false || (hasAuthCookie && Request.IsAuthenticated == false);
-            
-            if (needsSync && HttpContext.Current?.GetOwinContext() != null)
+            var owinContext = HttpContext.Current?.GetOwinContext();
+            if (owinContext == null)
             {
-                try
-                {
-                    var owinContext = HttpContext.Current.GetOwinContext();
-                    var owinUser = owinContext.Authentication?.User;
+                return; // No OWIN context available
+            }
+
+            var hasAuthCookie = Request.Cookies["ClinicAppAuth"] != null;
+            var isRequestAuthenticated = Request.IsAuthenticated;
+            var owinUser = owinContext.Authentication?.User;
+            var isOwinAuthenticated = owinUser != null && owinUser.Identity.IsAuthenticated;
+
+            // ✅ ENHANCED: Force sync in multiple scenarios
+            // Scenario 1: Cookie exists but Request.IsAuthenticated is false (timing issue after redirect)
+            // Scenario 2: OWIN user is authenticated but HttpContext.User is not synced
+            var needsSync = (hasAuthCookie && !isRequestAuthenticated) || 
+                           (isOwinAuthenticated && !isRequestAuthenticated) ||
+                           (isOwinAuthenticated && HttpContext.Current.User?.Identity?.Name != owinUser.Identity.Name);
+
+            if (needsSync && isOwinAuthenticated)
+            {
+                // ✅ DEBUG: Log sync operation for troubleshooting
+                var userId = owinUser.Identity is ClaimsIdentity claimsIdentity 
+                    ? claimsIdentity.GetUserId() 
+                    : owinUser.Identity.Name ?? "Unknown";
                     
-                    // ✅ If cookie exists but user not set, OWIN middleware may not have run yet
-                    // This can happen in redirect scenarios where cookie is set but middleware hasn't validated it
-                    if (hasAuthCookie && (owinUser == null || !owinUser.Identity.IsAuthenticated))
-                    {
-                        // OWIN middleware will handle validation on next request cycle
-                        // Log for debugging but don't force sync (security risk)
-                        Log.Information("🔄 Cookie exists but OWIN user not set - waiting for middleware validation");
-                        return;
-                    }
-                    
-                    if (owinUser != null && owinUser.Identity.IsAuthenticated)
-                    {
-                        // ✅ DEBUG: Log sync operation for troubleshooting
-                        // GetUserId() is an extension method that works on ClaimsIdentity
-                        var userId = owinUser.Identity is ClaimsIdentity claimsIdentity 
-                            ? claimsIdentity.GetUserId() 
-                            : owinUser.Identity.Name ?? "Unknown";
-                        Log.Information("🔄 Syncing OWIN user to HttpContext - UserId: {UserId}, IsAuthenticated: {IsAuth}", 
-                            userId, owinUser.Identity.IsAuthenticated);
-                        
-                        // Sync OWIN user to HttpContext
-                        HttpContext.Current.User = owinUser;
-                        
-                        // ✅ DEBUG: Verify sync completed
-                        Log.Information("✅ Sync complete - HttpContext.User.IsAuthenticated: {IsAuth}", 
-                            HttpContext.Current.User?.Identity?.IsAuthenticated ?? false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Failed to sync OWIN authentication state to HttpContext");
-                }
+                Log.Information("🔄 Syncing OWIN user to HttpContext - UserId: {UserId}, Cookie: {HasCookie}, ReqAuth: {ReqAuth}, OwinAuth: {OwinAuth}", 
+                    userId, hasAuthCookie, isRequestAuthenticated, isOwinAuthenticated);
+                
+                // ✅ FORCE SYNC: Set HttpContext.User to OWIN user
+                HttpContext.Current.User = owinUser;
+                
+                // ✅ VERIFY: Confirm sync completed
+                var syncSuccess = HttpContext.Current.User?.Identity?.IsAuthenticated ?? false;
+                Log.Information("✅ Sync complete - HttpContext.User.IsAuthenticated: {IsAuth}, Name: {Name}", 
+                    syncSuccess, HttpContext.Current.User?.Identity?.Name ?? "NULL");
+            }
+            else if (hasAuthCookie && !isOwinAuthenticated)
+            {
+                // ✅ Cookie exists but OWIN hasn't validated it yet
+                // This can happen immediately after login redirect
+                // OWIN middleware will validate on next request cycle
+                Log.Information("⏳ Cookie exists but OWIN validation pending - waiting for middleware");
             }
         }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to sync OWIN authentication state to HttpContext");
+        }
+    }
 
         /// <summary>
         /// تبدیل string به PascalCase

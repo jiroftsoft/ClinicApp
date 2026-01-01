@@ -118,6 +118,7 @@ namespace ClinicApp.Models
         
         // ========== موجودیت‌های جدید برای Security & Login Audit - 2025-01-XX ==========
         public DbSet<Entities.Security.UserLoginHistory> UserLoginHistories { get; set; }
+        public DbSet<Core.OtpStateEntity> OtpStates { get; set; } // ✅ BEAST MODE FIX #1 - Session Loss Prevention
         
         // ========== موجودیت‌های جدید برای پرداخت‌های آنلاین ==========
         public DbSet<PaymentGateway> PaymentGateways { get; set; }

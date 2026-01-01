@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 
 namespace ClinicApp.Controllers
@@ -93,7 +94,7 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in CheckUser for {NationalCode}", model.NationalCode);
+                _log.Error(ex, "System error in CheckUser for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
                 return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
             }
         }
@@ -112,7 +113,7 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in SendLoginOtp for {NationalCode}", model.NationalCode);
+                _log.Error(ex, "System error in SendLoginOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
                 return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
             }
         }
@@ -131,7 +132,7 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in SendRegistrationOtp for {NationalCode}", model.NationalCode);
+                _log.Error(ex, "System error in SendRegistrationOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
                 return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
             }
         }
@@ -141,31 +142,29 @@ namespace ClinicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
         {
-            // ✅ CRITICAL FIX: Support both AJAX (for registration) and Full Page POST (for login)
-            // Full Page POST ensures cookie is sent in redirect request
-            
-            // ✅ DEBUG: Log incoming request for troubleshooting
-            _log.Information("🔍 VerifyLoginOtp called - NationalCode: {NationalCode}, OtpCode Length: {OtpLength}, IsAjax: {IsAjax}, ReturnUrl: {ReturnUrl}",
-                model?.NationalCode ?? "NULL",
+            // ✅ SECURITY: Log with masked sensitive data (BEAST MODE FIX #2)
+            _log.Information("VerifyLoginOtp START - NationalCode: {MaskedNC}, OtpCode Length: {OtpLength}, IsAjax: {IsAjax}",
+                MaskHelper.MaskNationalCode(model?.NationalCode),
                 model?.OtpCode?.Length ?? 0,
-                Request.IsAjaxRequest(),
-                returnUrl);
+                Request.IsAjaxRequest());
+            
+            // ✅ CRITICAL: This endpoint MUST be called via AJAX
+            if (!Request.IsAjaxRequest())
+            {
+                _log.Error("CRITICAL: VerifyLoginOtp called WITHOUT AJAX - This should NEVER happen!");
+                return Json(new
+                {
+                    success = false,
+                    message = "این درخواست باید از طریق AJAX ارسال شود.",
+                    code = "INVALID_REQUEST_TYPE"
+                }, JsonRequestBehavior.AllowGet);
+            }
             
             if (!ModelState.IsValid)
             {
-                // ✅ DEBUG: Log ModelState errors
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                _log.Warning("❌ ModelState invalid - Errors: {Errors}", string.Join(", ", errors));
-                
-                if (Request.IsAjaxRequest())
-                {
-                    return CreateValidationErrorsJson();
-                }
-                // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
-                TempData["ErrorMessage"] = "لطفاً تمام فیلدها را به درستی پر کنید.";
-                var loginUrl = Url.Action("Login", "Account", new { returnUrl });
-                _log.Information("🔄 Redirecting to Login (ModelState invalid) - URL: {Url}", loginUrl);
-                return Redirect(loginUrl);
+                _log.Warning("ModelState invalid - Errors: {Errors}", string.Join(", ", errors));
+                return CreateValidationErrorsJson();
             }
 
             try
@@ -174,43 +173,20 @@ namespace ClinicApp.Controllers
                 
                 if (result.Success)
                 {
-                    // ✅ Check if AJAX request (for registration flow)
-                    if (Request.IsAjaxRequest())
-                    {
-                        // Return JSON for AJAX (registration flow)
-                        return CreateServiceResultJson(result, GetSafeRedirectUrl(returnUrl));
-                    }
-                    else
-                    {
-                        // ✅ Full Page POST - server-side redirect (for login)
-                        // Cookie will be sent in redirect request
-                        TempData["SuccessMessage"] = "ورود با موفقیت انجام شد.";
-                        return Redirect(GetSafeRedirectUrl(returnUrl));
-                    }
+                    var redirectUrl = GetSafeRedirectUrl(returnUrl);
+                    _log.Information("Login successful - redirecting to: {RedirectUrl}", redirectUrl);
+                    return CreateServiceResultJson(result, redirectUrl);
                 }
                 else
                 {
-                    if (Request.IsAjaxRequest())
-                    {
-                        return CreateServiceResultJson(result);
-                    }
-                    // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
-                    TempData["ErrorMessage"] = result.Message;
-                    var loginUrl = Url.Action("Login", "Account", new { returnUrl });
-                    return Redirect(loginUrl);
+                    _log.Warning("Login failed - Code: {Code}", result.Code);
+                    return CreateServiceResultJson(result);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in VerifyLoginOtp for {NationalCode}", model.NationalCode);
-                if (Request.IsAjaxRequest())
-                {
-                    return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
-                }
-                // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
-                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً دوباره تلاش کنید.";
-                var loginUrl = Url.Action("Login", "Account");
-                return Redirect(loginUrl);
+                _log.Error(ex, "System error in VerifyLoginOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
+                return CreateServiceResultJson(ServiceResult.Failed("خطای سیستمی رخ داد.", "SYSTEM_ERROR"));
             }
         }
 
@@ -316,7 +292,7 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error during final registration for {NationalCode}", model.NationalCode);
+                _log.Error(ex, "System error during final registration for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
                 ModelState.AddModelError("", "An unexpected system error occurred. Please contact support.");
                 return View(model);
             }
@@ -603,24 +579,13 @@ namespace ClinicApp.Controllers
 
         private string GetSafeRedirectUrl(string returnUrl)
         {
+            // If returnUrl is provided and local, use it
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return returnUrl;
             }
             
-            // ✅ Default redirect: If user is Patient, go to MyAppointments; otherwise Dashboard
-            if (User.Identity.IsAuthenticated)
-            {
-                // Check if user has Patient role
-                if (User.IsInRole(AppRoles.Patient))
-                {
-                    return Url.Action("MyAppointments", "Appointment", new { area = "Patient" });
-                }
-                // For Admin/Doctor users, go to Dashboard
-                return Url.Action("Index", "Dashboard", new { area = "" });
-            }
-            
-            // ✅ For anonymous users, go to home page
+            // Default: redirect to Home after login
             return Url.Action("Index", "Home", new { area = "" });
         }
 

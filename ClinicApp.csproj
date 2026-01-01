@@ -662,6 +662,7 @@
     <Compile Include="Helpers\LoadStoriesActionFilter.cs" />
     <Compile Include="Helpers\LoggingConfiguration.cs" />
     <Compile Include="Helpers\LoggingHelper.cs" />
+    <Compile Include="Helpers\MaskHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\NotificationHelper.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
@@ -966,6 +967,11 @@
     <Compile Include="Migrations\202512292007438_ADDUserLoginHistory.Designer.cs">
       <DependentUpon>202512292007438_ADDUserLoginHistory.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202601011951264_AddOtpStatesTable1011.cs" />
+    <Compile Include="Migrations\202601011951264_AddOtpStatesTable1011.Designer.cs">
+      <DependentUpon>202601011951264_AddOtpStatesTable1011.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
@@ -1415,6 +1421,7 @@
     <Compile Include="Services\DocumentUploadService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\HomePageService.cs" />
+    <Compile Include="Services\HybridOtpStateStore.cs" />
     <Compile Include="Services\ImageUploadService.cs" />
     <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
@@ -4922,6 +4929,17 @@
     <Content Include="Docs\PATIENT_AUTH_INTEGRATION_ANALYSIS.md" />
     <Content Include="Docs\PATIENT_AUTH_INTEGRATION_SUMMARY.md" />
     <Content Include="Docs\EMR_CONTRACT_COMPLIANCE_REPORT.md" />
+    <Content Include="Docs\BEAST_MODE_AUDIT_SUMMARY.md" />
+    <Content Include="Docs\BEAST_MODE_LOGIN_OTP_AUDIT.md" />
+    <Content Include="Docs\CRITICAL_FIXES_APPLIED.md" />
+    <Content Include="Docs\DEFINITIVE_LOGIN_FIX_PLAN.md" />
+    <Content Include="Docs\LOGIN_FIX_IMPLEMENTATION_SUMMARY.md" />
+    <Content Include="Docs\LOGOUT_VERIFICATION_CHECKLIST.md" />
+    <Content Include="Docs\OTP_STATE_DEBUGGING_GUIDE.md" />
+    <Content Include="Docs\OTP_VALIDATION_FIX.md" />
+    <Content Include="Docs\PATIENT_LOGIN_UI_SYNC_DEBUG_REPORT.md" />
+    <Content Include="Docs\FINAL_LOGIN_SOLUTION.md" />
+    <Content Include="Docs\Knowledge-Base\PATIENT_AREA_AUTH_GUIDE.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6634,6 +6652,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202512292007438_ADDUserLoginHistory.resx">
       <DependentUpon>202512292007438_ADDUserLoginHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601011951264_AddOtpStatesTable1011.resx">
+      <DependentUpon>202601011951264_AddOtpStatesTable1011.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

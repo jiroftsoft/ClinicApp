@@ -119,6 +119,17 @@ namespace ClinicApp.Models.Entities.Security
         public string SessionId { get; set; }
 
         /// <summary>
+        /// کلید Idempotency برای جلوگیری از ثبت duplicate
+        /// این کلید توسط کلاینت تولید می‌شود (UUID/GUID)
+        /// و برای هر login attempt یکتا است
+        /// 
+        /// ✅ استفاده: جلوگیری از ثبت چندباره login در صورت retry
+        /// طبق: BEAST MODE AUDIT - Issue #2
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "کلید Idempotency نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string IdempotencyKey { get; set; }
+
+        /// <summary>
         /// تاریخ و زمان ایجاد رکورد
         /// </summary>
         [Required(ErrorMessage = "تاریخ ایجاد الزامی است.")]
@@ -217,6 +228,12 @@ namespace ClinicApp.Models.Entities.Security
             Property(x => x.SessionId)
                 .IsOptional()
                 .HasMaxLength(128);
+
+            Property(x => x.IdempotencyKey)
+                .IsOptional()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_UserLoginHistory_IdempotencyKey") { IsUnique = true }));
 
             Property(x => x.CreatedAt)
                 .IsRequired();

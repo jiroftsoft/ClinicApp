@@ -126,6 +126,15 @@
                     if ($this.val().length === 1 && $this.next('.otp-input').length) {
                         $this.next('.otp-input').focus();
                     }
+                    
+                    // ✅ ADDED: Auto-submit on typing 6th digit
+                    let otp = '';
+                    ui.otpInputs.each(function() { otp += $(this).val(); });
+                    if (otp.length === 6) {
+                        ui.otpInputs.last().blur();
+                        console.log('⚡ DEBUG: Auto-submitting form (Input/Type)...');
+                        ui.forms.verifyOtp.trigger('submit');
+                    }
                 }).on('keydown', function(e) {
                     if (e.key === "Backspace" && $(this).val().length === 0 && $(this).prev('.otp-input').length) {
                         $(this).prev('.otp-input').focus();
@@ -138,11 +147,16 @@
                         ui.otpInputs.each(function(i) {
                             if (i < digits.length) $(this).val(digits[i]);
                         });
+                        
                         const lastInput = ui.otpInputs.eq(Math.min(5, digits.length - 1));
                         lastInput.focus();
                         if (digits.length >= 6) {
                             lastInput.blur();
-                            ui.forms.verifyOtp.submit();
+                            console.log('⚡ DEBUG: Auto-submitting form (Paste)...');
+                            // ✅ CRITICAL FIX: Use trigger('submit') instead of .submit()
+                            // .submit() bypasses jQuery event handlers (causing page refresh)
+                            // .trigger('submit') ensures handleVerifyOtpSubmit is called (AJAX)
+                            ui.forms.verifyOtp.trigger('submit');
                         }
                     }
                 });
@@ -205,6 +219,7 @@
         }
 
         function handleVerifyOtpSubmit(e) {
+            console.log('🛡️ DEBUG: handleVerifyOtpSubmit called! Preventing default...');
             e.preventDefault();
             const form = $(this);
             let otp = '';
@@ -219,25 +234,33 @@
 
             const actionUrl = state.isRegistrationFlow ? '@Url.Action("VerifyRegistrationOtp", "Account")' : '@Url.Action("VerifyLoginOtp", "Account")';
             form.attr('action', actionUrl);
+            
+            console.log('🔍 DEBUG: Submitting OTP form', {
+                actionUrl: actionUrl,
+                isRegistrationFlow: state.isRegistrationFlow,
+                nationalCode: state.nationalCode
+            });
 
             submitAjax(form, response => {
+                console.log('✅ DEBUG: AJAX Success Response:', response);
+                
                 if(response.success && response.redirectUrl) {
+                    console.log('✅ DEBUG: Login successful, redirecting to:', response.redirectUrl);
                     toastr.success(response.message || "عملیات موفقیت‌آمیز بود!");
                     
-                    // ✅ DEFINITIVE FIX: Use Hidden Form Submit instead of JavaScript redirect
-                    // This ensures cookie is sent in redirect request (server-side redirect)
-                    var redirectForm = $('<form>', {
-                        'method': 'GET',
-                        'action': response.redirectUrl,
-                        'style': 'display: none;'
-                    });
-                    
-                    $('body').append(redirectForm);
+                    // ✅ ENHANCED FIX: Add delay to ensure cookie is fully set before redirect
+                    // This gives OWIN middleware time to process the authentication cookie
                     setTimeout(function() {
-                        redirectForm.submit();
-                    }, 500);
+                        console.log('🔄 DEBUG: Executing redirect NOW to:', response.redirectUrl);
+                        // ✅ Use window.location.href for cleaner redirect
+                        // This ensures browser fully processes the cookie before loading new page
+                        window.location.href = response.redirectUrl;
+                    }, 800); // Increased delay to 800ms for better reliability
+                } else {
+                    console.error('❌ DEBUG: Response missing success or redirectUrl:', response);
                 }
             }, response => {
+                console.error('❌ DEBUG: AJAX Error Response:', response);
                 ui.otpError.text(response.message);
                 ui.otpInputs.val('').first().focus();
             });
@@ -302,12 +325,25 @@
             if (!form.valid()) return;
             const button = form.find('button[type="submit"]');
             showButtonSpinner(button, true);
+            
+            const ajaxUrl = form.attr('action');
+            const ajaxData = form.serialize();
+            
+            console.log('📤 DEBUG: AJAX Request Starting', {
+                url: ajaxUrl,
+                data: ajaxData,
+                hasXRequestedWith: true
+            });
 
             $.ajax({
-                url: form.attr('action'),
+                url: ajaxUrl,
                 type: 'POST',
-                data: form.serialize(),
+                data: ajaxData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'  // ✅ CRITICAL FIX: Ensure Request.IsAjaxRequest() returns true
+                },
                 success: function(response) {
+                    console.log('📥 DEBUG: AJAX Response Received:', response);
                     if (response.success) {
                         onSuccess(response);
                     } else {
@@ -315,7 +351,10 @@
                         else toastr.error(response.message || "خطایی رخ داده است.");
                     }
                 },
-                error: () => toastr.error("خطای شبکه یا سرور. لطفاً دقایقی دیگر تلاش کنید."),
+                error: (xhr, status, error) => {
+                    console.error('💥 DEBUG: AJAX Error:', {xhr, status, error});
+                    toastr.error("خطای شبکه یا سرور. لطفاً دقایقی دیگر تلاش کنید.");
+                },
                 complete: () => showButtonSpinner(button, false)
             });
         }
