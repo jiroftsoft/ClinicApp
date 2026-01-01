@@ -165,12 +165,18 @@ namespace ClinicApp.Services
         {
             try
             {
+                // ✅ DEBUG: Log incoming parameters
+                _log.Information("🔍 VerifyLoginOtpAndSignInAsync called - NationalCode: {NationalCode}, OtpCode Length: {OtpLength}",
+                    nationalCode ?? "NULL",
+                    otpCode?.Length ?? 0);
+                
                 // مرحله ۱: نرمال‌سازی و یافتن کاربر
                 var normalizedCode = PersianNumberHelper.ToEnglishNumbers(nationalCode);
                 var user = await _userManager.FindByNameAsync(normalizedCode);
 
                 if (user == null)
                 {
+                    _log.Warning("❌ User not found - NationalCode: {NationalCode}", normalizedCode);
                     return ServiceResult.Failed("کاربری با این مشخصات یافت نشد.", "USER_NOT_FOUND", ErrorCategory.NotFound);
                 }
 
@@ -194,8 +200,23 @@ namespace ClinicApp.Services
 
                 // مرحله ۳: اعتبارسنجی OTP
                 var state = _otpStateStore.GetState();
+                _log.Information("🔍 OTP State retrieved - IsNull: {IsNull}, NationalCode: {StateNC}, Expiry: {Expiry}",
+                    state == null,
+                    state?.NationalCode ?? "NULL",
+                    state?.ExpiryUtc ?? DateTime.MinValue);
+                
+                if (state == null)
+                {
+                    _log.Error("❌ CRITICAL: OTP State is NULL - Session may be lost. NationalCode: {NationalCode}", normalizedCode);
+                }
+                
                 var incomingHash = HashOtp(otpCode, user.PhoneNumber); // هش کردن با شماره موبایل کاربر
                 var validationResult = ValidateOtpState(state, normalizedCode, incomingHash, user.PhoneNumber); // ✅ ارسال phoneNumber برای بررسی
+                
+                _log.Information("📊 OTP Validation result - Success: {Success}, Message: {Message}, Code: {Code}",
+                    validationResult.Success,
+                    validationResult.Message,
+                    validationResult.Code);
 
                 if (!validationResult.Success)
                 {
@@ -530,8 +551,24 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
 
         private ServiceResult ValidateOtpState(OtpState state, string nationalCode, string incomingHash, string phoneNumber = null)
         {
-            if (state == null || state.NationalCode != nationalCode || state.ExpiryUtc < DateTime.UtcNow)
-                return ServiceResult.Failed("کد نامعتبر یا منقضی شده است.", "OTP_INVALID_OR_EXPIRED");
+            // ✅ CRITICAL FIX: Distinguish between different failure reasons for better UX
+            if (state == null)
+            {
+                _log.Warning("OTP state not found during validation | NationalCode: {NationalCode}", nationalCode);
+                return ServiceResult.Failed("کد تایید یافت نشد. لطفاً کد جدیدی دریافت کنید.", "OTP_STATE_NOT_FOUND", ErrorCategory.Validation);
+            }
+            
+            if (state.ExpiryUtc < DateTime.UtcNow)
+            {
+                _log.Warning("OTP expired | NationalCode: {NationalCode} | Expiry: {Expiry}", nationalCode, state.ExpiryUtc);
+                return ServiceResult.Failed("کد تایید منقضی شده است. لطفاً کد جدیدی دریافت کنید.", "OTP_EXPIRED", ErrorCategory.Validation);
+            }
+            
+            if (state.NationalCode != nationalCode)
+            {
+                _log.Warning("OTP NationalCode mismatch | State: {StateNC} | Provided: {ProvidedNC}", state.NationalCode, nationalCode);
+                return ServiceResult.Failed("کد تایید نامعتبر است.", "OTP_INVALID", ErrorCategory.Validation);
+            }
 
             // ✅ بررسی تطابق phoneNumber (برای Login flow)
             if (!string.IsNullOrEmpty(phoneNumber) && state.PhoneNumber != phoneNumber)

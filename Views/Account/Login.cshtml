@@ -221,9 +221,21 @@
             form.attr('action', actionUrl);
 
             submitAjax(form, response => {
-                if(response.redirectUrl) {
+                if(response.success && response.redirectUrl) {
                     toastr.success(response.message || "عملیات موفقیت‌آمیز بود!");
-                    window.location.href = response.redirectUrl;
+                    
+                    // ✅ DEFINITIVE FIX: Use Hidden Form Submit instead of JavaScript redirect
+                    // This ensures cookie is sent in redirect request (server-side redirect)
+                    var redirectForm = $('<form>', {
+                        'method': 'GET',
+                        'action': response.redirectUrl,
+                        'style': 'display: none;'
+                    });
+                    
+                    $('body').append(redirectForm);
+                    setTimeout(function() {
+                        redirectForm.submit();
+                    }, 500);
                 }
             }, response => {
                 ui.otpError.text(response.message);

@@ -652,13 +652,12 @@
         });
 
         $('#form-verify-otp').on('submit', function(e) {
-            e.preventDefault();
             var $form = $(this);
             var $button = $form.find('button[type="submit"]');
             
             // Prevent multiple submissions
             if ($button.prop('disabled')) {
-                return;
+                return false;
             }
             
             // Get OTP from combined field or rebuild from inputs
@@ -670,9 +669,10 @@
                 }).get().join('').replace(/\D/g, '');
                 
                 if (!otp || otp.length !== config.otpLength) {
+                    e.preventDefault();
                     $('#otp-error').text('لطفاً کد تایید ۶ رقمی را کامل وارد کنید');
                     $('#otp-inputs .otp-input:first').focus();
-                    return;
+                    return false;
                 }
                 
                 // Update combined field
@@ -687,36 +687,96 @@
                 if (nationalCode) {
                     $form.find('input[name="NationalCode"]').val(nationalCode);
                 } else {
+                    e.preventDefault();
                     $('#otp-error').text('خطا: کد ملی یافت نشد. لطفاً دوباره تلاش کنید.');
-                    return;
+                    return false;
                 }
             }
             
-            // ✅ For registration flow, ensure PhoneNumber is set
-            if (state.isRegistrationFlow) {
-                var phoneNumber = $form.find('input[name="PhoneNumber"]').val();
-                if (!phoneNumber) {
-                    phoneNumber = state.phoneNumber || $('#PhoneNumber').val();
-                    if (phoneNumber) {
-                        $form.find('input[name="PhoneNumber"]').val(phoneNumber);
-                    } else {
-                        $('#otp-error').text('خطا: شماره موبایل یافت نشد. لطفاً دوباره تلاش کنید.');
-                        return;
+            // ✅ CRITICAL FIX: For login flow, use Full Page POST (not AJAX)
+            // This ensures cookie is sent in redirect request
+            if (!state.isRegistrationFlow) {
+                // ✅ LOGIN FLOW: Full Page POST - don't prevent default
+                // ✅ CRITICAL: Ensure OTP is set in combined field before submit
+                var otpValue = $('#combined-otp-code').val();
+                if (!otpValue || otpValue.length !== config.otpLength) {
+                    // Rebuild from inputs if not set
+                    otpValue = $('#otp-inputs .otp-input').map(function() {
+                        return $(this).val();
+                    }).get().join('').replace(/\D/g, '');
+                    
+                    if (!otpValue || otpValue.length !== config.otpLength) {
+                        e.preventDefault();
+                        $('#otp-error').text('لطفاً کد تایید ۶ رقمی را کامل وارد کنید');
+                        $('#otp-inputs .otp-input:first').focus();
+                        return false;
                     }
+                    
+                    // Update combined field
+                    $('#combined-otp-code').val(otpValue);
+                }
+                
+                // ✅ Ensure NationalCode is set (already checked above, but double-check)
+                if (!nationalCode) {
+                    e.preventDefault();
+                    $('#otp-error').text('خطا: کد ملی یافت نشد. لطفاً دوباره تلاش کنید.');
+                    return false;
+                }
+                
+                // ✅ Ensure returnUrl is in form
+                var returnUrl = $form.find('input[name="returnUrl"]').val();
+                if (!returnUrl) {
+                    var loginModal = document.getElementById('loginModal');
+                    if (loginModal) {
+                        returnUrl = loginModal.getAttribute('data-return-url');
+                        if (returnUrl) {
+                            var $returnUrlInput = $form.find('input[name="returnUrl"]');
+                            if ($returnUrlInput.length === 0) {
+                                $form.append($('<input>', {
+                                    'type': 'hidden',
+                                    'name': 'returnUrl',
+                                    'value': returnUrl
+                                }));
+                            } else {
+                                $returnUrlInput.val(returnUrl);
+                            }
+                        }
+                    }
+                }
+                
+                // ✅ Update form action
+                $form.attr('action', '@Url.Action("VerifyLoginOtp", "Account")');
+                
+                // ✅ Don't prevent default - let form submit normally
+                // Server will handle redirect with cookie
+                // OTP is already set in combined-otp-code field
+                return true; // Allow form submission
+            }
+            
+            // ✅ REGISTRATION FLOW: Use AJAX (existing code)
+            e.preventDefault();
+            
+            // ✅ For registration flow, ensure PhoneNumber is set
+            var phoneNumber = $form.find('input[name="PhoneNumber"]').val();
+            if (!phoneNumber) {
+                phoneNumber = state.phoneNumber || $('#PhoneNumber').val();
+                if (phoneNumber) {
+                    $form.find('input[name="PhoneNumber"]').val(phoneNumber);
+                } else {
+                    $('#otp-error').text('خطا: شماره موبایل یافت نشد. لطفاً دوباره تلاش کنید.');
+                    return false;
                 }
             }
             
             // ✅ Update form action dynamically based on flow
-            var actionUrl = state.isRegistrationFlow 
-                ? '@Url.Action("VerifyRegistrationOtp", "Account")'
-                : '@Url.Action("VerifyLoginOtp", "Account")';
+            var actionUrl = '@Url.Action("VerifyRegistrationOtp", "Account")';
             $form.attr('action', actionUrl);
             
             // ✅ Get returnUrl from hidden input or modal data attribute
             var returnUrl = $form.find('input[name="returnUrl"]').val();
             if (!returnUrl) {
                 // Try to get from modal data attribute (set by openLoginModal)
-                var loginModal = document.getElementById('login-modal');
+                var loginModal = document.getElementById('loginModal');
                 if (loginModal) {
                     returnUrl = loginModal.getAttribute('data-return-url');
                 }
@@ -743,38 +803,17 @@
                 success: function(response) {
                     if (response.success) {
                         // ✅ Show appropriate success message
-                        var successMessage = state.isRegistrationFlow 
-                            ? 'کد تایید با موفقیت تایید شد. در حال هدایت به صفحه تکمیل ثبت‌نام...'
-                            : 'ورود با موفقیت انجام شد';
+                        var successMessage = 'کد تایید با موفقیت تایید شد. در حال هدایت به صفحه تکمیل ثبت‌نام...';
                         toastr.success(successMessage, '', { timeOut: 1500 });
                         
-                        // ✅ FIX: Increased delay to ensure cookie is set before redirect
-                        // Cookie needs time to be processed by browser after Set-Cookie header
-                        setTimeout(function() {
-                            if (response.redirectUrl) {
-                                // ✅ Check if we're already on the target page
-                                var currentUrl = window.location.pathname + window.location.search;
-                                var targetUrlObj = new URL(response.redirectUrl, window.location.origin);
-                                var targetUrl = targetUrlObj.pathname + targetUrlObj.search;
-                                
-                                if (currentUrl === targetUrl) {
-                                    // ✅ Same page - reload to sync authentication state
-                                    window.location.reload();
-                                } else {
-                                    // ✅ Different page - redirect with delay to ensure cookie is set
-                                    window.location.href = response.redirectUrl;
-                                }
-                            } else {
-                                // ✅ For registration, redirect to CompleteRegistration if no redirectUrl
-                                if (state.isRegistrationFlow) {
-                                    // The redirectUrl should be set by VerifyRegistrationOtp action
-                                    // If not, reload to show error
-                                    window.location.reload();
-                                } else {
-                                    window.location.reload();
-                                }
-                            }
-                        }, 1000); // ✅ Increased from 500ms to 1000ms to ensure cookie is processed
+                        // ✅ For registration, redirect to CompleteRegistration
+                        if (response.redirectUrl) {
+                            setTimeout(function() {
+                                window.location.href = response.redirectUrl;
+                            }, 500);
+                        } else {
+                            window.location.reload();
+                        }
                     } else {
                         // ✅ Show user-friendly error message
                         var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';

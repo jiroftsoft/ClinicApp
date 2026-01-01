@@ -139,19 +139,78 @@ namespace ClinicApp.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
+        public async Task<ActionResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
         {
-            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+            // ✅ CRITICAL FIX: Support both AJAX (for registration) and Full Page POST (for login)
+            // Full Page POST ensures cookie is sent in redirect request
+            
+            // ✅ DEBUG: Log incoming request for troubleshooting
+            _log.Information("🔍 VerifyLoginOtp called - NationalCode: {NationalCode}, OtpCode Length: {OtpLength}, IsAjax: {IsAjax}, ReturnUrl: {ReturnUrl}",
+                model?.NationalCode ?? "NULL",
+                model?.OtpCode?.Length ?? 0,
+                Request.IsAjaxRequest(),
+                returnUrl);
+            
+            if (!ModelState.IsValid)
+            {
+                // ✅ DEBUG: Log ModelState errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                _log.Warning("❌ ModelState invalid - Errors: {Errors}", string.Join(", ", errors));
+                
+                if (Request.IsAjaxRequest())
+                {
+                    return CreateValidationErrorsJson();
+                }
+                // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
+                TempData["ErrorMessage"] = "لطفاً تمام فیلدها را به درستی پر کنید.";
+                var loginUrl = Url.Action("Login", "Account", new { returnUrl });
+                _log.Information("🔄 Redirecting to Login (ModelState invalid) - URL: {Url}", loginUrl);
+                return Redirect(loginUrl);
+            }
 
             try
             {
                 var result = await _authService.VerifyLoginOtpAndSignInAsync(model.NationalCode, model.OtpCode);
-                return CreateServiceResultJson(result, result.Success ? GetSafeRedirectUrl(returnUrl) : null);
+                
+                if (result.Success)
+                {
+                    // ✅ Check if AJAX request (for registration flow)
+                    if (Request.IsAjaxRequest())
+                    {
+                        // Return JSON for AJAX (registration flow)
+                        return CreateServiceResultJson(result, GetSafeRedirectUrl(returnUrl));
+                    }
+                    else
+                    {
+                        // ✅ Full Page POST - server-side redirect (for login)
+                        // Cookie will be sent in redirect request
+                        TempData["SuccessMessage"] = "ورود با موفقیت انجام شد.";
+                        return Redirect(GetSafeRedirectUrl(returnUrl));
+                    }
+                }
+                else
+                {
+                    if (Request.IsAjaxRequest())
+                    {
+                        return CreateServiceResultJson(result);
+                    }
+                    // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
+                    TempData["ErrorMessage"] = result.Message;
+                    var loginUrl = Url.Action("Login", "Account", new { returnUrl });
+                    return Redirect(loginUrl);
+                }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "System error in VerifyLoginOtp for {NationalCode}", model.NationalCode);
-                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+                if (Request.IsAjaxRequest())
+                {
+                    return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+                }
+                // ✅ CRITICAL FIX: Use explicit URL generation to avoid route resolution issues
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً دوباره تلاش کنید.";
+                var loginUrl = Url.Action("Login", "Account");
+                return Redirect(loginUrl);
             }
         }
 
