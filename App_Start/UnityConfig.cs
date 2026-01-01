@@ -166,8 +166,9 @@ namespace ClinicApp
                         return userManager;
                     }));
 
-                // ثبت AuthenticationManager با پشتیبانی از محیط‌های مختلف
-                container.RegisterType<IAuthenticationManager>(new HierarchicalLifetimeManager(),
+                // ✅ CRITICAL FIX: Use PerRequestLifetimeManager to get fresh AuthenticationManager per request
+                // HierarchicalLifetimeManager was causing stale/cached AuthenticationManager from Application_Start
+                container.RegisterType<IAuthenticationManager>(new PerRequestLifetimeManager(),
                     new InjectionFactory(c => GetAuthenticationManager()));
             }
             catch (Exception ex)

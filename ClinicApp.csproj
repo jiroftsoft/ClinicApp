@@ -6407,6 +6407,7 @@
     <Content Include="Views\Home\Components\_MainMenuQuickActions.cshtml" />
     <Content Include="Views\Home\Components\_SectionHeader.cshtml" />
     <Content Include="Views\Home\Components\_SectionWrapper.cshtml" />
+    <Content Include="Views\Account\AuthDiagnostics.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

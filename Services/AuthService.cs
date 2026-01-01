@@ -752,13 +752,18 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
 
         private async Task SignInUserAsync(ApplicationUser user, bool isPersistent)
         {
+            _log.Information("🔐 [SignInUserAsync] START - UserId: {UserId}, IsPersistent: {IsPersistent}", 
+                user.Id, isPersistent);
+            
             _authenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
+            _log.Debug("[SignInUserAsync] Signed out external cookie");
+            
             var identity = await _userManager.CreateIdentityAsync(user, DefaultAuthenticationTypes.ApplicationCookie);
+            _log.Debug("[SignInUserAsync] Identity created - AuthType: {AuthType}, Name: {Name}, Claims: {ClaimCount}", 
+                identity.AuthenticationType, identity.Name, identity.Claims.Count());
 
             identity.AddClaim(new Claim("FullName", user.FullName ?? ""));
             identity.AddClaim(new Claim("NationalCode", user.NationalCode ?? ""));
-
-            // ✅ FIX: Add FirstName and LastName claims for UI display
             identity.AddClaim(new Claim("FirstName", user.FirstName ?? ""));
             identity.AddClaim(new Claim("LastName", user.LastName ?? ""));
 
@@ -767,16 +772,62 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             {
                 identity.AddClaim(new Claim("PrimaryRole", roles.First()));
             }
+            
+            _log.Debug("[SignInUserAsync] Claims added - Total: {ClaimCount}", identity.Claims.Count());
 
-            _authenticationManager.SignIn(new AuthenticationProperties { IsPersistent = isPersistent }, identity);
-
-            // ✅ REMOVED: Response.Flush() causes conflict with JsonResult
-            // OWIN manages cookie automatically and Application_PostAuthenticateRequest handles sync
-            // No need to flush - JsonResult will work correctly without it
-            // Cookie will be sent automatically by OWIN middleware
+            // ✅ DIAGNOSTIC: Check if HttpContext is available
+            var httpContext = HttpContext.Current;
+            if (httpContext == null)
+            {
+                _log.Error("❌ [SignInUserAsync] HttpContext.Current is NULL - Cannot sign in!");
+                return;
+            }
+            
+            var owinContext = httpContext.GetOwinContext();
+            if (owinContext == null)
+            {
+                _log.Error("❌ [SignInUserAsync] OwinContext is NULL - OWIN pipeline not configured!");
+                return;
+            }
+            
+            // ✅ CRITICAL: Get AuthenticationManager from CURRENT request context
+            // DO NOT use injected _authenticationManager (it may be stale)
+            var authManager = owinContext.Authentication;
+            
+            _log.Debug("[SignInUserAsync] AuthManager from OWIN: {Type}, Identity before SignIn: {Name}", 
+                authManager.GetType().Name, 
+                authManager.User?.Identity?.Name ?? "NULL");
+            
+            // ✅ Sign out any existing cookies first
+            authManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie, 
+                DefaultAuthenticationTypes.ExternalCookie);
+            
+            // ✅ CRITICAL: SignIn call with explicit cookie properties
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = isPersistent,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+                AllowRefresh = true,
+                IssuedUtc = DateTimeOffset.UtcNow
+            };
+            
+            _log.Debug("[SignInUserAsync] Calling SignIn - IsPersistent: {IsPersistent}, ExpiresUtc: {ExpiresUtc}", 
+                authProperties.IsPersistent, authProperties.ExpiresUtc);
+            
+            authManager.SignIn(authProperties, identity);
+            
+            _log.Information("✅ [SignInUserAsync] SignIn called on OWIN AuthManager");
+            
+            // ✅ VERIFY: Check if user is now authenticated
+            var owinUserAfter = authManager.User;
+            var isOwinAuth = owinUserAfter != null && owinUserAfter.Identity.IsAuthenticated;
+            _log.Information("[SignInUserAsync] Post-SignIn check - IsAuthenticated: {IsAuth}, Name: {Name}", 
+                isOwinAuth, owinUserAfter?.Identity?.Name ?? "NULL");
 
             user.LastLoginDate = DateTime.Now;
             await _userManager.UpdateAsync(user);
+            
+            _log.Information("✅ [SignInUserAsync] COMPLETE - UserId: {UserId}", user.Id);
         }
 
         #endregion

@@ -334,6 +334,16 @@ namespace ClinicApp.Controllers
         #endregion
 
         // -------------------------------------------------------------------
+        /// <summary>
+        /// 🔍 Diagnostic page for authentication debugging
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public ActionResult AuthDiagnostics()
+        {
+            return View();
+        }
+
         #region Profile Management (مدیریت پروفایل)
         // -------------------------------------------------------------------
 
