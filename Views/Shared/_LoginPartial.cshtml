@@ -2,22 +2,27 @@
 @using ClinicApp.Helpers
 @using ClinicApp.Constants
 @{
-    // ✅ FIX: Multiple checks for authentication state
+    // ✅ FIX: Multiple checks for authentication state with cookie validation
     var isAuthenticated = Request.IsAuthenticated;
+    var hasAuthCookie = Request.Cookies["ClinicAppAuth"] != null;
     
-    // ✅ FALLBACK: Check OWIN context if Request.IsAuthenticated is false
+    // ✅ ENHANCED FALLBACK: Check OWIN context if Request.IsAuthenticated is false
     // This ensures UI reflects authentication state even if sync hasn't happened yet
-    if (!isAuthenticated && HttpContext.Current?.GetOwinContext() != null)
+    // Also check for cookie existence to handle redirect timing issues
+    if (!isAuthenticated && (hasAuthCookie || HttpContext.Current?.GetOwinContext() != null))
     {
         try
         {
-            var owinContext = HttpContext.Current.GetOwinContext();
-            var owinUser = owinContext.Authentication?.User;
-            if (owinUser != null && owinUser.Identity.IsAuthenticated)
+            var owinContext = HttpContext.Current?.GetOwinContext();
+            if (owinContext != null)
             {
-                isAuthenticated = true;
-                // Sync for this request to ensure consistency
-                HttpContext.Current.User = owinUser;
+                var owinUser = owinContext.Authentication?.User;
+                if (owinUser != null && owinUser.Identity.IsAuthenticated)
+                {
+                    isAuthenticated = true;
+                    // Sync for this request to ensure consistency
+                    HttpContext.Current.User = owinUser;
+                }
             }
         }
         catch

@@ -748,10 +748,22 @@
                             : 'ورود با موفقیت انجام شد';
                         toastr.success(successMessage, '', { timeOut: 1500 });
                         
-                        // Small delay for better UX
+                        // ✅ FIX: Increased delay to ensure cookie is set before redirect
+                        // Cookie needs time to be processed by browser after Set-Cookie header
                         setTimeout(function() {
                             if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
+                                // ✅ Check if we're already on the target page
+                                var currentUrl = window.location.pathname + window.location.search;
+                                var targetUrlObj = new URL(response.redirectUrl, window.location.origin);
+                                var targetUrl = targetUrlObj.pathname + targetUrlObj.search;
+                                
+                                if (currentUrl === targetUrl) {
+                                    // ✅ Same page - reload to sync authentication state
+                                    window.location.reload();
+                                } else {
+                                    // ✅ Different page - redirect with delay to ensure cookie is set
+                                    window.location.href = response.redirectUrl;
+                                }
                             } else {
                                 // ✅ For registration, redirect to CompleteRegistration if no redirectUrl
                                 if (state.isRegistrationFlow) {
@@ -762,7 +774,7 @@
                                     window.location.reload();
                                 }
                             }
-                        }, 500);
+                        }, 1000); // ✅ Increased from 500ms to 1000ms to ensure cookie is processed
                     } else {
                         // ✅ Show user-friendly error message
                         var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';

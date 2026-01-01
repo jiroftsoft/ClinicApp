@@ -175,12 +175,27 @@ namespace ClinicApp
             // ✅ CRITICAL FIX: Ensure OWIN authentication state syncs with MVC HttpContext
             // OWIN middleware sets IOwinContext.Authentication.User, but HttpContext.User may not be synced
             // This is a known issue in ASP.NET MVC5 + OWIN integration
-            if (Request.IsAuthenticated == false && HttpContext.Current?.GetOwinContext() != null)
+            // ✅ ENHANCED: Also check for cookie existence to handle redirect timing issues
+            var hasAuthCookie = Request.Cookies["ClinicAppAuth"] != null;
+            var needsSync = Request.IsAuthenticated == false || (hasAuthCookie && Request.IsAuthenticated == false);
+            
+            if (needsSync && HttpContext.Current?.GetOwinContext() != null)
             {
                 try
                 {
                     var owinContext = HttpContext.Current.GetOwinContext();
                     var owinUser = owinContext.Authentication?.User;
+                    
+                    // ✅ If cookie exists but user not set, OWIN middleware may not have run yet
+                    // This can happen in redirect scenarios where cookie is set but middleware hasn't validated it
+                    if (hasAuthCookie && (owinUser == null || !owinUser.Identity.IsAuthenticated))
+                    {
+                        // OWIN middleware will handle validation on next request cycle
+                        // Log for debugging but don't force sync (security risk)
+                        Log.Information("🔄 Cookie exists but OWIN user not set - waiting for middleware validation");
+                        return;
+                    }
+                    
                     if (owinUser != null && owinUser.Identity.IsAuthenticated)
                     {
                         // ✅ DEBUG: Log sync operation for troubleshooting
