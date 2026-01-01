@@ -9,6 +9,7 @@ public interface IOtpStateStore
 {
     void SetState(OtpState state);
     OtpState GetState();
+    OtpState GetState(string nationalCode); // ✅ Overload for fallback by NationalCode
     void ClearState();
 }
 
@@ -43,6 +44,7 @@ public class HttpSessionOtpStateStore : IOtpStateStore
 
     public void SetState(OtpState state) => HttpContext.Current.Session[OtpStateSessionKey] = state;
     public OtpState GetState() => HttpContext.Current.Session[OtpStateSessionKey] as OtpState;
+    public OtpState GetState(string nationalCode) => GetState(); // Session-only implementation doesn't support NationalCode lookup
     public void ClearState() => HttpContext.Current.Session.Remove(OtpStateSessionKey);
 }
 

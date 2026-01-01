@@ -971,6 +971,10 @@
     <Compile Include="Migrations\202601011951264_AddOtpStatesTable1011.Designer.cs">
       <DependentUpon>202601011951264_AddOtpStatesTable1011.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202601012030538_WhatsNew1012.cs" />
+    <Compile Include="Migrations\202601012030538_WhatsNew1012.Designer.cs">
+      <DependentUpon>202601012030538_WhatsNew1012.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
@@ -1421,12 +1425,13 @@
     <Compile Include="Services\DocumentUploadService.cs" />
     <Compile Include="Services\Finance\DbFinancialYearService.cs" />
     <Compile Include="Services\HomePageService.cs" />
-    <Compile Include="Services\HybridOtpStateStore.cs" />
+    <Compile Include="Services\HttpSessionOtpStateStore.cs" />
     <Compile Include="Services\ImageUploadService.cs" />
     <Compile Include="Services\Insurance\IInsuranceRulesService.cs" />
     <Compile Include="Services\Insurance\InsuranceStatusCheckerService.cs" />
     <Compile Include="Services\NewsletterEmailService.cs" />
     <Compile Include="Services\NewsletterSmsService.cs" />
+    <Compile Include="Services\OtpCleanupService.cs" />
     <Compile Include="Services\PatientDashboardService.cs" />
     <Compile Include="Services\Patient\MedicalRecordService.cs" />
     <Compile Include="Services\Payment\CashierPerformanceService.cs" />
@@ -6655,6 +6660,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202601011951264_AddOtpStatesTable1011.resx">
       <DependentUpon>202601011951264_AddOtpStatesTable1011.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601012030538_WhatsNew1012.resx">
+      <DependentUpon>202601012030538_WhatsNew1012.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

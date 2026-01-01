@@ -393,8 +393,9 @@ namespace ClinicApp
                 // ثبت سرویس‌های ارتباطی پزشکی
                 container.RegisterType<IIdentityMessageService, AsanakSmsService>(new HierarchicalLifetimeManager());
 
-                // ✅ BEAST MODE FIX #1: Hybrid OTP Store با Database Fallback برای رفع Session Loss
-                container.RegisterType<IOtpStateStore, HybridOtpStateStore>(new PerRequestLifetimeManager());
+                // ✅ CRITICAL FIX: Session-only OTP Store (Simple & Reliable)
+                // Database persistence is handled by AuthService using its own context
+                container.RegisterType<IOtpStateStore, ClinicApp.Services.HttpSessionOtpStateStore>(new PerRequestLifetimeManager());
                 container.RegisterType<IClientInfoProvider, HttpContextClientInfoProvider>(new PerRequestLifetimeManager());
                 container.RegisterType<IRateLimiter, MemoryCacheRateLimiter>(new ContainerControlledLifetimeManager()); // Singleton
                 // This tells Unity: "When you need an IAppSettings, don't use a constructor.

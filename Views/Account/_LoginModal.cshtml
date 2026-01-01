@@ -651,14 +651,21 @@
             });
         });
 
+        // ✅ CRITICAL FIX: Prevent double submission
+        var isSubmitting = false;
+        
         $('#form-verify-otp').on('submit', function(e) {
             var $form = $(this);
             var $button = $form.find('button[type="submit"]');
             
-            // Prevent multiple submissions
-            if ($button.prop('disabled')) {
+            // ✅ Prevent multiple submissions
+            if ($button.prop('disabled') || isSubmitting) {
+                e.preventDefault();
                 return false;
             }
+            
+            // ✅ Mark as submitting
+            isSubmitting = true;
             
             // Get OTP from combined field or rebuild from inputs
             var otp = $('#combined-otp-code').val();
@@ -747,11 +754,17 @@
                 // ✅ Update form action
                 $form.attr('action', '@Url.Action("VerifyLoginOtp", "Account")');
                 
+                // ✅ Disable button to prevent double submit
+                $button.prop('disabled', true);
+                
                 // ✅ Don't prevent default - let form submit normally
                 // Server will handle redirect with cookie
                 // OTP is already set in combined-otp-code field
                 return true; // Allow form submission
             }
+            
+            // ✅ Reset flag if we preventDefault for registration flow
+            isSubmitting = false;
             
             // ✅ REGISTRATION FLOW: Use AJAX (existing code)
             e.preventDefault();
@@ -833,10 +846,12 @@
                         updateCombinedOtp();
                         showButtonSpinner($button, false);
                         $button.prop('disabled', false);
+                        // ✅ Reset submission flag
+                        isSubmitting = false;
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('VerifyOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                    console.error('VerifyOtp AJAX Error:', { xhr: xhr, status, error: error });
                     if (xhr.status === 400) {
                         try {
                             var errorResponse = JSON.parse(xhr.responseText);
@@ -856,6 +871,8 @@
                     updateCombinedOtp();
                     showButtonSpinner($button, false);
                     $button.prop('disabled', false);
+                    // ✅ Reset submission flag
+                    isSubmitting = false;
                 }
             });
         });

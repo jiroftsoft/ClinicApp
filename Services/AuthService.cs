@@ -75,59 +75,86 @@ namespace ClinicApp.Services
         /// </summary>
         public async Task<ServiceResult> SendLoginOtpAsync(string nationalCode)
         {
+            var startTime = DateTime.UtcNow;
+            _log.Information("🚀 [SendLoginOtp] START - NationalCode: {MaskedNC}", 
+                MaskHelper.MaskNationalCode(nationalCode));
+
             try
             {
                 // Step 1: Validate the National Code format
+                _log.Debug("[SendLoginOtp] Step 1: Validating National Code format");
                 var normalizedCode = PersianNumberHelper.ToEnglishNumbers(nationalCode);
                 if (!IranianNationalCodeValidator.IsValid(normalizedCode))
                 {
+                    _log.Warning("[SendLoginOtp] FAILED - Invalid National Code format: {MaskedNC}", 
+                        MaskHelper.MaskNationalCode(normalizedCode));
                     return ServiceResult.Failed("کد ملی وارد شده معتبر نیست.", "INVALID_NATIONAL_CODE", ErrorCategory.Validation);
                 }
+                _log.Debug("[SendLoginOtp] ✓ National Code format valid");
 
                 // Step 2: Find the user
+                _log.Debug("[SendLoginOtp] Step 2: Finding user in database");
                 var user = await _userManager.FindByNameAsync(normalizedCode);
                 if (user == null)
                 {
-                    // This is a security measure. In a login flow, the user MUST exist.
-                    _log.Warning("A login OTP was requested for a non-existent user: {NationalCode}", normalizedCode);
+                    _log.Warning("[SendLoginOtp] FAILED - User not found: {MaskedNC}", 
+                        MaskHelper.MaskNationalCode(normalizedCode));
                     return ServiceResult.Failed("کاربری با این مشخصات یافت نشد.", "USER_NOT_FOUND", ErrorCategory.NotFound);
                 }
+                _log.Debug("[SendLoginOtp] ✓ User found - UserId: {UserId}", user.Id);
 
                 // Step 3: Check for a valid phone number
+                _log.Debug("[SendLoginOtp] Step 3: Validating phone number");
                 if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !PersianNumberHelper.IsValidPhoneNumber(user.PhoneNumber))
                 {
-                    _log.Error("User {UserId} has an invalid or missing phone number.", user.Id);
+                    _log.Error("[SendLoginOtp] FAILED - Invalid or missing phone number - UserId: {UserId}, PhoneLength: {PhoneLength}", 
+                        user.Id, user.PhoneNumber?.Length ?? 0);
                     return ServiceResult.Failed("شماره موبایلی برای حساب شما ثبت نشده یا نامعتبر است. لطفاً با پشتیبانی تماس بگیرید.", "PHONE_NUMBER_MISSING", ErrorCategory.BusinessLogic);
                 }
+                _log.Debug("[SendLoginOtp] ✓ Phone number valid - MaskedPhone: {MaskedPhone}", 
+                    MaskHelper.MaskPhoneNumber(user.PhoneNumber));
 
                 // Step 4: Check if the account is locked
+                _log.Debug("[SendLoginOtp] Step 4: Checking account lockout status");
                 if (await _userManager.IsLockedOutAsync(user.Id))
                 {
                     var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user.Id);
                     var lockoutPersianTime = lockoutEnd.UtcDateTime.ToPersianDateTime() ?? " دقایقی دیگر";
-                    _log.Warning("Login attempt for locked-out user: {UserId}", user.Id);
+                    _log.Warning("[SendLoginOtp] FAILED - Account locked - UserId: {UserId}, LockoutEnd: {LockoutEnd}", 
+                        user.Id, lockoutEnd);
                     return ServiceResult.Failed($"حساب شما به دلیل تلاش‌های ناموفق تا {lockoutPersianTime} قفل شده است.", "ACCOUNT_LOCKED", ErrorCategory.Security);
                 }
+                _log.Debug("[SendLoginOtp] ✓ Account not locked");
 
                 // Step 5: Apply Rate Limiting
+                _log.Debug("[SendLoginOtp] Step 5: Checking rate limits");
                 var clientIp = _clientProvider.GetClientIpAddress();
                 if (_rateLimiter.IsRateLimited($"login_otp_send_nc:{normalizedCode}", _authSettings.OtpMaxSendsPerNationalCodePer5Min, TimeSpan.FromMinutes(5)) ||
                     _rateLimiter.IsRateLimited($"login_otp_send_ip:{clientIp}", _authSettings.OtpMaxSendsPerIpPer5Min, TimeSpan.FromMinutes(5)))
                 {
+                    _log.Warning("[SendLoginOtp] FAILED - Rate limit exceeded - IP: {IP}, MaskedNC: {MaskedNC}", 
+                        clientIp, MaskHelper.MaskNationalCode(normalizedCode));
                     return ServiceResult.Failed("تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً دقایقی دیگر تلاش کنید.", "RATE_LIMIT_EXCEEDED");
                 }
+                _log.Debug("[SendLoginOtp] ✓ Rate limits OK");
 
                 // Step 6: Generate, Store, and Send the OTP
+                _log.Debug("[SendLoginOtp] Step 6: Generating OTP");
                 var otp = GenerateSecureOtp(_authSettings.OtpLength);
-                var otpHash = HashOtp(otp, user.PhoneNumber); // Salt with phone number for login
+                var otpHash = HashOtp(otp, user.PhoneNumber);
+                _log.Debug("[SendLoginOtp] ✓ OTP generated - Length: {OtpLength}, HashLength: {HashLength}", 
+                    otp.Length, otpHash.Length);
 
-                // ✅ باطل کردن OTP قبلی (اگر وجود داشته باشد) و ثبت در لاگ
+                // Check and invalidate old OTP
                 var oldState = _otpStateStore.GetState();
                 if (oldState != null && oldState.NationalCode == normalizedCode)
                 {
-                    _log.Information("OTP قبلی برای کد ملی {NationalCode} باطل شد (OTP جدید ارسال شد)", normalizedCode);
+                    _log.Information("[SendLoginOtp] Invalidating old OTP for MaskedNC: {MaskedNC}", 
+                        MaskHelper.MaskNationalCode(normalizedCode));
                 }
 
+                // Create and store new OTP state
+                _log.Debug("[SendLoginOtp] Storing OTP state (Session + Database)");
                 var state = new OtpState
                 {
                     NationalCode = normalizedCode,
@@ -136,25 +163,66 @@ namespace ClinicApp.Services
                     ExpiryUtc = DateTime.UtcNow.AddMinutes(_authSettings.OtpExpiryMinutes),
                     IpAddress = clientIp,
                     UserAgent = _clientProvider.GetUserAgent(),
-                    AttemptCount = 0 // ✅ شمارنده تلاش‌ها
+                    AttemptCount = 0
                 };
                 _otpStateStore.SetState(state);
+                _log.Debug("[SendLoginOtp] ✓ OTP state stored to Session - Expiry: {Expiry}", state.ExpiryUtc);
 
-                // Log the request to the database for auditing
+                // ✅ ALSO save to database for fallback (using AuthService's context)
+                var sessionId = HttpContext.Current?.Session?.SessionID;
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    // Remove old OTP states for this user
+                    var oldStates = _context.OtpStates
+                        .Where(o => o.NationalCode == normalizedCode)
+                        .ToList();
+                    if (oldStates.Any())
+                    {
+                        _context.OtpStates.RemoveRange(oldStates);
+                        _log.Debug("[SendLoginOtp] Removed {Count} old OTP states from database", oldStates.Count);
+                    }
+
+                    // Add new OTP state
+                    var dbState = new OtpStateEntity
+                    {
+                        SessionId = sessionId,
+                        NationalCode = normalizedCode,
+                        PhoneNumber = user.PhoneNumber,
+                        OtpHash = otpHash,
+                        ExpiryUtc = state.ExpiryUtc,
+                        IpAddress = clientIp,
+                        UserAgent = _clientProvider.GetUserAgent(),
+                        AttemptCount = 0,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.OtpStates.Add(dbState);
+                    _log.Debug("[SendLoginOtp] Added OTP state to database for fallback");
+                }
+
+                // Log to audit database
+                _log.Debug("[SendLoginOtp] Logging OTP request to audit database");
                 var otpLog = new OtpRequest { PhoneNumber = user.PhoneNumber, OtpCodeHash = otpHash };
                 _context.OtpRequests.Add(otpLog);
                 await _context.SaveChangesAsync();
+                _log.Debug("[SendLoginOtp] ✓ Audit log saved");
 
-                // Send the SMS
+                // Send SMS
+                _log.Debug("[SendLoginOtp] Sending SMS to: {MaskedPhone}", 
+                    MaskHelper.MaskPhoneNumber(user.PhoneNumber));
                 var message = new IdentityMessage { Destination = user.PhoneNumber, Body = $"کد ورود کلینیک شفا: {otp}" };
                 await _smsService.SendAsync(message);
-
-                _log.Information("Login OTP sent successfully to user {UserId}", user.Id);
+                
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _log.Information("✅ [SendLoginOtp] SUCCESS - UserId: {UserId}, Duration: {Duration}ms", 
+                    user.Id, duration);
+                
                 return ServiceResult.Successful("کد ورود به شماره موبایل شما ارسال شد.");
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error while sending login OTP for {NationalCode}", nationalCode);
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _log.Error(ex, "❌ [SendLoginOtp] EXCEPTION - MaskedNC: {MaskedNC}, Duration: {Duration}ms, ExceptionType: {ExceptionType}", 
+                    MaskHelper.MaskNationalCode(nationalCode), duration, ex.GetType().Name);
                 return ServiceResult.Failed("یک خطای سیستمی رخ داد. لطفاً با پشتیبانی تماس بگیرید.", "SYSTEM_ERROR", ErrorCategory.System, SecurityLevel.High);
             }
         }
@@ -205,9 +273,42 @@ namespace ClinicApp.Services
                     state?.NationalCode ?? "NULL",
                     state?.ExpiryUtc ?? DateTime.MinValue);
                 
+                // ✅ CRITICAL FIX: Fallback to database lookup by NationalCode if session is lost
                 if (state == null)
                 {
-                    _log.Error("❌ CRITICAL: OTP State is NULL - Session may be lost. NationalCode: {NationalCode}", normalizedCode);
+                    _log.Warning("⚠️ OTP State is NULL in Session - Attempting database fallback by NationalCode: {MaskedNC}", 
+                        MaskHelper.MaskNationalCode(normalizedCode));
+                    
+                    // Query database directly (using AuthService's context)
+                    var dbState = await _context.OtpStates
+                        .Where(o => o.NationalCode == normalizedCode && o.ExpiryUtc > DateTime.UtcNow)
+                        .OrderByDescending(o => o.CreatedAt)
+                        .FirstOrDefaultAsync();
+                    
+                    if (dbState != null)
+                    {
+                        _log.Information("✅ OTP State recovered from database - DbId: {DbId}", dbState.Id);
+                        
+                        // Restore to in-memory state
+                        state = new OtpState
+                        {
+                            NationalCode = dbState.NationalCode,
+                            PhoneNumber = dbState.PhoneNumber,
+                            OtpHash = dbState.OtpHash,
+                            ExpiryUtc = dbState.ExpiryUtc,
+                            IpAddress = dbState.IpAddress,
+                            UserAgent = dbState.UserAgent,
+                            AttemptCount = dbState.AttemptCount
+                        };
+                        
+                        // Restore to session for next request
+                        _otpStateStore.SetState(state);
+                    }
+                    else
+                    {
+                        _log.Error("❌ CRITICAL: OTP State is NULL even after database fallback - NationalCode: {MaskedNC}", 
+                            MaskHelper.MaskNationalCode(normalizedCode));
+                    }
                 }
                 
                 var incomingHash = HashOtp(otpCode, user.PhoneNumber); // هش کردن با شماره موبایل کاربر
@@ -253,7 +354,18 @@ namespace ClinicApp.Services
                 }
 
                 // مرحله ۶: پاک‌سازی و ورود نهایی
-                _otpStateStore.ClearState(); // جلوگیری از استفاده مجدد از OTP
+                _otpStateStore.ClearState(); // جلوگیری از استفاده مجدد از OTP (Session)
+                
+                // ✅ Also clear from database
+                var dbStatesToClear = _context.OtpStates
+                    .Where(o => o.NationalCode == normalizedCode)
+                    .ToList();
+                if (dbStatesToClear.Any())
+                {
+                    _context.OtpStates.RemoveRange(dbStatesToClear);
+                    _log.Debug("[VerifyLoginOtp] Cleared {Count} OTP state(s) from database", dbStatesToClear.Count);
+                }
+                
                 await _userManager.ResetAccessFailedCountAsync(user.Id); // ریست کردن شمارنده خطاهای ورود
 
                 await SignInUserAsync(user, isPersistent: false); // ورود کاربر و آپدیت LastLoginDate

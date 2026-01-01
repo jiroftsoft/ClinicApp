@@ -21,12 +21,12 @@ namespace ClinicApp.Models.Core
         [Index("IX_OtpState_SessionId_Expiry", 1)]
         public string SessionId { get; set; }
 
-        [Required, MaxLength(10)]
-        [Index("IX_OtpState_NationalCode_Expiry", 1)]
-        public string NationalCode { get; set; }
+    [Required, MaxLength(10)]
+    [Index("IX_OtpState_NationalCode_Expiry", 1)]
+    public string NationalCode { get; set; }
 
-        [Required, MaxLength(11)]
-        public string PhoneNumber { get; set; }
+    [Required, MaxLength(20)]
+    public string PhoneNumber { get; set; }
 
         [Required, MaxLength(255)]
         public string OtpHash { get; set; }
@@ -61,6 +61,8 @@ namespace ClinicApp.Models.Core
 
             Property(x => x.NationalCode).IsRequired().HasMaxLength(10)
                 .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("IX_OtpState_NationalCode_Expiry", 1)));
+            
+            Property(x => x.PhoneNumber).IsRequired().HasMaxLength(20);
 
             Property(x => x.ExpiryUtc).IsRequired()
                 .HasColumnAnnotation("Index", new IndexAnnotation(new[]

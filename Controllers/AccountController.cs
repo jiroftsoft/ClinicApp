@@ -104,16 +104,31 @@ namespace ClinicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> SendLoginOtp(EnterNationalCodeViewModel model)
         {
-            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+            _log.Information("📨 [Controller.SendLoginOtp] START - MaskedNC: {MaskedNC}, IsAjax: {IsAjax}, IP: {IP}",
+                MaskHelper.MaskNationalCode(model?.NationalCode),
+                Request.IsAjaxRequest(),
+                Request.UserHostAddress);
+
+            if (!ModelState.IsValid)
+            {
+                _log.Warning("[Controller.SendLoginOtp] ModelState INVALID - Errors: {Errors}",
+                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                return CreateValidationErrorsJson();
+            }
 
             try
             {
                 var result = await _authService.SendLoginOtpAsync(model.NationalCode);
+                
+                _log.Information("[Controller.SendLoginOtp] Service returned - Success: {Success}, Code: {Code}",
+                    result.Success, result.Code);
+                
                 return CreateServiceResultJson(result);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in SendLoginOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
+                _log.Error(ex, "❌ [Controller.SendLoginOtp] EXCEPTION - MaskedNC: {MaskedNC}, ExceptionType: {ExceptionType}",
+                    MaskHelper.MaskNationalCode(model.NationalCode), ex.GetType().Name);
                 return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
             }
         }
@@ -142,29 +157,24 @@ namespace ClinicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
         {
-            // ✅ SECURITY: Log with masked sensitive data (BEAST MODE FIX #2)
+            var isAjaxRequest = Request.IsAjaxRequest();
+            
+            // ✅ SECURITY: Log with masked sensitive data
             _log.Information("VerifyLoginOtp START - NationalCode: {MaskedNC}, OtpCode Length: {OtpLength}, IsAjax: {IsAjax}",
                 MaskHelper.MaskNationalCode(model?.NationalCode),
                 model?.OtpCode?.Length ?? 0,
-                Request.IsAjaxRequest());
-            
-            // ✅ CRITICAL: This endpoint MUST be called via AJAX
-            if (!Request.IsAjaxRequest())
-            {
-                _log.Error("CRITICAL: VerifyLoginOtp called WITHOUT AJAX - This should NEVER happen!");
-                return Json(new
-                {
-                    success = false,
-                    message = "این درخواست باید از طریق AJAX ارسال شود.",
-                    code = "INVALID_REQUEST_TYPE"
-                }, JsonRequestBehavior.AllowGet);
-            }
+                isAjaxRequest);
             
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 _log.Warning("ModelState invalid - Errors: {Errors}", string.Join(", ", errors));
-                return CreateValidationErrorsJson();
+                
+                if (isAjaxRequest)
+                    return CreateValidationErrorsJson();
+                
+                TempData["ErrorMessage"] = "اطلاعات وارد شده معتبر نیست.";
+                return RedirectToAction("Login", new { returnUrl });
             }
 
             try
@@ -174,18 +184,41 @@ namespace ClinicApp.Controllers
                 if (result.Success)
                 {
                     var redirectUrl = GetSafeRedirectUrl(returnUrl);
-                    _log.Information("Login successful - redirecting to: {RedirectUrl}", redirectUrl);
+                    _log.Information("✅ Login successful - redirecting to: {RedirectUrl}", redirectUrl);
+                    
+                    // ✅ Server-side redirect for normal form submission (fixes Cookie Timing Issue)
+                    if (!isAjaxRequest)
+                    {
+                        return RedirectToLocal(redirectUrl);
+                    }
+                    
+                    // ✅ JSON response for AJAX requests
                     return CreateServiceResultJson(result, redirectUrl);
                 }
                 else
                 {
-                    _log.Warning("Login failed - Code: {Code}", result.Code);
+                    _log.Warning("❌ Login failed - Code: {Code}, Message: {Message}", result.Code, result.Message);
+                    
+                    if (!isAjaxRequest)
+                    {
+                        TempData["ErrorMessage"] = result.Message;
+                        return RedirectToAction("Login", new { returnUrl });
+                    }
+                    
                     return CreateServiceResultJson(result);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "System error in VerifyLoginOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
+                _log.Error(ex, "❌ System error in VerifyLoginOtp for NationalCode: {MaskedNC}", 
+                    MaskHelper.MaskNationalCode(model.NationalCode));
+                
+                if (!isAjaxRequest)
+                {
+                    TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً دوباره تلاش کنید.";
+                    return RedirectToAction("Login", new { returnUrl });
+                }
+                
                 return CreateServiceResultJson(ServiceResult.Failed("خطای سیستمی رخ داد.", "SYSTEM_ERROR"));
             }
         }
