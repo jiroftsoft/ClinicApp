@@ -20,6 +20,7 @@
 6. **راهنمای کامل Extensions** - 6 Extension با مثال
 7. **Quick Reference** - دسترسی سریع به توابع
 8. **MVC Routing Best Practices** 🛣️ - درس‌های گرانبها از تجربه واقعی
+9. **Patient Area Authentication** 🔒 - یکپارچه‌سازی احراز هویت Patient (جدید!)
 
 ---
 
@@ -315,12 +316,13 @@ SecurityHelper.Encrypt(password, key);
 
 ## 📊 آمار
 
-- **تعداد فایل‌های مستند:** 8 فایل
+- **تعداد فایل‌های مستند:** 9 فایل
 - **فایل‌های الزامی:** 3 فایل ⚡🔧
 - **تعداد Helpers مستند شده:** 50+ Helper
 - **جعبه ابزار (Toolbox):** 14 فایل + 100+ متد 🧰
 - **تعداد مثال‌های عملی:** 200+ مثال
 - **راهنماهای توسعه:** 2 راهنمای جامع (قرارداد + TODO)
+- **ماژول‌های Patient Area:** Dashboard, Medical Record, Appointment Booking 🔒
 - **وضعیت:** ✅ **فعال و به‌روز**
 
 ---
@@ -434,6 +436,16 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
           CacheHelper.GetOrCreate("key", () => data)
 ```
 
+**Q9: چطور احراز هویت Patient Area را پیاده‌سازی کنم؟** 🔒
+```
+A: از PatientRoleAuthorizationAttribute استفاده کن
+   مستند: Docs/PATIENT_AUTH_INTEGRATION_ANALYSIS.md
+   فایل: Filters/PatientRoleAuthorizationAttribute.cs
+   استفاده: [PatientRoleAuthorization] روی Controller
+   مثال: BasePatientController دارای این attribute است
+   تمام Patient Area Controllers باید از BasePatientController ارث‌بری کنند
+```
+
 ---
 
 ## 🔗 لینک‌های مفید
@@ -441,6 +453,8 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 ### **اسناد اصلی پروژه:**
 - **[Docs/DEVELOPMENT_CONTRACT.md](../DEVELOPMENT_CONTRACT.md)** - قرارداد توسعه کامل
 - **[Docs/TODO_TEMPLATE.md](../TODO_TEMPLATE.md)** - Template TODO کامل
+- **[Docs/PATIENT_AUTH_INTEGRATION_ANALYSIS.md](../PATIENT_AUTH_INTEGRATION_ANALYSIS.md)** 🔒 - تحلیل یکپارچه‌سازی احراز هویت Patient
+- **[Docs/PATIENT_AUTH_INTEGRATION_SUMMARY.md](../PATIENT_AUTH_INTEGRATION_SUMMARY.md)** 🔒 - خلاصه پیاده‌سازی احراز هویت Patient
 - **[Docs/PROJECT_MODULES_CATALOG.md](../PROJECT_MODULES_CATALOG.md)** - کاتالوگ ماژول‌ها
 - **[Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md](../PERSIAN_DATEPICKER_MODULE_GUIDE.md)** - راهنمای DatePicker
 - **[Docs/IMAGE_UPLOAD_SYSTEM_GUIDE.md](../IMAGE_UPLOAD_SYSTEM_GUIDE.md)** - راهنمای آپلود تصویر
@@ -561,8 +575,8 @@ A: 14 فایل Helper/Extension با 100+ متد کاربردی
 
 ---
 
-**نسخه:** 2.2.0  
-**آخرین به‌روزرسانی:** 1404/11/07 (اضافه شدن فایل پیش‌پرواز 🛡️)  
+**نسخه:** 2.3.0  
+**آخرین به‌روزرسانی:** 1404/11/08 (یکپارچه‌سازی احراز هویت Patient 🔒)  
 **وضعیت:** ✅ **فعال و به‌روز**
 
 ---

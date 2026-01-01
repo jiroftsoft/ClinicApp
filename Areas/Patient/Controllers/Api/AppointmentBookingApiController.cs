@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces;
@@ -11,8 +12,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 {
     /// <summary>
     /// API Controller برای رزرو نوبت
+    /// 
+    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can access
+    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
-    //[Authorize]
+    [PatientRoleAuthorization]
     public class AppointmentBookingApiController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

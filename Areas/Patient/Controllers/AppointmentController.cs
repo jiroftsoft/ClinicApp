@@ -26,8 +26,10 @@ namespace ClinicApp.Areas.Patient.Controllers
     /// <summary>
     /// Controller برای مدیریت نوبت‌های بیمار
     /// بهینه‌سازی شده طبق appointment_controller_review.md
+    /// 
+    /// ✅ Security: PatientRoleAuthorization enforced via BasePatientController
+    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
-    [AllowAnonymous] // اجازه دسترسی عمومی برای مشاهده نوبت‌ها
     public class AppointmentController : BasePatientController
     {
         private readonly IAppointmentBookingService _bookingService;

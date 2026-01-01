@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Filters;
 using ClinicApp.Interfaces;
 using Serilog;
 
@@ -9,7 +10,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
     /// <summary>
     /// Base Controller برای تمام Patient Area Controllers
     /// طبق appointment_controller_review.md - فاز 1
+    /// 
+    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can access
+    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
+    [PatientRoleAuthorization]
     public abstract class BasePatientController : Controller
     {
         protected readonly ILogger _logger;

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
 using Serilog;
@@ -9,8 +10,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 {
     /// <summary>
     /// API Controller برای جستجوی پزشکان
+    /// 
+    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can search doctors
+    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
-    [Authorize]
+    [PatientRoleAuthorization]
     public class DoctorSearchApiController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

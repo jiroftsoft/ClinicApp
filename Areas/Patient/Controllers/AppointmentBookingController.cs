@@ -25,8 +25,11 @@ namespace ClinicApp.Areas.Patient.Controllers
 {
     /// <summary>
     /// Controller برای رزرو نوبت آنلاین
+    /// 
+    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can book appointments
+    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
-    //[Authorize] // ✅ فعال برای امنیت
+    [PatientRoleAuthorization]
     public class AppointmentBookingController : Controller
     {
         private readonly IAppointmentBookingService _bookingService;

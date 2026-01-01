@@ -18,6 +18,7 @@
 | 06 | **Quick Reference** | [06-Quick-Reference.md](06-Quick-Reference.md) | جدول سریع تمام Helpers |
 | 07 | **جعبه ابزار (Toolbox)** 🧰 | [HelperExtensionsGuide.md](HelperExtensionsGuide.md) | 14 Helper/Extension + 100+ متد |
 | 08 | **🚨 ماژول‌های مالی** 💰 | [CRITICAL-FINANCIAL-MODULE-CONTRACT.md](CRITICAL-FINANCIAL-MODULE-CONTRACT.md) | قرارداد Critical برای صندوق، پرداخت، گزارش‌ها |
+| 09 | **🔒 احراز هویت Patient** | [PATIENT_AREA_AUTH_GUIDE.md](PATIENT_AREA_AUTH_GUIDE.md) | راهنمای یکپارچه‌سازی احراز هویت Patient Area |
 | -- | **فهرست این صفحه** | [INDEX.md](INDEX.md) | شما اینجا هستید |
 
 ---
@@ -437,8 +438,8 @@ TODO: اضافه کردن آمار استفاده از Helpers
 
 ---
 
-**نسخه:** 1.1.0  
-**آخرین به‌روزرسانی:** 1404/10/05 (اضافه شدن جعبه ابزار 🧰)  
+**نسخه:** 1.2.0  
+**آخرین به‌روزرسانی:** 1404/11/08 (اضافه شدن راهنمای احراز هویت Patient 🔒)  
 **وضعیت:** ✅ **فعال**
 
 ---
