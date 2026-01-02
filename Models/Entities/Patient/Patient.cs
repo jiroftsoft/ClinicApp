@@ -363,10 +363,11 @@ public class PatientConfig : EntityTypeConfiguration<Patient>
                 new IndexAnnotation(new IndexAttribute("IX_Patient_LastLoginDate")));
 
         // روابط
-        HasRequired(p => p.ApplicationUser)
-            .WithMany(u => u.Patients)
-            .HasForeignKey(p => p.ApplicationUserId)
-            .WillCascadeOnDelete(false);
+        // ✅ FIXED: ApplicationUserId is now OPTIONAL (nullable)
+        // Patients imported from old database don't have User accounts
+        // When they register on the website, User will be linked to existing Patient
+        // NOTE: Relationship is configured in ApplicationUserConfig (ITrackable.cs)
+        // to avoid conflicting configurations
 
         // رابطه با مدل قدیمی Insurance حذف شد
 

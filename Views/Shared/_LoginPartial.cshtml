@@ -101,27 +101,27 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 
-                @* Menu Items - AJAX Navigation *@
+                @* Menu Items - Full Page Navigation for Patient Area *@
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Profile", "Account")" data-ajax="true">
-                        <i class="fas fa-user-circle"></i>
-                        <span>پروفایل من</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" data-ajax="true">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>نوبت‌های من</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" data-ajax="true">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" data-ajax="false">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>داشبورد</span>
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" data-ajax="true">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Profile", "Account")" data-ajax="false">
+                        <i class="fas fa-user-circle"></i>
+                        <span>پروفایل من</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" data-ajax="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>نوبت‌های من</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" data-ajax="false">
                         <i class="fas fa-file-medical"></i>
                         <span>پرونده الکترونیک</span>
                     </a>
@@ -130,7 +130,7 @@
                 
                 @* Settings & Logout *@
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Settings", new { area = "" })">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Settings", new { area = "" })" data-ajax="false">
                         <i class="fas fa-cog"></i>
                         <span>تنظیمات</span>
                     </a>

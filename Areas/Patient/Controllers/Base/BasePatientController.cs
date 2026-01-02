@@ -59,39 +59,64 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
                 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    _logger.Warning("❌ User.Identity.GetUserId() returned null - User not authenticated");
+                    _logger.Warning("❌ GetCurrentPatientIdAsync: User.Identity.GetUserId() returned null - User not authenticated");
                     return null;
                 }
 
-                _logger.Debug("🔍 Looking for Patient record - UserId: {UserId}", userId);
+                // ✅ Enhanced Logging: Log user info for debugging
+                var userName = User.Identity.Name;
+                var isAuthenticated = User.Identity.IsAuthenticated;
+                var isPatientRole = User.IsInRole("Patient");
+                
+                _logger.Information("🔍 GetCurrentPatientIdAsync - UserId: {UserId}, UserName: {UserName}, IsAuthenticated: {IsAuthenticated}, IsPatientRole: {IsPatientRole}", 
+                    userId, userName, isAuthenticated, isPatientRole);
 
                 // ✅ DIRECT DATABASE QUERY: Bypass CurrentUserService to avoid DI/caching issues
-                // Use the same ApplicationDbContext that CurrentUserService uses
                 var dbContext = System.Web.Mvc.DependencyResolver.Current.GetService<ClinicApp.Models.ApplicationDbContext>();
                 
                 if (dbContext == null)
                 {
-                    _logger.Error("❌ ApplicationDbContext not available from DI");
+                    _logger.Error("❌ GetCurrentPatientIdAsync: ApplicationDbContext not available from DI");
                     return null;
                 }
 
+                // ✅ Enhanced Query: Log SQL query and results
+                _logger.Debug("🔍 Querying Patients table - ApplicationUserId: {UserId}", userId);
+                
                 var patient = await dbContext.Patients
                     .Where(p => p.ApplicationUserId == userId && !p.IsDeleted)
-                    .Select(p => new { p.PatientId })
+                    .Select(p => new { p.PatientId, p.FirstName, p.LastName, p.NationalCode })
                     .FirstOrDefaultAsync();
 
                 if (patient == null)
                 {
-                    _logger.Warning("⚠️ Patient record not found for UserId: {UserId}", userId);
+                    // ✅ CRITICAL: Log detailed info when Patient not found
+                    var totalPatientsCount = await dbContext.Patients.CountAsync(p => !p.IsDeleted);
+                    var patientsWithThisUserId = await dbContext.Patients
+                        .Where(p => p.ApplicationUserId == userId)
+                        .Select(p => new { p.PatientId, p.IsDeleted })
+                        .ToListAsync();
+                    
+                    _logger.Warning("⚠️ Patient record NOT FOUND - UserId: {UserId}, UserName: {UserName}, TotalPatients: {TotalCount}, PatientsWithThisUserId: {Count}", 
+                        userId, userName, totalPatientsCount, patientsWithThisUserId.Count);
+                    
+                    if (patientsWithThisUserId.Any())
+                    {
+                        _logger.Warning("⚠️ Found {Count} Patient records with ApplicationUserId={UserId} but IsDeleted=true: {@Patients}", 
+                            patientsWithThisUserId.Count, userId, patientsWithThisUserId);
+                    }
+                    
                     return null;
                 }
 
-                _logger.Debug("✅ Patient found - PatientId: {PatientId}", patient.PatientId);
+                _logger.Information("✅ Patient found - PatientId: {PatientId}, Name: {FullName}, NationalCode: {NationalCode}", 
+                    patient.PatientId, $"{patient.FirstName} {patient.LastName}", patient.NationalCode);
+                    
                 return patient.PatientId;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ Exception in GetCurrentPatientIdAsync");
+                _logger.Error(ex, "❌ Exception in GetCurrentPatientIdAsync - UserId: {UserId}", User?.Identity?.GetUserId());
                 return null;
             }
         }

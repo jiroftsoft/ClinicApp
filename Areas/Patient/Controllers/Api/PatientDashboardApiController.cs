@@ -5,6 +5,7 @@ using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient;
+using Microsoft.AspNet.Identity;
 using Serilog;
 
 namespace ClinicApp.Areas.Patient.Controllers.Api
@@ -31,8 +32,48 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
 
         /// <summary>
+        /// 🔍 DIAGNOSTIC: Check authentication and patient mapping
+        /// GET: /Patient/Api/PatientDashboardApi/DiagnoseAuth
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> DiagnoseAuth()
+        {
+            try
+            {
+                var userId = User.Identity.GetUserId();
+                var userName = User.Identity.Name;
+                var isAuthenticated = User.Identity.IsAuthenticated;
+                var isPatientRole = User.IsInRole("Patient");
+                
+                var patientId = await GetCurrentPatientIdAsync();
+                
+                var diagnostic = new
+                {
+                    userId,
+                    userName,
+                    isAuthenticated,
+                    isPatientRole,
+                    patientId,
+                    hasPatientRecord = patientId.HasValue,
+                    message = patientId.HasValue 
+                        ? $"✅ Patient record found - PatientId: {patientId}" 
+                        : "❌ Patient record NOT FOUND - User has Patient role but no Patient record in database"
+                };
+                
+                _logger.Warning("🔍 DIAGNOSTIC: {@Diagnostic}", diagnostic);
+                
+                return Json(new { success = true, data = diagnostic }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error in DiagnoseAuth");
+                return ErrorJsonResult("خطا در تشخیص");
+            }
+        }
+
+        /// <summary>
         /// دریافت آمار سریع داشبورد
-        /// GET: /Patient/Api/PatientDashboard/GetQuickStats
+        /// GET: /Patient/Api/PatientDashboardApi/GetQuickStats
         /// </summary>
         [HttpGet]
         [OutputCache(Duration = 30, VaryByCustom = "User")] // ✅ Cache for 30 seconds per user
@@ -43,12 +84,16 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
+                    _logger.Warning("❌ GetQuickStats: GetCurrentPatientIdAsync returned null - returning error");
                     return ErrorJsonResult("اطلاعات بیمار یافت نشد");
                 }
 
+                _logger.Information("✅ GetQuickStats: PatientId={PatientId}, calling service", patientId.Value);
+                
                 var result = await _dashboardService.GetQuickStatsAsync(patientId.Value);
                 if (!result.Success)
                 {
+                    _logger.Warning("⚠️ GetQuickStats: Service returned failure - Message: {Message}", result.Message);
                     return ErrorJsonResult(result.Message);
                 }
 
@@ -56,7 +101,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت آمار سریع داشبورد");
+                _logger.Error(ex, "❌ Exception in GetQuickStats");
                 return ErrorJsonResult("خطا در دریافت آمار");
             }
         }

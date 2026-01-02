@@ -79,17 +79,19 @@
             });
 
             // ✅ Profile menu items - AJAX navigation (ONLY items with data-ajax="true" AND href)
+            // ✅ Items with data-ajax="false" will use normal navigation (full page load)
             // This handler will NOT affect logout button because it's a <button>, not an <a>
-            $(document).off('click', '.user-menu-item[data-ajax="true"][href]')
-                       .on('click', '.user-menu-item[data-ajax="true"][href]', function(e) {
-                e.preventDefault();
+            $(document).off('click', '.user-menu-item[href]')
+                       .on('click', '.user-menu-item[href]', function(e) {
                 var $this = $(this);
                 var url = $this.attr('href');
                 var menuText = $this.find('span').text() || $this.text();
+                var isAjax = $this.attr('data-ajax') === 'true';
                 
                 // ✅ CRITICAL: Validate URL before proceeding
                 if (!url || url.trim() === '' || url === '#') {
-                    console.error('🔴 AJAX link has invalid href:', url, 'Element:', this);
+                    e.preventDefault();
+                    console.error('🔴 Link has invalid href:', url, 'Element:', this);
                     if (window.toastr) {
                         toastr.error('این گزینه در دسترس نیست.', '', { timeOut: 3000 });
                     }
@@ -98,13 +100,25 @@
                 
                 // ✅ Skip "به زودی" items
                 if ($this.find('.badge-new').length > 0) {
+                    e.preventDefault();
                     if (window.toastr) {
                         toastr.info('این بخش به زودی فعال خواهد شد.', '', { timeOut: 3000 });
                     }
                     return false;
                 }
 
-                console.log('🔗 Navigating to:', url, 'Title:', menuText);
+                // ✅ If data-ajax="false" or not set, use normal navigation
+                if (!isAjax || isAjax === false) {
+                    console.log('🔗 Full page navigation to:', url, 'Title:', menuText);
+                    // ✅ Add loading state
+                    $this.addClass('loading');
+                    // Let browser handle normal navigation
+                    return true;
+                }
+
+                // ✅ If data-ajax="true", use AJAX navigation
+                e.preventDefault();
+                console.log('🔗 AJAX navigation to:', url, 'Title:', menuText);
                 self.navigateTo(url, menuText);
             });
 
@@ -130,11 +144,13 @@
 
         /**
          * ✅ Setup AJAX Navigation System
+         * ✅ Only handles links with data-ajax="true" explicitly set
+         * ✅ Links with data-ajax="false" or no data-ajax attribute use normal navigation
          */
         setupAjaxNavigation: function() {
             var self = this;
 
-            // ✅ Intercept all internal links
+            // ✅ Intercept only links with data-ajax="true"
             $(document).off('click', 'a[data-ajax="true"]')
                        .on('click', 'a[data-ajax="true"]', function(e) {
                 e.preventDefault();

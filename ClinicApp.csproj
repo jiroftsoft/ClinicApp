@@ -531,7 +531,9 @@
     <Compile Include="Areas\Admin\Controllers\UserManagementController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\AppointmentBookingApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\DoctorSearchApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\MedicalRecordApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\PatientAppointmentApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\PatientDashboardApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentBookingController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentController.cs" />
     <Compile Include="Areas\Patient\Controllers\Base\BasePatientController.cs" />
@@ -979,6 +981,10 @@
     <Compile Include="Migrations\202601012030538_WhatsNew1012.cs" />
     <Compile Include="Migrations\202601012030538_WhatsNew1012.Designer.cs">
       <DependentUpon>202601012030538_WhatsNew1012.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601021611350_Make_Patient_ApplicationUserId_Nullable.cs" />
+    <Compile Include="Migrations\202601021611350_Make_Patient_ApplicationUserId_Nullable.Designer.cs">
+      <DependentUpon>202601021611350_Make_Patient_ApplicationUserId_Nullable.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
@@ -4867,18 +4873,15 @@
     <Content Include="Contracts\Knowledge-Base\14041008\DOCTOR_TIMESLOT_REVIEW_REPORT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\CLINICAPP_MODULE_REVIEW_PROMPT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\REVIEWS\CLINICAPP_VIEW_REVIEW_CHECKLIST.md" />
-    <Content Include="Contracts\Knowledge-Base\AI\PROMPTS\CLINICAPP_LOGIN_UI_UPGRADE_PROMPT.md" />
     <Content Include="Docs\RECEPTION_LIST_DUPLICATE_PRINT_FIX.md" />
     <Content Include="Docs\RECEPTION_LIST_PRINT_OPTIMIZATION.md" />
     <Content Include="Contracts\Knowledge-Base\AI\CHECKLISTS\CLINICAPP_OTP_LOGIN_REGISTRATION_CHECKLIST.md" />
-    <Content Include="Contracts\Knowledge-Base\AI\PROMPTS\CLINICAPP_SECURITY_AUDIT_LOGIN_OTP_PROMPT.md" />
     <Content Include="Contracts\Knowledge-Base\LOGIN_MODULE_IMPLEMENTATION_MAP.md" />
     <Content Include="Contracts\Knowledge-Base\LOGIN_SECURITY_AUDIT_ROADMAP.md" />
     <Content Include="Docs\DOCTORTIMESLOTS_OPTIMIZATION_REPORT.md" />
     <Content Include="Areas\Admin\Views\Security\LoginHistory\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Security\LoginHistory\Index.cshtml" />
     <Content Include="Contracts\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_BEAST_MODE_LOGIN_OTP_PACK.md" />
-    <Content Include="Contracts\Knowledge-Base\AI\PROMPTS\CLINICAPP_USER_PROFILE_MODULE_IMPLEMENTATION_PROMPT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\CURSOR\CLINICAPP_BEAST_MODE_MODULE_REVIEW_BUILD_PROMPT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\CURSOR\CLINICAPP_CURSOR_FLOW_DISCIPLINE_CONTRACT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\QUALITY\CLINICAPP_SCENARIO_MATRIX_TEMPLATE.md" />
@@ -4969,6 +4972,8 @@
     <Content Include="Contracts\AI_PREFLIGHT_V3_SUMMARY.md" />
     <Content Include="Contracts\AI_EXECUTION_CONTRACT.md" />
     <Content Include="Contracts\PASTE_THIS_EVERY_CHAT.md" />
+    <Content Include="Contracts\Knowledge-Base\AI\DB\Database-Connection-Guide.md" />
+    <Content Include="Contracts\Knowledge-Base\AI\View\CLINICAPP_FINAL_VIEW_REVIEW_OPTIMIZATION_PROMPT.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6684,6 +6689,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202601012030538_WhatsNew1012.resx">
       <DependentUpon>202601012030538_WhatsNew1012.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601021611350_Make_Patient_ApplicationUserId_Nullable.resx">
+      <DependentUpon>202601021611350_Make_Patient_ApplicationUserId_Nullable.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />
