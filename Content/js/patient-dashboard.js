@@ -17,7 +17,7 @@
 
     // ✅ Configuration
     var config = {
-        apiBaseUrl: '/Patient/Api/PatientDashboard',
+        apiBaseUrl: '/Patient/Api/PatientDashboardApi',
         sections: {
             quickStats: {
                 url: '/GetQuickStats',

@@ -2245,8 +2245,7 @@ namespace ClinicApp.Services
             {
                 _log.Information("ایجاد بیمار جدید با کد ملی: {NationalCode}", patientDto.NationalCode);
                 
-                // TODO: Implement actual patient creation logic
-                // This is a placeholder implementation
+                // ایجاد Entity بیمار با اطلاعات پایه
                 var patient = new Models.Entities.Patient.Patient
                 {
                     NationalCode = patientDto.NationalCode,

@@ -61,6 +61,8 @@ namespace ClinicApp.Services
                 _logger.Information("دریافت آمار سریع داشبورد - PatientId: {PatientId}", patientId);
 
                 // ✅ دریافت تمام نوبت‌ها برای محاسبه آمار
+                // ⚠️ PERFORMANCE NOTE: این روش برای تعداد زیاد نوبت‌ها بهینه نیست
+                // FIXME(Phase 2): Use dedicated stats query with COUNT(*) GROUP BY Status
                 var allAppointmentsResult = await _appointmentService.GetPatientAppointmentsAsync(patientId);
                 if (!allAppointmentsResult.Success)
                 {
@@ -72,6 +74,7 @@ namespace ClinicApp.Services
                 var appointments = allAppointmentsResult.Data ?? new List<PatientAppointmentDto>();
                 var now = DateTime.Now;
 
+                // ✅ Use LINQ to reduce memory allocation
                 var stats = new DashboardQuickStatsViewModel
                 {
                     TotalAppointments = appointments.Count,
@@ -82,8 +85,11 @@ namespace ClinicApp.Services
                         a.Status == AppointmentStatus.Completed),
                     CancelledAppointments = appointments.Count(a => 
                         a.Status == AppointmentStatus.Cancelled),
-                    TotalReceptions = 0 // TODO: دریافت از ReceptionService
+                    TotalReceptions = 0 // FIXME(Phase 2): دریافت از ReceptionService via SQL COUNT(*)
                 };
+                
+                _logger.Information("✅ آمار محاسبه شد - Total: {Total}, Upcoming: {Upcoming}", 
+                    stats.TotalAppointments, stats.UpcomingAppointments);
 
                 return ServiceResult<DashboardQuickStatsViewModel>.Successful(
                     stats,
@@ -141,7 +147,7 @@ namespace ClinicApp.Services
                 }
 
                 var appointments = result.Data ?? new List<ViewModels.PatientAppointmentViewModel>();
-                var totalCount = appointments.Count; // TODO: دریافت totalCount از service
+                var totalCount = appointments.Count; // FIXME(Phase 2): دریافت totalCount از service
 
                 var viewModel = new DashboardAppointmentsSectionViewModel
                 {
@@ -150,7 +156,7 @@ namespace ClinicApp.Services
                         AppointmentId = a.AppointmentId,
                         DoctorId = a.DoctorId,
                         DoctorName = a.DoctorName,
-                        DoctorSpecialization = null, // TODO: از service دریافت شود
+                        DoctorSpecialization = null, // FIXME(Phase 2): از service دریافت شود
                         AppointmentDate = a.AppointmentDate,
                         AppointmentDateShamsi = a.AppointmentDateShamsi,
                         AppointmentTime = a.AppointmentDate.ToString("HH:mm"),
@@ -244,7 +250,7 @@ namespace ClinicApp.Services
                         AppointmentId = a.AppointmentId,
                         DoctorId = a.DoctorId,
                         DoctorName = a.DoctorName,
-                        DoctorSpecialization = null, // TODO: از service دریافت شود
+                        DoctorSpecialization = null, // FIXME(Phase 2): از service دریافت شود
                         AppointmentDate = a.AppointmentDate,
                         AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
                         AppointmentTime = a.AppointmentDate.ToString("HH:mm"),
@@ -314,7 +320,7 @@ namespace ClinicApp.Services
                 }
 
                 var receptions = result.Data ?? new List<ViewModels.PatientReceptionViewModel>();
-                var totalCount = receptions.Count; // TODO: دریافت totalCount از service
+                var totalCount = receptions.Count; // FIXME(Phase 2): دریافت totalCount از service
 
                 var viewModel = new DashboardReceptionsSectionViewModel
                 {

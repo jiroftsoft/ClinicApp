@@ -3,10 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
+using ClinicApp.Factories;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient;
+using Microsoft.AspNet.Identity;
 using Serilog;
 
 namespace ClinicApp.Areas.Patient.Controllers
@@ -63,15 +65,16 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
+                var userId = User.Identity.GetUserId();
                 _logger.Information("درخواست نمایش داشبورد بیمار - UserId: {UserId}, IsAjax: {IsAjax}", 
-                    _currentUserService.UserId, IsAjaxRequestEnhanced());
+                    userId, IsAjaxRequestEnhanced());
 
                 // ✅ Security: دریافت patientId از auth context
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
                     _logger.Warning("⚠️ Dashboard access denied - patientId is null. UserId: {UserId}", 
-                        _currentUserService.UserId);
+                        userId);
                     
                     if (IsAjaxRequestEnhanced())
                     {
@@ -91,23 +94,14 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (IsAjaxRequestEnhanced())
                 {
                     _logger.Information("✅ Returning PartialView for AJAX request");
-                    return PartialView("_DashboardShell", new DashboardViewModel
-                    {
-                        QuickStats = null, // Will be loaded via AJAX
-                        RecentAppointments = null, // Will be loaded via AJAX
-                        UpcomingAppointments = null, // Will be loaded via AJAX
-                        RecentReceptions = null // Will be loaded via AJAX
-                    });
+                    // ✅ استفاده از Factory Pattern
+                    var partialViewModel = DashboardViewModelFactory.CreateEmpty();
+                    return PartialView("_DashboardShell", partialViewModel);
                 }
 
                 // ✅ Normal Request: Return Full View (با Layout)
-                var viewModel = new DashboardViewModel
-                {
-                    QuickStats = null, // Will be loaded via AJAX
-                    RecentAppointments = null, // Will be loaded via AJAX
-                    UpcomingAppointments = null, // Will be loaded via AJAX
-                    RecentReceptions = null // Will be loaded via AJAX
-                };
+                // ✅ استفاده از Factory Pattern - طبق DEVELOPMENT_CONTRACT.md
+                var viewModel = DashboardViewModelFactory.CreateEmpty();
 
                 return View(viewModel);
             }
@@ -128,9 +122,9 @@ namespace ClinicApp.Areas.Patient.Controllers
 
         /// <summary>
         /// Render Partial View for AJAX requests
-        /// POST: /Patient/Dashboard/RenderPartial
+        /// GET: /Patient/Dashboard/RenderPartial (Changed to GET for security simplicity)
         /// </summary>
-        [HttpPost]
+        [HttpGet]
         public ActionResult RenderPartial(string partialName)
         {
             try

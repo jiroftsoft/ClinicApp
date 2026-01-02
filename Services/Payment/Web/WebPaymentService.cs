@@ -537,8 +537,9 @@ namespace ClinicApp.Services.Payment.Web
 
         public async Task<ServiceResult<PaymentWebhookResult>> ProcessPaymentWebhookAsync(PaymentGatewayType gatewayType, PaymentWebhookData webhookData)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ProcessPaymentWebhookAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement webhook processing for payment gateways
+            _logger.Warning("⚠️ WEB PAYMENT: ProcessPaymentWebhookAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<PaymentWebhookResult>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PaymentStatus>> CheckPaymentStatusAsync(PaymentGatewayType gatewayType, string transactionId)
@@ -838,46 +839,54 @@ namespace ClinicApp.Services.Payment.Web
 
         public async Task<ServiceResult<IEnumerable<PaymentGateway>>> GetActivePaymentGatewaysAsync()
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetActivePaymentGatewaysAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement active payment gateways retrieval
+            _logger.Warning("⚠️ WEB PAYMENT: GetActivePaymentGatewaysAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<IEnumerable<PaymentGateway>>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PaymentGateway>> GetDefaultPaymentGatewayAsync()
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDefaultPaymentGatewayAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement default payment gateway retrieval
+            _logger.Warning("⚠️ WEB PAYMENT: GetDefaultPaymentGatewayAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<PaymentGateway>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> SetDefaultPaymentGatewayAsync(int gatewayId, string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("SetDefaultPaymentGatewayAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement default payment gateway setting
+            _logger.Warning("⚠️ WEB PAYMENT: SetDefaultPaymentGatewayAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<GatewayConnectionTest>> TestGatewayConnectionAsync(int gatewayId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("TestGatewayConnectionAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement gateway connection testing
+            _logger.Warning("⚠️ WEB PAYMENT: TestGatewayConnectionAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<GatewayConnectionTest>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> ValidatePaymentWebhookAsync(PaymentGatewayType gatewayType, PaymentWebhookData webhookData)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ValidatePaymentWebhookAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement webhook validation
+            _logger.Warning("⚠️ WEB PAYMENT: ValidatePaymentWebhookAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<WebPaymentStatistics>> GetWebPaymentStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetWebPaymentStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement web payment statistics calculation
+            _logger.Warning("⚠️ WEB PAYMENT: GetWebPaymentStatisticsAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<WebPaymentStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PaymentGatewayStatistics>> GetPaymentGatewayStatisticsAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
-                // TODO: Implement payment gateway statistics
-                return ServiceResult<PaymentGatewayStatistics>.Successful(new PaymentGatewayStatistics(), "آمار درگاه‌های پرداخت دریافت شد");
+                // FIXME(Phase 2): Implement actual payment gateway statistics calculation
+                // Returning placeholder data for now (empty statistics).
+                _logger.Warning("⚠️ WEB PAYMENT: GetPaymentGatewayStatisticsAsync returning placeholder data");
+                return await Task.FromResult(ServiceResult<PaymentGatewayStatistics>.Successful(new PaymentGatewayStatistics(), "آمار درگاه‌های پرداخت دریافت شد"));
             }
             catch (Exception ex)
             {
@@ -888,8 +897,9 @@ namespace ClinicApp.Services.Payment.Web
 
         public async Task<ServiceResult<DailyWebPaymentStatistics>> GetDailyWebPaymentStatisticsAsync(DateTime date)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDailyWebPaymentStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement daily web payment statistics calculation
+            _logger.Warning("⚠️ WEB PAYMENT: GetDailyWebPaymentStatisticsAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<DailyWebPaymentStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         #endregion

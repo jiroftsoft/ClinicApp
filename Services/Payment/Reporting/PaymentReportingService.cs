@@ -304,14 +304,16 @@ namespace ClinicApp.Services.Payment.Reporting
 
         public async Task<ServiceResult<YearlyPaymentReport>> GetYearlyPaymentReportAsync(int year)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetYearlyPaymentReportAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement yearly payment report generation
+            _logger.Warning("⚠️ PAYMENT REPORTING: GetYearlyPaymentReportAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<YearlyPaymentReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<DateRangePaymentReport>> GetDateRangePaymentReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDateRangePaymentReportAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement date range payment report
+            _logger.Warning("⚠️ PAYMENT REPORTING: GetDateRangePaymentReportAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<DateRangePaymentReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         Task<ServiceResult<PaymentStatistics>> IPaymentReportingService.GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod, PaymentStatus? paymentStatus)
@@ -321,92 +323,107 @@ namespace ClinicApp.Services.Payment.Reporting
 
         public async Task<ServiceResult<PaymentStatistics>> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod = null, PaymentStatus? paymentStatus = null)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPaymentStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<PaymentStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PaymentMethodStatistics>> GetPaymentMethodStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPaymentMethodStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<PaymentMethodStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PaymentStatusStatistics>> GetPaymentStatusStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPaymentStatusStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<PaymentStatusStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<UserPaymentStatistics>> GetUserPaymentStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetUserPaymentStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<UserPaymentStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<DailyFinancialReport>> GetDailyFinancialReportAsync(DateTime date)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDailyFinancialReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<DailyFinancialReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<MonthlyFinancialReport>> GetMonthlyFinancialReportAsync(int year, int month)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetMonthlyFinancialReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<MonthlyFinancialReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<IncomeExpenseReport>> GetIncomeExpenseReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetIncomeExpenseReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<IncomeExpenseReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<GatewayFeeReport>> GetGatewayFeeReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetGatewayFeeReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<GatewayFeeReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<GatewayPerformanceReport>> GetGatewayPerformanceReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetGatewayPerformanceReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<GatewayPerformanceReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PosTerminalPerformanceReport>> GetPosTerminalPerformanceReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPosTerminalPerformanceReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<PosTerminalPerformanceReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<CashSessionPerformanceReport>> GetCashSessionPerformanceReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetCashSessionPerformanceReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<CashSessionPerformanceReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<ResponseTimeReport>> GetResponseTimeReportAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetResponseTimeReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<ResponseTimeReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<CustomPaymentReport>> GetCustomPaymentReportAsync(CustomPaymentReportRequest request)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetCustomPaymentReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<CustomPaymentReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<ComparativePaymentReport>> GetComparativePaymentReportAsync(ComparativePaymentReportRequest request)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetComparativePaymentReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<ComparativePaymentReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<TrendPaymentReport>> GetTrendPaymentReportAsync(TrendPaymentReportRequest request)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetTrendPaymentReportAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<TrendPaymentReport>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
 
@@ -422,20 +439,23 @@ namespace ClinicApp.Services.Payment.Reporting
 
         public async Task<ServiceResult<byte[]>> ExportReportToExcelAsync(ReportType reportType, Dictionary<string, object> parameters)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ExportReportToExcelAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<byte[]>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<byte[]>> ExportReportToPdfAsync(ReportType reportType, Dictionary<string, object> parameters)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ExportReportToPdfAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<byte[]>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<byte[]>> ExportReportToCsvAsync(ReportType reportType, Dictionary<string, object> parameters)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ExportReportToCsvAsync will be implemented in next part");
+            // FIXME(Phase 2): این قابلیت در فاز بعدی پیاده‌سازی خواهد شد
+            _logger.Warning("⚠️ PAYMENT REPORTING: Method not implemented yet");
+            return await Task.FromResult(ServiceResult<byte[]>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         #endregion

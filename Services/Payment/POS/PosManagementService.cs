@@ -559,8 +559,9 @@ namespace ClinicApp.Services.Payment.POS
 
         public async Task<ServiceResult<CashSession>> StartCashSessionAsync(StartCashSessionRequest request)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("StartCashSessionAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement full StartCashSessionAsync with request object
+            _logger.Warning("⚠️ POS MANAGEMENT: StartCashSessionAsync(StartCashSessionRequest) not implemented yet");
+            return await Task.FromResult(ServiceResult<CashSession>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         /// <summary>
@@ -641,8 +642,9 @@ namespace ClinicApp.Services.Payment.POS
 
         public async Task<ServiceResult<CashSession>> EndCashSessionAsync(int sessionId, EndCashSessionRequest request)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("EndCashSessionAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement full EndCashSessionAsync with request object
+            _logger.Warning("⚠️ POS MANAGEMENT: EndCashSessionAsync(EndCashSessionRequest) not implemented yet");
+            return await Task.FromResult(ServiceResult<CashSession>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         /// <summary>
@@ -860,68 +862,79 @@ namespace ClinicApp.Services.Payment.POS
 
         public async Task<ServiceResult<CashBalance>> CalculateCashBalanceAsync(int sessionId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("CalculateCashBalanceAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement cash balance calculation
+            _logger.Warning("⚠️ POS MANAGEMENT: CalculateCashBalanceAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<CashBalance>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<CashBalance>> CalculateUserCashBalanceAsync(string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("CalculateUserCashBalanceAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement user cash balance calculation
+            _logger.Warning("⚠️ POS MANAGEMENT: CalculateUserCashBalanceAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<CashBalance>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<DailyCashBalance>> CalculateDailyCashBalanceAsync(DateTime date)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("CalculateDailyCashBalanceAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement daily cash balance calculation
+            _logger.Warning("⚠️ POS MANAGEMENT: CalculateDailyCashBalanceAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<DailyCashBalance>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> AddCashBalanceAsync(int sessionId, decimal amount, string description, string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("AddCashBalanceAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement add cash balance
+            _logger.Warning("⚠️ POS MANAGEMENT: AddCashBalanceAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> SubtractCashBalanceAsync(int sessionId, decimal amount, string description, string userId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("SubtractCashBalanceAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement subtract cash balance
+            _logger.Warning("⚠️ POS MANAGEMENT: SubtractCashBalanceAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<PosTerminalStatistics>> GetPosTerminalStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetPosTerminalStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement POS terminal statistics
+            _logger.Warning("⚠️ POS MANAGEMENT: GetPosTerminalStatisticsAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<PosTerminalStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<CashSessionStatistics>> GetCashSessionStatisticsAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetCashSessionStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement cash session statistics
+            _logger.Warning("⚠️ POS MANAGEMENT: GetCashSessionStatisticsAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<CashSessionStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<DailyPosStatistics>> GetDailyPosStatisticsAsync(DateTime date)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("GetDailyPosStatisticsAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement daily POS statistics
+            _logger.Warning("⚠️ POS MANAGEMENT: GetDailyPosStatisticsAsync not implemented yet");
+            return await Task.FromResult(ServiceResult<DailyPosStatistics>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> ValidatePosTerminalAsync(int terminalId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ValidatePosTerminalAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement POS terminal validation
+            _logger.Warning("⚠️ POS MANAGEMENT: ValidatePosTerminalAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> CanUsePosTerminalAsync(int terminalId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("CanUsePosTerminalAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement POS terminal usage check
+            _logger.Warning("⚠️ POS MANAGEMENT: CanUsePosTerminalAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult> ValidateCashSessionAsync(int sessionId)
         {
-            // TODO: Implement in next part
-            throw new NotImplementedException("ValidateCashSessionAsync will be implemented in next part");
+            // FIXME(Phase 2): Implement cash session validation
+            _logger.Warning("⚠️ POS MANAGEMENT: ValidateCashSessionAsync not implemented yet");
+            return await Task.FromResult(ServiceResult.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
         }
 
         public async Task<ServiceResult<IEnumerable<PosTerminal>>> GetTerminalsAsync(int pageNumber = 1, int pageSize = 50)

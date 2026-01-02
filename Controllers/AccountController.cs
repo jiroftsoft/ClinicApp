@@ -378,7 +378,8 @@ namespace ClinicApp.Controllers
                     User?.Identity?.IsAuthenticated ?? false,
                     IsAjaxRequestEnhanced());
 
-                var userId = _currentUserService.UserId;
+                // ✅ STANDARD: Use User.Identity.GetUserId() directly (not CurrentUserService)
+                var userId = User.Identity.GetUserId();
                 
                 // ✅ PRODUCTION: Proper unauthorized handling
                 if (string.IsNullOrEmpty(userId))

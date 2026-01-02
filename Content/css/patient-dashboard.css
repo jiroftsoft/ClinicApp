@@ -1,10 +1,22 @@
 /**
- * Patient Dashboard Styles - Enterprise-Grade
+ * Patient Dashboard Styles - Enterprise-Grade Healthcare
  * 
  * Single Responsibility: استایل‌های داشبورد بیمار
  * Mobile-First, Healthcare Formal UI
+ * ✅ Medical Colors Standards - بدون Gradient
  * طبق: DEVELOPMENT_CONTRACT.md, AI_ASSISTANT_MASTER_CONTRACT.md
  */
+
+/* ============================================
+   CSS Variables - Medical Standards
+   ============================================ */
+:root {
+    --medical-primary: #2c5aa0;
+    --medical-success: #28a745;
+    --medical-danger: #dc3545;
+    --medical-warning: #ffc107;
+    --medical-info: #17a2b8;
+}
 
 /* ============================================
    Dashboard Container
@@ -73,19 +85,19 @@
 }
 
 .stat-card-primary .stat-card-icon {
-    background: #0d6efd;
+    background: var(--medical-primary); /* ✅ استاندارد درمانی */
 }
 
 .stat-card-success .stat-card-icon {
-    background: #198754;
+    background: var(--medical-success); /* ✅ استاندارد درمانی */
 }
 
 .stat-card-info .stat-card-icon {
-    background: #0dcaf0;
+    background: var(--medical-info); /* ✅ استاندارد درمانی */
 }
 
 .stat-card-warning .stat-card-icon {
-    background: #ffc107;
+    background: var(--medical-warning); /* ✅ استاندارد درمانی */
     color: #212529;
 }
 
@@ -203,7 +215,7 @@
 .appointment-item:hover,
 .reception-item:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-color: #0d6efd;
+    border-color: var(--medical-primary); /* ✅ استاندارد درمانی */
 }
 
 .appointment-item-header,
@@ -256,22 +268,22 @@
 }
 
 .badge-warning {
-    background: #ffc107;
+    background: var(--medical-warning); /* ✅ استاندارد درمانی */
     color: #212529;
 }
 
 .badge-info {
-    background: #0dcaf0;
-    color: #212529;
+    background: var(--medical-info); /* ✅ استاندارد درمانی */
+    color: #fff;
 }
 
 .badge-success {
-    background: #198754;
+    background: var(--medical-success); /* ✅ استاندارد درمانی */
     color: #fff;
 }
 
 .badge-danger {
-    background: #dc3545;
+    background: var(--medical-danger); /* ✅ استاندارد درمانی */
     color: #fff;
 }
 

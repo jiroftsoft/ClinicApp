@@ -1,0 +1,670 @@
+@using ClinicApp.Helpers
+@using Microsoft.AspNet.Identity
+@{
+    var appName = "کلینیک درمانی شفا";
+    var title = ViewBag.Title ?? "پنل بیمار";
+    var metaDescription = ViewBag.MetaDescription ?? "کلینیک درمانی شفا - رزرو نوبت آنلاین";
+    var userId = User.Identity.GetUserId();
+    var userName = User.Identity.GetUserName();
+    var firstName = User.Identity.GetFirstName() ?? "";
+    var lastName = User.Identity.GetLastName() ?? "";
+    var fullName = !string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName) 
+        ? $"{firstName} {lastName}" 
+        : (!string.IsNullOrEmpty(firstName) ? firstName : userName);
+    var userInitials = !string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName)
+        ? $"{firstName[0]}{lastName[0]}"
+        : (!string.IsNullOrEmpty(firstName) ? firstName[0].ToString() : "U");
+}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+    <meta name="description" content="@metaDescription">
+    <meta name="author" content="@appName">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+
+    <title>@title - @appName</title>
+
+    <!-- Local Fonts -->
+    <link rel="stylesheet" href="~/Content/css/local-fonts.css">
+    <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="~/Content/bootstrap.rtl.min.css" rel="stylesheet" />
+
+    <!-- SweetAlert2 -->
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    
+    <!-- Toastr -->
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+
+    <!-- Patient Portal Professional Styles -->
+    <style>
+        :root {
+            /* استاندارد Medical Colors - بدون Gradient */
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #212529;
+            
+            /* Sidebar */
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 70px;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #dee2e6;
+            --sidebar-item-hover: #f8f9fa;
+            --sidebar-item-active: #e7f1ff;
+            --sidebar-text: #333333;
+            --sidebar-text-muted: #6c757d;
+            
+            /* Top Navbar */
+            --navbar-height: 60px;
+            --navbar-bg: #2c5aa0; /* ✅ رنگ ساده، نه Gradient */
+            --navbar-text: #ffffff;
+            --navbar-hover: rgba(255,255,255,0.1);
+            
+            /* Content */
+            --content-bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --card-border: #dee2e6;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            
+            /* Transitions */
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif !important;
+            background-color: var(--content-bg);
+            color: var(--medical-dark);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* ========================================
+           TOP NAVBAR
+           ======================================== */
+        .patient-navbar-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background-color: var(--navbar-bg); /* ✅ رنگ ساده */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1030;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: var(--navbar-text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background var(--transition-speed);
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--navbar-hover);
+        }
+
+        .navbar-brand {
+            color: var(--navbar-text) !important;
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-right {
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-notifications {
+            position: relative;
+            color: var(--navbar-text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background var(--transition-speed);
+        }
+
+        .navbar-notifications:hover {
+            background: var(--navbar-hover);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--medical-danger);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--navbar-text);
+            cursor: pointer;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            transition: background var(--transition-speed);
+        }
+
+        .navbar-user:hover {
+            background: var(--navbar-hover);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--medical-success);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* ========================================
+           SIDEBAR
+           ======================================== */
+        .patient-sidebar {
+            position: fixed;
+            top: var(--navbar-height);
+            right: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--navbar-height));
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--sidebar-border);
+            transition: width var(--transition-speed), transform var(--transition-speed);
+            z-index: 1020;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .patient-sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid var(--sidebar-border);
+            text-align: center;
+        }
+
+        .sidebar-user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--medical-success);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 0 auto 0.75rem;
+        }
+
+        .sidebar-user-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--medical-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-role {
+            font-size: 0.85rem;
+            color: var(--sidebar-text-muted);
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .sidebar-nav-item {
+            margin: 0.25rem 1rem;
+        }
+
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all var(--transition-speed);
+        }
+
+        .sidebar-nav-link:hover {
+            background: var(--sidebar-item-hover);
+            color: var(--medical-primary);
+        }
+
+        .sidebar-nav-link.active {
+            background: var(--sidebar-item-active);
+            color: var(--medical-primary);
+            font-weight: 600;
+        }
+
+        .sidebar-nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-nav-text {
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed .sidebar-nav-text,
+        .sidebar.collapsed .sidebar-user-name,
+        .sidebar.collapsed .sidebar-user-role {
+            display: none;
+        }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        .patient-content {
+            margin-top: var(--navbar-height);
+            margin-right: var(--sidebar-width);
+            padding: 2rem;
+            min-height: calc(100vh - var(--navbar-height));
+            transition: margin-right var(--transition-speed);
+        }
+
+        .patient-content.sidebar-collapsed {
+            margin-right: var(--sidebar-collapsed-width);
+        }
+
+        .breadcrumb-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item {
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item a {
+            color: var(--medical-primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-item.active {
+            color: var(--sidebar-text-muted);
+        }
+
+        .content-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .content-card-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--medical-dark);
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--medical-light);
+        }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        @@media (max-width: 991px) {
+            .patient-sidebar {
+                transform: translateX(100%);
+            }
+
+            .patient-sidebar.show {
+                transform: translateX(0);
+            }
+
+            .patient-content {
+                margin-right: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 1010;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .patient-navbar-top {
+                padding: 0 1rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .patient-content {
+                padding: 1rem;
+            }
+        }
+
+        /* ========================================
+           FOOTER
+           ======================================== */
+        .patient-footer {
+            background: var(--medical-dark);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="patient-navbar-top">
+        <div class="navbar-left">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="منوی کناری">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="@Url.Action("Index", "Home", new { area = "" })">
+                <i class="fas fa-hospital"></i>
+                <span>@appName</span>
+            </a>
+        </div>
+
+        <div class="navbar-right">
+            <div class="navbar-notifications" title="اعلان‌ها">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </div>
+
+            <div class="navbar-user" id="userMenuToggle">
+                <div class="user-avatar">@userInitials</div>
+                <span class="user-name">@fullName</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="patient-sidebar" id="patientSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-user-avatar">@userInitials</div>
+            <div class="sidebar-user-name">@fullName</div>
+            <div class="sidebar-user-role">بیمار</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-tachometer-alt"></i>
+                    <span class="sidebar-nav-text">داشبورد</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("Profile", "Account", new { area = "" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-user"></i>
+                    <span class="sidebar-nav-text">پروفایل من</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-calendar-check"></i>
+                    <span class="sidebar-nav-text">نوبت‌های من</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-calendar-plus"></i>
+                    <span class="sidebar-nav-text">رزرو نوبت جدید</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-file-medical"></i>
+                    <span class="sidebar-nav-text">پرونده الکترونیک</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="#" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-chart-bar"></i>
+                    <span class="sidebar-nav-text">گزارش‌ها</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <a href="@Url.Action("Index", "Settings", new { area = "Patient" })" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-cog"></i>
+                    <span class="sidebar-nav-text">تنظیمات</span>
+                </a>
+            </div>
+
+            <hr style="margin: 1rem 1rem; border-color: var(--sidebar-border);" />
+
+            <div class="sidebar-nav-item">
+                <a href="#" class="sidebar-nav-link">
+                    <i class="sidebar-nav-icon fas fa-question-circle"></i>
+                    <span class="sidebar-nav-text">راهنما</span>
+                </a>
+            </div>
+
+            <div class="sidebar-nav-item">
+                @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutFormSidebar", style = "margin: 0;" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="sidebar-nav-link" style="width: 100%; background: none; border: none; cursor: pointer; text-align: right;">
+                        <i class="sidebar-nav-icon fas fa-sign-out-alt"></i>
+                        <span class="sidebar-nav-text">خروج</span>
+                    </button>
+                }
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="patient-content" id="patientContent">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-container">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home", new { area = "" })">خانه</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@title</li>
+                </ol>
+            </nav>
+        </div>
+
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="patient-footer">
+        <p class="mb-0">
+            <i class="fas fa-hospital me-2"></i>
+            @appName - تمامی حقوق محفوظ است
+        </p>
+        <p class="mb-0 mt-2" style="opacity: 0.8; font-size: 0.9rem;">
+            © @DateTime.Now.Year
+        </p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    
+    <!-- ✅ NotificationHelper.js - طبق قرارداد توسعه -->
+    <script src="~/Content/js/notification-helper.js"></script>
+
+    @RenderSection("Scripts", required: false)
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ✅ Sidebar Toggle
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('patientSidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const content = document.getElementById('patientContent');
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    sidebarOverlay.classList.toggle('show');
+                });
+            }
+
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            }
+
+            // ✅ Active Menu Highlighting
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav-link');
+
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+
+            // ✅ Toastr Configuration
+            if (typeof toastr !== 'undefined') {
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-left',
+                    timeOut: 5000
+                };
+            }
+
+            // ✅ Display TempData Notifications (طبق قرارداد)
+            @if (TempData["Notification_Success"] != null)
+            {
+                <text>
+                if (typeof Notify !== 'undefined') {
+                    Notify.success('@Html.Raw(TempData["Notification_Success"])');
+                }
+                </text>
+            }
+            @if (TempData["Notification_Error"] != null)
+            {
+                <text>
+                if (typeof Notify !== 'undefined') {
+                    Notify.error('@Html.Raw(TempData["Notification_Error"])');
+                }
+                </text>
+            }
+            @if (TempData["Notification_Warning"] != null)
+            {
+                <text>
+                if (typeof Notify !== 'undefined') {
+                    Notify.warning('@Html.Raw(TempData["Notification_Warning"])');
+                }
+                </text>
+            }
+            @if (TempData["Notification_Info"] != null)
+            {
+                <text>
+                if (typeof Notify !== 'undefined') {
+                    Notify.info('@Html.Raw(TempData["Notification_Info"])');
+                }
+                </text>
+            }
+        })();
+    </script>
+</body>
+</html>
+

@@ -136,14 +136,13 @@
                     </a>
                 </li>
                 <li>
-                    @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "d-inline" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="dropdown-item user-menu-item user-menu-logout" aria-label="خروج از حساب کاربری">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>خروج</span>
-                        </button>
-                    }
+                    <a href="@Url.Action("LogOff", "Account")" 
+                       class="dropdown-item user-menu-item user-menu-logout-link"
+                       onclick="event.preventDefault(); event.stopPropagation(); var f=document.createElement('form'); f.method='POST'; f.action=this.href; var t=document.createElement('input'); t.type='hidden'; t.name='__RequestVerificationToken'; t.value=document.querySelector('input[name=__RequestVerificationToken]').value; f.appendChild(t); document.body.appendChild(f); f.submit(); return false;"
+                       aria-label="خروج از حساب کاربری">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>خروج</span>
+                    </a>
                 </li>
             </ul>
         </div>

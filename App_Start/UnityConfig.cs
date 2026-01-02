@@ -337,6 +337,7 @@ namespace ClinicApp
                 container.RegisterType<IPatientService, PatientService>(new HierarchicalLifetimeManager());
                 container.RegisterType<Interfaces.Repositories.IPatientRepository, PatientRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IPatientDashboardService, PatientDashboardService>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientSettingsService, PatientSettingsService>(new PerRequestLifetimeManager());
                 
                 // ✅ EMR Module - Medical Record Service & Repository
                 container.RegisterType<Interfaces.Repositories.IMedicalRecordRepository, Repositories.Patient.MedicalRecordRepository>(new PerRequestLifetimeManager());

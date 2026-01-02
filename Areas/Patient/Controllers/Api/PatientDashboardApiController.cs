@@ -35,6 +35,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// GET: /Patient/Api/PatientDashboard/GetQuickStats
         /// </summary>
         [HttpGet]
+        [OutputCache(Duration = 30, VaryByCustom = "User")] // ✅ Cache for 30 seconds per user
         public async Task<JsonResult> GetQuickStats()
         {
             try

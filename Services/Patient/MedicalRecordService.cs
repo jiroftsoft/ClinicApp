@@ -252,7 +252,7 @@ namespace ClinicApp.Services.Patient
                 // ✅ Factory Method: تبدیل ViewModel → Entity
                 var entity = MedicalRecordFactory.ToEntity(model, patientId, _currentUserService.UserId);
                 
-                // ✅ TODO: Handle file uploads if needed
+                // FIXME(Phase 2): Handle file uploads if needed
                 // For now, Attachments field is stored as string (comma-separated file paths)
                 // In future, implement proper file upload service
                 
@@ -604,18 +604,18 @@ namespace ClinicApp.Services.Patient
                     ReceptionNumber = $"R{r.ReceptionId:D6}",
                     DoctorId = r.DoctorId,
                     DoctorName = r.DoctorName,
-                    DepartmentName = null, // TODO: از service دریافت شود
-                    ClinicName = null, // TODO: از service دریافت شود
+                    DepartmentName = null, // FIXME(Phase 2): از service دریافت شود
+                    ClinicName = null, // FIXME(Phase 2): از service دریافت شود
                     ReceptionDate = r.ReceptionDate,
                     ReceptionDateShamsi = r.ReceptionDateShamsi,
                     ReceptionTime = r.ReceptionDate.ToString("HH:mm"),
                     Status = r.Status,
                     StatusText = r.StatusText,
                     TotalAmount = r.TotalAmount,
-                    PatientShare = 0, // TODO: از service دریافت شود
-                    InsurerShare = 0, // TODO: از service دریافت شود
+                    PatientShare = 0, // FIXME(Phase 2): از service دریافت شود
+                    InsurerShare = 0, // FIXME(Phase 2): از service دریافت شود
                     Notes = null,
-                    IsEmergency = false // TODO: از service دریافت شود
+                    IsEmergency = false // FIXME(Phase 2): از service دریافت شود
                 }).ToList();
                 
                 return ServiceResult<List<MedicalRecordReceptionViewModel>>.Successful(
@@ -665,7 +665,7 @@ namespace ClinicApp.Services.Patient
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 50) pageSize = 50;
                 
-                // TODO: دریافت از TriageService یا Repository
+                // FIXME(Phase 2): دریافت از TriageService یا Repository
                 // فعلاً لیست خالی برمی‌گردانیم
                 var viewModels = new List<MedicalRecordTriageViewModel>();
                 

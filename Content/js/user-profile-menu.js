@@ -46,24 +46,35 @@
         bindEvents: function() {
             var self = this;
 
-            // ✅ CRITICAL: Logout button handler MUST come FIRST
-            // This ensures logout form submission is NOT intercepted by AJAX handlers
+            // ✅ CRITICAL FIX: Prevent dropdown from closing on logout button click
+            // Must bind BEFORE Bootstrap dropdown handlers
             $(document).off('click', '.user-menu-logout')
                        .on('click', '.user-menu-logout', function(e) {
-                // ✅ EXPLICITLY allow form submission
-                console.log('🚪 Logout button clicked - submitting form');
+                console.log('🚪 Logout button clicked');
                 
-                // ✅ Get the form and submit it explicitly
-                var $form = $(this).closest('form');
-                if ($form.length > 0) {
-                    console.log('✅ Found logout form, submitting...');
-                    $form.submit();
-                } else {
-                    console.error('❌ Logout form not found!');
+                // ✅ Find and submit the form using native method
+                var $form = $('#logoutForm');
+                if ($form.length === 0) {
+                    $form = $(this).closest('form');
                 }
                 
-                // ✅ CRITICAL: Stop event propagation to prevent other handlers
+                if ($form.length > 0) {
+                    console.log('✅ Submitting logout form with native submit');
+                    // ✅ CRITICAL: Use DOM submit (not jQuery) to bypass all handlers
+                    var formElement = $form[0];
+                    if (formElement && typeof formElement.submit === 'function') {
+                        formElement.submit();
+                    } else {
+                        console.error('❌ Form.submit() not available');
+                    }
+                } else {
+                    console.error('❌ Logout form not found');
+                }
+                
+                // ✅ Prevent all default behaviors and propagation
+                e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 return false;
             });
 

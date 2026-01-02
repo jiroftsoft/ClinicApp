@@ -43,7 +43,7 @@
         }
     </div>
     
-    @if (Model.HasMore)
+    if (Model.HasMore)
     {
         <div class="text-center mt-3">
             <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" 

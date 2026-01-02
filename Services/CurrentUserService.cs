@@ -56,28 +56,36 @@ namespace ClinicApp.Services
             {
                 try
                 {
-                    // ✅ CRITICAL FIX: Direct access to ClaimsPrincipal (no database check)
-                    if (_httpContext?.User?.Identity == null || !_httpContext.User.Identity.IsAuthenticated)
+                    // ✅ CRITICAL: Get from injected HttpContext
+                    if (_httpContext == null)
                     {
-                        _logger.Debug("User not authenticated in UserId property");
+                        _logger.Warning("_httpContext is NULL in CurrentUserService");
                         return null;
                     }
 
-                    // ✅ Get UserId directly from Claims (fast, no DB)
+                    if (_httpContext.User?.Identity == null)
+                    {
+                        _logger.Warning("_httpContext.User or Identity is NULL");
+                        return null;
+                    }
+
+                    if (!_httpContext.User.Identity.IsAuthenticated)
+                    {
+                        return null;
+                    }
+
+                    // ✅ Get UserId directly from Claims (NO database check)
                     if (_httpContext.User.Identity is ClaimsIdentity claimsIdentity)
                     {
                         var userIdClaim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
                         if (userIdClaim != null && !string.IsNullOrEmpty(userIdClaim.Value))
                         {
-                            _logger.Debug("✅ UserId from claims: {UserId}", userIdClaim.Value);
                             return userIdClaim.Value;
                         }
                     }
 
-                    // ✅ Fallback: try GetUserId()
-                    var userId = GetUserId();
-                    _logger.Debug("UserId from GetUserId(): {UserId}", userId ?? "NULL");
-                    return userId;
+                    _logger.Warning("NameIdentifier claim not found for authenticated user");
+                    return null;
                 }
                 catch (Exception ex)
                 {
@@ -110,24 +118,8 @@ namespace ClinicApp.Services
                     return false;
                 }
 
-                var userId = UserId;
-                if (userId == "System")
-                {
-                    return false;
-                }
-
-                // ✅ CRITICAL FIX: Check Claims FIRST (fast, no DB hit)
-                // This is the standard ASP.NET Identity way - ClaimsPrincipal.IsInRole()
-                if (_httpContext.User.IsInRole(role))
-                {
-                    return true;
-                }
-                
-                // ✅ FALLBACK: Query database if claim not found (for legacy sessions)
-                // This should rarely execute after users re-login with new claims
-                _logger.Warning("⚠️ Role '{Role}' not found in claims for user {UserId} - falling back to database check", 
-                    role, userId);
-                return _userManager.IsInRole(userId, role);
+                // ✅ DIRECT: Use ClaimsPrincipal.IsInRole() - standard ASP.NET Identity
+                return _httpContext.User.IsInRole(role);
             }
             catch (Exception ex)
             {

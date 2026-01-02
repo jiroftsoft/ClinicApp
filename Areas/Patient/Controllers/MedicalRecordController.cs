@@ -7,6 +7,7 @@ using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient.MedicalRecord;
+using Microsoft.AspNet.Identity;
 using Serilog;
 using System.IO;
 using System.Text;
@@ -69,14 +70,15 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
+                var userId = User.Identity.GetUserId();
                 _logger.Information("درخواست نمایش پرونده الکترونیک - UserId: {UserId}, IsAjax: {IsAjax}", 
-                    _currentUserService.UserId, IsAjaxRequestEnhanced());
+                    userId, IsAjaxRequestEnhanced());
                 
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
                     _logger.Warning("⚠️ MedicalRecord access denied - patientId is null. UserId: {UserId}", 
-                        _currentUserService.UserId);
+                        userId);
                     
                     if (IsAjaxRequestEnhanced())
                     {
