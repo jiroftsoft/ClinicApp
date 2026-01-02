@@ -121,10 +121,9 @@ public class ApplicationUserConfig : EntityTypeConfiguration<ApplicationUser>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ApplicationUser_PhoneNumber") { IsUnique = true }));
 
-        // ✅ FIXED: Changed to WithOptional to match Patient configuration
-        // Patients imported from old database don't have User accounts
+        // ✅ رابطه با بیماران (1:0..1 - هر User می‌تواند یک Patient داشته باشد)
         HasMany(u => u.Patients)
-            .WithOptional(p => p.ApplicationUser)
+            .WithRequired(p => p.ApplicationUser)
             .HasForeignKey(p => p.ApplicationUserId)
             .WillCascadeOnDelete(false);
 

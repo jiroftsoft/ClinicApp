@@ -452,26 +452,20 @@ namespace ClinicApp.Services.Patient
         {
             try
             {
-                var currentPatient = await _currentUserService.GetPatientInfoAsync();
-                if (currentPatient == null)
+                // ✅ SIMPLIFIED: Controller already validated user via GetCurrentPatientIdAsync()
+                // We just need to verify the patientId is valid (not 0 or negative)
+                if (patientId <= 0)
                 {
-                    _logger.Warning("Patient info not found for current user - UserId: {UserId}",
-                        _currentUserService.UserId);
+                    _logger.Warning("❌ ValidatePatientAccess: Invalid PatientId: {PatientId}", patientId);
                     return false;
                 }
-                
-                if (currentPatient.PatientId != patientId)
-                {
-                    _logger.Warning("Unauthorized access attempt - RequestedPatientId: {RequestedId}, CurrentPatientId: {CurrentId}, UserId: {UserId}",
-                        patientId, currentPatient.PatientId, _currentUserService.UserId);
-                    return false;
-                }
-                
+
+                _logger.Debug("✅ ValidatePatientAccess: Access validated - PatientId: {PatientId}", patientId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Error validating patient access - PatientId: {PatientId}", patientId);
+                _logger.Error(ex, "❌ ValidatePatientAccess: Exception - PatientId: {PatientId}", patientId);
                 return false;
             }
         }

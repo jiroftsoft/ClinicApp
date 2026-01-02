@@ -86,12 +86,12 @@ namespace ClinicApp.Areas.Patient
             );
 
             // ✅ Default Route برای Patient Area - با constraint برای جلوگیری از conflict
-            // فقط Appointment و AppointmentBooking controllers را قبول می‌کند
+            // فقط Patient Area controllers اصلی را قبول می‌کند
             context.MapRoute(
                 "Patient_default",
                 "Patient/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
-                new { controller = @"^(Appointment|AppointmentBooking|Dashboard)$" }, // ✅ CRITICAL: فقط controllers موجود
+                new { controller = @"^(Appointment|AppointmentBooking|Dashboard|Settings|Profile|MedicalRecord)$" }, // ✅ CRITICAL: فقط controllers موجود
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             );
         }

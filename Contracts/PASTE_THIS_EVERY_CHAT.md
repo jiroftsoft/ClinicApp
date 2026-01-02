@@ -8,14 +8,17 @@
 🤖 AI: قبل از هر پاسخ، این قرارداد الزامی است:
 
 📄 Contracts/AI_EXECUTION_CONTRACT.md را بخوان (10s)
+🚨 Contracts/CRITICAL_MODULE_SAFETY_CONTRACT.md را بخوان (20s) ← ⭐ جدید
 ⚡ Contracts/AI_PREFLIGHT_QUICK_V3.md را چک کن (30s)
 
-🚫 15 ممنوعیت را رعایت کن
+🚫 15 ممنوعیت + NO BLIND CHANGES
 💰 مالی؟ → Contracts/AI_PREFLIGHT_MASTER_V3.md → STEP 2
 🐛 باگ؟ → Contracts/AI_PREFLIGHT_MASTER_V3.md → STEP 3
+🔴 تغییر حیاتی؟ → STOP & ASK USER FIRST
 🚨 تعارض؟ → HARD STOP
 
 ✓ Factory Pattern + ServiceResult + Log + Test + Doc
+✓ هرگز تغییر حیاتی بدون درک منطق + تأیید کاربر
 ```
 
 ---
@@ -50,9 +53,12 @@
 ## ⚡ **نسخه خلاصه (توصیه می‌شود):**
 
 ```
-🤖 AI: رعایت Contracts/AI_EXECUTION_CONTRACT.md الزامی است.
-قبل از هر پاسخ: چک Contracts/AI_PREFLIGHT_QUICK_V3.md (30s)
-مالی = STEP 2 | باگ = STEP 3 | تعارض = HARD STOP
+🤖 AI: رعایت Contracts الزامی است:
+- AI_EXECUTION_CONTRACT.md
+- CRITICAL_MODULE_SAFETY_CONTRACT.md ← ⭐ جدید: NO BLIND CHANGES
+- AI_PREFLIGHT_QUICK_V3.md (30s)
+
+مالی = STEP 2 | باگ = STEP 3 | تغییر حیاتی = ASK FIRST | تعارض = HARD STOP
 ```
 
 ---

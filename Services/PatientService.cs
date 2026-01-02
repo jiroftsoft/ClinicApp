@@ -1913,6 +1913,50 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت بیمار بر اساس شناسه کاربری (ApplicationUserId)
+        /// ✅ BULLETPROOF: Optimized for authentication/authorization scenarios
+        /// </summary>
+        /// <param name="userId">شناسه کاربری (ApplicationUserId)</param>
+        /// <returns>بیمار یا null اگر یافت نشود</returns>
+        public async Task<Models.Entities.Patient.Patient> GetPatientByUserIdAsync(string userId)
+        {
+            try
+            {
+                _log.Debug("🔍 GetPatientByUserId: Querying patient - UserId: {UserId}", userId);
+
+                // Validation
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _log.Warning("❌ GetPatientByUserId: UserId is null or empty");
+                    return null;
+                }
+
+                // Query database
+                var patient = await _context.Patients
+                    .AsNoTracking() // Performance optimization
+                    .Where(p => p.ApplicationUserId == userId && !p.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                {
+                    _log.Debug("✅ GetPatientByUserId: Patient found - PatientId: {PatientId}, UserId: {UserId}",
+                        patient.PatientId, userId);
+                }
+                else
+                {
+                    _log.Warning("⚠️ GetPatientByUserId: Patient NOT found - UserId: {UserId}", userId);
+                }
+
+                return patient;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ GetPatientByUserId: Exception - UserId: {UserId}", userId);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// دریافت اطلاعات بیمه‌های فعال بیمار
         /// </summary>
         public async Task<ServiceResult<List<PatientInsuranceViewModel>>> GetPatientInsurancesAsync(int patientId, int pageNumber = 1, int pageSize = 10)

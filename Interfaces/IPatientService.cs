@@ -427,6 +427,13 @@ namespace ClinicApp.Interfaces
         Task<Patient> GetPatientByNationalCodeAsync(string nationalCode);
 
         /// <summary>
+        /// دریافت بیمار بر اساس شناسه کاربری (ApplicationUserId)
+        /// </summary>
+        /// <param name="userId">شناسه کاربری (ApplicationUserId)</param>
+        /// <returns>بیمار یا null اگر یافت نشود</returns>
+        Task<Patient> GetPatientByUserIdAsync(string userId);
+
+        /// <summary>
         /// جستجوی بیمار بر اساس کد ملی
         /// </summary>
         /// <param name="nationalCode">کد ملی بیمار</param>

@@ -33,7 +33,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 
         /// <summary>
         /// 🔍 DIAGNOSTIC: Check authentication and patient mapping
-        /// GET: /Patient/Api/PatientDashboardApi/DiagnoseAuth
+        /// GET: /Patient/Api/PatientDashboard/DiagnoseAuth
         /// </summary>
         [HttpGet]
         public async Task<JsonResult> DiagnoseAuth()
@@ -73,7 +73,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 
         /// <summary>
         /// دریافت آمار سریع داشبورد
-        /// GET: /Patient/Api/PatientDashboardApi/GetQuickStats
+        /// GET: /Patient/Api/PatientDashboard/GetQuickStats
         /// </summary>
         [HttpGet]
         [OutputCache(Duration = 30, VaryByCustom = "User")] // ✅ Cache for 30 seconds per user

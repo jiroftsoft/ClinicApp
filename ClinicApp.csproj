@@ -986,6 +986,10 @@
     <Compile Include="Migrations\202601021611350_Make_Patient_ApplicationUserId_Nullable.Designer.cs">
       <DependentUpon>202601021611350_Make_Patient_ApplicationUserId_Nullable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202601021635448_Revert_Patient_ApplicationUserId_To_Required.cs" />
+    <Compile Include="Migrations\202601021635448_Revert_Patient_ApplicationUserId_To_Required.Designer.cs">
+      <DependentUpon>202601021635448_Revert_Patient_ApplicationUserId_To_Required.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
@@ -4996,6 +5000,7 @@
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.2.2.min.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery.signalR-2.4.2.min.js" />
+    <Content Include="Migrations\202601020001_Make_Patient_ApplicationUserId_Nullable.sql" />
     <Content Include="Scripts\admin\payment-management.js" />
     <Content Include="Scripts\admin\user-management.js" />
     <Content Include="Scripts\anti-forgery-ajax.js" />
@@ -6692,6 +6697,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202601021611350_Make_Patient_ApplicationUserId_Nullable.resx">
       <DependentUpon>202601021611350_Make_Patient_ApplicationUserId_Nullable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601021635448_Revert_Patient_ApplicationUserId_To_Required.resx">
+      <DependentUpon>202601021635448_Revert_Patient_ApplicationUserId_To_Required.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />
