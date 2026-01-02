@@ -1,0 +1,241 @@
+@model ClinicApp.ViewModels.Diagnostics.AuthDiagnosticsViewModel
+@{
+    ViewBag.Title = "🔍 Authentication Diagnostics";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">🔍 Authentication & Role Diagnostics</h3>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger">
+                            <h4>خطا در Diagnostics:</h4>
+                            <pre>@ViewBag.Error</pre>
+                        </div>
+                    }
+                    else if (Model != null)
+                    {
+                        <h4>📊 Authentication Status</h4>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 40%">Request.IsAuthenticated</th>
+                                <td>
+                                    @if (Model.RequestIsAuthenticated)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">❌ FALSE</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>User.Identity.IsAuthenticated</th>
+                                <td>
+                                    @if (Model.UserIdentityIsAuthenticated)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">❌ FALSE</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>User.Identity.Name</th>
+                                <td><code>@Model.UserIdentityName</code></td>
+                            </tr>
+                            <tr>
+                                <th>UserId</th>
+                                <td><code>@Model.UserId</code></td>
+                            </tr>
+                        </table>
+
+                        <hr />
+
+                        <h4>🔐 CurrentUserService Status</h4>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 40%">IsAuthenticated</th>
+                                <td>
+                                    @if (Model.CurrentUserServiceIsAuthenticated)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">❌ FALSE</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>IsPatient</th>
+                                <td>
+                                    @if (Model.CurrentUserServiceIsPatient)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">❌ FALSE (این باید TRUE باشد!)</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>IsAdmin</th>
+                                <td>
+                                    @if (Model.CurrentUserServiceIsAdmin)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">FALSE</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>IsDoctor</th>
+                                <td>
+                                    @if (Model.CurrentUserServiceIsDoctor)
+                                    {
+                                        <span class="badge bg-success">✅ TRUE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">FALSE</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+
+                        <hr />
+
+                        <h4>🎫 Claims in Cookie (بسیار مهم!)</h4>
+                        if (Model.Claims != null && Model.Claims.Count > 0)
+                        {
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Claim Type</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var claim in Model.Claims)
+                                    {
+                                        var isRoleClaim = claim.Type.IndexOf("role", StringComparison.OrdinalIgnoreCase) >= 0;
+                                        
+                                        <tr>
+                                            <td>
+                                                <code>@claim.Type</code>
+                                                @if (isRoleClaim)
+                                                {
+                                                    <span class="badge bg-warning text-dark">← ROLE CLAIM</span>
+                                                }
+                                            </td>
+                                            <td><strong>@claim.Value</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+
+                            
+                                var hasRoleClaim = Model.Claims.Any(c => c.Type.IndexOf("role", StringComparison.OrdinalIgnoreCase) >= 0);
+                                var hasPatientRoleClaim = Model.Claims.Any(c => 
+                                    c.Type.IndexOf("role", StringComparison.OrdinalIgnoreCase) >= 0 && 
+                                    c.Value.Equals("Patient", StringComparison.OrdinalIgnoreCase));
+                            
+
+                            if (!hasRoleClaim)
+                            {
+                                <div class="alert alert-danger">
+                                    <strong>❌ هیچ Role Claim پیدا نشد!</strong><br />
+                                    این یعنی شما باید Logout کنید و دوباره Login کنید تا Claims جدید ایجاد شوند.
+                                </div>
+                            }
+                            else if (!hasPatientRoleClaim)
+                            {
+                                <div class="alert alert-warning">
+                                    <strong>⚠️ Role Claim "Patient" پیدا نشد!</strong><br />
+                                    این یعنی User شما در database نقش Patient ندارد.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-success">
+                                    <strong>✅ Role Claim "Patient" موجود است - خوب!</strong>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-danger">
+                                <strong>❌ هیچ Claim پیدا نشد!</strong><br />
+                                این یعنی Cookie authentication وجود ندارد یا معتبر نیست.
+                            </div>
+                        }
+
+                        <hr />
+
+                        <h4>💾 Database Roles</h4>
+                        <pre class="bg-light p-3">@Newtonsoft.Json.JsonConvert.SerializeObject(Model.DatabaseRoles, Newtonsoft.Json.Formatting.Indented)</pre>
+
+                        <hr />
+
+                        <h4>👤 Patient Record</h4>
+                        <pre class="bg-light p-3">@Newtonsoft.Json.JsonConvert.SerializeObject(Model.PatientRecord, Newtonsoft.Json.Formatting.Indented)</pre>
+
+                        <hr />
+
+                        <h4>🍪 Authentication Cookies</h4>
+                        if (Model.Cookies != null && Model.Cookies.Count > 0)
+                        {
+                            <ul>
+                                @foreach (var cookie in Model.Cookies)
+                                {
+                                    <li>
+                                        <code>@cookie.Key</code>:
+                                        @if (cookie.HasValue)
+                                        {
+                                            <span class="badge bg-success">✅ Exists</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">❌ Empty</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">هیچ Authentication Cookie پیدا نشد</div>
+                        }
+
+                        <hr />
+
+                        <h4>📋 Full JSON Data</h4>
+                        <details>
+                            <summary>کلیک کنید برای نمایش JSON کامل</summary>
+                            <pre class="bg-dark text-white p-3" style="max-height: 400px; overflow-y: auto;">@ViewBag.DiagData</pre>
+                        </details>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">← بازگشت به صفحه اصلی</a>
+                    <button onclick="location.reload()" class="btn btn-primary">🔄 Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

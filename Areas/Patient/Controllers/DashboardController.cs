@@ -34,37 +34,63 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
+        /// ✅ BULLETPROOF: Enhanced AJAX request detection
+        /// Checks multiple sources: Request.IsAjaxRequest() + Custom Header + Query String
+        /// Healthcare-Grade: Must work across all ASP.NET configurations
+        /// </summary>
+        private bool IsAjaxRequestEnhanced()
+        {
+            if (Request.IsAjaxRequest())
+                return true;
+            
+            if (Request.Headers["X-AJAX-Request"] == "true")
+                return true;
+            
+            if (Request.QueryString["ajax"] == "1")
+                return true;
+            
+            return false;
+        }
+
+        /// <summary>
         /// نمایش داشبورد اصلی بیمار
         /// GET: /Patient/Dashboard
         /// ✅ AJAX-Compatible: پشتیبانی از درخواست‌های AJAX بدون رفرش صفحه
+        /// ✅ BULLETPROOF: Enhanced AJAX detection to prevent layout duplication
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> Index()
         {
             try
             {
-                _logger.Information("درخواست نمایش داشبورد بیمار - UserId: {UserId}", 
-                    _currentUserService.UserId);
+                _logger.Information("درخواست نمایش داشبورد بیمار - UserId: {UserId}, IsAjax: {IsAjax}", 
+                    _currentUserService.UserId, IsAjaxRequestEnhanced());
 
                 // ✅ Security: دریافت patientId از auth context
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    if (Request.IsAjaxRequest())
+                    _logger.Warning("⚠️ Dashboard access denied - patientId is null. UserId: {UserId}", 
+                        _currentUserService.UserId);
+                    
+                    if (IsAjaxRequestEnhanced())
                     {
+                        Response.StatusCode = 401;
                         return Json(new { 
                             success = false, 
                             message = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.",
-                            redirectUrl = Url.Action("Login", "Account", new { area = "" })
+                            code = "UNAUTHORIZED",
+                            redirectUrl = "/Account/Login" // ✅ FIXED: Absolute path for cross-area navigation
                         }, JsonRequestBehavior.AllowGet);
                     }
                     NotificationHelper.SetError(TempData, "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.");
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
 
-                // ✅ AJAX Request: Return Partial View (بدون Layout)
-                if (Request.IsAjaxRequest())
+                // ✅ AJAX Request: Return Partial View (بدون Layout) - CRITICAL for preventing layout duplication
+                if (IsAjaxRequestEnhanced())
                 {
+                    _logger.Information("✅ Returning PartialView for AJAX request");
                     return PartialView("_DashboardShell", new DashboardViewModel
                     {
                         QuickStats = null, // Will be loaded via AJAX
@@ -88,7 +114,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش داشبورد بیمار");
-                if (Request.IsAjaxRequest())
+                if (IsAjaxRequestEnhanced())
                 {
                     return Json(new { 
                         success = false, 

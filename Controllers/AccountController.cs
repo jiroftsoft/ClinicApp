@@ -157,7 +157,7 @@ namespace ClinicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
         {
-            var isAjaxRequest = Request.IsAjaxRequest();
+            var isAjaxRequest = IsAjaxRequestEnhanced();  // ✅ Use enhanced detection
             
             // ✅ SECURITY: Log with masked sensitive data
             _log.Information("VerifyLoginOtp START - NationalCode: {MaskedNC}, OtpCode Length: {OtpLength}, IsAjax: {IsAjax}",
@@ -334,23 +334,36 @@ namespace ClinicApp.Controllers
         #endregion
 
         // -------------------------------------------------------------------
-        /// <summary>
-        /// 🔍 Diagnostic page for authentication debugging
-        /// </summary>
-        [HttpGet]
-        [AllowAnonymous]
-        public ActionResult AuthDiagnostics()
-        {
-            return View();
-        }
-
         #region Profile Management (مدیریت پروفایل)
         // -------------------------------------------------------------------
+
+        /// <summary>
+        /// ✅ BULLETPROOF: Enhanced AJAX request detection
+        /// Checks multiple sources: Request.IsAjaxRequest() + Custom Header + Query String
+        /// Healthcare-Grade: Must work across all ASP.NET configurations
+        /// </summary>
+        private bool IsAjaxRequestEnhanced()
+        {
+            // Check standard ASP.NET method
+            if (Request.IsAjaxRequest())
+                return true;
+            
+            // Check custom header (added by user-profile-menu.js)
+            if (Request.Headers["X-AJAX-Request"] == "true")
+                return true;
+            
+            // Check query parameter as final fallback
+            if (Request.QueryString["ajax"] == "1")
+                return true;
+            
+            return false;
+        }
 
         /// <summary>
         /// نمایش پروفایل کاربر
         /// GET: /Account/Profile
         /// ✅ AJAX-Compatible: پشتیبانی از درخواست‌های AJAX بدون رفرش صفحه
+        /// ✅ BULLETPROOF: Enhanced AJAX detection to prevent layout duplication
         /// </summary>
         [HttpGet]
         [Authorize]
@@ -359,13 +372,34 @@ namespace ClinicApp.Controllers
         {
             try
             {
+                // ✅ CRITICAL: Log authentication state for debugging
+                _log.Information("🔍 Profile GET - Request.IsAuthenticated: {IsAuth}, User.Identity.IsAuthenticated: {UserAuth}, IsAjax: {IsAjax}",
+                    Request.IsAuthenticated,
+                    User?.Identity?.IsAuthenticated ?? false,
+                    IsAjaxRequestEnhanced());
+
                 var userId = _currentUserService.UserId;
+                
+                // ✅ PRODUCTION: Proper unauthorized handling
                 if (string.IsNullOrEmpty(userId))
                 {
-                    if (Request.IsAjaxRequest())
+                    _log.Warning("⚠️ Profile access denied - UserId is null. User: {UserName}, IsAuthenticated: {IsAuth}",
+                        User?.Identity?.Name ?? "NULL",
+                        User?.Identity?.IsAuthenticated ?? false);
+
+                    if (IsAjaxRequestEnhanced())
                     {
-                        return Json(new { success = false, message = UserProfileConstants.Messages.PleaseLoginAgain, redirectUrl = Url.Action("Login", "Account") }, JsonRequestBehavior.AllowGet);
+                        // ✅ Return 401 status for AJAX requests
+                        Response.StatusCode = 401;
+                        return Json(new
+                        {
+                            success = false,
+                            message = UserProfileConstants.Messages.PleaseLoginAgain,
+                            code = "UNAUTHORIZED",
+                            redirectUrl = Url.Action("Login", "Account")
+                        }, JsonRequestBehavior.AllowGet);
                     }
+                    
                     NotificationHelper.SetError(TempData, UserProfileConstants.Messages.PleaseLoginAgain);
                     return RedirectToAction(UserProfileConstants.Actions.Login);
                 }
@@ -373,7 +407,7 @@ namespace ClinicApp.Controllers
                 var result = await _userProfileService.GetMyProfileAsync(userId);
                 if (!result.Success)
                 {
-                    if (Request.IsAjaxRequest())
+                    if (IsAjaxRequestEnhanced())
                     {
                         return Json(new { success = false, message = result.Message, redirectUrl = Url.Action("Login", "Account") }, JsonRequestBehavior.AllowGet);
                     }
@@ -381,19 +415,21 @@ namespace ClinicApp.Controllers
                     return RedirectToAction(UserProfileConstants.Actions.Login);
                 }
 
-                // ✅ AJAX Request: Return Partial View (بدون Layout)
-                if (Request.IsAjaxRequest())
+                // ✅ AJAX Request: Return Partial View (بدون Layout) - CRITICAL for preventing layout duplication
+                if (IsAjaxRequestEnhanced())
                 {
+                    _log.Information("✅ Returning PartialView for AJAX request");
                     return PartialView("_UserProfileComponent", result.Data);
                 }
 
                 // ✅ Normal Request: Return Full View (با Layout)
+                _log.Information("✅ Returning full View for normal request");
                 return View(result.Data);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در نمایش پروفایل");
-                if (Request.IsAjaxRequest())
+                if (IsAjaxRequestEnhanced())
                 {
                     return Json(new { success = false, message = UserProfileConstants.Messages.LoadProfileError }, JsonRequestBehavior.AllowGet);
                 }
@@ -517,58 +553,43 @@ namespace ClinicApp.Controllers
         {
             try
             {
+                // ✅ CRITICAL: Log authentication state
+                _log.Information("🔍 Profile POST - Request.IsAuthenticated: {IsAuth}, User.Identity.IsAuthenticated: {UserAuth}",
+                    Request.IsAuthenticated,
+                    User?.Identity?.IsAuthenticated ?? false);
+
                 var userId = _currentUserService.UserId;
+                
+                // ✅ PRODUCTION: Proper unauthorized handling
                 if (string.IsNullOrEmpty(userId))
                 {
+                    _log.Warning("⚠️ Profile update denied - UserId is null");
+                    
+                    Response.StatusCode = 401;
                     return Json(new
                     {
                         success = false,
                         message = UserProfileConstants.Messages.PleaseLoginAgain,
-                        code = UserProfileConstants.ErrorCodes.InvalidUserId
+                        code = "UNAUTHORIZED",
+                        redirectUrl = Url.Action("Login", "Account")
                     });
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    var validationErrors = ModelState
-                        .Where(x => x.Value.Errors.Count > 0)
-                        .SelectMany(x => x.Value.Errors.Select(e => new
-                        {
-                            field = x.Key,
-                            message = e.ErrorMessage
-                        }))
-                        .ToList();
-
-                    return Json(new
-                    {
-                        success = false,
-                        message = UserProfileConstants.Messages.RequiredFieldsMissing,
-                        code = "VALIDATION_ERROR",
-                        validationErrors = validationErrors
-                    });
+                    return CreateValidationErrorsJson();
                 }
 
                 var result = await _userProfileService.UpdateMyProfileAsync(userId, model);
                 if (!result.Success)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = result.Message,
-                        code = result.Code
-                    });
+                    return CreateServiceResultJson(result);
                 }
 
                 // ✅ Reload profile data after successful update
                 var updatedProfile = await _userProfileService.GetMyProfileAsync(userId);
                 
-                return Json(new
-                {
-                    success = true,
-                    message = UserProfileConstants.Messages.ProfileUpdatedSuccessfully,
-                    code = "SUCCESS",
-                    data = updatedProfile.Success ? updatedProfile.Data : null
-                });
+                return CreateServiceResultJson(updatedProfile);
             }
             catch (Exception ex)
             {

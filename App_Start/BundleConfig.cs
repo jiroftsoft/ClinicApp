@@ -22,8 +22,9 @@ namespace ClinicApp
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
                         "~/Scripts/modernizr-*"));
 
+            // ✅ BULLETPROOF: bootstrap.bundle.min.js includes Popper.js - don't load it separately
             bundles.Add(new Bundle("~/bundles/bootstrap").Include(
-                      "~/Scripts/bootstrap.js",
+                      "~/Scripts/bootstrap.bundle.min.js", // ✅ Includes Popper.js for dropdowns/tooltips
                       "~/Scripts/aos.js",
                       "~/Scripts/jquery-ui.min.js",
                       "~/Scripts/toastr.min.js",

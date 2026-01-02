@@ -168,43 +168,61 @@ namespace ClinicApp.Services
                 _otpStateStore.SetState(state);
                 _log.Debug("[SendLoginOtp] ✓ OTP state stored to Session - Expiry: {Expiry}", state.ExpiryUtc);
 
-                // ✅ ALSO save to database for fallback (using AuthService's context)
-                var sessionId = HttpContext.Current?.Session?.SessionID;
-                if (!string.IsNullOrEmpty(sessionId))
+                // ✅ CRITICAL: ALWAYS save to database (not dependent on session)
+                // Remove old OTP states for this user
+                var oldStates = _context.OtpStates
+                    .Where(o => o.NationalCode == normalizedCode)
+                    .ToList();
+                if (oldStates.Any())
                 {
-                    // Remove old OTP states for this user
-                    var oldStates = _context.OtpStates
-                        .Where(o => o.NationalCode == normalizedCode)
-                        .ToList();
-                    if (oldStates.Any())
-                    {
-                        _context.OtpStates.RemoveRange(oldStates);
-                        _log.Debug("[SendLoginOtp] Removed {Count} old OTP states from database", oldStates.Count);
-                    }
-
-                    // Add new OTP state
-                    var dbState = new OtpStateEntity
-                    {
-                        SessionId = sessionId,
-                        NationalCode = normalizedCode,
-                        PhoneNumber = user.PhoneNumber,
-                        OtpHash = otpHash,
-                        ExpiryUtc = state.ExpiryUtc,
-                        IpAddress = clientIp,
-                        UserAgent = _clientProvider.GetUserAgent(),
-                        AttemptCount = 0,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.OtpStates.Add(dbState);
-                    _log.Debug("[SendLoginOtp] Added OTP state to database for fallback");
+                    _context.OtpStates.RemoveRange(oldStates);
+                    _log.Debug("[SendLoginOtp] Removed {Count} old OTP states from database", oldStates.Count);
                 }
+
+                // Add new OTP state (sessionId is optional)
+                var sessionId = HttpContext.Current?.Session?.SessionID;
+                var dbState = new OtpStateEntity
+                {
+                    SessionId = sessionId ?? "NO_SESSION",
+                    NationalCode = normalizedCode,
+                    PhoneNumber = user.PhoneNumber,
+                    OtpHash = otpHash,
+                    ExpiryUtc = state.ExpiryUtc,
+                    IpAddress = clientIp,
+                    UserAgent = _clientProvider.GetUserAgent(),
+                    AttemptCount = 0,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.OtpStates.Add(dbState);
+                _log.Information("📝 [SendLoginOtp] OTP state added to database - NC: {MaskedNC}, Expiry: {Expiry}, SessionId: {HasSession}", 
+                    MaskHelper.MaskNationalCode(normalizedCode), 
+                    dbState.ExpiryUtc, 
+                    !string.IsNullOrEmpty(sessionId));
 
                 // Log to audit database
                 _log.Debug("[SendLoginOtp] Logging OTP request to audit database");
                 var otpLog = new OtpRequest { PhoneNumber = user.PhoneNumber, OtpCodeHash = otpHash };
                 _context.OtpRequests.Add(otpLog);
-                await _context.SaveChangesAsync();
-                _log.Debug("[SendLoginOtp] ✓ Audit log saved");
+                
+                // ✅ CRITICAL: Save both OtpStateEntity and OtpRequest
+                var saveResult = await _context.SaveChangesAsync();
+                _log.Information("💾 [SendLoginOtp] Database save complete - Entities saved: {Count}", saveResult);
+                
+                // ✅ VERIFICATION: Query database to confirm OTP state was saved
+                var verifyState = await _context.OtpStates
+                    .Where(o => o.NationalCode == normalizedCode && o.ExpiryUtc > DateTime.UtcNow)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .FirstOrDefaultAsync();
+                
+                if (verifyState != null)
+                {
+                    _log.Information("✅ [SendLoginOtp] OTP state verified in database - DbId: {DbId}, Expiry: {Expiry}", 
+                        verifyState.Id, verifyState.ExpiryUtc);
+                }
+                else
+                {
+                    _log.Error("❌ [SendLoginOtp] CRITICAL: OTP state NOT found in database after save!");
+                }
 
                 // Send SMS
                 _log.Debug("[SendLoginOtp] Sending SMS to: {MaskedPhone}", 
@@ -367,6 +385,9 @@ namespace ClinicApp.Services
                 }
                 
                 await _userManager.ResetAccessFailedCountAsync(user.Id); // ریست کردن شمارنده خطاهای ورود
+
+                // ✅ CRITICAL: اطمینان از وجود رکورد Patient (Auto-Create if needed)
+                await EnsurePatientRecordExistsAsync(user);
 
                 await SignInUserAsync(user, isPersistent: false); // ورود کاربر و آپدیت LastLoginDate
 
@@ -739,6 +760,65 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             }
         }
 
+        /// <summary>
+        /// ✅ CRITICAL: Ensure Patient record exists for authenticated user
+        /// Auto-creates Patient entity if user has "Patient" role but no Patient record
+        /// Healthcare-Grade: Required for Patient area access
+        /// </summary>
+        private async Task EnsurePatientRecordExistsAsync(ApplicationUser user)
+        {
+            try
+            {
+                // Check if user has Patient role
+                var roles = await _userManager.GetRolesAsync(user.Id);
+                if (!roles.Contains(AppRoles.Patient))
+                {
+                    _log.Debug("User {UserId} does not have Patient role - skipping Patient record creation", user.Id);
+                    return;
+                }
+
+                // Check if Patient record already exists
+                var existingPatient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.ApplicationUserId == user.Id && !p.IsDeleted);
+                
+                if (existingPatient != null)
+                {
+                    _log.Debug("Patient record already exists for user {UserId} - PatientId: {PatientId}", 
+                        user.Id, existingPatient.PatientId);
+                    return;
+                }
+
+                // ✅ Auto-create Patient record
+                _log.Information("🏥 Auto-creating Patient record for user {UserId} ({NationalCode})", 
+                    user.Id, MaskHelper.MaskNationalCode(user.NationalCode));
+
+                var patient = new Models.Entities.Patient.Patient
+                {
+                    ApplicationUserId = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    NationalCode = user.NationalCode,
+                    PhoneNumber = user.PhoneNumber,
+                    Gender = user.Gender,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedByUserId = user.Id,
+                    IsDeleted = false
+                };
+                
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+                
+                _log.Information("✅ Patient record auto-created successfully - PatientId: {PatientId}, UserId: {UserId}", 
+                    patient.PatientId, user.Id);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ Failed to auto-create Patient record for user {UserId}", user.Id);
+                // Don't throw - allow login to proceed even if Patient creation fails
+                // User can complete profile later
+            }
+        }
+
         private bool SlowEquals(string a, string b)
         {
             if (a == null || b == null || a.Length != b.Length) return false;
@@ -767,10 +847,25 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
             identity.AddClaim(new Claim("FirstName", user.FirstName ?? ""));
             identity.AddClaim(new Claim("LastName", user.LastName ?? ""));
 
+            // ✅ CRITICAL FIX: Add Role Claims properly for IsInRole() to work
             var roles = await _userManager.GetRolesAsync(user.Id);
             if (roles.Any())
             {
+                // ✅ Add standard ClaimTypes.Role claims (required for IsInRole())
+                foreach (var role in roles)
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                }
+                
+                // ✅ Also add custom PrimaryRole claim for convenience
                 identity.AddClaim(new Claim("PrimaryRole", roles.First()));
+                
+                _log.Debug("[SignInUserAsync] Added {RoleCount} role claims: {Roles}", 
+                    roles.Count, string.Join(", ", roles));
+            }
+            else
+            {
+                _log.Warning("[SignInUserAsync] User {UserId} has NO roles assigned!", user.Id);
             }
             
             _log.Debug("[SignInUserAsync] Claims added - Total: {ClaimCount}", identity.Claims.Count());

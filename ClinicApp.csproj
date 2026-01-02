@@ -560,6 +560,7 @@
     <Compile Include="Controllers\BlogController.cs" />
     <Compile Include="Controllers\BlogPostCommentApiController.cs" />
     <Compile Include="Controllers\ContactController.cs" />
+    <Compile Include="Controllers\DiagnosticsController.cs" />
     <Compile Include="Controllers\FAQController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\HealthTipController.cs" />
@@ -650,6 +651,7 @@
     <Compile Include="Helpers\DynamicSqlConfiguration.cs" />
     <Compile Include="Helpers\DynamicSqlHelper.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
+    <Compile Include="Helpers\EnumHelper.cs" />
     <Compile Include="Helpers\ErrorMessageHelper.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
     <Compile Include="Helpers\HtmlHelper.cs" />
@@ -1648,6 +1650,7 @@
     <Compile Include="ViewModels\CMS\TestimonialViewModels.cs" />
     <Compile Include="ViewModels\CMS\VideoViewModels.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\Diagnostics\AuthDiagnosticsViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentPreviewViewModel.cs" />
@@ -4945,6 +4948,7 @@
     <Content Include="Docs\PATIENT_LOGIN_UI_SYNC_DEBUG_REPORT.md" />
     <Content Include="Docs\FINAL_LOGIN_SOLUTION.md" />
     <Content Include="Docs\Knowledge-Base\PATIENT_AREA_AUTH_GUIDE.md" />
+    <Content Include="Areas\Patient\Views\Appointment\_MyAppointmentsPartial.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6408,6 +6412,7 @@
     <Content Include="Views\Home\Components\_SectionHeader.cshtml" />
     <Content Include="Views\Home\Components\_SectionWrapper.cshtml" />
     <Content Include="Views\Account\AuthDiagnostics.cshtml" />
+    <Content Include="Views\Diagnostics\AuthCheck.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

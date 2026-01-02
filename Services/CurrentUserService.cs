@@ -54,23 +54,36 @@ namespace ClinicApp.Services
         {
             get
             {
-                _logger.Information("=== شروع UserId Property ===");
-                
-                var userId = GetUserId();
-                _logger.Information("GetUserId() برگرداند: {UserId}", userId);
-                
-                // اطمینان از اینکه هرگز null برنمی‌گرداند
-                if (string.IsNullOrEmpty(userId))
+                try
                 {
-                    _logger.Error("GetUserId() مقدار null یا خالی برگرداند. استفاده از کاربر Admin توسعه");
-                    var fallbackUserId = GetDevelopmentAdminUserId();
-                    _logger.Information("GetDevelopmentAdminUserId() برگرداند: {UserId}", fallbackUserId);
-                    _logger.Information("=== پایان UserId Property - Fallback - بازگشت: {UserId} ===", fallbackUserId);
-                    return fallbackUserId;
+                    // ✅ CRITICAL FIX: Direct access to ClaimsPrincipal (no database check)
+                    if (_httpContext?.User?.Identity == null || !_httpContext.User.Identity.IsAuthenticated)
+                    {
+                        _logger.Debug("User not authenticated in UserId property");
+                        return null;
+                    }
+
+                    // ✅ Get UserId directly from Claims (fast, no DB)
+                    if (_httpContext.User.Identity is ClaimsIdentity claimsIdentity)
+                    {
+                        var userIdClaim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+                        if (userIdClaim != null && !string.IsNullOrEmpty(userIdClaim.Value))
+                        {
+                            _logger.Debug("✅ UserId from claims: {UserId}", userIdClaim.Value);
+                            return userIdClaim.Value;
+                        }
+                    }
+
+                    // ✅ Fallback: try GetUserId()
+                    var userId = GetUserId();
+                    _logger.Debug("UserId from GetUserId(): {UserId}", userId ?? "NULL");
+                    return userId;
                 }
-                
-                _logger.Information("=== پایان UserId Property - Normal - بازگشت: {UserId} ===", userId);
-                return userId;
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error in UserId property");
+                    return null;
+                }
             }
         }
         public string UserName => GetUserName();
@@ -103,6 +116,17 @@ namespace ClinicApp.Services
                     return false;
                 }
 
+                // ✅ CRITICAL FIX: Check Claims FIRST (fast, no DB hit)
+                // This is the standard ASP.NET Identity way - ClaimsPrincipal.IsInRole()
+                if (_httpContext.User.IsInRole(role))
+                {
+                    return true;
+                }
+                
+                // ✅ FALLBACK: Query database if claim not found (for legacy sessions)
+                // This should rarely execute after users re-login with new claims
+                _logger.Warning("⚠️ Role '{Role}' not found in claims for user {UserId} - falling back to database check", 
+                    role, userId);
                 return _userManager.IsInRole(userId, role);
             }
             catch (Exception ex)
@@ -424,19 +448,75 @@ namespace ClinicApp.Services
         {
             try
             {
+                _logger.Debug("GetPatientInfoAsync called - UserId: {UserId}, IsPatient: {IsPatient}", 
+                    UserId, IsPatient);
+
                 if (!IsPatient)
                 {
+                    _logger.Debug("User {UserId} does not have Patient role - returning null", UserId);
                     return null;
                 }
 
-                return await _context.Patients
+                var patient = await _context.Patients
                     .Include(p => p.ApplicationUser)
                     //.Include(p => p.Insurance)
                     .FirstOrDefaultAsync(p => p.ApplicationUserId == UserId && !p.IsDeleted);
+
+                _logger.Debug("Patient record query result - UserId: {UserId}, Found: {Found}", 
+                    UserId, patient != null);
+
+                // ✅ BULLETPROOF: Auto-create Patient record if it doesn't exist
+                // This handles legacy users who logged in before auto-creation was implemented
+                if (patient == null && !string.IsNullOrEmpty(UserId))
+                {
+                    _logger.Warning("⚠️ Patient record not found for authenticated user {UserId} - Attempting auto-create", UserId);
+                    
+                    // ✅ Use FirstOrDefaultAsync instead of FindAsync (IDbSet doesn't have FindAsync)
+                    var user = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Id == UserId && !u.IsDeleted);
+                    
+                    if (user == null)
+                    {
+                        _logger.Error("❌ User {UserId} not found in database - cannot create Patient record", UserId);
+                        return null;
+                    }
+
+                    _logger.Information("📝 Creating Patient record for user {UserId} - Name: {Name}, NationalCode: {NC}", 
+                        user.Id, $"{user.FirstName} {user.LastName}", user.NationalCode);
+
+                    patient = new Models.Entities.Patient.Patient
+                    {
+                        ApplicationUserId = user.Id,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        NationalCode = user.NationalCode,
+                        PhoneNumber = user.PhoneNumber,
+                        Gender = user.Gender,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedByUserId = user.Id,
+                        IsDeleted = false
+                    };
+                    
+                    _context.Patients.Add(patient);
+                    
+                    try
+                    {
+                        var saveResult = await _context.SaveChangesAsync();
+                        _logger.Information("✅ Patient record auto-created successfully - PatientId: {PatientId}, SavedEntities: {Count}", 
+                            patient.PatientId, saveResult);
+                    }
+                    catch (Exception saveEx)
+                    {
+                        _logger.Error(saveEx, "❌ Failed to save Patient record for user {UserId}", UserId);
+                        throw;
+                    }
+                }
+
+                return patient;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اطلاعات بیمار برای کاربر {UserId}.", UserId);
+                _logger.Error(ex, "❌ Exception in GetPatientInfoAsync for user {UserId}", UserId);
                 return null;
             }
         }
@@ -599,25 +679,28 @@ namespace ClinicApp.Services
         {
             try
             {
+                // ✅ CRITICAL FIX: First, try to sync OWIN context with HttpContext
+                TrySyncOwinContextToHttpContext();
+
                 // بررسی وجود HttpContext
                 if (_httpContext == null)
                 {
                     _logger.Warning("HttpContext در CurrentUserService null است. احتمالاً در محیط توسعه یا Background Service");
-                    return GetDevelopmentAdminUserId();
+                    return null; // ✅ PRODUCTION: Return null instead of fallback
                 }
 
                 // بررسی وجود User
                 if (_httpContext.User == null)
                 {
-                    _logger.Warning("HttpContext.User در CurrentUserService null است. استفاده از کاربر Admin توسعه");
-                    return GetDevelopmentAdminUserId();
+                    _logger.Warning("HttpContext.User در CurrentUserService null است.");
+                    return null; // ✅ PRODUCTION: Return null instead of fallback
                 }
 
                 // بررسی وجود Identity
                 if (_httpContext.User.Identity == null)
                 {
-                    _logger.Warning("HttpContext.User.Identity در CurrentUserService null است. استفاده از کاربر Admin توسعه");
-                    return GetDevelopmentAdminUserId();
+                    _logger.Warning("HttpContext.User.Identity در CurrentUserService null است.");
+                    return null; // ✅ PRODUCTION: Return null instead of fallback
                 }
 
                 var identity = _httpContext.User.Identity;
@@ -625,8 +708,8 @@ namespace ClinicApp.Services
                 // بررسی احراز هویت
                 if (!identity.IsAuthenticated)
                 {
-                    _logger.Information("کاربر احراز هویت نشده است. استفاده از کاربر Admin توسعه. Identity.IsAuthenticated: {IsAuthenticated}", identity.IsAuthenticated);
-                    return GetDevelopmentAdminUserId();
+                    _logger.Information("کاربر احراز هویت نشده است. Identity.IsAuthenticated: {IsAuthenticated}", identity.IsAuthenticated);
+                    return null; // ✅ PRODUCTION: Return null - let controller handle it
                 }
 
                 _logger.Debug("کاربر احراز هویت شده است. Identity Type: {IdentityType}, Name: {IdentityName}", 
@@ -640,14 +723,17 @@ namespace ClinicApp.Services
 
                     _logger.Debug("ClaimsIdentity - NameIdentifier Claim: {UserId}", userId);
 
-                    if (!string.IsNullOrEmpty(userId) && UserExistsInDatabase(userId))
+                    // ✅ CRITICAL FIX: If user is authenticated and has claim, trust it
+                    // Don't check database here - it causes unnecessary DB hits and potential issues
+                    if (!string.IsNullOrEmpty(userId))
                     {
-                        _logger.Debug("کاربر با شناسه {UserId} در دیتابیس یافت شد", userId);
+                        _logger.Debug("✅ کاربر احراز هویت شده با شناسه {UserId}", userId);
                         return userId;
                     }
                     else
                     {
-                        _logger.Warning("کاربر با شناسه {UserId} در دیتابیس یافت نشد یا شناسه خالی است. استفاده از کاربر Admin توسعه", userId);
+                        _logger.Warning("⚠️ NameIdentifier claim موجود نیست یا خالی است", userId);
+                        return null;
                     }
                 }
                 // برای Identity ساده
@@ -658,26 +744,72 @@ namespace ClinicApp.Services
                     
                     if (!string.IsNullOrEmpty(userName))
                     {
+                        // ✅ Use async version - but we can't await here (property getter)
+                        // So we use sync FindByName (blocking but acceptable for this case)
                         var user = _userManager.FindByName(userName);
-                        if (user != null && UserExistsInDatabase(user.Id))
+                        if (user != null)
                         {
-                            _logger.Debug("کاربر با نام {UserName} و شناسه {UserId} در دیتابیس یافت شد", userName, user.Id);
+                            _logger.Debug("✅ کاربر با نام {UserName} و شناسه {UserId} یافت شد", userName, user.Id);
                             return user.Id;
                         }
                         else
                         {
-                            _logger.Warning("کاربر با نام {UserName} در دیتابیس یافت نشد. استفاده از کاربر Admin توسعه", userName);
+                            _logger.Warning("⚠️ کاربر با نام {UserName} در UserManager یافت نشد", userName);
+                            return null;
                         }
                     }
                 }
 
-                _logger.Warning("هیچ کاربر معتبری یافت نشد. استفاده از کاربر Admin توسعه");
-                return GetDevelopmentAdminUserId();
+                _logger.Warning("هیچ کاربر معتبری یافت نشد.");
+                return null; // ✅ PRODUCTION: Return null
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت شناسه کاربر. استفاده از کاربر Admin توسعه");
-                return GetDevelopmentAdminUserId();
+                _logger.Error(ex, "خطا در دریافت شناسه کاربر.");
+                return null; // ✅ PRODUCTION: Return null
+            }
+        }
+
+        /// <summary>
+        /// ✅ CRITICAL FIX: Sync OWIN Authentication Context to HttpContext
+        /// This ensures AJAX requests maintain authentication state
+        /// </summary>
+        private void TrySyncOwinContextToHttpContext()
+        {
+            try
+            {
+                if (_httpContext == null) return;
+
+                // Get OWIN context
+                var owinContext = _httpContext.GetOwinContext();
+                if (owinContext == null)
+                {
+                    _logger.Debug("OWIN context not available");
+                    return;
+                }
+
+                // Get OWIN authentication
+                var owinAuth = owinContext.Authentication;
+                if (owinAuth == null || owinAuth.User == null)
+                {
+                    _logger.Debug("OWIN authentication user not available");
+                    return;
+                }
+
+                // ✅ SYNC: If OWIN user is authenticated but HttpContext.User is not, sync them
+                if (owinAuth.User.Identity != null && owinAuth.User.Identity.IsAuthenticated)
+                {
+                    if (_httpContext.User == null || !_httpContext.User.Identity.IsAuthenticated)
+                    {
+                        _logger.Information("🔄 SYNC: OWIN user is authenticated, syncing to HttpContext.User");
+                        _httpContext.User = owinAuth.User;
+                        System.Threading.Thread.CurrentPrincipal = owinAuth.User;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "Failed to sync OWIN context to HttpContext - continuing without sync");
             }
         }
 

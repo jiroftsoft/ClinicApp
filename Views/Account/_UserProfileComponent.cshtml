@@ -44,39 +44,36 @@
 
                         <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام" } })
-                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام", aria_label = "نام", aria_describedby = "firstname-help", aria_required = "true" } })
+                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger", id = "firstname-help" })
                         </div>
 
                         <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی" } })
-                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی", aria_label = "نام خانوادگی", aria_describedby = "lastname-help", aria_required = "true" } })
+                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger", id = "lastname-help" })
                         </div>
 
                         <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.Email, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", type = "email", placeholder = "example@email.com" } })
-                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", type = "email", placeholder = "example@email.com", aria_label = "ایمیل", aria_describedby = "email-help", aria_required = "true" } })
+                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger", id = "email-help" })
                         </div>
 
                         <div class="col-12 col-sm-6">
                             @Html.LabelFor(model => model.Gender, new { @class = "form-label" })
-                            @{
-                                var genderList = new SelectList(new[]
-                                {
-                                    new SelectListItem { Text = "مرد", Value = "1" },
-                                    new SelectListItem { Text = "زن", Value = "2" }
-                                }, "Value", "Text", Model != null ? ((int)Model.Gender).ToString() : "1");
-                            }
-                            @Html.DropDownListFor(model => model.Gender, genderList, new { @class = "form-select" })
-                            @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
+                            @Html.DropDownListFor(
+                                model => model.Gender,
+                                ClinicApp.Helpers.EnumHelper.GetSelectList<ClinicApp.Models.Enums.Gender>(Model?.Gender),
+                                new { @class = "form-select", aria_label = "انتخاب جنسیت", aria_describedby = "gender-help" }
+                            )
+                            @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger", id = "gender-help" })
                         </div>
 
                         <div class="col-12">
                             @Html.LabelFor(model => model.Address, new { @class = "form-label" })
-                            @Html.TextAreaFor(model => model.Address, new { @class = "form-control", rows = "3", placeholder = "آدرس کامل خود را وارد کنید" })
-                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+                            @Html.TextAreaFor(model => model.Address, new { @class = "form-control", rows = "3", placeholder = "آدرس کامل خود را وارد کنید", aria_label = "آدرس", aria_describedby = "address-help" })
+                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger", id = "address-help" })
                         </div>
 
                         <div class="col-12">

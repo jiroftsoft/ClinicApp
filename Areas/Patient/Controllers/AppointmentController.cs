@@ -868,6 +868,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// نمایش لیست نوبت‌های بیمار (نیاز به لاگین)
         /// GET: /Patient/Appointment/MyAppointments
+        /// ✅ BULLETPROOF: Supports both AJAX and normal requests
         /// </summary>
         [HttpGet]
         [Authorize] // فقط برای کاربران لاگین شده
@@ -881,13 +882,27 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
-                _logger.Information("درخواست نمایش نوبت‌های بیمار - UserId: {UserId}",
-                    _currentUserService.UserId);
+                _logger.Information("درخواست نمایش نوبت‌های بیمار - UserId: {UserId}, IsAjax: {IsAjax}",
+                    _currentUserService.UserId,
+                    IsAjaxRequestEnhanced());
 
                 // دریافت شناسه بیمار از کاربر فعلی
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
+                    _logger.Warning("⚠️ PatientId is null for user: {UserId}", _currentUserService.UserId);
+                    
+                if (IsAjaxRequestEnhanced())
+                {
+                    Response.StatusCode = 401;
+                    return Json(new
+                    {
+                        success = false,
+                        message = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.",
+                        redirectUrl = "/Account/Login" // ✅ FIXED: Absolute path for cross-area navigation
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                    
                     NotificationHelper.SetError(TempData, "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید.");
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
@@ -901,12 +916,20 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (!result.Success)
                 {
                     NotificationHelper.SetError(TempData, result.Message ?? "خطا در دریافت نوبت‌ها");
-                    return View(new PatientAppointmentListViewModel
+                    
+                    var emptyViewModel = new PatientAppointmentListViewModel
                     {
                         Appointments = new System.Collections.Generic.List<PatientAppointmentDto>(),
                         PageNumber = page,
                         PageSize = pageSize
-                    });
+                    };
+                    
+                    // ✅ Return appropriate view type based on request type
+                    if (IsAjaxRequestEnhanced())
+                    {
+                        return PartialView("_MyAppointmentsPartial", emptyViewModel);
+                    }
+                    return View(emptyViewModel);
                 }
 
                 // فیلتر بر اساس وضعیت
@@ -944,11 +967,25 @@ namespace ClinicApp.Areas.Patient.Controllers
                     PageSize = pageSize
                 };
 
+                // ✅ CRITICAL: Return PartialView for AJAX, full View for normal requests
+                if (IsAjaxRequestEnhanced())
+                {
+                    _logger.Information("✅ Returning PartialView for AJAX request");
+                    return PartialView("_MyAppointmentsPartial", viewModel);
+                }
+
+                _logger.Information("✅ Returning full View for normal request");
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش نوبت‌های بیمار");
+                
+                if (IsAjaxRequestEnhanced())
+                {
+                    return Json(new { success = false, message = "خطا در بارگذاری نوبت‌ها" }, JsonRequestBehavior.AllowGet);
+                }
+                
                 NotificationHelper.SetError(TempData, "خطا در بارگذاری نوبت‌ها");
                 return View(new ViewModels.Patient.PatientAppointmentListViewModel
                 {
@@ -1026,6 +1063,30 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         // ✅ حذف GetCurrentPatientIdAsync - از BasePatientController استفاده می‌شود
+
+        #region AJAX Detection Helper
+
+        /// <summary>
+        /// ✅ BULLETPROOF: Robust AJAX request detection
+        /// Checks multiple sources: Headers + Query String
+        /// </summary>
+        private bool IsAjaxRequestEnhanced()
+        {
+            if (Request.IsAjaxRequest())
+                return true;
+            
+            // ✅ Check custom header
+            if (Request.Headers["X-AJAX-Request"] == "true")
+                return true;
+            
+            // ✅ Check query parameter as fallback
+            if (Request.QueryString["ajax"] == "1")
+                return true;
+            
+            return false;
+        }
+
+        #endregion
     }
 
 }
