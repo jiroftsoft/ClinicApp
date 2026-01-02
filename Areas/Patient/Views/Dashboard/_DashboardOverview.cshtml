@@ -1,0 +1,131 @@
+@* ✅ Dashboard Overview Tab Content *@
+
+<!-- Quick Stats Section (AJAX Loaded) -->
+<section class="dashboard-stats-section mb-4">
+    <div id="quickStatsContainer" class="row" data-dashboard-section="quickStats">
+        <!-- Loading State -->
+        <div class="col-12">
+            <div class="dashboard-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
+                </div>
+                <p class="mt-2 text-muted">در حال بارگذاری آمار...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content Sections -->
+<section class="dashboard-content-section">
+    <div class="row">
+        
+        <!-- Recent Appointments -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="dashboard-card" data-dashboard-section="recentAppointments">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">
+                        <i class="fas fa-calendar-check ml-2"></i>
+                        نوبت‌های اخیر
+                    </h3>
+                    <button type="button" class="btn btn-link btn-sm" onclick="UnifiedDashboard.switchTab('appointments')">
+                        مشاهده همه
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div class="dashboard-card-body">
+                    <div class="dashboard-section-loading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                    <div class="dashboard-section-content" style="display: none;"></div>
+                    <div class="dashboard-section-empty" style="display: none;">
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                            <br>هیچ نوبتی یافت نشد
+                        </p>
+                    </div>
+                    <div class="dashboard-section-error" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle ml-1"></i>
+                            <span class="error-message">خطا در بارگذاری</span>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('recentAppointments')">
+                                تلاش مجدد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="dashboard-card" data-dashboard-section="upcomingAppointments">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">
+                        <i class="fas fa-calendar-alt ml-2"></i>
+                        نوبت‌های آینده
+                    </h3>
+                    <button type="button" class="btn btn-link btn-sm" onclick="UnifiedDashboard.switchTab('appointments')">
+                        مشاهده همه
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div class="dashboard-card-body">
+                    <div class="dashboard-section-loading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                    <div class="dashboard-section-content" style="display: none;"></div>
+                    <div class="dashboard-section-empty" style="display: none;">
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                            <br>هیچ نوبت آینده‌ای وجود ندارد
+                        </p>
+                    </div>
+                    <div class="dashboard-section-error" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle ml-1"></i>
+                            <span class="error-message">خطا در بارگذاری</span>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('upcomingAppointments')">
+                                تلاش مجدد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Receptions -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="dashboard-card" data-dashboard-section="recentReceptions">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">
+                        <i class="fas fa-file-medical ml-2"></i>
+                        پذیرش‌های اخیر
+                    </h3>
+                </div>
+                <div class="dashboard-card-body">
+                    <div class="dashboard-section-loading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                    <div class="dashboard-section-content" style="display: none;"></div>
+                    <div class="dashboard-section-empty" style="display: none;">
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-file-medical fa-2x mb-2"></i>
+                            <br>هیچ پذیرشی یافت نشد
+                        </p>
+                    </div>
+                    <div class="dashboard-section-error" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle ml-1"></i>
+                            <span class="error-message">خطا در بارگذاری</span>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('recentReceptions')">
+                                تلاش مجدد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+

@@ -6,6 +6,8 @@ using System;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Core;
+using ClinicApp.Models.Core;
 
 namespace ClinicApp.Services.Patient
 {
@@ -112,16 +114,14 @@ namespace ClinicApp.Services.Patient
 
                 return ServiceResult.Successful(
                     $"ارسال پیامک به {successCount} بیمار موفق و {failCount} ناموفق بود.",
-                    new { successCount, failCount });
+                    "WELCOME_SMS_SENT");
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطای عمومی در ارسال پیامک خوش‌آمدگویی به بیماران Legacy");
                 return ServiceResult.Failed(
                     "خطا در ارسال پیامک خوش‌آمدگویی.",
-                    "WELCOME_SMS_ERROR",
-                    ErrorCategory.SystemError,
-                    SecurityLevel.High);
+                    "WELCOME_SMS_ERROR");
             }
         }
 
@@ -149,13 +149,8 @@ namespace ClinicApp.Services.Patient
 
                 if (stats == null)
                 {
-                    return ServiceResult.Successful("هیچ بیمار Legacy‌ای یافت نشد.", new
-                    {
-                        TotalLegacyPatients = 0,
-                        PatientsWithPhone = 0,
-                        PatientsWithEmail = 0,
-                        PatientsWithoutContact = 0
-                    });
+                    _log.Information("هیچ بیمار Legacy‌ای یافت نشد.");
+                    return ServiceResult.Successful("هیچ بیمار Legacy‌ای یافت نشد.", "NO_LEGACY_PATIENTS");
                 }
 
                 _log.Information(
@@ -165,16 +160,14 @@ namespace ClinicApp.Services.Patient
                     stats.PatientsWithEmail,
                     stats.PatientsWithoutContact);
 
-                return ServiceResult.Successful("آمار با موفقیت دریافت شد.", stats);
+                return ServiceResult.Successful("آمار با موفقیت دریافت شد.", "STATS_SUCCESS");
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در دریافت آمار بیماران Legacy");
                 return ServiceResult.Failed(
                     "خطا در دریافت آمار.",
-                    "STATS_ERROR",
-                    ErrorCategory.SystemError,
-                    SecurityLevel.Low);
+                    "STATS_ERROR");
             }
         }
     }

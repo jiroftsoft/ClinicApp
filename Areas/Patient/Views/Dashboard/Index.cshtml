@@ -1,207 +1,162 @@
 @model ClinicApp.ViewModels.Patient.DashboardViewModel
 @{
     ViewBag.Title = "داشبورد من";
-    // ✅ استفاده از Layout پیش‌فرض (_PatientLayoutPro) از _ViewStart.cshtml
 }
 
 @section Styles {
-    <link href="~/Content/css/patient-dashboard.css" rel="stylesheet" />
+    <link href="~/Content/css/patient-dashboard-unified.css" rel="stylesheet" />
 }
 
-<!-- ✅ Dashboard Shell - Component-Based Architecture -->
-<div id="patientDashboard" class="dashboard-container">
+<!-- ✅ Unified Dashboard - Tab-Based SPA Architecture -->
+<div id="unifiedDashboard" class="unified-dashboard-container">
     
-    <!-- ✅ Header Section -->
-    <section class="dashboard-header">
+    <!-- ✅ Dashboard Header with Tab Navigation -->
+    <section class="dashboard-header-unified">
         <div class="container-fluid">
-            <div class="row align-items-center">
+            <div class="row align-items-center mb-3">
                 <div class="col-12 col-md-8">
-                    <h1 class="dashboard-title">
+                    <h1 class="dashboard-title-main">
                         <i class="fas fa-tachometer-alt ml-2"></i>
-                        داشبورد من
+                        پنل بیمار
                     </h1>
-                    <p class="dashboard-subtitle text-muted">
-                        مشاهده و مدیریت اطلاعات پزشکی شما
+                    <p class="dashboard-subtitle-main text-muted">
+                        مدیریت جامع اطلاعات پزشکی و نوبت‌ها
                     </p>
                 </div>
                 <div class="col-12 col-md-4 text-left text-md-right mt-3 mt-md-0">
-                    <a href="@Url.Action("Available", "Appointment", new { area = "Patient" })" 
-                       class="btn btn-primary btn-sm" data-ajax="true">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnQuickAppointment">
                         <i class="fas fa-calendar-plus ml-1"></i>
                         رزرو نوبت جدید
-                    </a>
+                    </button>
                 </div>
             </div>
+            
+            <!-- ✅ Tab Navigation - مثل AWS Console -->
+            <ul class="nav nav-tabs dashboard-tabs" id="dashboardTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#content-overview" 
+                            type="button" role="tab" data-tab-name="overview">
+                        <i class="fas fa-home ml-1"></i>
+                        <span>خانه</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-profile" data-bs-toggle="tab" data-bs-target="#content-profile" 
+                            type="button" role="tab" data-tab-name="profile">
+                        <i class="fas fa-user-circle ml-1"></i>
+                        <span>پروفایل من</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#content-appointments" 
+                            type="button" role="tab" data-tab-name="appointments">
+                        <i class="fas fa-calendar-check ml-1"></i>
+                        <span>نوبت‌ها</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-medical-record" data-bs-toggle="tab" data-bs-target="#content-medical-record" 
+                            type="button" role="tab" data-tab-name="medical-record">
+                        <i class="fas fa-file-medical ml-1"></i>
+                        <span>پرونده پزشکی</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-settings" data-bs-toggle="tab" data-bs-target="#content-settings" 
+                            type="button" role="tab" data-tab-name="settings">
+                        <i class="fas fa-cog ml-1"></i>
+                        <span>تنظیمات</span>
+                    </button>
+                </li>
+            </ul>
         </div>
     </section>
 
-    <!-- ✅ Quick Stats Section (AJAX Loaded) -->
-    <section class="dashboard-stats-section">
-        <div class="container-fluid">
-            <div id="quickStatsContainer" class="row" data-dashboard-section="quickStats">
-                <!-- ✅ Loading State -->
-                <div class="col-12">
-                    <div class="dashboard-loading">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">در حال بارگذاری...</span>
-                        </div>
-                        <p class="mt-2 text-muted">در حال بارگذاری آمار...</p>
-                    </div>
-                </div>
+    <!-- ✅ Tab Content Container -->
+    <div class="tab-content dashboard-tab-content" id="dashboardTabContent">
+        
+        <!-- Tab 1: Overview (Dashboard اصلی) -->
+        <div class="tab-pane fade show active" id="content-overview" role="tabpanel">
+            <div class="container-fluid">
+                @Html.Partial("_DashboardOverview")
             </div>
         </div>
-    </section>
 
-    <!-- ✅ Main Content Sections -->
-    <section class="dashboard-content-section">
-        <div class="container-fluid">
-            <div class="row">
-                
-                <!-- ✅ Recent Appointments Section (AJAX Loaded) -->
-                <div class="col-12 col-lg-6 mb-4">
-                    <div class="dashboard-card" data-dashboard-section="recentAppointments">
-                        <div class="dashboard-card-header">
-                            <h3 class="dashboard-card-title">
-                                <i class="fas fa-calendar-check ml-2"></i>
-                                نوبت‌های اخیر
-                            </h3>
-                            <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" 
-                               class="btn btn-link btn-sm" data-ajax="true">
-                                مشاهده همه
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        </div>
-                        <div class="dashboard-card-body">
-                            <!-- ✅ Loading State -->
-                            <div class="dashboard-section-loading">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                            </div>
-                            <!-- ✅ Content will be loaded via AJAX -->
-                            <div class="dashboard-section-content" style="display: none;"></div>
-                            <!-- ✅ Empty State -->
-                            <div class="dashboard-section-empty" style="display: none;">
-                                <p class="text-muted text-center py-4">
-                                    <i class="fas fa-calendar-times fa-2x mb-2"></i>
-                                    <br>
-                                    هیچ نوبتی یافت نشد
-                                </p>
-                            </div>
-                            <!-- ✅ Error State -->
-                            <div class="dashboard-section-error" style="display: none;">
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-circle ml-1"></i>
-                                    <span class="error-message">خطا در بارگذاری</span>
-                                    <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('recentAppointments')">
-                                        تلاش مجدد
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Tab 2: Profile -->
+        <div class="tab-pane fade" id="content-profile" role="tabpanel">
+            <div class="container-fluid">
+                <div class="tab-loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
                     </div>
+                    <p class="mt-2">در حال بارگذاری پروفایل...</p>
                 </div>
-
-                <!-- ✅ Upcoming Appointments Section (AJAX Loaded) -->
-                <div class="col-12 col-lg-6 mb-4">
-                    <div class="dashboard-card" data-dashboard-section="upcomingAppointments">
-                        <div class="dashboard-card-header">
-                            <h3 class="dashboard-card-title">
-                                <i class="fas fa-calendar-alt ml-2"></i>
-                                نوبت‌های آینده
-                            </h3>
-                            <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" 
-                               class="btn btn-link btn-sm" data-ajax="true">
-                                مشاهده همه
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        </div>
-                        <div class="dashboard-card-body">
-                            <!-- ✅ Loading State -->
-                            <div class="dashboard-section-loading">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                            </div>
-                            <!-- ✅ Content will be loaded via AJAX -->
-                            <div class="dashboard-section-content" style="display: none;"></div>
-                            <!-- ✅ Empty State -->
-                            <div class="dashboard-section-empty" style="display: none;">
-                                <p class="text-muted text-center py-4">
-                                    <i class="fas fa-calendar-times fa-2x mb-2"></i>
-                                    <br>
-                                    هیچ نوبت آینده‌ای وجود ندارد
-                                </p>
-                            </div>
-                            <!-- ✅ Error State -->
-                            <div class="dashboard-section-error" style="display: none;">
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-circle ml-1"></i>
-                                    <span class="error-message">خطا در بارگذاری</span>
-                                    <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('upcomingAppointments')">
-                                        تلاش مجدد
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ✅ Recent Receptions Section (AJAX Loaded) -->
-                <div class="col-12 col-lg-6 mb-4">
-                    <div class="dashboard-card" data-dashboard-section="recentReceptions">
-                        <div class="dashboard-card-header">
-                            <h3 class="dashboard-card-title">
-                                <i class="fas fa-file-medical ml-2"></i>
-                                پذیرش‌های اخیر
-                            </h3>
-                        </div>
-                        <div class="dashboard-card-body">
-                            <!-- ✅ Loading State -->
-                            <div class="dashboard-section-loading">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                            </div>
-                            <!-- ✅ Content will be loaded via AJAX -->
-                            <div class="dashboard-section-content" style="display: none;"></div>
-                            <!-- ✅ Empty State -->
-                            <div class="dashboard-section-empty" style="display: none;">
-                                <p class="text-muted text-center py-4">
-                                    <i class="fas fa-file-medical fa-2x mb-2"></i>
-                                    <br>
-                                    هیچ پذیرشی یافت نشد
-                                </p>
-                            </div>
-                            <!-- ✅ Error State -->
-                            <div class="dashboard-section-error" style="display: none;">
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-circle ml-1"></i>
-                                    <span class="error-message">خطا در بارگذاری</span>
-                                    <button class="btn btn-sm btn-outline-danger mt-2" onclick="PatientDashboard.reloadSection('recentReceptions')">
-                                        تلاش مجدد
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <div class="tab-content-area"></div>
             </div>
         </div>
-    </section>
+
+        <!-- Tab 3: Appointments -->
+        <div class="tab-pane fade" id="content-appointments" role="tabpanel">
+            <div class="container-fluid">
+                <div class="tab-loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <p class="mt-2">در حال بارگذاری نوبت‌ها...</p>
+                </div>
+                <div class="tab-content-area"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Medical Record -->
+        <div class="tab-pane fade" id="content-medical-record" role="tabpanel">
+            <div class="container-fluid">
+                <div class="tab-loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <p class="mt-2">در حال بارگذاری پرونده...</p>
+                </div>
+                <div class="tab-content-area"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Settings -->
+        <div class="tab-pane fade" id="content-settings" role="tabpanel">
+            <div class="container-fluid">
+                <div class="tab-loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <p class="mt-2">در حال بارگذاری تنظیمات...</p>
+                </div>
+                <div class="tab-content-area"></div>
+            </div>
+        </div>
+
+    </div>
 
 </div>
 
 @section Scripts {
+    <!-- ✅ Dashboard Stats Module -->
     <script src="~/Content/js/patient-dashboard.js"></script>
+    
+    <!-- ✅ Unified Dashboard SPA Module -->
+    <script src="~/Content/js/unified-dashboard.js"></script>
+    
     <script>
-        // ✅ Initialize Dashboard on page load
+        // ✅ Initialize Modules
         $(document).ready(function() {
+            // Initialize Dashboard Stats (for Overview tab)
             if (typeof PatientDashboard !== 'undefined') {
                 PatientDashboard.init();
+            }
+            
+            // Initialize Unified Dashboard (Tab management)
+            if (typeof UnifiedDashboard !== 'undefined') {
+                UnifiedDashboard.init();
             }
         });
     </script>
 }
-

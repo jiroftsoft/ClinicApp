@@ -119,13 +119,21 @@
                 cache: false,
                 timeout: 30000
             }).then(function(response) {
-                if (response && response.success && response.data) {
+                console.log('✅ Dashboard AJAX Success:', sectionName, response);
+                
+                if (response && response.success) {
                     self.renderSection($container, section.partial, response.data);
                 } else {
+                    console.error('❌ Dashboard AJAX Failed:', sectionName, response);
                     self.showError($container, response?.message || 'خطا در بارگذاری');
                 }
             }).catch(function(xhr, status, error) {
-                console.error('AJAX Error for section:', sectionName, { xhr: xhr, status: status, error: error });
+                console.error('❌ Dashboard AJAX Error:', sectionName, { 
+                    status: xhr.status, 
+                    statusText: xhr.statusText, 
+                    responseText: xhr.responseText,
+                    error: error 
+                });
                 
                 if (xhr.status === 401) {
                     // ✅ Unauthorized - redirect to login
@@ -154,14 +162,21 @@
 
             // ✅ Check if data is empty
             var isEmpty = false;
-            if (Array.isArray(data)) {
+            
+            if (!data) {
+                isEmpty = true;
+            } else if (Array.isArray(data)) {
                 isEmpty = data.length === 0;
-            } else if (data && typeof data === 'object') {
+            } else if (typeof data === 'object') {
+                // QuickStats always shows (even with 0 values)
+                if (partialName === '_DashboardQuickStats') {
+                    isEmpty = false;
+                }
                 // Check for appointments/receptions arrays
-                if (data.Appointments && data.Appointments.length === 0) {
-                    isEmpty = true;
-                } else if (data.Receptions && data.Receptions.length === 0) {
-                    isEmpty = true;
+                else if (data.Appointments !== undefined) {
+                    isEmpty = !data.Appointments || data.Appointments.length === 0;
+                } else if (data.Receptions !== undefined) {
+                    isEmpty = !data.Receptions || data.Receptions.length === 0;
                 }
             }
 
@@ -170,10 +185,7 @@
                 return;
             }
 
-            // ✅ Render partial directly from data (client-side rendering)
-            // Note: For server-side rendering, we would need a RenderPartial action
-            // For now, we'll render the HTML directly using templates
-            
+            // ✅ Render HTML
             var html = self.renderPartialFromData(partialName, data);
             if (html) {
                 var $content = $container.find('.dashboard-section-content');
@@ -385,48 +397,6 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        },
-
-        /**
-         * ✅ Render Section (Updated)
-         * @param {jQuery} $container - Container element
-         * @param {string} partialName - Name of the partial view
-         * @param {object} data - Data to render
-         */
-        renderSection: function($container, partialName, data) {
-            var self = this;
-            
-            // ✅ Hide loading
-            this.hideLoading($container);
-
-            // ✅ Check if data is empty
-            var isEmpty = false;
-            if (Array.isArray(data)) {
-                isEmpty = data.length === 0;
-            } else if (data && typeof data === 'object') {
-                // Check for appointments/receptions arrays
-                if (data.Appointments && data.Appointments.length === 0) {
-                    isEmpty = true;
-                } else if (data.Receptions && data.Receptions.length === 0) {
-                    isEmpty = true;
-                }
-            }
-
-            if (isEmpty) {
-                this.showEmpty($container);
-                return;
-            }
-
-            // ✅ Render HTML directly (client-side)
-            var html = self.renderPartialFromData(partialName, data);
-            if (html) {
-                var $content = $container.find('.dashboard-section-content');
-                $content.html(html).fadeIn(300);
-                self.hideEmpty($container);
-                self.hideError($container);
-            } else {
-                self.showError($container, 'خطا در نمایش محتوا');
-            }
         },
 
         /**

@@ -534,6 +534,7 @@
     <Compile Include="Areas\Patient\Controllers\Api\MedicalRecordApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\PatientAppointmentApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\PatientDashboardApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\ProfileApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentBookingController.cs" />
     <Compile Include="Areas\Patient\Controllers\AppointmentController.cs" />
     <Compile Include="Areas\Patient\Controllers\Base\BasePatientController.cs" />
@@ -1449,6 +1450,7 @@
     <Compile Include="Services\OtpCleanupService.cs" />
     <Compile Include="Services\PatientDashboardService.cs" />
     <Compile Include="Services\PatientSettingsService.cs" />
+    <Compile Include="Services\Patient\LegacyPatientWelcomeService.cs" />
     <Compile Include="Services\Patient\MedicalRecordService.cs" />
     <Compile Include="Services\Payment\CashierPerformanceService.cs" />
     <Compile Include="Services\Payment\CashierReportService.cs" />
@@ -2043,6 +2045,7 @@
     <Content Include="Content\css\modern-services-section.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
+    <Content Include="Content\css\patient-dashboard-unified.css" />
     <Content Include="Content\css\patient-dashboard.css" />
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
@@ -2203,6 +2206,7 @@
     <Content Include="Content\js\persian-datepicker-manager.js" />
     <Content Include="Content\js\reception-error-handler.js" />
     <Content Include="Content\js\stories-component.js" />
+    <Content Include="Content\js\unified-dashboard.js" />
     <Content Include="Content\js\user-profile-component.js" />
     <Content Include="Content\js\user-profile-menu.js" />
     <Content Include="Content\js\user-profile.js" />
@@ -4978,6 +4982,11 @@
     <Content Include="Contracts\PASTE_THIS_EVERY_CHAT.md" />
     <Content Include="Contracts\Knowledge-Base\AI\DB\Database-Connection-Guide.md" />
     <Content Include="Contracts\Knowledge-Base\AI\View\CLINICAPP_FINAL_VIEW_REVIEW_OPTIMIZATION_PROMPT.md" />
+    <Content Include="Areas\Patient\Views\Dashboard\_AppointmentsTab.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_DashboardOverview.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_MedicalRecordTab.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_ProfileTab.cshtml" />
+    <Content Include="Areas\Patient\Views\Dashboard\_SettingsTab.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -5864,7 +5873,6 @@
     <Content Include="Content\plugins\ckeditor\skins\moono-lisa\images\spinner.gif" />
     <Content Include="Content\plugins\ckeditor\styles.js" />
     <Content Include="Content\plugins\ckeditor\vendor\promise.js" />
-    <Content Include="Scripts\DELETE_SHARED_SERVICES_SAFE.sql" />
     <Content Include="Scripts\dropzone\basic.css" />
     <Content Include="Scripts\dropzone\basic.min.css" />
     <Content Include="Scripts\dropzone\dropzone-amd-module.js" />
@@ -6438,6 +6446,7 @@
     <Content Include="Views\Home\Components\_SectionWrapper.cshtml" />
     <Content Include="Views\Account\AuthDiagnostics.cshtml" />
     <Content Include="Views\Diagnostics\AuthCheck.cshtml" />
+    <Content Include="Scripts\Restart_IIS_Express.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

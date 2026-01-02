@@ -1,0 +1,327 @@
+/**
+ * Unified Dashboard - Tab-Based SPA Styles
+ * Architecture: Enterprise-Grade (AWS Console, Azure Portal style)
+ */
+
+/* ========================================
+   Dashboard Container
+======================================== */
+.unified-dashboard-container {
+    min-height: calc(100vh - 120px);
+    background: var(--content-bg, #f5f7fa);
+    padding: 0;
+}
+
+/* ========================================
+   Dashboard Header
+======================================== */
+.dashboard-header-unified {
+    background: white;
+    border-bottom: 2px solid #e3e6eb;
+    padding: 1.5rem 0 0 0;
+    margin-bottom: 0;
+}
+
+.dashboard-title-main {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--medical-dark, #212529);
+    margin-bottom: 0.25rem;
+}
+
+.dashboard-subtitle-main {
+    font-size: 0.95rem;
+    color: var(--sidebar-text-muted, #6c757d);
+    margin-bottom: 0;
+}
+
+/* ========================================
+   Tab Navigation (مثل AWS Console)
+======================================== */
+.dashboard-tabs {
+    border-bottom: 2px solid #e3e6eb;
+    margin-bottom: 0;
+    padding: 0 1rem;
+}
+
+.dashboard-tabs .nav-item {
+    margin-bottom: -2px;
+}
+
+.dashboard-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: var(--sidebar-text, #333);
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-radius: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-tabs .nav-link:hover {
+    background: rgba(44, 90, 160, 0.05);
+    color: var(--medical-primary, #2c5aa0);
+    border-bottom-color: rgba(44, 90, 160, 0.3);
+}
+
+.dashboard-tabs .nav-link.active {
+    background: transparent;
+    color: var(--medical-primary, #2c5aa0);
+    border-bottom-color: var(--medical-primary, #2c5aa0);
+    font-weight: 600;
+}
+
+.dashboard-tabs .nav-link i {
+    font-size: 1rem;
+}
+
+/* ========================================
+   Tab Content Container
+======================================== */
+.dashboard-tab-content {
+    background: var(--content-bg, #f5f7fa);
+    padding: 2rem 0;
+    min-height: 500px;
+}
+
+.dashboard-tab-content .tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   Tab Loading State
+======================================== */
+.tab-loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--sidebar-text-muted, #6c757d);
+}
+
+.tab-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+.tab-loading p {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   Tab Content Area
+======================================== */
+.tab-content-area {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   Dashboard Cards (for Overview tab)
+======================================== */
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid var(--card-border, #dee2e6);
+    transition: box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.dashboard-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--card-border, #dee2e6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--medical-dark, #212529);
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-card-title i {
+    color: var(--medical-primary, #2c5aa0);
+}
+
+.dashboard-card-body {
+    padding: 1.5rem;
+    min-height: 200px;
+    position: relative;
+}
+
+/* ========================================
+   Section States (Loading, Empty, Error)
+======================================== */
+.dashboard-section-loading {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.dashboard-section-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--sidebar-text-muted, #6c757d);
+}
+
+.dashboard-section-empty i {
+    color: #cbd5e0;
+}
+
+.dashboard-section-error {
+    padding: 1rem;
+}
+
+.dashboard-section-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ========================================
+   Quick Stats (Overview Tab)
+======================================== */
+.dashboard-stats-section {
+    padding: 0;
+}
+
+#quickStatsContainer .dashboard-loading {
+    background: white;
+    border-radius: 8px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* ========================================
+   Responsive Design
+======================================== */
+@media (max-width: 768px) {
+    .dashboard-title-main {
+        font-size: 1.5rem;
+    }
+    
+    .dashboard-tabs {
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 0.5rem;
+    }
+    
+    .dashboard-tabs .nav-item {
+        display: inline-block;
+        float: none;
+    }
+    
+    .dashboard-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-tab-content {
+        padding: 1rem 0;
+    }
+    
+    .dashboard-card-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .dashboard-card-body {
+        padding: 1rem;
+    }
+}
+
+/* ========================================
+   Print Styles
+======================================== */
+@media print {
+    .dashboard-tabs {
+        display: none;
+    }
+    
+    .dashboard-tab-content {
+        padding: 0;
+    }
+    
+    .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+    }
+}
+
+/* ========================================
+   Accessibility
+======================================== */
+.dashboard-tabs .nav-link:focus {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========================================
+   Button Improvements
+======================================== */
+#btnQuickAppointment {
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#btnQuickAppointment:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(44, 90, 160, 0.2);
+}
+
+#btnQuickAppointment:active {
+    transform: translateY(0);
+}
+

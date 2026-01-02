@@ -10,6 +10,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient;
 using Microsoft.AspNet.Identity;
 using Serilog;
+using System.Web.Mvc.Async;
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -117,6 +118,144 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
                 NotificationHelper.SetError(TempData, "خطا در بارگذاری داشبورد");
                 return View(new DashboardViewModel());
+            }
+        }
+
+        /// <summary>
+        /// ✅ UNIFIED DASHBOARD: Profile Tab Content
+        /// GET: /Patient/Dashboard/ProfileTab
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> ProfileTab()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return new HttpStatusCodeResult(401, "Unauthorized");
+                }
+
+                _logger.Information("📄 Loading Profile Tab - PatientId: {PatientId}", patientId.Value);
+                
+                // ViewModel will be populated by the partial view
+                return PartialView("_ProfileTab");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بارگذاری پروفایل");
+                return Content("<div class='alert alert-danger'>خطا در بارگذاری پروفایل</div>");
+            }
+        }
+
+        /// <summary>
+        /// ✅ UNIFIED DASHBOARD: Appointments Tab Content
+        /// GET: /Patient/Dashboard/AppointmentsTab
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> AppointmentsTab()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return new HttpStatusCodeResult(401, "Unauthorized");
+                }
+
+                _logger.Information("📄 Loading Appointments Tab - PatientId: {PatientId}", patientId.Value);
+                
+                return PartialView("_AppointmentsTab");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بارگذاری نوبت‌ها");
+                return Content("<div class='alert alert-danger'>خطا در بارگذاری نوبت‌ها</div>");
+            }
+        }
+
+        /// <summary>
+        /// ✅ UNIFIED DASHBOARD: Medical Record Tab Content
+        /// GET: /Patient/Dashboard/MedicalRecordTab
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> MedicalRecordTab()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return new HttpStatusCodeResult(401, "Unauthorized");
+                }
+
+                _logger.Information("📄 Loading Medical Record Tab - PatientId: {PatientId}", patientId.Value);
+                
+                return PartialView("_MedicalRecordTab");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بارگذاری پرونده پزشکی");
+                return Content("<div class='alert alert-danger'>خطا در بارگذاری پرونده پزشکی</div>");
+            }
+        }
+
+        /// <summary>
+        /// ✅ UNIFIED DASHBOARD: Settings Tab Content
+        /// GET: /Patient/Dashboard/SettingsTab
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> SettingsTab()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return new HttpStatusCodeResult(401, "Unauthorized");
+                }
+
+                _logger.Information("📄 Loading Settings Tab - PatientId: {PatientId}", patientId.Value);
+                
+                return PartialView("_SettingsTab");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بارگذاری تنظیمات");
+                return Content("<div class='alert alert-danger'>خطا در بارگذاری تنظیمات</div>");
+            }
+        }
+
+        /// <summary>
+        /// ✅ Update Profile (AJAX Form Submit)
+        /// POST: /Patient/Dashboard/UpdateProfile
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> UpdateProfile(string firstName, string lastName, string phoneNumber, 
+            string email, string birthDate, string gender, string address)
+        {
+            try
+            {
+                // Delegate to API controller
+                var apiController = new Api.ProfileApiController(
+                    DependencyResolver.Current.GetService<IPatientService>(),
+                    _logger,
+                    _currentUserService
+                );
+                
+                // Set HttpContext (required for auth)
+                apiController.ControllerContext = new ControllerContext(
+                    this.ControllerContext.RequestContext,
+                    apiController
+                );
+                
+                return await apiController.UpdateProfile(firstName, lastName, phoneNumber, email, birthDate, gender, address);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی پروفایل");
+                return Json(new { success = false, message = "خطا در به‌روزرسانی پروفایل" }, JsonRequestBehavior.DenyGet);
             }
         }
 

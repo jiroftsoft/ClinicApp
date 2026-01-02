@@ -63,6 +63,22 @@ namespace ClinicApp.Areas.Patient
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
             );
 
+            // ✅ Route برای Medical Record API
+            context.MapRoute(
+                name: "Patient_API_MedicalRecord",
+                url: "Patient/Api/MedicalRecord/{action}/{id}",
+                defaults: new { controller = "MedicalRecordApi", action = "GetMedicalHistories", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
+            );
+
+            // ✅ Route برای Profile API
+            context.MapRoute(
+                name: "Patient_API_Profile",
+                url: "Patient/Api/Profile/{action}/{id}",
+                defaults: new { controller = "ProfileApi", action = "GetProfile", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
+            );
+
             // ✅ Route برای API Endpoints
             context.MapRoute(
                 name: "Patient_API_Appointments",

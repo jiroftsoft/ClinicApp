@@ -32,17 +32,23 @@
 
     <title>@title - @appName</title>
 
-    <!-- Local Fonts -->
+    <!-- ============================================
+         CSS Loading Order (Enterprise Pattern)
+         1. Fonts (Local first)
+         2. Framework (Bootstrap)
+         3. Plugins (SweetAlert, Toastr)
+         4. Custom Styles (Page-specific)
+    ============================================= -->
+    
+    <!-- 1️⃣ Fonts (Local - No CDN for Performance & Security) -->
     <link rel="stylesheet" href="~/Content/css/local-fonts.css">
     <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css">
 
-    <!-- Bootstrap CSS -->
+    <!-- 2️⃣ Framework CSS -->
     <link href="~/Content/bootstrap.rtl.min.css" rel="stylesheet" />
 
-    <!-- SweetAlert2 -->
+    <!-- 3️⃣ Plugin CSS -->
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    
-    <!-- Toastr -->
     <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
 
     <!-- Patient Portal Professional Styles -->
@@ -197,6 +203,23 @@
             background: var(--navbar-hover);
         }
 
+        .navbar-user-button {
+            background: none;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+        
+        .navbar-user-button:hover {
+            background: var(--navbar-hover);
+        }
+
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -208,6 +231,76 @@
             justify-content: center;
             font-weight: 600;
             font-size: 0.9rem;
+        }
+        
+        .user-dropdown {
+            min-width: 280px;
+            padding: 0.5rem 0;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .user-info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.5rem 0;
+        }
+        
+        .user-avatar-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--medical-success);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .user-name-large {
+            font-weight: 600;
+            color: var(--medical-dark);
+            font-size: 0.9rem;
+        }
+        
+        .user-email-small {
+            font-size: 0.75rem;
+            color: var(--sidebar-text-muted);
+        }
+        
+        .user-dropdown .dropdown-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-dropdown .dropdown-item:hover {
+            background: var(--sidebar-item-hover);
+        }
+        
+        .user-dropdown .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .user-dropdown form {
+            margin: 0;
+        }
+        
+        .user-dropdown form button {
+            width: 100%;
+            text-align: right;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        
+        .user-dropdown form button:hover {
+            background: #ffe6e6;
         }
 
         .user-name {
@@ -458,10 +551,38 @@
                 <span class="notification-badge">3</span>
             </div>
 
-            <div class="navbar-user" id="userMenuToggle">
-                <div class="user-avatar">@userInitials</div>
-                <span class="user-name">@fullName</span>
-                <i class="fas fa-chevron-down"></i>
+            <div class="navbar-user dropdown">
+                <button class="navbar-user-button" type="button" id="userMenuToggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-avatar">@userInitials</div>
+                    <span class="user-name">@fullName</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userMenuToggle">
+                    <li class="dropdown-header">
+                        <div class="user-info-header">
+                            <div class="user-avatar-large">@userInitials</div>
+                            <div>
+                                <div class="user-name-large">@fullName</div>
+                                <div class="user-email-small">@userName</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#overview"><i class="fas fa-tachometer-alt ml-2"></i> داشبورد</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#profile"><i class="fas fa-user-circle ml-2"></i> پروفایل من</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#appointments"><i class="fas fa-calendar-check ml-2"></i> نوبت‌های من</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#medical-record"><i class="fas fa-file-medical ml-2"></i> پرونده الکترونیک</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#settings"><i class="fas fa-cog ml-2"></i> تنظیمات</a></li>
+                    <li>
+                        <form method="POST" action="@Url.Action("LogOff", "Account")" id="topbarLogoutForm">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="fas fa-sign-out-alt ml-2"></i> خروج
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -575,15 +696,28 @@
         </p>
     </footer>
 
-    <!-- Scripts -->
+    <!-- ============================================
+         JavaScript Loading Order (Enterprise Pattern)
+         1. Core Libraries (jQuery, Bootstrap) - MUST be first
+         2. Plugins (SweetAlert, Toastr)
+         3. Helper Modules (NotificationHelper)
+         4. Page-specific Scripts (RenderSection)
+         
+         CRITICAL: jQuery MUST load before any jQuery-dependent code
+    ============================================= -->
+    
+    <!-- 1️⃣ Core Libraries (Foundation) -->
     <script src="~/Scripts/jquery-3.7.0.min.js"></script>
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    
+    <!-- 2️⃣ UI Plugins -->
     <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/Content/plugins/toastr/toastr.min.js"></script>
     
-    <!-- ✅ NotificationHelper.js - طبق قرارداد توسعه -->
+    <!-- 3️⃣ Application Helpers -->
     <script src="~/Content/js/notification-helper.js"></script>
 
+    <!-- 4️⃣ Page-Specific Scripts (Loaded AFTER all dependencies) -->
     @RenderSection("Scripts", required: false)
 
     <script>
