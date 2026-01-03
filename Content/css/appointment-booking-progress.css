@@ -1,0 +1,381 @@
+/**
+ * ✅ ULTIMATE: Appointment Booking Progress Indicator Styles
+ * 
+ * Features:
+ * - Modern, clean design
+ * - Responsive (Mobile-first)
+ * - RTL support
+ * - Smooth animations
+ * - Accessible (ARIA compliant)
+ * 
+ * طبق: APPOINTMENT_BOOKING_ROADMAP.md - Phase 2.1
+ */
+
+:root {
+    --progress-primary: #2c5aa0;
+    --progress-primary-light: #3d6bb3;
+    --progress-success: #28a745;
+    --progress-pending: #6c757d;
+    --progress-bg: #e9ecef;
+    --progress-border: #dee2e6;
+    --progress-shadow: rgba(44, 90, 160, 0.15);
+}
+
+/* ============================================
+   Main Container
+   ============================================ */
+
+.appointment-progress-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px var(--progress-shadow);
+    border: 1px solid var(--progress-border);
+}
+
+/* ============================================
+   Progress Bar
+   ============================================ */
+
+.appointment-progress-bar {
+    margin-bottom: 2rem;
+}
+
+.progress-track {
+    height: 8px;
+    background: var(--progress-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--progress-primary) 0%, var(--progress-primary-light) 100%);
+    border-radius: 10px;
+    transition: width 0.6s ease-in-out;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ============================================
+   Breadcrumb Steps
+   ============================================ */
+
+.appointment-steps-breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.breadcrumb-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 80px;
+    flex: 1;
+    transition: transform 0.3s ease;
+}
+
+.breadcrumb-step.clickable:hover {
+    transform: translateY(-2px);
+}
+
+.step-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+/* Step States */
+.breadcrumb-step.completed .step-icon {
+    background: var(--progress-success);
+    color: white;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.breadcrumb-step.current .step-icon {
+    background: var(--progress-primary);
+    color: white;
+    box-shadow: 0 4px 12px var(--progress-shadow);
+    animation: pulse 2s infinite;
+}
+
+.breadcrumb-step.pending .step-icon {
+    background: var(--progress-bg);
+    color: var(--progress-pending);
+    border: 2px solid var(--progress-border);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px var(--progress-shadow);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(44, 90, 160, 0.4);
+    }
+}
+
+/* Step Labels */
+.step-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
+}
+
+.step-number-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--progress-pending);
+    text-transform: uppercase;
+}
+
+.step-name-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.breadcrumb-step.completed .step-number-text,
+.breadcrumb-step.completed .step-name-text {
+    color: var(--progress-success);
+}
+
+.breadcrumb-step.current .step-number-text,
+.breadcrumb-step.current .step-name-text {
+    color: var(--progress-primary);
+    font-weight: 600;
+}
+
+/* Step Connector */
+.step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--progress-bg);
+    margin: 0 0.5rem;
+    position: relative;
+    top: -24px;
+    min-width: 20px;
+}
+
+.breadcrumb-step.completed + .step-connector {
+    background: var(--progress-success);
+}
+
+/* ============================================
+   Current Step Info
+   ============================================ */
+
+.current-step-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, var(--progress-primary) 0%, var(--progress-primary-light) 100%);
+    border-radius: 8px;
+    color: white;
+}
+
+.step-number {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+}
+
+.step-name {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ============================================
+   Responsive Design (Mobile-First)
+   ============================================ */
+
+/* Mobile (< 576px) */
+@media (max-width: 575.98px) {
+    .appointment-progress-container {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .appointment-steps-breadcrumb {
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb-step {
+        min-width: 60px;
+    }
+
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .step-name-text {
+        font-size: 0.75rem;
+        display: none; /* مخفی کردن نام در موبایل */
+    }
+
+    .step-number-text {
+        font-size: 0.7rem;
+    }
+
+    .step-connector {
+        top: -20px;
+        min-width: 10px;
+    }
+
+    .current-step-info {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .step-name {
+        font-size: 0.875rem;
+    }
+}
+
+/* Tablet (≥ 576px) */
+@media (min-width: 576px) {
+    .step-name-text {
+        display: block;
+    }
+}
+
+/* Desktop (≥ 992px) */
+@media (min-width: 992px) {
+    .appointment-progress-container {
+        padding: 2rem;
+    }
+
+    .breadcrumb-step {
+        min-width: 100px;
+    }
+
+    .step-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+    }
+
+    .step-connector {
+        top: -28px;
+    }
+}
+
+/* ============================================
+   RTL Support
+   ============================================ */
+
+[dir="rtl"] .appointment-steps-breadcrumb {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .step-connector {
+    /* در RTL، connectorها معکوس می‌شوند */
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    .appointment-progress-container {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+
+    .progress-fill::after {
+        animation: none;
+    }
+
+    .breadcrumb-step.current .step-icon {
+        animation: none;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+.breadcrumb-step.clickable {
+    cursor: pointer;
+}
+
+.breadcrumb-step:focus,
+.breadcrumb-step:focus-visible {
+    outline: 2px solid var(--progress-primary);
+    outline-offset: 4px;
+    border-radius: 8px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .step-icon {
+        border: 2px solid currentColor;
+    }
+
+    .progress-track {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .progress-fill,
+    .breadcrumb-step,
+    .step-icon {
+        transition: none;
+    }
+
+    .progress-fill::after,
+    .breadcrumb-step.current .step-icon {
+        animation: none;
+    }
+}
+

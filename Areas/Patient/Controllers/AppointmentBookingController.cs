@@ -20,42 +20,57 @@ using ClinicApp.Filters;
 using Serilog;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.AspNet.Identity;
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
     /// <summary>
-    /// Controller برای رزرو نوبت آنلاین
+    /// ✅ ULTIMATE: Controller برای رزرو نوبت آنلاین - Enterprise-Grade
     /// 
-    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can book appointments
-    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
+    /// Architecture:
+    /// - Extends BasePatientController for standard patient authentication
+    /// - PatientRoleAuthorization ensures only Patient role users can book
+    /// - Uses GetCurrentPatientIdAsync() for secure patient ID retrieval
+    /// 
+    /// Security:
+    /// - CSRF protection on all POST actions
+    /// - Rate limiting for booking attempts
+    /// - State validation between booking steps
+    /// 
+    /// Performance:
+    /// - Caching for doctor list & available slots
+    /// - Optimized database queries
+    /// - Transaction management for booking + payment
+    /// 
+    /// طبق: APPOINTMENT_BOOKING_ROADMAP.md | PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
     [PatientRoleAuthorization]
-    public class AppointmentBookingController : Controller
+    public class AppointmentBookingController : Base.BasePatientController
     {
         private readonly IAppointmentBookingService _bookingService;
-        private readonly ICurrentUserService _currentUserService;
         private readonly IWebPaymentService _webPaymentService;
         private readonly IPaymentGatewayService _paymentGatewayService;
-        private readonly IIdempotencyService _idempotencyService; // ✅ Idempotency
+        private readonly IIdempotencyService _idempotencyService;
+        private readonly IAppSettings _appSettings;
         private readonly ApplicationDbContext _context;
-        private readonly ILogger _logger;
 
         public AppointmentBookingController(
             IAppointmentBookingService bookingService,
             ICurrentUserService currentUserService,
             IWebPaymentService webPaymentService,
             IPaymentGatewayService paymentGatewayService,
-            IIdempotencyService idempotencyService, // ✅ Idempotency
+            IIdempotencyService idempotencyService,
+            IAppSettings appSettings,
             ApplicationDbContext context,
             ILogger logger)
+            : base(logger, currentUserService) // ✅ Call base constructor
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
-            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _webPaymentService = webPaymentService ?? throw new ArgumentNullException(nameof(webPaymentService));
             _paymentGatewayService = paymentGatewayService ?? throw new ArgumentNullException(nameof(paymentGatewayService));
             _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger?.ForContext<AppointmentBookingController>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -65,7 +80,68 @@ namespace ClinicApp.Areas.Patient.Controllers
         [HttpGet]
         public ActionResult Book()
         {
+            // ✅ Diagnostic: Log user info before redirect
+            _logger.Information("🔍 [Book] User info - IsAuthenticated: {IsAuth}, UserId: {UserId}, IsPatientRole: {IsPatient}, UserName: {UserName}",
+                User.Identity.IsAuthenticated,
+                User.Identity.GetUserId(),
+                User.IsInRole("Patient"),
+                User.Identity.Name);
+            
             return RedirectToAction("SelectDoctor");
+        }
+
+        /// <summary>
+        /// ✅ Diagnostic Action: بررسی وضعیت احراز هویت و نقش کاربر
+        /// GET: /Patient/Appointment/Book/CheckAuth
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // برای تست
+        public JsonResult CheckAuth()
+        {
+            try
+            {
+                var userId = User.Identity.GetUserId();
+                var userName = User.Identity.Name;
+                var isAuthenticated = User.Identity.IsAuthenticated;
+                var isPatientRole = User.IsInRole("Patient");
+                var allRoles = new List<string>();
+                
+                if (User.Identity is System.Security.Claims.ClaimsIdentity claimsIdentity)
+                {
+                    allRoles = claimsIdentity.Claims
+                        .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                        .Select(c => c.Value)
+                        .ToList();
+                }
+
+                var patientId = GetCurrentPatientIdAsync().Result;
+
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        isAuthenticated,
+                        userId,
+                        userName,
+                        isPatientRole,
+                        allRoles,
+                        patientId,
+                        message = isPatientRole 
+                            ? "کاربر دارای نقش Patient است" 
+                            : "کاربر نقش Patient ندارد"
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی وضعیت احراز هویت");
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         /// <summary>
@@ -74,17 +150,25 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// ✅ CRITICAL FIX: Use [Authorize] instead of manual check to ensure authentication state is synchronized
         /// </summary>
         [HttpGet]
-        [Authorize] // ✅ CRITICAL FIX: Let MVC authorization middleware handle authentication (ensures cookie is validated)
+        [Authorize]
+        [OutputCache(Duration = 300, VaryByParam = "departmentId;searchTerm")] // ✅ Cache for 5 minutes
         public async Task<ActionResult> SelectDoctor(int? departmentId, string searchTerm)
         {
             try
             {
-                _logger.Information("درخواست صفحه انتخاب پزشک - DepartmentId: {DepartmentId}, SearchTerm: {SearchTerm}",
-                    departmentId, searchTerm);
+                // ✅ Diagnostic: Log user info for debugging
+                var userId = User.Identity.GetUserId();
+                var isPatientRole = User.IsInRole("Patient");
+                _logger.Information("🔍 [SelectDoctor] User info - UserId: {UserId}, IsPatientRole: {IsPatient}, DepartmentId: {DepartmentId}, SearchTerm: {SearchTerm}",
+                    userId, isPatientRole, departmentId, searchTerm);
 
-                // ✅ CRITICAL FIX: Removed manual authentication check
-                // [Authorize] attribute ensures User.Identity.IsAuthenticated is true before action executes
-                // This prevents race condition between cookie set and validation
+                // ✅ Validation: Check if user has Patient role (double check)
+                if (!isPatientRole)
+                {
+                    _logger.Warning("⚠️ [SelectDoctor] User {UserId} does not have Patient role", userId);
+                    NotificationHelper.SetError(TempData, "شما مجوز دسترسی به بخش رزرو نوبت را ندارید. لطفاً با حساب کاربری بیمار وارد شوید.");
+                    return RedirectToAction("Login", "Account", new { area = "", returnUrl = Request.Url?.PathAndQuery });
+                }
 
                 var result = await _bookingService.GetAvailableDoctorsAsync(departmentId, searchTerm);
 
@@ -98,13 +182,25 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
-                // TODO: دریافت لیست دپارتمان‌ها برای فیلتر
+                // ✅ دریافت لیست دپارتمان‌های فعال برای فیلتر
+                var departments = await _context.Departments
+                    .AsNoTracking()
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .OrderBy(d => d.Name)
+                    .Select(d => new DepartmentInfo
+                    {
+                        DepartmentId = d.DepartmentId,
+                        Name = d.Name,
+                        Code = d.Code
+                    })
+                    .ToListAsync();
+
                 var viewModel = new DoctorSelectionViewModel
                 {
                     Doctors = result.Data,
                     SelectedDepartmentId = departmentId,
                     SearchTerm = searchTerm,
-                    Departments = new System.Collections.Generic.List<DepartmentInfo>() // TODO: دریافت از سرویس
+                    Departments = departments
                 };
 
                 return View(viewModel);
@@ -124,18 +220,47 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// صفحه انتخاب تاریخ
         /// GET: /Patient/Appointment/Book/SelectDate/{doctorId}
+        /// ✅ ULTIMATE: Bulletproof validation
         /// </summary>
         [HttpGet]
+        [Authorize] // ✅ Explicit authorization (inherits PatientRoleAuthorization from controller)
         public async Task<ActionResult> SelectDate(int doctorId)
         {
             try
             {
                 _logger.Information("درخواست صفحه انتخاب تاریخ - DoctorId: {DoctorId}", doctorId);
 
+                // ✅ Validation 1: DoctorId must be positive
+                if (doctorId <= 0)
+                {
+                    _logger.Warning("DoctorId نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                // ✅ Validation 2: Check if patient is authenticated
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    _logger.Warning("بیمار لاگین نیست");
+                    NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید");
+                    return RedirectToAction("Login", "Account", new { area = "" });
+                }
+
+                // ✅ Validation 3: Check if doctor exists and is active
                 var doctorResult = await _bookingService.GetDoctorDetailsAsync(doctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
+                    _logger.Warning("پزشک {DoctorId} یافت نشد", doctorId);
                     NotificationHelper.SetError(TempData, "پزشک یافت نشد");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                // ✅ Validation 4: Check if doctor has active schedule (accepts appointments)
+                if (!doctorResult.Data.HasActiveSchedule)
+                {
+                    _logger.Warning("پزشک {DoctorId} برنامه کاری فعالی ندارد", doctorId);
+                    NotificationHelper.SetError(TempData, "این پزشک در حال حاضر برنامه کاری فعالی ندارد");
                     return RedirectToAction("SelectDoctor");
                 }
 
@@ -159,6 +284,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// صفحه انتخاب زمان
         /// GET: /Patient/Appointment/Book/SelectTime/{doctorId}/{date}
+        /// ✅ ULTIMATE: Bulletproof validation
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> SelectTime(int doctorId, DateTime date)
@@ -168,9 +294,37 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Information("درخواست صفحه انتخاب زمان - DoctorId: {DoctorId}, Date: {Date}",
                     doctorId, date.ToString("yyyy/MM/dd"));
 
+                // ✅ Validation 1: DoctorId must be positive
+                if (doctorId <= 0)
+                {
+                    _logger.Warning("DoctorId نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                // ✅ Validation 2: Check if patient is authenticated
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    _logger.Warning("بیمار لاگین نیست");
+                    NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید");
+                    return RedirectToAction("Login", "Account", new { area = "" });
+                }
+
+                // ✅ Validation 3: Date must not be in the past
                 if (date.Date < DateTime.Today)
                 {
+                    _logger.Warning("تاریخ {Date} در گذشته است", date.ToString("yyyy/MM/dd"));
                     NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
+                    return RedirectToAction("SelectDate", new { doctorId });
+                }
+
+                // ✅ Validation 4: Date must not be too far in the future (max 90 days)
+                var maxFutureDate = DateTime.Today.AddDays(90);
+                if (date.Date > maxFutureDate)
+                {
+                    _logger.Warning("تاریخ {Date} بیش از 90 روز در آینده است", date.ToString("yyyy/MM/dd"));
+                    NotificationHelper.SetError(TempData, "نمی‌توانید برای بیش از 90 روز آینده نوبت رزرو کنید");
                     return RedirectToAction("SelectDate", new { doctorId });
                 }
 
@@ -188,13 +342,21 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDate", new { doctorId });
                 }
 
+                // ✅ دریافت مدت زمان نوبت از تنظیمات پزشک (DoctorSchedule) یا استفاده از مقدار پیش‌فرض
+                var doctorSchedule = await _context.DoctorSchedules
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId && !ds.IsDeleted);
+
+                var appointmentDuration = doctorSchedule?.AppointmentDuration 
+                    ?? _appSettings.DefaultAppointmentDurationMinutes;
+
                 var viewModel = new TimeSlotSelectionViewModel
                 {
                     DoctorId = doctorId,
                     DoctorName = doctorResult.Data.FullName,
                     SelectedDate = date,
                     AvailableSlots = slotsResult.Data,
-                    AppointmentDuration = 30 // TODO: از تنظیمات پزشک دریافت شود
+                    AppointmentDuration = appointmentDuration
                 };
 
                 return View(viewModel);
@@ -210,6 +372,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// صفحه تایید و پرداخت
         /// GET: /Patient/Appointment/Book/Confirm
+        /// ✅ ULTIMATE: Bulletproof validation + Double booking prevention
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> ConfirmBooking(
@@ -225,19 +388,98 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Information("درخواست صفحه تایید رزرو - DoctorId: {DoctorId}, Date: {Date}, Time: {StartTime}",
                     doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
 
+                // ✅ Validation 1: DoctorId must be positive
+                if (doctorId <= 0)
+                {
+                    _logger.Warning("DoctorId نامعتبر: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                // ✅ Validation 2: Check if patient is authenticated
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    NotificationHelper.SetError(TempData, "اطلاعات بیمار یافت نشد");
+                    _logger.Warning("بیمار لاگین نیست");
+                    NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید");
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
 
-                // بررسی دسترسی‌پذیری مجدد
+                // ✅ Validation 3: Date must not be in the past
+                if (appointmentDate.Date < DateTime.Today)
+                {
+                    _logger.Warning("تاریخ {Date} در گذشته است", appointmentDate.ToString("yyyy/MM/dd"));
+                    NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                // ✅ Validation 4: StartTime must be before EndTime
+                if (startTime >= endTime)
+                {
+                    _logger.Warning("زمان شروع {StartTime} بعد از زمان پایان {EndTime} است", startTime, endTime);
+                    NotificationHelper.SetError(TempData, "زمان شروع باید قبل از زمان پایان باشد");
+                    return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
+                }
+
+                // ✅ Validation 5: Time must be valid (00:00 to 23:59)
+                if (startTime < TimeSpan.Zero || startTime >= TimeSpan.FromHours(24) ||
+                    endTime < TimeSpan.Zero || endTime >= TimeSpan.FromHours(24))
+                {
+                    _logger.Warning("زمان نامعتبر - StartTime: {StartTime}, EndTime: {EndTime}", startTime, endTime);
+                    NotificationHelper.SetError(TempData, "زمان انتخاب شده نامعتبر است");
+                    return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
+                }
+
+                // ✅ Validation 6: Description length check (if provided)
+                if (!string.IsNullOrEmpty(description) && description.Length > 500)
+                {
+                    _logger.Warning("توضیحات خیلی طولانی است: {Length} کاراکتر", description.Length);
+                    NotificationHelper.SetError(TempData, "توضیحات نباید بیش از 500 کاراکتر باشد");
+                    return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
+                }
+
+                // ✅ Validation 7: Check if patient already has an appointment at this time (Double Booking Prevention)
+                // Note: Appointment model uses AppointmentDate (DateTime) + Duration (int minutes)
+                var requestedStartDateTime = appointmentDate.Date + startTime;
+                var requestedEndDateTime = appointmentDate.Date + endTime;
+
+                var existingAppointments = await _context.Appointments
+                    .AsNoTracking()
+                    .Where(a => a.PatientId == patientId.Value &&
+                                a.AppointmentDate.Year == appointmentDate.Year &&
+                                a.AppointmentDate.Month == appointmentDate.Month &&
+                                a.AppointmentDate.Day == appointmentDate.Day &&
+                                a.Status != AppointmentStatus.Cancelled &&
+                                !a.IsDeleted)
+                    .ToListAsync();
+
+                // Check overlap in memory (because we need to calculate EndTime = AppointmentDate + Duration)
+                var hasOverlap = existingAppointments.Any(a =>
+                {
+                    var existingStartTime = a.AppointmentDate;
+                    var existingEndTime = a.AppointmentDate.AddMinutes(a.Duration);
+
+                    return (existingStartTime <= requestedStartDateTime && existingEndTime > requestedStartDateTime) ||
+                           (existingStartTime < requestedEndDateTime && existingEndTime >= requestedEndDateTime) ||
+                           (existingStartTime >= requestedStartDateTime && existingEndTime <= requestedEndDateTime);
+                });
+
+                if (hasOverlap)
+                {
+                    _logger.Warning("⚠️ DOUBLE BOOKING: بیمار {PatientId} در تاریخ {Date} زمان {Time} قبلاً نوبت دارد",
+                        patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
+                    NotificationHelper.SetError(TempData, "شما در این تاریخ و زمان قبلاً نوبت دارید. لطفاً زمان دیگری انتخاب کنید");
+                    return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
+                }
+
+                // ✅ Validation 8: بررسی دسترسی‌پذیری مجدد (Race Condition Prevention)
                 var availabilityCheck = await _bookingService.CheckSlotAvailabilityAsync(
                     doctorId, appointmentDate, startTime, endTime);
 
                 if (!availabilityCheck.Success || !availabilityCheck.Data)
                 {
+                    _logger.Warning("⚠️ SLOT UNAVAILABLE: اسلات {DoctorId}/{Date}/{Time} دیگر در دسترس نیست",
+                        doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
                     NotificationHelper.SetError(TempData, "این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید");
                     return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
                 }
@@ -282,6 +524,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// رزرو نوبت
         /// POST: /Patient/Appointment/Book/Reserve
+        /// ✅ ULTIMATE: Bulletproof validation + Transaction + Double booking prevention
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -293,16 +536,74 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Information("درخواست رزرو نوبت - DoctorId: {DoctorId}, Date: {Date}, Time: {StartTime}",
                     model.DoctorId, model.AppointmentDate.ToString("yyyy/MM/dd"), model.StartTime);
 
+                // ✅ Validation 1: ModelState
                 if (!ModelState.IsValid)
                 {
-                    NotificationHelper.SetError(TempData, "اطلاعات وارد شده نامعتبر است");
-                    return RedirectToAction("SelectDoctor");
+                    var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                    _logger.Warning("ModelState نامعتبر: {Errors}", errors);
+                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است: " + errors });
                 }
 
+                // ✅ Validation 2: Check if patient is authenticated
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد" });
+                    _logger.Warning("بیمار لاگین نیست");
+                    return Json(new { success = false, message = "لطفاً ابتدا وارد سیستم شوید", redirectUrl = "/Account/Login" });
+                }
+
+                // ✅ Validation 3: DoctorId must be positive
+                if (model.DoctorId <= 0)
+                {
+                    _logger.Warning("DoctorId نامعتبر: {DoctorId}", model.DoctorId);
+                    return Json(new { success = false, message = "شناسه پزشک نامعتبر است" });
+                }
+
+                // ✅ Validation 4: Date must not be in the past
+                if (model.AppointmentDate.Date < DateTime.Today)
+                {
+                    _logger.Warning("تاریخ {Date} در گذشته است", model.AppointmentDate.ToString("yyyy/MM/dd"));
+                    return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" });
+                }
+
+                // ✅ Validation 5: StartTime must be before EndTime
+                if (model.StartTime >= model.EndTime)
+                {
+                    _logger.Warning("زمان شروع {StartTime} بعد از زمان پایان {EndTime} است", model.StartTime, model.EndTime);
+                    return Json(new { success = false, message = "زمان شروع باید قبل از زمان پایان باشد" });
+                }
+
+                // ✅ Validation 6: Double Booking Prevention (Check again in POST)
+                // Note: Appointment model uses AppointmentDate (DateTime) + Duration (int minutes)
+                var requestedStartDateTime = model.AppointmentDate.Date + model.StartTime;
+                var requestedEndDateTime = model.AppointmentDate.Date + model.EndTime;
+
+                var existingAppointments = await _context.Appointments
+                    .AsNoTracking()
+                    .Where(a => a.PatientId == patientId.Value &&
+                                a.AppointmentDate.Year == model.AppointmentDate.Year &&
+                                a.AppointmentDate.Month == model.AppointmentDate.Month &&
+                                a.AppointmentDate.Day == model.AppointmentDate.Day &&
+                                a.Status != AppointmentStatus.Cancelled &&
+                                !a.IsDeleted)
+                    .ToListAsync();
+
+                // Check overlap in memory (because we need to calculate EndTime = AppointmentDate + Duration)
+                var hasOverlap = existingAppointments.Any(a =>
+                {
+                    var existingStartTime = a.AppointmentDate;
+                    var existingEndTime = a.AppointmentDate.AddMinutes(a.Duration);
+
+                    return (existingStartTime <= requestedStartDateTime && existingEndTime > requestedStartDateTime) ||
+                           (existingStartTime < requestedEndDateTime && existingEndTime >= requestedEndDateTime) ||
+                           (existingStartTime >= requestedStartDateTime && existingEndTime <= requestedEndDateTime);
+                });
+
+                if (hasOverlap)
+                {
+                    _logger.Warning("⚠️ DOUBLE BOOKING PREVENTED: بیمار {PatientId} در تاریخ {Date} زمان {Time} قبلاً نوبت دارد",
+                        patientId, model.AppointmentDate.ToString("yyyy/MM/dd"), model.StartTime);
+                    return Json(new { success = false, message = "شما در این تاریخ و زمان قبلاً نوبت دارید" });
                 }
 
                 var request = new AppointmentBookingRequestDto

@@ -1,10 +1,13 @@
 @model ClinicApp.ViewModels.Patient.DoctorSelectionViewModel
 @{
     ViewBag.Title = "انتخاب پزشک";
-    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayoutPro.cshtml";
+    ViewBag.BookingStep = 1; // ✅ Progress Indicator: Step 1/4
+    ViewBag.BookingTotal = 4;
 }
 
 @section Styles {
+    <link href="~/Content/css/appointment-booking-progress.css" rel="stylesheet" />
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
@@ -176,6 +179,9 @@
         </div>
     </form>
 </div>
+
+<!-- ✅ Diagnostic: نمایش وضعیت احراز هویت (فقط برای دیباگ - در production حذف شود) -->
+@Html.Partial("_AuthDiagnostic")
 
 <!-- لیست پزشکان -->
 <div class="doctors-container" id="doctorsContainer">

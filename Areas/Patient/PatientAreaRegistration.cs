@@ -18,34 +18,35 @@ namespace ClinicApp.Areas.Patient
 
         public override void RegisterArea(AreaRegistrationContext context)
         {
-            // ✅ Route برای Appointment Booking
+            // ✅ BEST PRACTICE: Route خاص قبل از default route + UseNamespaceFallback = false
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectDoctor",
                 url: "Patient/Appointment/Book/SelectDoctor",
-                defaults: new { controller = "AppointmentBooking", action = "SelectDoctor" },
+                defaults: new { controller = "AppointmentBooking", action = "SelectDoctor", area = "Patient" },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
 
+            // ✅ BEST PRACTICE: Route خاص قبل از default route + UseNamespaceFallback = false
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectDate",
                 url: "Patient/Appointment/Book/SelectDate/{doctorId}",
-                defaults: new { controller = "AppointmentBooking", action = "SelectDate" },
+                defaults: new { controller = "AppointmentBooking", action = "SelectDate", area = "Patient" },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
 
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectTime",
                 url: "Patient/Appointment/Book/SelectTime/{doctorId}/{date}",
-                defaults: new { controller = "AppointmentBooking", action = "SelectTime" },
+                defaults: new { controller = "AppointmentBooking", action = "SelectTime", area = "Patient" },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false;
 
             context.MapRoute(
                 name: "Patient_AppointmentBooking_Confirm",
                 url: "Patient/Appointment/Book/Confirm",
-                defaults: new { controller = "AppointmentBooking", action = "ConfirmBooking" },
+                defaults: new { controller = "AppointmentBooking", action = "ConfirmBooking", area = "Patient" },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false;
 
             // ✅ Route برای Dashboard
             context.MapRoute(
@@ -103,13 +104,14 @@ namespace ClinicApp.Areas.Patient
 
             // ✅ Default Route برای Patient Area - با constraint برای جلوگیری از conflict
             // فقط Patient Area controllers اصلی را قبول می‌کند
+            // ✅ BEST PRACTICE: UseNamespaceFallback = false (طبق 08-MVC-Routing-Best-Practices.md)
             context.MapRoute(
                 "Patient_default",
                 "Patient/{controller}/{action}/{id}",
-                new { action = "Index", id = UrlParameter.Optional },
+                new { action = "Index", id = UrlParameter.Optional, area = "Patient" },
                 new { controller = @"^(Appointment|AppointmentBooking|Dashboard|Settings|Profile|MedicalRecord)$" }, // ✅ CRITICAL: فقط controllers موجود
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
         }
     }
 }

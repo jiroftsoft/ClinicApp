@@ -53,10 +53,39 @@
                         </span>
                     }
                 </div>
-                <button type="button" class="btn btn-primary w-100 select-doctor-btn" data-doctor-id="@Model.DoctorId" @(!Model.HasActiveSchedule ? "disabled" : "")>
-                    <i class="fas fa-calendar-plus me-1"></i>
-                    انتخاب پزشک
-                </button>
+                @if (Model.HasActiveSchedule)
+                {
+                    // ✅ BEST PRACTICE: استفاده از @Url.Action با area مشخص (طبق 08-MVC-Routing-Best-Practices.md)
+                    var selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
+                    
+                    // ✅ Validation: بررسی اینکه URL درست تولید شده
+                    if (string.IsNullOrEmpty(selectDateUrl))
+                    {
+                        // Fallback: استفاده از route name (اگر Url.Action fail کرد)
+                        selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { doctorId = Model.DoctorId });
+                    }
+                    
+                    // ✅ Final validation: اگر هنوز null است، از route pattern استفاده کن
+                    if (string.IsNullOrEmpty(selectDateUrl))
+                    {
+                        selectDateUrl = $"/Patient/Appointment/Book/SelectDate/{Model.DoctorId}";
+                    }
+                    
+                    <a href="@selectDateUrl" 
+                       class="btn btn-primary w-100 select-doctor-btn" 
+                       data-doctor-id="@Model.DoctorId"
+                       data-href="@selectDateUrl">
+                        <i class="fas fa-calendar-plus me-1"></i>
+                        انتخاب پزشک
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-secondary w-100" disabled>
+                        <i class="fas fa-times-circle me-1"></i>
+                        غیرفعال
+                    </button>
+                }
             </div>
         </div>
     </div>

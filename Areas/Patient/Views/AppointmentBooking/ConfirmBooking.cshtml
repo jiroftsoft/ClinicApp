@@ -3,10 +3,13 @@
 @model ClinicApp.ViewModels.Patient.AppointmentBookingViewModel
 @{
     ViewBag.Title = "تایید نهایی رزرو";
-    Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayoutPro.cshtml";
+    ViewBag.BookingStep = 4; // ✅ Progress Indicator: Step 4/4
+    ViewBag.BookingTotal = 4;
 }
 
 @section Styles {
+    <link href="~/Content/css/appointment-booking-progress.css" rel="stylesheet" />
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />

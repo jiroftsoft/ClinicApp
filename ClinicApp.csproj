@@ -1996,6 +1996,8 @@
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\ajax-navigation.css" />
     <Content Include="Content\css\announcements-section.css" />
+    <Content Include="Content\css\appointment-booking-progress.css" />
+    <Content Include="Content\css\appointment-booking-skeleton.css" />
     <Content Include="Content\css\appointment-views.css" />
     <Content Include="Content\css\blog-section.css" />
     <Content Include="Content\css\breadcrumb-medical.css" />
@@ -2181,6 +2183,10 @@
     <Content Include="Content\Insurance\supplementary-tariff.css" />
     <Content Include="Content\js\admin-layout.js" />
     <Content Include="Content\js\admin-notification-service.js" />
+    <Content Include="Content\js\appointment-booking-loading.js" />
+    <Content Include="Content\js\appointment-booking-progress.js" />
+    <Content Include="Content\js\appointment-booking-validation.js" />
+    <Content Include="Content\js\appointment-real-time-availability.js" />
     <Content Include="Content\js\doctor-timeslot-index.js" />
     <Content Include="Content\js\faq-accordion.js" />
     <Content Include="Content\js\gallery-lightbox.js" />
@@ -4987,6 +4993,16 @@
     <Content Include="Areas\Patient\Views\Dashboard\_MedicalRecordTab.cshtml" />
     <Content Include="Areas\Patient\Views\Dashboard\_ProfileTab.cshtml" />
     <Content Include="Areas\Patient\Views\Dashboard\_SettingsTab.cshtml" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_FINAL_REPORT.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_ROADMAP.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_ULTIMATE_SUMMARY.md" />
+    <Content Include="Docs\DASHBOARD_BULLETPROOF_CHECKLIST.md" />
+    <Content Include="Docs\LEGACY_PATIENT_MIGRATION_GUIDE.md" />
+    <Content Include="Docs\PATIENT_USER_MAPPING_ARCHITECTURE.md" />
+    <Content Include="Docs\UNIFIED_DASHBOARD_ARCHITECTURE.md" />
+    <Content Include="Areas\Patient\Views\AppointmentBooking\_AuthDiagnostic.cshtml" />
+    <Content Include="Contracts\CRITICAL_MODULE_SAFETY_CONTRACT.md" />
+    <Content Include="Contracts\NEW_CONTRACT_SUMMARY.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

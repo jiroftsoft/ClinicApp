@@ -532,7 +532,7 @@
 
     @RenderSection("Styles", required: false)
 </head>
-<body>
+<body data-booking-step="@ViewBag.BookingStep" data-booking-total="@ViewBag.BookingTotal">
     <!-- Top Navbar -->
     <nav class="patient-navbar-top">
         <div class="navbar-left">
@@ -719,6 +719,12 @@
 
     <!-- 4️⃣ Page-Specific Scripts (Loaded AFTER all dependencies) -->
     @RenderSection("Scripts", required: false)
+
+    <!-- ✅ Appointment Booking Progress Indicator (Auto-init) -->
+    @if (ViewBag.BookingStep != null)
+    {
+        <script src="~/Content/js/appointment-booking-progress.js"></script>
+    }
 
     <script>
         (function() {

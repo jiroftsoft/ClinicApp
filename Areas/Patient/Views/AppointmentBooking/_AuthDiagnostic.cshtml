@@ -1,0 +1,67 @@
+@using Microsoft.AspNet.Identity
+@* ✅ Diagnostic Partial View برای بررسی وضعیت احراز هویت *@
+@if (User.Identity.IsAuthenticated)
+{
+    <div class="alert alert-info mt-3">
+        <h5><i class="fas fa-info-circle me-2"></i>وضعیت احراز هویت</h5>
+        <ul class="mb-0">
+            <li><strong>شناسه کاربر:</strong> @User.Identity.GetUserId()</li>
+            <li><strong>نام کاربری:</strong> @User.Identity.Name</li>
+            <li><strong>احراز هویت شده:</strong> @(User.Identity.IsAuthenticated ? "بله" : "خیر")</li>
+            <li><strong>نقش Patient:</strong> @(User.IsInRole("Patient") ? "✅ دارد" : "❌ ندارد")</li>
+            <li><strong>تمام نقش‌ها:</strong> 
+                @{
+                    var roles = new List<string>();
+                    if (User.Identity is System.Security.Claims.ClaimsIdentity claimsIdentity)
+                    {
+                        roles = claimsIdentity.Claims
+                            .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                            .Select(c => c.Value)
+                            .ToList();
+                    }
+                }
+                @string.Join(", ", roles.Any() ? roles : new[] { "هیچ نقشی یافت نشد" })
+            </li>
+        </ul>
+        <button type="button" class="btn btn-sm btn-primary mt-2" onclick="checkAuthStatus()">
+            <i class="fas fa-sync me-1"></i>بررسی مجدد وضعیت
+        </button>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        <h5><i class="fas fa-exclamation-triangle me-2"></i>شما وارد سیستم نشده‌اید</h5>
+        <p class="mb-0">لطفاً ابتدا وارد سیستم شوید.</p>
+        <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.PathAndQuery })" class="btn btn-sm btn-primary mt-2">
+            <i class="fas fa-sign-in-alt me-1"></i>ورود به سیستم
+        </a>
+    </div>
+}
+
+<script>
+function checkAuthStatus() {
+    $.ajax({
+        url: '@Url.Action("CheckAuth", "AppointmentBooking", new { area = "Patient" })',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                console.log('✅ Auth Status:', response.data);
+                alert('وضعیت احراز هویت:\n' +
+                    'احراز هویت شده: ' + (response.data.isAuthenticated ? 'بله' : 'خیر') + '\n' +
+                    'نقش Patient: ' + (response.data.isPatientRole ? '✅ دارد' : '❌ ندارد') + '\n' +
+                    'تمام نقش‌ها: ' + response.data.allRoles.join(', ') + '\n' +
+                    'شناسه بیمار: ' + (response.data.patientId || 'یافت نشد'));
+            } else {
+                console.error('❌ Error:', response.message);
+                alert('خطا: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ AJAX Error:', xhr);
+            alert('خطا در ارتباط با سرور');
+        }
+    });
+}
+</script>
+

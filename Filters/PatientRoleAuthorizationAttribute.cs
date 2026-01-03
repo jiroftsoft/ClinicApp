@@ -70,10 +70,12 @@ namespace ClinicApp.Filters
             {
                 var httpContext = filterContext.HttpContext;
                 
+                // ✅ تعریف returnUrl در ابتدای متد (برای استفاده در تمام scopeها)
+                var returnUrl = httpContext.Request.Url?.PathAndQuery;
+                
                 // اگر کاربر احراز هویت نشده است، به صفحه لاگین هدایت می‌شود
                 if (httpContext?.User?.Identity == null || !httpContext.User.Identity.IsAuthenticated)
                 {
-                    var returnUrl = httpContext.Request.Url?.PathAndQuery;
                     filterContext.Result = new RedirectToRouteResult(
                         new System.Web.Routing.RouteValueDictionary
                         {
@@ -109,25 +111,27 @@ namespace ClinicApp.Filters
                     return;
                 }
 
-                // برای درخواست‌های عادی، به صفحه خطا یا داشبورد مناسب هدایت می‌شود
+                // ✅ برای درخواست‌های عادی، به صفحه Login هدایت می‌شود (نه Home)
+                // این بهتر است چون کاربر ممکن است با نقش دیگری لاگین کرده باشد
                 filterContext.Result = new RedirectToRouteResult(
                     new System.Web.Routing.RouteValueDictionary
                     {
-                        { "controller", "Home" },
-                        { "action", "Index" },
-                        { "area", "" }
+                        { "controller", "Account" },
+                        { "action", "Login" },
+                        { "area", "" },
+                        { "returnUrl", returnUrl }
                     });
                 
-                // می‌توانیم پیام خطا را در TempData قرار دهیم
+                // ✅ پیام خطا را در TempData قرار می‌دهیم
                 if (filterContext.Controller is Controller controller)
                 {
                     NotificationHelper.SetError(controller.TempData, 
-                        "شما مجوز دسترسی به بخش بیمار را ندارید. لطفاً با نقش مناسب وارد شوید.");
+                        "شما مجوز دسترسی به بخش بیمار را ندارید. لطفاً با حساب کاربری بیمار وارد شوید.");
                 }
 
                 _log.Warning(
-                    "کاربر احراز هویت شده اما بدون نقش Patient - هدایت به صفحه اصلی. UserId: {UserId}",
-                    httpContext.User.Identity.GetUserId());
+                    "کاربر احراز هویت شده اما بدون نقش Patient - هدایت به صفحه Login. UserId: {UserId}, ReturnUrl: {ReturnUrl}",
+                    httpContext.User.Identity.GetUserId(), returnUrl);
             }
             catch (Exception ex)
             {
