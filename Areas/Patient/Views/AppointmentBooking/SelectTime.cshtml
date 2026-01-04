@@ -9,129 +9,14 @@
 
 @section Styles {
     <link href="~/Content/css/appointment-booking-progress.css" rel="stylesheet" />
+    <link href="~/Content/css/appointment-booking-views.css" rel="stylesheet" />
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
-    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    <style>
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-primary-light: #3d6bb3;
-            --medical-border: #dee2e6;
-            --medical-text: #495057;
-        }
-
-        .page-header {
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            color: white;
-            box-shadow: 0 4px 16px rgba(44, 90, 160, 0.25);
-        }
-
-        .info-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .time-slots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--medical-text);
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: var(--medical-border);
-            margin-bottom: 1rem;
-        }
-
-        .selected-slot-info {
-            background: linear-gradient(135deg, var(--medical-primary-light) 0%, var(--medical-primary) 100%);
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: white;
-            margin-top: 2rem;
-            display: none;
-        }
-
-        .selected-slot-info.show {
-            display: block;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        /* ✅ Mobile-First: Base styles for mobile */
-        .page-header {
-            padding: 1.5rem;
-        }
-
-        .page-header h2 {
-            font-size: 1.5rem;
-        }
-
-        .info-card {
-            padding: 1rem;
-        }
-
-        .time-slots-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 0.75rem;
-        }
-
-        /* ✅ Tablet: 768px and up */
-        @@media (min-width: 768px) {
-            .page-header {
-                padding: 2rem;
-            }
-
-            .page-header h2 {
-                font-size: 2rem;
-            }
-
-            .info-card {
-                padding: 1.5rem;
-            }
-
-            .time-slots-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1rem;
-            }
-        }
-
-        /* ✅ Desktop: 992px and up */
-        @@media (min-width: 992px) {
-            .page-header {
-                padding: 2.5rem;
-            }
-        }
-
-        /* Animation */
-        @@keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        .time-slot-card {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-    </style>
+    <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <!-- ✅ CRITICAL FIX: حذف Inline Styles - انتقال به appointment-booking-views.css -->
 }
 
-<div class="page-header">
+<div class="appointment-page-header">
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h2 class="mb-1">
@@ -231,7 +116,7 @@
 <input type="hidden" id="selectedEndTime" />
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/time-selection.js"></script>
 }
 

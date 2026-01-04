@@ -325,23 +325,21 @@ namespace ClinicApp.Services.Appointment
 
             try
             {
-                // بررسی نوبت‌های دیگر بیمار در همان زمان
+                // ✅ CRITICAL FIX: استفاده از متد جدید با Locking برای جلوگیری از Race Condition
+                var hasOverlap = await _appointmentRepository.HasOverlappingPatientAppointmentAsync(
+                    patientId, appointmentDate, startTime, endTime);
+
+                if (hasOverlap)
+                {
+                    errors.Add("شما در این تاریخ و زمان قبلاً نوبت دارید. لطفاً زمان دیگری انتخاب کنید");
+                    _logger.Warning("⚠️ DOUBLE BOOKING PREVENTED: بیمار {PatientId} در تاریخ {Date} زمان {StartTime} قبلاً نوبت دارد",
+                        patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
+                }
+
+                // هشدار برای چند نوبت در یک روز (بدون Locking - فقط برای هشدار)
                 var patientAppointments = await _appointmentRepository.GetPatientAppointmentsAsync(
                     patientId, appointmentDate.Date, appointmentDate.Date.AddDays(1));
 
-                var conflictingAppointment = patientAppointments.FirstOrDefault(a =>
-                    a.AppointmentDate.Date == appointmentDate.Date &&
-                    a.Status != AppointmentStatus.Cancelled &&
-                    ((a.AppointmentDate.TimeOfDay >= startTime && a.AppointmentDate.TimeOfDay < endTime) ||
-                     (a.AppointmentDate.AddMinutes(a.Duration) > appointmentDate.Date.Add(startTime) &&
-                      a.AppointmentDate.AddMinutes(a.Duration) <= appointmentDate.Date.Add(endTime))));
-
-                if (conflictingAppointment != null)
-                {
-                    errors.Add("شما در این زمان نوبت دیگری دارید");
-                }
-
-                // هشدار برای چند نوبت در یک روز
                 var sameDayAppointments = patientAppointments.Count(a =>
                     a.AppointmentDate.Date == appointmentDate.Date &&
                     a.Status != AppointmentStatus.Cancelled);
@@ -356,8 +354,8 @@ namespace ClinicApp.Services.Appointment
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بررسی تداخل نوبت‌های بیمار");
-                warnings.Add("نتوانستیم تداخل نوبت‌های شما را بررسی کنیم");
-                return ValidationResult.Create(new List<string>(), warnings);
+                errors.Add("خطا در بررسی تداخل نوبت‌های شما. لطفاً دوباره تلاش کنید");
+                return ValidationResult.Failed(errors);
             }
         }
 

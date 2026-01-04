@@ -36,7 +36,7 @@ namespace ClinicApp.Filters
         /// <summary>
         /// ✅ Override OnAuthorization to support AllowAnonymous
         /// </summary>
-        public override void OnAuthorization(AuthorizationContext filterContext)
+        public override void OnAuthorization(System.Web.Mvc.AuthorizationContext filterContext)
         {
             // ✅ Check for AllowAnonymous attribute
             if (filterContext.ActionDescriptor.IsDefined(typeof(AllowAnonymousAttribute), inherit: true) ||
@@ -98,7 +98,7 @@ namespace ClinicApp.Filters
                 var isInPatientRole = identity.IsInRole(PatientRoleValue);
                 
                 // Method 3: Check Custom PatientId Claim (if exists)
-                var hasPatientIdClaim = identity.HasClaim(PatientIdClaim);
+                var hasPatientIdClaim = identity.HasClaim(c => c.Type == PatientIdClaim);
 
                 var isAuthorized = hasPatientRoleClaim || isInPatientRole;
 
@@ -128,7 +128,7 @@ namespace ClinicApp.Filters
         /// <summary>
         /// ✅ MODERN: Handle unauthorized requests with proper redirect logic
         /// </summary>
-        protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
+        protected override void HandleUnauthorizedRequest(System.Web.Mvc.AuthorizationContext filterContext)
         {
             try
             {

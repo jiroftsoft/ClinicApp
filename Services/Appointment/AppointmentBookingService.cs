@@ -491,107 +491,130 @@ namespace ClinicApp.Services.Appointment
         public async Task<ServiceResult<AppointmentEntity>> ReserveAppointmentAsync(
             AppointmentBookingRequestDto request)
         {
-            try
+            // ✅ CRITICAL FIX: Transaction Management برای یکپارچگی داده
+            // تمام عملیات (validation, price calculation, appointment creation) در یک transaction
+            using (var transaction = _context.Database.BeginTransaction())
             {
-                _logger.Information("درخواست رزرو نوبت - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}",
-                    request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"), request.StartTime);
-
-                // اعتبارسنجی پیشرفته
-                var validationService = new AppointmentValidationService(
-                    _appointmentRepository,
-                    _doctorScheduleRepository,
-                    _doctorCrudService,
-                    _logger);
-
-                var validationResult = await validationService.ValidateBookingRequestAsync(request);
-
-                if (!validationResult.IsValid)
-                {
-                    var errorMessage = string.Join("، ", validationResult.Errors);
-                    if (validationResult.Warnings.Any())
-                    {
-                        errorMessage += " | هشدارها: " + string.Join("، ", validationResult.Warnings);
-                    }
-                    return ServiceResult<AppointmentEntity>.Failed(errorMessage);
-                }
-
-                // نمایش هشدارها در لاگ
-                if (validationResult.Warnings.Any())
-                {
-                    _logger.Warning("هشدارهای اعتبارسنجی: {Warnings}",
-                        string.Join("، ", validationResult.Warnings));
-                }
-
-                // محاسبه قیمت
-                var priceResult = await GetAppointmentPriceAsync(request.DoctorId, request.ServiceCategoryId);
-                if (!priceResult.Success)
-                {
-                    return ServiceResult<AppointmentEntity>.Failed(priceResult.Message ?? "خطا در محاسبه قیمت");
-                }
-
-                // محاسبه تاریخ و زمان نوبت
-                var appointmentDateTime = request.AppointmentDate.Date.Add(request.StartTime);
-
-                // ایجاد نوبت
-                var appointment = new AppointmentEntity
-                {
-                    DoctorId = request.DoctorId,
-                    PatientId = request.PatientId,
-                    AppointmentDate = appointmentDateTime,
-                    Status = AppointmentStatus.Scheduled,
-                    Price = priceResult.Data,
-                    Description = request.Description,
-                    IsOnlineBooking = true,
-                    Duration = (int)(request.EndTime - request.StartTime).TotalMinutes,
-                    Priority = AppointmentPriority.Normal,
-                    IsEmergency = false,
-                    CreatedByUserId = _currentUserService.UserId,
-                    CreatedAt = DateTime.Now,
-                    IsDeleted = false
-                };
-
-                var createdAppointment = await _appointmentRepository.CreateAppointmentAsync(appointment);
-
-                // ✅ CRITICAL: Cache حذف شد - نیازی به پاک کردن Cache نیست
-
-                _logger.Information("نوبت {AppointmentId} با موفقیت رزرو شد - پزشک: {DoctorId}, بیمار: {PatientId}",
-                    createdAppointment.AppointmentId, request.DoctorId, request.PatientId);
-
-                // ارسال اعلان رزرو موفق (به صورت Async - بدون انتظار)
                 try
                 {
-                    var notificationService = new AppointmentNotificationService(
-                        _context,
-                        new EmailService(),
-                        new AsanakSmsService(),
+                    _logger.Information("درخواست رزرو نوبت - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}",
+                        request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"), request.StartTime);
+
+                    // اعتبارسنجی پیشرفته
+                    var validationService = new AppointmentValidationService(
+                        _appointmentRepository,
+                        _doctorScheduleRepository,
+                        _doctorCrudService,
                         _logger);
 
-                    // Fire and forget - خطا در ارسال اعلان نباید رزرو را متوقف کند
-                    _ = Task.Run(async () =>
+                    var validationResult = await validationService.ValidateBookingRequestAsync(request);
+
+                    if (!validationResult.IsValid)
                     {
-                        try
+                        transaction.Rollback();
+                        var errorMessage = string.Join("، ", validationResult.Errors);
+                        if (validationResult.Warnings.Any())
                         {
-                            await notificationService.SendBookingConfirmationAsync(createdAppointment.AppointmentId);
+                            errorMessage += " | هشدارها: " + string.Join("، ", validationResult.Warnings);
                         }
-                        catch (Exception ex)
+                        _logger.Warning("اعتبارسنجی ناموفق - خطاها: {Errors}", errorMessage);
+                        return ServiceResult<AppointmentEntity>.Failed(errorMessage);
+                    }
+
+                    // نمایش هشدارها در لاگ
+                    if (validationResult.Warnings.Any())
+                    {
+                        _logger.Warning("هشدارهای اعتبارسنجی: {Warnings}",
+                            string.Join("، ", validationResult.Warnings));
+                    }
+
+                    // محاسبه قیمت
+                    var priceResult = await GetAppointmentPriceAsync(request.DoctorId, request.ServiceCategoryId);
+                    if (!priceResult.Success)
+                    {
+                        transaction.Rollback();
+                        _logger.Warning("خطا در محاسبه قیمت: {Message}", priceResult.Message);
+                        return ServiceResult<AppointmentEntity>.Failed(priceResult.Message ?? "خطا در محاسبه قیمت");
+                    }
+
+                    // محاسبه تاریخ و زمان نوبت
+                    var appointmentDateTime = request.AppointmentDate.Date.Add(request.StartTime);
+
+                    // ایجاد نوبت
+                    var appointment = new AppointmentEntity
+                    {
+                        DoctorId = request.DoctorId,
+                        PatientId = request.PatientId,
+                        AppointmentDate = appointmentDateTime,
+                        Status = AppointmentStatus.Scheduled,
+                        Price = priceResult.Data,
+                        Description = request.Description,
+                        IsOnlineBooking = true,
+                        Duration = (int)(request.EndTime - request.StartTime).TotalMinutes,
+                        Priority = AppointmentPriority.Normal,
+                        IsEmergency = false,
+                        CreatedByUserId = _currentUserService.UserId,
+                        CreatedAt = DateTime.Now,
+                        IsDeleted = false
+                    };
+
+                    var createdAppointment = await _appointmentRepository.CreateAppointmentAsync(appointment);
+
+                    // ✅ CRITICAL: Commit transaction فقط بعد از موفقیت تمام عملیات
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
+
+                    _logger.Information("✅ نوبت {AppointmentId} با موفقیت رزرو شد (Transaction Committed) - پزشک: {DoctorId}, بیمار: {PatientId}",
+                        createdAppointment.AppointmentId, request.DoctorId, request.PatientId);
+
+                    // ارسال اعلان رزرو موفق (به صورت Async - بدون انتظار)
+                    // ✅ Note: Notification خارج از transaction است (Fire and Forget)
+                    try
+                    {
+                        var notificationService = new AppointmentNotificationService(
+                            _context,
+                            new EmailService(),
+                            new AsanakSmsService(),
+                            _logger);
+
+                        // Fire and forget - خطا در ارسال اعلان نباید رزرو را متوقف کند
+                        _ = Task.Run(async () =>
                         {
-                            _logger.Error(ex, "خطا در ارسال اعلان رزرو - AppointmentId: {AppointmentId}",
-                                createdAppointment.AppointmentId);
-                        }
-                    });
+                            try
+                            {
+                                await notificationService.SendBookingConfirmationAsync(createdAppointment.AppointmentId);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "خطا در ارسال اعلان رزرو - AppointmentId: {AppointmentId}",
+                                    createdAppointment.AppointmentId);
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
+                            createdAppointment.AppointmentId);
+                    }
+
+                    return ServiceResult<AppointmentEntity>.Successful(createdAppointment);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
-                        createdAppointment.AppointmentId);
+                    // ✅ CRITICAL: Rollback transaction در صورت خطا
+                    try
+                    {
+                        transaction.Rollback();
+                        _logger.Warning("Transaction rolled back due to error");
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _logger.Error(rollbackEx, "خطا در Rollback transaction");
+                    }
+                    
+                    _logger.Error(ex, "❌ خطا در رزرو نوبت - Transaction Rolled Back");
+                    return ServiceResult<AppointmentEntity>.Failed("خطا در رزرو نوبت. لطفاً دوباره تلاش کنید");
                 }
-
-                return ServiceResult<AppointmentEntity>.Successful(createdAppointment);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در رزرو نوبت");
-                return ServiceResult<AppointmentEntity>.Failed("خطا در رزرو نوبت. لطفاً دوباره تلاش کنید");
             }
         }
 
@@ -620,6 +643,39 @@ namespace ClinicApp.Services.Appointment
             {
                 _logger.Error(ex, "خطا در محاسبه قیمت نوبت");
                 return ServiceResult<decimal>.Failed("خطا در محاسبه قیمت");
+            }
+        }
+
+        /// <summary>
+        /// ✅ CRITICAL FIX: بررسی تداخل نوبت‌های بیمار (Double Booking Prevention)
+        /// استفاده از Repository با Locking برای جلوگیری از Race Condition
+        /// </summary>
+        public async Task<ServiceResult<bool>> CheckPatientDoubleBookingAsync(
+            int patientId,
+            DateTime appointmentDate,
+            TimeSpan startTime,
+            TimeSpan endTime)
+        {
+            try
+            {
+                _logger.Debug("بررسی تداخل نوبت‌های بیمار - PatientId: {PatientId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}",
+                    patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime);
+
+                var hasOverlap = await _appointmentRepository.HasOverlappingPatientAppointmentAsync(
+                    patientId, appointmentDate, startTime, endTime);
+
+                if (hasOverlap)
+                {
+                    _logger.Warning("⚠️ DOUBLE BOOKING DETECTED: بیمار {PatientId} در تاریخ {Date} زمان {StartTime} قبلاً نوبت دارد",
+                        patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
+                }
+
+                return ServiceResult<bool>.Successful(hasOverlap);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی تداخل نوبت‌های بیمار - PatientId: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در بررسی تداخل نوبت‌ها");
             }
         }
 

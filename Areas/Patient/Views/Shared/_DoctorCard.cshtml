@@ -108,36 +108,5 @@
         </div>
     </div>
 </div>
-
-<style>
-    .doctor-card {
-        border: 1px solid var(--medical-border);
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        background: white;
-    }
-
-    .doctor-card:hover {
-        box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
-        transform: translateY(-2px);
-        border-color: var(--medical-primary);
-    }
-
-    .doctor-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        /* ✅ FIX Issue 6: حذف Gradient و استفاده از رنگ ساده (طبق SELECT_DOCTOR_MODULE_REVIEW.md) */
-        background: var(--medical-primary, #2c5aa0);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white !important;
-    }
-
-    .select-doctor-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>
+<!-- ✅ CRITICAL FIX: حذف Inline Styles - انتقال به appointment-booking-views.css -->
 

@@ -123,6 +123,21 @@ namespace ClinicApp.Interfaces.Appointment
             int doctorId,
             int? serviceCategoryId = null);
 
+        /// <summary>
+        /// بررسی تداخل نوبت‌های بیمار (Double Booking Prevention)
+        /// ✅ CRITICAL: با Locking برای جلوگیری از Race Condition
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="appointmentDate">تاریخ نوبت</param>
+        /// <param name="startTime">زمان شروع</param>
+        /// <param name="endTime">زمان پایان</param>
+        /// <returns>true اگر تداخل وجود دارد</returns>
+        Task<ServiceResult<bool>> CheckPatientDoubleBookingAsync(
+            int patientId,
+            DateTime appointmentDate,
+            TimeSpan startTime,
+            TimeSpan endTime);
+
         #endregion
     }
 }

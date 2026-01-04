@@ -50,6 +50,16 @@ namespace ClinicApp.Interfaces.Appointment
         Task<List<Models.Entities.Appointment.Appointment>> GetDoctorAppointmentsByDateAsync(
             int doctorId,
             DateTime date);
+
+        /// <summary>
+        /// بررسی تداخل نوبت‌های بیمار (Double Booking Prevention)
+        /// ✅ CRITICAL: با Locking برای جلوگیری از Race Condition
+        /// </summary>
+        Task<bool> HasOverlappingPatientAppointmentAsync(
+            int patientId,
+            DateTime appointmentDate,
+            TimeSpan startTime,
+            TimeSpan endTime);
     }
 }
 

@@ -214,6 +214,59 @@ namespace ClinicApp.Repositories.Appointment
                 throw;
             }
         }
+
+        /// <summary>
+        /// ✅ CRITICAL FIX: بررسی تداخل نوبت‌های بیمار با Locking برای جلوگیری از Race Condition
+        /// استفاده از UPDLOCK برای pessimistic locking در SQL Server
+        /// </summary>
+        public async Task<bool> HasOverlappingPatientAppointmentAsync(
+            int patientId,
+            DateTime appointmentDate,
+            TimeSpan startTime,
+            TimeSpan endTime)
+        {
+            try
+            {
+                var appointmentDateTime = appointmentDate.Date.Add(startTime);
+                var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
+
+                // ✅ CRITICAL: استفاده از Raw SQL با UPDLOCK برای pessimistic locking
+                // این باعث می‌شود که ردیف‌های مربوطه lock شوند تا Race Condition رخ ندهد
+                var sql = @"
+                    SELECT COUNT(*) 
+                    FROM Appointments WITH (UPDLOCK, ROWLOCK)
+                    WHERE PatientId = @p0
+                      AND IsDeleted = 0
+                      AND Status != @p1
+                      AND CAST(AppointmentDate AS DATE) = CAST(@p2 AS DATE)
+                      AND (
+                          (AppointmentDate >= @p3 AND AppointmentDate < @p4) OR
+                          (DATEADD(MINUTE, Duration, AppointmentDate) > @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) <= @p4) OR
+                          (AppointmentDate <= @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) >= @p4)
+                      )";
+
+                var count = await _context.Database.SqlQuery<int>(sql,
+                    new System.Data.SqlClient.SqlParameter("@p0", patientId),
+                    new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Cancelled),
+                    new System.Data.SqlClient.SqlParameter("@p2", appointmentDate.Date),
+                    new System.Data.SqlClient.SqlParameter("@p3", appointmentDateTime),
+                    new System.Data.SqlClient.SqlParameter("@p4", appointmentEndDateTime)
+                ).FirstOrDefaultAsync();
+
+                var hasOverlap = count > 0;
+
+                _logger.Information("بررسی تداخل نوبت‌های بیمار - PatientId: {PatientId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, تداخل: {HasOverlap}",
+                    patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, hasOverlap);
+
+                return hasOverlap;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی تداخل نوبت‌های بیمار - PatientId: {PatientId}, تاریخ: {Date}",
+                    patientId, appointmentDate.ToString("yyyy/MM/dd"));
+                throw;
+            }
+        }
     }
 }
 

@@ -88,7 +88,13 @@
                placeholder="@placeholder" 
                autocomplete="off"
                value="@persianDateValue"
-               data-persian-datepicker="true" />
+               data-persian-datepicker="true"
+               @* ✅ CRITICAL FIX: جلوگیری از نمایش تاریخ پیش‌فرض (15) - طبق Knowledge-Base *@
+               @* اگر ViewBag.PersianDatePickerValue null باشد، نباید تاریخ امروز نمایش داده شود *@
+               @if (!value.HasValue)
+               {
+                   <text>data-no-default-date="true"</text>
+               } />
     </div>
     @if (!string.IsNullOrEmpty(helpText))
     {

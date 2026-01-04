@@ -1,0 +1,565 @@
+/**
+ * ✅ ULTIMATE: Appointment Booking Views Styles
+ * 
+ * Features:
+ * - Shared styles for all appointment booking views
+ * - Mobile-First responsive design
+ * - Healthcare UI Standards compliance
+ * - No gradients (طبق Healthcare UI Standards)
+ * 
+ * طبق: APPOINTMENT_BOOKING_VIEWS_REVIEW.md - Issue #3
+ * 
+ * Views:
+ * - SelectDoctor.cshtml
+ * - SelectDate.cshtml
+ * - SelectTime.cshtml
+ * - ConfirmBooking.cshtml
+ * - _DoctorCard.cshtml
+ * - _TimeSlotCard.cshtml
+ */
+
+:root {
+    --medical-primary: #2c5aa0;
+    --medical-primary-light: #3d6bb3;
+    --medical-border: #dee2e6;
+    --medical-text: #495057;
+    --medical-bg: #f8f9fa;
+    --medical-success: #28a745;
+}
+
+/* ============================================
+   Shared Page Header (All Views)
+   ============================================ */
+
+.appointment-page-header {
+    /* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+    background: var(--medical-primary, #2c5aa0);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
+}
+
+.appointment-page-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.appointment-page-header p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* ============================================
+   SelectDoctor View Styles
+   ============================================ */
+
+.search-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.doctors-container {
+    min-height: 400px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--medical-text);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: var(--medical-border);
+    margin-bottom: 1rem;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 3rem;
+}
+
+.loading-spinner .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.doctor-card {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ============================================
+   SelectDate View Styles
+   ============================================ */
+
+.doctor-info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-right: 4px solid var(--medical-primary);
+}
+
+.doctor-avatar {
+    width: 60px;
+    height: 60px;
+    /* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+    background: var(--medical-primary, #2c5aa0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.calendar-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.date-picker-wrapper {
+    text-align: center;
+}
+
+.btn-continue {
+    min-width: 200px;
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-continue:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-continue:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.date-selected-feedback {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #e8f5e9;
+    border-radius: 8px;
+    color: #2e7d32;
+    font-weight: 600;
+    display: none;
+}
+
+.date-selected-feedback.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calendar-container {
+    animation: slideIn 0.4s ease-out;
+}
+
+/* ============================================
+   SelectTime View Styles
+   ============================================ */
+
+.info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.selected-slot-info {
+    /* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+    background: var(--medical-primary, #2c5aa0);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-top: 2rem;
+    display: none;
+}
+
+.selected-slot-info.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ============================================
+   ConfirmBooking View Styles
+   ============================================ */
+
+.summary-card {
+    background: var(--medical-bg);
+    border: 1px solid var(--medical-border-light);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--medical-border-light);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item-label {
+    color: var(--medical-text-light);
+    font-weight: 600;
+}
+
+.summary-item-value {
+    color: var(--medical-text);
+    font-weight: 400;
+    text-align: left;
+}
+
+.price-section {
+    background: var(--medical-bg-light);
+    border: 1px solid var(--medical-border-light);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.price-total {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--medical-primary);
+}
+
+.payment-form {
+    background: var(--medical-bg);
+    border: 1px solid var(--medical-border-light);
+    border-radius: 6px;
+    padding: 1.5rem;
+}
+
+.payment-method-card {
+    border: 1px solid var(--medical-border);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.payment-method-card:hover {
+    border-color: var(--medical-primary);
+}
+
+.payment-method-card.selected {
+    border-color: var(--medical-primary);
+    background-color: rgba(44, 90, 160, 0.05);
+}
+
+/* ============================================
+   _DoctorCard Partial Styles
+   ============================================ */
+
+.doctor-card {
+    border: 1px solid var(--medical-border);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.doctor-card:hover {
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
+    transform: translateY(-2px);
+    border-color: var(--medical-primary);
+}
+
+.doctor-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    /* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+    background: var(--medical-primary, #2c5aa0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+}
+
+.select-doctor-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   _TimeSlotCard Partial Styles
+   ============================================ */
+
+.time-slot-card {
+    border: 2px solid var(--medical-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+    text-align: center;
+}
+
+/* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+.time-slot-card.available {
+    border-color: var(--medical-success);
+    background: #f8fff9;
+}
+
+.time-slot-card.available:hover {
+    border-color: var(--medical-primary);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.15);
+    transform: translateY(-2px);
+    background: #e8f5e9;
+}
+
+.time-slot-card.unavailable {
+    border-color: #e0e0e0;
+    background: #f5f5f5;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.slot-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.slot-time {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--medical-primary);
+    margin-bottom: 0.5rem;
+}
+
+.slot-range {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.slot-duration {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.select-slot-btn {
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.select-slot-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+/* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
+.time-slot-card.selected {
+    border-color: var(--medical-primary);
+    background: var(--medical-primary, #2c5aa0);
+    color: white;
+}
+
+.time-slot-card.selected .slot-time,
+.time-slot-card.selected .slot-range,
+.time-slot-card.selected .slot-duration {
+    color: white;
+}
+
+/* ============================================
+   Responsive Design (Mobile-First)
+   ============================================ */
+
+/* Mobile (< 576px) - Base styles */
+.appointment-page-header {
+    padding: 1.5rem;
+}
+
+.appointment-page-header h2 {
+    font-size: 1.5rem;
+}
+
+.search-card {
+    padding: 1rem;
+}
+
+.doctors-container {
+    min-height: 300px;
+}
+
+.doctor-info-card {
+    padding: 1.25rem;
+}
+
+.calendar-container {
+    padding: 1.5rem;
+}
+
+.info-card {
+    padding: 1rem;
+}
+
+.time-slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.summary-card {
+    padding: 1rem;
+}
+
+.payment-form {
+    padding: 1rem;
+}
+
+/* Tablet (≥ 768px) */
+@media (min-width: 768px) {
+    .appointment-page-header {
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .appointment-page-header h2 {
+        font-size: 2rem;
+    }
+
+    .appointment-page-header p {
+        font-size: 1rem;
+    }
+
+    .search-card {
+        padding: 1.5rem;
+    }
+
+    .doctors-container {
+        min-height: 400px;
+    }
+
+    .doctor-info-card {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .doctor-avatar {
+        width: 70px;
+        height: 70px;
+    }
+
+    .calendar-container {
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .btn-continue {
+        min-width: 250px;
+        padding: 1rem 2.5rem;
+    }
+
+    .info-card {
+        padding: 1.5rem;
+    }
+
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-card {
+        padding: 1.5rem;
+    }
+
+    .payment-form {
+        padding: 1.5rem;
+    }
+}
+
+/* Desktop (≥ 992px) */
+@media (min-width: 992px) {
+    .appointment-page-header {
+        padding: 2.5rem;
+    }
+
+    .appointment-page-header h2 {
+        font-size: 2.25rem;
+    }
+
+    .calendar-container {
+        padding: 2.5rem;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .doctor-card,
+    .time-slot-card,
+    .btn-continue,
+    .select-slot-btn {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .doctor-card,
+    .time-slot-card,
+    .info-card {
+        border: 2px solid currentColor;
+    }
+}
+

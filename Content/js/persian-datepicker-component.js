@@ -34,8 +34,8 @@
             logPrefix: '📅 [PersianDatePicker]',
             enableLogging: true,
             cacheTodayFor: 60000, // 1 دقیقه (میلی‌ثانیه)
-            retryDelay: 100, // تأخیر برای retry
-            maxRetries: 3
+            retryDelay: 100, // تأخیر برای retry (میلی‌ثانیه)
+            maxRetries: 30 // ✅ CRITICAL FIX: افزایش تعداد تلاش‌ها (30 * 100ms = 3 ثانیه)
         },
 
         /**
@@ -322,9 +322,17 @@
                 }
             }
 
-            // ✅ دریافت تاریخ امروز از سرور (فقط برای fallback - اگر currentValue خالی باشد)
+            // ✅ CRITICAL FIX: بررسی data-no-default-date attribute
+            // اگر این attribute وجود داشته باشد، نباید تاریخ امروز را به عنوان پیش‌فرض نمایش دهیم
+            var noDefaultDate = $input.attr('data-no-default-date') === 'true';
+            
+            // ✅ دریافت تاریخ امروز از سرور (فقط برای fallback - اگر currentValue خالی باشد و noDefaultDate نباشد)
             // ⚠️ مهم: این فقط برای initialize اولیه است، نه برای reset کردن تاریخ انتخاب شده
-            this.getTodayFromServer().then(function(todayPersianDate) {
+            var todayPromise = noDefaultDate 
+                ? Promise.resolve(null) 
+                : this.getTodayFromServer();
+            
+            todayPromise.then(function(todayPersianDate) {
                 // ✅ دوباره چک کردن currentValue (ممکن است در این فاصله set شده باشد)
                 var finalCurrentValue = $input.val();
                 if (!finalCurrentValue || finalCurrentValue.trim() === '') {
@@ -335,8 +343,21 @@
                     field: fieldName,
                     finalCurrentValue: finalCurrentValue,
                     todayPersianDate: todayPersianDate,
+                    noDefaultDate: noDefaultDate,
                     willUseCurrentValue: finalCurrentValue && finalCurrentValue.trim() !== ''
                 });
+                
+                // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، initialValue باید false باشد
+                // این تضمین می‌کند که تاریخ پیش‌فرض (15) نمایش داده نشود
+                var initialValueToUse = false;
+                if (finalCurrentValue && finalCurrentValue.trim() !== '') {
+                    // اگر مقدار از View آمده، استفاده کن
+                    initialValueToUse = self.convertPersianToEnglishNumbers(finalCurrentValue.trim());
+                } else if (!noDefaultDate && todayPersianDate) {
+                    // فقط اگر noDefaultDate false باشد و todayPersianDate موجود باشد
+                    initialValueToUse = todayPersianDate;
+                }
+                
                 // Initialize pDatepicker
                 var datePickerConfig = {
                     calendarType: 'persian',
@@ -370,13 +391,11 @@
                             locale: 'fa'
                         }
                     },
-                    // ✅ تنظیم initialValue: اول از finalCurrentValue استفاده می‌کنیم (تاریخ انتخاب شده از View)
-                    // فقط اگر finalCurrentValue خالی باشد، از todayPersianDate استفاده می‌کنیم
-                    // ⚠️ مهم: این تضمین می‌کند که تاریخ انتخاب شده از View حفظ می‌شود
-                    initialValue: (finalCurrentValue && finalCurrentValue.trim() !== '') 
-                        ? self.convertPersianToEnglishNumbers(finalCurrentValue.trim())
-                        : (todayPersianDate || false),
-                    initialValueType: 'persian',
+                    // ✅ CRITICAL FIX: استفاده از initialValueToUse که با توجه به noDefaultDate محاسبه شده
+                    // ⚠️ مهم: اگر initialValueToUse false باشد و noDefaultDate true باشد، باید null باشد نه false
+                    // چون pDatepicker ممکن است false را به عنوان "امروز" تفسیر کند
+                    initialValue: initialValueToUse || (noDefaultDate ? null : false),
+                    initialValueType: initialValueToUse ? 'persian' : undefined,
                     onSelect: function(unix) {
                         // ✅ برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
                         if ($hiddenInput) {
@@ -464,6 +483,61 @@
                 };
 
                 $input.pDatepicker(datePickerConfig);
+
+                // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، باید تاریخ انتخاب شده را clear کنیم
+                // این تضمین می‌کند که تاریخ پیش‌فرض (15) highlight نشود
+                if (noDefaultDate && !initialValueToUse) {
+                    // ✅ Clear کردن تاریخ انتخاب شده در datePicker instance
+                    setTimeout(function() {
+                        try {
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance) {
+                                // ✅ CRITICAL FIX: Clear کردن input value اول
+                                $input.val(''); // Clear input value
+                                
+                                // ✅ CRITICAL FIX: استفاده از setDate(null) برای unselect کردن تاریخ
+                                if (typeof datePickerInstance.setDate === 'function') {
+                                    datePickerInstance.setDate(null);
+                                }
+                                
+                                // ✅ CRITICAL FIX: اگر datePicker متد clear دارد، استفاده کن
+                                if (typeof datePickerInstance.clear === 'function') {
+                                    datePickerInstance.clear();
+                                }
+                                
+                                // ✅ CRITICAL FIX: حذف class های highlight از تقویم
+                                // pDatepicker ممکن است class 'selected' یا 'today' را به روزها اضافه کند
+                                setTimeout(function() {
+                                    try {
+                                        // پیدا کردن تمام روزهای highlight شده در تقویم
+                                        var $calendar = $input.closest('.pdp-container, .pdp-calendar, .pdatepicker');
+                                        if ($calendar.length === 0) {
+                                            // اگر calendar container پیدا نشد، در document جستجو کن
+                                            $calendar = $('.pdp-container, .pdp-calendar, .pdatepicker').last();
+                                        }
+                                        
+                                        if ($calendar.length > 0) {
+                                            // حذف class های highlight
+                                            $calendar.find('.pdp-day-selected, .pdp-day-today, .selected, .today').removeClass('pdp-day-selected pdp-day-today selected today');
+                                            self.logger.success('Class های highlight حذف شدند:', {
+                                                field: fieldName
+                                            });
+                                        }
+                                    } catch (classError) {
+                                        self.logger.warn('خطا در حذف class های highlight:', classError);
+                                    }
+                                }, 100); // تاخیر بیشتر برای اطمینان از render شدن تقویم
+                                
+                                self.logger.success('تاریخ پیش‌فرض clear شد:', {
+                                    field: fieldName,
+                                    noDefaultDate: noDefaultDate
+                                });
+                            }
+                        } catch (clearError) {
+                            self.logger.warn('خطا در clear کردن تاریخ پیش‌فرض:', clearError);
+                        }
+                    }, 100); // تاخیر کوتاه برای اطمینان از initialize شدن datePicker
+                }
 
                 // Mark as initialized
                 $input.data('pDatepicker-initialized', true);
@@ -694,12 +768,25 @@
             }
 
             if (typeof $.fn.pDatepicker === 'undefined') {
-                this.logger.warn('pDatepicker یافت نشد، تلاش مجدد...');
-                setTimeout(function() {
-                    self.initializeAll();
-                }, this.config.retryDelay);
+                // ✅ CRITICAL FIX: محدود کردن تعداد تلاش‌ها برای جلوگیری از loop بی‌نهایت
+                if (!self._retryCount) {
+                    self._retryCount = 0;
+                }
+                
+                if (self._retryCount < self.config.maxRetries * 10) { // 30 تلاش = 3 ثانیه
+                    self._retryCount++;
+                    this.logger.warn('pDatepicker یافت نشد، تلاش مجدد... (' + self._retryCount + '/' + (self.config.maxRetries * 10) + ')');
+                    setTimeout(function() {
+                        self.initializeAll();
+                    }, this.config.retryDelay);
+                } else {
+                    this.logger.error('pDatepicker پس از ' + (self.config.maxRetries * 10) + ' تلاش یافت نشد. لطفاً مطمئن شوید که فایل‌های persian-datepicker لود شده‌اند.');
+                }
                 return false;
             }
+            
+            // ✅ Reset retry count on success
+            self._retryCount = 0;
 
             this.logger.log('شروع initialize تمام DatePicker ها...');
 

@@ -28,6 +28,7 @@ using ClinicApp; // ✅ برای ApplicationUserManager
 using ClinicApp.Models.Core; // ✅ برای AppRoles (Strongly-Typed)
 using ClinicApp.Interfaces.ClinicAdmin; // ✅ برای IDepartmentManagementService
 using ClinicApp.Filters; // ✅ برای NoCache
+using ClinicApp.Factories.Patient; // ✅ برای AppointmentBookingViewModelFactory
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -286,13 +287,12 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
                 var departments = departmentsResult.Data ?? new List<DepartmentInfo>();
 
-                var viewModel = new DoctorSelectionViewModel
-                {
-                    Doctors = result.Data,
-                    SelectedDepartmentId = departmentId,
-                    SearchTerm = searchTerm,
-                    Departments = departments
-                };
+                // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
+                var viewModel = AppointmentBookingViewModelFactory.CreateDoctorSelectionViewModel(
+                    result.Data,
+                    departments,
+                    departmentId,
+                    searchTerm);
 
                 return View(viewModel);
             }
@@ -358,12 +358,11 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDoctor");
                 }
 
-                var viewModel = new DateSelectionViewModel
-                {
-                    DoctorId = doctorId,
-                    DoctorName = doctorResult.Data.FullName,
-                    DoctorSpecialization = doctorResult.Data.Specialization
-                };
+                // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
+                var viewModel = AppointmentBookingViewModelFactory.CreateDateSelectionViewModel(
+                    doctorId,
+                    doctorResult.Data.FullName,
+                    doctorResult.Data.Specialization);
 
                 return View(viewModel);
             }
@@ -439,14 +438,13 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var appointmentDuration = doctorSchedule?.AppointmentDuration 
                     ?? _appSettings.DefaultAppointmentDurationMinutes;
 
-                var viewModel = new TimeSlotSelectionViewModel
-                {
-                    DoctorId = doctorId,
-                    DoctorName = doctorResult.Data.FullName,
-                    SelectedDate = date,
-                    AvailableSlots = slotsResult.Data,
-                    AppointmentDuration = appointmentDuration
-                };
+                // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
+                var viewModel = AppointmentBookingViewModelFactory.CreateTimeSlotSelectionViewModel(
+                    doctorId,
+                    doctorResult.Data.FullName,
+                    date,
+                    slotsResult.Data,
+                    appointmentDuration);
 
                 return View(viewModel);
             }
@@ -524,33 +522,19 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
                 }
 
-                // ✅ Validation 7: Check if patient already has an appointment at this time (Double Booking Prevention)
-                // Note: Appointment model uses AppointmentDate (DateTime) + Duration (int minutes)
-                var requestedStartDateTime = appointmentDate.Date + startTime;
-                var requestedEndDateTime = appointmentDate.Date + endTime;
+                // ✅ CRITICAL FIX: استفاده از Service برای بررسی Double Booking (Architecture Fix)
+                // حذف دسترسی مستقیم Controller → DB
+                var doubleBookingCheck = await _bookingService.CheckPatientDoubleBookingAsync(
+                    patientId, appointmentDate, startTime, endTime);
 
-                var existingAppointments = await _context.Appointments
-                    .AsNoTracking()
-                    .Where(a => a.PatientId == patientId &&
-                                a.AppointmentDate.Year == appointmentDate.Year &&
-                                a.AppointmentDate.Month == appointmentDate.Month &&
-                                a.AppointmentDate.Day == appointmentDate.Day &&
-                                a.Status != AppointmentStatus.Cancelled &&
-                                !a.IsDeleted)
-                    .ToListAsync();
-
-                // Check overlap in memory (because we need to calculate EndTime = AppointmentDate + Duration)
-                var hasOverlap = existingAppointments.Any(a =>
+                if (!doubleBookingCheck.Success)
                 {
-                    var existingStartTime = a.AppointmentDate;
-                    var existingEndTime = a.AppointmentDate.AddMinutes(a.Duration);
+                    _logger.Warning("خطا در بررسی تداخل نوبت‌ها: {Message}", doubleBookingCheck.Message);
+                    NotificationHelper.SetError(TempData, "خطا در بررسی نوبت‌های شما. لطفاً دوباره تلاش کنید");
+                    return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
+                }
 
-                    return (existingStartTime <= requestedStartDateTime && existingEndTime > requestedStartDateTime) ||
-                           (existingStartTime < requestedEndDateTime && existingEndTime >= requestedEndDateTime) ||
-                           (existingStartTime >= requestedStartDateTime && existingEndTime <= requestedEndDateTime);
-                });
-
-                if (hasOverlap)
+                if (doubleBookingCheck.Data)
                 {
                     _logger.Warning("⚠️ DOUBLE BOOKING: بیمار {PatientId} در تاریخ {Date} زمان {Time} قبلاً نوبت دارد",
                         patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime);
@@ -584,18 +568,17 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectTime", new { doctorId, date = appointmentDate });
                 }
 
-                var viewModel = new AppointmentBookingViewModel
-                {
-                    DoctorId = doctorId,
-                    DoctorName = doctorResult.Data.FullName,
-                    DoctorSpecialization = doctorResult.Data.Specialization,
-                    AppointmentDate = appointmentDate,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    Price = priceResult.Data,
-                    ServiceCategoryId = serviceCategoryId,
-                    Description = description
-                };
+                // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
+                var viewModel = AppointmentBookingViewModelFactory.CreateAppointmentBookingViewModel(
+                    doctorId,
+                    doctorResult.Data.FullName,
+                    doctorResult.Data.Specialization,
+                    appointmentDate,
+                    startTime,
+                    endTime,
+                    priceResult.Data,
+                    serviceCategoryId,
+                    description);
 
                 return View(viewModel);
             }
@@ -657,33 +640,18 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return Json(new { success = false, message = "زمان شروع باید قبل از زمان پایان باشد" });
                 }
 
-                // ✅ Validation 6: Double Booking Prevention (Check again in POST)
-                // Note: Appointment model uses AppointmentDate (DateTime) + Duration (int minutes)
-                var requestedStartDateTime = model.AppointmentDate.Date + model.StartTime;
-                var requestedEndDateTime = model.AppointmentDate.Date + model.EndTime;
+                // ✅ CRITICAL FIX: استفاده از Service برای بررسی Double Booking (Architecture Fix)
+                // حذف دسترسی مستقیم Controller → DB
+                var doubleBookingCheck = await _bookingService.CheckPatientDoubleBookingAsync(
+                    patientId, model.AppointmentDate, model.StartTime, model.EndTime);
 
-                var existingAppointments = await _context.Appointments
-                    .AsNoTracking()
-                    .Where(a => a.PatientId == patientId &&
-                                a.AppointmentDate.Year == model.AppointmentDate.Year &&
-                                a.AppointmentDate.Month == model.AppointmentDate.Month &&
-                                a.AppointmentDate.Day == model.AppointmentDate.Day &&
-                                a.Status != AppointmentStatus.Cancelled &&
-                                !a.IsDeleted)
-                    .ToListAsync();
-
-                // Check overlap in memory (because we need to calculate EndTime = AppointmentDate + Duration)
-                var hasOverlap = existingAppointments.Any(a =>
+                if (!doubleBookingCheck.Success)
                 {
-                    var existingStartTime = a.AppointmentDate;
-                    var existingEndTime = a.AppointmentDate.AddMinutes(a.Duration);
+                    _logger.Warning("خطا در بررسی تداخل نوبت‌ها: {Message}", doubleBookingCheck.Message);
+                    return Json(new { success = false, message = "خطا در بررسی نوبت‌های شما. لطفاً دوباره تلاش کنید" });
+                }
 
-                    return (existingStartTime <= requestedStartDateTime && existingEndTime > requestedStartDateTime) ||
-                           (existingStartTime < requestedEndDateTime && existingEndTime >= requestedEndDateTime) ||
-                           (existingStartTime >= requestedStartDateTime && existingEndTime <= requestedEndDateTime);
-                });
-
-                if (hasOverlap)
+                if (doubleBookingCheck.Data)
                 {
                     _logger.Warning("⚠️ DOUBLE BOOKING PREVENTED: بیمار {PatientId} در تاریخ {Date} زمان {Time} قبلاً نوبت دارد",
                         patientId, model.AppointmentDate.ToString("yyyy/MM/dd"), model.StartTime);
