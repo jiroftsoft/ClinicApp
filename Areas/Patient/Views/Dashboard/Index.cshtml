@@ -5,6 +5,7 @@
 
 @section Styles {
     <link href="~/Content/css/patient-dashboard-unified.css" rel="stylesheet" />
+    <link href="~/Content/css/patient-profile.css" rel="stylesheet" />
 }
 
 <!-- ✅ Unified Dashboard - Tab-Based SPA Architecture -->
@@ -156,6 +157,11 @@
             // Initialize Unified Dashboard (Tab management)
             if (typeof UnifiedDashboard !== 'undefined') {
                 UnifiedDashboard.init();
+            }
+            
+            // Initialize Patient Profile (when profile tab is active)
+            if (typeof PatientProfile !== 'undefined') {
+                // Will auto-initialize when profile form is loaded
             }
         });
     </script>

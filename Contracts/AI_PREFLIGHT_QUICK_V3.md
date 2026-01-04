@@ -123,10 +123,15 @@
 **Full:** `AI_PREFLIGHT_MASTER_V3.md`  
 **Contracts:**
 - `Docs/DEVELOPMENT_CONTRACT.md`
-- `Docs/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md` (مالی)
+- `Contracts/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md` (مالی)
 - `PREFLIGHT_CHECKLIST.md`
 
-**Helpers:** `Docs/Knowledge-Base/`
+**Knowledge-Base (الزامی برای Helper/Standard):**
+- `Contracts/Knowledge-Base/AI/Master/README.md` - راهنمای اصلی
+- `Contracts/Knowledge-Base/AI/Master/INDEX.md` - فهرست کامل
+- `Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md` - تاریخ و زمان
+- `Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md` - قرارداد توسعه
+- `Contracts/Knowledge-Base/AI/Master/05-Debugging-Specialist-Contract.md` - دیباگ
 
 ---
 

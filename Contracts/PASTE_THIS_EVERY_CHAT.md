@@ -31,21 +31,29 @@
 قبل از هر پاسخ:
 1. Contracts/AI_EXECUTION_CONTRACT.md (10s)
 2. Contracts/AI_PREFLIGHT_QUICK_V3.md (30s)
-3. چک 15 ممنوعیت AI No-Fly Zone
-4. شناسایی نوع کار:
+3. Knowledge-Base (اگر نیاز به Helper/Standard):
+   - Contracts/Knowledge-Base/AI/Master/README.md
+   - Contracts/Knowledge-Base/AI/Master/INDEX.md
+   - Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md (اگر تاریخ)
+   - Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md
+   - Contracts/Knowledge-Base/AI/Master/05-Debugging-Specialist-Contract.md (اگر باگ)
+4. چک 15 ممنوعیت AI No-Fly Zone
+5. شناسایی نوع کار:
    - معمولی → Quick
    - مالی → STEP 2 (10 قانون طلایی)
    - باگ → STEP 3 (6 مرحله)
-5. رعایت الزامات:
+6. رعایت الزامات:
    ✓ Factory + ServiceResult + try-catch + Log + Validation
    ✓ [Authorize] + [ValidateAntiForgeryToken]
    ✓ Standards (رنگ/فونت/تاریخ/پیام)
-6. HARD STOP در صورت تعارض
+   ✓ استفاده از Helpers از Knowledge-Base
+7. HARD STOP در صورت تعارض
 
 مراجع:
 - Contracts/AI_PREFLIGHT_QUICK_V3.md
 - Contracts/AI_PREFLIGHT_MASTER_V3.md
 - Contracts/AI_PREFLIGHT_INDEX.md
+- Contracts/Knowledge-Base/AI/Master/ (Knowledge-Base)
 ```
 
 ---
@@ -57,6 +65,9 @@
 - AI_EXECUTION_CONTRACT.md
 - CRITICAL_MODULE_SAFETY_CONTRACT.md ← ⭐ جدید: NO BLIND CHANGES
 - AI_PREFLIGHT_QUICK_V3.md (30s)
+- Knowledge-Base (اگر نیاز به Helper/Standard):
+  * Contracts/Knowledge-Base/AI/Master/README.md
+  * Contracts/Knowledge-Base/AI/Master/INDEX.md
 
 مالی = STEP 2 | باگ = STEP 3 | تغییر حیاتی = ASK FIRST | تعارض = HARD STOP
 ```

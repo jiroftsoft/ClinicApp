@@ -400,5 +400,39 @@ namespace ClinicApp.Services
                 return ServiceResult<List<DepartmentDto>>.Failed("خطا در دریافت دپارتمان‌ها برای پذیرش");
             }
         }
+
+        /// <summary>
+        /// ✅ دریافت لیست دپارتمان‌های فعال برای Patient Area (SelectDoctor)
+        /// طبق قرارداد: Controller نباید مستقیماً به DB دسترسی داشته باشد
+        /// طبق: SELECT_DOCTOR_MODULE_REVIEW.md - Issue 1
+        /// </summary>
+        public async Task<ServiceResult<List<ViewModels.Patient.DepartmentInfo>>> GetActiveDepartmentsForPatientAsync()
+        {
+            try
+            {
+                _log.Information("✅ PATIENT: دریافت لیست دپارتمان‌های فعال برای SelectDoctor");
+
+                var departments = await _context.Departments
+                    .AsNoTracking()
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .OrderBy(d => d.Name)
+                    .Select(d => new ViewModels.Patient.DepartmentInfo
+                    {
+                        DepartmentId = d.DepartmentId,
+                        Name = d.Name,
+                        Code = d.Code
+                    })
+                    .ToListAsync();
+
+                _log.Information("✅ PATIENT: {Count} دپارتمان فعال دریافت شد", departments.Count);
+
+                return ServiceResult<List<ViewModels.Patient.DepartmentInfo>>.Successful(departments);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ PATIENT: خطا در دریافت دپارتمان‌های فعال برای SelectDoctor");
+                return ServiceResult<List<ViewModels.Patient.DepartmentInfo>>.Failed("خطا در دریافت لیست دپارتمان‌ها");
+            }
+        }
     }
 }

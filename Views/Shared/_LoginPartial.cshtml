@@ -102,26 +102,27 @@
                 <li><hr class="dropdown-divider"></li>
                 
                 @* Menu Items - Full Page Navigation for Patient Area *@
+                @* ✅ BEST PRACTICE: لینک به داشبورد و صفحات مربوطه *@
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })" data-ajax="false">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#overview" data-ajax="false">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>داشبورد</span>
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Profile", "Account")" data-ajax="false">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#profile" data-ajax="false">
                         <i class="fas fa-user-circle"></i>
                         <span>پروفایل من</span>
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" data-ajax="false">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#appointments" data-ajax="false">
                         <i class="fas fa-calendar-check"></i>
                         <span>نوبت‌های من</span>
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" data-ajax="false">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#medical-record" data-ajax="false">
                         <i class="fas fa-file-medical"></i>
                         <span>پرونده الکترونیک</span>
                     </a>
@@ -130,7 +131,7 @@
                 
                 @* Settings & Logout *@
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Settings", new { area = "" })" data-ajax="false">
+                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#settings" data-ajax="false">
                         <i class="fas fa-cog"></i>
                         <span>تنظیمات</span>
                     </a>

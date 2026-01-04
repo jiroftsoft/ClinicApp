@@ -324,12 +324,23 @@ Notify.error('پیام خطا');
 Notify.confirm('تأیید؟', 'عنوان', onConfirm, onCancel);
 ```
 
-#### Persian DatePicker:
-```csharp
-// ✅ GOOD
-PersianDateHelper.ToPersianDate(DateTime.Now)
+#### Persian DatePicker (طبق Knowledge-Base):
+```razor
+@* ✅ GOOD - طبق Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md *@
+@{
+    ViewBag.PersianDatePickerId = "BirthDate";
+    ViewBag.PersianDatePickerName = "BirthDate";
+    ViewBag.PersianDatePickerValue = Model?.BirthDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ تولد";
+    ViewBag.PersianDatePickerPlaceholder = "1370/01/01";
+    ViewBag.PersianDatePickerRequired = false;
+}
+@Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
 
-// ❌ BAD
+@* در Controller - Parse تاریخ *@
+model.BirthDate = this.ParseDateFromHiddenInput("BirthDate", _logger);
+
+@* ❌ BAD - ممنوع *@
 <input type="datetime-local"> // ممنوع
 ```
 
@@ -374,7 +385,13 @@ public async Task<ServiceResult<T>> GetDataAsync() {
 - آیا کد مشابه وجود دارد؟
 - آیا Helper موجود است؟
 - آیا Pattern استفاده شده؟
-- مراجعه به: Docs/Knowledge-Base/
+- مراجعه به Knowledge-Base:
+  * Contracts/Knowledge-Base/AI/Master/README.md
+  * Contracts/Knowledge-Base/AI/Master/INDEX.md
+  * Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md (اگر تاریخ)
+  * Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md
+  * Contracts/Knowledge-Base/AI/Master/05-Debugging-Specialist-Contract.md (اگر باگ)
+  * Contracts/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md (اگر مالی)
 ```
 
 ### 3️⃣ Design (طراحی):
@@ -453,27 +470,32 @@ public async Task<ServiceResult<T>> GetDataAsync() {
 
 ### قراردادهای اصلی:
 ```
-📄 PREFLIGHT_CHECKLIST.md (این فایل)
-📄 Docs/DEVELOPMENT_CONTRACT.md
-📄 Docs/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md
-📄 Docs/Knowledge-Base/AI/PreFlight/Bugfix-Master-Contract.md
-📄 Docs/Knowledge-Base/AI/PreFlight/05-Debugging-Specialist-Contract.md
-📄 Docs/Knowledge-Base/03-Development-Contract-Quick-Guide.md
+📄 Contracts/AI_PREFLIGHT_MASTER_V3.md (این فایل)
+📄 Contracts/AI_EXECUTION_CONTRACT.md
+📄 Contracts/AI_PREFLIGHT_QUICK_V3.md
+📄 Contracts/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md (مالی)
+📄 Contracts/Knowledge-Base/AI/PreFlight/05-Debugging-Specialist-Contract.md (باگ)
+📄 Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md (استانداردها)
 ```
 
-### راهنماها:
+### Knowledge-Base (الزامی برای Helper/Standard):
 ```
-📄 Docs/Knowledge-Base/README.md
-📄 Docs/Knowledge-Base/14041004/NOTIFICATION_HELPER_USAGE_GUIDE.md
-📄 Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md
-📄 Docs/IMAGE_UPLOAD_SYSTEM_GUIDE.md
+📖 Contracts/Knowledge-Base/AI/Master/README.md - راهنمای اصلی
+📋 Contracts/Knowledge-Base/AI/Master/INDEX.md - فهرست کامل
+📅 Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md - تاریخ و زمان
+📋 Contracts/Knowledge-Base/AI/Master/02-Helpers-Validation.md - اعتبارسنجی
+⚡ Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md - قرارداد توسعه
+📋 Contracts/Knowledge-Base/AI/Master/04-TODO-Implementation-Guide.md - راهنمای TODO
+🔧 Contracts/Knowledge-Base/AI/PreFlight/05-Debugging-Specialist-Contract.md - دیباگ
+🧰 Contracts/Knowledge-Base/AI/Master/HelperExtensionsGuide.md - جعبه ابزار (100+ متد)
+📊 Contracts/Knowledge-Base/AI/Master/06-Quick-Reference.md - مرجع سریع
 ```
 
-### Helpers:
+### راهنماهای تکمیلی:
 ```
-📄 Docs/Knowledge-Base/01-Helpers-DateTime.md
-📄 Docs/Knowledge-Base/02-Helpers-Validation.md
-📄 Docs/Knowledge-Base/HelperExtensionsGuide.md (100+ متد)
+📄 Docs/DEVELOPMENT_CONTRACT.md - قرارداد توسعه کامل
+📄 Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md - راهنمای DatePicker
+📄 Docs/IMAGE_UPLOAD_SYSTEM_GUIDE.md - راهنمای آپلود تصویر
 ```
 
 ---
@@ -541,6 +563,7 @@ public async Task<ServiceResult<T>> GetDataAsync() {
 🚫 حدس ممنوع
 ✅ شواهد الزامی
 ✅ قراردادها بالاتر از همه
+✅ Knowledge-Base را بررسی کن (اگر نیاز به Helper/Standard)
 ✅ امنیت اولویت اول
 ✅ مالی = حساسیت دوبرابر
 ✅ تست الزامی
@@ -553,11 +576,13 @@ public async Task<ServiceResult<T>> GetDataAsync() {
 **تاریخ:** 2026-01-02  
 **وضعیت:** 🔴 MANDATORY - قبل از هر پاسخ اجباری است
 
-**📌 این فایل شامل تمام 4 قرارداد حیاتی است:**
-1. ✅ PREFLIGHT_CHECKLIST.md (15 ممنوعیت + 12 دروازه)
-2. ✅ CRITICAL-FINANCIAL-MODULE-CONTRACT.md (10 قانون طلایی)
-3. ✅ 03-Development-Contract-Quick-Guide.md (استانداردها)
-4. ✅ 05-Debugging-Specialist-Contract.md (فرآیند دیباگ)
+**📌 این فایل شامل تمام قراردادهای حیاتی است:**
+1. ✅ AI_EXECUTION_CONTRACT.md (15 ممنوعیت + چک‌لیست 30s)
+2. ✅ AI_PREFLIGHT_QUICK_V3.md (چک‌لیست سریع)
+3. ✅ CRITICAL-FINANCIAL-MODULE-CONTRACT.md (10 قانون طلایی مالی)
+4. ✅ 03-Development-Contract-Quick-Guide.md (استانداردها)
+5. ✅ 05-Debugging-Specialist-Contract.md (فرآیند دیباگ)
+6. ✅ Knowledge-Base (Helpers, Extensions, Best Practices)
 
 **🎉 با این Preflight، کیفیت کدت 10x بهتر + امنیت مالی 100% تضمین شده!**
 

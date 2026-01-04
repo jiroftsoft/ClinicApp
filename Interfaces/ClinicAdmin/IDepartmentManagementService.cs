@@ -89,5 +89,12 @@ namespace ClinicApp.Interfaces.ClinicAdmin
     /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
     /// <returns>لیست دپارتمان‌های مناسب</returns>
     Task<ServiceResult<List<DepartmentDto>>> GetDepartmentsForReceptionAsync(int? clinicId = null);
+
+    /// <summary>
+    /// ✅ دریافت لیست دپارتمان‌های فعال برای Patient Area (SelectDoctor)
+    /// طبق قرارداد: Controller نباید مستقیماً به DB دسترسی داشته باشد
+    /// </summary>
+    /// <returns>لیست دپارتمان‌های فعال</returns>
+    Task<ServiceResult<List<ViewModels.Patient.DepartmentInfo>>> GetActiveDepartmentsForPatientAsync();
     }
 }

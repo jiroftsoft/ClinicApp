@@ -280,6 +280,27 @@
                 });
             });
             
+            // ✅ Tab-specific initialization
+            if (tabName === 'profile') {
+                // Initialize Patient Profile module after tab content is loaded
+                if (typeof PatientProfile !== 'undefined' && $('#profileForm').length > 0) {
+                    console.log('✅ Initializing PatientProfile module...');
+                    // Use setTimeout to ensure DOM is fully rendered
+                    setTimeout(function() {
+                        PatientProfile.init();
+                        
+                        // ✅ Initialize Persian DatePicker for profile tab (after AJAX load)
+                        if (typeof PersianDatePickerComponent !== 'undefined') {
+                            console.log('✅ Initializing PersianDatePickerComponent for profile tab...');
+                            // Re-initialize datepickers in the loaded content
+                            PersianDatePickerComponent.initializeAll();
+                        }
+                    }, 150);
+                } else {
+                    console.warn('⚠️ PatientProfile module not found or profileForm not found');
+                }
+            }
+            
             // Dispatch custom event
             $(document).trigger('unifiedDashboard:contentLoaded', { tab: tabName });
         },
@@ -313,9 +334,13 @@
                 console.log('✅ Form submit success:', response);
                 
                 if (response.success) {
-                    // Show success message
+                    // ✅ Show success message (طبق notification-helper.js: success method)
                     if (window.NotificationHelper) {
-                        NotificationHelper.showSuccess(response.message || 'عملیات با موفقیت انجام شد');
+                        NotificationHelper.success(response.message || 'عملیات با موفقیت انجام شد');
+                    } else if (window.Notify) {
+                        Notify.success(response.message || 'عملیات با موفقیت انجام شد');
+                    } else if (window.toastr) {
+                        toastr.success(response.message || 'عملیات با موفقیت انجام شد');
                     }
                     
                     // Clear cache for this tab
@@ -327,17 +352,26 @@
                         UnifiedDashboard.reloadTab(tabName);
                     }
                 } else {
-                    // Show error
+                    // ✅ Show error (طبق notification-helper.js: error method)
                     if (window.NotificationHelper) {
-                        NotificationHelper.showError(response.message || 'خطا در ثبت اطلاعات');
+                        NotificationHelper.error(response.message || 'خطا در ثبت اطلاعات');
+                    } else if (window.Notify) {
+                        Notify.error(response.message || 'خطا در ثبت اطلاعات');
+                    } else if (window.toastr) {
+                        toastr.error(response.message || 'خطا در ثبت اطلاعات');
                     }
                 }
             })
             .fail(function(xhr) {
                 console.error('❌ Form submit error:', xhr.status);
                 
+                // ✅ Show error (طبق notification-helper.js: error method)
                 if (window.NotificationHelper) {
-                    NotificationHelper.showError('خطا در ارتباط با سرور');
+                    NotificationHelper.error('خطا در ارتباط با سرور');
+                } else if (window.Notify) {
+                    Notify.error('خطا در ارتباط با سرور');
+                } else if (window.toastr) {
+                    toastr.error('خطا در ارتباط با سرور');
                 }
             })
             .always(function() {

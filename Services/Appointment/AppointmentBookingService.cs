@@ -12,6 +12,8 @@ using ClinicApp.Models.DTOs.Appointment;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
 using ClinicApp.Models.Enums;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Doctor;
+using EntityFramework.DynamicFilters;
 using Serilog;
 
 namespace ClinicApp.Services.Appointment
@@ -231,12 +233,72 @@ namespace ClinicApp.Services.Appointment
 
                 var doctors = result.Data.Items;
 
-                // بررسی برنامه کاری هر پزشک
-                var doctorDtos = new List<DoctorSearchResultDto>();
+                // ✅ FIX Issue 4: Batch Loading برای جلوگیری از N+1 Query (طبق SELECT_DOCTOR_MODULE_REVIEW.md)
+                var doctorIds = doctors.Select(d => d.DoctorId).ToList();
+                
+                // ✅ Batch Load Schedules (یک Query برای همه)
+                var schedulesDict = new Dictionary<int, DoctorSchedule>();
+                try
+                {
+                    _context.DisableFilter("ActiveDoctorSchedules");
+                    _context.DisableFilter("ActiveDoctorWorkDays");
+                    _context.DisableFilter("ActiveDoctorTimeRanges");
+                    
+                    var allSchedules = await _context.DoctorSchedules
+                        .AsNoTracking()
+                        .Where(ds => doctorIds.Contains(ds.DoctorId) && !ds.IsDeleted)
+                        .Include(ds => ds.WorkDays)
+                        .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
+                        .ToListAsync();
+                    
+                    _context.EnableFilter("ActiveDoctorSchedules");
+                    _context.EnableFilter("ActiveDoctorWorkDays");
+                    _context.EnableFilter("ActiveDoctorTimeRanges");
+                    
+                    schedulesDict = allSchedules
+                        .GroupBy(s => s.DoctorId)
+                        .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning(ex, "⚠️ خطا در Batch Loading Schedules، استفاده از روش قبلی");
+                    // Fallback: استفاده از روش قبلی
+                }
 
+                // ✅ Batch Load Doctor Details (یک Query برای همه)
+                var doctorDetailsDict = new Dictionary<int, string>();
+                try
+                {
+                    var doctorDetailsResults = await Task.WhenAll(
+                        doctorIds.Select(async id =>
+                        {
+                            try
+                            {
+                                var result = await _doctorCrudService.GetDoctorDetailsAsync(id);
+                                return new { DoctorId = id, Bio = result.Success && result.Data != null ? result.Data.Bio : null };
+                            }
+                            catch
+                            {
+                                return new { DoctorId = id, Bio = (string)null };
+                            }
+                        })
+                    );
+                    doctorDetailsDict = doctorDetailsResults.ToDictionary(d => d.DoctorId, d => d.Bio);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning(ex, "⚠️ خطا در Batch Loading Doctor Details");
+                }
+
+                // ✅ Map به DTOs
+                var doctorDtos = new List<DoctorSearchResultDto>();
                 foreach (var doctor in doctors)
                 {
-                    var schedule = await _doctorScheduleRepository.GetDoctorScheduleWithDetailsAsync(doctor.DoctorId);
+                    // ✅ استفاده از Batch Loaded Data
+                    var schedule = schedulesDict.ContainsKey(doctor.DoctorId) 
+                        ? schedulesDict[doctor.DoctorId] 
+                        : null;
+                    
                     var hasActiveSchedule = schedule != null 
                         && schedule.IsActive 
                         && !schedule.IsDeleted
@@ -245,20 +307,10 @@ namespace ClinicApp.Services.Appointment
 
                     var specialization = doctor.SpecializationNames?.FirstOrDefault() ?? "نامشخص";
                     
-                    // دریافت اطلاعات کامل پزشک برای Bio
-                    string bio = null;
-                    try
-                    {
-                        var doctorDetailsResult = await _doctorCrudService.GetDoctorDetailsAsync(doctor.DoctorId);
-                        if (doctorDetailsResult.Success && doctorDetailsResult.Data != null)
-                        {
-                            bio = doctorDetailsResult.Data.Bio;
-                        }
-                    }
-                    catch
-                    {
-                        // در صورت خطا، Bio را null می‌گذاریم
-                    }
+                    // ✅ استفاده از Batch Loaded Bio
+                    var bio = doctorDetailsDict.ContainsKey(doctor.DoctorId) 
+                        ? doctorDetailsDict[doctor.DoctorId] 
+                        : null;
                     
                     var dto = new DoctorSearchResultDto
                     {

@@ -27,12 +27,21 @@ namespace ClinicApp.Filters
         {
             try
             {
+                // ✅ DEBUGGING: Log request details
+                var requestPath = httpContext.Request?.Url?.PathAndQuery ?? "NULL";
+                _log.Debug("🔍 [PatientRoleAuthorization] Checking authorization for path: {Path}", requestPath);
+                
                 // بررسی احراز هویت
                 if (httpContext?.User?.Identity == null || !httpContext.User.Identity.IsAuthenticated)
                 {
-                    _log.Debug("کاربر احراز هویت نشده است - دسترسی به بخش Patient رد شد");
+                    _log.Debug("کاربر احراز هویت نشده است - دسترسی به بخش Patient رد شد - Path: {Path}", requestPath);
                     return false;
                 }
+
+                // ✅ DEBUGGING: Log user details
+                var userId = httpContext.User.Identity.GetUserId();
+                var userName = httpContext.User.Identity.Name;
+                _log.Debug("🔍 [PatientRoleAuthorization] User authenticated - UserId: {UserId}, UserName: {UserName}", userId, userName);
 
                 // بررسی نقش Patient
                 var isPatient = httpContext.User.IsInRole(AppRoles.Patient);
@@ -40,22 +49,25 @@ namespace ClinicApp.Filters
                 if (!isPatient)
                 {
                     _log.Warning(
-                        "کاربر با شناسه {UserId} و نام {UserName} که نقش Patient ندارد، تلاش برای دسترسی به بخش Patient کرد",
-                        httpContext.User.Identity.GetUserId(),
-                        httpContext.User.Identity.Name);
+                        "کاربر با شناسه {UserId} و نام {UserName} که نقش Patient ندارد، تلاش برای دسترسی به بخش Patient کرد - Path: {Path}",
+                        userId,
+                        userName,
+                        requestPath);
                 }
                 else
                 {
                     _log.Debug(
-                        "کاربر با شناسه {UserId} و نقش Patient مجوز دسترسی دارد",
-                        httpContext.User.Identity.GetUserId());
+                        "کاربر با شناسه {UserId} و نقش Patient مجوز دسترسی دارد - Path: {Path}",
+                        userId,
+                        requestPath);
                 }
 
                 return isPatient;
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در بررسی مجوز دسترسی به بخش Patient");
+                var requestPath = httpContext?.Request?.Url?.PathAndQuery ?? "NULL";
+                _log.Error(ex, "خطا در بررسی مجوز دسترسی به بخش Patient - Path: {Path}", requestPath);
                 // در صورت خطا، دسترسی را رد می‌کنیم (Fail-Safe)
                 return false;
             }

@@ -1,11 +1,12 @@
 @* ✅ Profile Tab Content - Enterprise-Grade Form *@
+@* طبق قراردادها: 03-Development-Contract-Quick-Guide.md *@
 
 <div class="profile-tab-container">
     
     <!-- Tab Header -->
     <div class="tab-header mb-4">
         <h2 class="tab-title">
-            <i class="fas fa-user-circle ml-2"></i>
+            <i class="fas fa-user-circle"></i>
             پروفایل من
         </h2>
         <p class="tab-subtitle text-muted">مشاهده و ویرایش اطلاعات شخصی</p>
@@ -17,9 +18,9 @@
         <!-- Profile Card -->
         <div class="col-12 col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-white">
+                <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle ml-2 text-primary"></i>
+                        <i class="fas fa-info-circle"></i>
                         اطلاعات شخصی
                     </h5>
                 </div>
@@ -32,45 +33,47 @@
                             <!-- First Name -->
                             <div class="col-12 col-md-6 mb-3">
                                 <label for="FirstName" class="form-label">
-                                    <i class="fas fa-user ml-1"></i>
+                                    <i class="fas fa-user"></i>
                                     نام <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control" id="FirstName" name="FirstName" 
-                                       required maxlength="50" placeholder="نام خود را وارد کنید" />
+                                       required maxlength="50" placeholder="نام خود را وارد کنید" 
+                                       autocomplete="given-name" />
                                 <span class="text-danger field-validation-error" data-valmsg-for="FirstName"></span>
                             </div>
 
                             <!-- Last Name -->
                             <div class="col-12 col-md-6 mb-3">
                                 <label for="LastName" class="form-label">
-                                    <i class="fas fa-user ml-1"></i>
+                                    <i class="fas fa-user"></i>
                                     نام خانوادگی <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control" id="LastName" name="LastName" 
-                                       required maxlength="50" placeholder="نام خانوادگی خود را وارد کنید" />
+                                       required maxlength="50" placeholder="نام خانوادگی خود را وارد کنید" 
+                                       autocomplete="family-name" />
                                 <span class="text-danger field-validation-error" data-valmsg-for="LastName"></span>
                             </div>
 
                             <!-- National Code -->
                             <div class="col-12 col-md-6 mb-3">
                                 <label for="NationalCode" class="form-label">
-                                    <i class="fas fa-id-card ml-1"></i>
+                                    <i class="fas fa-id-card"></i>
                                     کد ملی
                                 </label>
                                 <input type="text" class="form-control" id="NationalCode" name="NationalCode" 
-                                       readonly placeholder="کد ملی شما" />
+                                       readonly placeholder="کد ملی شما" autocomplete="off" />
                                 <small class="form-text text-muted">کد ملی قابل تغییر نیست</small>
                             </div>
 
                             <!-- Phone Number -->
                             <div class="col-12 col-md-6 mb-3">
                                 <label for="PhoneNumber" class="form-label">
-                                    <i class="fas fa-phone ml-1"></i>
+                                    <i class="fas fa-phone"></i>
                                     شماره تماس <span class="text-danger">*</span>
                                 </label>
                                 <input type="tel" class="form-control" id="PhoneNumber" name="PhoneNumber" 
                                        required pattern="^\+98\d{10}$" placeholder="+989123456789" 
-                                       dir="ltr" style="text-align: left;" />
+                                       dir="ltr" style="text-align: left;" autocomplete="tel" />
                                 <small class="form-text text-muted">فرمت: +989123456789</small>
                                 <span class="text-danger field-validation-error" data-valmsg-for="PhoneNumber"></span>
                             </div>
@@ -78,33 +81,38 @@
                             <!-- Email -->
                             <div class="col-12 col-md-6 mb-3">
                                 <label for="Email" class="form-label">
-                                    <i class="fas fa-envelope ml-1"></i>
+                                    <i class="fas fa-envelope"></i>
                                     ایمیل
                                 </label>
                                 <input type="email" class="form-control" id="Email" name="Email" 
                                        maxlength="100" placeholder="example@domain.com" 
-                                       dir="ltr" style="text-align: left;" />
+                                       dir="ltr" style="text-align: left;" autocomplete="email" />
                                 <span class="text-danger field-validation-error" data-valmsg-for="Email"></span>
                             </div>
 
                             <!-- Birth Date -->
+                            @* ✅ BEST PRACTICE: استفاده از _PersianDatePicker طبق قرارداد 01-Helpers-DateTime.md *@
                             <div class="col-12 col-md-6 mb-3">
-                                <label for="BirthDate" class="form-label">
-                                    <i class="fas fa-calendar ml-1"></i>
-                                    تاریخ تولد
-                                </label>
-                                <input type="text" class="form-control persianDatepicker" id="BirthDate" name="BirthDate" 
-                                       placeholder="1370/01/01" dir="ltr" style="text-align: left;" />
-                                <span class="text-danger field-validation-error" data-valmsg-for="BirthDate"></span>
+                                @{
+                                    ViewBag.PersianDatePickerId = "BirthDate";
+                                    ViewBag.PersianDatePickerName = "BirthDate";
+                                    ViewBag.PersianDatePickerValue = Model?.BirthDate;
+                                    ViewBag.PersianDatePickerLabel = "تاریخ تولد";
+                                    ViewBag.PersianDatePickerPlaceholder = "1370/01/01";
+                                    ViewBag.PersianDatePickerHelpText = "";
+                                    ViewBag.PersianDatePickerRequired = false;
+                                    ViewBag.PersianDatePickerCssClass = "form-control";
+                                }
+                                @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
                             </div>
 
                             <!-- Gender -->
                             <div class="col-12 mb-3">
                                 <label class="form-label">
-                                    <i class="fas fa-venus-mars ml-1"></i>
+                                    <i class="fas fa-venus-mars"></i>
                                     جنسیت <span class="text-danger">*</span>
                                 </label>
-                                <div class="d-flex gap-3">
+                                <div class="d-flex flex-wrap gap-2">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="Gender" id="GenderMale" value="Male" required />
                                         <label class="form-check-label" for="GenderMale">مرد</label>
@@ -120,24 +128,28 @@
                             <!-- Address -->
                             <div class="col-12 mb-3">
                                 <label for="Address" class="form-label">
-                                    <i class="fas fa-map-marker-alt ml-1"></i>
+                                    <i class="fas fa-map-marker-alt"></i>
                                     آدرس
                                 </label>
                                 <textarea class="form-control" id="Address" name="Address" rows="3" 
-                                          maxlength="500" placeholder="آدرس کامل خود را وارد کنید"></textarea>
+                                          maxlength="500" placeholder="آدرس کامل خود را وارد کنید" autocomplete="street-address"></textarea>
                                 <span class="text-danger field-validation-error" data-valmsg-for="Address"></span>
                             </div>
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="d-flex justify-content-end gap-2 mt-4">
+                        <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-4">
                             <button type="button" class="btn btn-secondary" onclick="UnifiedDashboard.switchTab('overview')">
-                                <i class="fas fa-times ml-1"></i>
+                                <i class="fas fa-times"></i>
                                 انصراف
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save ml-1"></i>
-                                ذخیره تغییرات
+                            <button type="submit" class="btn btn-primary" id="btnSaveProfile">
+                                <i class="fas fa-save"></i>
+                                <span class="btn-text">ذخیره تغییرات</span>
+                                <span class="btn-loading d-none">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    در حال ذخیره...
+                                </span>
                             </button>
                         </div>
                     }
@@ -146,12 +158,12 @@
         </div>
 
         <!-- Profile Sidebar -->
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-lg-4 mt-4 mt-lg-0">
             <!-- Profile Summary Card -->
             <div class="card shadow-sm mb-3">
                 <div class="card-body text-center">
                     <div class="profile-avatar-large mb-3">
-                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        <i class="fas fa-user-circle"></i>
                     </div>
                     <h5 class="card-title mb-1" id="displayFullName">نام کاربر</h5>
                     <p class="text-muted small mb-0" id="displayNationalCode">کد ملی: -</p>
@@ -160,25 +172,25 @@
 
             <!-- Quick Info Card -->
             <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fas fa-info-circle ml-1"></i>
+                <div class="card-header" style="background: var(--medical-primary-lighter, #e8f0f8); border-bottom: 1px solid var(--medical-border, #dee2e6);">
+                    <h6 class="mb-0" style="color: var(--medical-primary, #2c5aa0);">
+                        <i class="fas fa-info-circle"></i>
                         راهنما
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled small mb-0">
-                        <li class="mb-2">
-                            <i class="fas fa-check-circle text-success ml-1"></i>
-                            اطلاعات خود را کامل کنید
+                        <li class="mb-2 d-flex align-items-start">
+                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                            <span>اطلاعات خود را کامل کنید</span>
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-check-circle text-success ml-1"></i>
-                            شماره تماس را به‌روز نگه دارید
+                        <li class="mb-2 d-flex align-items-start">
+                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                            <span>شماره تماس را به‌روز نگه دارید</span>
                         </li>
-                        <li class="mb-0">
-                            <i class="fas fa-check-circle text-success ml-1"></i>
-                            آدرس ایمیل معتبر وارد کنید
+                        <li class="mb-0 d-flex align-items-start">
+                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                            <span>آدرس ایمیل معتبر وارد کنید</span>
                         </li>
                     </ul>
                 </div>
@@ -189,48 +201,40 @@
 
 </div>
 
+@* ✅ BEST PRACTICE: Initialize PatientProfile after AJAX load *@
+@* ✅ طبق قرارداد 01-Helpers-DateTime.md: استفاده از _PersianDatePicker *@
+@* Script در layout اصلی load می‌شود، فقط باید initialize کنیم *@
 <script>
-    // ✅ Load Profile Data via AJAX
-    $(document).ready(function() {
-        // Load existing profile data
-        $.ajax({
-            url: '/Patient/Api/Profile/GetProfile',
-            method: 'GET',
-            dataType: 'json'
-        })
-        .done(function(response) {
-            if (response.success && response.data) {
-                var profile = response.data;
-                $('#FirstName').val(profile.FirstName);
-                $('#LastName').val(profile.LastName);
-                $('#NationalCode').val(profile.NationalCode);
-                $('#PhoneNumber').val(profile.PhoneNumber);
-                $('#Email').val(profile.Email);
-                $('#BirthDate').val(profile.BirthDate);
-                $('#Address').val(profile.Address);
+    (function() {
+        // ✅ Wait for DOM to be ready and form to exist
+        function initProfile() {
+            if (typeof PatientProfile !== 'undefined' && $('#profileForm').length > 0) {
+                console.log('✅ [ProfileTab] Initializing PatientProfile module...');
+                PatientProfile.init();
                 
-                if (profile.Gender) {
-                    $('input[name="Gender"][value="' + profile.Gender + '"]').prop('checked', true);
-                }
-                
-                // Update display
-                $('#displayFullName').text(profile.FirstName + ' ' + profile.LastName);
-                $('#displayNationalCode').text('کد ملی: ' + profile.NationalCode);
+                // ✅ Initialize Persian DatePicker after profile module is initialized
+                // طبق قرارداد 01-Helpers-DateTime.md: استفاده از PersianDatePickerComponent
+                setTimeout(function() {
+                    if (typeof PersianDatePickerComponent !== 'undefined') {
+                        console.log('✅ [ProfileTab] Initializing PersianDatePickerComponent (طبق قرارداد 01-Helpers-DateTime.md)...');
+                        PersianDatePickerComponent.initializeAll();
+                    } else {
+                        console.warn('⚠️ [ProfileTab] PersianDatePickerComponent not found');
+                    }
+                }, 200);
+            } else {
+                console.warn('⚠️ [ProfileTab] PatientProfile not ready, retrying...');
+                setTimeout(initProfile, 100);
             }
-        })
-        .fail(function() {
-            if (window.NotificationHelper) {
-                NotificationHelper.showWarning('خطا در بارگذاری اطلاعات پروفایل');
-            }
-        });
-        
-        // Initialize Persian Datepicker (if available)
-        if ($.fn.pDatepicker) {
-            $('.persianDatepicker').pDatepicker({
-                format: 'YYYY/MM/DD',
-                autoClose: true
-            });
         }
-    });
+        
+        // ✅ Initialize immediately if DOM is ready, otherwise wait
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initProfile);
+        } else {
+            // DOM already ready, but wait a bit for AJAX content to render
+            setTimeout(initProfile, 50);
+        }
+    })();
 </script>
 

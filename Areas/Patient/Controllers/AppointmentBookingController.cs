@@ -20,7 +20,9 @@ using ClinicApp.Filters;
 using Serilog;
 using System.Linq;
 using System.Collections.Generic;
+using System.Web.UI;
 using Microsoft.AspNet.Identity;
+using ClinicApp.Interfaces.ClinicAdmin; // ✅ برای IDepartmentManagementService
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -53,6 +55,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IIdempotencyService _idempotencyService;
         private readonly IAppSettings _appSettings;
         private readonly ApplicationDbContext _context;
+        private readonly IDepartmentManagementService _departmentService; // ✅ طبق قرارداد: Controller → Service
 
         public AppointmentBookingController(
             IAppointmentBookingService bookingService,
@@ -62,6 +65,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             IIdempotencyService idempotencyService,
             IAppSettings appSettings,
             ApplicationDbContext context,
+            IDepartmentManagementService departmentService, // ✅ طبق قرارداد: Controller → Service
             ILogger logger)
             : base(logger, currentUserService) // ✅ Call base constructor
         {
@@ -71,6 +75,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _departmentService = departmentService ?? throw new ArgumentNullException(nameof(departmentService));
         }
 
         /// <summary>
@@ -151,11 +156,39 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// </summary>
         [HttpGet]
         [Authorize]
-        [OutputCache(Duration = 300, VaryByParam = "departmentId;searchTerm")] // ✅ Cache for 5 minutes
+        // ✅ FIX Issue 2: کاهش OutputCache در محیط درمانی (طبق SELECT_DOCTOR_MODULE_REVIEW.md)
+        // در محیط درمانی، داده‌ها باید Real-time باشند - Cache فقط 1 دقیقه
+        [OutputCache(Duration = 60, VaryByParam = "departmentId;searchTerm", Location = OutputCacheLocation.Server)]
         public async Task<ActionResult> SelectDoctor(int? departmentId, string searchTerm)
         {
             try
             {
+                // ✅ FIX Issue 5: Input Validation (طبق SELECT_DOCTOR_MODULE_REVIEW.md)
+                // ✅ Validate departmentId
+                if (departmentId.HasValue && departmentId.Value <= 0)
+                {
+                    _logger.Warning("⚠️ [SelectDoctor] Invalid departmentId: {DepartmentId}", departmentId);
+                    departmentId = null;
+                }
+
+                // ✅ Validate and sanitize searchTerm
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.Trim();
+                    // ✅ Limit length for performance and security
+                    if (searchTerm.Length > 100)
+                    {
+                        _logger.Warning("⚠️ [SelectDoctor] SearchTerm too long, truncating: {Length}", searchTerm.Length);
+                        searchTerm = searchTerm.Substring(0, 100);
+                    }
+                    // ✅ Sanitize for XSS (HTML Encode will be done in View)
+                    // Note: EF Core parameterized queries prevent SQL Injection
+                }
+                else
+                {
+                    searchTerm = null;
+                }
+
                 // ✅ Diagnostic: Log user info for debugging
                 var userId = User.Identity.GetUserId();
                 var isPatientRole = User.IsInRole("Patient");
@@ -182,18 +215,16 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
-                // ✅ دریافت لیست دپارتمان‌های فعال برای فیلتر
-                var departments = await _context.Departments
-                    .AsNoTracking()
-                    .Where(d => !d.IsDeleted && d.IsActive)
-                    .OrderBy(d => d.Name)
-                    .Select(d => new DepartmentInfo
-                    {
-                        DepartmentId = d.DepartmentId,
-                        Name = d.Name,
-                        Code = d.Code
-                    })
-                    .ToListAsync();
+                // ✅ دریافت لیست دپارتمان‌های فعال برای فیلتر (طبق قرارداد: Controller → Service)
+                // ✅ FIX Issue 1: انتقال DB Access از Controller به Service
+                var departmentsResult = await _departmentService.GetActiveDepartmentsForPatientAsync();
+                if (!departmentsResult.Success)
+                {
+                    _logger.Warning("⚠️ [SelectDoctor] خطا در دریافت دپارتمان‌ها: {Message}", departmentsResult.Message);
+                    // Fallback: لیست خالی
+                    departmentsResult = ServiceResult<List<DepartmentInfo>>.Successful(new List<DepartmentInfo>());
+                }
+                var departments = departmentsResult.Data ?? new List<DepartmentInfo>();
 
                 var viewModel = new DoctorSelectionViewModel
                 {
@@ -228,6 +259,12 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
+                // ✅ DEBUGGING: Log route resolution
+                _logger.Information("🔍 [SelectDate] Route resolved successfully - DoctorId: {DoctorId}, User: {UserName}, IsAuthenticated: {IsAuth}, IsPatientRole: {IsPatient}", 
+                    doctorId, 
+                    User.Identity?.Name ?? "NULL", 
+                    User.Identity?.IsAuthenticated ?? false,
+                    User.IsInRole("Patient"));
                 _logger.Information("درخواست صفحه انتخاب تاریخ - DoctorId: {DoctorId}", doctorId);
 
                 // ✅ Validation 1: DoctorId must be positive

@@ -20,7 +20,8 @@
         }
 
         .page-header {
-            background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            /* ✅ FIX Issue 6: حذف Gradient و استفاده از رنگ ساده (طبق SELECT_DOCTOR_MODULE_REVIEW.md) */
+            background: var(--medical-primary, #2c5aa0);
             border-radius: 16px;
             padding: 2rem;
             margin-bottom: 2rem;
@@ -180,8 +181,12 @@
     </form>
 </div>
 
-<!-- ✅ Diagnostic: نمایش وضعیت احراز هویت (فقط برای دیباگ - در production حذف شود) -->
-@Html.Partial("_AuthDiagnostic")
+<!-- ✅ Diagnostic: نمایش وضعیت احراز هویت (فقط در Debug Mode) -->
+@* ✅ FIX Issue 3: Conditional Rendering برای Diagnostic View - طبق SELECT_DOCTOR_MODULE_REVIEW.md *@
+@if (this.Context.IsDebuggingEnabled)
+{
+    @Html.Partial("_AuthDiagnostic")
+}
 
 <!-- لیست پزشکان -->
 <div class="doctors-container" id="doctorsContainer">

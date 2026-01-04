@@ -44,10 +44,19 @@ namespace ClinicApp
 
             // 🏥 CRITICAL: Patient Controller Route - باید قبل از ApiPatientController باشد
             // این route باید قبل از Default route باشد و conflict با Api/PatientController را جلوگیری کند
+            // ✅ CRITICAL FIX: اضافه کردن constraint برای جلوگیری از conflict با Area routes
+            // فقط action های مشخص PatientController را قبول می‌کند (نه Appointment/Book/...)
+            // ⚠️ IMPORTANT: این route فقط برای PatientController در root namespace است
+            // Area routes (Patient/Appointment/Book/...) باید قبل از این route match شوند
             routes.MapRoute(
                 name: "Patient_Specific",
                 url: "Patient/{action}/{id}",
                 defaults: new { controller = "Patient", action = "Index", id = UrlParameter.Optional },
+                constraints: new { 
+                    // ✅ CRITICAL: فقط action های مشخص PatientController را قبول می‌کند
+                    // Negative lookahead: action نباید با "Appointment" شروع شود (برای جلوگیری از conflict با Area routes)
+                    action = @"^(?!Appointment)(Index|Edit|Create|Delete|Details|LoadPatients|Search)$"
+                },
                 namespaces: new[] { "ClinicApp.Controllers" } // ✅ ONLY MVC PatientController
             ).DataTokens["UseNamespaceFallback"] = false; // ❌ جلوگیری از fallback به namespace های دیگر
 

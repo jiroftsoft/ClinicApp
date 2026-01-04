@@ -55,29 +55,49 @@
                 </div>
                 @if (Model.HasActiveSchedule)
                 {
-                    // ✅ BEST PRACTICE: استفاده از @Url.Action با area مشخص (طبق 08-MVC-Routing-Best-Practices.md)
-                    var selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
+                    // ✅ DEBUGGING: بررسی Route Resolution (طبق 05-Debugging-Specialist-Contract.md)
+                    // ✅ BEST PRACTICE: استفاده از RouteUrl با route name مشخص (طبق 08-MVC-Routing-Best-Practices.md)
+                    // ✅ CRITICAL FIX: استفاده از RouteUrl به جای Url.Action برای اطمینان از Route Resolution صحیح
+                    var selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { doctorId = Model.DoctorId });
                     
-                    // ✅ Validation: بررسی اینکه URL درست تولید شده
+                    // ✅ Fallback 1: اگر RouteUrl null برگرداند، از Url.Action استفاده کن
                     if (string.IsNullOrEmpty(selectDateUrl))
                     {
-                        // Fallback: استفاده از route name (اگر Url.Action fail کرد)
-                        selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { doctorId = Model.DoctorId });
+                        selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
                     }
                     
-                    // ✅ Final validation: اگر هنوز null است، از route pattern استفاده کن
+                    // ✅ Fallback 2: اگر هنوز null است، از route pattern مستقیم استفاده کن
                     if (string.IsNullOrEmpty(selectDateUrl))
                     {
+                        selectDateUrl = $"/Patient/Appointment/Book/SelectDate/{Model.DoctorId}";
+                    }
+                    
+                    // ✅ CRITICAL FIX: اطمینان از اینکه URL معتبر است و به Home اشاره نمی‌کند
+                    if (string.IsNullOrEmpty(selectDateUrl) || 
+                        selectDateUrl == "/" || 
+                        selectDateUrl.Contains("/Home") || 
+                        !selectDateUrl.Contains("SelectDate"))
+                    {
+                        // ✅ Final Fallback: استفاده از route pattern مستقیم
                         selectDateUrl = $"/Patient/Appointment/Book/SelectDate/{Model.DoctorId}";
                     }
                     
                     <a href="@selectDateUrl" 
                        class="btn btn-primary w-100 select-doctor-btn" 
                        data-doctor-id="@Model.DoctorId"
-                       data-href="@selectDateUrl">
+                       data-href="@selectDateUrl"
+                       onclick="console.log('🔍 [DoctorCard] Clicked - href:', '@selectDateUrl', 'doctorId:', '@Model.DoctorId'); console.log('🔍 [DoctorCard] Full URL:', window.location.origin + '@selectDateUrl'); return true;">
                         <i class="fas fa-calendar-plus me-1"></i>
                         انتخاب پزشک
                     </a>
+                    
+                    @* ✅ DEBUGGING: نمایش URL تولید شده (فقط در Debug Mode) *@
+                    if (this.Context.IsDebuggingEnabled)
+                    {
+                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                            🔍 Debug: URL = @selectDateUrl
+                        </small>
+                    }
                 }
                 else
                 {
@@ -109,7 +129,8 @@
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+        /* ✅ FIX Issue 6: حذف Gradient و استفاده از رنگ ساده (طبق SELECT_DOCTOR_MODULE_REVIEW.md) */
+        background: var(--medical-primary, #2c5aa0);
         display: flex;
         align-items: center;
         justify-content: center;

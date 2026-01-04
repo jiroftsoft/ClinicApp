@@ -1,0 +1,416 @@
+/**
+ * 🏥 Patient Profile Styles - استایل‌های پروفایل بیمار
+ * 
+ * طبق قراردادها:
+ * - 03-Development-Contract-Quick-Guide.md
+ * - رنگ‌های رسمی درمانی (Medical Colors)
+ * - Mobile-First Responsive Design
+ * - Accessibility (WCAG AA)
+ * 
+ * @version 1.0.0
+ */
+
+/* ============================================
+   🎨 Medical Color Variables
+   ============================================ */
+:root {
+    --medical-primary: #2c5aa0;           /* آبی درمانی */
+    --medical-primary-dark: #1e3d6f;      /* آبی تیره */
+    --medical-primary-light: #4a7bc8;     /* آبی روشن */
+    --medical-primary-lighter: #e8f0f8;   /* آبی خیلی روشن */
+    
+    --medical-secondary: #6c757d;         /* خاکستری */
+    --medical-success: #28a745;           /* سبز */
+    --medical-danger: #dc3545;            /* قرمز */
+    --medical-warning: #ffc107;           /* زرد */
+    --medical-info: #17a2b8;             /* آبی روشن */
+    
+    --medical-bg: #ffffff;               /* سفید */
+    --medical-bg-light: #f8f9fa;         /* خاکستری روشن */
+    --medical-text: #212529;             /* متن تیره */
+    --medical-text-muted: #6c757d;       /* متن خاکستری */
+    --medical-border: #dee2e6;           /* border */
+    
+    --medical-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --medical-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   📱 Profile Tab Container (Mobile-First)
+   ============================================ */
+.profile-tab-container {
+    padding: 1rem;
+    background: var(--medical-bg-light, #f8f9fa);
+    min-height: 100vh;
+}
+
+.tab-header {
+    margin-bottom: 1.5rem;
+}
+
+.tab-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-title i {
+    font-size: 1.75rem;
+}
+
+.tab-subtitle {
+    font-size: 0.95rem;
+    color: var(--medical-text-muted, #6c757d);
+    margin: 0;
+}
+
+/* ============================================
+   🎴 Profile Card
+   ============================================ */
+.profile-tab-container .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--medical-shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.profile-tab-container .card:hover {
+    box-shadow: var(--medical-shadow-hover);
+}
+
+.profile-tab-container .card-header {
+    background: var(--medical-primary, #2c5aa0);
+    color: white;
+    border: none;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.profile-tab-container .card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-tab-container .card-header h5 i {
+    font-size: 1.2rem;
+}
+
+.profile-tab-container .card-body {
+    padding: 1.5rem;
+    background: var(--medical-bg, #ffffff);
+}
+
+/* ============================================
+   📝 Form Elements
+   ============================================ */
+.profile-form .form-label {
+    font-weight: 600;
+    color: var(--medical-text, #212529);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-form .form-label i {
+    color: var(--medical-primary, #2c5aa0);
+    font-size: 0.9rem;
+}
+
+.profile-form .form-label .text-danger {
+    color: var(--medical-danger, #dc3545);
+    font-weight: 700;
+    margin-right: 0.25rem;
+}
+
+.profile-form .form-control,
+.profile-form .form-select {
+    border: 1px solid var(--medical-border, #dee2e6);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: var(--medical-bg, #ffffff);
+    color: var(--medical-text, #212529);
+}
+
+.profile-form .form-control:focus,
+.profile-form .form-select:focus {
+    border-color: var(--medical-primary, #2c5aa0);
+    box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+    outline: none;
+}
+
+.profile-form .form-control[readonly] {
+    background-color: var(--medical-bg-light, #f8f9fa);
+    cursor: not-allowed;
+    color: var(--medical-text-muted, #6c757d);
+}
+
+.profile-form .form-text {
+    font-size: 0.85rem;
+    color: var(--medical-text-muted, #6c757d);
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   🔘 Radio Buttons (Gender)
+   ============================================ */
+.profile-form .form-check {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--medical-border, #dee2e6);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.profile-form .form-check:hover {
+    background: var(--medical-primary-lighter, #e8f0f8);
+    border-color: var(--medical-primary-light, #4a7bc8);
+}
+
+.profile-form .form-check-input {
+    margin-top: 0.25rem;
+    cursor: pointer;
+}
+
+.profile-form .form-check-input:checked {
+    background-color: var(--medical-primary, #2c5aa0);
+    border-color: var(--medical-primary, #2c5aa0);
+}
+
+.profile-form .form-check-label {
+    cursor: pointer;
+    margin-right: 0.5rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   📅 Datepicker
+   ============================================ */
+.profile-form .persianDatepicker {
+    direction: ltr;
+    text-align: left;
+}
+
+/* ============================================
+   🔘 Buttons
+   ============================================ */
+.profile-form .btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-form .btn-primary {
+    background: var(--medical-primary, #2c5aa0);
+    border-color: var(--medical-primary, #2c5aa0);
+    color: white;
+}
+
+.profile-form .btn-primary:hover {
+    background: var(--medical-primary-dark, #1e3d6f);
+    border-color: var(--medical-primary-dark, #1e3d6f);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(44, 90, 160, 0.2);
+}
+
+.profile-form .btn-secondary {
+    background: var(--medical-secondary, #6c757d);
+    border-color: var(--medical-secondary, #6c757d);
+    color: white;
+}
+
+.profile-form .btn-secondary:hover {
+    background: #5a6268;
+    border-color: #545b62;
+}
+
+/* ============================================
+   ⚠️ Validation Messages
+   ============================================ */
+.profile-form .field-validation-error {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--medical-danger, #dc3545);
+    margin-top: 0.25rem;
+}
+
+.profile-form .alert-danger {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* ============================================
+   👤 Profile Sidebar
+   ============================================ */
+.profile-avatar-large {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1rem;
+    background: var(--medical-primary-lighter, #e8f0f8);
+    border-radius: 50%;
+    border: 3px solid var(--medical-primary, #2c5aa0);
+}
+
+.profile-avatar-large i {
+    font-size: 4rem;
+    color: var(--medical-primary, #2c5aa0);
+}
+
+#displayFullName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--medical-text, #212529);
+    margin-bottom: 0.5rem;
+}
+
+#displayNationalCode {
+    font-size: 0.9rem;
+    color: var(--medical-text-muted, #6c757d);
+}
+
+/* ============================================
+   📱 Responsive Design (Mobile-First)
+   ============================================ */
+
+/* Small Mobile (320px - 575px) */
+@media (max-width: 575.98px) {
+    .profile-tab-container {
+        padding: 0.75rem;
+    }
+    
+    .tab-title {
+        font-size: 1.25rem;
+    }
+    
+    .profile-tab-container .card-body {
+        padding: 1rem;
+    }
+    
+    .profile-form .form-control,
+    .profile-form .form-select {
+        padding: 0.6rem 0.85rem;
+        font-size: 0.9rem;
+    }
+    
+    .profile-form .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-form .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-avatar-large i {
+        font-size: 3rem;
+    }
+}
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .profile-tab-container {
+        padding: 1.5rem;
+    }
+    
+    .profile-tab-container .card-body {
+        padding: 1.75rem;
+    }
+}
+
+/* Desktop (992px+) */
+@media (min-width: 992px) {
+    .profile-tab-container {
+        padding: 2rem;
+    }
+    
+    .profile-tab-container .card-body {
+        padding: 2rem;
+    }
+}
+
+/* ============================================
+   ♿ Accessibility
+   ============================================ */
+.profile-form .form-control:focus-visible,
+.profile-form .form-select:focus-visible,
+.profile-form .btn:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .profile-tab-container .card {
+        border: 2px solid var(--medical-primary, #2c5aa0);
+    }
+    
+    .profile-form .form-control,
+    .profile-form .form-select {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .profile-tab-container .card,
+    .profile-form .form-control,
+    .profile-form .btn {
+        transition: none;
+    }
+    
+    .profile-form .btn-primary:hover {
+        transform: none;
+    }
+}
+
+/* ============================================
+   🖨️ Print Styles
+   ============================================ */
+@media print {
+    .profile-tab-container {
+        background: white;
+        padding: 0;
+    }
+    
+    .profile-form .btn {
+        display: none;
+    }
+    
+    .profile-tab-container .card-header {
+        background: white !important;
+        color: black !important;
+        border-bottom: 2px solid black;
+    }
+}
+

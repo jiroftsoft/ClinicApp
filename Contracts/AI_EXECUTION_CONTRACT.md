@@ -14,6 +14,12 @@
 ```
 □ Contracts/AI_PREFLIGHT_QUICK_V3.md را چک کردم
 □ 15 ممنوعیت AI No-Fly Zone را بررسی کردم
+□ Knowledge-Base را بررسی کردم (اگر نیاز به Helper/Standard):
+   □ Contracts/Knowledge-Base/AI/Master/README.md
+   □ Contracts/Knowledge-Base/AI/Master/INDEX.md
+   □ Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md (اگر تاریخ)
+   □ Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md
+   □ Contracts/Knowledge-Base/AI/Master/05-Debugging-Specialist-Contract.md (اگر باگ)
 □ نوع کار را شناسایی کردم:
    □ معمولی → Quick Check
    □ مالی → Contracts/AI_PREFLIGHT_MASTER_V3.md → STEP 2
@@ -128,6 +134,14 @@
 📚 Contracts/AI_PREFLIGHT_MASTER_V3.md (10m)
 📖 Contracts/AI_PREFLIGHT_V3_README.md (راهنما)
 📊 Contracts/AI_PREFLIGHT_INDEX.md (فهرست)
+
+📚 Knowledge-Base (الزامی برای Helper/Standard):
+   📖 Contracts/Knowledge-Base/AI/Master/README.md
+   📋 Contracts/Knowledge-Base/AI/Master/INDEX.md
+   📅 Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md
+   ⚡ Contracts/Knowledge-Base/AI/Master/03-Development-Contract-Quick-Guide.md
+   🔧 Contracts/Knowledge-Base/AI/Master/05-Debugging-Specialist-Contract.md
+   💰 Contracts/Knowledge-Base/CRITICAL-FINANCIAL-MODULE-CONTRACT.md
 ```
 
 ---

@@ -62,18 +62,22 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var patient = result.Data;
 
                 // Map to DTO
+                // ✅ BEST PRACTICE: Convert Gender enum to string for JSON serialization
                 var profileDto = new
                 {
                     PatientId = patient.PatientId,
-                    FirstName = patient.FirstName,
-                    LastName = patient.LastName,
-                    NationalCode = patient.NationalCode,
-                    PhoneNumber = patient.PhoneNumber,
-                    Email = patient.Email,
-                    BirthDate = patient.BirthDate?.ToString("yyyy/MM/dd"),
-                    Gender = patient.Gender,
-                    Address = patient.Address
+                    FirstName = patient.FirstName ?? string.Empty,
+                    LastName = patient.LastName ?? string.Empty,
+                    NationalCode = patient.NationalCode ?? string.Empty,
+                    PhoneNumber = patient.PhoneNumber ?? string.Empty,
+                    Email = patient.Email ?? string.Empty,
+                    BirthDate = patient.BirthDate?.ToString("yyyy/MM/dd") ?? string.Empty,
+                    Gender = patient.Gender.ToString(), // ✅ Convert enum to string
+                    Address = patient.Address ?? string.Empty
                 };
+
+                _logger.Information("✅ GetProfile: Profile loaded successfully - PatientId: {PatientId}, Gender: {Gender}", 
+                    patient.PatientId, profileDto.Gender);
 
                 return SuccessJsonResult(profileDto, "پروفایل با موفقیت بارگذاری شد");
             }

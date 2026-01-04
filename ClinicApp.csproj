@@ -2051,6 +2051,7 @@
     <Content Include="Content\css\patient-dashboard.css" />
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
+    <Content Include="Content\css\patient-profile.css" />
     <Content Include="Content\css\quick-appointment-section.css" />
     <Content Include="Content\css\reception-error-toast.css" />
     <Content Include="Content\css\reception-form-header.css" />
@@ -2207,6 +2208,7 @@
     <Content Include="Content\js\modern-navigation.js" />
     <Content Include="Content\js\notification-helper.js" />
     <Content Include="Content\js\patient-dashboard.js" />
+    <Content Include="Content\js\patient-profile.js" />
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
