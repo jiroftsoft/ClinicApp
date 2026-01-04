@@ -55,15 +55,14 @@
                 </div>
                 @if (Model.HasActiveSchedule)
                 {
-                    // ✅ DEBUGGING: بررسی Route Resolution (طبق 05-Debugging-Specialist-Contract.md)
-                    // ✅ BEST PRACTICE: استفاده از RouteUrl با route name مشخص (طبق 08-MVC-Routing-Best-Practices.md)
-                    // ✅ CRITICAL FIX: استفاده از RouteUrl به جای Url.Action برای اطمینان از Route Resolution صحیح
-                    var selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { doctorId = Model.DoctorId });
+                    // ✅ CRITICAL FIX: استفاده از Url.Action با area برای اطمینان از Route Resolution صحیح
+                    // مشکل: Url.RouteUrl برای Area routes ممکن است area را در نظر نگیرد
+                    var selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
                     
-                    // ✅ Fallback 1: اگر RouteUrl null برگرداند، از Url.Action استفاده کن
+                    // ✅ Fallback 1: اگر Url.Action null برگرداند، از RouteUrl استفاده کن
                     if (string.IsNullOrEmpty(selectDateUrl))
                     {
-                        selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
+                        selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { area = "Patient", doctorId = Model.DoctorId });
                     }
                     
                     // ✅ Fallback 2: اگر هنوز null است، از route pattern مستقیم استفاده کن
@@ -85,8 +84,7 @@
                     <a href="@selectDateUrl" 
                        class="btn btn-primary w-100 select-doctor-btn" 
                        data-doctor-id="@Model.DoctorId"
-                       data-href="@selectDateUrl"
-                       onclick="console.log('🔍 [DoctorCard] Clicked - href:', '@selectDateUrl', 'doctorId:', '@Model.DoctorId'); console.log('🔍 [DoctorCard] Full URL:', window.location.origin + '@selectDateUrl'); return true;">
+                       data-href="@selectDateUrl">
                         <i class="fas fa-calendar-plus me-1"></i>
                         انتخاب پزشک
                     </a>

@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Core;
 using Microsoft.AspNet.Identity;
+using Microsoft.Owin.Security;
 using Serilog;
 
 namespace ClinicApp.Filters
@@ -21,7 +22,29 @@ namespace ClinicApp.Filters
         private static readonly ILogger _log = Log.ForContext<PatientRoleAuthorizationAttribute>();
 
         /// <summary>
+        /// ✅ CRITICAL FIX: Override OnAuthorization to support AllowAnonymous
+        /// این متد قبل از AuthorizeCore فراخوانی می‌شود و AllowAnonymous را check می‌کند
+        /// طبق: APPOINTMENT_BOOKING_AUTHORIZATION_FIX_PLAN.md
+        /// </summary>
+        public override void OnAuthorization(AuthorizationContext filterContext)
+        {
+            // ✅ Check for AllowAnonymous attribute on action or controller
+            // این باید قبل از AuthorizeCore check شود
+            if (filterContext.ActionDescriptor.IsDefined(typeof(AllowAnonymousAttribute), inherit: true) ||
+                filterContext.ActionDescriptor.ControllerDescriptor.IsDefined(typeof(AllowAnonymousAttribute), inherit: true))
+            {
+                var requestPath = filterContext.HttpContext?.Request?.Url?.PathAndQuery ?? "NULL";
+                _log.Debug("✅ [PatientRoleAuthorization] AllowAnonymous detected - skipping authorization for path: {Path}", requestPath);
+                return; // Skip authorization - AllowAnonymous takes precedence
+            }
+
+            // ✅ If no AllowAnonymous, proceed with normal authorization
+            base.OnAuthorization(filterContext);
+        }
+
+        /// <summary>
         /// بررسی احراز هویت و نقش Patient
+        /// ✅ CRITICAL FIX: استفاده از OWIN Context برای اطمینان از sync شدن authentication state
         /// </summary>
         protected override bool AuthorizeCore(HttpContextBase httpContext)
         {
@@ -31,20 +54,34 @@ namespace ClinicApp.Filters
                 var requestPath = httpContext.Request?.Url?.PathAndQuery ?? "NULL";
                 _log.Debug("🔍 [PatientRoleAuthorization] Checking authorization for path: {Path}", requestPath);
                 
-                // بررسی احراز هویت
-                if (httpContext?.User?.Identity == null || !httpContext.User.Identity.IsAuthenticated)
+                // ✅ CRITICAL FIX: استفاده از OWIN Context برای اطمینان از sync شدن authentication state
+                // OWIN middleware ممکن است authentication state را set کرده باشد اما HttpContext.User sync نشده باشد
+                var owinContext = httpContext.GetOwinContext();
+                var owinUser = owinContext?.Authentication?.User;
+                
+                // ✅ Check both HttpContext.User and OWIN User
+                var httpContextAuthenticated = httpContext?.User?.Identity != null && httpContext.User.Identity.IsAuthenticated;
+                var owinAuthenticated = owinUser?.Identity != null && owinUser.Identity.IsAuthenticated;
+                
+                if (!httpContextAuthenticated && !owinAuthenticated)
                 {
-                    _log.Debug("کاربر احراز هویت نشده است - دسترسی به بخش Patient رد شد - Path: {Path}", requestPath);
+                    _log.Debug("کاربر احراز هویت نشده است (HttpContext: {HttpAuth}, OWIN: {OwinAuth}) - دسترسی به بخش Patient رد شد - Path: {Path}", 
+                        httpContextAuthenticated, owinAuthenticated, requestPath);
                     return false;
                 }
 
-                // ✅ DEBUGGING: Log user details
-                var userId = httpContext.User.Identity.GetUserId();
-                var userName = httpContext.User.Identity.Name;
-                _log.Debug("🔍 [PatientRoleAuthorization] User authenticated - UserId: {UserId}, UserName: {UserName}", userId, userName);
+                // ✅ Use OWIN User if available (more reliable), otherwise use HttpContext.User
+                var identity = owinAuthenticated ? owinUser.Identity : httpContext.User.Identity;
+                var userId = identity.GetUserId();
+                var userName = identity.Name;
+                
+                _log.Debug("🔍 [PatientRoleAuthorization] User authenticated - UserId: {UserId}, UserName: {UserName}, Source: {Source}", 
+                    userId, userName, owinAuthenticated ? "OWIN" : "HttpContext");
 
-                // بررسی نقش Patient
-                var isPatient = httpContext.User.IsInRole(AppRoles.Patient);
+                // ✅ بررسی نقش Patient - استفاده از OWIN User اگر available باشد
+                var isPatient = owinAuthenticated 
+                    ? owinUser.IsInRole(AppRoles.Patient)
+                    : httpContext.User.IsInRole(AppRoles.Patient);
                 
                 if (!isPatient)
                 {
@@ -85,19 +122,27 @@ namespace ClinicApp.Filters
                 // ✅ تعریف returnUrl در ابتدای متد (برای استفاده در تمام scopeها)
                 var returnUrl = httpContext.Request.Url?.PathAndQuery;
                 
-                // اگر کاربر احراز هویت نشده است، به صفحه لاگین هدایت می‌شود
-                if (httpContext?.User?.Identity == null || !httpContext.User.Identity.IsAuthenticated)
+                // ✅ CRITICAL FIX: استفاده از OWIN Context برای اطمینان از sync شدن authentication state
+                // باید همان منطق AuthorizeCore را استفاده کنیم
+                var owinContext = httpContext.GetOwinContext();
+                var owinUser = owinContext?.Authentication?.User;
+                var httpContextAuthenticated = httpContext?.User?.Identity != null && httpContext.User.Identity.IsAuthenticated;
+                var owinAuthenticated = owinUser?.Identity != null && owinUser.Identity.IsAuthenticated;
+                
+                // اگر کاربر احراز هویت نشده است (نه در HttpContext و نه در OWIN)، به صفحه لاگین هدایت می‌شود
+                if (!httpContextAuthenticated && !owinAuthenticated)
                 {
-                    filterContext.Result = new RedirectToRouteResult(
-                        new System.Web.Routing.RouteValueDictionary
-                        {
-                            { "controller", "Account" },
-                            { "action", "Login" },
-                            { "area", "" },
-                            { "returnUrl", returnUrl }
-                        });
+                    // ✅ CRITICAL FIX: استفاده از RedirectResult با URL مستقیم برای اطمینان از route resolution صحیح
+                    var loginUrl = "/Account/Login";
+                    if (!string.IsNullOrEmpty(returnUrl))
+                    {
+                        loginUrl += "?returnUrl=" + HttpUtility.UrlEncode(returnUrl);
+                    }
                     
-                    _log.Debug("کاربر احراز هویت نشده - هدایت به صفحه لاگین با returnUrl: {ReturnUrl}", returnUrl);
+                    filterContext.Result = new RedirectResult(loginUrl);
+                    
+                    _log.Debug("کاربر احراز هویت نشده (HttpContext: {HttpAuth}, OWIN: {OwinAuth}) - هدایت به صفحه لاگین با returnUrl: {ReturnUrl}", 
+                        httpContextAuthenticated, owinAuthenticated, returnUrl);
                     return;
                 }
 
@@ -123,15 +168,15 @@ namespace ClinicApp.Filters
                     return;
                 }
 
-                // ✅ برای درخواست‌های عادی، به صفحه Login هدایت می‌شود (نه Home)
-                // این بهتر است چون کاربر ممکن است با نقش دیگری لاگین کرده باشد
+                // ✅ CRITICAL FIX: اگر کاربر authenticate شده اما نقش Patient ندارد،
+                // نباید به Login redirect کنیم (چون باعث redirect loop می‌شود)
+                // به جای آن، به Home redirect می‌کنیم با پیام خطا
                 filterContext.Result = new RedirectToRouteResult(
                     new System.Web.Routing.RouteValueDictionary
                     {
-                        { "controller", "Account" },
-                        { "action", "Login" },
-                        { "area", "" },
-                        { "returnUrl", returnUrl }
+                        { "controller", "Home" },
+                        { "action", "Index" },
+                        { "area", "" }
                     });
                 
                 // ✅ پیام خطا را در TempData قرار می‌دهیم
@@ -142,7 +187,7 @@ namespace ClinicApp.Filters
                 }
 
                 _log.Warning(
-                    "کاربر احراز هویت شده اما بدون نقش Patient - هدایت به صفحه Login. UserId: {UserId}, ReturnUrl: {ReturnUrl}",
+                    "کاربر احراز هویت شده اما بدون نقش Patient - هدایت به Home (جلوگیری از redirect loop). UserId: {UserId}, RequestedPath: {Path}",
                     httpContext.User.Identity.GetUserId(), returnUrl);
             }
             catch (Exception ex)

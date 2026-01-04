@@ -19,25 +19,36 @@ namespace ClinicApp.Areas.Patient
         public override void RegisterArea(AreaRegistrationContext context)
         {
             // ✅ BEST PRACTICE: Route خاص قبل از default route + UseNamespaceFallback = false
+            // ✅ CRITICAL FIX: اضافه کردن optional route parameter برای departmentId
+            // این route هم URL بدون پارامتر و هم با departmentId را می‌پذیرد
+            // مثال: /Patient/Appointment/Book/SelectDoctor و /Patient/Appointment/Book/SelectDoctor/2
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectDoctor",
-                url: "Patient/Appointment/Book/SelectDoctor",
-                defaults: new { controller = "AppointmentBooking", action = "SelectDoctor", area = "Patient" },
+                url: "Patient/Appointment/Book/SelectDoctor/{departmentId}",
+                defaults: new { controller = "AppointmentBooking", action = "SelectDoctor", area = "Patient", departmentId = UrlParameter.Optional },
+                constraints: new { departmentId = @"^\d*$" }, // ✅ فقط عدد (یا خالی برای optional)
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
 
             // ✅ BEST PRACTICE: Route خاص قبل از default route + UseNamespaceFallback = false
+            // ✅ CRITICAL FIX: اضافه کردن constraint برای doctorId تا فقط عدد باشد
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectDate",
                 url: "Patient/Appointment/Book/SelectDate/{doctorId}",
                 defaults: new { controller = "AppointmentBooking", action = "SelectDate", area = "Patient" },
+                constraints: new { doctorId = @"^\d+$" }, // ✅ فقط عدد مثبت
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
 
+            // ✅ CRITICAL FIX: اضافه کردن constraint برای doctorId و date
             context.MapRoute(
                 name: "Patient_AppointmentBooking_SelectTime",
                 url: "Patient/Appointment/Book/SelectTime/{doctorId}/{date}",
                 defaults: new { controller = "AppointmentBooking", action = "SelectTime", area = "Patient" },
+                constraints: new { 
+                    doctorId = @"^\d+$", // ✅ فقط عدد مثبت
+                    date = @"^\d{4}-\d{2}-\d{2}$" // ✅ فرمت تاریخ: YYYY-MM-DD
+                },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 

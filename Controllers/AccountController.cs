@@ -73,6 +73,21 @@ namespace ClinicApp.Controllers
         {
             if (_authService.IsAuthenticated)
             {
+                // ✅ CRITICAL FIX: جلوگیری از redirect loop
+                // اگر returnUrl مربوط به Patient Area است، باید چک کنیم که کاربر نقش Patient دارد
+                if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/Patient/", StringComparison.OrdinalIgnoreCase))
+                {
+                    // ✅ چک کردن نقش Patient - استفاده از AppRoles برای Strongly-Typed
+                    if (!User.IsInRole(AppRoles.Patient))
+                    {
+                        _log.Warning("⚠️ [Login] کاربر authenticate شده اما نقش Patient ندارد - redirect به Home. UserId: {UserId}, ReturnUrl: {ReturnUrl}", 
+                            User.Identity.GetUserId(), returnUrl);
+                        NotificationHelper.SetError(TempData, 
+                            "شما مجوز دسترسی به بخش بیمار را ندارید. لطفاً با حساب کاربری بیمار وارد شوید.");
+                        return RedirectToAction("Index", "Home", new { area = "" });
+                    }
+                }
+                
                 return RedirectToLocal(returnUrl);
             }
             ViewBag.ReturnUrl = returnUrl;
@@ -644,13 +659,50 @@ namespace ClinicApp.Controllers
 
         private string GetSafeRedirectUrl(string returnUrl)
         {
-            // If returnUrl is provided and local, use it
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            // ✅ CRITICAL FIX: پردازش صحیح returnUrl
+            // اگر returnUrl خالی است یا null، به Home redirect می‌کنیم
+            if (string.IsNullOrEmpty(returnUrl))
+            {
+                return Url.Action("Index", "Home", new { area = "" });
+            }
+
+            // ✅ Decode URL-encoded returnUrl (مثل http%3A%2F%2Flocalhost%3A3560%2F)
+            try
+            {
+                returnUrl = Uri.UnescapeDataString(returnUrl);
+            }
+            catch
+            {
+                // اگر decode ناموفق بود، از returnUrl اصلی استفاده می‌کنیم
+            }
+
+            // ✅ اگر returnUrl یک URL کامل است (مثل http://localhost:3560/)، path را استخراج می‌کنیم
+            if (Uri.TryCreate(returnUrl, UriKind.Absolute, out Uri absoluteUri))
+            {
+                // ✅ بررسی اینکه آیا URL مربوط به همین host است
+                var currentHost = Request.Url?.Host ?? "";
+                if (absoluteUri.Host.Equals(currentHost, StringComparison.OrdinalIgnoreCase) ||
+                    absoluteUri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                {
+                    // ✅ استفاده از PathAndQuery (مثل / یا /Patient/Appointment/Book/SelectDate/2)
+                    returnUrl = absoluteUri.PathAndQuery;
+                }
+                else
+                {
+                    // ✅ اگر URL مربوط به host دیگری است، به Home redirect می‌کنیم (امنیت)
+                    _log.Warning("⚠️ [GetSafeRedirectUrl] External URL detected - redirecting to Home. ReturnUrl: {ReturnUrl}", returnUrl);
+                    return Url.Action("Index", "Home", new { area = "" });
+                }
+            }
+
+            // ✅ بررسی اینکه returnUrl یک local URL است
+            if (Url.IsLocalUrl(returnUrl))
             {
                 return returnUrl;
             }
             
-            // Default: redirect to Home after login
+            // ✅ Default: redirect to Home after login
+            _log.Warning("⚠️ [GetSafeRedirectUrl] Invalid returnUrl - redirecting to Home. ReturnUrl: {ReturnUrl}", returnUrl);
             return Url.Action("Index", "Home", new { area = "" });
         }
 

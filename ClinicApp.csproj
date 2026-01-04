@@ -5005,6 +5005,11 @@
     <Content Include="Areas\Patient\Views\AppointmentBooking\_AuthDiagnostic.cshtml" />
     <Content Include="Contracts\CRITICAL_MODULE_SAFETY_CONTRACT.md" />
     <Content Include="Contracts\NEW_CONTRACT_SUMMARY.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_AUTHORIZATION_FIX_PLAN.md" />
+    <Content Include="Contracts\CONTRACTS_ENGINEERING_ANALYSIS.md" />
+    <Content Include="Contracts\AI_PREFLIGHT_KNOWLEDGE_BASE_INTEGRATION.md" />
+    <Content Include="Contracts\AI_PREFLIGHT_KNOWLEDGE_BASE_UPDATE_SUMMARY.md" />
+    <Content Include="Docs\SELECT_DOCTOR_MODULE_REVIEW.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

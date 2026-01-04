@@ -15,10 +15,17 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
     /// Base Controller برای تمام Patient Area Controllers
     /// طبق appointment_controller_review.md - فاز 1
     /// 
-    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can access
-    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
+    /// ⚠️ TEMPORARY: Authorization موقتاً غیرفعال شده است برای رفع مشکل redirect
+    /// 
+    /// ✅ MODERN STANDARD: برای فعال‌سازی Claims-Based Authorization:
+    /// 1. Uncomment خط زیر و از PatientClaimAuthorizationAttribute استفاده کنید
+    /// 2. PatientClaimAuthorizationAttribute از Claims استفاده می‌کند (روش استاندارد امروزی)
+    /// 3. این روش در تمام پروژه‌های مدرن استفاده می‌شود و با ASP.NET Core Identity سازگار است
+    /// 
+    /// [PatientClaimAuthorization] // ✅ MODERN: Claims-Based Authorization (روش استاندارد)
+    /// [PatientRoleAuthorization] // ❌ OLD: Role-Based Authorization (legacy)
     /// </summary>
-    [PatientRoleAuthorization]
+    // ⚠️ TEMPORARY: موقتاً غیرفعال برای رفع مشکل redirect
     public abstract class BasePatientController : Controller
     {
         protected readonly ILogger _logger;

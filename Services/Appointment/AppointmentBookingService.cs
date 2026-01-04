@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Data.Entity;
 using ClinicApp.Helpers;
@@ -29,8 +28,8 @@ namespace ClinicApp.Services.Appointment
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
-        private static readonly MemoryCache _cache = MemoryCache.Default;
-        private const int CACHE_EXPIRATION_MINUTES = 5; // 5 دقیقه
+        // ✅ CRITICAL: Cache حذف شد - در محیط درمانی، داده‌ها باید Real-time باشند
+        // این ماژول قرار است به صورت گسترده استفاده شود و نیاز به داده‌های به‌روز دارد
 
         public AppointmentBookingService(
             IAppointmentRepository appointmentRepository,
@@ -203,17 +202,7 @@ namespace ClinicApp.Services.Appointment
                 _logger.Information("جستجوی پزشکان - بخش: {DepartmentId}, عبارت: {SearchTerm}",
                     departmentId?.ToString() ?? "همه", searchTerm ?? "");
 
-                // بررسی Cache (فقط برای درخواست‌های بدون فیلتر)
-                if (!departmentId.HasValue && string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    var cacheKey = "AvailableDoctors_All";
-                    var cachedDoctors = _cache.Get(cacheKey) as List<DoctorSearchResultDto>;
-                    if (cachedDoctors != null)
-                    {
-                        _logger.Information("پزشکان از Cache دریافت شد - Count: {Count}", cachedDoctors.Count);
-                        return ServiceResult<List<DoctorSearchResultDto>>.Successful(cachedDoctors);
-                    }
-                }
+                // ✅ CRITICAL: Cache حذف شد - داده‌ها باید Real-time باشند
 
                 // استفاده از DoctorCrudService برای دریافت پزشکان
                 var filter = new ViewModels.DoctorManagementVM.DoctorSearchViewModel
@@ -331,17 +320,7 @@ namespace ClinicApp.Services.Appointment
                     doctorDtos.Add(dto);
                 }
 
-                // ذخیره در Cache (فقط برای درخواست‌های بدون فیلتر)
-                if (!departmentId.HasValue && string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    var cacheKey = "AvailableDoctors_All";
-                    var cachePolicy = new CacheItemPolicy
-                    {
-                        AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(CACHE_EXPIRATION_MINUTES)
-                    };
-                    _cache.Set(cacheKey, doctorDtos, cachePolicy);
-                    _logger.Information("پزشکان در Cache ذخیره شد - Count: {Count}", doctorDtos.Count);
-                }
+                // ✅ CRITICAL: Cache حذف شد - داده‌ها باید Real-time باشند
 
                 _logger.Information("یافت {Count} پزشک", doctorDtos.Count);
 
@@ -429,15 +408,7 @@ namespace ClinicApp.Services.Appointment
                 _logger.Information("دریافت اسلات‌های در دسترس - پزشک: {DoctorId}, تاریخ: {Date}",
                     doctorId, date.ToString("yyyy/MM/dd"));
 
-                // بررسی Cache
-                var cacheKey = $"AvailableTimeSlots_{doctorId}_{date:yyyyMMdd}";
-                var cachedSlots = _cache.Get(cacheKey) as List<AvailableTimeSlotDto>;
-                if (cachedSlots != null)
-                {
-                    _logger.Information("اسلات‌های زمانی از Cache دریافت شد - DoctorId: {DoctorId}, Date: {Date}, Count: {Count}",
-                        doctorId, date.ToString("yyyy/MM/dd"), cachedSlots.Count);
-                    return ServiceResult<List<AvailableTimeSlotDto>>.Successful(cachedSlots);
-                }
+                // ✅ CRITICAL: Cache حذف شد - داده‌ها باید Real-time باشند
 
                 // دریافت اسلات‌های در دسترس از DoctorScheduleRepository
                 _logger.Information("در حال دریافت اسلات‌های در دسترس از DoctorScheduleRepository - DoctorId: {DoctorId}, Date: {Date}",
@@ -470,14 +441,7 @@ namespace ClinicApp.Services.Appointment
                     };
                 }).ToList();
 
-                // ذخیره در Cache
-                var cachePolicy = new CacheItemPolicy
-                {
-                    AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(CACHE_EXPIRATION_MINUTES)
-                };
-                _cache.Set(cacheKey, slotDtos, cachePolicy);
-                _logger.Information("اسلات‌های زمانی در Cache ذخیره شد - DoctorId: {DoctorId}, Date: {Date}, Count: {Count}",
-                    doctorId, date.ToString("yyyy/MM/dd"), slotDtos.Count);
+                // ✅ CRITICAL: Cache حذف شد - داده‌ها باید Real-time باشند
 
                 _logger.Information("دریافت {Count} اسلات برای پزشک {DoctorId} در تاریخ {Date}",
                     slotDtos.Count, doctorId, date.ToString("yyyy/MM/dd"));
@@ -588,11 +552,7 @@ namespace ClinicApp.Services.Appointment
 
                 var createdAppointment = await _appointmentRepository.CreateAppointmentAsync(appointment);
 
-                // پاک کردن Cache مربوط به اسلات‌های زمانی این پزشک و تاریخ
-                var cacheKey = $"AvailableTimeSlots_{request.DoctorId}_{request.AppointmentDate:yyyyMMdd}";
-                _cache.Remove(cacheKey);
-                _logger.Information("Cache اسلات‌های زمانی پاک شد - DoctorId: {DoctorId}, Date: {Date}",
-                    request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"));
+                // ✅ CRITICAL: Cache حذف شد - نیازی به پاک کردن Cache نیست
 
                 _logger.Information("نوبت {AppointmentId} با موفقیت رزرو شد - پزشک: {DoctorId}, بیمار: {PatientId}",
                     createdAppointment.AppointmentId, request.DoctorId, request.PatientId);
