@@ -54,8 +54,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// لیست روزهای کاری هفتگی پزشک
         /// </summary>
-        [Required(ErrorMessage = "حداقل یک روز کاری باید تعیین شود.")]
         public List<WorkDayViewModel> WorkDays { get; set; } = new List<WorkDayViewModel>();
+
+        /// <summary>
+        /// لیست تاریخ‌های خاص برای تنظیم برنامه (نه هفتگی)
+        /// </summary>
+        public List<SpecificDateViewModel> SpecificDates { get; set; } = new List<SpecificDateViewModel>();
 
         /// <summary>
         /// مدت زمان هر نوبت (به دقیقه)
@@ -638,11 +642,16 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .WithMessage("مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")
                 .WithErrorCode("INVALID_APPOINTMENT_DURATION");
 
-            // اعتبارسنجی WorkDays (اصلی)
-            RuleFor(x => x.WorkDays)
-                .NotEmpty()
-                .WithMessage("حداقل یک روز کاری باید تعیین شود.")
-                .WithErrorCode("NO_WORK_DAYS");
+            // ✅ اعتبارسنجی WorkDays (اصلی) - فقط اگر تاریخ خاصی وجود نداشته باشد
+            // ✅ اگر تاریخ خاصی وجود دارد، نیازی به WorkDays نیست
+            RuleFor(x => x)
+                .Must(model => 
+                    (model.WorkDays != null && model.WorkDays.Any()) ||
+                    (model.SpecificDates != null && model.SpecificDates.Any(sd => !string.IsNullOrWhiteSpace(sd.PersianDate)))
+                )
+                .WithMessage("حداقل یک روز کاری هفتگی باید تعیین شود یا یک تاریخ خاص اضافه شود.")
+                .WithErrorCode("NO_WORK_DAYS_OR_SPECIFIC_DATES")
+                .OverridePropertyName("WorkDays");
 
             // اعتبارسنجی تعداد روزهای کاری
             RuleFor(x => x.WorkDays)
@@ -656,11 +665,16 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .WithMessage("روزهای کاری تکراری مجاز نیست.")
                 .WithErrorCode("DUPLICATE_WORK_DAYS");
 
-            // اعتبارسنجی WorkDays فعال
-            RuleFor(x => x.WorkDays)
-                .Must(workDays => workDays == null || workDays.Any(w => w.IsActive))
-                .WithMessage("حداقل یک روز کاری باید فعال باشد.")
-                .WithErrorCode("NO_ACTIVE_WORK_DAYS");
+            // ✅ اعتبارسنجی WorkDays فعال یا تاریخ‌های خاص
+            // ✅ اگر تاریخ خاصی وجود دارد، نیازی به WorkDay فعال نیست
+            RuleFor(x => x)
+                .Must(model => 
+                    (model.WorkDays != null && model.WorkDays.Any(w => w.IsActive)) ||
+                    (model.SpecificDates != null && model.SpecificDates.Any(sd => !string.IsNullOrWhiteSpace(sd.PersianDate)))
+                )
+                .WithMessage("حداقل یک روز کاری هفتگی باید فعال باشد یا یک تاریخ خاص تعیین شود.")
+                .WithErrorCode("NO_ACTIVE_WORK_DAYS_OR_SPECIFIC_DATES")
+                .OverridePropertyName("WorkDays");
 
             // اعتبارسنجی جزئیات WorkDays
             When(x => x.WorkDays != null && x.WorkDays.Any(), () =>
@@ -1026,5 +1040,33 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// نام بخش
         /// </summary>
         public string DepartmentName { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای تاریخ‌های خاص (نه هفتگی)
+    /// </summary>
+    public class SpecificDateViewModel
+    {
+        /// <summary>
+        /// تاریخ شمسی (مثلاً: 1404/10/17)
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ الزامی است.")]
+        public string PersianDate { get; set; }
+
+        /// <summary>
+        /// زمان شروع
+        /// </summary>
+        public TimeSpan StartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان
+        /// </summary>
+        public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// مدت زمان هر نوبت (به دقیقه)
+        /// </summary>
+        [Range(5, 120, ErrorMessage = "مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")]
+        public int AppointmentDuration { get; set; } = 30;
     }
 }

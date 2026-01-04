@@ -1092,6 +1092,26 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     return new List<DoctorTimeSlot>(); // در تعطیلات رسمی هیچ اسلاتی در دسترس نیست
                 }
 
+                // ✅ بررسی ScheduleExceptions (تعطیلات، مرخصی، و غیره)
+                var doctorSchedule = await _context.DoctorSchedules
+                    .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted && ds.IsActive)
+                    .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
+                    .FirstOrDefaultAsync();
+
+                if (doctorSchedule == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ برنامه کاری فعالی برای پزشک {doctorId} یافت نشد");
+                    return new List<DoctorTimeSlot>();
+                }
+
+                var hasScheduleException = await HasScheduleExceptionAsync(doctorSchedule.ScheduleId, date);
+                if (hasScheduleException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ ScheduleException برای تاریخ {date:yyyy/MM/dd} یافت شد");
+                    return new List<DoctorTimeSlot>();
+                }
+
                 // ✅ خواندن اسلات‌های موجود از دیتابیس (به جای محاسبه)
                 var existingSlots = await _context.DoctorTimeSlots
                     .Where(ts => ts.DoctorId == doctorId &&
@@ -1103,18 +1123,95 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {existingSlots.Count} اسلات از دیتابیس خوانده شد");
 
-                // ✅ بررسی ScheduleExceptions (تعطیلات، مرخصی، و غیره)
-                var doctorSchedule = await _context.DoctorSchedules
-                    .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted && ds.IsActive)
-                    .FirstOrDefaultAsync();
-
-                if (doctorSchedule != null)
+                // ✅ CRITICAL FIX: اگر هیچ اسلاتی در دیتابیس وجود ندارد، از Schedule تولید می‌کنیم
+                if (!existingSlots.Any())
                 {
-                    var hasScheduleException = await HasScheduleExceptionAsync(doctorSchedule.ScheduleId, date);
-                    if (hasScheduleException)
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ هیچ اسلاتی در دیتابیس یافت نشد - تولید از Schedule...");
+                    
+                    // ✅ اطمینان از بارگذاری TimeRanges
+                    if (doctorSchedule.WorkDays != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ ScheduleException برای تاریخ {date:yyyy/MM/dd} یافت شد");
-                        return new List<DoctorTimeSlot>();
+                        foreach (var workDay in doctorSchedule.WorkDays)
+                        {
+                            if (workDay != null && workDay.TimeRanges == null)
+                            {
+                                await _context.Entry(workDay)
+                                    .Collection(wd => wd.TimeRanges)
+                                    .LoadAsync();
+                            }
+                        }
+                    }
+
+                    // ✅ تولید اسلات‌ها از Schedule
+                    // ✅ CRITICAL FIX: تبدیل C# DayOfWeek به دیتابیس DayOfWeek
+                    // در C#: Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6
+                    // در دیتابیس: یکشنبه=0, دوشنبه=1, سه‌شنبه=2, چهارشنبه=3, پنج‌شنبه=4, جمعه=5, شنبه=6
+                    // تبدیل: Sunday(0) → یکشنبه(0), Monday(1) → دوشنبه(1), ..., Saturday(6) → شنبه(6)
+                    // پس: dayOfWeek در C# = dayOfWeek در دیتابیس (بدون تبدیل)
+                    var cSharpDayOfWeek = (int)date.DayOfWeek;
+                    var dbDayOfWeek = cSharpDayOfWeek; // ✅ بدون تبدیل - یکسان هستند
+                    
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] 📅 تاریخ: {date:yyyy/MM/dd}, CSharpDayOfWeek: {cSharpDayOfWeek} ({(DayOfWeek)cSharpDayOfWeek}), DbDayOfWeek: {dbDayOfWeek}");
+                    
+                    var workDays = doctorSchedule.WorkDays?
+                        .Where(wd => wd != null && wd.DayOfWeek == dbDayOfWeek && wd.IsActive && !wd.IsDeleted)
+                        .ToList() ?? new List<DoctorWorkDay>();
+                    
+                    System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {workDays.Count} WorkDay برای DayOfWeek {dbDayOfWeek} یافت شد");
+
+                    if (workDays.Any())
+                    {
+                        // ✅ دریافت ScheduleExceptions و booked appointments برای تولید اسلات
+                        var allScheduleExceptions = await _context.ScheduleExceptions
+                            .Where(se => se.ScheduleId == doctorSchedule.ScheduleId &&
+                                        DbFunctions.TruncateTime(se.StartDate) <= DbFunctions.TruncateTime(date) &&
+                                        (se.EndDate == null || DbFunctions.TruncateTime(se.EndDate.Value) >= DbFunctions.TruncateTime(date)) &&
+                                        se.IsActive && !se.IsDeleted)
+                            .ToListAsync();
+
+                        var bookedAppointmentsInRange = await _context.Appointments
+                            .Where(a => a.DoctorId == doctorId &&
+                                       DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
+                                       a.Status != AppointmentStatus.Cancelled &&
+                                       !a.IsDeleted)
+                            .ToListAsync();
+
+                        // ✅ تولید اسلات‌ها
+                        var generatedSlots = await GenerateSlotsForDateAsync(
+                            date,
+                            workDays,
+                            doctorSchedule,
+                            doctorSchedule.ScheduleId,
+                            doctorId,
+                            allScheduleExceptions,
+                            new List<DoctorTimeSlot>(), // existingSlotsInRange (خالی است)
+                            bookedAppointmentsInRange);
+
+                        System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {generatedSlots.Count} اسلات از Schedule تولید شد");
+
+                        // ✅ ذخیره اسلات‌ها در دیتابیس (فقط برای این تاریخ)
+                        if (generatedSlots.Any())
+                        {
+                            try
+                            {
+                                _context.DoctorTimeSlots.AddRange(generatedSlots);
+                                await _context.SaveChangesAsync();
+                                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {generatedSlots.Count} اسلات در دیتابیس ذخیره شد");
+                                
+                                // ✅ استفاده از اسلات‌های تولید شده
+                                existingSlots = generatedSlots;
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ خطا در ذخیره اسلات‌ها: {ex.Message}");
+                                // ✅ در صورت خطا، از اسلات‌های تولید شده استفاده می‌کنیم (بدون ذخیره)
+                                existingSlots = generatedSlots;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ هیچ WorkDay فعالی برای DayOfWeek {dbDayOfWeek} یافت نشد");
                     }
                 }
 
@@ -1156,16 +1253,21 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
-        /// تولید و ذخیره اسلات‌های زمانی در دیتابیس برای یک بازه زمانی مشخص
+        /// تولید و ذخیره اسلات‌های زمانی در دیتابیس برای یک تاریخ خاص
         /// این متد هنگام ایجاد یا به‌روزرسانی برنامه کاری فراخوانی می‌شود
         /// 
-        /// ✅ منطق جدید: به صورت پیش‌فرض فقط برای همان روز خاص (روزی که برنامه ایجاد می‌شود) اسلات تولید می‌شود
-        /// اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
+        /// ✅ منطق: برنامه هفتگی است و منشی برای تاریخ‌های خاص برنامه تنظیم می‌کند
+        /// - منشی می‌تواند برای هفته آینده یا تاریخ‌های خاص (مثلاً 25-26) برنامه تنظیم کند
+        /// - اسلات‌ها فقط برای همان تاریخ خاص تولید می‌شوند (نه برای چند هفته آینده)
+        /// - اگر targetDate مشخص نشده باشد، اولین روز کاری آینده (در 7 روز آینده) استفاده می‌شود
+        /// 
+        /// ✅ رعایت تقویم شمسی: شنبه = اولین روز هفته (مطابق time.ir)
+        /// ✅ On-Demand Generation: برای تاریخ‌های دیگر، اسلات‌ها در `GetAvailableAppointmentSlotsAsync` تولید می‌شوند
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="scheduleId">شناسه برنامه کاری</param>
-        /// <param name="daysAhead">تعداد روزهای آینده برای تولید اسلات (پیش‌فرض: 1 - فقط همان روز خاص)</param>
-        public async Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 1)
+        /// <param name="targetDate">تاریخ هدف برای تولید اسلات (null = اولین روز کاری آینده)</param>
+        public async Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, DateTime? targetDate = null)
         {
             // ✅ Transaction Management: بررسی اینکه آیا از قبل یک transaction وجود دارد یا نه
             // ✅ اگر از داخل یک transaction فراخوانی شده باشد (مثل AddDoctorScheduleAsync)، از همان استفاده می‌کنیم
@@ -1186,7 +1288,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🔍 شروع - DoctorId: {doctorId}, ScheduleId: {scheduleId}, DaysAhead: {daysAhead}");
+                System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🔍 شروع - DoctorId: {doctorId}, ScheduleId: {scheduleId}, TargetDate: {targetDate?.ToString("yyyy/MM/dd") ?? "null (اولین روز کاری)"}");
 
                 // دریافت برنامه کاری با جزئیات
                 // ✅ حذف شرط ds.IsActive از query برای اجازه تولید اسلات حتی اگر IsActive = false باشد
@@ -1255,19 +1357,25 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ برنامه کاری یافت شد - WorkDaysCount: {doctorSchedule.WorkDays?.Count(wd => wd.IsActive && !wd.IsDeleted) ?? 0}");
 
-                // ✅ منطق جدید: پیدا کردن اولین روز کاری برای تولید اسلات
-                // ✅ اگر امروز روز کاری است، برای امروز اسلات تولید می‌شود
-                // ✅ اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
-                var targetDate = await FindFirstWorkDayForScheduleAsync(doctorSchedule, DateTime.Today);
+                // ✅ منطق: اگر targetDate مشخص شده باشد، از آن استفاده می‌کنیم (منشی تاریخ خاص را انتخاب کرده)
+                // ✅ در غیر این صورت، اولین روز کاری آینده را پیدا می‌کنیم
+                DateTime? dateToGenerate = targetDate;
                 
-                if (targetDate == null)
+                if (!dateToGenerate.HasValue)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ روز کاری فعالی در 7 روز آینده یافت نشد - اسلات تولید نمی‌شود");
-                    return;
+                    // ✅ پیدا کردن اولین روز کاری برای تولید اسلات
+                    // ✅ اگر امروز روز کاری است، برای امروز اسلات تولید می‌شود
+                    // ✅ اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
+                    dateToGenerate = await FindFirstWorkDayForScheduleAsync(doctorSchedule, DateTime.Today);
+                    
+                    if (!dateToGenerate.HasValue)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ روز کاری فعالی در 7 روز آینده یافت نشد - اسلات تولید نمی‌شود");
+                        return;
+                    }
                 }
 
-                var startDate = targetDate.Value;
-                var endDate = startDate.AddDays(daysAhead);
+                var startDate = dateToGenerate.Value.Date; // ✅ فقط بخش تاریخ (بدون زمان)
                 var generatedSlots = new List<DoctorTimeSlot>();
 
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 📅 تولید اسلات‌ها برای تاریخ {startDate:yyyy/MM/dd} (روز کاری: {(DayOfWeek)startDate.DayOfWeek})");

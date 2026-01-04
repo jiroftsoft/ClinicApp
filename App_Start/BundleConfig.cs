@@ -34,21 +34,21 @@ namespace ClinicApp
                       ));
             // --- CSS Bundle ---
             bundles.Add(new StyleBundle("~/Content/plugins/css").Include(
-                "~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css",
-                "~/Content/plugins/datatables/css/responsive.bootstrap4.min.css",
-                "~/Content/plugins/select2/css/select2.min.css",
-                "~/Content/plugins/SweetAlert2/sweetalert2.min.css"
+                "~/Content/js/plugins/DataTables/css/dataTables.bootstrap4.min.css",
+                "~/Content/js/plugins/DataTables/css/responsive.bootstrap4.min.css",
+                "~/Content/js/plugins/select2/css/select2.min.css",
+                "~/Content/js/plugins/SweetAlert2/sweetalert2.min.css"
             ));
 
             // --- JS Bundle ---
             bundles.Add(new ScriptBundle("~/bundles/plugins").Include(
-                "~/Content/plugins/datatables/js/jquery.dataTables.min.js",
-                "~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js",
-                "~/Content/plugins/datatables/js/dataTables.responsive.min.js",
-                "~/Content/plugins/datatables/js/responsive.bootstrap4.min.js",
-                "~/Content/plugins/select2/js/select2.full.min.js",
-                "~/Content/plugins/select2/js/fa.min.js",
-                "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
+                "~/Content/js/plugins/DataTables/js/jquery.dataTables.min.js",
+                "~/Content/js/plugins/DataTables/js/dataTables.bootstrap4.min.js",
+                "~/Content/js/plugins/DataTables/js/dataTables.responsive.min.js",
+                "~/Content/js/plugins/DataTables/js/responsive.bootstrap4.min.js",
+                "~/Content/js/plugins/select2/js/select2.full.min.js",
+                "~/Content/js/plugins/select2/js/fa.min.js",
+                "~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"
             ));
 
             // Reception Module CSS Bundle

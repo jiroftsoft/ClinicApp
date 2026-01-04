@@ -70,7 +70,17 @@ public interface IDoctorScheduleRepository
     /// <param name="doctorId">شناسه پزشک</param>
     /// <param name="scheduleId">شناسه برنامه کاری</param>
     /// <param name="daysAhead">تعداد روزهای آینده برای تولید اسلات (پیش‌فرض: 90 روز)</param>
-    Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90);
+    /// <summary>
+    /// تولید و ذخیره اسلات‌های زمانی برای یک پزشک در دیتابیس
+    /// 
+    /// ✅ منطق: برنامه هفتگی است و منشی برای تاریخ‌های خاص برنامه تنظیم می‌کند
+    /// - منشی می‌تواند برای هفته آینده یا تاریخ‌های خاص (مثلاً 25-26) برنامه تنظیم کند
+    /// - اسلات‌ها فقط برای همان تاریخ خاص تولید می‌شوند (نه برای چند هفته آینده)
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <param name="targetDate">تاریخ هدف برای تولید اسلات (null = اولین روز کاری آینده)</param>
+    Task GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, DateTime? targetDate = null);
 
     /// <summary>
     /// مسدود کردن یک بازه زمانی برای پزشک (مثلا برای مرخصی یا جلسه)

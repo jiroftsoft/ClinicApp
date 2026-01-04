@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using ClinicApp.Core;
+using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -738,13 +739,20 @@ namespace ClinicApp.Services.ClinicAdmin
 
         /// <summary>
         /// تولید و ذخیره اسلات‌های زمانی برای یک پزشک در دیتابیس
+        /// 
+        /// ✅ منطق: برنامه هفتگی است و منشی برای تاریخ‌های خاص برنامه تنظیم می‌کند
+        /// - منشی می‌تواند برای هفته آینده یا تاریخ‌های خاص (مثلاً 25-26) برنامه تنظیم کند
+        /// - اسلات‌ها فقط برای همان تاریخ خاص تولید می‌شوند (نه برای چند هفته آینده)
         /// </summary>
-        public async Task<ServiceResult> GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, int daysAhead = 90)
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <param name="scheduleId">شناسه برنامه کاری</param>
+        /// <param name="targetDate">تاریخ هدف برای تولید اسلات (null = اولین روز کاری آینده)</param>
+        public async Task<ServiceResult> GenerateAndSaveTimeSlotsAsync(int doctorId, int scheduleId, DateTime? targetDate = null)
         {
             try
             {
-                _logger.Information("درخواست تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, DaysAhead: {DaysAhead}",
-                    doctorId, scheduleId, daysAhead);
+                _logger.Information("درخواست تولید اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, TargetDate: {TargetDate}",
+                    doctorId, scheduleId, targetDate?.ToString("yyyy/MM/dd") ?? "null (اولین روز کاری)");
 
                 if (doctorId <= 0 || scheduleId <= 0)
                 {
@@ -760,7 +768,7 @@ namespace ClinicApp.Services.ClinicAdmin
                 }
 
                 // تولید و ذخیره اسلات‌های زمانی
-                await _doctorScheduleRepository.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, daysAhead);
+                await _doctorScheduleRepository.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, targetDate);
 
                 _logger.Information("اسلات‌های زمانی با موفقیت تولید شدند - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}",
                     doctorId, scheduleId);

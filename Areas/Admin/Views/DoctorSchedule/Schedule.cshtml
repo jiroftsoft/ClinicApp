@@ -6,9 +6,9 @@
 }
 
 @section Styles {
-    <link href="~/Content/plugins/DataTables/js/dataTables.bootstrap5.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/DataTables/js/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی برای رفع خطای CSP -->
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
@@ -840,16 +840,23 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/DataTables/js/jquery.dataTables.min.js"></script>
-    <script src="~/Content/plugins/DataTables/js/dataTables.bootstrap5.min.js"></script>
-    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
-    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
-    <script src="~/Content/plugins/FullCalendar/index.global.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script src="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/js/plugins/FullCalendar/index.global.min.js"></script>
 
     <script>
         // ✅ Error Handling - ضد گلوله
         $(document).ready(function() {
             try {
+                // ✅ بررسی اینکه FullCalendar لود شده است
+                if (typeof FullCalendar === 'undefined') {
+                    console.error('FullCalendar لود نشده است. لطفاً صفحه را رفرش کنید.');
+                    showError('خطا در بارگذاری تقویم. لطفاً صفحه را رفرش کنید.');
+                    return;
+                }
+                
                 // Initialize FullCalendar
                 initializeCalendar();
             } catch (error) {
@@ -946,6 +953,13 @@
         // ✅ Initialize Calendar - با Error Handling
         function initializeCalendar() {
             try {
+                // ✅ بررسی اینکه FullCalendar لود شده است
+                if (typeof FullCalendar === 'undefined') {
+                    console.error('FullCalendar لود نشده است');
+                    showError('خطا در بارگذاری تقویم. لطفاً صفحه را رفرش کنید.');
+                    return;
+                }
+                
                 var calendarEl = document.getElementById('scheduleCalendar');
                 if (!calendarEl) {
                     console.error('عنصر تقویم یافت نشد');

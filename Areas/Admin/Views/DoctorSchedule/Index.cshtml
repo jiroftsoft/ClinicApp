@@ -15,11 +15,11 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
-    <link href="~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/datatables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/DataTables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/DataTables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی برای رفع خطای CSP -->
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
@@ -1034,12 +1034,12 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js"></script>
-    <script src="~/Content/plugins/datatables/js/dataTables.responsive.min.js"></script>
-    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
-    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
-    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script src="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/js/plugins/select2/js/select2.full.min.js"></script>
 
     <script>
         $(document).ready(function () {
@@ -1056,7 +1056,7 @@
                     var table = $table.DataTable({
                         responsive: true,
                         language: {
-                            url: '/Content/plugins/datatables/js/fa.json',
+                            url: '/Content/js/plugins/DataTables/js/fa.json',
                             emptyTable: 'هیچ برنامه کاری یافت نشد',
                             loadingRecords: 'در حال بارگذاری...',
                             processing: 'در حال پردازش...',

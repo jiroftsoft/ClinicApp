@@ -5,8 +5,8 @@
 }
 
 @section Styles {
-    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <!-- ✅ فونت‌های رسمی درمانی - استفاده از فونت‌های محلی -->
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <style>
@@ -160,6 +160,28 @@
         .work-day-card.active:hover {
             border-color: var(--medical-primary-light);
             box-shadow: 0 6px 16px rgba(44, 90, 160, 0.2);
+        }
+
+        /* ✅ Highlight برای روز امروز */
+        .work-day-card.today-highlight {
+            border-color: var(--medical-warning);
+            background: #fff3cd;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+        }
+
+        .work-day-card.today-highlight:hover {
+            border-color: #ffb300;
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .work-day-card.today-highlight.active {
+            border-color: var(--medical-success);
+            background: #d4edda;
+        }
+
+        .work-day-card.today-highlight.active:hover {
+            border-color: #28a745;
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.25);
         }
 
         /* ✅ Time Range Item */
@@ -513,6 +535,43 @@
 
                     <!-- Work Days -->
                     <div class="form-section">
+                        <!-- ✅ راهنمایی کامل برای منشی -->
+                        <div class="alert alert-info border-info mb-4" style="border-right: 5px solid #17a2b8; background-color: #d1ecf1;">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-info-circle fa-2x text-info me-3 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="alert-heading fw-bold mb-2" style="color: #0c5460;">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        راهنمای تنظیم برنامه کاری
+                                    </h6>
+                                    <div style="color: #0c5460; line-height: 1.8;">
+                                        <p class="mb-2">
+                                            <strong>📅 امروز:</strong> 
+                                            <span class="badge bg-info text-white fs-6 me-2">@ViewBag.TodayDayOfWeekName</span>
+                                            <span class="badge bg-primary text-white fs-6">@ViewBag.TodayPersianDate</span>
+                                        </p>
+                                        <hr class="my-2" style="border-color: #17a2b8;">
+                                        <p class="mb-2 fw-bold">📋 دو روش تنظیم برنامه:</p>
+                                        <ol class="mb-2 ps-3" style="list-style-type: decimal;">
+                                            <li class="mb-2">
+                                                <strong>برنامه هفتگی:</strong> برای تنظیم برنامه <strong>فقط برای هفته جاری</strong> (7 روز آینده)
+                                                <br>
+                                                <small class="text-muted">مثال: اگر "شنبه" را فعال کنید، پزشک فقط در <strong>شنبه این هفته</strong> (1404/10/13) نوبت خواهد داشت. برای شنبه‌های هفته‌های آینده از بخش "تاریخ‌های خاص" استفاده کنید.</small>
+                                            </li>
+                                            <li class="mb-2">
+                                                <strong>تاریخ خاص:</strong> برای تنظیم برنامه برای <strong>هفته‌های آینده</strong> یا <strong>تاریخ‌های خاص</strong>
+                                                <br>
+                                                <small class="text-muted">مثال: اگر می‌خواهید برای چهارشنبه هفته آینده (1404/10/24) یا هر تاریخ دیگری در آینده برنامه تنظیم کنید، از این بخش استفاده کنید.</small>
+                                            </li>
+                                        </ol>
+                                        <p class="mb-0 fw-bold text-success">
+                                            ✅ <strong>نکته:</strong> کنار هر روز هفته، تاریخ آن روز در هفته جاری نمایش داده شده است تا اشتباه نکنید.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0">
                                 <i class="fas fa-calendar-week me-2"></i>
@@ -527,13 +586,33 @@
                             @for (int i = 0; i < Model.WorkDays.Count; i++)
                             {
                                 var workDay = Model.WorkDays[i];
+                                // ✅ محاسبه اینکه آیا این روز امروز است یا نه
+                                var isToday = ViewBag.Today != null && (int)((DateTime)ViewBag.Today).DayOfWeek == workDay.DayOfWeek;
+                                // ✅ دریافت تاریخ این روز در هفته جاری
+                                var weekDates = ViewBag.WeekDates as Dictionary<int, string>;
+                                var dayDate = weekDates != null && weekDates.ContainsKey(workDay.DayOfWeek) 
+                                    ? weekDates[workDay.DayOfWeek] 
+                                    : "";
                                 <div class="col-md-6 mb-3">
-                                    <div class="work-day-card p-3 @(workDay.IsActive ? "active" : "")" id="workDay-@i">
+                                    <div class="work-day-card p-3 @(workDay.IsActive ? "active" : "") @(isToday ? "today-highlight" : "")" id="workDay-@i">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div class="form-check">
                                                 @Html.CheckBoxFor(m => m.WorkDays[i].IsActive, new { @class = "form-check-input work-day-toggle", data_day = i })
                                                 <label class="form-check-label fw-bold" for="@Html.IdFor(m => m.WorkDays[i].IsActive)">
                                                     @workDay.DayName
+                                                    @if (!string.IsNullOrEmpty(dayDate))
+                                                    {
+                                                        <span class="badge bg-secondary ms-2" style="font-size: 0.75rem; font-weight: normal;">
+                                                            @dayDate
+                                                        </span>
+                                                    }
+                                                    @if (isToday)
+                                                    {
+                                                        <span class="badge bg-success ms-2" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-calendar-check me-1"></i>
+                                                            امروز
+                                                        </span>
+                                                    }
                                                 </label>
                                             </div>
                                             <button type="button" class="btn btn-sm btn-outline-primary add-time-range" data-day="@i">
@@ -589,6 +668,52 @@
                         </div>
                     </div>
 
+                    <!-- Specific Dates Section -->
+                    <div class="form-section">
+                        <div class="alert alert-success border-success mb-4" style="border-right: 5px solid #28a745; background-color: #d4edda;">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-calendar-day fa-2x text-success me-3 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="alert-heading fw-bold mb-2" style="color: #155724;">
+                                        <i class="fas fa-calendar-alt me-2"></i>
+                                        تنظیم برنامه برای تاریخ‌های خاص
+                                    </h6>
+                                    <div style="color: #155724; line-height: 1.8;">
+                                        <p class="mb-2">
+                                            <strong>📅 استفاده از این بخش:</strong> برای تنظیم برنامه برای <strong>هفته‌های آینده</strong> یا <strong>تاریخ‌های خاص</strong> (مثلاً چهارشنبه 1404/10/24) از این بخش استفاده کنید.
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>💡 مثال:</strong> اگر می‌خواهید برای <strong>چهارشنبه هفته آینده (1404/10/24)</strong> یا هر تاریخ دیگری در آینده برنامه تنظیم کنید، تاریخ را در این بخش انتخاب کنید.
+                                        </p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>نکته:</strong> این برنامه فقط برای همان تاریخ خاص اعمال می‌شود و برای هفته‌های آینده تکرار نمی‌شود.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-day me-2"></i>
+                                تاریخ‌های خاص
+                            </h5>
+                            <button type="button" class="btn btn-sm btn-success add-specific-date" id="addSpecificDateBtn">
+                                <i class="fas fa-plus me-1"></i>
+                                افزودن تاریخ
+                            </button>
+                        </div>
+
+                        <div id="specificDatesContainer">
+                            <!-- ✅ تاریخ‌های خاص به صورت داینامیک اضافه می‌شوند -->
+                            <div class="alert alert-light border mb-3" id="noSpecificDatesMessage">
+                                <i class="fas fa-info-circle me-2"></i>
+                                هنوز تاریخی اضافه نشده است. برای افزودن تاریخ خاص، روی دکمه "افزودن تاریخ" کلیک کنید.
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Submit Buttons -->
                     <div class="form-section">
                         <div class="row">
@@ -613,7 +738,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script>
         // ✅ Helper Functions برای تبدیل ساعت به فارسی
         function formatTimeToPersian(timeString) {
@@ -804,6 +929,133 @@
                 setTimeout(function() {
                     $item.remove();
                 }, 300);
+            });
+
+            // ✅ Add specific date functionality
+            var specificDateIndex = 0;
+            $('#addSpecificDateBtn').on('click', function() {
+                var container = $('#specificDatesContainer');
+                var noMessage = $('#noSpecificDatesMessage');
+                
+                if (noMessage.length > 0) {
+                    noMessage.remove();
+                }
+                
+                var defaultStartTime = $('#defaultStartTime').val() || '07:00';
+                var defaultEndTime = $('#defaultEndTime').val() || '17:00';
+                var appointmentDuration = @Model.AppointmentDuration;
+                
+                var specificDateHtml = `
+                    <div class="specific-date-card p-3 mb-3 border rounded" data-index="${specificDateIndex}" style="background: #f8f9fa; border-color: #28a745 !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fas fa-calendar-day me-2 text-success"></i>
+                                تاریخ خاص #${specificDateIndex + 1}
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-specific-date" data-index="${specificDateIndex}">
+                                <i class="fas fa-trash me-1"></i>
+                                حذف
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">تاریخ <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control persian-date-input" 
+                                       name="SpecificDates[${specificDateIndex}].PersianDate" 
+                                       placeholder="مثال: 1404/10/17" 
+                                       required 
+                                       data-index="${specificDateIndex}" 
+                                       autocomplete="off" />
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    تاریخ را به صورت شمسی وارد کنید (مثلاً: 1404/10/17)
+                                </small>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">زمان شروع</label>
+                                <input type="time" class="form-control time-input" 
+                                       name="SpecificDates[${specificDateIndex}].StartTime" 
+                                       value="${defaultStartTime}" />
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">زمان پایان</label>
+                                <input type="time" class="form-control time-input" 
+                                       name="SpecificDates[${specificDateIndex}].EndTime" 
+                                       value="${defaultEndTime}" />
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold">مدت نوبت (دقیقه)</label>
+                                <input type="number" class="form-control" 
+                                       name="SpecificDates[${specificDateIndex}].AppointmentDuration" 
+                                       value="${appointmentDuration}" 
+                                       min="5" max="120" />
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                var $newItem = $(specificDateHtml);
+                container.append($newItem);
+                
+                // ✅ Initialize Persian DatePicker for the new input
+                setTimeout(function() {
+                    if (typeof $ !== 'undefined' && typeof $.fn.pDatepicker !== 'undefined') {
+                        $newItem.find('.persian-date-input').each(function() {
+                            var $input = $(this);
+                            $input.pDatepicker({
+                                initialValue: false,
+                                calendarType: 'persian',
+                                format: 'YYYY/MM/DD',
+                                altField: $input,
+                                altFormat: 'YYYY/MM/DD',
+                                observer: true,
+                                calendar: {
+                                    persian: {
+                                        locale: 'fa',
+                                        showHint: true
+                                    }
+                                }
+                            });
+                        });
+                    } else {
+                        console.warn('Persian DatePicker not loaded yet. Retrying...');
+                        setTimeout(function() {
+                            if (typeof $.fn.pDatepicker !== 'undefined') {
+                                $newItem.find('.persian-date-input').pDatepicker({
+                                    initialValue: false,
+                                    calendarType: 'persian',
+                                    format: 'YYYY/MM/DD'
+                                });
+                            }
+                        }, 1000);
+                    }
+                }, 100);
+                
+                // ✅ Initialize time displays
+                $newItem.find('.time-input').each(function() {
+                    updateTimeDisplay(this);
+                });
+                
+                specificDateIndex++;
+            });
+            
+            // ✅ Remove specific date
+            $(document).on('click', '.remove-specific-date', function() {
+                var $card = $(this).closest('.specific-date-card');
+                $card.fadeOut(300, function() {
+                    $card.remove();
+                    
+                    // ✅ اگر هیچ تاریخی باقی نماند، پیغام را نمایش بده
+                    if ($('#specificDatesContainer .specific-date-card').length === 0) {
+                        $('#specificDatesContainer').html(`
+                            <div class="alert alert-light border mb-3" id="noSpecificDatesMessage">
+                                <i class="fas fa-info-circle me-2"></i>
+                                هنوز تاریخی اضافه نشده است. برای افزودن تاریخ خاص، روی دکمه "افزودن تاریخ" کلیک کنید.
+                            </div>
+                        `);
+                        specificDateIndex = 0; // Reset index
+                    }
+                });
             });
 
             // Form submission

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Collections.Generic; // Added for List
 using System.Text.RegularExpressions;
 using ClinicApp.Constants;
+using ClinicApp.Extensions; // ✅ برای استفاده از DateTimeExtensions
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -267,14 +268,34 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         /// <summary>
         /// تولید دستی اسلات‌های زمانی برای یک پزشک
+        /// 
+        /// ✅ منطق: برنامه هفتگی است و منشی برای تاریخ‌های خاص برنامه تنظیم می‌کند
+        /// - منشی می‌تواند برای هفته آینده یا تاریخ‌های خاص (مثلاً 25-26) برنامه تنظیم کند
+        /// - اسلات‌ها فقط برای همان تاریخ خاص تولید می‌شوند (نه برای چند هفته آینده)
         /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <param name="scheduleId">شناسه برنامه کاری</param>
+        /// <param name="targetDate">تاریخ هدف برای تولید اسلات (اختیاری - فرمت: yyyy-MM-dd)</param>
         [HttpPost]
-        public async Task<JsonResult> GenerateTimeSlots(int doctorId, int scheduleId, int daysAhead = 90)
+        public async Task<JsonResult> GenerateTimeSlots(int doctorId, int scheduleId, string targetDate = null)
         {
             try
             {
-                _logger.Information("درخواست تولید دستی اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, DaysAhead: {DaysAhead}",
-                    doctorId, scheduleId, daysAhead);
+                DateTime? targetDateTime = null;
+                if (!string.IsNullOrWhiteSpace(targetDate))
+                {
+                    if (DateTime.TryParse(targetDate, out var parsedDate))
+                    {
+                        targetDateTime = parsedDate.Date;
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "فرمت تاریخ نامعتبر است. فرمت صحیح: yyyy-MM-dd" }, JsonRequestBehavior.AllowGet);
+                    }
+                }
+
+                _logger.Information("درخواست تولید دستی اسلات‌های زمانی - DoctorId: {DoctorId}, ScheduleId: {ScheduleId}, TargetDate: {TargetDate}",
+                    doctorId, scheduleId, targetDateTime?.ToString("yyyy/MM/dd") ?? "null (اولین روز کاری)");
 
                 if (doctorId <= 0 || scheduleId <= 0)
                 {
@@ -282,7 +303,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 // تولید و ذخیره اسلات‌های زمانی از طریق Service
-                var result = await _doctorScheduleService.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, daysAhead);
+                var result = await _doctorScheduleService.GenerateAndSaveTimeSlotsAsync(doctorId, scheduleId, targetDateTime);
 
                 if (!result.Success)
                 {
@@ -586,6 +607,27 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 ViewBag.Doctor = doctor;
 
+                // ✅ اضافه کردن اطلاعات امروز برای راهنمایی منشی
+                var today = DateTime.Today;
+                var todayPersianDate = PersianDateHelper.ToPersianDate(today);
+                var todayDayOfWeekName = PersianDateHelper.GetPersianDayOfWeekName(today.DayOfWeek);
+                ViewBag.TodayPersianDate = todayPersianDate;
+                ViewBag.TodayDayOfWeekName = todayDayOfWeekName;
+                ViewBag.Today = today;
+
+                // ✅ محاسبه تاریخ هر روز هفته در هفته جاری (برای نمایش کنار نام روز)
+                // ✅ هفته شمسی از شنبه شروع می‌شود (مطابق time.ir)
+                var weekStart = today.StartOfWeek(DayOfWeek.Saturday);
+                var weekDates = new Dictionary<int, string>(); // DayOfWeek -> PersianDate
+                for (int i = 0; i < 7; i++)
+                {
+                    var date = weekStart.AddDays(i);
+                    var persianDate = PersianDateHelper.ToPersianDate(date);
+                    var dayOfWeek = (int)date.DayOfWeek;
+                    weekDates[dayOfWeek] = persianDate;
+                }
+                ViewBag.WeekDates = weekDates;
+
                 _logger.Information("فرم تنظیم برنامه کاری پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
                 return View(model);
             }
@@ -773,10 +815,56 @@ namespace ClinicApp.Areas.Admin.Controllers
                     }
                 }
                 
-                _logger.Information("🔍 [AssignSchedule POST] بعد از فیلتر TimeRange های خالی. WorkDaysCount: {WorkDaysCount}, TotalTimeRangesCount: {TotalTimeRangesCount}", 
+                // ✅ پردازش تاریخ‌های خاص از Request.Form
+                if (model.SpecificDates == null)
+                {
+                    model.SpecificDates = new List<SpecificDateViewModel>();
+                }
+                
+                // ✅ استخراج تاریخ‌های خاص از Request.Form
+                var specificDateKeys = Request.Form?.AllKeys?.Where(k => k != null && k.StartsWith("SpecificDates[") && k.Contains("].PersianDate"))?.ToList() ?? new List<string>();
+                foreach (var key in specificDateKeys)
+                {
+                    // ✅ استخراج index از key (مثلاً: "SpecificDates[0].PersianDate" -> 0)
+                    var match = System.Text.RegularExpressions.Regex.Match(key, @"SpecificDates\[(\d+)\]\.PersianDate");
+                    if (match.Success && int.TryParse(match.Groups[1].Value, out int index))
+                    {
+                        var persianDate = Request.Form[key]?.ToString()?.Trim();
+                        if (!string.IsNullOrWhiteSpace(persianDate))
+                        {
+                            // ✅ خواندن StartTime, EndTime, AppointmentDuration
+                            var startTimeKey = $"SpecificDates[{index}].StartTime";
+                            var endTimeKey = $"SpecificDates[{index}].EndTime";
+                            var durationKey = $"SpecificDates[{index}].AppointmentDuration";
+                            
+                            var startTimeStr = Request.Form[startTimeKey]?.ToString()?.Trim();
+                            var endTimeStr = Request.Form[endTimeKey]?.ToString()?.Trim();
+                            var durationStr = Request.Form[durationKey]?.ToString()?.Trim();
+                            
+                            if (TimeSpan.TryParse(startTimeStr, out TimeSpan startTime) && 
+                                TimeSpan.TryParse(endTimeStr, out TimeSpan endTime) &&
+                                int.TryParse(durationStr, out int duration))
+                            {
+                                model.SpecificDates.Add(new SpecificDateViewModel
+                                {
+                                    PersianDate = persianDate,
+                                    StartTime = startTime,
+                                    EndTime = endTime,
+                                    AppointmentDuration = duration > 0 ? duration : 30
+                                });
+                                
+                                _logger.Information("✅ [AssignSchedule POST] تاریخ خاص اضافه شد: {PersianDate}, StartTime={StartTime}, EndTime={EndTime}, Duration={Duration}", 
+                                    persianDate, startTime, endTime, duration);
+                            }
+                        }
+                    }
+                }
+                
+                _logger.Information("🔍 [AssignSchedule POST] بعد از فیلتر TimeRange های خالی. WorkDaysCount: {WorkDaysCount}, TotalTimeRangesCount: {TotalTimeRangesCount}, SpecificDatesCount: {SpecificDatesCount}", 
                     model.WorkDays?.Count ?? 0,
-                    model.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
-                System.Diagnostics.Debug.WriteLine($"[AssignSchedule POST] بعد از فیلتر TimeRange های خالی. WorkDaysCount: {model.WorkDays?.Count ?? 0}, TotalTimeRangesCount: {model.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0}");
+                    model.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0,
+                    model.SpecificDates?.Count ?? 0);
+                System.Diagnostics.Debug.WriteLine($"[AssignSchedule POST] بعد از فیلتر TimeRange های خالی. WorkDaysCount: {model.WorkDays?.Count ?? 0}, TotalTimeRangesCount: {model.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0}, SpecificDatesCount: {model.SpecificDates?.Count ?? 0}");
 
                 // ✅ بررسی ModelState بعد از فیلتر
                 if (!ModelState.IsValid)

@@ -397,6 +397,35 @@
                     initialValue: initialValueToUse || (noDefaultDate ? null : false),
                     initialValueType: initialValueToUse ? 'persian' : undefined,
                     onSelect: function(unix) {
+                        // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
+                        // این event باید trigger شود تا date-selection.js بتواند تاریخ را پردازش کند
+                        var eventData = {
+                            unix: unix,
+                            selected: null
+                        };
+                        
+                        try {
+                            // ✅ دریافت selected object از datePicker instance
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance && datePickerInstance.selected) {
+                                eventData.selected = datePickerInstance.selected;
+                            }
+                        } catch (e) {
+                            self.logger.warn('خطا در دریافت selected object:', e);
+                        }
+                        
+                        // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
+                        // استفاده از jQuery.Event برای pass کردن data به درستی
+                        var customEvent = $.Event('pDatepicker:select');
+                        customEvent.unix = unix;
+                        customEvent.selected = eventData.selected;
+                        $input.trigger(customEvent, eventData);
+                        
+                        // ✅ Trigger change event برای fallback handlers
+                        setTimeout(function() {
+                            $input.trigger('change');
+                        }, 50);
+                        
                         // ✅ برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
                         if ($hiddenInput) {
                             self.handleDateSelect($input, $hiddenInput, fieldName, unix);
@@ -507,26 +536,42 @@
                                 
                                 // ✅ CRITICAL FIX: حذف class های highlight از تقویم
                                 // pDatepicker ممکن است class 'selected' یا 'today' را به روزها اضافه کند
+                                // ⚠️ مهم: باید بعد از render شدن تقویم این کار را انجام دهیم
                                 setTimeout(function() {
                                     try {
-                                        // پیدا کردن تمام روزهای highlight شده در تقویم
+                                        // ✅ روش 1: پیدا کردن calendar container از طریق input
                                         var $calendar = $input.closest('.pdp-container, .pdp-calendar, .pdatepicker');
+                                        
+                                        // ✅ روش 2: اگر پیدا نشد، در document جستجو کن
                                         if ($calendar.length === 0) {
-                                            // اگر calendar container پیدا نشد، در document جستجو کن
                                             $calendar = $('.pdp-container, .pdp-calendar, .pdatepicker').last();
                                         }
                                         
+                                        // ✅ روش 3: اگر هنوز پیدا نشد، از طریق datePicker instance
+                                        if ($calendar.length === 0 && datePickerInstance && datePickerInstance.$container) {
+                                            $calendar = $(datePickerInstance.$container);
+                                        }
+                                        
                                         if ($calendar.length > 0) {
-                                            // حذف class های highlight
-                                            $calendar.find('.pdp-day-selected, .pdp-day-today, .selected, .today').removeClass('pdp-day-selected pdp-day-today selected today');
+                                            // ✅ حذف class های highlight از تمام روزها
+                                            $calendar.find('.pdp-day-selected, .pdp-day-today, .selected, .today, .pdp-selected, .pdp-today')
+                                                .removeClass('pdp-day-selected pdp-day-today selected today pdp-selected pdp-today');
+                                            
+                                            // ✅ حذف attribute های selected
+                                            $calendar.find('[data-selected="true"], [data-today="true"]')
+                                                .attr('data-selected', 'false')
+                                                .attr('data-today', 'false');
+                                            
                                             self.logger.success('Class های highlight حذف شدند:', {
                                                 field: fieldName
                                             });
+                                        } else {
+                                            self.logger.warn('Calendar container پیدا نشد برای clear کردن highlight');
                                         }
                                     } catch (classError) {
                                         self.logger.warn('خطا در حذف class های highlight:', classError);
                                     }
-                                }, 100); // تاخیر بیشتر برای اطمینان از render شدن تقویم
+                                }, 200); // ✅ تاخیر بیشتر برای اطمینان از render شدن کامل تقویم
                                 
                                 self.logger.success('تاریخ پیش‌فرض clear شد:', {
                                     field: fieldName,

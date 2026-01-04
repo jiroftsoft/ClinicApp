@@ -105,18 +105,48 @@
 
         handleDateSelection: function (event) {
             try {
-                // ✅ Extract date from event
-                if (event && event.unix) {
-                    const unixTimestamp = event.unix;
+                // ✅ CRITICAL FIX: اولویت با unix timestamp (دقیق‌تر است)
+                // jQuery event object structure: event.originalEvent یا event.data
+                let eventData = null;
+                
+                if (event && event.originalEvent) {
+                    eventData = event.originalEvent;
+                } else if (event && event.data) {
+                    eventData = event.data;
+                } else if (event && (event.unix || event.selected)) {
+                    eventData = event;
+                }
+                
+                if (eventData && eventData.unix) {
+                    const unixTimestamp = eventData.unix;
+                    console.log('📅 Using unix timestamp from event:', unixTimestamp);
                     this.handleDateSelectionFromUnix(unixTimestamp);
-                } else if (event && event.selected) {
-                    // ✅ Use selected object (jy, jm, jd)
-                    const selected = event.selected;
+                    return;
+                }
+                
+                // ✅ Fallback: استفاده از selected object (jy, jm, jd)
+                if (eventData && eventData.selected) {
+                    const selected = eventData.selected;
                     if (selected && selected.jy && selected.jm && selected.jd) {
                         const persianDate = `${selected.jy}/${String(selected.jm).padStart(2, '0')}/${String(selected.jd).padStart(2, '0')}`;
+                        console.log('📅 Using selected object:', persianDate);
                         this.handleDateSelectionFromPersian(persianDate);
+                        return;
                     }
                 }
+                
+                // ✅ Last fallback: استفاده از input value
+                const $datePicker = $('#appointmentDatePicker');
+                if ($datePicker.length > 0) {
+                    const persianDate = $datePicker.val();
+                    if (persianDate && persianDate.trim() !== '') {
+                        console.log('📅 Using input value as fallback:', persianDate);
+                        this.handleDateSelectionFromPersian(persianDate);
+                        return;
+                    }
+                }
+                
+                console.warn('⚠️ No valid date found in event:', event);
             } catch (ex) {
                 console.error('❌ Error in handleDateSelection:', ex);
                 this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
@@ -156,16 +186,19 @@
             try {
                 if (!persianDate || persianDate.trim() === '') return;
 
+                // ✅ CRITICAL FIX: تبدیل اعداد فارسی به انگلیسی قبل از parse
+                const englishDate = this.convertPersianToEnglishNumbers(persianDate.trim());
+                
                 // ✅ Convert Persian date to Gregorian
-                const gregorianDate = this.convertPersianToGregorian(persianDate);
+                const gregorianDate = this.convertPersianToGregorian(englishDate);
                 if (gregorianDate) {
-                    this.selectedDatePersian = persianDate;
+                    this.selectedDatePersian = persianDate; // نگه داشتن فرمت فارسی برای نمایش
                     this.selectedDateGregorian = gregorianDate;
                     $('#selectedDateGregorian').val(this.formatDateForInput(gregorianDate));
                     this.updateUI(persianDate);
                     this.checkDateAvailability(gregorianDate);
                 } else {
-                    console.error('❌ Failed to convert Persian date:', persianDate);
+                    console.error('❌ Failed to convert Persian date:', persianDate, 'English:', englishDate);
                     this.showError('تاریخ انتخاب شده نامعتبر است. لطفاً دوباره تلاش کنید.');
                 }
             } catch (ex) {
@@ -182,15 +215,20 @@
 
         convertPersianToGregorian: function (persianDate) {
             try {
+                // ✅ CRITICAL FIX: اطمینان از اینکه تاریخ با اعداد انگلیسی است
+                // (اگر هنوز فارسی است، تبدیل می‌کنیم)
+                const englishDate = this.convertPersianToEnglishNumbers(persianDate);
+                
                 // ✅ Use jalaali library (loaded with PersianDatePicker)
                 if (typeof jalaali !== 'undefined' && jalaali.toGregorian) {
-                    const parts = persianDate.split('/');
+                    const parts = englishDate.split('/');
                     if (parts.length === 3) {
                         const year = parseInt(parts[0], 10);
                         const month = parseInt(parts[1], 10);
                         const day = parseInt(parts[2], 10);
                         
-                        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                        if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+                            year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
                             const gregorian = jalaali.toGregorian(year, month, day);
                             return new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
                         }
@@ -201,6 +239,26 @@
                 console.error('❌ Error converting Persian to Gregorian:', ex);
                 return null;
             }
+        },
+
+        /**
+         * Convert Persian/Arabic Numbers to English
+         * تبدیل اعداد فارسی/عربی به انگلیسی
+         */
+        convertPersianToEnglishNumbers: function(str) {
+            if (!str) return str;
+            
+            const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            
+            let result = str.toString();
+            for (let i = 0; i < 10; i++) {
+                result = result.replace(new RegExp(persianNumbers[i], 'g'), englishNumbers[i]);
+                result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+            }
+            
+            return result;
         },
 
         checkDateAvailability: function (date) {
