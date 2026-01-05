@@ -91,6 +91,14 @@ namespace ClinicApp.Areas.Patient
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
             );
 
+            // ✅ Route برای DoctorSearch API
+            context.MapRoute(
+                name: "Patient_API_DoctorSearch",
+                url: "Patient/Api/DoctorSearch/{action}/{id}",
+                defaults: new { controller = "DoctorSearchApi", action = "GetAvailableDoctors", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
+            );
+
             // ✅ Route برای API Endpoints
             context.MapRoute(
                 name: "Patient_API_Appointments",

@@ -97,9 +97,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// دریافت اسلات‌های زمانی در دسترس برای یک پزشک در یک تاریخ مشخص
         /// GET: /Patient/Api/DoctorSearch/GetAvailableTimeSlots
+        /// پشتیبانی از تاریخ شمسی و میلادی
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetAvailableTimeSlots(int id, DateTime date)
+        public async Task<JsonResult> GetAvailableTimeSlots(int id, string date)
         {
             try
             {
@@ -108,12 +109,39 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     return Json(new { success = false, message = "شناسه پزشک نامعتبر است" }, JsonRequestBehavior.AllowGet);
                 }
 
-                if (date.Date < DateTime.Today)
+                if (string.IsNullOrWhiteSpace(date))
+                {
+                    return Json(new { success = false, message = "تاریخ الزامی است" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // ✅ Parse تاریخ (پشتیبانی از شمسی و میلادی)
+                DateTime? parsedDate = null;
+                
+                // ابتدا سعی می‌کنیم به صورت میلادی parse کنیم (فرمت ISO: yyyy-MM-dd)
+                if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture, 
+                    System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                {
+                    parsedDate = gregorianDate.Date;
+                }
+                else
+                {
+                    // اگر parse نشد، سعی می‌کنیم به صورت شمسی parse کنیم
+                    parsedDate = PersianDateHelper.ParsePersianDate(date);
+                }
+
+                if (!parsedDate.HasValue)
+                {
+                    return Json(new { success = false, message = "فرمت تاریخ نامعتبر است. لطفاً از فرمت yyyy-MM-dd یا yyyy/MM/dd استفاده کنید" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var appointmentDate = parsedDate.Value;
+
+                if (appointmentDate.Date < DateTime.Today)
                 {
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" }, JsonRequestBehavior.AllowGet);
                 }
 
-                var result = await _bookingService.GetAvailableTimeSlotsAsync(id, date);
+                var result = await _bookingService.GetAvailableTimeSlotsAsync(id, appointmentDate);
 
                 if (!result.Success)
                 {
@@ -125,12 +153,12 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     success = true,
                     data = result.Data,
                     count = result.Data?.Count ?? 0,
-                    date = date.ToString("yyyy/MM/dd")
+                    date = appointmentDate.ToString("yyyy-MM-dd")
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - پزشک: {DoctorId}, تاریخ: {Date}", id, date.ToString("yyyy/MM/dd"));
+                _logger.Error(ex, "خطا در دریافت اسلات‌های زمانی - پزشک: {DoctorId}, تاریخ: {Date}", id, date);
                 return Json(new { success = false, message = "خطای سرور" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -138,6 +166,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// بررسی دسترسی‌پذیری یک اسلات زمانی
         /// POST: /Patient/Api/DoctorSearch/CheckSlotAvailability
+        /// پشتیبانی از تاریخ شمسی و میلادی
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -145,9 +174,58 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         {
             try
             {
+                // ✅ اگر request null است یا DoctorId نامعتبر است، سعی می‌کنیم از form data بخوانیم
                 if (request == null || request.DoctorId <= 0)
                 {
-                    return Json(new { success = false, message = "اطلاعات نامعتبر است" });
+                    var doctorIdStr = Request.Form["doctorId"] ?? Request["doctorId"];
+                    var appointmentDateStr = Request.Form["appointmentDate"] ?? Request["appointmentDate"];
+                    var startTimeStr = Request.Form["startTime"] ?? Request["startTime"];
+                    var endTimeStr = Request.Form["endTime"] ?? Request["endTime"];
+
+                    if (string.IsNullOrWhiteSpace(doctorIdStr) || 
+                        string.IsNullOrWhiteSpace(appointmentDateStr) ||
+                        string.IsNullOrWhiteSpace(startTimeStr) ||
+                        string.IsNullOrWhiteSpace(endTimeStr))
+                    {
+                        return Json(new { success = false, message = "اطلاعات نامعتبر است" });
+                    }
+
+                    if (!int.TryParse(doctorIdStr, out int doctorId) || doctorId <= 0)
+                    {
+                        return Json(new { success = false, message = "شناسه پزشک نامعتبر است" });
+                    }
+
+                    // ✅ Parse تاریخ (پشتیبانی از شمسی و میلادی)
+                    DateTime? parsedDate = null;
+                    if (DateTime.TryParse(appointmentDateStr, System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                    {
+                        parsedDate = gregorianDate.Date;
+                    }
+                    else
+                    {
+                        parsedDate = PersianDateHelper.ParsePersianDate(appointmentDateStr);
+                    }
+
+                    if (!parsedDate.HasValue)
+                    {
+                        return Json(new { success = false, message = "فرمت تاریخ نامعتبر است" });
+                    }
+
+                    // ✅ Parse زمان
+                    if (!TimeSpan.TryParse(startTimeStr, out TimeSpan startTime) ||
+                        !TimeSpan.TryParse(endTimeStr, out TimeSpan endTime))
+                    {
+                        return Json(new { success = false, message = "فرمت زمان نامعتبر است" });
+                    }
+
+                    request = new SlotAvailabilityRequest
+                    {
+                        DoctorId = doctorId,
+                        AppointmentDate = parsedDate.Value,
+                        StartTime = startTime,
+                        EndTime = endTime
+                    };
                 }
 
                 if (request.AppointmentDate.Date < DateTime.Today)
@@ -225,5 +303,31 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         public DateTime AppointmentDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
+        
+        // ✅ برای پشتیبانی از تاریخ شمسی در query string
+        public string AppointmentDateString 
+        { 
+            set 
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    // ابتدا سعی می‌کنیم به صورت میلادی parse کنیم
+                    if (DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                    {
+                        AppointmentDate = gregorianDate.Date;
+                    }
+                    else
+                    {
+                        // اگر parse نشد، سعی می‌کنیم به صورت شمسی parse کنیم
+                        var persianDate = PersianDateHelper.ParsePersianDate(value);
+                        if (persianDate.HasValue)
+                        {
+                            AppointmentDate = persianDate.Value.Date;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

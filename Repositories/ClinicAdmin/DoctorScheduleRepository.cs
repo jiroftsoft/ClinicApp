@@ -1511,25 +1511,53 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {slotsToDelete.Count} اسلات قدیمی با Soft Delete علامت‌گذاری شدند (ذخیره در SaveChanges)");
                 }
 
-                // اضافه کردن اسلات‌های جدید
-                if (generatedSlots.Any())
+                // ✅ CRITICAL FIX: حذف اسلات‌های قدیمی قبل از اضافه کردن اسلات‌های جدید
+                // ✅ این کار برای جلوگیری از اسلات‌های تکراری و تضمین یکپارچگی داده‌ها ضروری است
+                if (slotsToDelete.Any())
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ➕ اضافه کردن {generatedSlots.Count} اسلات جدید");
-                    _context.DoctorTimeSlots.AddRange(generatedSlots);
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] 🗑️ حذف {slotsToDelete.Count} اسلات قدیمی قبل از اضافه کردن اسلات جدید");
+                    // ✅ ذخیره تغییرات حذف قبل از اضافه کردن اسلات جدید
+                    await _context.SaveChangesAsync();
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {slotsToDelete.Count} اسلات قدیمی با موفقیت حذف شدند");
+                }
+
+                // ✅ CRITICAL FIX: فیلتر کردن اسلات‌های جدید برای جلوگیری از تکراری
+                // ✅ بررسی اینکه آیا اسلات جدید با اسلات‌های موجود (که حذف نشده‌اند) تکراری است یا نه
+                var slotsToAdd = new List<DoctorTimeSlot>();
+                foreach (var newSlot in generatedSlots)
+                {
+                    // ✅ بررسی اینکه آیا این اسلات با اسلات‌های موجود (که حذف نشده‌اند) تکراری است
+                    var isDuplicate = slotsToKeep.Any(ks =>
+                        ks.DoctorId == newSlot.DoctorId &&
+                        ks.AppointmentDate.Date == newSlot.AppointmentDate.Date &&
+                        ks.StartTime == newSlot.StartTime &&
+                        ks.EndTime == newSlot.EndTime &&
+                        ks.Duration == newSlot.Duration &&
+                        !ks.IsDeleted);
+                    
+                    if (!isDuplicate)
+                    {
+                        slotsToAdd.Add(newSlot);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ اسلات تکراری نادیده گرفته شد - StartTime: {newSlot.StartTime}, EndTime: {newSlot.EndTime}, Duration: {newSlot.Duration}");
+                    }
+                }
+
+                // اضافه کردن اسلات‌های جدید (فقط اسلات‌های غیرتکراری)
+                if (slotsToAdd.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ➕ اضافه کردن {slotsToAdd.Count} اسلات جدید (از {generatedSlots.Count} اسلات تولید شده، {generatedSlots.Count - slotsToAdd.Count} اسلات تکراری نادیده گرفته شد)");
+                    _context.DoctorTimeSlots.AddRange(slotsToAdd);
                     
                     // ✅ ذخیره اسلات‌های جدید
                     await _context.SaveChangesAsync();
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {generatedSlots.Count} اسلات جدید با موفقیت ذخیره شدند");
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ {slotsToAdd.Count} اسلات جدید با موفقیت ذخیره شدند");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ اسلات جدیدی برای تولید وجود ندارد");
-                    // اگر اسلات‌های قدیمی حذف شده‌اند، باید SaveChanges را فراخوانی کنیم
-                    if (slotsToDelete.Any())
-                    {
-                        await _context.SaveChangesAsync();
-                        System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ حذف {slotsToDelete.Count} اسلات قدیمی با موفقیت انجام شد");
-                    }
+                    System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ⚠️ هیچ اسلات جدیدی برای اضافه کردن وجود ندارد (همه تکراری بودند یا قبلاً حذف شدند)");
                 }
 
                 System.Diagnostics.Debug.WriteLine($"[GenerateAndSaveTimeSlotsAsync] ✅ فرآیند تولید اسلات‌های زمانی با موفقیت تکمیل شد");
@@ -1649,10 +1677,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     // ✅ بررسی دقیق: اسلات باید کاملاً درون TimeRange باشد
                     // ✅ StartTime اسلات باید >= StartTime TimeRange
                     // ✅ EndTime اسلات باید <= EndTime TimeRange
-                    // ✅ Duration اسلات باید برابر با AppointmentDuration باشد
+                    // ✅ CRITICAL FIX: Duration اسلات باید برابر با AppointmentDuration فعلی باشد
+                    // ✅ اگر Duration تغییر کرده باشد، اسلات قدیمی باید حذف شود
                     if (oldSlot.StartTime >= timeRange.StartTime &&
                         oldSlot.EndTime <= timeRange.EndTime &&
-                        oldSlot.Duration == doctorSchedule.AppointmentDuration)
+                        oldSlot.Duration == doctorSchedule.AppointmentDuration) // ✅ بررسی Duration برای جلوگیری از اسلات‌های با Duration نادرست
                     {
                         // ✅ این اسلات در یک TimeRange معتبر قرار دارد
                         isSlotValid = true;
@@ -1661,6 +1690,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     }
                     else
                     {
+                        // ✅ CRITICAL FIX: اگر Duration متفاوت باشد، اسلات باید حذف شود
+                        if (oldSlot.Duration != doctorSchedule.AppointmentDuration)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[ShouldDeleteOldSlot] 🗑️ اسلات {oldSlot.TimeSlotId} حذف می‌شود - Duration متفاوت است: {oldSlot.Duration} (انتظار: {doctorSchedule.AppointmentDuration})");
+                            return true; // حذف شود - Duration تغییر کرده است
+                        }
                         System.Diagnostics.Debug.WriteLine($"[ShouldDeleteOldSlot] ⚠️ اسلات {oldSlot.TimeSlotId} در TimeRange {timeRange.StartTime}-{timeRange.EndTime} قرار ندارد - StartTime: {oldSlot.StartTime}, EndTime: {oldSlot.EndTime}, Duration: {oldSlot.Duration}, ExpectedDuration: {doctorSchedule.AppointmentDuration}");
                     }
                 }
@@ -1813,12 +1848,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
                             if (!hasPartialException)
                             {
                                 // ✅ بررسی وجود اسلات در دیتابیس (استفاده از لیست از پیش بارگذاری شده)
+                                // ✅ CRITICAL FIX: بررسی Duration نیز برای جلوگیری از اسلات‌های تکراری با Duration متفاوت
                                 var existingSlot = existingSlotsInRange != null && existingSlotsInRange.Any(ts =>
                                     ts != null &&
                                     ts.DoctorId == doctorId &&
                                     ts.AppointmentDate.Date == dateOnly &&
                                     ts.StartTime == currentTime &&
                                     ts.EndTime == slotEndTime &&
+                                    ts.Duration == doctorSchedule.AppointmentDuration && // ✅ بررسی Duration برای جلوگیری از تکراری
                                     !ts.IsDeleted);
 
                                 if (!existingSlot)
@@ -1839,17 +1876,21 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                         // ✅ بررسی نهایی: اطمینان از اینکه اسلات درون TimeRange است
                                         if (currentTime >= timeRange.StartTime && slotEndTime <= timeRange.EndTime)
                                         {
-                                            slotsForDate.Add(new DoctorTimeSlot
+                                            // ✅ CRITICAL FIX: اطمینان از اینکه Duration از DoctorSchedule استفاده می‌شود
+                                            // ✅ همچنین اطمینان از اینکه Status = Available است
+                                            var newSlot = new DoctorTimeSlot
                                             {
                                                 DoctorId = doctorId,
                                                 AppointmentDate = dateOnly,
                                                 StartTime = currentTime,
                                                 EndTime = slotEndTime,
-                                                Duration = doctorSchedule.AppointmentDuration,
-                                                Status = AppointmentStatus.Available,
+                                                Duration = doctorSchedule.AppointmentDuration, // ✅ استفاده از AppointmentDuration از DoctorSchedule
+                                                Status = AppointmentStatus.Available, // ✅ همیشه Available برای اسلات‌های جدید
                                                 CreatedAt = DateTime.Now,
                                                 CreatedByUserId = doctorSchedule.UpdatedByUserId ?? doctorSchedule.CreatedByUserId
-                                            });
+                                            };
+                                            
+                                            slotsForDate.Add(newSlot);
                                             slotsCreatedForThisTimeRange++;
                                             System.Diagnostics.Debug.WriteLine($"[GenerateSlotsForDateAsync] ✅ اسلات ایجاد شد - StartTime: {currentTime}, EndTime: {slotEndTime}, درون TimeRange: {timeRange.StartTime}-{timeRange.EndTime}");
                                         }
