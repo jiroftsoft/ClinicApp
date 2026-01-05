@@ -26,12 +26,21 @@ namespace ClinicApp.Filters
         {
             var req = filterContext.HttpContext.Request;
             var path = req?.RawUrl ?? req?.Path ?? "unknown";
+            var actionName = filterContext.ActionDescriptor?.ActionName ?? "unknown";
+            var controllerName = filterContext.ActionDescriptor?.ControllerDescriptor?.ControllerName ?? "unknown";
             
             // Log entry point
             Serilog.Log.Information("🔒 AntiForgery: OnAuthorization شروع شد - Path: {Path}, Method: {Method}, Controller: {Controller}, Action: {Action}",
-                path, req?.HttpMethod, 
-                filterContext.ActionDescriptor?.ControllerDescriptor?.ControllerName,
-                filterContext.ActionDescriptor?.ActionName);
+                path, req?.HttpMethod, controllerName, actionName);
+
+            // ✅ CRITICAL FIX: Skip برای CheckSlotAvailability - این یک Read Operation است و AllowAnonymous است
+            // IgnoreAntiforgeryToken در ASP.NET MVC 5 وجود ندارد، بنابراین از Route-based skip استفاده می‌کنیم
+            if (string.Equals(actionName, "CheckSlotAvailability", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(controllerName, "DoctorSearchApi", StringComparison.OrdinalIgnoreCase))
+            {
+                Serilog.Log.Debug("🔒 AntiForgery: Skipped - CheckSlotAvailability is a Read Operation with AllowAnonymous");
+                return;
+            }
 
             // فقط روی POST/PUT/DELETE اعمال شود
             if (!(string.Equals(req.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase) ||

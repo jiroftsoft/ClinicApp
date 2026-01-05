@@ -132,12 +132,28 @@ namespace ClinicApp.Helpers
                 _log.Information("🔍 DateTime.Kind: {Kind}", dateTime.Kind);
                 _log.Information("🔍 DateTime.Ticks: {Ticks}", dateTime.Ticks);
                 
-                // تبدیل به Local اگر UTC است (برای جلوگیری از مشکل timezone)
+                // ✅ ENTERPRISE-GRADE: تبدیل به Iran Time اگر UTC است (برای جلوگیری از مشکل timezone)
                 DateTime localDateTime = dateTime;
                 if (dateTime.Kind == DateTimeKind.Utc)
                 {
-                    localDateTime = dateTime.ToLocalTime();
-                    _log.Information("🔍 Converted UTC to Local: {LocalDateTime}", localDateTime);
+                    // ✅ استفاده از TimeZoneInfo برای تبدیل دقیق به timezone ایران
+                    TimeZoneInfo iranTimeZone;
+                    try
+                    {
+                        iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                    }
+                    catch (TimeZoneNotFoundException)
+                    {
+                        // ✅ Fallback: ایجاد custom timezone
+                        iranTimeZone = TimeZoneInfo.CreateCustomTimeZone(
+                            "Iran Standard Time",
+                            TimeSpan.FromHours(3.5),
+                            "Iran Standard Time",
+                            "Iran Standard Time");
+                    }
+                    
+                    localDateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, iranTimeZone);
+                    _log.Information("🔍 Converted UTC to Iran Time: {LocalDateTime}", localDateTime);
                 }
                 else if (dateTime.Kind == DateTimeKind.Unspecified)
                 {

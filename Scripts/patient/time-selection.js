@@ -86,6 +86,7 @@
             showLoading();
 
             // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
+            // ✅ Note: CSRF Token حذف شد - این یک Read Operation است و AllowAnonymous است
             this.ajaxWithRetry({
                 url: '/Patient/Api/DoctorSearch/CheckSlotAvailability',
                 type: 'POST',
@@ -95,9 +96,8 @@
                     startTime: this.selectedSlot.startTime,
                     endTime: this.selectedSlot.endTime
                 },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
+                // ✅ CRITICAL FIX: حذف CSRF Token Header - ValidateAntiForgeryToken حذف شد
+                // این یک Read Operation است و برای Anonymous users مشکل ایجاد می‌کرد
                 timeout: 30000, // ✅ 30 ثانیه Timeout
                 maxRetries: 3, // ✅ حداکثر 3 بار تلاش
                 retryDelay: 1000, // ✅ 1 ثانیه تاخیر بین تلاش‌ها

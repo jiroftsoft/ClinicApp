@@ -175,11 +175,14 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// POST: /Patient/Api/DoctorSearch/CheckSlotAvailability
         /// پشتیبانی از تاریخ شمسی و میلادی
         /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login دسترسی‌پذیری اسلات را بررسی کنند
-        /// ⚠️ Note: ValidateAntiForgeryToken برای anonymous users کار می‌کند اگر token ارائه شود
+        /// ✅ CRITICAL FIX: ValidateAntiForgeryToken حذف شد - این یک Read Operation است و برای Anonymous users مشکل ایجاد می‌کرد
+        /// ⚠️ Security: Rate Limiting در Controller level اعمال می‌شود
+        /// ⚠️ Note: Global Filter برای این action skip می‌شود (بر اساس Action Name: CheckSlotAvailability)
         /// </summary>
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
+        // ✅ CRITICAL FIX: IgnoreAntiforgeryToken در ASP.NET MVC 5 وجود ندارد
+        // Global Filter برای این action skip می‌شود (بر اساس Action Name: CheckSlotAvailability)
         public async Task<JsonResult> CheckSlotAvailability(SlotAvailabilityRequest request)
         {
             try

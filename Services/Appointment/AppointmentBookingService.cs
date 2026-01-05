@@ -14,6 +14,7 @@ using ClinicApp.Models;
 using ClinicApp.Models.Entities.Doctor;
 using EntityFramework.DynamicFilters;
 using Serilog;
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
 namespace ClinicApp.Services.Appointment
 {
@@ -28,6 +29,7 @@ namespace ClinicApp.Services.Appointment
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
+        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
         // ✅ CRITICAL: Cache حذف شد - در محیط درمانی، داده‌ها باید Real-time باشند
         // این ماژول قرار است به صورت گسترده استفاده شود و نیاز به داده‌های به‌روز دارد
 
@@ -37,6 +39,7 @@ namespace ClinicApp.Services.Appointment
             IDoctorCrudService doctorCrudService,
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
+            ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -44,6 +47,7 @@ namespace ClinicApp.Services.Appointment
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _logger = logger?.ForContext<AppointmentBookingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -166,7 +170,7 @@ namespace ClinicApp.Services.Appointment
 
                 // بررسی حداقل زمان برای لغو (مثلاً 2 ساعت قبل)
                 var minimumCancelTime = appointment.AppointmentDate.AddHours(-2);
-                if (DateTime.Now > minimumCancelTime)
+                if (_timeProvider.GetIranNow() > minimumCancelTime)
                 {
                     return ServiceResult.Failed("امکان لغو نوبت کمتر از 2 ساعت قبل از زمان نوبت وجود ندارد");
                 }
@@ -400,7 +404,7 @@ namespace ClinicApp.Services.Appointment
                 date = date.Date;
 
                 // ✅ بررسی اینکه تاریخ در گذشته نباشد
-                if (date < DateTime.Today)
+                if (date < _timeProvider.GetIranToday())
                 {
                     return ServiceResult<List<AvailableTimeSlotDto>>.Failed("تاریخ انتخاب شده در گذشته است. لطفاً تاریخ امروز یا آینده را انتخاب کنید");
                 }
@@ -506,6 +510,7 @@ namespace ClinicApp.Services.Appointment
                         _appointmentRepository,
                         _doctorScheduleRepository,
                         _doctorCrudService,
+                        _timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
                         _logger);
 
                     var validationResult = await validationService.ValidateBookingRequestAsync(request);
@@ -555,7 +560,7 @@ namespace ClinicApp.Services.Appointment
                         Priority = AppointmentPriority.Normal,
                         IsEmergency = false,
                         CreatedByUserId = _currentUserService.UserId,
-                        CreatedAt = DateTime.Now,
+                        CreatedAt = _timeProvider.UtcNow, // ✅ UTC برای timestamp
                         IsDeleted = false
                     };
 

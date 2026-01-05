@@ -2214,7 +2214,9 @@
     <Content Include="Content\js\patient-profile.js" />
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />
+    <Content Include="Content\js\persian-datepicker-core.js" />
     <Content Include="Content\js\persian-datepicker-manager.js" />
+    <Content Include="Content\js\persian-datepicker-service.js" />
     <Content Include="Content\js\reception-error-handler.js" />
     <Content Include="Content\js\stories-component.js" />
     <Content Include="Content\js\unified-dashboard.js" />
@@ -5016,6 +5018,9 @@
     <Content Include="Docs\PATIENT_AUTHENTICATION_SECURITY_AUDIT_REPORT.md" />
     <Content Include="Docs\APPOINTMENT_BOOKING_MODULE_REVIEW.md" />
     <Content Include="Docs\APPOINTMENT_BOOKING_VIEWS_REVIEW.md" />
+    <Content Include="Contracts\1015\CLINICAPP_APPOINTMENT_BOOKING_MODULE_PROMPT.md" />
+    <Content Include="Contracts\1015\CLINICAPP_CURSOR_7ROLES_CONTRACT_PROMPT_OPTIMIZED.md" />
+    <Content Include="Contracts\1015\CLINICAPP_RULES_SNAPSHOT_ONE_PAGE.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

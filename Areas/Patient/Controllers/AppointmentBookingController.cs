@@ -29,6 +29,7 @@ using ClinicApp.Models.Core; // ✅ برای AppRoles (Strongly-Typed)
 using ClinicApp.Interfaces.ClinicAdmin; // ✅ برای IDepartmentManagementService
 using ClinicApp.Filters; // ✅ برای NoCache
 using ClinicApp.Factories.Patient; // ✅ برای AppointmentBookingViewModelFactory
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -64,6 +65,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IAppSettings _appSettings;
         private readonly ApplicationDbContext _context;
         private readonly IDepartmentManagementService _departmentService; // ✅ طبق قرارداد: Controller → Service
+        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
 
         public AppointmentBookingController(
             IAppointmentBookingService bookingService,
@@ -74,6 +76,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             IAppSettings appSettings,
             ApplicationDbContext context,
             IDepartmentManagementService departmentService, // ✅ طبق قرارداد: Controller → Service
+            ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             ILogger logger)
             : base(logger, currentUserService) // ✅ Call base constructor
         {
@@ -84,6 +87,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _departmentService = departmentService ?? throw new ArgumentNullException(nameof(departmentService));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
         /// <summary>
@@ -400,7 +404,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 // TODO: بعد از رفع مشکل، احراز هویت را فعال کنید
 
                 // ✅ Validation 3: Date must not be in the past
-                if (date.Date < DateTime.Today)
+                if (date.Date < _timeProvider.GetIranToday())
                 {
                     _logger.Warning("تاریخ {Date} در گذشته است", date.ToString("yyyy/MM/dd"));
                     NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
@@ -408,7 +412,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
 
                 // ✅ Validation 4: Date must not be too far in the future (max 90 days)
-                var maxFutureDate = DateTime.Today.AddDays(90);
+                var maxFutureDate = _timeProvider.GetIranToday().AddDays(90);
                 if (date.Date > maxFutureDate)
                 {
                     _logger.Warning("تاریخ {Date} بیش از 90 روز در آینده است", date.ToString("yyyy/MM/dd"));
@@ -490,7 +494,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var patientId = 1; // ⚠️ TEMPORARY: فقط برای تست
 
                 // ✅ Validation 3: Date must not be in the past
-                if (appointmentDate.Date < DateTime.Today)
+                if (appointmentDate.Date < _timeProvider.GetIranToday())
                 {
                     _logger.Warning("تاریخ {Date} در گذشته است", appointmentDate.ToString("yyyy/MM/dd"));
                     NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
@@ -627,7 +631,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
 
                 // ✅ Validation 4: Date must not be in the past
-                if (model.AppointmentDate.Date < DateTime.Today)
+                if (model.AppointmentDate.Date < _timeProvider.GetIranToday())
                 {
                     _logger.Warning("تاریخ {Date} در گذشته است", model.AppointmentDate.ToString("yyyy/MM/dd"));
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" });
@@ -712,7 +716,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 // ✅ 0. Idempotency Check (جلوگیری از درخواست‌های تکراری)
                 if (string.IsNullOrEmpty(idempotencyKey))
                 {
-                    idempotencyKey = $"payment_{appointmentId}_{_currentUserService.UserId}_{DateTime.UtcNow:yyyyMMddHHmm}";
+                    idempotencyKey = $"payment_{appointmentId}_{_currentUserService.UserId}_{_timeProvider.UtcNow:yyyyMMddHHmm}";
                 }
 
                 var idempotencyKeyFull = $"appointment_payment_{idempotencyKey}";
@@ -808,7 +812,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             Amount = appointment.Price,
                             Description = $"پرداخت نوبت - پزشک: {appointment.Doctor?.FullName ?? "نامشخص"}",
                             CreatedByUserId = _currentUserService.UserId,
-                            CreatedAt = DateTime.UtcNow, // ✅ استفاده از UtcNow
+                            CreatedAt = _timeProvider.UtcNow, // ✅ استفاده از UtcNow
                             IsDeleted = false
                         };
 
@@ -864,7 +868,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             // ✅ به‌روزرسانی وضعیت OnlinePayment به Failed
                             onlinePayment.Status = OnlinePaymentStatus.Failed;
                             onlinePayment.ErrorMessage = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت";
-                            onlinePayment.UpdatedAt = DateTime.UtcNow;
+                            onlinePayment.UpdatedAt = _timeProvider.UtcNow;
                             onlinePayment.UpdatedByUserId = _currentUserService.UserId;
                             await _context.SaveChangesAsync();
                             transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
@@ -883,7 +887,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             onlinePayment.Status = OnlinePaymentStatus.Failed;
                             onlinePayment.ErrorMessage = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت";
                             onlinePayment.ErrorCode = gatewayResponse.ErrorCode;
-                            onlinePayment.UpdatedAt = DateTime.UtcNow;
+                            onlinePayment.UpdatedAt = _timeProvider.UtcNow;
                             onlinePayment.UpdatedByUserId = _currentUserService.UserId;
                             await _context.SaveChangesAsync();
                             transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
@@ -895,8 +899,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                         onlinePayment.PaymentToken = gatewayResponse.PaymentToken;
                         onlinePayment.GatewayTransactionId = gatewayResponse.GatewayTransactionId;
                         onlinePayment.PaymentUrl = gatewayResponse.PaymentUrl;
-                        onlinePayment.PaymentStartDate = DateTime.UtcNow;
-                        onlinePayment.UpdatedAt = DateTime.UtcNow;
+                        onlinePayment.PaymentStartDate = _timeProvider.UtcNow;
+                        onlinePayment.UpdatedAt = _timeProvider.UtcNow;
                         onlinePayment.UpdatedByUserId = _currentUserService.UserId;
                         await _context.SaveChangesAsync();
 
@@ -1067,8 +1071,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                             onlinePaymentForUpdate.Status = OnlinePaymentStatus.Successful;
                             onlinePaymentForUpdate.GatewayTransactionId = result.GatewayTransactionId; // RefId
                             onlinePaymentForUpdate.GatewayReferenceCode = callbackData.ReferenceCode ?? result.GatewayTransactionId;
-                            onlinePaymentForUpdate.PaymentCompletionDate = DateTime.UtcNow;
-                            onlinePaymentForUpdate.UpdatedAt = DateTime.UtcNow;
+                            onlinePaymentForUpdate.PaymentCompletionDate = _timeProvider.UtcNow;
+                            onlinePaymentForUpdate.UpdatedAt = _timeProvider.UtcNow;
                             onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
 
                             // به‌روزرسانی Appointment
@@ -1077,7 +1081,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             {
                                 appointment.Status = AppointmentStatus.Scheduled;
                                 appointment.PaymentTransactionId = result.PaymentTransactionId;
-                                appointment.UpdatedAt = DateTime.UtcNow;
+                                appointment.UpdatedAt = _timeProvider.UtcNow;
                                 appointment.UpdatedByUserId = _currentUserService.UserId ?? "System";
                             }
 
@@ -1178,8 +1182,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                         onlinePaymentForUpdate.Status = OnlinePaymentStatus.Failed;
                         onlinePaymentForUpdate.ErrorMessage = result.ErrorMessage;
                         onlinePaymentForUpdate.ErrorCode = callbackData.ErrorCode;
-                        onlinePaymentForUpdate.PaymentCompletionDate = DateTime.UtcNow;
-                        onlinePaymentForUpdate.UpdatedAt = DateTime.UtcNow;
+                        onlinePaymentForUpdate.PaymentCompletionDate = _timeProvider.UtcNow;
+                        onlinePaymentForUpdate.UpdatedAt = _timeProvider.UtcNow;
                         onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
                         await _context.SaveChangesAsync();
 

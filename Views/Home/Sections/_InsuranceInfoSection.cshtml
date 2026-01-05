@@ -11,7 +11,7 @@
 }
 
 @* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+<link rel="stylesheet" href="@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 <link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 
 <section class="insurance-info-section" aria-label="بیمه‌های طرف قرارداد">
@@ -126,7 +126,7 @@
                 return;
             }
             var script = document.createElement('script');
-            script.src = '@Url.Content("~/Content/plugins/Swiper/swiper-bundle.min.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks';
+            script.src = '@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks';
             script.async = false;
             script.defer = false;
             script.onload = function() {

@@ -22,17 +22,48 @@ namespace ClinicApp.Controllers.Api
         [HttpGet]
         [Route("today")]
         [AllowAnonymous]
+        /// <summary>
+        /// ✅ ENTERPRISE-GRADE: دریافت تاریخ امروز شمسی از سرور
+        /// طبق Best Practices پروژه‌های بزرگ (دیجی‌کالا، خانومی، مکت‌خونه):
+        /// 1. استفاده از UTC در سرور
+        /// 2. تبدیل به timezone ایران فقط برای نمایش
+        /// 3. همیشه از سرور (نه client-side calculation)
+        /// </summary>
         public JsonResult GetToday()
         {
             try
             {
-                // ✅ استفاده از DateTime.Today برای فقط تاریخ (بدون زمان)
-                var today = DateTime.Today;
+                // ✅ Today را همیشه بر اساس TimeZone ایران محاسبه کن (مستقل از تنظیمات سرور)
+                TimeZoneInfo iranTz;
+                try
+                {
+                    iranTz = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    // ✅ Fallback: اگر timezone پیدا نشد، از offset استفاده می‌کنیم
+                    iranTz = TimeZoneInfo.CreateCustomTimeZone(
+                        "Iran Standard Time",
+                        TimeSpan.FromHours(3.5),
+                        "Iran Standard Time",
+                        "Iran Standard Time");
+                }
+                
+                var iranNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, iranTz);
+                var iranMidnight = new DateTimeOffset(
+                    iranNow.Year, iranNow.Month, iranNow.Day,
+                    0, 0, 0,
+                    iranNow.Offset
+                );
+                var today = iranMidnight.DateTime;
+                
+                // ✅ تبدیل به تاریخ شمسی
                 var persianToday = PersianDateHelper.ToPersianDate(today);
                 
                 // ✅ بررسی صحت تبدیل
                 if (string.IsNullOrEmpty(persianToday) || persianToday == "0000/00/00")
                 {
+                    Serilog.Log.Warning("🔍 [GetToday] Invalid Persian date conversion: {PersianDate}", persianToday);
                     return Json(new
                     {
                         success = false,
@@ -42,19 +73,34 @@ namespace ClinicApp.Controllers.Api
 
                 // ✅ تبدیل به میلادی برای استفاده در DatePicker
                 var gregorianToday = today.ToString("yyyy-MM-dd");
+                
+                // ✅ Logging برای Debug و Monitoring
+                Serilog.Log.Information("🔍 [GetToday] UTC: {UtcNow}, Iran: {IranNow}, Persian: {PersianDate}, Gregorian: {GregorianDate}, Timezone: {Timezone}", 
+                    DateTimeOffset.UtcNow, iranNow, persianToday, gregorianToday, iranTz.Id);
 
                 return Json(new
                 {
                     success = true,
                     persianDate = persianToday,
                     gregorianDate = gregorianToday,
-                    timestamp = (long)(today - new DateTime(1970, 1, 1)).TotalSeconds
+                    // ✅ Unix time دقیق (بر مبنای نیمه‌شب ایران)
+                    timestamp = iranMidnight.ToUnixTimeSeconds(),
+                    timezone = iranTz.Id,
+                    utcDate = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd"),
+                    iranDate = today.ToString("yyyy-MM-dd"),
+                    // ✅ اضافه کردن اطلاعات برای Debug
+                    debug = new
+                    {
+                        utcNow = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                        iranNow = iranNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                        iranToday = today.ToString("yyyy-MM-dd")
+                    }
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 // ✅ Logging خطا
-                Serilog.Log.Error(ex, "خطا در دریافت تاریخ امروز شمسی");
+                Serilog.Log.Error(ex, "❌ [GetToday] خطا در دریافت تاریخ امروز شمسی");
                 
                 return Json(new
                 {

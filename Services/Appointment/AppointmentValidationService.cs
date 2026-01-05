@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.DTOs.Appointment;
 using ClinicApp.Models.Enums;
 using Serilog;
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
 namespace ClinicApp.Services.Appointment
 {
@@ -21,16 +22,19 @@ namespace ClinicApp.Services.Appointment
         private readonly IDoctorScheduleRepository _doctorScheduleRepository;
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly ILogger _logger;
+        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
 
         public AppointmentValidationService(
             IAppointmentRepository appointmentRepository,
             IDoctorScheduleRepository doctorScheduleRepository,
             IDoctorCrudService doctorCrudService,
+            ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _logger = logger?.ForContext<AppointmentValidationService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -285,10 +289,10 @@ namespace ClinicApp.Services.Appointment
             var warnings = new List<string>();
 
             var appointmentDateTime = appointmentDate.Date.Add(startTime);
-            var now = DateTime.Now;
+            var now = _timeProvider.GetIranNow();
 
             // بررسی تاریخ گذشته
-            if (appointmentDate.Date < DateTime.Today)
+            if (appointmentDate.Date < _timeProvider.GetIranToday())
             {
                 errors.Add("نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
             }

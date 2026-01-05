@@ -13,6 +13,7 @@ using ClinicApp.Models.Entities.Appointment;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Enums;
 using EntityFramework.DynamicFilters;
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
 namespace ClinicApp.Repositories.ClinicAdmin
 {
@@ -31,10 +32,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
     public class DoctorScheduleRepository : IDoctorScheduleRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
 
-        public DoctorScheduleRepository(ApplicationDbContext context)
+        public DoctorScheduleRepository(ApplicationDbContext context, ITimeProvider timeProvider)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
         /// <summary>
@@ -1366,7 +1369,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     // ✅ پیدا کردن اولین روز کاری برای تولید اسلات
                     // ✅ اگر امروز روز کاری است، برای امروز اسلات تولید می‌شود
                     // ✅ اگر امروز روز کاری نیست، برای اولین روز کاری آینده (در 7 روز آینده) اسلات تولید می‌شود
-                    dateToGenerate = await FindFirstWorkDayForScheduleAsync(doctorSchedule, DateTime.Today);
+                    dateToGenerate = await FindFirstWorkDayForScheduleAsync(doctorSchedule, _timeProvider.GetIranToday());
                     
                     if (!dateToGenerate.HasValue)
                     {
@@ -2108,7 +2111,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Appointments
                     .AnyAsync(a => a.DoctorId == doctorId &&
-                                 a.AppointmentDate >= DateTime.Today &&
+                                 a.AppointmentDate >= _timeProvider.GetIranToday() &&
                                  a.Status != AppointmentStatus.Cancelled &&
                                  !a.IsDeleted);
             }

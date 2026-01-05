@@ -8,6 +8,7 @@ using ClinicApp.Models;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
 using ClinicApp.Models.Enums;
 using Serilog;
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
 namespace ClinicApp.Repositories.Appointment
 {
@@ -18,10 +19,12 @@ namespace ClinicApp.Repositories.Appointment
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
+        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
 
-        public AppointmentRepository(ApplicationDbContext context, ILogger logger)
+        public AppointmentRepository(ApplicationDbContext context, ITimeProvider timeProvider, ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _logger = logger?.ForContext<AppointmentRepository>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -98,7 +101,7 @@ namespace ClinicApp.Repositories.Appointment
                     throw new ArgumentNullException(nameof(appointment));
                 }
 
-                appointment.CreatedAt = DateTime.Now;
+                appointment.CreatedAt = _timeProvider.UtcNow; // ✅ UTC برای timestamp
                 appointment.IsDeleted = false;
 
                 _context.Appointments.Add(appointment);
@@ -132,7 +135,7 @@ namespace ClinicApp.Repositories.Appointment
                 }
 
                 appointment.Status = status;
-                appointment.UpdatedAt = DateTime.Now;
+                appointment.UpdatedAt = _timeProvider.UtcNow; // ✅ UTC برای timestamp
 
                 await _context.SaveChangesAsync();
 
