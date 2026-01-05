@@ -12,6 +12,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
     /// API Controller برای جستجوی پزشکان
     /// 
     /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can search doctors
+    /// ✅ Note: برخی متدها با [AllowAnonymous] برای مشاهده اطلاعات قبل از login
     /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
     /// </summary>
     [PatientRoleAuthorization]
@@ -31,8 +32,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// دریافت لیست پزشکان در دسترس
         /// GET: /Patient/Api/DoctorSearch/GetAvailableDoctors
+        /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login پزشکان را ببینند
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<JsonResult> GetAvailableDoctors(
             int? departmentId = null,
             string searchTerm = null)
@@ -63,8 +66,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// دریافت اطلاعات یک پزشک
         /// GET: /Patient/Api/DoctorSearch/GetDoctorDetails/{id}
+        /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login اطلاعات پزشک را ببینند
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<JsonResult> GetDoctorDetails(int id)
         {
             try
@@ -98,8 +103,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// دریافت اسلات‌های زمانی در دسترس برای یک پزشک در یک تاریخ مشخص
         /// GET: /Patient/Api/DoctorSearch/GetAvailableTimeSlots
         /// پشتیبانی از تاریخ شمسی و میلادی
+        /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login اسلات‌های در دسترس را ببینند
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<JsonResult> GetAvailableTimeSlots(int id, string date)
         {
             try
@@ -167,8 +174,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// بررسی دسترسی‌پذیری یک اسلات زمانی
         /// POST: /Patient/Api/DoctorSearch/CheckSlotAvailability
         /// پشتیبانی از تاریخ شمسی و میلادی
+        /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login دسترسی‌پذیری اسلات را بررسی کنند
+        /// ⚠️ Note: ValidateAntiForgeryToken برای anonymous users کار می‌کند اگر token ارائه شود
         /// </summary>
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> CheckSlotAvailability(SlotAvailabilityRequest request)
         {
@@ -260,8 +270,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// دریافت قیمت نوبت
         /// GET: /Patient/Api/DoctorSearch/GetAppointmentPrice
+        /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login قیمت نوبت را ببینند
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<JsonResult> GetAppointmentPrice(
             int id,
             int? serviceCategoryId = null)

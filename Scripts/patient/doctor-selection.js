@@ -159,14 +159,18 @@
             
             showLoading();
             
-            $.ajax({
+            // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
+            this.ajaxWithRetry({
                 url: '/Patient/Api/DoctorSearch/GetAvailableDoctors',
                 type: 'GET',
                 data: {
                     departmentId: departmentId || null,
                     searchTerm: searchTerm || null
                 },
-                success: (response) => {
+                timeout: 30000, // ✅ 30 ثانیه Timeout
+                maxRetries: 3, // ✅ حداکثر 3 بار تلاش
+                retryDelay: 1000, // ✅ 1 ثانیه تاخیر
+                onSuccess: (response) => {
                     hideLoading();
                     if (response.success && response.data) {
                         this.renderDoctors(response.data);
@@ -174,9 +178,21 @@
                         this.showError(response.message || 'خطا در دریافت لیست پزشکان');
                     }
                 },
-                error: () => {
+                onError: (xhr, status, error) => {
                     hideLoading();
-                    this.showError('خطا در ارتباط با سرور');
+                    let errorMessage = 'خطا در ارتباط با سرور';
+                    
+                    // ✅ تشخیص نوع خطا و نمایش پیام مناسب
+                    if (status === 'timeout') {
+                        errorMessage = 'زمان اتصال به سرور به پایان رسید. لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.';
+                    } else if (status === 'error' && xhr.status === 0) {
+                        errorMessage = 'خطا در اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                    } else if (xhr.status >= 500) {
+                        errorMessage = 'خطای سرور. لطفاً چند لحظه صبر کنید و دوباره تلاش کنید.';
+                    }
+                    
+                    this.showError(errorMessage);
+                    console.error('❌ [DoctorSelection] AJAX Error:', { status, error, xhr });
                 }
             });
         },
@@ -248,13 +264,77 @@
             `);
         },
 
+        /**
+         * ✅ CRITICAL FIX: AJAX Helper با Retry Logic و Timeout Handling
+         * طبق قراردادها: Bulletproof Error Handling
+         */
+        ajaxWithRetry: function (options) {
+            const self = this;
+            let retryCount = 0;
+            const maxRetries = options.maxRetries || 3;
+            const retryDelay = options.retryDelay || 1000;
+            const timeout = options.timeout || 30000;
+
+            function makeRequest() {
+                $.ajax({
+                    url: options.url,
+                    type: options.type || 'GET',
+                    data: options.data || {},
+                    headers: options.headers || {},
+                    timeout: timeout,
+                    success: function (response) {
+                        if (options.onSuccess) {
+                            options.onSuccess(response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // ✅ تشخیص نوع خطا
+                        const isNetworkError = status === 'timeout' || 
+                                             status === 'error' && xhr.status === 0 ||
+                                             status === 'abort';
+                        
+                        const isServerError = xhr.status >= 500;
+
+                        // ✅ Retry Logic برای Network Errors و Server Errors
+                        if (retryCount < maxRetries && (isNetworkError || isServerError)) {
+                            retryCount++;
+                            console.warn(`⚠️ [DoctorSelection] Retry attempt ${retryCount}/${maxRetries} for ${options.url}`);
+                            
+                            // ✅ Exponential Backoff
+                            const delay = retryDelay * Math.pow(2, retryCount - 1);
+                            
+                            setTimeout(function () {
+                                makeRequest();
+                            }, delay);
+                        } else {
+                            // ✅ تمام تلاش‌ها انجام شد یا خطای Client Error
+                            if (options.onError) {
+                                options.onError(xhr, status, error);
+                            } else {
+                                self.showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                            }
+                        }
+                    }
+                });
+            }
+
+            makeRequest();
+        },
+
         showError: function (message) {
-            Swal.fire({
-                title: 'خطا',
-                text: message,
-                icon: 'error',
-                confirmButtonText: 'باشه'
-            });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'خطا',
+                    text: message,
+                    icon: 'error',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#2c5aa0'
+                });
+            } else if (typeof toastr !== 'undefined') {
+                toastr.error(message);
+            } else {
+                alert(message);
+            }
         }
     };
 

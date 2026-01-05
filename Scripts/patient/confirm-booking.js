@@ -48,11 +48,16 @@
         submitBooking: function (formData) {
             showLoading();
 
-            $.ajax({
+            // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
+            // ⚠️ Note: برای Reserve، Retry باید با احتیاط باشد (Idempotency)
+            this.ajaxWithRetry({
                 url: '/Patient/AppointmentBooking/Reserve',
                 type: 'POST',
                 data: formData,
-                success: async (response) => {
+                timeout: 60000, // ✅ 60 ثانیه Timeout برای Reserve (ممکن است طول بکشد)
+                maxRetries: 1, // ✅ فقط 1 بار Retry برای Reserve (به دلیل Idempotency)
+                retryDelay: 2000, // ✅ 2 ثانیه تاخیر
+                onSuccess: async (response) => {
                     hideLoading();
                     if (response.success) {
                         // اگر نیاز به پرداخت دارد، پرداخت را انجام بده
@@ -65,13 +70,25 @@
                         this.showError(response.message || 'خطا در رزرو نوبت');
                     }
                 },
-                error: (xhr) => {
+                onError: (xhr, status, error) => {
                     hideLoading();
+                    let errorMessage = 'خطا در ارتباط با سرور';
+                    
+                    // ✅ تشخیص نوع خطا و نمایش پیام مناسب
                     if (xhr.responseJSON && xhr.responseJSON.message) {
-                        this.showError(xhr.responseJSON.message);
-                    } else {
-                        this.showError('خطا در ارتباط با سرور');
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (status === 'timeout') {
+                        errorMessage = 'زمان اتصال به سرور به پایان رسید. لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.';
+                    } else if (status === 'error' && xhr.status === 0) {
+                        errorMessage = 'خطا در اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                    } else if (xhr.status >= 500) {
+                        errorMessage = 'خطای سرور. لطفاً چند لحظه صبر کنید و دوباره تلاش کنید.';
+                    } else if (xhr.status === 400) {
+                        errorMessage = 'اطلاعات ارسالی نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
                     }
+                    
+                    this.showError(errorMessage);
+                    console.error('❌ [ConfirmBooking] AJAX Error:', { status, error, xhr });
                 }
             });
         },
@@ -145,13 +162,78 @@
             });
         },
 
+        /**
+         * ✅ CRITICAL FIX: AJAX Helper با Retry Logic و Timeout Handling
+         * طبق قراردادها: Bulletproof Error Handling
+         */
+        ajaxWithRetry: function (options) {
+            const self = this;
+            let retryCount = 0;
+            const maxRetries = options.maxRetries || 3;
+            const retryDelay = options.retryDelay || 1000;
+            const timeout = options.timeout || 30000;
+
+            function makeRequest() {
+                $.ajax({
+                    url: options.url,
+                    type: options.type || 'GET',
+                    data: options.data || {},
+                    headers: options.headers || {},
+                    timeout: timeout,
+                    success: function (response) {
+                        if (options.onSuccess) {
+                            options.onSuccess(response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // ✅ تشخیص نوع خطا
+                        const isNetworkError = status === 'timeout' || 
+                                             status === 'error' && xhr.status === 0 ||
+                                             status === 'abort';
+                        
+                        const isServerError = xhr.status >= 500;
+                        const isClientError = xhr.status >= 400 && xhr.status < 500;
+
+                        // ✅ Retry Logic برای Network Errors و Server Errors (نه Client Errors)
+                        if (retryCount < maxRetries && (isNetworkError || isServerError) && !isClientError) {
+                            retryCount++;
+                            console.warn(`⚠️ [ConfirmBooking] Retry attempt ${retryCount}/${maxRetries} for ${options.url}`);
+                            
+                            // ✅ Exponential Backoff
+                            const delay = retryDelay * Math.pow(2, retryCount - 1);
+                            
+                            setTimeout(function () {
+                                makeRequest();
+                            }, delay);
+                        } else {
+                            // ✅ تمام تلاش‌ها انجام شد یا خطای Client Error
+                            if (options.onError) {
+                                options.onError(xhr, status, error);
+                            } else {
+                                self.showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                            }
+                        }
+                    }
+                });
+            }
+
+            makeRequest();
+        },
+
         showError: function (message) {
-            Swal.fire({
-                title: 'خطا',
-                text: message,
-                icon: 'error',
-                confirmButtonText: 'باشه'
-            });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'خطا',
+                    text: message,
+                    icon: 'error',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#2c5aa0'
+                });
+            } else if (typeof toastr !== 'undefined') {
+                toastr.error(message);
+            } else {
+                alert(message);
+            }
         }
     };
 

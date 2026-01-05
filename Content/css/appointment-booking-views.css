@@ -151,6 +151,18 @@
     font-weight: 600;
     border-radius: 12px;
     transition: all 0.3s ease;
+    /* ✅ CRITICAL FIX: Touch Target حداقل 44x44px */
+    min-height: 44px;
+}
+
+/* ✅ Mobile: دکمه‌های بزرگتر برای Touch بهتر */
+@media (max-width: 575.98px) {
+    .btn-continue {
+        min-width: 100%; /* ✅ عرض کامل در موبایل */
+        min-height: 48px; /* ✅ کمی بزرگتر */
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem; /* ✅ حداقل 16px */
+    }
 }
 
 .btn-continue:disabled {
@@ -312,6 +324,16 @@
     background: white;
 }
 
+/* ✅ Mobile: بهبود Touch Targets برای دکمه‌های Doctor Card */
+@media (max-width: 575.98px) {
+    .doctor-card .select-doctor-btn,
+    .doctor-card .btn {
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        font-size: 1rem; /* ✅ حداقل 16px */
+    }
+}
+
 .doctor-card:hover {
     box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
     transform: translateY(-2px);
@@ -393,15 +415,43 @@
     margin-bottom: 0.5rem;
 }
 
+/* ✅ Mobile: بهبود Font Sizes برای خوانایی بهتر */
+@media (max-width: 575.98px) {
+    .slot-time {
+        font-size: 1.2rem; /* ✅ بزرگتر برای موبایل - 19.2px */
+    }
+    
+    .slot-range {
+        font-size: 1rem; /* ✅ حداقل 16px برای خوانایی */
+    }
+    
+    .slot-duration {
+        font-size: 0.95rem; /* ✅ حداقل 15.2px */
+    }
+}
+
 .select-slot-btn {
     font-weight: 600;
     border-radius: 8px;
     transition: all 0.3s ease;
+    /* ✅ CRITICAL FIX: Touch Target حداقل 44x44px برای Mobile (طبق Healthcare UI Standards) */
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 1rem; /* ✅ اطمینان از padding مناسب */
 }
 
 .select-slot-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+/* ✅ Mobile: اطمینان از Touch Target مناسب */
+@media (max-width: 575.98px) {
+    .select-slot-btn {
+        min-height: 48px; /* ✅ کمی بزرگتر برای موبایل */
+        padding: 0.625rem 1.25rem;
+        font-size: 1rem; /* ✅ حداقل 16px برای خوانایی */
+    }
 }
 
 /* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
@@ -427,7 +477,29 @@
 }
 
 .appointment-page-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.5rem; /* ✅ 24px - مناسب برای موبایل */
+}
+
+/* ✅ اطمینان از خوانایی در موبایل */
+@media (max-width: 575.98px) {
+    .appointment-page-header {
+        padding: 1.25rem; /* ✅ کمی کمتر padding در موبایل کوچک */
+    }
+    
+    .appointment-page-header h2 {
+        font-size: 1.375rem; /* ✅ 22px - کمی کوچکتر برای موبایل کوچک */
+    }
+    
+    .appointment-page-header p {
+        font-size: 0.875rem; /* ✅ 14px - حداقل برای خوانایی */
+    }
+    
+    /* ✅ بهبود Touch Targets برای دکمه‌های Header */
+    .appointment-page-header .btn {
+        min-height: 44px;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem; /* ✅ حداقل 14px */
+    }
 }
 
 .search-card {
@@ -451,8 +523,16 @@
 }
 
 .time-slots-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    /* ✅ Mobile-First: در موبایل، یک ستون کامل */
+    grid-template-columns: 1fr;
     gap: 0.75rem;
+}
+
+/* ✅ Tablet: دو ستون */
+@media (min-width: 576px) {
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
 }
 
 .summary-card {

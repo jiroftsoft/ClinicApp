@@ -493,7 +493,8 @@ namespace ClinicApp.Services.Appointment
         {
             // ✅ CRITICAL FIX: Transaction Management برای یکپارچگی داده
             // تمام عملیات (validation, price calculation, appointment creation) در یک transaction
-            using (var transaction = _context.Database.BeginTransaction())
+            // ✅ استفاده از ReadCommitted Isolation Level برای جلوگیری از Dirty Read و Race Condition
+            using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
             {
                 try
                 {

@@ -146,6 +146,10 @@ namespace ClinicApp.Repositories.Appointment
             }
         }
 
+        /// <summary>
+        /// ✅ CRITICAL FIX: بررسی دسترسی‌پذیری اسلات با UPDLOCK برای جلوگیری از Race Condition
+        /// استفاده از Raw SQL با UPDLOCK برای pessimistic locking در SQL Server
+        /// </summary>
         public async Task<bool> CheckSlotAvailabilityAsync(
             int doctorId,
             DateTime appointmentDate,
@@ -157,23 +161,33 @@ namespace ClinicApp.Repositories.Appointment
                 var appointmentDateTime = appointmentDate.Date.Add(startTime);
                 var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
 
-                // بررسی نوبت‌های موجود که با این بازه زمانی تداخل دارند
-                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
-                var conflictingAppointment = await _context.Appointments
-                    .AnyAsync(a =>
-                        a.DoctorId == doctorId &&
-                        !a.IsDeleted &&
-                        a.Status != AppointmentStatus.Cancelled &&
-                        DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(appointmentDate) &&
-                        ((a.AppointmentDate >= appointmentDateTime && a.AppointmentDate < appointmentEndDateTime) ||
-                         (a.AppointmentDate.AddMinutes(a.Duration) > appointmentDateTime && 
-                          a.AppointmentDate.AddMinutes(a.Duration) <= appointmentEndDateTime) ||
-                         (a.AppointmentDate <= appointmentDateTime && 
-                          a.AppointmentDate.AddMinutes(a.Duration) >= appointmentEndDateTime)));
+                // ✅ CRITICAL: استفاده از Raw SQL با UPDLOCK برای pessimistic locking
+                // این باعث می‌شود که ردیف‌های مربوطه lock شوند تا Race Condition رخ ندهد
+                // مشابه HasOverlappingPatientAppointmentAsync اما برای DoctorId
+                var sql = @"
+                    SELECT COUNT(*) 
+                    FROM Appointments WITH (UPDLOCK, ROWLOCK)
+                    WHERE DoctorId = @p0
+                      AND IsDeleted = 0
+                      AND Status != @p1
+                      AND CAST(AppointmentDate AS DATE) = CAST(@p2 AS DATE)
+                      AND (
+                          (AppointmentDate >= @p3 AND AppointmentDate < @p4) OR
+                          (DATEADD(MINUTE, Duration, AppointmentDate) > @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) <= @p4) OR
+                          (AppointmentDate <= @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) >= @p4)
+                      )";
 
-                var isAvailable = !conflictingAppointment;
+                var count = await _context.Database.SqlQuery<int>(sql,
+                    new System.Data.SqlClient.SqlParameter("@p0", doctorId),
+                    new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Cancelled),
+                    new System.Data.SqlClient.SqlParameter("@p2", appointmentDate.Date),
+                    new System.Data.SqlClient.SqlParameter("@p3", appointmentDateTime),
+                    new System.Data.SqlClient.SqlParameter("@p4", appointmentEndDateTime)
+                ).FirstOrDefaultAsync();
 
-                _logger.Information("بررسی دسترسی‌پذیری اسلات - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, در دسترس: {IsAvailable}",
+                var isAvailable = count == 0;
+
+                _logger.Information("بررسی دسترسی‌پذیری اسلات (با UPDLOCK) - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, در دسترس: {IsAvailable}",
                     doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, isAvailable);
 
                 return isAvailable;
