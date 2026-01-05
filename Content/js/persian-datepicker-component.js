@@ -136,33 +136,45 @@
          */
         calculateTodayClientSide: function() {
             try {
+                // ✅ CRITICAL FIX: محاسبه تاریخ «ایران» مستقل از timezone کاربر
+                // محاسبه UTC + offset ایران (+03:30)
+                var now = new Date();
+                var utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+                var iranMs = utcMs + (210 * 60000); // +03:30 = 3.5 * 60 * 1000 = 210 minutes
+                var iranDate = new Date(iranMs);
+                
                 // ✅ استفاده از jalaali برای تبدیل
                 if (typeof jalaali !== 'undefined' && jalaali.toJalaali) {
-                    var today = new Date();
-                    var jalaaliDate = jalaali.toJalaali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+                    var jalaaliDate = jalaali.toJalaali(
+                        iranDate.getUTCFullYear(), 
+                        iranDate.getUTCMonth() + 1, 
+                        iranDate.getUTCDate()
+                    );
                     
                     var year = String(jalaaliDate.jy).padStart(4, '0');
                     var month = String(jalaaliDate.jm).padStart(2, '0');
                     var day = String(jalaaliDate.jd).padStart(2, '0');
                     
                     var result = year + '/' + month + '/' + day;
-                    this.logger.log('تاریخ امروز در client-side محاسبه شد:', result);
+                    this.logger.log('تاریخ امروز ایران در client-side محاسبه شد:', result);
                     return result;
                 } else {
-                    this.logger.warn('jalaali library یافت نشد، استفاده از تاریخ میلادی');
-                    var today = new Date();
-                    var year = today.getFullYear();
-                    var month = String(today.getMonth() + 1).padStart(2, '0');
-                    var day = String(today.getDate()).padStart(2, '0');
+                    this.logger.warn('jalaali library یافت نشد، استفاده از تاریخ میلادی ایران');
+                    var year = iranDate.getUTCFullYear();
+                    var month = String(iranDate.getUTCMonth() + 1).padStart(2, '0');
+                    var day = String(iranDate.getUTCDate()).padStart(2, '0');
                     return year + '/' + month + '/' + day;
                 }
             } catch (error) {
                 this.logger.error('خطا در محاسبه تاریخ امروز در client-side:', error);
-                // ✅ آخرین Fallback: تاریخ میلادی
-                var today = new Date();
-                var year = today.getFullYear();
-                var month = String(today.getMonth() + 1).padStart(2, '0');
-                var day = String(today.getDate()).padStart(2, '0');
+                // ✅ آخرین Fallback: تاریخ میلادی ایران
+                var now = new Date();
+                var utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+                var iranMs = utcMs + (210 * 60000);
+                var iranDate = new Date(iranMs);
+                var year = iranDate.getUTCFullYear();
+                var month = String(iranDate.getUTCMonth() + 1).padStart(2, '0');
+                var day = String(iranDate.getUTCDate()).padStart(2, '0');
                 return year + '/' + month + '/' + day;
             }
         },

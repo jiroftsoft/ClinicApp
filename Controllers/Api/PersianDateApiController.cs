@@ -55,10 +55,12 @@ namespace ClinicApp.Controllers.Api
                     0, 0, 0,
                     iranNow.Offset
                 );
-                var today = iranMidnight.DateTime;
+                // ✅ CRITICAL FIX: تبدیل به UTC برای PersianDateHelper
+                // PersianDateHelper برای UTC به درستی به Iran Time تبدیل می‌کند
+                var todayUtc = iranMidnight.UtcDateTime;
                 
-                // ✅ تبدیل به تاریخ شمسی
-                var persianToday = PersianDateHelper.ToPersianDate(today);
+                // ✅ تبدیل به تاریخ شمسی (PersianDateHelper UTC را به Iran Time تبدیل می‌کند)
+                var persianToday = PersianDateHelper.ToPersianDate(todayUtc);
                 
                 // ✅ بررسی صحت تبدیل
                 if (string.IsNullOrEmpty(persianToday) || persianToday == "0000/00/00")
@@ -71,8 +73,8 @@ namespace ClinicApp.Controllers.Api
                     }, JsonRequestBehavior.AllowGet);
                 }
 
-                // ✅ تبدیل به میلادی برای استفاده در DatePicker
-                var gregorianToday = today.ToString("yyyy-MM-dd");
+                // ✅ تبدیل به میلادی برای استفاده در DatePicker (از iranMidnight استفاده می‌کنیم)
+                var gregorianToday = iranMidnight.DateTime.ToString("yyyy-MM-dd");
                 
                 // ✅ Logging برای Debug و Monitoring
                 Serilog.Log.Information("🔍 [GetToday] UTC: {UtcNow}, Iran: {IranNow}, Persian: {PersianDate}, Gregorian: {GregorianDate}, Timezone: {Timezone}", 
@@ -87,13 +89,13 @@ namespace ClinicApp.Controllers.Api
                     timestamp = iranMidnight.ToUnixTimeSeconds(),
                     timezone = iranTz.Id,
                     utcDate = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd"),
-                    iranDate = today.ToString("yyyy-MM-dd"),
+                    iranDate = iranMidnight.DateTime.ToString("yyyy-MM-dd"),
                     // ✅ اضافه کردن اطلاعات برای Debug
                     debug = new
                     {
                         utcNow = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
                         iranNow = iranNow.ToString("yyyy-MM-dd HH:mm:ss"),
-                        iranToday = today.ToString("yyyy-MM-dd")
+                        iranToday = iranMidnight.DateTime.ToString("yyyy-MM-dd")
                     }
                 }, JsonRequestBehavior.AllowGet);
             }

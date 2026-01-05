@@ -25,6 +25,8 @@
         selectedDatePersian: null,
         selectedDateGregorian: null,
         datePickerInstance: null,
+        isProcessingSelection: false, // ✅ Flag برای جلوگیری از duplicate validation
+        lastSelectionTime: 0, // ✅ Track selection time for auto-recovery
 
         init: function () {
             this.doctorId = parseInt($('#doctorId').val(), 10);
@@ -72,10 +74,18 @@
 
             // ✅ Method 2: Listen for change event (Fallback)
             $datePicker.on('change', function () {
+                // ✅ CRITICAL FIX: جلوگیری از duplicate validation
+                if (self.isProcessingSelection) {
+                    console.log('📅 Selection already processing, skipping change event');
+                    return;
+                }
+                
                 const persianDate = $(this).val();
                 if (persianDate && persianDate.trim() !== '') {
                     console.log('📅 Change event fired', persianDate);
+                    self.isProcessingSelection = true;
                     self.handleDateSelectionFromPersian(persianDate);
+                    // ✅ Flag در handleDateSelectionFromPersian reset می‌شود
                 }
             });
 
@@ -105,65 +115,113 @@
 
         handleDateSelection: function (event) {
             try {
-                // ✅ CRITICAL FIX: اولویت با unix timestamp (دقیق‌تر است)
-                // jQuery event object structure: event.originalEvent یا event.data
-                let eventData = null;
-                
-                if (event && event.originalEvent) {
-                    eventData = event.originalEvent;
-                } else if (event && event.data) {
-                    eventData = event.data;
-                } else if (event && (event.unix || event.selected)) {
-                    eventData = event;
-                }
-                
-                if (eventData && eventData.unix) {
-                    const unixTimestamp = eventData.unix;
-                    console.log('📅 Using unix timestamp from event:', unixTimestamp);
-                    this.handleDateSelectionFromUnix(unixTimestamp);
-                    return;
-                }
-                
-                // ✅ Fallback: استفاده از selected object (jy, jm, jd)
-                if (eventData && eventData.selected) {
-                    const selected = eventData.selected;
-                    if (selected && selected.jy && selected.jm && selected.jd) {
-                        const persianDate = `${selected.jy}/${String(selected.jm).padStart(2, '0')}/${String(selected.jd).padStart(2, '0')}`;
-                        console.log('📅 Using selected object:', persianDate);
-                        this.handleDateSelectionFromPersian(persianDate);
+                // ✅ CRITICAL FIX: جلوگیری از duplicate validation
+                // اما اگر بیش از 2 ثانیه گذشته باشد، flag را reset می‌کنیم (auto-recovery)
+                if (this.isProcessingSelection) {
+                    const timeSinceLastSelection = Date.now() - (this.lastSelectionTime || 0);
+                    if (timeSinceLastSelection > 2000) {
+                        console.log('📅 Auto-resetting flag after timeout');
+                        this.isProcessingSelection = false;
+                    } else {
+                        console.log('📅 Selection already processing, skipping duplicate event');
                         return;
                     }
                 }
                 
-                // ✅ Last fallback: استفاده از input value
-                const $datePicker = $('#appointmentDatePicker');
-                if ($datePicker.length > 0) {
-                    const persianDate = $datePicker.val();
-                    if (persianDate && persianDate.trim() !== '') {
-                        console.log('📅 Using input value as fallback:', persianDate);
-                        this.handleDateSelectionFromPersian(persianDate);
+                // ✅ CRITICAL FIX: اولویت با input value (دقیق‌ترین و timezone-independent)
+                // Input value همیشه Persian date string است که دقیق‌تر از unix timestamp است
+                // استفاده از setTimeout برای اطمینان از اینکه input value set شده است
+                const self = this;
+                this.isProcessingSelection = true;
+                this.lastSelectionTime = Date.now(); // ✅ Track selection time
+                
+                setTimeout(function() {
+                    const $datePicker = $('#appointmentDatePicker');
+                    if ($datePicker.length > 0) {
+                        const persianDate = $datePicker.val();
+                        if (persianDate && persianDate.trim() !== '') {
+                            console.log('📅 Using input value (primary):', persianDate);
+                            self.handleDateSelectionFromPersian(persianDate);
+                            self.isProcessingSelection = false;
+                            return;
+                        }
+                    }
+                    
+                    // ✅ Fallback: استفاده از event data
+                    let eventData = null;
+                    if (event && event.originalEvent) {
+                        eventData = event.originalEvent;
+                    } else if (event && event.data) {
+                        eventData = event.data;
+                    } else if (event && (event.unix || event.selected)) {
+                        eventData = event;
+                    }
+                    
+                    // ✅ Fallback 1: استفاده از selected object (jy, jm, jd)
+                    if (eventData && eventData.selected) {
+                        const selected = eventData.selected;
+                        if (selected && selected.jy && selected.jm && selected.jd) {
+                            const persianDate = `${selected.jy}/${String(selected.jm).padStart(2, '0')}/${String(selected.jd).padStart(2, '0')}`;
+                            console.log('📅 Using selected object:', persianDate);
+                            self.handleDateSelectionFromPersian(persianDate);
+                            self.isProcessingSelection = false;
+                            return;
+                        }
+                    }
+                    
+                    // ✅ Fallback 2: استفاده از unix timestamp (آخرین گزینه)
+                    if (eventData && eventData.unix) {
+                        const unixTimestamp = eventData.unix;
+                        console.log('📅 Using unix timestamp from event (fallback):', unixTimestamp);
+                        self.handleDateSelectionFromUnix(unixTimestamp);
+                        self.isProcessingSelection = false;
                         return;
                     }
-                }
-                
-                console.warn('⚠️ No valid date found in event:', event);
+                    
+                    console.warn('⚠️ No valid date found in event:', event);
+                    self.isProcessingSelection = false;
+                }, 50); // ✅ Small delay to ensure input value is set
             } catch (ex) {
                 console.error('❌ Error in handleDateSelection:', ex);
+                this.isProcessingSelection = false;
                 this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
             }
         },
 
         handleDateSelectionFromUnix: function (unixTimestamp) {
             try {
-                if (!unixTimestamp) return;
+                if (!unixTimestamp) {
+                    this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag if no timestamp
+                    return;
+                }
 
-                // ✅ Convert Unix timestamp to Date (handle both seconds and milliseconds)
+                // ✅ CRITICAL FIX: اولویت با Persian date string (timezone-independent)
+                // Unix timestamp ممکن است از local timezone DatePicker بیاید
+                if (this.datePickerInstance) {
+                    const persianDate = this.datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                    if (persianDate) {
+                        console.log('📅 Using Persian date from DatePicker:', persianDate);
+                        // ✅ استفاده از Persian date برای تبدیل (دقیق‌تر از unix timestamp)
+                        this.handleDateSelectionFromPersian(persianDate);
+                        return;
+                    }
+                }
+
+                // ✅ Fallback: استفاده از unix timestamp (اگر Persian date در دسترس نبود)
                 const timestamp = unixTimestamp < 2e10 ? unixTimestamp * 1000 : unixTimestamp;
+                // ✅ CRITICAL FIX: ساخت Date از UTC برای timezone-independent
+                // Unix timestamp معمولاً UTC است، اما برای اطمینان از UTC استفاده می‌کنیم
                 const date = new Date(timestamp);
                 
                 if (date && date instanceof Date && !isNaN(date.getTime())) {
-                    this.selectedDateGregorian = date;
-                    $('#selectedDateGregorian').val(this.formatDateForInput(date));
+                    // ✅ استفاده از UTC methods برای date-only (timezone-independent)
+                    const year = date.getUTCFullYear();
+                    const month = date.getUTCMonth() + 1;
+                    const day = date.getUTCDate();
+                    const dateUTC = new Date(Date.UTC(year, month - 1, day));
+                    
+                    this.selectedDateGregorian = dateUTC;
+                    $('#selectedDateGregorian').val(this.formatDateForInput(dateUTC));
                     
                     // ✅ Get Persian date from datePicker instance
                     if (this.datePickerInstance) {
@@ -174,9 +232,13 @@
                         }
                     }
                     
-                    this.checkDateAvailability(date);
+                    this.checkDateAvailability(dateUTC);
+                } else {
+                    this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag if invalid date
+                    console.error('❌ Invalid date from unix timestamp:', unixTimestamp);
                 }
             } catch (ex) {
+                this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag on error
                 console.error('❌ Error in handleDateSelectionFromUnix:', ex);
                 this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
             }
@@ -184,7 +246,10 @@
 
         handleDateSelectionFromPersian: function (persianDate) {
             try {
-                if (!persianDate || persianDate.trim() === '') return;
+                if (!persianDate || persianDate.trim() === '') {
+                    this.isProcessingSelection = false;
+                    return;
+                }
 
                 // ✅ CRITICAL FIX: تبدیل اعداد فارسی به انگلیسی قبل از parse
                 const englishDate = this.convertPersianToEnglishNumbers(persianDate.trim());
@@ -197,11 +262,14 @@
                     $('#selectedDateGregorian').val(this.formatDateForInput(gregorianDate));
                     this.updateUI(persianDate);
                     this.checkDateAvailability(gregorianDate);
+                    // ✅ Flag در checkDateAvailability reset می‌شود (بعد از async)
                 } else {
+                    this.isProcessingSelection = false;
                     console.error('❌ Failed to convert Persian date:', persianDate, 'English:', englishDate);
                     this.showError('تاریخ انتخاب شده نامعتبر است. لطفاً دوباره تلاش کنید.');
                 }
             } catch (ex) {
+                this.isProcessingSelection = false;
                 console.error('❌ Error in handleDateSelectionFromPersian:', ex);
                 this.showError('خطا در انتخاب تاریخ. لطفاً دوباره تلاش کنید.');
             }
@@ -230,7 +298,8 @@
                         if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
                             year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
                             const gregorian = jalaali.toGregorian(year, month, day);
-                            return new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
+                            // ✅ CRITICAL FIX: استفاده از UTC برای timezone-independent date
+                            return new Date(Date.UTC(gregorian.gy, gregorian.gm - 1, gregorian.gd));
                         }
                     }
                 }
@@ -264,27 +333,83 @@
         checkDateAvailability: function (date) {
             if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
                 $('#continueToTimeBtn').prop('disabled', true);
+                this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag if invalid date
                 return;
             }
 
-            // ✅ Get today's date (server timezone aware)
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const selectedDateOnly = new Date(date);
-            selectedDateOnly.setHours(0, 0, 0, 0);
+            // ✅ CRITICAL FIX: استفاده از server today (Iran timezone) به جای client Date
+            // دریافت تاریخ امروز از server برای اطمینان از صحت
+            const self = this;
+            if (window.PersianDatePickerComponent && window.PersianDatePickerComponent.getTodayFromServer) {
+                window.PersianDatePickerComponent.getTodayFromServer().then(function(todayPersian) {
+                    // ✅ CRITICAL FIX: مقایسه date strings (timezone-independent)
+                    // تبدیل todayPersian (1404/10/15) به Gregorian string برای مقایسه
+                    const todayGregorian = self.convertPersianToGregorian(todayPersian);
+                    if (todayGregorian) {
+                        // ✅ استفاده از date string (YYYY-MM-DD) برای مقایسه timezone-independent
+                        const todayString = self.formatDateForInput(todayGregorian); // "2025-12-26"
+                        const selectedString = self.formatDateForInput(date); // "2026-01-05"
+                        
+                        console.log('🔍 Date comparison - Today (Iran):', todayString, 'Selected:', selectedString);
 
-            // ✅ Check if date is in the past
-            if (selectedDateOnly < today) {
+                        // ✅ Check if date is in the past (string comparison is timezone-independent)
+                        if (selectedString < todayString) {
+                            $('#continueToTimeBtn').prop('disabled', true);
+                            $('#dateSelectedFeedback').removeClass('show');
+                            self.showError('نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید');
+                            console.warn('⚠️ Date rejected as past:', selectedString, '<', todayString);
+                            self.isProcessingSelection = false; // ✅ CRITICAL: Reset flag before return
+                            return;
+                        }
+
+                        // ✅ Date is valid - enable button
+                        $('#continueToTimeBtn').prop('disabled', false);
+                        console.log('✅ Date selected and validated (Iran timezone):', selectedString, '>=', todayString);
+                        self.isProcessingSelection = false; // ✅ Reset flag after validation
+                    } else {
+                        // Fallback: استفاده از client date (اگر server unavailable)
+                        console.warn('⚠️ Failed to convert todayPersian, using fallback');
+                        self.checkDateAvailabilityFallback(date);
+                    }
+                }).catch(function(error) {
+                    // Fallback: استفاده از client date
+                    console.warn('⚠️ getTodayFromServer failed, using fallback:', error);
+                    self.checkDateAvailabilityFallback(date);
+                });
+            } else {
+                // Fallback: استفاده از client date
+                console.warn('⚠️ PersianDatePickerComponent not available, using fallback');
+                this.checkDateAvailabilityFallback(date);
+            }
+        },
+
+        checkDateAvailabilityFallback: function (date) {
+            // ✅ Fallback: محاسبه ایران‌محور در client
+            const now = new Date();
+            const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const iranMs = utcMs + (210 * 60000); // +03:30
+            const iranDate = new Date(iranMs);
+            
+            // ✅ استفاده از UTC برای date-only (timezone-independent)
+            const today = new Date(Date.UTC(iranDate.getUTCFullYear(), iranDate.getUTCMonth(), iranDate.getUTCDate()));
+            const todayString = this.formatDateForInput(today);
+            
+            const selectedString = this.formatDateForInput(date);
+            
+            console.log('🔍 Date comparison (fallback) - Today (Iran):', todayString, 'Selected:', selectedString);
+
+            if (selectedString < todayString) {
                 $('#continueToTimeBtn').prop('disabled', true);
                 $('#dateSelectedFeedback').removeClass('show');
                 this.showError('نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید');
+                console.warn('⚠️ Date rejected as past (fallback):', selectedString, '<', todayString);
+                this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag before return
                 return;
             }
 
-            // ✅ Date is valid - enable button
             $('#continueToTimeBtn').prop('disabled', false);
-            console.log('✅ Date selected and validated:', this.formatDateForInput(date));
+            console.log('✅ Date selected and validated (fallback):', selectedString, '>=', todayString);
+            this.isProcessingSelection = false; // ✅ Reset flag after validation
         },
 
         handleContinue: function () {
@@ -311,9 +436,11 @@
             if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
                 return '';
             }
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+            // ✅ CRITICAL FIX: استفاده از UTC برای timezone-independent date-only
+            // این برای مقایسه تاریخ‌ها مهم است (مستقل از timezone کاربر)
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         },
 
