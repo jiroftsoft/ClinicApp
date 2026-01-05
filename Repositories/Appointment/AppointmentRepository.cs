@@ -7,6 +7,7 @@ using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Models;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models.Entities.Doctor; // ✅ برای DoctorTimeSlot
 using Serilog;
 using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 
@@ -152,6 +153,7 @@ namespace ClinicApp.Repositories.Appointment
         /// <summary>
         /// ✅ CRITICAL FIX: بررسی دسترسی‌پذیری اسلات با UPDLOCK برای جلوگیری از Race Condition
         /// استفاده از Raw SQL با UPDLOCK برای pessimistic locking در SQL Server
+        /// ✅ بهبود: بررسی هم DoctorTimeSlot و هم Appointments
         /// </summary>
         public async Task<bool> CheckSlotAvailabilityAsync(
             int doctorId,
@@ -164,9 +166,25 @@ namespace ClinicApp.Repositories.Appointment
                 var appointmentDateTime = appointmentDate.Date.Add(startTime);
                 var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
 
-                // ✅ CRITICAL: استفاده از Raw SQL با UPDLOCK برای pessimistic locking
+                // ✅ STEP 1: بررسی وجود اسلات در DoctorTimeSlots با Status = Available
+                // اگر اسلات در DoctorTimeSlots وجود نداشته باشد یا Status != Available باشد، در دسترس نیست
+                var slotExists = await _context.DoctorTimeSlots
+                    .AnyAsync(ts => ts.DoctorId == doctorId &&
+                                   ts.AppointmentDate.Date == appointmentDate.Date &&
+                                   ts.StartTime == startTime &&
+                                   ts.EndTime == endTime &&
+                                   ts.Status == AppointmentStatus.Available &&
+                                   !ts.IsDeleted);
+
+                if (!slotExists)
+                {
+                    _logger.Warning("⚠️ SLOT NOT FOUND OR NOT AVAILABLE: اسلات {DoctorId}/{Date}/{StartTime}-{EndTime} در DoctorTimeSlots یافت نشد یا در دسترس نیست",
+                        doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime);
+                    return false;
+                }
+
+                // ✅ STEP 2: بررسی overlap با Appointments موجود (با UPDLOCK برای Race Condition Prevention)
                 // این باعث می‌شود که ردیف‌های مربوطه lock شوند تا Race Condition رخ ندهد
-                // مشابه HasOverlappingPatientAppointmentAsync اما برای DoctorId
                 var sql = @"
                     SELECT COUNT(*) 
                     FROM Appointments WITH (UPDLOCK, ROWLOCK)
@@ -190,15 +208,15 @@ namespace ClinicApp.Repositories.Appointment
 
                 var isAvailable = count == 0;
 
-                _logger.Information("بررسی دسترسی‌پذیری اسلات (با UPDLOCK) - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, در دسترس: {IsAvailable}",
-                    doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, isAvailable);
+                _logger.Information("✅ بررسی دسترسی‌پذیری اسلات (با UPDLOCK) - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, SlotExists: {SlotExists}, OverlapCount: {Count}, در دسترس: {IsAvailable}",
+                    doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, slotExists, count, isAvailable);
 
                 return isAvailable;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی دسترسی‌پذیری اسلات - پزشک: {DoctorId}, تاریخ: {Date}",
-                    doctorId, appointmentDate.ToString("yyyy/MM/dd"));
+                _logger.Error(ex, "❌ خطا در بررسی دسترسی‌پذیری اسلات - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, ExceptionType: {ExceptionType}, Message: {Message}",
+                    doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, ex.GetType().Name, ex.Message);
                 throw;
             }
         }

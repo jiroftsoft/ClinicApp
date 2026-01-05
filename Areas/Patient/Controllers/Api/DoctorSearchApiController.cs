@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
+using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
 using Serilog;
 
 namespace ClinicApp.Areas.Patient.Controllers.Api
@@ -20,12 +21,15 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
     {
         private readonly IAppointmentBookingService _bookingService;
         private readonly ILogger _logger;
+        private readonly ITimeProvider _timeProvider; // ✅ برای استفاده از GetIranToday()
 
         public DoctorSearchApiController(
             IAppointmentBookingService bookingService,
+            ITimeProvider timeProvider,
             ILogger logger)
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
+            _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _logger = logger?.ForContext<DoctorSearchApiController>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -124,16 +128,66 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 // ✅ Parse تاریخ (پشتیبانی از شمسی و میلادی)
                 DateTime? parsedDate = null;
                 
-                // ابتدا سعی می‌کنیم به صورت میلادی parse کنیم (فرمت ISO: yyyy-MM-dd)
-                if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture, 
-                    System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                // ✅ CRITICAL FIX: بهبود منطق parse برای تشخیص شمسی/میلادی
+                // اگر سال > 2000 باشد، احتمالاً میلادی است
+                // اگر سال < 2000 باشد، احتمالاً شمسی است
+                var normalizedDate = date.Trim();
+                var separators = new[] { '/', '-', '.', ' ' };
+                var parts = normalizedDate.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+                
+                if (parts.Length >= 3 && int.TryParse(parts[0], out int year))
                 {
-                    parsedDate = gregorianDate.Date;
+                    if (year > 2000)
+                    {
+                        // ✅ احتمالاً میلادی است
+                        if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture, 
+                            System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                        {
+                            parsedDate = gregorianDate.Date;
+                            _logger.Debug("تاریخ به صورت میلادی parse شد: {Date} -> {ParsedDate}", date, parsedDate.Value.ToString("yyyy/MM/dd"));
+                        }
+                        else
+                        {
+                            // اگر parse نشد، سعی می‌کنیم به صورت شمسی parse کنیم
+                            parsedDate = PersianDateHelper.ParsePersianDate(date);
+                            if (parsedDate.HasValue)
+                            {
+                                _logger.Debug("تاریخ به صورت شمسی parse شد (fallback): {Date} -> {ParsedDate}", date, parsedDate.Value.ToString("yyyy/MM/dd"));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // ✅ احتمالاً شمسی است
+                        parsedDate = PersianDateHelper.ParsePersianDate(date);
+                        if (parsedDate.HasValue)
+                        {
+                            _logger.Debug("تاریخ به صورت شمسی parse شد: {Date} -> {ParsedDate}", date, parsedDate.Value.ToString("yyyy/MM/dd"));
+                        }
+                        else
+                        {
+                            // اگر parse نشد، سعی می‌کنیم به صورت میلادی parse کنیم (fallback)
+                            if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture, 
+                                System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                            {
+                                parsedDate = gregorianDate.Date;
+                                _logger.Debug("تاریخ به صورت میلادی parse شد (fallback): {Date} -> {ParsedDate}", date, parsedDate.Value.ToString("yyyy/MM/dd"));
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    // اگر parse نشد، سعی می‌کنیم به صورت شمسی parse کنیم
-                    parsedDate = PersianDateHelper.ParsePersianDate(date);
+                    // ✅ اگر نتوانستیم سال را parse کنیم، از منطق قبلی استفاده می‌کنیم
+                    if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out DateTime gregorianDate))
+                    {
+                        parsedDate = gregorianDate.Date;
+                    }
+                    else
+                    {
+                        parsedDate = PersianDateHelper.ParsePersianDate(date);
+                    }
                 }
 
                 if (!parsedDate.HasValue)
@@ -143,8 +197,13 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 
                 var appointmentDate = parsedDate.Value;
 
-                if (appointmentDate.Date < DateTime.Today)
+                // ✅ CRITICAL FIX: استفاده از GetIranToday() به جای DateTime.Today
+                // DateTime.Today timezone-dependent است و ممکن است تاریخ اشتباه برگرداند
+                var iranToday = _timeProvider.GetIranToday();
+                if (appointmentDate.Date < iranToday)
                 {
+                    _logger.Warning("⚠️ تاریخ گذشته رد شد - تاریخ درخواست: {RequestDate}, تاریخ امروز ایران: {IranToday}",
+                        appointmentDate.ToString("yyyy/MM/dd"), iranToday.ToString("yyyy/MM/dd"));
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" }, JsonRequestBehavior.AllowGet);
                 }
 
@@ -241,8 +300,13 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     };
                 }
 
-                if (request.AppointmentDate.Date < DateTime.Today)
+                // ✅ CRITICAL FIX: استفاده از GetIranToday() به جای DateTime.Today
+                // DateTime.Today timezone-dependent است و ممکن است تاریخ اشتباه برگرداند
+                var iranToday = _timeProvider.GetIranToday();
+                if (request.AppointmentDate.Date < iranToday)
                 {
+                    _logger.Warning("⚠️ تاریخ گذشته رد شد - تاریخ درخواست: {RequestDate}, تاریخ امروز ایران: {IranToday}",
+                        request.AppointmentDate.ToString("yyyy/MM/dd"), iranToday.ToString("yyyy/MM/dd"));
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" });
                 }
 

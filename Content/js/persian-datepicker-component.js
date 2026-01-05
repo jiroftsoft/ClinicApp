@@ -338,26 +338,34 @@
             // اگر این attribute وجود داشته باشد، نباید تاریخ امروز را به عنوان پیش‌فرض نمایش دهیم
             var noDefaultDate = $input.attr('data-no-default-date') === 'true';
             
-            // ✅ دریافت تاریخ امروز از سرور (فقط برای fallback - اگر currentValue خالی باشد و noDefaultDate نباشد)
-            // ⚠️ مهم: این فقط برای initialize اولیه است، نه برای reset کردن تاریخ انتخاب شده
-            var todayPromise = noDefaultDate 
-                ? Promise.resolve(null) 
-                : this.getTodayFromServer();
+            // ✅ CRITICAL FIX: همیشه تاریخ امروز از سرور را دریافت کن (حتی اگر noDefaultDate true باشد)
+            // دلیل: برای override کردن highlight اشتباه DatePicker (16 به جای 15)
+            // اما اگر noDefaultDate true باشد، از آن به عنوان initialValue استفاده نمی‌کنیم
+            var todayPromise = this.getTodayFromServer();
             
             todayPromise.then(function(todayPersianDate) {
                 // ✅ دوباره چک کردن currentValue (ممکن است در این فاصله set شده باشد)
-                var finalCurrentValue = $input.val();
+                // ⚠️ CRITICAL: اگر noDefaultDate true باشد، نباید از input value استفاده کنیم
+                // چون DatePicker ممکن است تاریخ اشتباه (16) را set کرده باشد
+                var finalCurrentValue = currentValue; // استفاده از مقدار اولیه (قبل از initialize)
                 if (!finalCurrentValue || finalCurrentValue.trim() === '') {
-                    finalCurrentValue = currentValue; // استفاده از مقدار اولیه
+                    // فقط اگر مقدار اولیه خالی باشد و noDefaultDate false باشد، از input value استفاده کن
+                    var inputVal = $input.val();
+                    if (inputVal && inputVal.trim() !== '' && !noDefaultDate) {
+                        finalCurrentValue = inputVal;
+                    }
                 }
                 
-                self.logger.log('مقدار نهایی برای initialValue:', {
-                    field: fieldName,
-                    finalCurrentValue: finalCurrentValue,
-                    todayPersianDate: todayPersianDate,
-                    noDefaultDate: noDefaultDate,
-                    willUseCurrentValue: finalCurrentValue && finalCurrentValue.trim() !== ''
-                });
+                // ✅ Log فقط برای debug (کاهش لاگ‌ها)
+                if (PersianDatePickerComponent.config.enableLogging && (!noDefaultDate || finalCurrentValue)) {
+                    self.logger.log('مقدار نهایی برای initialValue:', {
+                        field: fieldName,
+                        finalCurrentValue: finalCurrentValue,
+                        todayPersianDate: todayPersianDate,
+                        noDefaultDate: noDefaultDate,
+                        willUseCurrentValue: finalCurrentValue && finalCurrentValue.trim() !== ''
+                    });
+                }
                 
                 // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، initialValue باید false باشد
                 // این تضمین می‌کند که تاریخ پیش‌فرض (15) نمایش داده نشود
@@ -370,12 +378,29 @@
                     initialValueToUse = todayPersianDate;
                 }
                 
+                // ✅ CRITICAL FIX: محاسبه minDate از تاریخ سرور (برای جلوگیری از انتخاب تاریخ‌های گذشته)
+                var minDate = null;
+                if (todayPersianDate) {
+                    var gregorianTodayStr = self.convertPersianToGregorian(todayPersianDate);
+                    if (gregorianTodayStr) {
+                        // تبدیل ISO string به Date object
+                        minDate = new Date(gregorianTodayStr);
+                        if (isNaN(minDate.getTime())) {
+                            minDate = null;
+                        }
+                    }
+                }
+                
                 // Initialize pDatepicker
                 var datePickerConfig = {
                     calendarType: 'persian',
                     format: 'YYYY/MM/DD',
                     autoClose: true,
-                    observer: true,
+                    // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، observer باید false باشد
+                    // چون observer باعث می‌شود DatePicker خودش input را parse کند و تاریخ اشتباه (16) را set کند
+                    observer: !noDefaultDate, // false اگر noDefaultDate true باشد
+                    // ✅ CRITICAL FIX: استفاده از minDate برای جلوگیری از انتخاب تاریخ‌های گذشته
+                    minDate: minDate,
                     timePicker: {
                         enabled: false
                     },
@@ -402,200 +427,649 @@
                             enabled: true,
                             locale: 'fa'
                         }
-                    },
-                    // ✅ CRITICAL FIX: استفاده از initialValueToUse که با توجه به noDefaultDate محاسبه شده
-                    // ⚠️ مهم: اگر initialValueToUse false باشد و noDefaultDate true باشد، باید null باشد نه false
-                    // چون pDatepicker ممکن است false را به عنوان "امروز" تفسیر کند
-                    initialValue: initialValueToUse || (noDefaultDate ? null : false),
-                    initialValueType: initialValueToUse ? 'persian' : undefined,
-                    onSelect: function(unix) {
-                        // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
-                        // این event باید trigger شود تا date-selection.js بتواند تاریخ را پردازش کند
-                        var eventData = {
-                            unix: unix,
-                            selected: null
-                        };
-                        
-                        try {
-                            // ✅ دریافت selected object از datePicker instance
-                            var datePickerInstance = $input.data('pDatepicker');
-                            if (datePickerInstance && datePickerInstance.selected) {
-                                eventData.selected = datePickerInstance.selected;
-                            }
-                        } catch (e) {
-                            self.logger.warn('خطا در دریافت selected object:', e);
-                        }
-                        
-                        // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
-                        // استفاده از jQuery.Event برای pass کردن data به درستی
-                        var customEvent = $.Event('pDatepicker:select');
-                        customEvent.unix = unix;
-                        customEvent.selected = eventData.selected;
-                        $input.trigger(customEvent, eventData);
-                        
-                        // ✅ Trigger change event برای fallback handlers
-                        setTimeout(function() {
-                            $input.trigger('change');
-                        }, 50);
-                        
-                        // ✅ برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
-                        if ($hiddenInput) {
-                            self.handleDateSelect($input, $hiddenInput, fieldName, unix);
-                        } else {
-                            // ✅ برای فرم GET، استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
-                            // ⚠️ مهم: نباید از $input.val() استفاده کنیم چون ممکن است هنوز به‌روز نشده باشد
-                            var persianDateStr = null;
-                            
-                            try {
-                                // ✅ استفاده از datePicker instance برای دریافت تاریخ انتخاب شده
-                                var datePickerInstance = $input.data('pDatepicker');
-                                if (datePickerInstance) {
-                                    // روش 1: استفاده از selected object (jy, jm, jd) - بهترین روش
-                                    var selected = datePickerInstance.selected;
-                                    if (selected && 
-                                        typeof selected.jy === 'number' && 
-                                        typeof selected.jm === 'number' && 
-                                        typeof selected.jd === 'number' &&
-                                        selected.jy > 0 && 
-                                        selected.jm >= 1 && selected.jm <= 12 && 
-                                        selected.jd >= 1 && selected.jd <= 31) {
-                                        
-                                        var year = String(selected.jy).padStart(4, '0');
-                                        var month = String(selected.jm).padStart(2, '0');
-                                        var day = String(selected.jd).padStart(2, '0');
-                                        persianDateStr = year + '/' + month + '/' + day;
-                                        
-                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از selected object:', {
-                                                field: fieldName,
-                                                persian: persianDateStr
-                                            });
-                                        }
-                                    }
-                                    
-                                    // روش 2: استفاده از getFormattedDate (fallback)
-                                    if (!persianDateStr) {
-                                        var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
-                                        if (formattedDate && 
-                                            typeof formattedDate === 'string' && 
-                                            formattedDate.includes('/') && 
-                                            formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            persianDateStr = formattedDate;
-                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از getFormattedDate:', {
-                                                field: fieldName,
-                                                persian: persianDateStr
-                                            });
-                                        }
-                                    }
-                                }
-                                
-                                // روش 3: استفاده از input value (آخرین fallback)
-                                if (!persianDateStr) {
-                                    persianDateStr = $input.val();
-                                    if (persianDateStr) {
-                                        persianDateStr = self.convertPersianToEnglishNumbers(persianDateStr);
-                                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                            self.logger.success('تاریخ انتخاب شد (فرم GET) - از input value:', {
-                                                field: fieldName,
-                                                persian: persianDateStr
-                                            });
-                                        } else {
-                                            persianDateStr = null;
-                                        }
-                                    }
-                                }
-                            } catch (error) {
-                                self.logger.error('خطا در دریافت تاریخ از datePicker:', error, {
-                                    field: fieldName
-                                });
-                                // Fallback: استفاده از input value
-                                persianDateStr = $input.val();
-                            }
-                            
-                            // ✅ اگر تاریخ معتبر پیدا نشد، لاگ warning
-                            if (!persianDateStr || !persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                                self.logger.warn('تاریخ معتبر پیدا نشد در onSelect:', {
-                                    field: fieldName,
-                                    inputValue: $input.val()
-                                });
-                            }
-                        }
                     }
                 };
-
-                $input.pDatepicker(datePickerConfig);
-
-                // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، باید تاریخ انتخاب شده را clear کنیم
-                // این تضمین می‌کند که تاریخ پیش‌فرض (15) highlight نشود
-                if (noDefaultDate && !initialValueToUse) {
-                    // ✅ Clear کردن تاریخ انتخاب شده در datePicker instance
-                    setTimeout(function() {
+                
+                // ✅ CRITICAL FIX: طبق مستندات Persian DatePicker (https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/)
+                // برای جلوگیری از نمایش تاریخ پیش‌فرض، باید initialValue: false باشد
+                // ⚠️ مهم: طبق مستندات، initialValue: false به معنای "بدون مقدار اولیه" است
+                var finalInitialValue = false;
+                if (initialValueToUse) {
+                    // ✅ اگر مقدار از View آمده، استفاده کن
+                    finalInitialValue = initialValueToUse;
+                } else if (!noDefaultDate && todayPersianDate) {
+                    // ✅ فقط اگر noDefaultDate false باشد و todayPersianDate موجود باشد
+                    // استفاده از تاریخ سرور برای highlight (نه client-side calculation)
+                    finalInitialValue = todayPersianDate;
+                }
+                // ✅ اگر noDefaultDate true باشد، finalInitialValue باید false بماند
+                
+                // ✅ Set finalInitialValue در datePickerConfig (طبق مستندات)
+                datePickerConfig.initialValue = finalInitialValue;
+                datePickerConfig.initialValueType = finalInitialValue ? 'persian' : undefined;
+                
+                // ✅ CRITICAL: Log فقط برای debug (کاهش لاگ‌ها)
+                if (PersianDatePickerComponent.config.enableLogging && (!noDefaultDate || finalInitialValue)) {
+                    self.logger.log('🔍 [DEBUG] finalInitialValue set شد:', {
+                        field: fieldName,
+                        finalInitialValue: finalInitialValue,
+                        initialValueToUse: initialValueToUse,
+                        todayPersianDate: todayPersianDate,
+                        noDefaultDate: noDefaultDate,
+                        willUseServerDate: !noDefaultDate && todayPersianDate
+                    });
+                }
+                
+                // ✅ BEST PRACTICE: استفاده از onShow callback (event-driven approach)
+                // این callback زمانی فراخوانی می‌شود که DatePicker باز می‌شود
+                var originalOnShow = datePickerConfig.onShow;
+                datePickerConfig.onShow = function() {
+                    // ✅ Call original onShow
+                    if (typeof originalOnShow === 'function') {
+                        originalOnShow.call(this);
+                    }
+                    
+                    // ✅ CRITICAL FIX: اگر noDefaultDate true باشد، باید highlight را clear کنیم
+                    // طبق مستندات API: استفاده از setDate(null) و getState() برای clear کردن
+                    if (noDefaultDate && !initialValueToUse) {
+                        // ✅ Clear کردن فوری (بدون setTimeout)
                         try {
                             var datePickerInstance = $input.data('pDatepicker');
                             if (datePickerInstance) {
-                                // ✅ CRITICAL FIX: Clear کردن input value اول
-                                $input.val(''); // Clear input value
-                                
-                                // ✅ CRITICAL FIX: استفاده از setDate(null) برای unselect کردن تاریخ
+                                // ✅ استفاده از API: setDate(null) برای clear کردن (طبق مستندات)
                                 if (typeof datePickerInstance.setDate === 'function') {
                                     datePickerInstance.setDate(null);
                                 }
                                 
-                                // ✅ CRITICAL FIX: اگر datePicker متد clear دارد، استفاده کن
-                                if (typeof datePickerInstance.clear === 'function') {
-                                    datePickerInstance.clear();
+                                // ✅ Clear کردن input value
+                                $input.val('');
+                            }
+                        } catch (error) {
+                            self.logger.warn('خطا در onShow clear highlight (فوری):', error);
+                        }
+                        
+                        // ✅ Clear کردن با تاخیر (برای اطمینان کامل)
+                        setTimeout(function() {
+                            try {
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    // ✅ استفاده از API: setDate(null) برای clear کردن (طبق مستندات)
+                                    if (typeof datePickerInstance.setDate === 'function') {
+                                        datePickerInstance.setDate(null);
+                                    }
+                                    
+                                    // ✅ Clear کردن input value
+                                    $input.val('');
+                                    
+                                    // ✅ استفاده از getState() برای بررسی state (طبق مستندات API)
+                                    if (typeof datePickerInstance.getState === 'function') {
+                                        var state = datePickerInstance.getState();
+                                        if (state && state.selected && state.selected.unixDate) {
+                                            // ✅ اگر هنوز تاریخ set شده است، دوباره clear کن
+                                            datePickerInstance.setDate(null);
+                                            $input.val('');
+                                        }
+                                    }
+                                    
+                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
+                                    // طبق مستندات، باید از container استفاده کنیم
+                                    var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
+                                    if ($calendar.length > 0) {
+                                        // ✅ حذف class های selected از تمام روزها
+                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                            .removeClass('pdp-day-selected selected')
+                                            .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class های highlight
+                                        $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
+                                            .removeClass('pdp-day-today today pdp-selected pdp-today');
+                                        
+                                        // ✅ حذف attribute های selected
+                                        $calendar.find('[data-selected="true"]')
+                                            .attr('data-selected', 'false');
+                                    }
+                                }
+                            } catch (error) {
+                                self.logger.warn('خطا در onShow clear highlight:', error);
+                            }
+                        }, 100);
+                    } else if (todayPersianDate && !noDefaultDate) {
+                        // ✅ Override highlight با تاریخ سرور (فقط اگر noDefaultDate false باشد)
+                        setTimeout(function() {
+                            try {
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    var gregorianDateStr = self.convertPersianToGregorian(todayPersianDate);
+                                    if (gregorianDateStr) {
+                                        var gregorianDate = new Date(gregorianDateStr);
+                                        if (!isNaN(gregorianDate.getTime())) {
+                                            // ✅ فقط highlight می‌کنیم، اما input value را set نمی‌کنیم
+                                            // چون اگر initialValue false باشد، نباید input value set شود
+                                            if (typeof datePickerInstance.setDate === 'function') {
+                                                datePickerInstance.setDate(gregorianDate);
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                self.logger.warn('خطا در onShow override highlight:', error);
+                            }
+                        }, 100);
+                    }
+                };
+                
+                // ✅ CRITICAL: تعریف flags در scope بالاتر برای دسترسی در onSelect و onSet
+                var isUserSelection = false; // ✅ Flag برای تشخیص انتخاب user (در onSelect set می‌شود)
+                var isInitializing = true; // ✅ Flag برای تشخیص initialize شدن
+                var initializationCompleteTime = null; // ✅ زمان تکمیل initialization
+                var allowSelection = false; // ✅ Flag برای اجازه دادن به انتخاب (بعد از initialize کامل)
+                
+                // ✅ اضافه کردن onSelect callback (طبق مستندات: https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/)
+                datePickerConfig.onSelect = function(unix) {
+                    // ✅ CRITICAL FIX: طبق مستندات، onSelect زمانی فراخوانی می‌شود که user تاریخ را انتخاب کند
+                    // اما DatePicker در initialization خودش onSelect را فراخوانی می‌کند
+                    // باید این را ignore کنیم تا تاریخ اشتباه (16) set نشود
+                    
+                    // ✅ CRITICAL: اگر noDefaultDate true باشد، باید تمام انتخاب‌های خودکار را ignore کنیم
+                    if (noDefaultDate && !initialValueToUse) {
+                        // ✅ بررسی اینکه آیا این انتخاب خودکار است یا نه
+                        var now = Date.now();
+                        var timeSinceInit = initializationCompleteTime ? (now - initializationCompleteTime) : 0;
+                        var isAutoSelection = !allowSelection || isInitializing || timeSinceInit < 2000;
+                        
+                        if (isAutoSelection && !isUserSelection) {
+                            // ✅ این یک انتخاب خودکار است - ignore کن
+                            self.logger.log('⚠️ انتخاب خودکار ignore شد:', {
+                                field: fieldName,
+                                unix: unix,
+                                allowSelection: allowSelection,
+                                isInitializing: isInitializing,
+                                timeSinceInit: timeSinceInit
+                            });
+                            
+                            // ✅ Clear کردن فوری
+                            $input.val('');
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance) {
+                                // ✅ استفاده از API: setDate(null) برای clear کردن (طبق مستندات)
+                                if (typeof datePickerInstance.setDate === 'function') {
+                                    datePickerInstance.setDate(null);
                                 }
                                 
-                                // ✅ CRITICAL FIX: حذف class های highlight از تقویم
-                                // pDatepicker ممکن است class 'selected' یا 'today' را به روزها اضافه کند
-                                // ⚠️ مهم: باید بعد از render شدن تقویم این کار را انجام دهیم
-                                setTimeout(function() {
-                                    try {
-                                        // ✅ روش 1: پیدا کردن calendar container از طریق input
-                                        var $calendar = $input.closest('.pdp-container, .pdp-calendar, .pdatepicker');
-                                        
-                                        // ✅ روش 2: اگر پیدا نشد، در document جستجو کن
-                                        if ($calendar.length === 0) {
-                                            $calendar = $('.pdp-container, .pdp-calendar, .pdatepicker').last();
-                                        }
-                                        
-                                        // ✅ روش 3: اگر هنوز پیدا نشد، از طریق datePicker instance
-                                        if ($calendar.length === 0 && datePickerInstance && datePickerInstance.$container) {
-                                            $calendar = $(datePickerInstance.$container);
-                                        }
-                                        
-                                        if ($calendar.length > 0) {
-                                            // ✅ حذف class های highlight از تمام روزها
-                                            $calendar.find('.pdp-day-selected, .pdp-day-today, .selected, .today, .pdp-selected, .pdp-today')
-                                                .removeClass('pdp-day-selected pdp-day-today selected today pdp-selected pdp-today');
-                                            
-                                            // ✅ حذف attribute های selected
-                                            $calendar.find('[data-selected="true"], [data-today="true"]')
-                                                .attr('data-selected', 'false')
-                                                .attr('data-today', 'false');
-                                            
-                                            self.logger.success('Class های highlight حذف شدند:', {
-                                                field: fieldName
-                                            });
-                                        } else {
-                                            self.logger.warn('Calendar container پیدا نشد برای clear کردن highlight');
-                                        }
-                                    } catch (classError) {
-                                        self.logger.warn('خطا در حذف class های highlight:', classError);
+                                // ✅ استفاده از getState() برای بررسی state (طبق مستندات API)
+                                if (typeof datePickerInstance.getState === 'function') {
+                                    var state = datePickerInstance.getState();
+                                    if (state && state.selected && state.selected.unixDate) {
+                                        // ✅ اگر هنوز تاریخ set شده است، دوباره clear کن
+                                        datePickerInstance.setDate(null);
+                                        $input.val('');
                                     }
-                                }, 200); // ✅ تاخیر بیشتر برای اطمینان از render شدن کامل تقویم
+                                }
                                 
-                                self.logger.success('تاریخ پیش‌فرض clear شد:', {
+                                // ✅ حذف class های highlight از تقویم
+                                var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
+                                if ($calendar.length > 0) {
+                                    $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                        .removeClass('pdp-day-selected selected')
+                                        .removeAttr('data-selected');
+                                }
+                            }
+                            return; // ✅ جلوگیری از ادامه execution
+                        }
+                    }
+                    
+                    // ✅ CRITICAL FIX: Set flag برای تشخیص انتخاب user
+                    isUserSelection = true;
+                    isInitializing = false; // ✅ Initialize تمام شده است
+                    
+                    // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
+                    // این event باید trigger شود تا date-selection.js بتواند تاریخ را پردازش کند
+                    var eventData = {
+                        unix: unix,
+                        selected: null
+                    };
+                    
+                    try {
+                        // ✅ دریافت selected object از datePicker instance
+                        var datePickerInstance = $input.data('pDatepicker');
+                        if (datePickerInstance && datePickerInstance.selected) {
+                            eventData.selected = datePickerInstance.selected;
+                        }
+                    } catch (e) {
+                        self.logger.warn('خطا در دریافت selected object:', e);
+                    }
+                    
+                    // ✅ CRITICAL FIX: Trigger custom event برای date-selection.js
+                    // استفاده از jQuery.Event برای pass کردن data به درستی
+                    var customEvent = $.Event('pDatepicker:select');
+                    customEvent.unix = unix;
+                    customEvent.selected = eventData.selected;
+                    $input.trigger(customEvent, eventData);
+                    
+                    // ✅ Trigger change event برای fallback handlers
+                    setTimeout(function() {
+                        $input.trigger('change');
+                    }, 50);
+                    
+                    // ✅ برای فرم GET، فقط تاریخ شمسی را در input نگه می‌داریم
+                    if ($hiddenInput) {
+                        self.handleDateSelect($input, $hiddenInput, fieldName, unix);
+                    } else {
+                        // ✅ برای فرم GET، استفاده مستقیم از تاریخ انتخاب شده از datePicker instance
+                        // ⚠️ مهم: نباید از $input.val() استفاده کنیم چون ممکن است هنوز به‌روز نشده باشد
+                        var persianDateStr = null;
+                        
+                        try {
+                            // ✅ استفاده از datePicker instance برای دریافت تاریخ انتخاب شده
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance) {
+                                // روش 1: استفاده از selected object (jy, jm, jd) - بهترین روش
+                                var selected = datePickerInstance.selected;
+                                if (selected && 
+                                    typeof selected.jy === 'number' && 
+                                    typeof selected.jm === 'number' && 
+                                    typeof selected.jd === 'number' &&
+                                    selected.jy > 0 && 
+                                    selected.jm >= 1 && selected.jm <= 12 && 
+                                    selected.jd >= 1 && selected.jd <= 31) {
+                                    
+                                    var year = String(selected.jy).padStart(4, '0');
+                                    var month = String(selected.jm).padStart(2, '0');
+                                    var day = String(selected.jd).padStart(2, '0');
+                                    persianDateStr = year + '/' + month + '/' + day;
+                                    
+                                    if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                        self.logger.success('تاریخ انتخاب شد (فرم GET) - از selected object:', {
+                                            field: fieldName,
+                                            persian: persianDateStr
+                                        });
+                                    }
+                                }
+                                
+                                // روش 2: استفاده از getFormattedDate (fallback)
+                                if (!persianDateStr) {
+                                    var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
+                                    if (formattedDate && 
+                                        typeof formattedDate === 'string' && 
+                                        formattedDate.includes('/') && 
+                                        formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                        persianDateStr = formattedDate;
+                                        self.logger.success('تاریخ انتخاب شد (فرم GET) - از getFormattedDate:', {
+                                            field: fieldName,
+                                            persian: persianDateStr
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            // روش 3: استفاده از input value (آخرین fallback)
+                            if (!persianDateStr) {
+                                persianDateStr = $input.val();
+                                if (persianDateStr) {
+                                    persianDateStr = self.convertPersianToEnglishNumbers(persianDateStr);
+                                    if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                                        self.logger.success('تاریخ انتخاب شد (فرم GET) - از input value:', {
+                                            field: fieldName,
+                                            persian: persianDateStr
+                                        });
+                                    } else {
+                                        persianDateStr = null;
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            self.logger.error('خطا در دریافت تاریخ از datePicker:', error, {
+                                field: fieldName
+                            });
+                            // Fallback: استفاده از input value
+                            persianDateStr = $input.val();
+                        }
+                        
+                        // ✅ اگر تاریخ معتبر پیدا نشد، لاگ warning
+                        if (!persianDateStr || !persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            self.logger.warn('تاریخ معتبر پیدا نشد در onSelect:', {
+                                field: fieldName,
+                                inputValue: $input.val()
+                            });
+                        }
+                    }
+                };
+
+                // ✅ BEST PRACTICE: استفاده از onSet callback برای جلوگیری از set شدن خودکار تاریخ
+                // طبق مستندات: onSet زمانی فراخوانی می‌شود که تاریخ از طریق API (نه user selection) set شود
+                // ⚠️ توجه: isUserSelection و isInitializing در بالا تعریف شده‌اند
+                var originalOnSet = datePickerConfig.onSet;
+                datePickerConfig.onSet = function(unix) {
+                    // ✅ CRITICAL FIX: اگر noDefaultDate true باشد و این set شدن خودکار است، ignore کن
+                    // onSet معمولاً در initialization فراخوانی می‌شود
+                    if (noDefaultDate && !initialValueToUse && (!allowSelection || isInitializing || !isUserSelection)) {
+                        // ✅ این یک set شدن خودکار است - ignore کن
+                        self.logger.log('⚠️ onSet خودکار ignore شد:', {
+                            field: fieldName,
+                            unix: unix,
+                            allowSelection: allowSelection,
+                            isInitializing: isInitializing,
+                            isUserSelection: isUserSelection
+                        });
+                        
+                        // ✅ Clear کردن فوری
+                        $input.val('');
+                        var datePickerInstance = $input.data('pDatepicker');
+                        if (datePickerInstance && typeof datePickerInstance.setDate === 'function') {
+                            datePickerInstance.setDate(null);
+                        }
+                        return; // ✅ جلوگیری از ادامه execution
+                    }
+                    
+                    // ✅ Reset flag
+                    isUserSelection = false;
+                    
+                    // ✅ Call original onSet اگر وجود دارد
+                    if (typeof originalOnSet === 'function') {
+                        originalOnSet.call(this, unix);
+                    }
+                };
+                
+                // ✅ BEST PRACTICE: استفاده از readonly attribute برای جلوگیری از manual input
+                // این تضمین می‌کند که user نمی‌تواند تاریخ را manually وارد کند
+                // ⚠️ مهم: فقط اگر observer false باشد، readonly را set کن
+                // چون اگر observer true باشد، user باید بتواند تایپ کند
+                if (noDefaultDate && !initialValueToUse && !datePickerConfig.observer) {
+                    $input.attr('readonly', 'readonly');
+                }
+                
+                // ✅ Initialize DatePicker (طبق مستندات: https://babakhani.github.io/PersianWebToolkit/doc/datepicker/api/)
+                $input.pDatepicker(datePickerConfig);
+                
+                // ✅ Set initialization complete time (برای تشخیص انتخاب خودکار)
+                initializationCompleteTime = Date.now();
+                
+                // ✅ CRITICAL FIX: بعد از initialize کامل، allowSelection را true کن
+                // این تضمین می‌کند که فقط انتخاب‌های واقعی user پردازش شوند
+                // ⚠️ مهم: باید تاخیر بیشتری بگذاریم تا مطمئن شویم که تمام انتخاب‌های خودکار ignore شده‌اند
+                setTimeout(function() {
+                    allowSelection = true;
+                    isInitializing = false;
+                    self.logger.log('✅ Initialize کامل شد - انتخاب‌ها فعال شدند:', {
+                        field: fieldName,
+                        noDefaultDate: noDefaultDate
+                    });
+                }, 2000); // ✅ 2 ثانیه تاخیر برای اطمینان از initialize کامل و ignore کردن تمام انتخاب‌های خودکار
+                
+                // ✅ CRITICAL FIX: طبق مستندات API (https://babakhani.github.io/PersianWebToolkit/doc/datepicker/api/)
+                // استفاده از setDate(null) برای clear کردن تاریخ بلافاصله بعد از initialize
+                // این تضمین می‌کند که اگر DatePicker خودش تاریخ را set کرد، بلافاصله clear شود
+                if (noDefaultDate && !initialValueToUse) {
+                    // ✅ Clear بلافاصله بعد از initialize (طبق API: setDate(unix))
+                    setTimeout(function() {
+                        try {
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance) {
+                                // ✅ استفاده از API: setDate(null) برای clear کردن (طبق مستندات)
+                                if (typeof datePickerInstance.setDate === 'function') {
+                                    datePickerInstance.setDate(null);
+                                }
+                                
+                                // ✅ Clear input value
+                                $input.val('');
+                                
+                                // ✅ استفاده از getState() برای بررسی state (طبق مستندات API)
+                                if (typeof datePickerInstance.getState === 'function') {
+                                    var state = datePickerInstance.getState();
+                                    if (state && state.selected && state.selected.unixDate) {
+                                        // ✅ اگر هنوز تاریخ set شده است، دوباره clear کن
+                                        datePickerInstance.setDate(null);
+                                        $input.val('');
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            self.logger.warn('خطا در clear کردن تاریخ بعد از initialize:', e);
+                        }
+                    }, 0);
+                    
+                    // ✅ چندین بار تلاش برای clear کردن (برای اطمینان کامل - ضد گلوله)
+                    // این برای handle کردن case هایی است که DatePicker دوباره تاریخ را set می‌کند
+                    var clearAttempts = [50, 100, 200, 300, 500, 1000, 1500];
+                    clearAttempts.forEach(function(delay) {
+                        setTimeout(function() {
+                            try {
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance) {
+                                    var currentVal = $input.val();
+                                    // ✅ اگر تاریخ set شده است، clear کن
+                                    if (currentVal && currentVal.trim() !== '') {
+                                        // ✅ استفاده از API: setDate(null) (طبق مستندات)
+                                        if (typeof datePickerInstance.setDate === 'function') {
+                                            datePickerInstance.setDate(null);
+                                        }
+                                        $input.val('');
+                                        
+                                        // ✅ بررسی state با getState() (طبق مستندات API)
+                                        if (typeof datePickerInstance.getState === 'function') {
+                                            var state = datePickerInstance.getState();
+                                            if (state && state.selected && state.selected.unixDate) {
+                                                datePickerInstance.setDate(null);
+                                                $input.val('');
+                                            }
+                                        }
+                                    }
+                                    
+                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
+                                    var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
+                                    if ($calendar.length > 0) {
+                                        // ✅ حذف class های selected از تمام روزها
+                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                            .removeClass('pdp-day-selected selected')
+                                            .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class های highlight
+                                        $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
+                                            .removeClass('pdp-day-today today pdp-selected pdp-today');
+                                        
+                                        // ✅ حذف attribute های selected
+                                        $calendar.find('[data-selected="true"]')
+                                            .attr('data-selected', 'false');
+                                    }
+                                }
+                            } catch (clearError) {
+                                // Silent fail
+                            }
+                        }, delay);
+                    });
+                    
+                    // ✅ CRITICAL FIX: استفاده از event listener برای detect کردن تغییرات خودکار در input value
+                    // این یک لایه محافظ اضافی است برای جلوگیری از set شدن خودکار تاریخ
+                    // طبق مستندات، باید از event listener استفاده کنیم نه MutationObserver
+                    var inputChangeHandler = function() {
+                        if (!allowSelection && noDefaultDate && !initialValueToUse) {
+                            var currentVal = $input.val();
+                            if (currentVal && currentVal.trim() !== '') {
+                                // ✅ تاریخ خودکار set شده است - clear کن
+                                self.logger.log('⚠️ تاریخ خودکار detect شد و clear شد:', {
                                     field: fieldName,
-                                    noDefaultDate: noDefaultDate
+                                    value: currentVal
                                 });
+                                $input.val('');
+                                var datePickerInstance = $input.data('pDatepicker');
+                                if (datePickerInstance && typeof datePickerInstance.setDate === 'function') {
+                                    datePickerInstance.setDate(null);
+                                }
+                            }
+                        }
+                    };
+                    
+                    // ✅ Listen کردن به تغییرات در input value
+                    $input.on('input change', inputChangeHandler);
+                    
+                    // ✅ بعد از 1.5 ثانیه، event listener را remove کن
+                    setTimeout(function() {
+                        $input.off('input change', inputChangeHandler);
+                    }, 1500);
+                }
+                
+                // ✅ CRITICAL: Log برای debug - بررسی اینکه initialValue درست set شده
+                setTimeout(function() {
+                    var datePickerInstance = $input.data('pDatepicker');
+                    if (datePickerInstance) {
+                        self.logger.log('🔍 [DEBUG] DatePicker initialize شد - بررسی initialValue:', {
+                            field: fieldName,
+                            finalInitialValue: finalInitialValue,
+                            datePickerConfigInitialValue: datePickerConfig.initialValue,
+                            datePickerConfigInitialValueType: datePickerConfig.initialValueType,
+                            inputValue: $input.val(),
+                            todayPersianDate: todayPersianDate,
+                            noDefaultDate: noDefaultDate
+                        });
+                    }
+                }, 50);
+
+                // ✅ NOTE: onShow callback قبلاً در خط 457 تعریف شده است
+
+                // ✅ NOTE: Clear کردن تاریخ بعد از initialize در خط 720 انجام شده است
+                // این بخش برای clear کردن highlight در تقویم است (بعد از render شدن کامل)
+                if (noDefaultDate && !initialValueToUse) {
+                    // ✅ Clear کردن highlight در تقویم (بعد از render شدن کامل)
+                    setTimeout(function() {
+                        try {
+                            var datePickerInstance = $input.data('pDatepicker');
+                            if (datePickerInstance) {
+                                // ✅ استفاده از getState() برای بررسی state (طبق مستندات API)
+                                if (typeof datePickerInstance.getState === 'function') {
+                                    var state = datePickerInstance.getState();
+                                    if (state && state.selected && state.selected.unixDate) {
+                                        // ✅ اگر هنوز تاریخ set شده است، clear کن
+                                        datePickerInstance.setDate(null);
+                                        $input.val('');
+                                    }
+                                }
+                                
+                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
+                                    // طبق مستندات، باید از container استفاده کنیم
+                                    var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
+                                    if ($calendar.length > 0) {
+                                        // ✅ حذف class های selected از تمام روزها
+                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                            .removeClass('pdp-day-selected selected')
+                                            .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class های highlight
+                                        $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
+                                            .removeClass('pdp-day-today today pdp-selected pdp-today');
+                                        
+                                        // ✅ حذف attribute های selected
+                                        $calendar.find('[data-selected="true"]')
+                                            .attr('data-selected', 'false');
+                                    }
                             }
                         } catch (clearError) {
-                            self.logger.warn('خطا در clear کردن تاریخ پیش‌فرض:', clearError);
+                            self.logger.warn('خطا در clear کردن highlight:', clearError);
                         }
-                    }, 100); // تاخیر کوتاه برای اطمینان از initialize شدن datePicker
+                    }, 200); // ✅ تاخیر برای اطمینان از render شدن کامل تقویم
                 }
 
+                // ✅ CRITICAL FIX: Override دکمه "امروز" برای استفاده از تاریخ سرور
+                // این تضمین می‌کند که وقتی کاربر روی "امروز" کلیک می‌کند، تاریخ از سرور استفاده شود
+                setTimeout(function() {
+                    try {
+                        var datePickerInstance = $input.data('pDatepicker');
+                        if (datePickerInstance && datePickerInstance.$container) {
+                            // ✅ پیدا کردن دکمه "امروز" در DatePicker
+                            var $todayBtn = datePickerInstance.$container.find('.pdp-today-btn, .pdp-toolbox-today, [data-today-btn], button:contains("امروز")');
+                            
+                            if ($todayBtn.length === 0) {
+                                // ✅ Fallback: جستجو در کل container
+                                $todayBtn = $(datePickerInstance.$container).find('*').filter(function() {
+                                    var $this = $(this);
+                                    return $this.text().trim() === 'امروز' || 
+                                           $this.attr('data-today') === 'true' ||
+                                           $this.hasClass('pdp-today');
+                                });
+                            }
+                            
+                            if ($todayBtn.length > 0) {
+                                // ✅ Override click handler
+                                $todayBtn.off('click.persianDatePickerOverride').on('click.persianDatePickerOverride', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    self.logger.log('دکمه "امروز" کلیک شد - دریافت تاریخ از سرور');
+                                    
+                                    // ✅ دریافت تاریخ امروز از سرور
+                                    self.getTodayFromServer().then(function(todayPersianDate) {
+                                        if (todayPersianDate) {
+                                            // ✅ تبدیل تاریخ شمسی به میلادی برای setDate
+                                            var gregorianDateStr = self.convertPersianToGregorian(todayPersianDate);
+                                            if (gregorianDateStr) {
+                                                // ✅ CRITICAL: تبدیل string به Date object
+                                                // convertPersianToGregorian یک ISO string برمی‌گرداند (YYYY-MM-DDTHH:mm:ss)
+                                                var dateObj = new Date(gregorianDateStr);
+                                                
+                                                // ✅ بررسی صحت Date object
+                                                if (isNaN(dateObj.getTime())) {
+                                                    self.logger.error('خطا در ساخت Date object از:', gregorianDateStr);
+                                                    return;
+                                                }
+                                                
+                                                // ✅ Set date در DatePicker instance
+                                                if (typeof datePickerInstance.setDate === 'function') {
+                                                    datePickerInstance.setDate(dateObj);
+                                                } else if (typeof datePickerInstance.set === 'function') {
+                                                    datePickerInstance.set('date', dateObj);
+                                                } else if (typeof datePickerInstance.update === 'function') {
+                                                    // ✅ Fallback: استفاده از update
+                                                    datePickerInstance.update(dateObj);
+                                                }
+                                                
+                                                // ✅ Set value در input
+                                                $input.val(todayPersianDate);
+                                                
+                                                // ✅ Trigger events برای date-selection.js
+                                                setTimeout(function() {
+                                                    $input.trigger('change');
+                                                    
+                                                    // ✅ Trigger custom event
+                                                    var customEvent = $.Event('pDatepicker:select');
+                                                    customEvent.unix = dateObj.getTime();
+                                                    
+                                                    // ✅ Parse Persian date برای selected object
+                                                    var dateParts = todayPersianDate.split('/');
+                                                    if (dateParts.length === 3) {
+                                                        customEvent.selected = {
+                                                            jy: parseInt(dateParts[0], 10),
+                                                            jm: parseInt(dateParts[1], 10),
+                                                            jd: parseInt(dateParts[2], 10)
+                                                        };
+                                                    }
+                                                    
+                                                    $input.trigger(customEvent);
+                                                }, 50);
+                                                
+                                                self.logger.success('✅ دکمه "امروز" - تاریخ از سرور set شد:', {
+                                                    persian: todayPersianDate,
+                                                    gregorian: dateObj.toISOString()
+                                                });
+                                            } else {
+                                                self.logger.error('خطا در تبدیل تاریخ شمسی به میلادی:', todayPersianDate);
+                                            }
+                                        } else {
+                                            self.logger.error('خطا در دریافت تاریخ امروز از سرور');
+                                        }
+                                    }).catch(function(error) {
+                                        self.logger.error('خطا در دریافت تاریخ امروز از سرور:', error);
+                                    });
+                                });
+                                
+                                self.logger.success('✅ دکمه "امروز" override شد برای استفاده از تاریخ سرور');
+                            } else {
+                                self.logger.warn('⚠️ دکمه "امروز" پیدا نشد برای override');
+                            }
+                        }
+                    } catch (overrideError) {
+                        self.logger.warn('خطا در override دکمه "امروز":', overrideError);
+                    }
+                }, 200); // ✅ تاخیر برای اطمینان از render شدن کامل DatePicker
+                
                 // Mark as initialized
                 $input.data('pDatepicker-initialized', true);
                 self.logger.success('DatePicker initialize شد:', fieldName);

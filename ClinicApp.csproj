@@ -6280,6 +6280,13 @@
     <Content Include="Scripts\triage\triage.ajax.js" />
     <Content Include="Scripts\triage\triage.forms.js" />
     <Content Include="Scripts\triage\triage.queue.js" />
+    <Content Include="temp\Example - Persian Web Toolkit.html" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\application-02c2a4388f.palette.css" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\application-bfecc7305d.css" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\extra.css" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\font-awesome.min.css" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\logo.svg" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\persian-datepicker.css" />
     <Content Include="Views\Shared\jqueryui.html" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -6481,6 +6488,18 @@
     <Content Include="Views\Account\AuthDiagnostics.cshtml" />
     <Content Include="Views\Diagnostics\AuthCheck.cshtml" />
     <Content Include="Scripts\Restart_IIS_Express.ps1" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\analytics.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\application-6940329b9f.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\buttons.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\css" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\css%281%29" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\datepicker-example.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\doc.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\icon" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\jquery.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\modernizr-1df76c4e58.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\persian-date.js.download" />
+    <Content Include="temp\Example - Persian Web Toolkit_files\persian-datepicker.js.download" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
