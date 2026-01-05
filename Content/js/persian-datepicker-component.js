@@ -511,14 +511,21 @@
                                         }
                                     }
                                     
-                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
-                                    // طبق مستندات، باید از container استفاده کنیم
+                                    // ✅ CRITICAL: حذف class های highlight از تقویم (طبق کد source خط 1987 و template خط 1294)
+                                    // markSelectedDay() class 'selected' را اضافه می‌کند
+                                    // باید این class را از تمام روزها حذف کنیم
                                     var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
                                     if ($calendar.length > 0) {
-                                        // ✅ حذف class های selected از تمام روزها
-                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                        // ✅ CRITICAL: حذف class selected از تمام td ها (طبق کد source خط 3239-3245)
+                                        // markSelectedDay() روی .table-days td کار می‌کند و class 'selected' را اضافه می‌کند
+                                        $calendar.find('.table-days td.selected, td[data-unix].selected, .pdp-day-selected, .selected')
                                             .removeClass('pdp-day-selected selected')
                                             .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class selected از span (طبق template خط 1294)
+                                        // Template: <td data-unix="..."><span class="{{#selected}}selected{{/selected}}">...</span></td>
+                                        $calendar.find('td[data-unix] span.selected')
+                                            .removeClass('selected');
                                         
                                         // ✅ حذف class های highlight
                                         $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
@@ -527,6 +534,13 @@
                                         // ✅ حذف attribute های selected
                                         $calendar.find('[data-selected="true"]')
                                             .attr('data-selected', 'false');
+                                        
+                                        // ✅ CRITICAL: حذف class selected از تمام td ها (طبق کد source خط 3239)
+                                        $calendar.find('.table-days td').each(function() {
+                                            var $td = $(this);
+                                            $td.removeClass('selected');
+                                            $td.find('span').removeClass('selected');
+                                        });
                                     }
                                 }
                             } catch (error) {
@@ -563,6 +577,7 @@
                 var isInitializing = true; // ✅ Flag برای تشخیص initialize شدن
                 var initializationCompleteTime = null; // ✅ زمان تکمیل initialization
                 var allowSelection = false; // ✅ Flag برای اجازه دادن به انتخاب (بعد از initialize کامل)
+                var firstOnSelectCall = true; // ✅ Flag برای تشخیص اولین فراخوانی onSelect
                 
                 // ✅ اضافه کردن onSelect callback (طبق مستندات: https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/)
                 datePickerConfig.onSelect = function(unix) {
@@ -571,20 +586,28 @@
                     // باید این را ignore کنیم تا تاریخ اشتباه (16) set نشود
                     
                     // ✅ CRITICAL: اگر noDefaultDate true باشد، باید تمام انتخاب‌های خودکار را ignore کنیم
+                    // طبق کد source DatePicker (خط 273-274 و 1742):
+                    // - DatePicker در initialization خودش getOnInitState() را فراخوانی می‌کند
+                    // - اگر inputValue خالی باشد، new Date().valueOf() را set می‌کند (خط 1742)
+                    // - این تاریخ در initialUnix ذخیره می‌شود و سپس onSelect فراخوانی می‌شود
                     if (noDefaultDate && !initialValueToUse) {
                         // ✅ بررسی اینکه آیا این انتخاب خودکار است یا نه
                         var now = Date.now();
                         var timeSinceInit = initializationCompleteTime ? (now - initializationCompleteTime) : 0;
-                        var isAutoSelection = !allowSelection || isInitializing || timeSinceInit < 2000;
+                        // ✅ CRITICAL: اولین فراخوانی onSelect همیشه خودکار است (در initialization)
+                        // طبق کد source، onSelect در initialization فراخوانی می‌شود حتی اگر initialValue == false
+                        var isAutoSelection = firstOnSelectCall || !allowSelection || isInitializing || timeSinceInit < 2000;
                         
                         if (isAutoSelection && !isUserSelection) {
                             // ✅ این یک انتخاب خودکار است - ignore کن
-                            self.logger.log('⚠️ انتخاب خودکار ignore شد:', {
+                            self.logger.log('⚠️ انتخاب خودکار ignore شد (طبق کد source DatePicker):', {
                                 field: fieldName,
                                 unix: unix,
+                                firstOnSelectCall: firstOnSelectCall,
                                 allowSelection: allowSelection,
                                 isInitializing: isInitializing,
-                                timeSinceInit: timeSinceInit
+                                timeSinceInit: timeSinceInit,
+                                reason: 'DatePicker در initialization خودش getOnInitState() را فراخوانی می‌کند و new Date().valueOf() را set می‌کند'
                             });
                             
                             // ✅ Clear کردن فوری
@@ -606,16 +629,37 @@
                                     }
                                 }
                                 
-                                // ✅ حذف class های highlight از تقویم
+                                // ✅ CRITICAL: حذف class های highlight از تقویم (طبق کد source خط 3236-3246)
+                                // markSelectedDay() class 'selected' را به td اضافه می‌کند (خط 3241)
+                                // باید این class را از تمام td ها حذف کنیم
                                 var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
                                 if ($calendar.length > 0) {
-                                    $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                    // ✅ طبق کد source (خط 3239-3245): markSelectedDay() روی .table-days td کار می‌کند
+                                    $calendar.find('.table-days td.selected, td[data-unix].selected, .pdp-day-selected, .selected')
                                         .removeClass('pdp-day-selected selected')
                                         .removeAttr('data-selected');
+                                    
+                                    // ✅ حذف class selected از span (طبق template خط 1294)
+                                    $calendar.find('td[data-unix] span.selected')
+                                        .removeClass('selected');
+                                    
+                                    // ✅ حذف class های highlight
+                                    $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
+                                        .removeClass('pdp-day-today today pdp-selected pdp-today');
+                                    
+                                    // ✅ حذف attribute های selected
+                                    $calendar.find('[data-selected="true"]')
+                                        .attr('data-selected', 'false');
                                 }
                             }
+                            
+                            // ✅ Reset flag برای فراخوانی بعدی
+                            firstOnSelectCall = false;
                             return; // ✅ جلوگیری از ادامه execution
                         }
+                        
+                        // ✅ اگر این اولین فراخوانی نبود، flag را reset کن
+                        firstOnSelectCall = false;
                     }
                     
                     // ✅ CRITICAL FIX: Set flag برای تشخیص انتخاب user
@@ -784,6 +828,38 @@
                 // ✅ Set initialization complete time (برای تشخیص انتخاب خودکار)
                 initializationCompleteTime = Date.now();
                 
+                // ✅ CRITICAL FIX: طبق کد source DatePicker (خط 273-274 و 1742)
+                // DatePicker در initialization خودش getOnInitState() را فراخوانی می‌کند
+                // اگر inputValue خالی باشد، new Date().valueOf() را set می‌کند (خط 1742)
+                // این تاریخ در initialUnix ذخیره می‌شود و سپس onSelect فراخوانی می‌شود
+                // باید بلافاصله بعد از initialize، تاریخ را clear کنیم
+                setTimeout(function() {
+                    try {
+                        var datePickerInstance = $input.data('pDatepicker');
+                        if (datePickerInstance && noDefaultDate && !initialValueToUse) {
+                            // ✅ استفاده از API: setDate(null) برای clear کردن (طبق مستندات)
+                            if (typeof datePickerInstance.setDate === 'function') {
+                                datePickerInstance.setDate(null);
+                            }
+                            
+                            // ✅ Clear input value
+                            $input.val('');
+                            
+                            // ✅ استفاده از getState() برای بررسی state (طبق مستندات API)
+                            if (typeof datePickerInstance.getState === 'function') {
+                                var state = datePickerInstance.getState();
+                                if (state && state.selected && state.selected.unixDate) {
+                                    // ✅ اگر هنوز تاریخ set شده است، دوباره clear کن
+                                    datePickerInstance.setDate(null);
+                                    $input.val('');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        self.logger.warn('خطا در clear کردن تاریخ بعد از initialize (فوری):', e);
+                    }
+                }, 0);
+                
                 // ✅ CRITICAL FIX: بعد از initialize کامل، allowSelection را true کن
                 // این تضمین می‌کند که فقط انتخاب‌های واقعی user پردازش شوند
                 // ⚠️ مهم: باید تاخیر بیشتری بگذاریم تا مطمئن شویم که تمام انتخاب‌های خودکار ignore شده‌اند
@@ -828,40 +904,46 @@
                         }
                     }, 0);
                     
-                    // ✅ چندین بار تلاش برای clear کردن (برای اطمینان کامل - ضد گلوله)
-                    // این برای handle کردن case هایی است که DatePicker دوباره تاریخ را set می‌کند
-                    var clearAttempts = [50, 100, 200, 300, 500, 1000, 1500];
+                    // ✅ CRITICAL FIX: طبق کد source DatePicker (خط 273-275)
+                    // DatePicker در initialization خودش render() را فراخوانی می‌کند
+                    // این باعث می‌شود که تاریخ highlight شود حتی اگر initialValue == false باشد
+                    // باید بعد از render، تاریخ را clear کنیم و highlight را حذف کنیم
+                    var clearAttempts = [50, 100, 200, 300, 500, 1000, 1500, 2000];
                     clearAttempts.forEach(function(delay) {
                         setTimeout(function() {
                             try {
                                 var datePickerInstance = $input.data('pDatepicker');
                                 if (datePickerInstance) {
-                                    var currentVal = $input.val();
-                                    // ✅ اگر تاریخ set شده است، clear کن
-                                    if (currentVal && currentVal.trim() !== '') {
-                                        // ✅ استفاده از API: setDate(null) (طبق مستندات)
-                                        if (typeof datePickerInstance.setDate === 'function') {
+                                    // ✅ CRITICAL: همیشه تاریخ را clear کن (حتی اگر input value خالی باشد)
+                                    // چون DatePicker ممکن است تاریخ را در state نگه دارد
+                                    if (typeof datePickerInstance.setDate === 'function') {
+                                        datePickerInstance.setDate(null);
+                                    }
+                                    $input.val('');
+                                    
+                                    // ✅ بررسی state با getState() (طبق مستندات API)
+                                    if (typeof datePickerInstance.getState === 'function') {
+                                        var state = datePickerInstance.getState();
+                                        if (state && state.selected && state.selected.unixDate) {
+                                            // ✅ اگر هنوز تاریخ set شده است، دوباره clear کن
                                             datePickerInstance.setDate(null);
-                                        }
-                                        $input.val('');
-                                        
-                                        // ✅ بررسی state با getState() (طبق مستندات API)
-                                        if (typeof datePickerInstance.getState === 'function') {
-                                            var state = datePickerInstance.getState();
-                                            if (state && state.selected && state.selected.unixDate) {
-                                                datePickerInstance.setDate(null);
-                                                $input.val('');
-                                            }
+                                            $input.val('');
                                         }
                                     }
                                     
-                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
+                                    // ✅ CRITICAL: حذف class های highlight از تقویم (طبق کد source خط 3236-3246)
+                                    // markSelectedDay() class 'selected' را به td اضافه می‌کند (خط 3241)
+                                    // باید این class را از تمام td ها حذف کنیم
                                     var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
                                     if ($calendar.length > 0) {
-                                        // ✅ حذف class های selected از تمام روزها
-                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                        // ✅ طبق کد source (خط 3239-3245): markSelectedDay() روی .table-days td کار می‌کند
+                                        $calendar.find('.table-days td.selected, td[data-unix].selected, .pdp-day-selected, .selected')
                                             .removeClass('pdp-day-selected selected')
                                             .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class selected از span (طبق template خط 1294)
+                                        $calendar.find('td[data-unix] span.selected')
+                                            .removeClass('selected');
                                         
                                         // ✅ حذف class های highlight
                                         $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
@@ -870,6 +952,13 @@
                                         // ✅ حذف attribute های selected
                                         $calendar.find('[data-selected="true"]')
                                             .attr('data-selected', 'false');
+                                        
+                                        // ✅ CRITICAL: حذف class selected از تمام td ها (طبق کد source خط 3239)
+                                        $calendar.find('.table-days td').each(function() {
+                                            var $td = $(this);
+                                            $td.removeClass('selected');
+                                            $td.find('span').removeClass('selected');
+                                        });
                                     }
                                 }
                             } catch (clearError) {
@@ -944,14 +1033,19 @@
                                     }
                                 }
                                 
-                                    // ✅ حذف class های highlight از تقویم (برای اطمینان کامل)
-                                    // طبق مستندات، باید از container استفاده کنیم
+                                    // ✅ CRITICAL: حذف class های highlight از تقویم (طبق کد source خط 3236-3246)
+                                    // markSelectedDay() class 'selected' را به td اضافه می‌کند (خط 3241)
+                                    // باید این class را از تمام td ها حذف کنیم
                                     var $calendar = datePickerInstance.$container || $(datePickerInstance.container || '.pdp-container').last();
                                     if ($calendar.length > 0) {
-                                        // ✅ حذف class های selected از تمام روزها
-                                        $calendar.find('td[data-unix], .pdp-day-selected, .selected')
+                                        // ✅ طبق کد source (خط 3239-3245): markSelectedDay() روی .table-days td کار می‌کند
+                                        $calendar.find('.table-days td.selected, td[data-unix].selected, .pdp-day-selected, .selected')
                                             .removeClass('pdp-day-selected selected')
                                             .removeAttr('data-selected');
+                                        
+                                        // ✅ حذف class selected از span (طبق template خط 1294)
+                                        $calendar.find('td[data-unix] span.selected')
+                                            .removeClass('selected');
                                         
                                         // ✅ حذف class های highlight
                                         $calendar.find('.pdp-day-today, .today, .pdp-selected, .pdp-today')
@@ -960,6 +1054,13 @@
                                         // ✅ حذف attribute های selected
                                         $calendar.find('[data-selected="true"]')
                                             .attr('data-selected', 'false');
+                                        
+                                        // ✅ CRITICAL: حذف class selected از تمام td ها (طبق کد source خط 3239)
+                                        $calendar.find('.table-days td').each(function() {
+                                            var $td = $(this);
+                                            $td.removeClass('selected');
+                                            $td.find('span').removeClass('selected');
+                                        });
                                     }
                             }
                         } catch (clearError) {

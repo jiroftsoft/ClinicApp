@@ -1,0 +1,3376 @@
+<!DOCTYPE html>
+<!-- saved from url=(0069)https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/ -->
+<html lang="en" class="js supports csstransforms3d no-ios" style=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+      
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Persian Web Toolkit document">
+      
+      
+        <link rel="canonical" href="http://babakhani.github.io/PersianWebToolkit/beta/datepicker/options/">
+      
+      
+        <meta name="author" content="babakhani.reza@gmail.com">
+      
+      
+        <link rel="shortcut icon" href="https://babakhani.github.io/PersianWebToolkit/doc/img/favicon.ico">
+      
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.8.1">
+    
+    
+      
+        <title>Options - Persian Web Toolkit</title>
+      
+    
+    
+      <script async="" src="./Options - Persian Web Toolkit_files/analytics.js.download"></script><script src="./Options - Persian Web Toolkit_files/modernizr-1df76c4e58.js.download"></script>
+    
+    
+      <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/application-bfecc7305d.css">
+      
+        <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/application-02c2a4388f.palette.css">
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/css">
+        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+      <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/icon">
+    
+    
+      <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/css(1)">
+    
+      <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/extra.css">
+    
+      <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/persian-datepicker.css">
+    
+    
+  </head>
+  
+  
+  
+  
+    <body data-md-color-primary="red" data-md-color-accent="blue-light" data-md-state="">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"></path></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
+    
+      <header class="md-header" data-md-component="header" data-md-state="shadow">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <a href="https://babakhani.github.io/PersianWebToolkit/beta/" title="Persian Web Toolkit" class="md-logo md-header-nav__button">
+            <img src="./Options - Persian Web Toolkit_files/logo.svg" width="24" height="24">
+          </a>
+        
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <span class="md-flex__ellipsis md-header-nav__title">
+          
+            
+              
+                <span class="md-header-nav__parent">
+                  Persian Datepicker
+                </span>
+              
+            
+            Options
+          
+        </span>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="search"></label>
+  <div class="md-search__inner">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" required="" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix="">
+        <div class="md-search-result" data-md-component="result" data-md-lang-search="" data-md-lang-tokenizer="[\s\-]+">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+
+  <a href="https://github.com/babakhani/PersianWebToolkit" title="Go to repository" class="md-source" data-md-source="github" data-md-state="done">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    <ul class="md-source__facts"><li class="md-source__fact">48 Stars</li><li class="md-source__fact">9 Forks</li></ul></div>
+  </a>
+
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" style="height: 883px;" data-md-state="lock">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="drawer">
+    
+      <i class="md-logo md-nav__button" href="/PersianWebToolkit/beta/">
+        <img src="./Options - Persian Web Toolkit_files/logo.svg">
+      </i>
+    
+    Persian Web Toolkit
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/babakhani/PersianWebToolkit" title="Go to repository" class="md-source" data-md-source="github" data-md-state="done">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    <ul class="md-source__facts"><li class="md-source__fact">48 Stars</li><li class="md-source__fact">9 Forks</li></ul></div>
+  </a>
+
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
+    
+    <label class="md-nav__link" for="nav-1">
+      Persian Date
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        Persian Date
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix="">
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/persian-date/" title="Document" class="md-nav__link">
+      Document
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/persian-date/changelog/" title="Change log" class="md-nav__link">
+      Change log
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/persian-date/leapyear/" title="Leap year" class="md-nav__link">
+      Leap year
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked="">
+    
+    <label class="md-nav__link" for="nav-2">
+      Persian Datepicker
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Persian Datepicker
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix="">
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/" title="Getting Start" class="md-nav__link">
+      Getting Start
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/example/" title="Example" class="md-nav__link">
+      Example
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/playground-page/" title="Playground" class="md-nav__link">
+      Playground
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Options
+      </label>
+    
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/" title="Options" class="md-nav__link md-nav__link--active">
+      Options
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendartype-string" title="Config.calendarType : string" class="md-nav__link">
+    Config.calendarType : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendar-object" title="Config.calendar : object" class="md-nav__link">
+    Config.calendar : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarpersian-object" title="calendar.persian : object" class="md-nav__link">
+    calendar.persian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianlocale-string" title="persian.locale : string" class="md-nav__link">
+    persian.locale : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianshowhint-boolean" title="persian.showHint : boolean" class="md-nav__link">
+    persian.showHint : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianleapyearmode-string" title="persian.leapYearMode : string" class="md-nav__link">
+    persian.leapYearMode : string
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendargregorian-object" title="calendar.gregorian : object" class="md-nav__link">
+    calendar.gregorian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianlocale-string" title="gregorian.locale : string" class="md-nav__link">
+    gregorian.locale : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianshowhint-boolean" title="gregorian.showHint : boolean" class="md-nav__link">
+    gregorian.showHint : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configresponsive-boolean" title="Config.responsive : boolean" class="md-nav__link">
+    Config.responsive : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinline-boolean" title="Config.inline : boolean" class="md-nav__link">
+    Config.inline : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvalue-boolean" title="Config.initialValue : boolean" class="md-nav__link">
+    Config.initialValue : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvaluetype-boolean" title="Config.initialValueType : boolean" class="md-nav__link">
+    Config.initialValueType : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configpersiandigit-boolean" title="Config.persianDigit : boolean" class="md-nav__link">
+    Config.persianDigit : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configviewmode-string" title="Config.viewMode : string" class="md-nav__link">
+    Config.viewMode : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformat-boolean" title="Config.format : boolean" class="md-nav__link">
+    Config.format : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfield-boolean" title="Config.altField : boolean" class="md-nav__link">
+    Config.altField : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltformat-string" title="Config.altFormat : string" class="md-nav__link">
+    Config.altFormat : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmindate-date" title="Config.minDate : Date" class="md-nav__link">
+    Config.minDate : Date
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmaxdate-date" title="Config.maxDate : Date" class="md-nav__link">
+    Config.maxDate : Date
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#confignavigator-object" title="Config.navigator : object" class="md-nav__link">
+    Config.navigator : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorenabled-boolean" title="navigator.enabled : boolean" class="md-nav__link">
+    navigator.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorscroll-object" title="navigator.scroll : object" class="md-nav__link">
+    navigator.scroll : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#scrollenabled-boolean" title="scroll.enabled : boolean" class="md-nav__link">
+    scroll.enabled : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatortext" title="navigator.text" class="md-nav__link">
+    navigator.text
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnnexttext" title="text.btnNextText" class="md-nav__link">
+    text.btnNextText
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnprevtext" title="text.btnPrevText" class="md-nav__link">
+    text.btnPrevText
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onnext" title="" onnext""="" class="md-nav__link">
+    "onNext"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onprev" title="" onprev""="" class="md-nav__link">
+    "onPrev"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch" title="" onswitch""="" class="md-nav__link">
+    "onSwitch"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtoolbox-object" title="Config.toolbox : object" class="md-nav__link">
+    Config.toolbox : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxenabled-boolean" title="toolbox.enabled : boolean" class="md-nav__link">
+    toolbox.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtext-object" title="toolbox.text : object" class="md-nav__link">
+    toolbox.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtntoday-string" title="text.btnToday : string" class="md-nav__link">
+    text.btnToday : string
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxsubmitbutton" title="toolbox.submitButton" class="md-nav__link">
+    toolbox.submitButton
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttonenabled-boolean" title="submitButton.enabled : boolean" class="md-nav__link">
+    submitButton.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttontext-object" title="submitButton.text : object" class="md-nav__link">
+    submitButton.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object" title="text.fa : object" class="md-nav__link">
+    text.fa : object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object" title="text.en : object" class="md-nav__link">
+    text.en : object
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onsubmit" title="" onsubmit""="" class="md-nav__link">
+    "onSubmit"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtodaybutton" title="toolbox.todayButton" class="md-nav__link">
+    toolbox.todayButton
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttonenabled-boolean" title="todayButton.enabled : boolean" class="md-nav__link">
+    todayButton.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttontext-object" title="todayButton.text : object" class="md-nav__link">
+    todayButton.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object_1" title="text.fa : object" class="md-nav__link">
+    text.fa : object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object_1" title="text.en : object" class="md-nav__link">
+    text.en : object
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday" title="" ontoday""="" class="md-nav__link">
+    "onToday"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxcalendarswitch-object" title="toolbox.calendarSwitch : object" class="md-nav__link">
+    toolbox.calendarSwitch : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchenabled-boolean" title="calendarSwitch.enabled : boolean" class="md-nav__link">
+    calendarSwitch.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchformat-string" title="calendarSwitch.format : string" class="md-nav__link">
+    calendarSwitch.format : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch_1" title="" onswitch""="" class="md-nav__link">
+    "onSwitch"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday-toolbox" title="" ontoday"="" (toolbox)"="" class="md-nav__link">
+    "onToday" (toolbox)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlytimepicker-boolean" title="Config.onlyTimePicker : boolean" class="md-nav__link">
+    Config.onlyTimePicker : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlyselectondate-boolean" title="Config.onlySelectOnDate : boolean" class="md-nav__link">
+    Config.onlySelectOnDate : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtimepicker-object" title="Config.timePicker : object" class="md-nav__link">
+    Config.timePicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerenabled-boolean" title="timePicker.enabled : boolean" class="md-nav__link">
+    timePicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerstep-number" title="timePicker.step : number" class="md-nav__link">
+    timePicker.step : number
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerhour-object" title="timePicker.hour : object" class="md-nav__link">
+    timePicker.hour : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourenabled-boolean" title="hour.enabled : boolean" class="md-nav__link">
+    hour.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourstep-boolean" title="hour.step : boolean" class="md-nav__link">
+    hour.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerminute-object" title="timePicker.minute : object" class="md-nav__link">
+    timePicker.minute : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minuteenabled-boolean" title="minute.enabled : boolean" class="md-nav__link">
+    minute.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minutestep-boolean" title="minute.step : boolean" class="md-nav__link">
+    minute.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickersecond-object" title="timePicker.second : object" class="md-nav__link">
+    timePicker.second : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondenabled-boolean" title="second.enabled : boolean" class="md-nav__link">
+    second.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondstep-boolean" title="second.step : boolean" class="md-nav__link">
+    second.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickermeridian-object" title="timePicker.meridian : object" class="md-nav__link">
+    timePicker.meridian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#meridianenabled-boolean" title="meridian.enabled : boolean" class="md-nav__link">
+    meridian.enabled : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configdaypicker-object" title="Config.dayPicker : object" class="md-nav__link">
+    Config.dayPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickerenabled-boolean" title="dayPicker.enabled : boolean" class="md-nav__link">
+    dayPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformat-string" title="dayPicker.titleFormat : string" class="md-nav__link">
+    dayPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformatteryear-month-42" title="dayPicker.titleFormatter(year, month) ⇒ *" class="md-nav__link">
+    dayPicker.titleFormatter(year, month) ⇒ *
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-selecteddayunix" title="" onselect"="" (selecteddayunix)"="" class="md-nav__link">
+    "onSelect" (selectedDayUnix)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmonthpicker-object" title="Config.monthPicker : object" class="md-nav__link">
+    Config.monthPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickerenabled-boolean" title="monthPicker.enabled : boolean" class="md-nav__link">
+    monthPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformat-string" title="monthPicker.titleFormat : string" class="md-nav__link">
+    monthPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformatterunix-42" title="monthPicker.titleFormatter(unix) ⇒ *" class="md-nav__link">
+    monthPicker.titleFormatter(unix) ⇒ *
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-monthindex" title="" onselect"="" (monthindex)"="" class="md-nav__link">
+    "onSelect" (monthIndex)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configyearpicker-object" title="Config.yearPicker : object" class="md-nav__link">
+    Config.yearPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickerenabled-boolean" title="yearPicker.enabled : boolean" class="md-nav__link">
+    yearPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformat-string" title="yearPicker.titleFormat : string" class="md-nav__link">
+    yearPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformatteryear-string" title="yearPicker.titleFormatter(year) ⇒ string" class="md-nav__link">
+    yearPicker.titleFormatter(year) ⇒ string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-year" title="" onselect"="" (year)"="" class="md-nav__link">
+    "onSelect" (year)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configposition-string-124-array" title="Config.position : string | array" class="md-nav__link">
+    Config.position : string | array
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configautoclose-boolean" title="Config.autoClose : boolean" class="md-nav__link">
+    Config.autoClose : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtemplate-string" title="Config.template : string" class="md-nav__link">
+    Config.template : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configobserver-boolean" title="Config.observer : boolean" class="md-nav__link">
+    Config.observer : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinputdelay-number" title="Config.inputDelay : number" class="md-nav__link">
+    Config.inputDelay : number
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformatterunixdate" title="Config.formatter(unixDate)" class="md-nav__link">
+    Config.formatter(unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfieldformatterunixdate" title="Config.altFieldFormatter(unixDate)" class="md-nav__link">
+    Config.altFieldFormatter(unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckdate-function" title="Config.checkDate() : function" class="md-nav__link">
+    Config.checkDate() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckmonth-function" title="Config.checkMonth() : function" class="md-nav__link">
+    Config.checkMonth() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckyear-function" title="Config.checkYear() : function" class="md-nav__link">
+    Config.checkYear() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-unixdate" title="" onselect"="" (unixdate)"="" class="md-nav__link">
+    "onSelect" (unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onset-unixdate" title="" onset"="" (unixdate)"="" class="md-nav__link">
+    "onSet" (unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onshow" title="" onshow""="" class="md-nav__link">
+    "onShow"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onhide" title="" onhide""="" class="md-nav__link">
+    "onHide"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoggle" title="" ontoggle""="" class="md-nav__link">
+    "onToggle"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ondestroy" title="" ondestroy""="" class="md-nav__link">
+    "onDestroy"
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/api/" title="API" class="md-nav__link">
+      API
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/changelog/" title="Change log" class="md-nav__link">
+      Change log
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" style="height: 883px;" data-md-state="lock">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendartype-string" title="Config.calendarType : string" class="md-nav__link" data-md-state="blur">
+    Config.calendarType : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendar-object" title="Config.calendar : object" class="md-nav__link" data-md-state="blur">
+    Config.calendar : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarpersian-object" title="calendar.persian : object" class="md-nav__link" data-md-state="blur">
+    calendar.persian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianlocale-string" title="persian.locale : string" class="md-nav__link" data-md-state="blur">
+    persian.locale : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianshowhint-boolean" title="persian.showHint : boolean" class="md-nav__link" data-md-state="blur">
+    persian.showHint : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianleapyearmode-string" title="persian.leapYearMode : string" class="md-nav__link" data-md-state="blur">
+    persian.leapYearMode : string
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendargregorian-object" title="calendar.gregorian : object" class="md-nav__link" data-md-state="blur">
+    calendar.gregorian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianlocale-string" title="gregorian.locale : string" class="md-nav__link" data-md-state="blur">
+    gregorian.locale : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianshowhint-boolean" title="gregorian.showHint : boolean" class="md-nav__link">
+    gregorian.showHint : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configresponsive-boolean" title="Config.responsive : boolean" class="md-nav__link">
+    Config.responsive : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinline-boolean" title="Config.inline : boolean" class="md-nav__link">
+    Config.inline : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvalue-boolean" title="Config.initialValue : boolean" class="md-nav__link">
+    Config.initialValue : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvaluetype-boolean" title="Config.initialValueType : boolean" class="md-nav__link">
+    Config.initialValueType : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configpersiandigit-boolean" title="Config.persianDigit : boolean" class="md-nav__link">
+    Config.persianDigit : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configviewmode-string" title="Config.viewMode : string" class="md-nav__link">
+    Config.viewMode : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformat-boolean" title="Config.format : boolean" class="md-nav__link">
+    Config.format : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfield-boolean" title="Config.altField : boolean" class="md-nav__link">
+    Config.altField : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltformat-string" title="Config.altFormat : string" class="md-nav__link">
+    Config.altFormat : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmindate-date" title="Config.minDate : Date" class="md-nav__link">
+    Config.minDate : Date
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmaxdate-date" title="Config.maxDate : Date" class="md-nav__link">
+    Config.maxDate : Date
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#confignavigator-object" title="Config.navigator : object" class="md-nav__link">
+    Config.navigator : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorenabled-boolean" title="navigator.enabled : boolean" class="md-nav__link">
+    navigator.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorscroll-object" title="navigator.scroll : object" class="md-nav__link">
+    navigator.scroll : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#scrollenabled-boolean" title="scroll.enabled : boolean" class="md-nav__link">
+    scroll.enabled : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatortext" title="navigator.text" class="md-nav__link">
+    navigator.text
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnnexttext" title="text.btnNextText" class="md-nav__link">
+    text.btnNextText
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnprevtext" title="text.btnPrevText" class="md-nav__link">
+    text.btnPrevText
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onnext" title="" onnext""="" class="md-nav__link">
+    "onNext"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onprev" title="" onprev""="" class="md-nav__link">
+    "onPrev"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch" title="" onswitch""="" class="md-nav__link">
+    "onSwitch"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtoolbox-object" title="Config.toolbox : object" class="md-nav__link">
+    Config.toolbox : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxenabled-boolean" title="toolbox.enabled : boolean" class="md-nav__link">
+    toolbox.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtext-object" title="toolbox.text : object" class="md-nav__link">
+    toolbox.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtntoday-string" title="text.btnToday : string" class="md-nav__link">
+    text.btnToday : string
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxsubmitbutton" title="toolbox.submitButton" class="md-nav__link">
+    toolbox.submitButton
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttonenabled-boolean" title="submitButton.enabled : boolean" class="md-nav__link">
+    submitButton.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttontext-object" title="submitButton.text : object" class="md-nav__link">
+    submitButton.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object" title="text.fa : object" class="md-nav__link">
+    text.fa : object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object" title="text.en : object" class="md-nav__link">
+    text.en : object
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onsubmit" title="" onsubmit""="" class="md-nav__link">
+    "onSubmit"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtodaybutton" title="toolbox.todayButton" class="md-nav__link">
+    toolbox.todayButton
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttonenabled-boolean" title="todayButton.enabled : boolean" class="md-nav__link">
+    todayButton.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttontext-object" title="todayButton.text : object" class="md-nav__link">
+    todayButton.text : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object_1" title="text.fa : object" class="md-nav__link">
+    text.fa : object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object_1" title="text.en : object" class="md-nav__link">
+    text.en : object
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday" title="" ontoday""="" class="md-nav__link">
+    "onToday"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxcalendarswitch-object" title="toolbox.calendarSwitch : object" class="md-nav__link">
+    toolbox.calendarSwitch : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchenabled-boolean" title="calendarSwitch.enabled : boolean" class="md-nav__link">
+    calendarSwitch.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchformat-string" title="calendarSwitch.format : string" class="md-nav__link">
+    calendarSwitch.format : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch_1" title="" onswitch""="" class="md-nav__link">
+    "onSwitch"
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday-toolbox" title="" ontoday"="" (toolbox)"="" class="md-nav__link">
+    "onToday" (toolbox)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlytimepicker-boolean" title="Config.onlyTimePicker : boolean" class="md-nav__link">
+    Config.onlyTimePicker : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlyselectondate-boolean" title="Config.onlySelectOnDate : boolean" class="md-nav__link">
+    Config.onlySelectOnDate : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtimepicker-object" title="Config.timePicker : object" class="md-nav__link">
+    Config.timePicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerenabled-boolean" title="timePicker.enabled : boolean" class="md-nav__link">
+    timePicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerstep-number" title="timePicker.step : number" class="md-nav__link">
+    timePicker.step : number
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerhour-object" title="timePicker.hour : object" class="md-nav__link">
+    timePicker.hour : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourenabled-boolean" title="hour.enabled : boolean" class="md-nav__link">
+    hour.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourstep-boolean" title="hour.step : boolean" class="md-nav__link">
+    hour.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerminute-object" title="timePicker.minute : object" class="md-nav__link">
+    timePicker.minute : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minuteenabled-boolean" title="minute.enabled : boolean" class="md-nav__link">
+    minute.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minutestep-boolean" title="minute.step : boolean" class="md-nav__link">
+    minute.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickersecond-object" title="timePicker.second : object" class="md-nav__link">
+    timePicker.second : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondenabled-boolean" title="second.enabled : boolean" class="md-nav__link">
+    second.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondstep-boolean" title="second.step : boolean" class="md-nav__link">
+    second.step : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickermeridian-object" title="timePicker.meridian : object" class="md-nav__link">
+    timePicker.meridian : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#meridianenabled-boolean" title="meridian.enabled : boolean" class="md-nav__link">
+    meridian.enabled : boolean
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configdaypicker-object" title="Config.dayPicker : object" class="md-nav__link">
+    Config.dayPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickerenabled-boolean" title="dayPicker.enabled : boolean" class="md-nav__link">
+    dayPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformat-string" title="dayPicker.titleFormat : string" class="md-nav__link">
+    dayPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformatteryear-month-42" title="dayPicker.titleFormatter(year, month) ⇒ *" class="md-nav__link">
+    dayPicker.titleFormatter(year, month) ⇒ *
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-selecteddayunix" title="" onselect"="" (selecteddayunix)"="" class="md-nav__link">
+    "onSelect" (selectedDayUnix)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmonthpicker-object" title="Config.monthPicker : object" class="md-nav__link">
+    Config.monthPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickerenabled-boolean" title="monthPicker.enabled : boolean" class="md-nav__link">
+    monthPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformat-string" title="monthPicker.titleFormat : string" class="md-nav__link">
+    monthPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformatterunix-42" title="monthPicker.titleFormatter(unix) ⇒ *" class="md-nav__link">
+    monthPicker.titleFormatter(unix) ⇒ *
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-monthindex" title="" onselect"="" (monthindex)"="" class="md-nav__link">
+    "onSelect" (monthIndex)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configyearpicker-object" title="Config.yearPicker : object" class="md-nav__link">
+    Config.yearPicker : object
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickerenabled-boolean" title="yearPicker.enabled : boolean" class="md-nav__link">
+    yearPicker.enabled : boolean
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformat-string" title="yearPicker.titleFormat : string" class="md-nav__link">
+    yearPicker.titleFormat : string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformatteryear-string" title="yearPicker.titleFormatter(year) ⇒ string" class="md-nav__link">
+    yearPicker.titleFormatter(year) ⇒ string
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-year" title="" onselect"="" (year)"="" class="md-nav__link">
+    "onSelect" (year)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configposition-string-124-array" title="Config.position : string | array" class="md-nav__link">
+    Config.position : string | array
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configautoclose-boolean" title="Config.autoClose : boolean" class="md-nav__link">
+    Config.autoClose : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtemplate-string" title="Config.template : string" class="md-nav__link">
+    Config.template : string
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configobserver-boolean" title="Config.observer : boolean" class="md-nav__link">
+    Config.observer : boolean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinputdelay-number" title="Config.inputDelay : number" class="md-nav__link">
+    Config.inputDelay : number
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformatterunixdate" title="Config.formatter(unixDate)" class="md-nav__link">
+    Config.formatter(unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfieldformatterunixdate" title="Config.altFieldFormatter(unixDate)" class="md-nav__link">
+    Config.altFieldFormatter(unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckdate-function" title="Config.checkDate() : function" class="md-nav__link">
+    Config.checkDate() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckmonth-function" title="Config.checkMonth() : function" class="md-nav__link">
+    Config.checkMonth() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckyear-function" title="Config.checkYear() : function" class="md-nav__link">
+    Config.checkYear() : function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-unixdate" title="" onselect"="" (unixdate)"="" class="md-nav__link">
+    "onSelect" (unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onset-unixdate" title="" onset"="" (unixdate)"="" class="md-nav__link">
+    "onSet" (unixDate)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onshow" title="" onshow""="" class="md-nav__link">
+    "onShow"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onhide" title="" onhide""="" class="md-nav__link">
+    "onHide"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoggle" title="" ontoggle""="" class="md-nav__link">
+    "onToggle"
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ondestroy" title="" ondestroy""="" class="md-nav__link">
+    "onDestroy"
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/babakhani/PersianWebToolkit/edit/master/docs/datepicker/options.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                
+                
+                <p><a name="Config"></a></p>
+<h1 id="config">Config<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#config" title="Permanent link">¶</a></h1>
+<p>persian-datepicker configuration document</p>
+<p><strong>Kind</strong>: global constant  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config">Config</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendarType">.calendarType</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar">.calendar</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian">.persian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.showHint">.showHint</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.leapYearMode">.leapYearMode</a> : <code>string</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian">.gregorian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.showHint">.showHint</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.responsive">.responsive</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.inline">.inline</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.initialValue">.initialValue</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.initialValueType">.initialValueType</a> : <code>boolean</code></li>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.persianDigit">.persianDigit</a> : <code>boolean</code></del></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.viewMode">.viewMode</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.format">.format</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.altField">.altField</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.altFormat">.altFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.minDate">.minDate</a> : <code>Date</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.maxDate">.maxDate</a> : <code>Date</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator">.navigator</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.scroll">.scroll</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.scroll.enabled">.enabled</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text">.text</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnNextText">.btnNextText</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnPrevText">.btnPrevText</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onNext">"onNext"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onPrev">"onPrev"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onSwitch">"onSwitch"</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox">.toolbox</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.enabled">.enabled</a> : <code>boolean</code></li>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.text">.text</a> : <code>object</code></del><ul>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.text.btnToday">.btnToday</a> : <code>string</code></del></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton">.submitButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.event_onSubmit">"onSubmit"</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton">.todayButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.event_onToday">"onToday"</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch">.calendarSwitch</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.format">.format</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.event_onSwitch">"onSwitch"</a></li>
+</ul>
+</li>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.event_onToday">"onToday" (toolbox)</a></del></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.onlyTimePicker">.onlyTimePicker</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.onlySelectOnDate">.onlySelectOnDate</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker">.timePicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.step">.step</a> : <code>number</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour">.hour</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute">.minute</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second">.second</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.meridian">.meridian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.meridian.enabled">.enabled</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker">.dayPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.titleFormatter">.titleFormatter(year, month)</a> ⇒ <code>*</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.event_onSelect">"onSelect" (selectedDayUnix)</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker">.monthPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.titleFormatter">.titleFormatter(unix)</a> ⇒ <code>*</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.event_onSelect">"onSelect" (monthIndex)</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker">.yearPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.titleFormatter">.titleFormatter(year)</a> ⇒ <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.event_onSelect">"onSelect" (year)</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.position">.position</a> : <code>string</code> | <code>array</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.autoClose">.autoClose</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.template">.template</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.observer">.observer</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.inputDelay">.inputDelay</a> : <code>number</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.formatter">.formatter(unixDate)</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.altFieldFormatter">.altFieldFormatter(unixDate)</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.checkDate">.checkDate()</a> : <code>function</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.checkMonth">.checkMonth()</a> : <code>function</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.checkYear">.checkYear()</a> : <code>function</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onSelect">"onSelect" (unixDate)</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onSet">"onSet" (unixDate)</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onShow">"onShow"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onHide">"onHide"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onToggle">"onToggle"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.event_onDestroy">"onDestroy"</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.calendarType"></a></p>
+<h2 id="configcalendartype-string">Config.calendarType : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendartype-string" title="Permanent link">¶</a></h2>
+<p>set default calendar mode of datepicker, available options: 'persian', 'gregorian'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>"'persian'"</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.calendar"></a></p>
+<h2 id="configcalendar-object">Config.calendar : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcalendar-object" title="Permanent link">¶</a></h2>
+<p>calendar type and localization configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Since</strong>: 1.0.0<br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_0"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_0 pre, #__code_0 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="p">{</span>
+    <span class="s1">'persian'</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s1">'locale'</span><span class="o">:</span> <span class="s1">'fa'</span><span class="p">,</span>
+        <span class="s1">'showHint'</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="s1">'leapYearMode'</span><span class="o">:</span> <span class="s1">'algorithmic'</span> <span class="c1">// "astronomical"</span>
+    <span class="p">},</span>
+
+    <span class="s1">'gregorian'</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s1">'locale'</span><span class="o">:</span> <span class="s1">'en'</span><span class="p">,</span>
+        <span class="s1">'showHint'</span><span class="o">:</span> <span class="kc">false</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar">.calendar</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian">.persian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.showHint">.showHint</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.leapYearMode">.leapYearMode</a> : <code>string</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian">.gregorian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.showHint">.showHint</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.calendar.persian"></a></p>
+<h3 id="calendarpersian-object">calendar.persian : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarpersian-object" title="Permanent link">¶</a></h3>
+<p>Persian calendar configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar"><code>calendar</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian">.persian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.showHint">.showHint</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian.leapYearMode">.leapYearMode</a> : <code>string</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.calendar.persian.locale"></a></p>
+<h4 id="persianlocale-string">persian.locale : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianlocale-string" title="Permanent link">¶</a></h4>
+<p>set locale of Persian calendar available options: 'fa', 'en'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian"><code>persian</code></a><br>
+<strong>Default</strong>: <code>"'fa'"</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.calendar.persian.showHint"></a></p>
+<h4 id="persianshowhint-boolean">persian.showHint : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianshowhint-boolean" title="Permanent link">¶</a></h4>
+<p>if set true, small date hint of this calendar will be shown on another calendar</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian"><code>persian</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.calendar.persian.leapYearMode"></a></p>
+<h4 id="persianleapyearmode-string">persian.leapYearMode : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#persianleapyearmode-string" title="Permanent link">¶</a></h4>
+<p>Persian calendar leap year calculation mode, available options: 'algorithmic', 'astronomical'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.persian"><code>persian</code></a><br>
+<strong>Default</strong>: <code>"'algorithmic'"</code><br>
+<strong>Link</strong>: http://babakhani.github.io/PersianWebToolkit/doc/persian-date/leapyear<br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.calendar.gregorian"></a></p>
+<h3 id="calendargregorian-object">calendar.gregorian : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendargregorian-object" title="Permanent link">¶</a></h3>
+<p>Gregorian calendar configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar"><code>calendar</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian">.gregorian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.locale">.locale</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian.showHint">.showHint</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.calendar.gregorian.locale"></a></p>
+<h4 id="gregorianlocale-string">gregorian.locale : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianlocale-string" title="Permanent link">¶</a></h4>
+<p>set locale of Gregorian calendar available options: 'fa', 'en'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian"><code>gregorian</code></a><br>
+<strong>Default</strong>: <code>"'en'"</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.calendar.gregorian.showHint"></a></p>
+<h4 id="gregorianshowhint-boolean">gregorian.showHint : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#gregorianshowhint-boolean" title="Permanent link">¶</a></h4>
+<p>if set true, small date hint of this calendar will be shown on another calendar</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.calendar.gregorian"><code>gregorian</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.responsive"></a></p>
+<h2 id="configresponsive-boolean">Config.responsive : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configresponsive-boolean" title="Permanent link">¶</a></h2>
+<p>if set true make enable responsive view on mobile devices</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.inline"></a></p>
+<h2 id="configinline-boolean">Config.inline : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinline-boolean" title="Permanent link">¶</a></h2>
+<p>if true datepicker render inline</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<a name="Config.initialValue"></a></p>
+<h2 id="configinitialvalue-boolean">Config.initialValue : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvalue-boolean" title="Permanent link">¶</a></h2>
+<p>If set true datepicker init with input value date, use data-date property when you want set inline datepicker initial value</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.initialValueType"></a></p>
+<h2 id="configinitialvaluetype-boolean">Config.initialValueType : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinitialvaluetype-boolean" title="Permanent link">¶</a></h2>
+<p>Initial value calendar type, accept: 'persian', 'gregorian'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.persianDigit"></a></p>
+<h2 id="configpersiandigit-boolean"><del>Config.persianDigit : <code>boolean</code></del><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configpersiandigit-boolean" title="Permanent link">¶</a></h2>
+<p><strong><em>Deprecated</em></strong></p>
+<p>from v1.0.0 this options is deprecated, use calendar.persian.locale instead</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.viewMode"></a></p>
+<h2 id="configviewmode-string">Config.viewMode : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configviewmode-string" title="Permanent link">¶</a></h2>
+<p>default view mode, Acceptable value : day,month,year</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>"'day'"</code><br>
+<a name="Config.format"></a></p>
+<h2 id="configformat-boolean">Config.format : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformat-boolean" title="Permanent link">¶</a></h2>
+<p>the date format, combination of d, dd, m, mm, yy, yyy.</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>'LLLL'</code><br>
+<strong>Link</strong>: http://babakhani.github.io/PersianWebToolkit/doc/persian-date/#format<br>
+<a name="Config.altField"></a></p>
+<h2 id="configaltfield-boolean">Config.altField : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfield-boolean" title="Permanent link">¶</a></h2>
+<p>An input element that is to be updated with the selected date from the datepicker. Use the altFormat option to change the format of the date within this field. Leave as blank for no alternate field. acceptable value: : '#elementId','.element-class'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_1"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_1 pre, #__code_1 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="nx">altField</span><span class="o">:</span> <span class="s1">'#inputAltFirld'</span>
+
+<span class="nx">altField</span><span class="o">:</span> <span class="s1">'.input-alt-field'</span>
+</pre></div>
+
+
+<p><a name="Config.altFormat"></a></p>
+<h2 id="configaltformat-string">Config.altFormat : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltformat-string" title="Permanent link">¶</a></h2>
+<p>the date format, combination of d, dd, m, mm, yy, yyy.</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>"'unix'"</code><br>
+<strong>Link</strong>: http://babakhani.github.io/PersianWebToolkit/doc/persian-date/#format<br>
+<a name="Config.minDate"></a></p>
+<h2 id="configmindate-date">Config.minDate : <code>Date</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmindate-date" title="Permanent link">¶</a></h2>
+<p>Set min date on datepicker, prevent user select date before given unix time</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>null</code><br>
+<strong>Properties</strong></p>
+<div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>minDate</td>
+    </tr>  </tbody>
+</table></div></div>
+
+<p><a name="Config.maxDate"></a></p>
+<h2 id="configmaxdate-date">Config.maxDate : <code>Date</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmaxdate-date" title="Permanent link">¶</a></h2>
+<p>Set max date on datepicker, prevent user select date after given unix time</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>null</code><br>
+<strong>Properties</strong></p>
+<div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>maxDate</td>
+    </tr>  </tbody>
+</table></div></div>
+
+<p><a name="Config.navigator"></a></p>
+<h2 id="confignavigator-object">Config.navigator : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#confignavigator-object" title="Permanent link">¶</a></h2>
+<p>navigator config object</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator">.navigator</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.scroll">.scroll</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.scroll.enabled">.enabled</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text">.text</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnNextText">.btnNextText</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnPrevText">.btnPrevText</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onNext">"onNext"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onPrev">"onPrev"</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.event_onSwitch">"onSwitch"</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.navigator.enabled"></a></p>
+<h3 id="navigatorenabled-boolean">navigator.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorenabled-boolean" title="Permanent link">¶</a></h3>
+<p>make navigator enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.navigator.scroll"></a></p>
+<h3 id="navigatorscroll-object">navigator.scroll : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatorscroll-object" title="Permanent link">¶</a></h3>
+<p>scroll navigation options</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a><br>
+<a name="Config.navigator.scroll.enabled"></a></p>
+<h4 id="scrollenabled-boolean">scroll.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#scrollenabled-boolean" title="Permanent link">¶</a></h4>
+<p>if you want make disable scroll navigation set this option false</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.scroll"><code>scroll</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.navigator.text"></a></p>
+<h3 id="navigatortext">navigator.text<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#navigatortext" title="Permanent link">¶</a></h3>
+<p>navigator text config object</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text">.text</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnNextText">.btnNextText</a></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text.btnPrevText">.btnPrevText</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.navigator.text.btnNextText"></a></p>
+<h4 id="textbtnnexttext">text.btnNextText<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnnexttext" title="Permanent link">¶</a></h4>
+<p>text of next button</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>'&lt;'</code><br>
+<a name="Config.navigator.text.btnPrevText"></a></p>
+<h4 id="textbtnprevtext">text.btnPrevText<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtnprevtext" title="Permanent link">¶</a></h4>
+<p>text of prev button</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator.text"><code>text</code></a><br>
+<strong>Default:</strong>: '&gt;'<br>
+<a name="Config.navigator.event_onNext"></a></p>
+<h3 id="onnext">"onNext"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onnext" title="Permanent link">¶</a></h3>
+<p>Called when navigator goes to next state</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_2"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_2 pre, #__code_2 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">navigator</span><span class="p">)</span> <span class="p">{</span>
+     <span class="c1">//log('navigator next ');</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.navigator.event_onPrev"></a></p>
+<h3 id="onprev">"onPrev"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onprev" title="Permanent link">¶</a></h3>
+<p>Called when navigator goes to previews state</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_3"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_3 pre, #__code_3 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">navigator</span><span class="p">)</span> <span class="p">{</span>
+     <span class="c1">//log('navigator prev ');</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.navigator.event_onSwitch"></a></p>
+<h3 id="onswitch">"onSwitch"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch" title="Permanent link">¶</a></h3>
+<p>Called when navigator switch</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.navigator"><code>navigator</code></a><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_4"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_4 pre, #__code_4 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">datepickerObject</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// console.log('navigator switch ');</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.toolbox"></a></p>
+<h2 id="configtoolbox-object">Config.toolbox : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtoolbox-object" title="Permanent link">¶</a></h2>
+<p>toolbox config object</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>true</code>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox">.toolbox</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.enabled">.enabled</a> : <code>boolean</code></li>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.text">.text</a> : <code>object</code></del><ul>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.text.btnToday">.btnToday</a> : <code>string</code></del></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton">.submitButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.event_onSubmit">"onSubmit"</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton">.todayButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.event_onToday">"onToday"</a></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch">.calendarSwitch</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.format">.format</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.event_onSwitch">"onSwitch"</a></li>
+</ul>
+</li>
+<li><del><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.event_onToday">"onToday" (toolbox)</a></del></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.enabled"></a></p>
+<h3 id="toolboxenabled-boolean">toolbox.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxenabled-boolean" title="Permanent link">¶</a></h3>
+<p>boolean option that make toolbar enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.toolbox.text"></a></p>
+<h3 id="toolboxtext-object"><del>toolbox.text : <code>object</code></del><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtext-object" title="Permanent link">¶</a></h3>
+<p><strong><em>Deprecated</em></strong></p>
+<p>toolbox button text configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+<a name="Config.toolbox.text.btnToday"></a></p>
+<h4 id="textbtntoday-string"><del>text.btnToday : <code>string</code></del><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textbtntoday-string" title="Permanent link">¶</a></h4>
+<p><strong><em>Deprecated</em></strong></p>
+<p>text of today button, deprecated from 1.0.0</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>"'امروز'"</code><br>
+<a name="Config.toolbox.submitButton"></a></p>
+<h3 id="toolboxsubmitbutton">toolbox.submitButton<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxsubmitbutton" title="Permanent link">¶</a></h3>
+<p>submit button configuration (only shown on mobile)</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton">.submitButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.event_onSubmit">"onSubmit"</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.submitButton.enabled"></a></p>
+<h4 id="submitbuttonenabled-boolean">submitButton.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttonenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make submit button enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton"><code>submitButton</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.submitButton.text"></a></p>
+<h4 id="submitbuttontext-object">submitButton.text : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#submitbuttontext-object" title="Permanent link">¶</a></h4>
+<p>submit button text</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton"><code>submitButton</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.submitButton.text.fa"></a></p>
+<h5 id="textfa-object">text.fa : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object" title="Permanent link">¶</a></h5>
+<p>show when current calendar is Persian</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>تایید</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.submitButton.text.en"></a></p>
+<h5 id="texten-object">text.en : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object" title="Permanent link">¶</a></h5>
+<p>show when current calendar is Gregorian</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>submit</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.submitButton.event_onSubmit"></a></p>
+<h4 id="onsubmit">"onSubmit"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onsubmit" title="Permanent link">¶</a></h4>
+<p>Called when submit button clicked</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.submitButton"><code>submitButton</code></a><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.todayButton"></a></p>
+<h3 id="toolboxtodaybutton">toolbox.todayButton<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxtodaybutton" title="Permanent link">¶</a></h3>
+<p>toolbox today button configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton">.todayButton</a><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.event_onToday">"onToday"</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.todayButton.enabled"></a></p>
+<h4 id="todaybuttonenabled-boolean">todayButton.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttonenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make toolbox today button enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton"><code>todayButton</code></a><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.todayButton.text"></a></p>
+<h4 id="todaybuttontext-object">todayButton.text : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#todaybuttontext-object" title="Permanent link">¶</a></h4>
+<p>today button text</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton"><code>todayButton</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text">.text</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.fa">.fa</a> : <code>object</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text.en">.en</a> : <code>object</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.todayButton.text.fa"></a></p>
+<h5 id="textfa-object_1">text.fa : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#textfa-object_1" title="Permanent link">¶</a></h5>
+<p>show when current calendar is Persian</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>امروز</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.todayButton.text.en"></a></p>
+<h5 id="texten-object_1">text.en : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#texten-object_1" title="Permanent link">¶</a></h5>
+<p>show when current calendar is Gregorian</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton.text"><code>text</code></a><br>
+<strong>Default</strong>: <code>today</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.todayButton.event_onToday"></a></p>
+<h4 id="ontoday">"onToday"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday" title="Permanent link">¶</a></h4>
+<p>Called when today button clicked</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.todayButton"><code>todayButton</code></a><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.calendarSwitch"></a></p>
+<h3 id="toolboxcalendarswitch-object">toolbox.calendarSwitch : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#toolboxcalendarswitch-object" title="Permanent link">¶</a></h3>
+<p>toolbox calendar switch configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+<strong>Since</strong>: 1.0.0  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch">.calendarSwitch</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.format">.format</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch.event_onSwitch">"onSwitch"</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.toolbox.calendarSwitch.enabled"></a></p>
+<h4 id="calendarswitchenabled-boolean">calendarSwitch.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make calendar switch enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch"><code>calendarSwitch</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.calendarSwitch.format"></a></p>
+<h4 id="calendarswitchformat-string">calendarSwitch.format : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#calendarswitchformat-string" title="Permanent link">¶</a></h4>
+<p>calendar switch text format string</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch"><code>calendarSwitch</code></a><br>
+<strong>Default</strong>: <code>"MMMM"</code><br>
+<strong>Link</strong>: http://babakhani.github.io/PersianWebToolkit/doc/persian-date/#format<br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.calendarSwitch.event_onSwitch"></a></p>
+<h4 id="onswitch_1">"onSwitch"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onswitch_1" title="Permanent link">¶</a></h4>
+<p>Called when calendar switch clicked</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox.calendarSwitch"><code>calendarSwitch</code></a><br>
+<strong>Since</strong>: 1.0.0<br>
+<a name="Config.toolbox.event_onToday"></a></p>
+<h3 id="ontoday-toolbox"><del>"onToday" (toolbox)</del><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoday-toolbox" title="Permanent link">¶</a></h3>
+<p><strong><em>Deprecated</em></strong></p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.toolbox"><code>toolbox</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>toolbox</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><strong>Example</strong>  </p>
+<div class="codehilite" id="__code_5"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_5 pre, #__code_5 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">toolbox</span><span class="p">)</span> <span class="p">{</span>
+     <span class="c1">//log('toolbox today btn');</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.onlyTimePicker"></a></p>
+<h2 id="configonlytimepicker-boolean">Config.onlyTimePicker : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlytimepicker-boolean" title="Permanent link">¶</a></h2>
+<p>if true all pickers hide and just show timepicker</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<a name="Config.onlySelectOnDate"></a></p>
+<h2 id="configonlyselectondate-boolean">Config.onlySelectOnDate : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configonlyselectondate-boolean" title="Permanent link">¶</a></h2>
+<p>if true date select just by click on day in month grid, and when user select month or year selected date doesnt change</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default:</strong>: true<br>
+<strong>Properties</strong></p>
+<div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>justSelectOnDate</td>
+    </tr>  </tbody>
+</table></div></div>
+
+<p><a name="Config.timePicker"></a></p>
+<h2 id="configtimepicker-object">Config.timePicker : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtimepicker-object" title="Permanent link">¶</a></h2>
+<p>timePicker configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker">.timePicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.step">.step</a> : <code>number</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour">.hour</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute">.minute</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second">.second</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.meridian">.meridian</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.meridian.enabled">.enabled</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.timePicker.enabled"></a></p>
+<h3 id="timepickerenabled-boolean">timePicker.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerenabled-boolean" title="Permanent link">¶</a></h3>
+<p>make timePicker enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a><br>
+<a name="Config.timePicker.step"></a></p>
+<h3 id="timepickerstep-number">timePicker.step : <code>number</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerstep-number" title="Permanent link">¶</a></h3>
+<p>The amount that increases or decreases by pressing the button</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a><br>
+<a name="Config.timePicker.hour"></a></p>
+<h3 id="timepickerhour-object">timePicker.hour : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerhour-object" title="Permanent link">¶</a></h3>
+<p>hour selector configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour">.hour</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.timePicker.hour.enabled"></a></p>
+<h4 id="hourenabled-boolean">hour.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make hour selector enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour"><code>hour</code></a><br>
+<a name="Config.timePicker.hour.step"></a></p>
+<h4 id="hourstep-boolean">hour.step : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#hourstep-boolean" title="Permanent link">¶</a></h4>
+<p>The amount that increases or decreases hour, by pressing the button. overwrite by timepicker.step</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.hour"><code>hour</code></a><br>
+<a name="Config.timePicker.minute"></a></p>
+<h3 id="timepickerminute-object">timePicker.minute : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickerminute-object" title="Permanent link">¶</a></h3>
+<p>minute selector configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute">.minute</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.timePicker.minute.enabled"></a></p>
+<h4 id="minuteenabled-boolean">minute.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minuteenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make minute selector enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute"><code>minute</code></a><br>
+<a name="Config.timePicker.minute.step"></a></p>
+<h4 id="minutestep-boolean">minute.step : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#minutestep-boolean" title="Permanent link">¶</a></h4>
+<p>overwrite by parent step</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.minute"><code>minute</code></a><br>
+<a name="Config.timePicker.second"></a></p>
+<h3 id="timepickersecond-object">timePicker.second : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickersecond-object" title="Permanent link">¶</a></h3>
+<p>second selector configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second">.second</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second.step">.step</a> : <code>boolean</code></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.timePicker.second.enabled"></a></p>
+<h4 id="secondenabled-boolean">second.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondenabled-boolean" title="Permanent link">¶</a></h4>
+<p>make second selector enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second"><code>second</code></a><br>
+<a name="Config.timePicker.second.step"></a></p>
+<h4 id="secondstep-boolean">second.step : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#secondstep-boolean" title="Permanent link">¶</a></h4>
+<p>The amount that increases or decreases second, by pressing the button. overwrite by timepicker.step</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.second"><code>second</code></a><br>
+<a name="Config.timePicker.meridian"></a></p>
+<h3 id="timepickermeridian-object">timePicker.meridian : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#timepickermeridian-object" title="Permanent link">¶</a></h3>
+<p>meridian selector configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker"><code>timePicker</code></a><br>
+<a name="Config.timePicker.meridian.enabled"></a></p>
+<h4 id="meridianenabled-boolean">meridian.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#meridianenabled-boolean" title="Permanent link">¶</a></h4>
+<p>if you set this as false, datepicker timepicker system moved to 24-hour system</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.timePicker.meridian"><code>meridian</code></a><br>
+<a name="Config.dayPicker"></a></p>
+<h2 id="configdaypicker-object">Config.dayPicker : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configdaypicker-object" title="Permanent link">¶</a></h2>
+<p>dayPicker configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker">.dayPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.titleFormatter">.titleFormatter(year, month)</a> ⇒ <code>*</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker.event_onSelect">"onSelect" (selectedDayUnix)</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.dayPicker.enabled"></a></p>
+<h3 id="daypickerenabled-boolean">dayPicker.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickerenabled-boolean" title="Permanent link">¶</a></h3>
+<p>make daypicker enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker"><code>dayPicker</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.dayPicker.titleFormat"></a></p>
+<h3 id="daypickertitleformat-string">dayPicker.titleFormat : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformat-string" title="Permanent link">¶</a></h3>
+<p>daypicker title format string</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker"><code>dayPicker</code></a><br>
+<strong>Default</strong>: <code>"'YYYY MMMM'"</code><br>
+<strong>Link</strong>: http://babakhani.github.io/PersianWebToolkit/doc/persian-date/#format<br>
+<a name="Config.dayPicker.titleFormatter"></a></p>
+<h3 id="daypickertitleformatteryear-month-42">dayPicker.titleFormatter(year, month) ⇒ <code>*</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#daypickertitleformatteryear-month-42" title="Permanent link">¶</a></h3>
+<p>daypicker title formatter function</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker"><code>dayPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>year</td>
+    </tr><tr>
+    <td>month</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.dayPicker.event_onSelect"></a></p>
+<h3 id="onselect-selecteddayunix">"onSelect" (selectedDayUnix)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-selecteddayunix" title="Permanent link">¶</a></h3>
+<p>fired when user select date</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.dayPicker"><code>dayPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>selectedDayUnix</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.monthPicker"></a></p>
+<h2 id="configmonthpicker-object">Config.monthPicker : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configmonthpicker-object" title="Permanent link">¶</a></h2>
+<p>monthPicker configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker">.monthPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.titleFormatter">.titleFormatter(unix)</a> ⇒ <code>*</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker.event_onSelect">"onSelect" (monthIndex)</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.monthPicker.enabled"></a></p>
+<h3 id="monthpickerenabled-boolean">monthPicker.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickerenabled-boolean" title="Permanent link">¶</a></h3>
+<p>make monthPicker enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker"><code>monthPicker</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.monthPicker.titleFormat"></a></p>
+<h3 id="monthpickertitleformat-string">monthPicker.titleFormat : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformat-string" title="Permanent link">¶</a></h3>
+<p>monthPicker title format string</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker"><code>monthPicker</code></a><br>
+<strong>Default</strong>: <code>"'YYYY'"</code><br>
+<a name="Config.monthPicker.titleFormatter"></a></p>
+<h3 id="monthpickertitleformatterunix-42">monthPicker.titleFormatter(unix) ⇒ <code>*</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#monthpickertitleformatterunix-42" title="Permanent link">¶</a></h3>
+<p>monthPicker title formatter function</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker"><code>monthPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>unix</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.monthPicker.event_onSelect"></a></p>
+<h3 id="onselect-monthindex">"onSelect" (monthIndex)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-monthindex" title="Permanent link">¶</a></h3>
+<p>fired when user select month</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.monthPicker"><code>monthPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>monthIndex</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.yearPicker"></a></p>
+<h2 id="configyearpicker-object">Config.yearPicker : <code>object</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configyearpicker-object" title="Permanent link">¶</a></h2>
+<p>yearPicker configuration</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a>  </p>
+<ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker">.yearPicker</a> : <code>object</code><ul>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.enabled">.enabled</a> : <code>boolean</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.titleFormat">.titleFormat</a> : <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.titleFormatter">.titleFormatter(year)</a> ⇒ <code>string</code></li>
+<li><a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker.event_onSelect">"onSelect" (year)</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="Config.yearPicker.enabled"></a></p>
+<h3 id="yearpickerenabled-boolean">yearPicker.enabled : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickerenabled-boolean" title="Permanent link">¶</a></h3>
+<p>make yearPicker enable or disable</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker"><code>yearPicker</code></a><br>
+<strong>Default</strong>: <code>true</code><br>
+<a name="Config.yearPicker.titleFormat"></a></p>
+<h3 id="yearpickertitleformat-string">yearPicker.titleFormat : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformat-string" title="Permanent link">¶</a></h3>
+<p>yearPicker title format string</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker"><code>yearPicker</code></a><br>
+<strong>Default</strong>: <code>"'YYYY'"</code><br>
+<a name="Config.yearPicker.titleFormatter"></a></p>
+<h3 id="yearpickertitleformatteryear-string">yearPicker.titleFormatter(year) ⇒ <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#yearpickertitleformatteryear-string" title="Permanent link">¶</a></h3>
+<p>yearPicker title formatter function</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker"><code>yearPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>year</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.yearPicker.event_onSelect"></a></p>
+<h3 id="onselect-year">"onSelect" (year)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-year" title="Permanent link">¶</a></h3>
+<p>fired when user select year</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config.yearPicker"><code>yearPicker</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>year</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.position"></a></p>
+<h2 id="configposition-string-124-array">Config.position : <code>string</code> | <code>array</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configposition-string-124-array" title="Permanent link">¶</a></h2>
+<p>position of datepicker relative to input element</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>"'auto'"</code><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_6"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_6 pre, #__code_6 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="s1">'position'</span><span class="o">:</span> <span class="s1">'auto'</span>
+<span class="s1">'position'</span><span class="o">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+
+
+<p><a name="Config.autoClose"></a></p>
+<h2 id="configautoclose-boolean">Config.autoClose : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configautoclose-boolean" title="Permanent link">¶</a></h2>
+<p>If true datepicker close When select a date</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<a name="Config.template"></a></p>
+<h2 id="configtemplate-string">Config.template : <code>string</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configtemplate-string" title="Permanent link">¶</a></h2>
+<p>by default datepicker have a template string, and you can overwrite it simply by replace string in config.</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_7"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_7 pre, #__code_7 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s2">"plotId"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-plot-area datepicker-plot-area-inline-view"</span><span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">navigator</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"navigator"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-header"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"btn btn-next"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">navigator</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">btnNextText</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"btn btn-switch"</span><span class="o">&gt;</span><span class="p">{{</span> <span class="nx">navigator</span><span class="p">.</span><span class="k">switch</span><span class="p">.</span><span class="nx">text</span> <span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"btn btn-prev"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">navigator</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">btnPrevText</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/navigator.enabled}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-grid-view"</span> <span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">days</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">days</span><span class="p">.</span><span class="nx">viewMode</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-day-view"</span> <span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"month-grid-box"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"title"</span><span class="o">&gt;&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">ش</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">ی</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">د</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">س</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">چ</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">پ</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"header-row-cell"</span><span class="o">&gt;</span><span class="nx">ج</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">table</span> <span class="nx">cellspacing</span><span class="o">=</span><span class="s2">"0"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"table-days"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">tbody</span><span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">days</span><span class="p">.</span><span class="nx">list</span><span class="p">}}</span>
+
+     <span class="o">&lt;</span><span class="nx">tr</span><span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="p">.}}</span>
+
+     <span class="p">{{</span><span class="err">#</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">td</span> <span class="nx">data</span><span class="o">-</span><span class="nx">unix</span><span class="o">=</span><span class="s2">"{{dataUnix}}"</span> <span class="o">&gt;&lt;</span><span class="nx">span</span>  <span class="kr">class</span><span class="o">=</span><span class="s2">"{{#otherMonth}}other-month{{/otherMonth}} {{#selected}}selected{{/selected}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/span&gt;&lt;/td&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="o">^</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">td</span> <span class="nx">data</span><span class="o">-</span><span class="nx">unix</span><span class="o">=</span><span class="s2">"{{dataUnix}}"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"disabled"</span><span class="o">&gt;&lt;</span><span class="nx">span</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"{{#otherMonth}}other-month{{/otherMonth}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/span&gt;&lt;/td&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+
+     <span class="p">{{</span><span class="err">/.}}</span>
+     <span class="o">&lt;</span><span class="err">/tr&gt;</span>
+     <span class="p">{{</span><span class="err">/days.list}}</span>
+     <span class="o">&lt;</span><span class="err">/tbody&gt;</span>
+     <span class="o">&lt;</span><span class="err">/table&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/days.viewMode}}</span>
+     <span class="p">{{</span><span class="err">/days.enabled}}</span>
+
+     <span class="p">{{</span><span class="err">#</span><span class="nx">month</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">month</span><span class="p">.</span><span class="nx">viewMode</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-month-view"</span><span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">month</span><span class="p">.</span><span class="nx">list</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">data</span><span class="o">-</span><span class="nx">month</span><span class="o">=</span><span class="s2">"{{dataMonth}}"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"month-item {{#selected}}selected{{/selected}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/small&gt;&lt;/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="o">^</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">data</span><span class="o">-</span><span class="nx">month</span><span class="o">=</span><span class="s2">"{{dataMonth}}"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"month-item month-item-disable {{#selected}}selected{{/selected}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/small&gt;&lt;/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="err">/month.list}}</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/month.viewMode}}</span>
+     <span class="p">{{</span><span class="err">/month.enabled}}</span>
+
+     <span class="p">{{</span><span class="err">#</span><span class="nx">year</span><span class="p">.</span><span class="nx">enabled</span> <span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">year</span><span class="p">.</span><span class="nx">viewMode</span> <span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-year-view"</span> <span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">year</span><span class="p">.</span><span class="nx">list</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">data</span><span class="o">-</span><span class="nx">year</span><span class="o">=</span><span class="s2">"{{dataYear}}"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"year-item {{#selected}}selected{{/selected}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="o">^</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">data</span><span class="o">-</span><span class="nx">year</span><span class="o">=</span><span class="s2">"{{dataYear}}"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"year-item year-item-disable {{#selected}}selected{{/selected}}"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">title</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="err">/year.list}}</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/year.viewMode }}</span>
+     <span class="p">{{</span><span class="err">/year.enabled }}</span>
+
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">time</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"datepicker-time-view"</span><span class="o">&gt;</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">hour</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"hour time-segment"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"hour"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"up-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"hour"</span><span class="o">&gt;</span><span class="err">▲</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">input</span> <span class="nx">value</span><span class="o">=</span><span class="s2">"{{hour.title}}"</span> <span class="nx">type</span><span class="o">=</span><span class="s2">"text"</span> <span class="nx">placeholder</span><span class="o">=</span><span class="s2">"hour"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"hour-input"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"down-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"hour"</span><span class="o">&gt;</span><span class="err">▼</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"divider"</span><span class="o">&gt;:&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/hour.enabled}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">minute</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"minute time-segment"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"minute"</span> <span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"up-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"minute"</span><span class="o">&gt;</span><span class="err">▲</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">input</span> <span class="nx">value</span><span class="o">=</span><span class="s2">"{{minute.title}}"</span> <span class="nx">type</span><span class="o">=</span><span class="s2">"text"</span> <span class="nx">placeholder</span><span class="o">=</span><span class="s2">"minute"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"minute-input"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"down-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"minute"</span><span class="o">&gt;</span><span class="err">▼</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"divider second-divider"</span><span class="o">&gt;:&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/minute.enabled}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">second</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"second time-segment"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"second"</span>  <span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"up-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"second"</span> <span class="o">&gt;</span><span class="err">▲</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">input</span> <span class="nx">value</span><span class="o">=</span><span class="s2">"{{second.title}}"</span>  <span class="nx">type</span><span class="o">=</span><span class="s2">"text"</span> <span class="nx">placeholder</span><span class="o">=</span><span class="s2">"second"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"second-input"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"down-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"second"</span> <span class="o">&gt;</span><span class="err">▼</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"divider meridian-divider"</span><span class="o">&gt;&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"divider meridian-divider"</span><span class="o">&gt;&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/second.enabled}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">meridian</span><span class="p">.</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"meridian time-segment"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"meridian"</span> <span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"up-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"meridian"</span><span class="o">&gt;</span><span class="err">▲</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="nx">input</span> <span class="nx">value</span><span class="o">=</span><span class="s2">"{{meridian.title}}"</span> <span class="nx">type</span><span class="o">=</span><span class="s2">"text"</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"meridian-input"</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"down-btn"</span> <span class="nx">data</span><span class="o">-</span><span class="nx">time</span><span class="o">-</span><span class="nx">key</span><span class="o">=</span><span class="s2">"meridian"</span><span class="o">&gt;</span><span class="err">▼</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/meridian.enabled}}</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="err">/time}}</span>
+
+     <span class="p">{{</span><span class="err">#</span><span class="nx">toolbox</span><span class="p">}}</span>
+     <span class="p">{{</span><span class="err">#</span><span class="nx">enabled</span><span class="p">}}</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"toolbox "</span><span class="o">&gt;</span>
+     <span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">"btn-today"</span><span class="o">&gt;</span><span class="p">{{</span><span class="nx">text</span><span class="p">.</span><span class="nx">btnToday</span><span class="p">}}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+     <span class="p">{{</span><span class="err">/enabled}}</span>
+     <span class="p">{{</span><span class="err">/toolbox}}</span>
+     <span class="o">&lt;</span><span class="err">/div&gt;</span>
+</pre></div>
+
+
+<p><a name="Config.observer"></a></p>
+<h2 id="configobserver-boolean">Config.observer : <code>boolean</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configobserver-boolean" title="Permanent link">¶</a></h2>
+<p>if true datepicker update self by user inputted date string, accept 'yyyy/mm/dd'</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>false</code><br>
+<strong>Example</strong>  </p>
+<div class="codehilite" id="__code_8"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_8 pre, #__code_8 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="s1">'1396/10/2'</span><span class="p">,</span> <span class="s1">''</span>
+</pre></div>
+
+
+<p><a name="Config.inputDelay"></a></p>
+<h2 id="configinputdelay-number">Config.inputDelay : <code>number</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configinputdelay-number" title="Permanent link">¶</a></h2>
+<p>waite time for last user key-down event, accept millisecond</p>
+<p><strong>Kind</strong>: static property of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>800</code><br>
+<a name="Config.formatter"></a></p>
+<h2 id="configformatterunixdate">Config.formatter(unixDate)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configformatterunixdate" title="Permanent link">¶</a></h2>
+<p>format value of input</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>function</code><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>unixDate</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><strong>Example</strong>  </p>
+<div class="codehilite" id="__code_9"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_9 pre, #__code_9 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">unixDate</span><span class="p">)</span> <span class="p">{</span>
+     <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+     <span class="kd">var</span> <span class="nx">pdate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">persianDate</span><span class="p">(</span><span class="nx">unixDate</span><span class="p">);</span>
+     <span class="nx">pdate</span><span class="p">.</span><span class="nx">formatPersian</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">persianDigit</span><span class="p">;</span>
+     <span class="k">return</span> <span class="nx">pdate</span><span class="p">.</span><span class="nx">format</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">format</span><span class="p">);</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.altFieldFormatter"></a></p>
+<h2 id="configaltfieldformatterunixdate">Config.altFieldFormatter(unixDate)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configaltfieldformatterunixdate" title="Permanent link">¶</a></h2>
+<p>format value of 'altField' input</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<strong>Default</strong>: <code>function</code><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>unixDate</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><strong>Example</strong>  </p>
+<div class="codehilite" id="__code_10"><button class="md-clipboard" title="Copy to clipboard" data-clipboard-target="#__code_10 pre, #__code_10 code"><span class="md-clipboard__message"></span></button><pre><span></span><span class="kd">function</span> <span class="p">(</span><span class="nx">unixDate</span><span class="p">)</span> <span class="p">{</span>
+     <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+     <span class="kd">var</span> <span class="nx">thisAltFormat</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">altFormat</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">();</span>
+     <span class="k">if</span> <span class="p">(</span><span class="nx">thisAltFormat</span> <span class="o">===</span> <span class="s1">'gregorian'</span> <span class="o">||</span> <span class="nx">thisAltFormat</span> <span class="o">===</span> <span class="s1">'g'</span><span class="p">)</span> <span class="p">{</span>
+         <span class="k">return</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">unixDate</span><span class="p">);</span>
+     <span class="p">}</span>
+     <span class="k">if</span> <span class="p">(</span><span class="nx">thisAltFormat</span> <span class="o">===</span> <span class="s1">'unix'</span> <span class="o">||</span> <span class="nx">thisAltFormat</span> <span class="o">===</span> <span class="s1">'u'</span><span class="p">)</span> <span class="p">{</span>
+         <span class="k">return</span> <span class="nx">unixDate</span><span class="p">;</span>
+     <span class="p">}</span>
+     <span class="k">else</span> <span class="p">{</span>
+         <span class="kd">var</span> <span class="nx">pd</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">persianDate</span><span class="p">(</span><span class="nx">unixDate</span><span class="p">);</span>
+         <span class="nx">pd</span><span class="p">.</span><span class="nx">formatPersian</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">persianDigit</span><span class="p">;</span>
+         <span class="k">return</span> <span class="nx">pd</span><span class="p">.</span><span class="nx">format</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">altFormat</span><span class="p">);</span>
+     <span class="p">}</span>
+ <span class="p">}</span>
+</pre></div>
+
+
+<p><a name="Config.checkDate"></a></p>
+<h2 id="configcheckdate-function">Config.checkDate() : <code>function</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckdate-function" title="Permanent link">¶</a></h2>
+<p>Validate date access before render</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.checkMonth"></a></p>
+<h2 id="configcheckmonth-function">Config.checkMonth() : <code>function</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckmonth-function" title="Permanent link">¶</a></h2>
+<p>Validate month access before render</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.checkYear"></a></p>
+<h2 id="configcheckyear-function">Config.checkYear() : <code>function</code><a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#configcheckyear-function" title="Permanent link">¶</a></h2>
+<p>Validate year access before render</p>
+<p><strong>Kind</strong>: static method of <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.event_onSelect"></a></p>
+<h2 id="onselect-unixdate">"onSelect" (unixDate)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onselect-unixdate" title="Permanent link">¶</a></h2>
+<p>Called when date Select by user.</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>unixDate</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.event_onSet"></a></p>
+<h2 id="onset-unixdate">"onSet" (unixDate)<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onset-unixdate" title="Permanent link">¶</a></h2>
+<p>Called when date Select by api.</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+</p><div class="md-typeset__scrollwrap"><div class="md-typeset__table"><table>
+  <thead>
+    <tr>
+      <th>Param</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>unixDate</td>
+    </tr>  </tbody>
+</table></div></div><p></p>
+<p><a name="Config.event_onShow"></a></p>
+<h2 id="onshow">"onShow"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onshow" title="Permanent link">¶</a></h2>
+<p>A function that takes current datepicker instance. It is called just before the datepicker is displayed.</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.event_onHide"></a></p>
+<h2 id="onhide">"onHide"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#onhide" title="Permanent link">¶</a></h2>
+<p>A function that takes current datepicker instance. It is called just before the datepicker Hide.</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.event_onToggle"></a></p>
+<h2 id="ontoggle">"onToggle"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ontoggle" title="Permanent link">¶</a></h2>
+<p>on toggle datepicker event</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a><br>
+<a name="Config.event_onDestroy"></a></p>
+<h2 id="ondestroy">"onDestroy"<a class="headerlink" href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#ondestroy" title="Permanent link">¶</a></h2>
+<p>on destroy datepicker event</p>
+<p><strong>Kind</strong>: event emitted by <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/options/#Config"><code>Config</code></a>  </p>
+                
+                  
+                
+              
+              
+                
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/playground-page/" title="Playground" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Playground
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="https://babakhani.github.io/PersianWebToolkit/doc/datepicker/api/" title="API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                API
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            license http://www.wtfpl.net/
+          </div>
+        
+        powered by
+        <a href="http://www.mkdocs.org/" title="MkDocs">MkDocs</a>
+        and
+        <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
+          Material for MkDocs</a>
+      </div>
+      
+        
+  <div class="md-footer-social">
+    
+    <link rel="stylesheet" href="./Options - Persian Web Toolkit_files/font-awesome.min.css">
+    
+      <a href="https://github.com/babakhani" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://www.linkedin.com/in/reza-babakhani-52747389/" class="md-footer-social__link fa fa-linkedin"></a>
+    
+      <a href="https://twitter.com/babakhani_reza" class="md-footer-social__link fa fa-twitter"></a>
+    
+  </div>
+
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="./Options - Persian Web Toolkit_files/application-6940329b9f.js.download"></script>
+      
+      
+      <script>app.initialize({url:{base:"../.."}})</script>
+      
+        <script src="./Options - Persian Web Toolkit_files/jquery.js.download"></script>
+      
+        <script src="./Options - Persian Web Toolkit_files/persian-date.js.download"></script>
+      
+        <script src="./Options - Persian Web Toolkit_files/persian-datepicker.js.download"></script>
+      
+        <script src="./Options - Persian Web Toolkit_files/datepicker-example.js.download"></script>
+      
+        <script src="./Options - Persian Web Toolkit_files/doc.js.download"></script>
+      
+        <script src="./Options - Persian Web Toolkit_files/buttons.js.download"></script>
+      
+    
+    
+      
+      <script>!function(e,t,a,n,o,c,i){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,c=t.createElement(a),i=t.getElementsByTagName(a)[0],c.async=1,c.src=n,i.parentNode.insertBefore(c,i)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-40548780-1","babakhani.github.io/PersianWebToolkit/"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var t=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",t,e.href)})});var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})</script>
+      
+    
+  
+</body></html>

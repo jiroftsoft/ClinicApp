@@ -1,8 +1,11 @@
 @*
-    Script برای Initialize کردن Persian DatePicker
+    Script برای Initialize کردن JalaliDatePicker
     این فایل باید یک بار در صفحه لود شود (نه برای هر DatePicker جداگانه)
     
-    ✅ به‌روزرسانی: استفاده از کامپوننت اصولی PersianDatePickerComponent
+    ✅ Migration: تغییر از Persian DatePicker (babakhani) به JalaliDatePicker (majidh1)
+    - بدون وابستگی به jQuery
+    - سبک‌تر و سریع‌تر
+    - API ساده‌تر
     - دریافت تاریخ امروز از سرور برای اطمینان از صحت
     - طبق استانداردهای فرم‌های درمانی سطح سازمانی
     - مقاوم و ضد گلوله
@@ -14,15 +17,13 @@
     }
 *@
 
-<!-- Persian DatePicker Scripts -->
-<link href="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
-<script src="~/Content/js/plugins/persian-datepicker/jalaali.min.js"></script>
-<script src="~/Content/js/plugins/persian-datepicker/persian-date.min.js"></script>
-<script src="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+<!-- JalaliDatePicker Enterprise Scripts -->
+<link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+<link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
+<!-- ✅ CRITICAL: jalaali.js باید قبل از jalalidatepicker.min.js لود شود -->
+<script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.js"></script>
+<script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
 
-<!-- Persian DatePicker Manager -->
-<script src="~/Content/js/persian-datepicker-manager.js"></script>
-
-<!-- Persian DatePicker Component (Main Wrapper) -->
-<script src="~/Content/js/persian-datepicker-component.js"></script>
+<!-- JalaliDatePicker Enterprise Component (Production-Ready) -->
+<script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
 

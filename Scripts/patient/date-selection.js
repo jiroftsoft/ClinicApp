@@ -49,9 +49,24 @@
                 attempts++;
                 const $datePicker = $('#appointmentDatePicker');
                 
-                if ($datePicker.length && $datePicker.data('pDatepicker-initialized')) {
+                // ✅ Enterprise: استفاده از JalaliDatePickerEnterprise
+                const datePickerElement = $datePicker[0];
+                if (datePickerElement && 
+                    (datePickerElement.dataset.jdpInitialized === 'true' || 
+                     (typeof JalaliDatePickerEnterprise !== 'undefined' && 
+                      typeof jalaliDatepicker !== 'undefined'))) {
                     clearInterval(checkInterval);
-                    self.datePickerInstance = $datePicker.data('pDatepicker');
+                    
+                    // ✅ Get instance from Enterprise Component
+                    if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                        self.datePickerInstance = JalaliDatePickerEnterprise.getInstance('#appointmentDatePicker');
+                    }
+                    
+                    // ✅ Fallback to global jalaliDatepicker
+                    if (!self.datePickerInstance) {
+                        self.datePickerInstance = jalaliDatepicker;
+                    }
+                    
                     self.initDatePickerHandlers();
                     console.log('✅ DatePicker initialized successfully');
                 } else if (attempts >= maxAttempts) {
@@ -65,14 +80,44 @@
         initDatePickerHandlers: function () {
             const self = this;
             const $datePicker = $('#appointmentDatePicker');
+            const datePickerElement = $datePicker[0]; // Native DOM element
 
-            // ✅ Method 1: Listen for pDatepicker:select event (Primary)
-            $datePicker.on('pDatepicker:select', function (e) {
-                console.log('📅 pDatepicker:select event fired', e);
-                self.handleDateSelection(e);
-            });
+            // ✅ Enterprise: استفاده از pDatepicker:select event (Primary)
+            // JalaliDatePickerEnterprise event pDatepicker:select را trigger می‌کند
+            if (datePickerElement) {
+                datePickerElement.addEventListener('pDatepicker:select', function (e) {
+                    // ✅ CRITICAL FIX: جلوگیری از duplicate validation
+                    if (self.isProcessingSelection) {
+                        console.log('📅 Selection already processing, skipping pDatepicker:select event');
+                        return;
+                    }
+                    console.log('📅 pDatepicker:select event fired', e);
+                    self.handleDateSelection(e);
+                });
+            }
 
-            // ✅ Method 2: Listen for change event (Fallback)
+            // ✅ Method 2: Listen for jdp:change event (JalaliDatePicker native event) - Fallback
+            // ⚠️ فقط اگر pDatepicker:select trigger نشد، از این استفاده می‌کنیم
+            if (datePickerElement) {
+                var jdpChangeHandled = false;
+                datePickerElement.addEventListener('jdp:change', function (e) {
+                    // ✅ فقط اگر pDatepicker:select trigger نشده باشد
+                    if (!jdpChangeHandled && !self.isProcessingSelection) {
+                        console.log('📅 jdp:change event fired (fallback)', e);
+                        const persianDate = $datePicker.val();
+                        if (persianDate && persianDate.trim() !== '') {
+                            self.isProcessingSelection = true;
+                            self.handleDateSelectionFromPersian(persianDate);
+                            jdpChangeHandled = true;
+                            setTimeout(function() {
+                                jdpChangeHandled = false;
+                            }, 200);
+                        }
+                    }
+                });
+            }
+
+            // ✅ Method 3: Listen for change event (Ultimate Fallback) - فقط برای manual input
             $datePicker.on('change', function () {
                 // ✅ CRITICAL FIX: جلوگیری از duplicate validation
                 if (self.isProcessingSelection) {
@@ -82,27 +127,20 @@
                 
                 const persianDate = $(this).val();
                 if (persianDate && persianDate.trim() !== '') {
-                    console.log('📅 Change event fired', persianDate);
+                    // ✅ فقط اگر event دیگری trigger نشده باشد
+                    console.log('📅 Change event fired (manual input)', persianDate);
                     self.isProcessingSelection = true;
                     self.handleDateSelectionFromPersian(persianDate);
-                    // ✅ Flag در handleDateSelectionFromPersian reset می‌شود
                 }
             });
 
-            // ✅ Method 3: Direct access to datePicker instance (Ultimate Fallback)
-            if (self.datePickerInstance && self.datePickerInstance.config) {
-                const originalOnSelect = self.datePickerInstance.config.onSelect;
-                if (originalOnSelect) {
-                    self.datePickerInstance.config.onSelect = function(unix) {
-                        // Call original handler
-                        if (typeof originalOnSelect === 'function') {
-                            originalOnSelect.call(this, unix);
-                        }
-                        // Our custom handler
-                        console.log('📅 onSelect callback fired', unix);
-                        self.handleDateSelectionFromUnix(unix);
-                    };
-                }
+            // ✅ Method 4: Direct access to datePicker instance (Ultimate Fallback) - برای backward compatibility
+            // JalaliDatePicker از global jalaliDatepicker object استفاده می‌کند
+            if (self.datePickerInstance && typeof self.datePickerInstance.show === 'function') {
+                // JalaliDatePicker instance در دسترس است
+                console.log('✅ JalaliDatePicker instance available');
+                // JalaliDatePicker از event-based approach استفاده می‌کند
+                // Event handling در Method 1 و 3 انجام شده است
             }
         },
 
@@ -340,8 +378,9 @@
             // ✅ CRITICAL FIX: استفاده از server today (Iran timezone) به جای client Date
             // دریافت تاریخ امروز از server برای اطمینان از صحت
             const self = this;
-            if (window.PersianDatePickerComponent && window.PersianDatePickerComponent.getTodayFromServer) {
-                window.PersianDatePickerComponent.getTodayFromServer().then(function(todayPersian) {
+            // ✅ Enterprise: استفاده از JalaliDatePickerEnterprise
+            if (window.JalaliDatePickerEnterprise && window.JalaliDatePickerEnterprise.getTodayFromServer) {
+                window.JalaliDatePickerEnterprise.getTodayFromServer().then(function(todayPersian) {
                     // ✅ CRITICAL FIX: مقایسه date strings (timezone-independent)
                     // تبدیل todayPersian (1404/10/15) به Gregorian string برای مقایسه
                     const todayGregorian = self.convertPersianToGregorian(todayPersian);
@@ -378,7 +417,7 @@
                 });
             } else {
                 // Fallback: استفاده از client date
-                console.warn('⚠️ PersianDatePickerComponent not available, using fallback');
+                console.warn('⚠️ JalaliDatePickerEnterprise not available, using fallback');
                 this.checkDateAvailabilityFallback(date);
             }
         },

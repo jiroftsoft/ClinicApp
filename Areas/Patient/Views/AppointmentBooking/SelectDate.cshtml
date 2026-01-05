@@ -93,30 +93,50 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
-    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    @* ✅ Enterprise: استفاده از Enterprise Component که در Layout لود شده است *@
+    @* نیازی به لود مجدد نیست - فقط اگر در Layout لود نشده باشد *@
+    @if (false) // ✅ Enterprise Component در Layout لود می‌شود
+    {
+        @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
+    }
     <!-- ✅ CRITICAL FIX: انتقال JavaScript به فایل جداگانه (طبق APPOINTMENT_BOOKING_VIEWS_REVIEW.md) -->
     <!-- ✅ CRITICAL FIX: منتظر می‌مانیم تا pDatepicker لود شود -->
     <script>
-        // ✅ Wait for pDatepicker to be loaded before initializing date-selection module
-        function waitForPDatepicker(callback, maxAttempts) {
+        // ✅ Enterprise: Wait for JalaliDatePickerEnterprise to be loaded before initializing date-selection module
+        function waitForJalaliDatePickerEnterprise(callback, maxAttempts) {
             maxAttempts = maxAttempts || 50; // 5 seconds max
             var attempts = 0;
             
             function check() {
                 attempts++;
-                if (typeof jQuery !== 'undefined' && typeof $.fn.pDatepicker !== 'undefined') {
+                // ✅ Enterprise: بررسی JalaliDatePickerEnterprise و jalaliDatepicker
+                // همچنین بررسی می‌کنیم که DatePicker initialize شده باشد
+                var $datePicker = $('#appointmentDatePicker');
+                var datePickerElement = $datePicker[0];
+                
+                if (typeof jalaliDatepicker !== 'undefined' && 
+                    typeof JalaliDatePickerEnterprise !== 'undefined' &&
+                    datePickerElement && 
+                    (datePickerElement.dataset.jdpInitialized === 'true' || attempts > 10)) {
+                    // ✅ اگر بعد از 10 تلاش هنوز initialize نشده، ادامه می‌دهیم (ممکن است بعداً initialize شود)
                     callback();
                 } else if (attempts < maxAttempts) {
                     setTimeout(check, 100);
                 } else {
-                    console.error('❌ pDatepicker failed to load after ' + maxAttempts + ' attempts');
+                    console.error('❌ JalaliDatePickerEnterprise failed to load after ' + maxAttempts + ' attempts');
+                    console.error('jalaliDatepicker:', typeof jalaliDatepicker);
+                    console.error('JalaliDatePickerEnterprise:', typeof JalaliDatePickerEnterprise);
+                    console.error('DatePicker Element:', datePickerElement);
+                    console.error('Initialized:', datePickerElement ? datePickerElement.dataset.jdpInitialized : 'N/A');
+                    // ✅ حتی اگر لود نشده باشد، callback را فراخوانی می‌کنیم تا date-selection.js لود شود
+                    callback();
                 }
             }
             check();
         }
         
-        // ✅ Load date-selection.js after pDatepicker is ready
-        waitForPDatepicker(function() {
+        // ✅ Load date-selection.js after JalaliDatePickerEnterprise is ready
+        waitForJalaliDatePickerEnterprise(function() {
             // Load the module script dynamically
             var script = document.createElement('script');
             script.src = '@Url.Content("~/Scripts/patient/date-selection.js")';
@@ -136,6 +156,9 @@
                         });
                     }
                 }
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load date-selection.js');
             };
             document.head.appendChild(script);
         });
