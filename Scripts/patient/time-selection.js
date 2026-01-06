@@ -26,7 +26,10 @@
         },
 
         bindEvents: function () {
-            // انتخاب اسلات
+            // ✅ ENTERPRISE-GRADE: کلیک روی کارت (نه فقط دکمه) باعث انتخاب می‌شود
+            $(document).on('click', '.time-slot-premium.slot-available, .time-slot-card-minimal.slot-available, .time-slot-card.available', this.handleCardClick.bind(this));
+            
+            // انتخاب اسلات از طریق دکمه (برای سازگاری)
             $(document).on('click', '.btn-slot-premium, .btn-slot-select, .select-slot-btn', this.handleSelectSlot.bind(this));
             
             // پاک کردن انتخاب
@@ -36,27 +39,57 @@
             $('#continueToConfirmBtn, #continueToConfirmBtnMobile').on('click', this.handleContinue.bind(this));
         },
 
+        handleCardClick: function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // ✅ جلوگیری از انتخاب اگر روی دکمه کلیک شده است
+            if ($(e.target).closest('.btn-slot-premium, .btn-slot-select, .select-slot-btn').length > 0) {
+                return;
+            }
+            
+            const $card = $(e.currentTarget);
+            this.selectSlot($card);
+        },
+
         handleSelectSlot: function (e) {
             e.preventDefault();
+            e.stopPropagation();
             const $card = $(e.currentTarget).closest('.time-slot-premium, .time-slot-card-minimal, .time-slot-card');
-            
+            this.selectSlot($card);
+        },
+
+        selectSlot: function ($card) {
             if (!$card.hasClass('slot-available') && !$card.hasClass('available')) {
                 return;
             }
 
-            // حذف انتخاب قبلی
+            // ✅ ENTERPRISE-GRADE: حذف انتخاب قبلی با انیمیشن
             $('.time-slot-premium, .time-slot-card-minimal, .time-slot-card').removeClass('selected');
             
-            // انتخاب جدید
+            // ✅ ENTERPRISE-GRADE: انتخاب جدید با انیمیشن
             $card.addClass('selected');
+            
+            // ✅ انیمیشن انتخاب
+            $card.css('transform', 'scale(0.98)');
+            setTimeout(() => {
+                $card.css('transform', '');
+            }, 150);
             
             const startTime = $card.data('start-time');
             const endTime = $card.data('end-time');
             
+            // ✅ استخراج زمان نمایش از المان‌های مختلف
+            let displayTime = $card.find('.slot-time-display').text() || 
+                             $card.find('.slot-time-main').text() || 
+                             $card.find('.slot-time strong').text() || 
+                             $card.find('.slot-time-text').text() ||
+                             startTime;
+            
             this.selectedSlot = {
                 startTime: startTime,
                 endTime: endTime,
-                displayTime: $card.find('.slot-time strong').text()
+                displayTime: displayTime.trim()
             };
 
             // ✅ CRITICAL FIX: Save to sessionStorage for state management
@@ -198,14 +231,32 @@
         },
 
         showSelectedSlotInfo: function () {
-            $('#selectedTimeDisplay').text(this.selectedSlot.displayTime);
-            $('#selectedSlotInfo').addClass('show');
+            if (!this.selectedSlot) {
+                $('#selectedSlotInfo').removeClass('show');
+                $('#stickySelectedTime').hide();
+                return;
+            }
+
+            const timeText = this.selectedSlot.displayTime || 
+                           `${this.selectedSlot.startTime} - ${this.selectedSlot.endTime}`;
+            
+            // ✅ ENTERPRISE-GRADE: نمایش زمان انتخاب شده با انیمیشن
+            $('#selectedTimeDisplay').text(timeText).hide().fadeIn(300);
+            $('#stickyTimeDisplay').text(timeText).hide().fadeIn(300);
+            
+            // ✅ انیمیشن نمایش بخش انتخاب شده
+            const $info = $('#selectedSlotInfo');
+            if (!$info.hasClass('show')) {
+                $info.addClass('show').hide().slideDown(300);
+            }
+            
+            $('#stickySelectedTime').show().hide().fadeIn(300);
+            
+            // ✅ CRITICAL FIX: Set hidden fields for form submission
             $('#selectedStartTime').val(this.selectedSlot.startTime);
             $('#selectedEndTime').val(this.selectedSlot.endTime);
             
             // ✅ CRITICAL FIX: Update sticky bottom bar for mobile
-            $('#stickyTimeDisplay').text(this.selectedSlot.displayTime);
-            $('#stickySelectedTime').show();
             $('#continueToConfirmBtnMobile').prop('disabled', false);
         },
 
