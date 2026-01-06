@@ -921,5 +921,57 @@ namespace ClinicApp.Repositories.Payment
         }
 
         #endregion
+
+        #region Security Operations (برای PaymentSecurityService)
+
+        /// <summary>
+        /// دریافت پرداخت‌های آنلاین بر اساس کاربر و بازه زمانی (برای Rate Limiting)
+        /// </summary>
+        public async Task<IEnumerable<OnlinePayment>> GetByUserIdAndDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                return await _context.OnlinePayments
+                    .AsNoTracking()
+                    .Where(op => !op.IsDeleted &&
+                                op.CreatedByUserId == userId &&
+                                op.CreatedAt >= startDate &&
+                                op.CreatedAt <= endDate)
+                    .OrderByDescending(op => op.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پرداخت‌های آنلاین بر اساس کاربر و بازه زمانی - UserId: {UserId}, StartDate: {StartDate}, EndDate: {EndDate}",
+                    userId, startDate, endDate);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت پرداخت‌های آنلاین بر اساس IP و بازه زمانی (برای Rate Limiting)
+        /// </summary>
+        public async Task<IEnumerable<OnlinePayment>> GetByIpAddressAndDateRangeAsync(string ipAddress, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                return await _context.OnlinePayments
+                    .AsNoTracking()
+                    .Where(op => !op.IsDeleted &&
+                                op.UserIpAddress == ipAddress &&
+                                op.CreatedAt >= startDate &&
+                                op.CreatedAt <= endDate)
+                    .OrderByDescending(op => op.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پرداخت‌های آنلاین بر اساس IP و بازه زمانی - IpAddress: {IpAddress}, StartDate: {StartDate}, EndDate: {EndDate}",
+                    ipAddress, startDate, endDate);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

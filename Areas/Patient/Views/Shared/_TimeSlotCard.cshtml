@@ -1,37 +1,48 @@
 @model ClinicApp.Models.DTOs.Appointment.AvailableTimeSlotDto
 
-@* Partial View برای نمایش کارت اسلات زمانی - رعایت SRP: فقط نمایش یک اسلات زمانی *@
-<div class="time-slot-card @(Model.IsAvailable ? "available" : "unavailable")" 
+@* ✅ PREMIUM DESIGN: طراحی حرفه‌ای و جذاب با انیمیشن‌های نرم *@
+<div class="time-slot-premium @(Model.IsAvailable ? "slot-available" : "slot-booked")" 
      data-start-time="@Model.StartTime.ToString(@"hh\:mm")" 
      data-end-time="@Model.EndTime.ToString(@"hh\:mm")"
      data-is-available="@Model.IsAvailable.ToString().ToLower()">
-    <div class="slot-content">
-        <div class="slot-time">
-            <i class="fas fa-clock me-2"></i>
-            <strong>@Model.DisplayTime</strong>
-        </div>
-        <div class="slot-range text-muted small">
-            @Model.DisplayRange
-        </div>
-        <div class="slot-duration text-muted small">
-            <i class="fas fa-hourglass-half me-1"></i>
-            @Model.Duration دقیقه
+    <div class="slot-header">
+        <div class="slot-time-wrapper">
+            <span class="slot-time-display">@Model.DisplayTime</span>
+            <span class="slot-duration-badge">@Model.Duration دقیقه</span>
         </div>
         @if (Model.IsAvailable)
         {
-            <button type="button" class="btn btn-sm btn-primary select-slot-btn w-100 mt-2">
-                <i class="fas fa-check-circle me-1"></i>
-                انتخاب
-            </button>
+            <div class="slot-status-indicator available-indicator">
+                <i class="fas fa-circle"></i>
+                <span>در دسترس</span>
+            </div>
         }
         else
         {
-            <button type="button" class="btn btn-sm btn-secondary w-100 mt-2" disabled>
-                <i class="fas fa-times-circle me-1"></i>
-                غیرقابل رزرو
-            </button>
+            <div class="slot-status-indicator booked-indicator">
+                <i class="fas fa-lock"></i>
+                <span>رزرو شده</span>
+            </div>
         }
     </div>
+    
+    <div class="slot-range-display">
+        @Model.DisplayRange
+    </div>
+    
+    @if (Model.IsAvailable)
+    {
+        <button type="button" class="btn-slot-premium">
+            <i class="fas fa-check-circle"></i>
+            <span>انتخاب این زمان</span>
+        </button>
+    }
+    else
+    {
+        <div class="slot-booked-premium">
+            <i class="fas fa-user-check"></i>
+            <span>این زمان رزرو شده است</span>
+        </div>
+    }
 </div>
-<!-- ✅ CRITICAL FIX: حذف Inline Styles - انتقال به appointment-booking-views.css -->
 

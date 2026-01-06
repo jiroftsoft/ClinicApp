@@ -165,6 +165,29 @@
     border-color: var(--medical-info);
 }
 
+.btn-medical-warning {
+    background-color: var(--medical-warning);
+    border-color: var(--medical-warning);
+    color: #212529;
+    font-weight: var(--font-weight-medium);
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+}
+
+.btn-medical-warning:hover {
+    background-color: #ff9800;
+    border-color: #ff9800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    color: #212529;
+}
+
+.btn-medical-warning:active {
+    transform: translateY(0);
+}
+
 /* ✅ 7️⃣ Doctor Card - طراحی Mobile-First و حرفه‌ای */
 
 /* 📱 Mobile First - Base Styles (320px+) */
@@ -933,11 +956,169 @@
     border-radius: 12px;
     background: var(--medical-bg);
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .appointment-card-medical:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+}
+
+/* ✅ ENTERPRISE-GRADE: Highlight برای نوبت‌های نیازمند پرداخت */
+.appointment-requires-payment {
+    border: 2px solid var(--medical-warning) !important;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    box-shadow: 0 4px 16px rgba(255, 193, 7, 0.25);
+    animation: paymentPulse 2s ease-in-out infinite;
+}
+
+.appointment-requires-payment:hover {
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.35);
+    transform: translateY(-3px);
+    border-color: #ff9800 !important;
+}
+
+@keyframes paymentPulse {
+    0%, 100% {
+        box-shadow: 0 4px 16px rgba(255, 193, 7, 0.25);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 193, 7, 0.4);
+    }
+}
+
+/* ✅ ENTERPRISE-GRADE: Payment Alert Banner */
+.payment-alert-banner {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border: 2px solid var(--medical-warning);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.payment-alert-icon {
+    color: var(--medical-warning);
+    font-size: 1.5rem;
+    animation: pulseIcon 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseIcon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.payment-alert-title {
+    color: #856404;
+    font-size: 1rem;
+    font-weight: var(--font-weight-bold);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.payment-alert-text {
+    color: #856404;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.payment-action-btn {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, #ff9800 100%);
+    border: none;
+    color: #212529;
+    font-weight: var(--font-weight-bold);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    white-space: nowrap;
+}
+
+.payment-action-btn:hover {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
+    color: #212529;
+}
+
+.payment-action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.payment-action-btn i {
+    animation: creditCardPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes creditCardPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+/* ✅ Mobile Optimization برای Payment Banner */
+@media (max-width: 767.98px) {
+    .payment-alert-banner {
+        padding: 0.875rem 1rem;
+    }
+    
+    .payment-alert-banner .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .payment-action-btn {
+        width: 100%;
+        margin-top: 0.75rem;
+        padding: 0.875rem 1.25rem;
+        font-size: 1rem;
+    }
+    
+    .payment-alert-title {
+        font-size: 0.9375rem;
+    }
+    
+    .payment-alert-text {
+        font-size: 0.8125rem;
+    }
+}
+
+/* ✅ Badge برای نوبت‌های نیازمند پرداخت */
+.badge-payment-pending {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, #ff9800 100%);
+    color: #212529;
+    font-weight: var(--font-weight-bold);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(255, 193, 7, 0.5);
+    }
 }
 
 /* ✅ 1️⃣7️⃣ Badge Styles */

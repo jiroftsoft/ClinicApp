@@ -27,7 +27,7 @@
 
         bindEvents: function () {
             // انتخاب اسلات
-            $(document).on('click', '.select-slot-btn', this.handleSelectSlot.bind(this));
+            $(document).on('click', '.btn-slot-premium, .btn-slot-select, .select-slot-btn', this.handleSelectSlot.bind(this));
             
             // پاک کردن انتخاب
             $('#clearSelectionBtn').on('click', this.handleClearSelection.bind(this));
@@ -38,14 +38,14 @@
 
         handleSelectSlot: function (e) {
             e.preventDefault();
-            const $card = $(e.currentTarget).closest('.time-slot-card');
+            const $card = $(e.currentTarget).closest('.time-slot-premium, .time-slot-card-minimal, .time-slot-card');
             
-            if (!$card.hasClass('available')) {
+            if (!$card.hasClass('slot-available') && !$card.hasClass('available')) {
                 return;
             }
 
             // حذف انتخاب قبلی
-            $('.time-slot-card').removeClass('selected');
+            $('.time-slot-premium, .time-slot-card-minimal, .time-slot-card').removeClass('selected');
             
             // انتخاب جدید
             $card.addClass('selected');
@@ -77,7 +77,7 @@
         },
 
         handleClearSelection: function () {
-            $('.time-slot-card').removeClass('selected');
+            $('.time-slot-premium, .time-slot-card-minimal, .time-slot-card').removeClass('selected');
             this.selectedSlot = null;
             $('#selectedSlotInfo').removeClass('show');
             $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', true);
@@ -251,13 +251,17 @@
 
         updateSlotsUI: function (slots) {
             slots.forEach(slot => {
-                const $card = $(`.time-slot-card[data-start-time="${slot.startTime}"]`);
+                const $card = $(`.time-slot-premium[data-start-time="${slot.startTime}"], .time-slot-card-minimal[data-start-time="${slot.startTime}"], .time-slot-card[data-start-time="${slot.startTime}"]`);
                 if ($card.length) {
                     if (!slot.isAvailable) {
-                        $card.removeClass('available').addClass('unavailable');
-                        $card.find('.select-slot-btn').prop('disabled', true)
-                            .removeClass('btn-primary').addClass('btn-secondary')
-                            .html('<i class="fas fa-times-circle me-1"></i> غیرقابل رزرو');
+                        $card.removeClass('slot-available available').addClass('slot-booked unavailable');
+                        const $btn = $card.find('.btn-slot-premium, .btn-slot-select, .select-slot-btn');
+                        if ($btn.length) {
+                            $btn.prop('disabled', true)
+                                .removeClass('btn-medical-primary btn-primary')
+                                .addClass('btn-secondary')
+                                .html('رزرو شده');
+                        }
                     }
                 }
             });
@@ -356,10 +360,10 @@
                 const saved = sessionStorage.getItem(`timeSelection_${this.doctorId}_${this.selectedDate}`);
                 if (saved) {
                     const slot = JSON.parse(saved);
-                    const $card = $(`.time-slot-card[data-start-time="${slot.startTime}"]`);
-                    if ($card.length && $card.hasClass('available')) {
+                    const $card = $(`.time-slot-premium[data-start-time="${slot.startTime}"], .time-slot-card-minimal[data-start-time="${slot.startTime}"], .time-slot-card[data-start-time="${slot.startTime}"]`);
+                    if ($card.length && ($card.hasClass('slot-available') || $card.hasClass('available'))) {
                         // ✅ Restore selection
-                        $('.time-slot-card').removeClass('selected');
+                        $('.time-slot-premium, .time-slot-card-minimal, .time-slot-card').removeClass('selected');
                         $card.addClass('selected');
                         this.selectedSlot = slot;
                         this.showSelectedSlotInfo();

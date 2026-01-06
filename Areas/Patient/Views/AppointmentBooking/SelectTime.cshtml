@@ -32,38 +32,117 @@
     </div>
 </div>
 
-<!-- اطلاعات -->
-<div class="info-card">
-    <div class="row">
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="fas fa-user-md me-2 text-primary"></i>
-                @Model.DoctorName
-            </h5>
-            <p class="text-muted mb-1">
-                <i class="fas fa-calendar-alt me-1"></i>
-                تاریخ: <strong>@Model.SelectedDate.ToPersianDate()</strong>
-            </p>
-            <p class="text-muted mb-0">
-                <i class="fas fa-hourglass-half me-1"></i>
-                مدت زمان هر نوبت: <strong>@Model.AppointmentDuration دقیقه</strong>
-            </p>
+<!-- ✅ ENTERPRISE-GRADE: اطلاعات پزشک و تاریخ -->
+<div class="info-card appointment-info-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-2">
+                <div class="doctor-avatar-mini me-3">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1 text-medical-primary">
+                        @Model.DoctorName
+                    </h5>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        <strong>@Model.SelectedDate.ToPersianDate()</strong>
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-hourglass-half me-1"></i>
+                        <strong>@Model.AppointmentDuration دقیقه</strong>
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6 text-end">
-            <div class="alert alert-info mb-0">
-                <i class="fas fa-info-circle me-1"></i>
-                <small>اسلات‌های سبز رنگ در دسترس هستند</small>
+        <div class="col-md-4 text-end">
+            @{
+                var availableCount = Model.AvailableSlots?.Count(s => s.IsAvailable) ?? 0;
+                var bookedCount = Model.AvailableSlots?.Count(s => !s.IsAvailable) ?? 0;
+                var totalCount = Model.AvailableSlots?.Count ?? 0;
+                var availablePercent = totalCount > 0 ? (int)((availableCount / (double)totalCount) * 100) : 0;
+                var bookedPercent = totalCount > 0 ? (int)((bookedCount / (double)totalCount) * 100) : 0;
+            }
+            <div class="availability-stats">
+                <div class="stats-row">
+                    <div class="stat-item available-stat">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <strong>@availableCount</strong>
+                        <small>در دسترس</small>
+                    </div>
+                    <div class="stat-item booked-stat">
+                        <i class="fas fa-lock me-1"></i>
+                        <strong>@bookedCount</strong>
+                        <small>رزرو شده</small>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-available" style="width: @availablePercent%"></div>
+                        <div class="progress-bar-booked" style="width: @bookedPercent%"></div>
+                    </div>
+                    <small class="text-muted">@availablePercent% در دسترس</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- اسلات‌های زمانی -->
-<div class="info-card">
-    <h5 class="mb-3">
-        <i class="fas fa-list me-2"></i>
-        اسلات‌های زمانی در دسترس
-    </h5>
+<!-- ✅ ENTERPRISE-GRADE: هشدار فوریت (Urgency Alert) -->
+@if (availableCount > 0 && availableCount <= 5)
+{
+    <div class="urgency-alert urgency-high">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle urgency-icon me-2"></i>
+            <div class="flex-grow-1">
+                <strong>فقط @availableCount اسلات باقی مانده!</strong>
+                <p class="mb-0 small">سریع‌تر اقدام کنید - ممکن است به زودی پر شوند</p>
+            </div>
+        </div>
+    </div>
+}
+else if (bookedPercent >= 70 && availableCount > 0)
+{
+    <div class="urgency-alert urgency-medium">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-users urgency-icon me-2"></i>
+            <div class="flex-grow-1">
+                <strong>@bookedPercent% از اسلات‌ها رزرو شده است!</strong>
+                <p class="mb-0 small">@availableCount اسلات دیگر در دسترس است - سریع‌تر رزرو کنید</p>
+            </div>
+        </div>
+    </div>
+}
+else if (bookedCount > 0 && availableCount > 0)
+{
+    <div class="urgency-alert urgency-info">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle urgency-icon me-2"></i>
+            <div class="flex-grow-1">
+                <strong>@bookedCount اسلات رزرو شده است</strong>
+                <p class="mb-0 small">@availableCount اسلات دیگر در دسترس است - قبل از پر شدن رزرو کنید</p>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ✅ ENTERPRISE-GRADE: اسلات‌های زمانی -->
+<div class="info-card time-slots-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fas fa-clock me-2 text-medical-primary"></i>
+            اسلات‌های زمانی در دسترس
+        </h5>
+        <div class="slot-legend">
+            <span class="legend-item">
+                <span class="legend-dot available-dot"></span>
+                <small>در دسترس</small>
+            </span>
+            <span class="legend-item ms-3">
+                <span class="legend-dot unavailable-dot"></span>
+                <small>رزرو شده</small>
+            </span>
+        </div>
+    </div>
     
     <div class="time-slots-grid" id="timeSlotsGrid">
         @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
@@ -76,10 +155,10 @@
         else
         {
             <div class="empty-state col-12">
-                <i class="fas fa-clock"></i>
+                <i class="fas fa-clock empty-state-icon"></i>
                 <h4>اسلات زمانی در دسترس نیست</h4>
                 <p class="text-muted">برای این تاریخ اسلات زمانی در دسترس وجود ندارد</p>
-                <a href="@Url.Action("SelectDate", new { doctorId = Model.DoctorId })" class="btn btn-primary mt-3">
+                <a href="@Url.Action("SelectDate", new { doctorId = Model.DoctorId })" class="btn btn-medical-primary mt-3">
                     <i class="fas fa-arrow-right me-1"></i>
                     انتخاب تاریخ دیگر
                 </a>

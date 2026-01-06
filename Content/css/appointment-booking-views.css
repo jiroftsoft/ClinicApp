@@ -217,25 +217,228 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.time-slots-grid {
-    /* ✅ Mobile: 2 columns (optimal for touch targets - طبق Healthcare UI Standards) */
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    margin-top: 2rem;
+/* ✅ ENTERPRISE-GRADE: Appointment Info Header */
+.appointment-info-header {
+    border-right: 4px solid var(--medical-primary);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 }
 
-/* ✅ Tablet: 2-3 columns */
-@media (min-width: 576px) {
-    .time-slots-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+.doctor-avatar-mini {
+    width: 48px;
+    height: 48px;
+    background: var(--medical-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* ✅ ENTERPRISE-GRADE: Availability Statistics */
+.availability-stats {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    border: 2px solid var(--medical-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stat-item.available-stat {
+    background: #e8f5e9;
+    border: 1px solid var(--medical-success);
+}
+
+.stat-item.booked-stat {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.stat-item strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+    margin: 0.25rem 0;
+}
+
+.stat-item.available-stat strong {
+    color: var(--medical-success);
+}
+
+.stat-item.booked-stat strong {
+    color: #ff9800;
+}
+
+.stat-item small {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.stats-progress {
+    margin-top: 0.75rem;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-available {
+    height: 100%;
+    background: var(--medical-success);
+    transition: width 0.5s ease;
+}
+
+.progress-bar-booked {
+    height: 100%;
+    background: #ffc107;
+    transition: width 0.5s ease;
+}
+
+/* ✅ ENTERPRISE-GRADE: Urgency Alert - Multiple Levels */
+.urgency-alert {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    animation: urgencyPulse 2s ease-in-out infinite;
+}
+
+.urgency-alert.urgency-high {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border: 2px solid #f44336;
+}
+
+.urgency-alert.urgency-medium {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border: 2px solid #ffc107;
+}
+
+.urgency-alert.urgency-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 2px solid #2196f3;
+}
+
+@keyframes urgencyPulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(255, 193, 7, 0.4);
     }
 }
 
-/* ✅ Desktop: 3-4 columns */
+.urgency-icon {
+    color: #ff9800;
+    font-size: 1.5rem;
+    animation: urgencyIconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes urgencyIconPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* ✅ ENTERPRISE-GRADE: Slot Legend */
+.slot-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-dot.available-dot {
+    background: var(--medical-success);
+}
+
+.legend-dot.unavailable-dot {
+    background: #6c757d;
+}
+
+/* ✅ ENTERPRISE-GRADE: Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--medical-text);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--medical-border);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* ✅ ENTERPRISE-GRADE: Time Slots Grid - بهینه‌سازی Layout */
+/* ✅ PREMIUM DESIGN: Time Slots Grid - Layout بهینه برای کارت‌های بزرگ */
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+/* ✅ Tablet: 2 columns */
+@media (min-width: 768px) {
+    .time-slots-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* ✅ Desktop: 3 columns */
 @media (min-width: 992px) {
     .time-slots-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
+    }
+}
+
+/* ✅ Large Desktop: 3 columns (بهتر از 4 برای خوانایی) */
+@media (min-width: 1200px) {
+    .time-slots-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
     }
 }
 
@@ -373,76 +576,413 @@
 }
 
 /* ============================================
-   _TimeSlotCard Partial Styles
+   _TimeSlotCard Partial Styles - PREMIUM DESIGN
    ============================================ */
 
-.time-slot-card {
-    border: 2px solid var(--medical-border);
+/* ✅ PREMIUM DESIGN: طراحی حرفه‌ای و جذاب با انیمیشن‌های نرم */
+.time-slot-premium {
+    border: 2px solid #e8e8e8;
     border-radius: 12px;
-    padding: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    animation: slotFadeIn 0.4s ease-out;
+}
+
+@keyframes slotFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.time-slot-premium.slot-available {
+    border-color: #e0e0e0;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.time-slot-premium.slot-available:hover {
+    border-color: var(--medical-primary);
+    box-shadow: 0 8px 24px rgba(44, 90, 160, 0.15);
+    transform: translateY(-4px);
+    background: linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%);
+}
+
+.time-slot-premium.slot-available.selected {
+    border-color: var(--medical-primary);
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(44, 90, 160, 0.02) 100%);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.time-slot-premium.slot-booked {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+    opacity: 0.85;
+    cursor: not-allowed;
+    position: relative;
+    overflow: hidden;
+}
+
+.time-slot-premium.slot-booked::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 3px;
+    background: #ff9800;
+}
+
+.time-slot-premium.slot-booked::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 152, 0, 0.03) 10px,
+        rgba(255, 152, 0, 0.03) 20px
+    );
+    pointer-events: none;
+}
+
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 1rem;
-    transition: all 0.3s ease;
+}
+
+.slot-time-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.slot-time-display {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--medical-primary);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+
+.slot-duration-badge {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+    background: #f0f0f0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.slot-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.slot-status-indicator.available-indicator {
+    background: #e8f5e9;
+    color: var(--medical-success);
+}
+
+.slot-status-indicator.available-indicator i {
+    font-size: 0.625rem;
+    animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(0.9);
+    }
+}
+
+.slot-status-indicator.booked-indicator {
+    background: #fff3cd;
+    color: #ff9800;
+}
+
+.slot-range-display {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.btn-slot-premium {
+    background: var(--medical-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 48px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
+}
+
+.btn-slot-premium:hover {
+    background: #1e4178;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.btn-slot-premium:active {
+    transform: translateY(0);
+}
+
+.btn-slot-premium i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-slot-premium:hover i {
+    transform: scale(1.1);
+}
+
+.slot-booked-premium {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #ff9800;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.75rem;
+    background: rgba(255, 152, 0, 0.1);
+    border-radius: 8px;
+    min-height: 48px;
+}
+
+.slot-booked-premium i {
+    font-size: 1rem;
+}
+
+/* ✅ Legacy Support - برای سازگاری با کد قدیمی */
+.time-slot-card-minimal {
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ✅ Legacy Support - برای سازگاری با کد قدیمی */
+.time-slot-card {
+    border: 1px solid var(--medical-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0;
+    transition: all 0.2s ease;
     background: white;
     cursor: pointer;
     text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
 }
 
-/* ✅ CRITICAL FIX: حذف Gradient طبق Healthcare UI Standards */
-.time-slot-card.available {
-    border-color: var(--medical-success);
-    background: #f8fff9;
-}
-
-.time-slot-card.available:hover {
+/* ✅ MINIMAL DESIGN: Selected State */
+.time-slot-card-minimal.selected,
+.time-slot-card.selected {
     border-color: var(--medical-primary);
-    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.15);
-    transform: translateY(-2px);
-    background: #e8f5e9;
+    background: rgba(44, 90, 160, 0.05);
+    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.1);
 }
 
-.time-slot-card.unavailable {
-    border-color: #e0e0e0;
-    background: #f5f5f5;
-    opacity: 0.6;
-    cursor: not-allowed;
+.time-slot-card-minimal.selected .slot-time-main,
+.time-slot-card.selected .slot-time-main {
+    color: var(--medical-primary);
+    font-weight: 700;
+}
+
+.time-slot-card-minimal.selected .btn-slot-select,
+.time-slot-card.selected .btn-slot-select {
+    background: var(--medical-primary);
+    color: white;
 }
 
 .slot-content {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* ✅ ENTERPRISE-GRADE: Status Badge */
+.slot-status-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    z-index: 2;
+}
+
+.slot-status-badge.available-badge {
+    background: var(--medical-success);
+    color: white;
+}
+
+.slot-status-badge.booked-badge {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    animation: bookedBadgePulse 2s ease-in-out infinite;
+}
+
+@keyframes bookedBadgePulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(255, 152, 0, 0.5);
+    }
 }
 
 .slot-time {
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
     color: var(--medical-primary);
     margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.slot-time-icon {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.slot-time-text {
+    font-size: 1.3rem;
 }
 
 .slot-range {
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
 }
 
 .slot-duration {
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
 }
 
-/* ✅ Mobile: بهبود Font Sizes برای خوانایی بهتر */
+/* ✅ ENTERPRISE-GRADE: Mobile Optimization */
 @media (max-width: 575.98px) {
+    .time-slot-card {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
     .slot-time {
-        font-size: 1.2rem; /* ✅ بزرگتر برای موبایل - 19.2px */
+        font-size: 1.15rem;
+        margin-top: 1.25rem;
+    }
+    
+    .slot-time-text {
+        font-size: 1.2rem;
     }
     
     .slot-range {
-        font-size: 1rem; /* ✅ حداقل 16px برای خوانایی */
+        font-size: 0.9375rem; /* ✅ حداقل 15px */
     }
     
     .slot-duration {
-        font-size: 0.95rem; /* ✅ حداقل 15.2px */
+        font-size: 0.875rem; /* ✅ حداقل 14px */
     }
+    
+    .slot-status-badge {
+        top: 0.5rem;
+        left: 0.5rem;
+        font-size: 0.6875rem;
+        padding: 0.2rem 0.6rem;
+    }
+}
+
+/* ✅ ENTERPRISE-GRADE: Medical Primary Button */
+.btn-medical-primary {
+    background-color: var(--medical-primary);
+    border-color: var(--medical-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+}
+
+.btn-medical-primary:hover {
+    background-color: #1e4178;
+    border-color: #1e4178;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.btn-medical-primary:active {
+    transform: translateY(0);
 }
 
 .select-slot-btn {

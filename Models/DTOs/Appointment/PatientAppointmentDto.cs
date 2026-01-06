@@ -24,6 +24,18 @@ namespace ClinicApp.Models.DTOs.Appointment
         public bool IsOnlineBooking { get; set; }
         public int Duration { get; set; } // مدت زمان ویزیت به دقیقه
         public DateTime CreatedAt { get; set; }
+        
+        // ✅ ENTERPRISE-GRADE: فیلد برای تشخیص نوبت‌های نیازمند پرداخت
+        /// <summary>
+        /// آیا این نوبت نیاز به پرداخت دارد؟
+        /// true = نوبت رزرو شده اما پرداخت نشده (Status = Pending و PaymentTransactionId = null)
+        /// </summary>
+        public bool RequiresPayment { get; set; }
+        
+        /// <summary>
+        /// شناسه تراکنش پرداخت (اگر پرداخت شده باشد)
+        /// </summary>
+        public int? PaymentTransactionId { get; set; }
     }
 }
 

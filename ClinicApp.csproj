@@ -858,6 +858,7 @@
     <Compile Include="Interfaces\Payment\POS\IPosPaymentService.cs" />
     <Compile Include="Interfaces\Payment\POS\IPosTerminalRepository.cs" />
     <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
+    <Compile Include="Interfaces\Payment\Security\IPaymentSecurityService.cs" />
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
     <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
     <Compile Include="Interfaces\Reception\IMedicalEmergencyService.cs" />
@@ -1468,6 +1469,7 @@
     <Compile Include="Services\Payment\POS\PosPaymentLogger.cs" />
     <Compile Include="Services\Payment\POS\PosPaymentOrchestrator.cs" />
     <Compile Include="Services\Payment\POS\PosPaymentService.cs" />
+    <Compile Include="Services\Payment\Security\PaymentSecurityService.cs" />
     <Compile Include="Services\Pricing\Coverage\InsuranceCoverageProvider.cs" />
     <Compile Include="Services\Pricing\Engines\PricingEngine.cs" />
     <Compile Include="Services\Pricing\Interfaces\IInsuranceCoverageProvider.cs" />

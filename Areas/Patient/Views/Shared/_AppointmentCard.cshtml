@@ -2,8 +2,34 @@
 @model ClinicApp.Models.DTOs.Appointment.PatientAppointmentDto
 
 @* ✅ Partial View برای نمایش کارت نوبت - طبق پرامپت *@
-<div class="appointment-card-medical mb-3" data-appointment-id="@Model.AppointmentId">
+@* ✅ ENTERPRISE-GRADE: Highlight برای نوبت‌های نیازمند پرداخت *@
+<div class="appointment-card-medical mb-3 @(Model.RequiresPayment ? "appointment-requires-payment" : "")" 
+     data-appointment-id="@Model.AppointmentId"
+     data-requires-payment="@Model.RequiresPayment.ToString().ToLower()">
     <div class="card-body p-3 p-md-4">
+        @* ✅ ENTERPRISE-GRADE: Alert Banner برای نوبت‌های نیازمند پرداخت *@
+        @if (Model.RequiresPayment)
+        {
+            <div class="payment-alert-banner mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle payment-alert-icon ml-2"></i>
+                        <div>
+                            <strong class="payment-alert-title">نیاز به پرداخت</strong>
+                            <p class="payment-alert-text mb-0">لطفاً برای تکمیل رزرو نوبت، پرداخت را انجام دهید</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="btn btn-medical-warning btn-pay-now payment-action-btn" 
+                            data-appointment-id="@Model.AppointmentId"
+                            data-price="@Model.Price">
+                        <i class="fas fa-credit-card ml-1"></i>
+                        پرداخت سریع
+                    </button>
+                </div>
+            </div>
+        }
+        
         <div class="row align-items-center">
             <div class="col-md-8">
                 <div class="d-flex align-items-center mb-2">
@@ -49,10 +75,20 @@
                         </span>
                         break;
                     case ClinicApp.Models.Enums.AppointmentStatus.Pending:
-                        <span class="badge badge-medical-warning mb-2">
-                            <i class="fas fa-clock ml-1"></i>
-                            @Model.StatusDisplay
-                        </span>
+                        @if (Model.RequiresPayment)
+                        {
+                            <span class="badge badge-payment-pending mb-2">
+                                <i class="fas fa-credit-card ml-1"></i>
+                                نیاز به پرداخت
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-medical-warning mb-2">
+                                <i class="fas fa-clock ml-1"></i>
+                                @Model.StatusDisplay
+                            </span>
+                        }
                         break;
                 }
                 <p class="mb-2">
@@ -63,7 +99,17 @@
                         <i class="fas fa-eye ml-1"></i>
                         جزئیات
                     </button>
-                    @if (Model.Status == ClinicApp.Models.Enums.AppointmentStatus.Scheduled)
+                    @if (Model.RequiresPayment)
+                    {
+                        <button type="button" 
+                                class="btn btn-sm btn-medical-warning btn-pay-now-mobile mt-2 payment-action-btn" 
+                                data-appointment-id="@Model.AppointmentId"
+                                data-price="@Model.Price">
+                            <i class="fas fa-credit-card ml-1"></i>
+                            پرداخت سریع
+                        </button>
+                    }
+                    else if (Model.Status == ClinicApp.Models.Enums.AppointmentStatus.Scheduled)
                     {
                         <button type="button" class="btn btn-sm btn-outline-medical-danger cancel-appointment-btn mt-2" data-appointment-id="@Model.AppointmentId">
                             <i class="fas fa-times ml-1"></i>

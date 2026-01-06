@@ -1118,11 +1118,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     return new List<DoctorTimeSlot>();
                 }
 
-                // ✅ خواندن اسلات‌های موجود از دیتابیس (به جای محاسبه)
+                // ✅ CRITICAL FIX: خواندن همه اسلات‌های موجود از دیتابیس (نه فقط Available)
+                // Service مسئولیت تعیین IsAvailable را دارد
+                // ⚠️ NOTE: حذف فیلتر Status برای نمایش اسلات‌های booked در UI
                 var existingSlots = await _context.DoctorTimeSlots
                     .Where(ts => ts.DoctorId == doctorId &&
                                 DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(date) &&
-                                ts.Status == AppointmentStatus.Available &&
                                 !ts.IsDeleted)
                     .OrderBy(ts => ts.StartTime)
                     .ToListAsync();
@@ -1221,29 +1222,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     }
                 }
 
-                // ✅ فیلتر کردن اسلات‌هایی که رزرو شده‌اند
-                var bookedAppointments = await _context.Appointments
-                    .Where(a => a.DoctorId == doctorId &&
-                               DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
-                               a.Status != AppointmentStatus.Cancelled &&
-                               !a.IsDeleted)
-                    .ToListAsync();
+                // ✅ CRITICAL FIX: Repository باید همه اسلات‌ها را برگرداند (نه فقط available)
+                // Service مسئولیت تعیین IsAvailable را دارد
+                // ⚠️ NOTE: این تغییر برای نمایش اسلات‌های booked در UI است
+                // منطق دقیق Overlap با Duration در Service انجام می‌شود
+                
+                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {existingSlots.Count} اسلات برگردانده می‌شود (همه اسلات‌ها، نه فقط available)");
 
-                var availableSlots = existingSlots.Where(slot =>
-                {
-                    var slotStartDateTime = slot.AppointmentDate.Date.Add(slot.StartTime);
-                    var slotEndDateTime = slot.AppointmentDate.Date.Add(slot.EndTime);
-                    
-                    var isBooked = bookedAppointments.Any(a =>
-                        a.AppointmentDate >= slotStartDateTime &&
-                        a.AppointmentDate < slotEndDateTime);
-                    
-                    return !isBooked;
-                }).ToList();
-
-                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {availableSlots.Count} اسلات موجود پس از فیلتر نوبت‌های رزرو شده");
-
-                return availableSlots;
+                return existingSlots;
             }
             catch (Exception ex)
             {

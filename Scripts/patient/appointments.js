@@ -18,6 +18,9 @@
             // لغو نوبت
             $(document).on('click', '.cancel-appointment-btn', this.handleCancelAppointment.bind(this));
 
+            // ✅ ENTERPRISE-GRADE: پرداخت سریع نوبت
+            $(document).on('click', '.payment-action-btn', this.handleQuickPayment.bind(this));
+
             // فیلتر
             $('#filterForm').on('submit', this.handleFilter.bind(this));
         },
@@ -110,6 +113,124 @@
                 error: () => {
                     hideLoading();
                     this.showError('خطا در ارتباط با سرور');
+                }
+            });
+        },
+
+        handleQuickPayment: function (e) {
+            e.preventDefault();
+            const appointmentId = $(e.currentTarget).data('appointment-id');
+            const price = $(e.currentTarget).data('price');
+            
+            if (!appointmentId) {
+                this.showError('شناسه نوبت نامعتبر است');
+                return;
+            }
+
+            // ✅ ENTERPRISE-GRADE: تایید پرداخت با نمایش مبلغ
+            Swal.fire({
+                title: 'تایید پرداخت',
+                html: `
+                    <p class="mb-3">آیا می‌خواهید برای این نوبت پرداخت کنید؟</p>
+                    <div class="alert alert-info">
+                        <strong>مبلغ قابل پرداخت:</strong> 
+                        <span class="h5 text-medical-primary">${price ? price.toLocaleString('fa-IR') : 'نامشخص'} تومان</span>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، پرداخت کن',
+                cancelButtonText: 'خیر',
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.processPayment(appointmentId);
+                }
+            });
+        },
+
+        processPayment: function (appointmentId) {
+            showLoading();
+
+            const token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                hideLoading();
+                this.showError('خطا در دریافت توکن امنیتی. لطفاً صفحه را نوسازی کنید.');
+                return;
+            }
+
+            $.ajax({
+                url: '/Patient/AppointmentBooking/ProcessPayment',
+                type: 'POST',
+                data: {
+                    appointmentId: appointmentId,
+                    paymentMethod: 'online',
+                    __RequestVerificationToken: token
+                },
+                dataType: 'json',
+                timeout: 30000,
+                success: (response) => {
+                    hideLoading();
+                    console.log('✅ [PatientAppointments] Payment response received:', response);
+                    
+                    if (response && response.success === true && response.paymentUrl) {
+                        // هدایت به درگاه پرداخت
+                        console.log('🔄 [PatientAppointments] Redirecting to payment gateway:', response.paymentUrl);
+                        
+                        Swal.fire({
+                            title: 'در حال هدایت به درگاه پرداخت',
+                            text: 'لطفاً صبر کنید...',
+                            icon: 'info',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // هدایت به درگاه پس از 1 ثانیه
+                        setTimeout(() => {
+                            window.location.href = response.paymentUrl;
+                        }, 1000);
+                    } else {
+                        const errorMessage = response?.message || 'خطا در ایجاد درخواست پرداخت';
+                        console.error('❌ [PatientAppointments] Payment request failed - Message:', errorMessage);
+                        
+                        Swal.fire({
+                            title: 'خطا در پردازش پرداخت',
+                            text: errorMessage,
+                            icon: 'warning',
+                            confirmButtonText: 'باشه',
+                            confirmButtonColor: '#2c5aa0'
+                        });
+                    }
+                },
+                error: (xhr, status, error) => {
+                    hideLoading();
+                    console.error('❌ [PatientAppointments] AJAX Error in processPayment:', { status, error, xhr });
+                    
+                    let errorMessage = 'خطا در پردازش پرداخت';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (status === 'timeout') {
+                        errorMessage = 'زمان اتصال به سرور به پایان رسید. لطفاً دوباره تلاش کنید.';
+                    } else if (status === 'error' && xhr.status === 0) {
+                        errorMessage = 'خطا در اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                    } else if (xhr.status >= 500) {
+                        errorMessage = 'خطای سرور. لطفاً چند لحظه صبر کنید و دوباره تلاش کنید.';
+                    } else if (xhr.status === 400) {
+                        errorMessage = 'اطلاعات ارسالی نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
+                    }
+                    
+                    Swal.fire({
+                        title: 'خطا در پردازش پرداخت',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: 'باشه',
+                        confirmButtonColor: '#2c5aa0'
+                    });
                 }
             });
         },

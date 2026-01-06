@@ -226,23 +226,28 @@ namespace ClinicApp.Repositories.Appointment
             }
         }
 
+        /// <summary>
+        /// ✅ ENTERPRISE-GRADE: دریافت نوبت‌های پزشک در یک تاریخ خاص
+        /// فقط نوبت‌های فعال (Scheduled, Pending) را برمی‌گرداند
+        /// </summary>
         public async Task<List<Models.Entities.Appointment.Appointment>> GetDoctorAppointmentsByDateAsync(
             int doctorId,
             DateTime date)
         {
             try
             {
-                // ✅ استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ در LINQ to Entities
+                // ✅ CRITICAL FIX: فیلتر کردن همه Status‌های غیرفعال (نه فقط Cancelled)
+                // فقط Scheduled و Pending را در نظر می‌گیریم
                 var appointments = await _context.Appointments
                     .Where(a =>
                         a.DoctorId == doctorId &&
                         !a.IsDeleted &&
                         DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
-                        a.Status != AppointmentStatus.Cancelled)
+                        (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Pending))
                     .OrderBy(a => a.AppointmentDate)
                     .ToListAsync();
 
-                _logger.Information("دریافت {Count} نوبت برای پزشک {DoctorId} در تاریخ {Date}",
+                _logger.Information("دریافت {Count} نوبت فعال برای پزشک {DoctorId} در تاریخ {Date}",
                     appointments.Count, doctorId, date.ToString("yyyy/MM/dd"));
 
                 return appointments;

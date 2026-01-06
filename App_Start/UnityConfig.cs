@@ -707,6 +707,15 @@ namespace ClinicApp
                 // ثبت سرویس اصلی پرداخت (IPaymentService)
                 container.RegisterType<Interfaces.Payment.IPaymentService, Services.Payment.PaymentService>(new PerRequestLifetimeManager());
                 
+                // ✅ ثبت Payment Security Service (Enterprise-Grade)
+                container.RegisterType<Interfaces.Payment.Security.IPaymentSecurityService, Services.Payment.Security.PaymentSecurityService>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<Interfaces.Payment.IOnlinePaymentRepository>(),
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
+                
                 // ✅ ثبت Payment Management (Admin)
                 container.RegisterType<Interfaces.Payment.Management.IPaymentManagementRepository, Repositories.Payment.Management.PaymentManagementRepository>(
                     new PerRequestLifetimeManager(),

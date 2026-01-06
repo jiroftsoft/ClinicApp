@@ -846,9 +846,116 @@ namespace ClinicApp.Services.Payment.Web
 
         public async Task<ServiceResult<PaymentGateway>> GetDefaultPaymentGatewayAsync()
         {
-            // FIXME(Phase 2): Implement default payment gateway retrieval
-            _logger.Warning("⚠️ WEB PAYMENT: GetDefaultPaymentGatewayAsync not implemented yet");
-            return await Task.FromResult(ServiceResult<PaymentGateway>.Failed("این قابلیت در نسخه بعدی پیاده‌سازی خواهد شد", "NOT_IMPLEMENTED"));
+            try
+            {
+                _logger.Debug("🔍 WEB PAYMENT: جستجوی درگاه پرداخت پیش‌فرض...");
+
+                // ✅ STEP 1: جستجوی درگاه پیش‌فرض (IsDefault = true)
+                var defaultGateways = await _paymentGatewayRepository.GetDefaultGatewaysAsync();
+                var defaultGateway = defaultGateways?.FirstOrDefault();
+
+                if (defaultGateway != null && defaultGateway.IsActive && !defaultGateway.IsDeleted)
+                {
+                    _logger.Information("✅ WEB PAYMENT: درگاه پیش‌فرض یافت شد - GatewayId: {GatewayId}, Name: {Name}, Type: {Type}",
+                        defaultGateway.PaymentGatewayId, defaultGateway.Name, defaultGateway.GatewayType);
+                    return ServiceResult<PaymentGateway>.Successful(defaultGateway);
+                }
+
+                // ✅ STEP 2: اگر درگاه پیش‌فرض یافت نشد، جستجوی درگاه ZarinPal فعال
+                _logger.Debug("⚠️ WEB PAYMENT: درگاه پیش‌فرض یافت نشد. جستجوی درگاه ZarinPal فعال...");
+                var zarinPalGateways = await _paymentGatewayRepository.GetByTypeAsync(PaymentGatewayType.ZarinPal);
+                var activeZarinPalGateway = zarinPalGateways?.FirstOrDefault(g => g.IsActive && !g.IsDeleted);
+
+                if (activeZarinPalGateway != null)
+                {
+                    _logger.Information("✅ WEB PAYMENT: درگاه ZarinPal فعال یافت شد - GatewayId: {GatewayId}, Name: {Name}",
+                        activeZarinPalGateway.PaymentGatewayId, activeZarinPalGateway.Name);
+                    return ServiceResult<PaymentGateway>.Successful(activeZarinPalGateway);
+                }
+
+                // ✅ STEP 3: اگر ZarinPal یافت نشد، جستجوی اولین درگاه فعال
+                _logger.Debug("⚠️ WEB PAYMENT: درگاه ZarinPal یافت نشد. جستجوی اولین درگاه فعال...");
+                var activeGateways = await _paymentGatewayRepository.GetActiveGatewaysAsync();
+                var firstActiveGateway = activeGateways?.FirstOrDefault();
+
+                if (firstActiveGateway != null)
+                {
+                    _logger.Information("✅ WEB PAYMENT: اولین درگاه فعال یافت شد - GatewayId: {GatewayId}, Name: {Name}, Type: {Type}",
+                        firstActiveGateway.PaymentGatewayId, firstActiveGateway.Name, firstActiveGateway.GatewayType);
+                    return ServiceResult<PaymentGateway>.Successful(firstActiveGateway);
+                }
+
+                // ✅ STEP 4: اگر هیچ درگاهی یافت نشد، تلاش برای ایجاد خودکار از Web.config
+                _logger.Warning("⚠️ WEB PAYMENT: هیچ درگاه پرداخت فعالی یافت نشد. تلاش برای ایجاد خودکار از Web.config...");
+                
+                try
+                {
+                    // ✅ تلاش برای خواندن Merchant ID از Web.config
+                    var merchantId = ZarinPalHelper.GetMerchantId();
+                    if (!string.IsNullOrWhiteSpace(merchantId))
+                    {
+                        // ✅ بررسی اینکه آیا درگاه با این Merchant ID وجود دارد
+                        var existingGateway = await _paymentGatewayRepository.GetByMerchantIdAsync(merchantId);
+                        if (existingGateway != null)
+                        {
+                            // ✅ اگر درگاه وجود دارد اما غیرفعال است، فعال می‌کنیم
+                            if (!existingGateway.IsActive)
+                            {
+                                existingGateway.IsActive = true;
+                                await _paymentGatewayRepository.UpdateAsync(existingGateway);
+                                _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} فعال شد", merchantId);
+                            }
+                            
+                            if (!existingGateway.IsDeleted)
+                            {
+                                _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} یافت شد - GatewayId: {GatewayId}", 
+                                    merchantId, existingGateway.PaymentGatewayId);
+                                return ServiceResult<PaymentGateway>.Successful(existingGateway);
+                            }
+                        }
+                        
+                        // ✅ اگر درگاه وجود ندارد، ایجاد می‌کنیم
+                        var isSandbox = ZarinPalHelper.IsSandbox();
+                        var newGateway = new PaymentGateway
+                        {
+                            Name = isSandbox ? "زرین‌پال (Sandbox)" : "زرین‌پال (Production)",
+                            GatewayType = PaymentGatewayType.ZarinPal,
+                            MerchantId = merchantId,
+                            ApiKey = merchantId, // برای ZarinPal، ApiKey همان MerchantId است
+                            GatewayUrl = ZarinPalHelper.GetStartPayUrl(), // ✅ URL برای redirect به درگاه
+                            CallbackUrl = "", // بعداً تنظیم می‌شود (از Controller تنظیم می‌شود)
+                            IsActive = true,
+                            IsDefault = true, // ✅ به عنوان پیش‌فرض تنظیم می‌شود
+                            Description = $"درگاه پرداخت زرین‌پال - ایجاد شده خودکار از Web.config (Sandbox: {isSandbox})",
+                            CreatedByUserId = "System",
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        
+                        // ✅ پاک کردن درگاه‌های پیش‌فرض قبلی
+                        await _paymentGatewayRepository.ClearDefaultGatewaysAsync();
+                        
+                        var createdGateway = await _paymentGatewayRepository.CreateAsync(newGateway);
+                        _logger.Information("✅ WEB PAYMENT: درگاه پرداخت زرین‌پال به صورت خودکار ایجاد شد - GatewayId: {GatewayId}, MerchantId: {MerchantId}", 
+                            createdGateway.PaymentGatewayId, merchantId);
+                        
+                        return ServiceResult<PaymentGateway>.Successful(createdGateway);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "❌ WEB PAYMENT: خطا در ایجاد خودکار درگاه از Web.config");
+                    // ادامه می‌دهیم و خطا را برمی‌گردانیم
+                }
+                
+                // ❌ STEP 5: اگر همه تلاش‌ها ناموفق بود
+                _logger.Error("❌ WEB PAYMENT: هیچ درگاه پرداخت فعالی یافت نشد و امکان ایجاد خودکار وجود ندارد");
+                return ServiceResult<PaymentGateway>.Failed("درگاه پرداخت پیش‌فرض یافت نشد. لطفاً با پشتیبانی تماس بگیرید", "GATEWAY_NOT_FOUND");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ WEB PAYMENT: خطا در دریافت درگاه پرداخت پیش‌فرض");
+                return ServiceResult<PaymentGateway>.Failed("خطا در دریافت درگاه پرداخت. لطفاً دوباره تلاش کنید", "GATEWAY_ERROR");
+            }
         }
 
         public async Task<ServiceResult> SetDefaultPaymentGatewayAsync(int gatewayId, string userId)

@@ -304,6 +304,28 @@ namespace ClinicApp.Interfaces.Payment
         Task<OnlinePaymentStatistics> GetStatisticsByPaymentTypeAsync(OnlinePaymentType paymentType, DateTime startDate, DateTime endDate);
 
         #endregion
+
+        #region Security Operations (برای PaymentSecurityService)
+
+        /// <summary>
+        /// دریافت پرداخت‌های آنلاین بر اساس کاربر و بازه زمانی (برای Rate Limiting)
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <returns>لیست پرداخت‌ها</returns>
+        Task<IEnumerable<OnlinePayment>> GetByUserIdAndDateRangeAsync(string userId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// دریافت پرداخت‌های آنلاین بر اساس IP و بازه زمانی (برای Rate Limiting)
+        /// </summary>
+        /// <param name="ipAddress">آدرس IP</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <returns>لیست پرداخت‌ها</returns>
+        Task<IEnumerable<OnlinePayment>> GetByIpAddressAndDateRangeAsync(string ipAddress, DateTime startDate, DateTime endDate);
+
+        #endregion
     }
 
     /// <summary>

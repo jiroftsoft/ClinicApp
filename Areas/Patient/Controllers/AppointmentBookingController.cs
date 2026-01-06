@@ -6,6 +6,7 @@ using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Payment.Web;
 using ClinicApp.Interfaces.Payment.Gateway;
+using ClinicApp.Interfaces.Payment.Security; // ✅ ENTERPRISE-GRADE: Payment Security
 using ClinicApp.Models.DTOs.Appointment;
 using ClinicApp.ViewModels.Patient;
 using ClinicApp.Models;
@@ -61,6 +62,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IAppointmentBookingService _bookingService;
         private readonly IWebPaymentService _webPaymentService;
         private readonly IPaymentGatewayService _paymentGatewayService;
+        private readonly IPaymentSecurityService _paymentSecurityService; // ✅ ENTERPRISE-GRADE: Security Validation
         private readonly IIdempotencyService _idempotencyService;
         private readonly IAppSettings _appSettings;
         private readonly ApplicationDbContext _context;
@@ -72,6 +74,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             ICurrentUserService currentUserService,
             IWebPaymentService webPaymentService,
             IPaymentGatewayService paymentGatewayService,
+            IPaymentSecurityService paymentSecurityService, // ✅ ENTERPRISE-GRADE: Security Validation
             IIdempotencyService idempotencyService,
             IAppSettings appSettings,
             ApplicationDbContext context,
@@ -83,6 +86,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
             _webPaymentService = webPaymentService ?? throw new ArgumentNullException(nameof(webPaymentService));
             _paymentGatewayService = paymentGatewayService ?? throw new ArgumentNullException(nameof(paymentGatewayService));
+            _paymentSecurityService = paymentSecurityService ?? throw new ArgumentNullException(nameof(paymentSecurityService));
             _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -384,12 +388,23 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// ✅ ULTIMATE: Bulletproof validation
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> SelectTime(int doctorId, string date = null)
+        public async Task<ActionResult> SelectTime(int? doctorId, string date = null)
         {
             try
             {
+                // ✅ CRITICAL FIX: Validation برای doctorId
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    _logger.Warning("⚠️ SelectTime: doctorId نامعتبر یا null - doctorId: {DoctorId}", doctorId);
+                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                var validDoctorId = doctorId.Value;
+
                 // ✅ CRITICAL FIX: Parse تاریخ از string (پشتیبانی از Persian و Gregorian)
                 DateTime parsedDate;
+                
                 if (string.IsNullOrWhiteSpace(date))
                 {
                     // ✅ Fallback: اگر date در route نبود، از query string بخوان
@@ -398,13 +413,13 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 if (string.IsNullOrWhiteSpace(date))
                 {
-                    _logger.Warning("⚠️ تاریخ ارسال نشده است - DoctorId: {DoctorId}", doctorId);
+                    _logger.Warning("⚠️ تاریخ ارسال نشده است - DoctorId: {DoctorId}", validDoctorId);
                     NotificationHelper.SetError(TempData, "تاریخ نامعتبر است. لطفاً دوباره تلاش کنید");
-                    return RedirectToAction("SelectDate", new { doctorId });
+                    return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                 }
 
                 // ✅ CRITICAL FIX: Parse تاریخ (پشتیبانی از Persian yyyy-MM-dd و Gregorian yyyy-MM-dd)
-                _logger.Debug("🔍 Parse تاریخ - RawDate: {RawDate}, DoctorId: {DoctorId}", date, doctorId);
+                _logger.Debug("🔍 Parse تاریخ - RawDate: {RawDate}, DoctorId: {DoctorId}", date, validDoctorId);
                 
                 // ✅ ابتدا سعی می‌کنیم به صورت Gregorian parse کنیم
                 if (DateTime.TryParse(date, System.Globalization.CultureInfo.InvariantCulture,
@@ -429,7 +444,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                         {
                             _logger.Warning("⚠️ تاریخ parse نشد (نه Gregorian و نه Persian): {Date}", date);
                             NotificationHelper.SetError(TempData, "تاریخ نامعتبر است. لطفاً دوباره تلاش کنید");
-                            return RedirectToAction("SelectDate", new { doctorId });
+                            return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                         }
                     }
                 }
@@ -446,20 +461,12 @@ namespace ClinicApp.Areas.Patient.Controllers
                     {
                         _logger.Warning("⚠️ تاریخ parse نشد (نه Gregorian و نه Persian): {Date}", date);
                         NotificationHelper.SetError(TempData, "تاریخ نامعتبر است. لطفاً دوباره تلاش کنید");
-                        return RedirectToAction("SelectDate", new { doctorId });
+                        return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                     }
                 }
 
                 _logger.Information("درخواست صفحه انتخاب زمان - DoctorId: {DoctorId}, Date: {Date}, RawDate: {RawDate}",
-                    doctorId, parsedDate.ToString("yyyy/MM/dd"), date);
-
-                // ✅ Validation 1: DoctorId must be positive
-                if (doctorId <= 0)
-                {
-                    _logger.Warning("DoctorId نامعتبر: {DoctorId}", doctorId);
-                    NotificationHelper.SetError(TempData, "شناسه پزشک نامعتبر است");
-                    return RedirectToAction("SelectDoctor");
-                }
+                    validDoctorId, parsedDate.ToString("yyyy/MM/dd"), date);
 
                 // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است (برای تست)
                 // TODO: بعد از انجام تست‌های کامل، احراز هویت را فعال کنید
@@ -477,7 +484,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 {
                     _logger.Warning("⚠️ تاریخ {Date} در گذشته است (IranToday: {IranToday})", parsedDate.ToString("yyyy/MM/dd"), _timeProvider.GetIranToday().ToString("yyyy/MM/dd"));
                     NotificationHelper.SetError(TempData, "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
-                    return RedirectToAction("SelectDate", new { doctorId });
+                    return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                 }
 
                 // ✅ Validation 4: Date must not be too far in the future (max 90 days)
@@ -486,32 +493,32 @@ namespace ClinicApp.Areas.Patient.Controllers
                 {
                     _logger.Warning("⚠️ تاریخ {Date} بیش از 90 روز در آینده است", parsedDate.ToString("yyyy/MM/dd"));
                     NotificationHelper.SetError(TempData, "نمی‌توانید برای بیش از 90 روز آینده نوبت رزرو کنید");
-                    return RedirectToAction("SelectDate", new { doctorId });
+                    return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                 }
 
-                var doctorResult = await _bookingService.GetDoctorDetailsAsync(doctorId);
+                var doctorResult = await _bookingService.GetDoctorDetailsAsync(validDoctorId);
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
                     NotificationHelper.SetError(TempData, "پزشک یافت نشد");
                     return RedirectToAction("SelectDoctor");
                 }
 
-                var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, parsedDate);
+                var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(validDoctorId, parsedDate);
                 if (!slotsResult.Success)
                 {
                     NotificationHelper.SetError(TempData, slotsResult.Message ?? "خطا در دریافت اسلات‌های زمانی");
-                    return RedirectToAction("SelectDate", new { doctorId });
+                    return RedirectToAction("SelectDate", new { doctorId = validDoctorId });
                 }
 
                 // ✅ CRITICAL FIX: استفاده از Service به جای Direct DB Access (طبق قرارداد)
-                var durationResult = await _bookingService.GetAppointmentDurationAsync(doctorId);
+                var durationResult = await _bookingService.GetAppointmentDurationAsync(validDoctorId);
                 var appointmentDuration = durationResult.Success 
                     ? durationResult.Data 
                     : _appSettings.DefaultAppointmentDurationMinutes;
 
                 // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
                 var viewModel = AppointmentBookingViewModelFactory.CreateTimeSlotSelectionViewModel(
-                    doctorId,
+                    validDoctorId,
                     doctorResult.Data.FullName,
                     parsedDate,
                     slotsResult.Data,
@@ -523,7 +530,12 @@ namespace ClinicApp.Areas.Patient.Controllers
             {
                 _logger.Error(ex, "خطا در نمایش صفحه انتخاب زمان");
                 NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه");
-                return RedirectToAction("SelectDate", new { doctorId });
+                // ✅ CRITICAL FIX: استفاده از validDoctorId (اگر موجود باشد)
+                if (doctorId.HasValue && doctorId.Value > 0)
+                {
+                    return RedirectToAction("SelectDate", new { doctorId = doctorId.Value });
+                }
+                return RedirectToAction("SelectDoctor");
             }
         }
 
@@ -953,17 +965,21 @@ namespace ClinicApp.Areas.Patient.Controllers
         [AppointmentRateLimit(10, 60)] // حداکثر 10 درخواست پرداخت در ساعت
         public async Task<ActionResult> ProcessPayment(int appointmentId, string paymentMethod = "online", string idempotencyKey = null)
         {
+            // ✅ ENTERPRISE-GRADE: Correlation ID برای Tracing
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
-                _logger.Information("💰 PAYMENT REQUEST: درخواست پردازش پرداخت - AppointmentId: {AppointmentId}, Method: {Method}, IdempotencyKey: {IdempotencyKey}",
-                    appointmentId, paymentMethod, idempotencyKey);
+                _logger.Information("💰 PAYMENT REQUEST: درخواست پردازش پرداخت - AppointmentId: {AppointmentId}, Method: {Method}, IdempotencyKey: {IdempotencyKey}, CorrelationId: {CorrelationId}",
+                    appointmentId, paymentMethod, idempotencyKey, correlationId);
 
                 // ✅ 0. Idempotency Check (جلوگیری از درخواست‌های تکراری)
                 // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است
+                var userIdForIdempotency = _currentUserService?.UserId ?? "System"; // ✅ Fallback برای زمانی که authentication غیرفعال است
                 if (string.IsNullOrEmpty(idempotencyKey))
                 {
-                    var userId = _currentUserService?.UserId ?? "System"; // ✅ Fallback برای زمانی که authentication غیرفعال است
-                    idempotencyKey = $"payment_{appointmentId}_{userId}_{_timeProvider.UtcNow:yyyyMMddHHmm}";
+                    idempotencyKey = $"payment_{appointmentId}_{userIdForIdempotency}_{_timeProvider.UtcNow:yyyyMMddHHmm}";
                 }
 
                 var idempotencyKeyFull = $"appointment_payment_{idempotencyKey}";
@@ -1030,10 +1046,43 @@ namespace ClinicApp.Areas.Patient.Controllers
                 // 2. بررسی وضعیت نوبت
                 if (appointment.Status != AppointmentStatus.Scheduled && appointment.Status != AppointmentStatus.Pending)
                 {
-                    _logger.Warning("نوبت {AppointmentId} در وضعیت قابل پرداخت نیست. وضعیت: {Status}",
-                        appointmentId, appointment.Status);
-                    return Json(new { success = false, message = "این نوبت در وضعیت قابل پرداخت نیست" });
+                    _logger.Warning("نوبت {AppointmentId} در وضعیت قابل پرداخت نیست. وضعیت: {Status}, CorrelationId: {CorrelationId}",
+                        appointmentId, appointment.Status, correlationId);
+                    return Json(new { success = false, message = "این نوبت در وضعیت قابل پرداخت نیست", correlationId = correlationId });
                 }
+
+                // ✅ 2.5. ENTERPRISE-GRADE: Security Validation (قبل از پردازش)
+                var userIpAddress = Request.UserHostAddress ?? Request.ServerVariables["REMOTE_ADDR"] ?? "Unknown";
+                var userAgent = Request.UserAgent ?? "Unknown";
+                var userId = _currentUserService?.UserId ?? "System";
+                
+                var securityRequest = new PaymentSecurityValidationRequest
+                {
+                    CorrelationId = correlationId,
+                    UserId = userId,
+                    PatientId = appointment.PatientId ?? 0,
+                    AppointmentId = appointmentId,
+                    Amount = appointment.Price,
+                    UserIpAddress = userIpAddress,
+                    UserAgent = userAgent
+                };
+
+                var securityResult = await _paymentSecurityService.ValidatePaymentRequestSecurityAsync(securityRequest);
+                if (!securityResult.Success)
+                {
+                    _logger.Warning("⚠️ SECURITY: Security validation failed - AppointmentId: {AppointmentId}, Message: {Message}, CorrelationId: {CorrelationId}",
+                        appointmentId, securityResult.Message, correlationId);
+                    
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = securityResult.Message ?? "اعتبارسنجی امنیتی ناموفق بود",
+                        correlationId = correlationId
+                    });
+                }
+
+                _logger.Information("✅ SECURITY: Security validation passed - AppointmentId: {AppointmentId}, CorrelationId: {CorrelationId}",
+                    appointmentId, correlationId);
 
                 // 3. دریافت درگاه پیش‌فرض
                 var defaultGatewayResult = await _paymentGatewayService.GetDefaultPaymentGatewayAsync();
@@ -1073,6 +1122,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                             Status = OnlinePaymentStatus.Pending,
                             Amount = appointment.Price,
                             Description = $"پرداخت نوبت - پزشک: {appointment.Doctor?.FullName ?? "نامشخص"}",
+                            UserIpAddress = userIpAddress, // ✅ ENTERPRISE-GRADE: ذخیره IP برای Audit
+                            UserAgent = userAgent, // ✅ ENTERPRISE-GRADE: ذخیره User Agent برای Audit
                             CreatedByUserId = createdByUserId,
                             CreatedAt = _timeProvider.UtcNow, // ✅ استفاده از UtcNow
                             IsDeleted = false
@@ -1099,8 +1150,6 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                         // 6. ایجاد درخواست پرداخت
                         var callbackUrl = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" }, Request.Url.Scheme);
-                        var userIpAddress = Request.UserHostAddress;
-                        var userAgent = Request.UserAgent;
 
                         var paymentRequest = new CreatePaymentRequest
                         {
@@ -1109,8 +1158,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                             Amount = appointment.Price,
                             Description = $"پرداخت نوبت - {appointment.Doctor?.FullName ?? "نامشخص"}",
                             CallbackUrl = callbackUrl,
-                            UserIpAddress = userIpAddress,
-                            UserAgent = userAgent,
+                            UserIpAddress = userIpAddress, // ✅ استفاده از متغیر تعریف شده در scope بالاتر
+                            UserAgent = userAgent, // ✅ استفاده از متغیر تعریف شده در scope بالاتر
                             AdditionalData = new Dictionary<string, string>
                             {
                                 { "AppointmentId", appointmentId.ToString() },
@@ -1182,8 +1231,9 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                         transaction.Commit(); // ✅ Commit موفق
 
-                        _logger.Information("✅ PAYMENT REQUEST: درخواست پرداخت با موفقیت ایجاد شد - OnlinePaymentId: {OnlinePaymentId}, PaymentUrl: {PaymentUrl}",
-                            verified.OnlinePaymentId, verified.PaymentUrl);
+                        var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                        _logger.Information("✅ PAYMENT REQUEST: درخواست پرداخت با موفقیت ایجاد شد - OnlinePaymentId: {OnlinePaymentId}, PaymentUrl: {PaymentUrl}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                            verified.OnlinePaymentId, verified.PaymentUrl, processingTime, correlationId);
 
                         // 9. هدایت به درگاه پرداخت
                         return Json(new
@@ -1191,7 +1241,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                             success = true,
                             paymentUrl = gatewayResponse.PaymentUrl,
                             paymentToken = gatewayResponse.PaymentToken,
-                            message = "در حال هدایت به درگاه پرداخت..."
+                            message = "در حال هدایت به درگاه پرداخت...",
+                            correlationId = correlationId // ✅ ENTERPRISE-GRADE: برگرداندن Correlation ID به Client
                         });
                     }
                     catch (Exception ex)
@@ -1204,8 +1255,16 @@ namespace ClinicApp.Areas.Patient.Controllers
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در پردازش پرداخت - AppointmentId: {AppointmentId}", appointmentId);
-                return Json(new { success = false, message = "خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید" });
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ PAYMENT REQUEST: خطا در پردازش پرداخت - AppointmentId: {AppointmentId}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                    appointmentId, processingTime, correlationId);
+                
+                return Json(new 
+                { 
+                    success = false, 
+                    message = "خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید",
+                    correlationId = correlationId // ✅ ENTERPRISE-GRADE: برگرداندن Correlation ID برای Support
+                });
             }
         }
 
@@ -1219,10 +1278,14 @@ namespace ClinicApp.Areas.Patient.Controllers
             string Status, // ZarinPal: Status (OK/NOK)
             string Authority) // ZarinPal: Authority (PaymentToken)
         {
+            // ✅ ENTERPRISE-GRADE: Correlation ID برای Tracing
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
-                _logger.Information("💰 PAYMENT CALLBACK: دریافت Callback از درگاه - Status: {Status}, Authority: {Authority}",
-                    Status, Authority);
+                _logger.Information("💰 PAYMENT CALLBACK: دریافت Callback از درگاه - Status: {Status}, Authority: {Authority}, CorrelationId: {CorrelationId}",
+                    Status, Authority, correlationId);
 
                 // ✅ ZarinPal Callback Format: ?Status=OK&Authority=xxx
                 // اگر Status یا Authority خالی باشد، از QueryString بخوان

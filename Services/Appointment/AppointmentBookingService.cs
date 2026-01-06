@@ -85,7 +85,12 @@ namespace ClinicApp.Services.Appointment
                     Description = a.Description,
                     IsOnlineBooking = a.IsOnlineBooking,
                     Duration = a.Duration,
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    // ✅ ENTERPRISE-GRADE: تشخیص نوبت‌های نیازمند پرداخت
+                    RequiresPayment = (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Scheduled) && 
+                                      !a.PaymentTransactionId.HasValue && 
+                                      a.Price > 0,
+                    PaymentTransactionId = a.PaymentTransactionId
                 }).ToList();
 
                 _logger.Information("دریافت {Count} نوبت برای بیمار {PatientId}", dtos.Count, patientId);
@@ -429,13 +434,42 @@ namespace ClinicApp.Services.Appointment
                 var bookedAppointments = await _appointmentRepository.GetDoctorAppointmentsByDateAsync(doctorId, date);
                 _logger.Information("نوبت‌های رزرو شده دریافت شد - Count: {Count}", bookedAppointments?.Count() ?? 0);
 
-                // تبدیل به DTO و بررسی دسترسی‌پذیری
+                // ✅ ENTERPRISE-GRADE: تبدیل به DTO و بررسی دسترسی‌پذیری با منطق Overlap صحیح
+                // ⚠️ NOTE: bookedAppointments از Repository فقط Scheduled و Pending را برمی‌گرداند
                 var slotDtos = availableSlots.Select(slot =>
                 {
+                    // ✅ منطق Overlap صحیح (فرمول استاندارد):
+                    // دو بازه زمانی A و B overlap دارند اگر و فقط اگر:
+                    // (A.Start < B.End) AND (A.End > B.Start)
+                    // 
+                    // در اینجا:
+                    // - A = slot (StartTime تا EndTime)
+                    // - B = appointment (AppointmentDate.TimeOfDay تا AppointmentDate.TimeOfDay + Duration)
                     var isBooked = bookedAppointments.Any(a =>
-                        a.AppointmentDate.TimeOfDay >= slot.StartTime &&
-                        a.AppointmentDate.TimeOfDay < slot.EndTime &&
-                        a.Status != AppointmentStatus.Cancelled);
+                    {
+                        // ✅ Repository قبلاً Status را فیلتر کرده است (فقط Scheduled و Pending)
+                        // اما برای اطمینان بیشتر، دوباره چک می‌کنیم
+                        if (a.Status != AppointmentStatus.Scheduled && a.Status != AppointmentStatus.Pending)
+                            return false;
+
+                        var appointmentStart = a.AppointmentDate.TimeOfDay;
+                        // ✅ CRITICAL FIX: استفاده از Duration واقعی نوبت (یا default 15 دقیقه)
+                        var appointmentDuration = a.Duration > 0 ? a.Duration : 15;
+                        var appointmentEnd = appointmentStart.Add(TimeSpan.FromMinutes(appointmentDuration));
+
+                        // ✅ منطق Overlap صحیح: slot.StartTime < appointmentEnd && slot.EndTime > appointmentStart
+                        // استفاده از < و > (نه <= و >=) برای جلوگیری از overlap نوبت‌های مجاور
+                        // مثال: نوبت 10:00-10:15 و 10:15-10:30 overlap ندارند
+                        var hasOverlap = slot.StartTime < appointmentEnd && slot.EndTime > appointmentStart;
+                        
+                        if (hasOverlap)
+                        {
+                            _logger.Debug("🔍 Overlap detected - Slot: {SlotStart}-{SlotEnd}, Appointment: {AppStart}-{AppEnd} (Duration: {Duration}min, Status: {Status})",
+                                slot.StartTime, slot.EndTime, appointmentStart, appointmentEnd, appointmentDuration, a.Status);
+                        }
+                        
+                        return hasOverlap;
+                    });
 
                     return new AvailableTimeSlotDto
                     {
