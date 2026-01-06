@@ -399,9 +399,15 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDoctor");
                 }
 
-                // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است
-                // var patientId = await GetCurrentPatientIdAsync();
-                // TODO: بعد از رفع مشکل، احراز هویت را فعال کنید
+                // ✅ CRITICAL FIX: فعال‌سازی Authentication (طبق قرارداد)
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    _logger.Warning("Unauthorized access attempt to SelectTime - DoctorId: {DoctorId}, Date: {Date}",
+                        doctorId, date.ToString("yyyy/MM/dd"));
+                    NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید");
+                    return RedirectToAction("Login", "Account", new { area = "" });
+                }
 
                 // ✅ Validation 3: Date must not be in the past
                 if (date.Date < _timeProvider.GetIranToday())
@@ -434,13 +440,11 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDate", new { doctorId });
                 }
 
-                // ✅ دریافت مدت زمان نوبت از تنظیمات پزشک (DoctorSchedule) یا استفاده از مقدار پیش‌فرض
-                var doctorSchedule = await _context.DoctorSchedules
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId && !ds.IsDeleted);
-
-                var appointmentDuration = doctorSchedule?.AppointmentDuration 
-                    ?? _appSettings.DefaultAppointmentDurationMinutes;
+                // ✅ CRITICAL FIX: استفاده از Service به جای Direct DB Access (طبق قرارداد)
+                var durationResult = await _bookingService.GetAppointmentDurationAsync(doctorId);
+                var appointmentDuration = durationResult.Success 
+                    ? durationResult.Data 
+                    : _appSettings.DefaultAppointmentDurationMinutes;
 
                 // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
                 var viewModel = AppointmentBookingViewModelFactory.CreateTimeSlotSelectionViewModel(

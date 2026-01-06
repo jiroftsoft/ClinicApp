@@ -218,10 +218,25 @@
 }
 
 .time-slots-grid {
+    /* ✅ Mobile-First: در موبایل، یک ستون کامل */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
     margin-top: 2rem;
+}
+
+/* ✅ Tablet: دو ستون */
+@media (min-width: 576px) {
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+/* ✅ Desktop: سه ستون */
+@media (min-width: 992px) {
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
 }
 
 .selected-slot-info {

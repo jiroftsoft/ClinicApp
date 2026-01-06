@@ -88,6 +88,13 @@ namespace ClinicApp.Interfaces.Appointment
             DateTime date);
 
         /// <summary>
+        /// دریافت مدت زمان نوبت برای یک پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>مدت زمان نوبت (دقیقه)</returns>
+        Task<ServiceResult<int>> GetAppointmentDurationAsync(int doctorId);
+
+        /// <summary>
         /// بررسی دسترسی‌پذیری یک اسلات زمانی
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>

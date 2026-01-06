@@ -30,6 +30,7 @@ namespace ClinicApp.Services.Appointment
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+        private readonly IAppSettings _appSettings; // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
         // ✅ CRITICAL: Cache حذف شد - در محیط درمانی، داده‌ها باید Real-time باشند
         // این ماژول قرار است به صورت گسترده استفاده شود و نیاز به داده‌های به‌روز دارد
 
@@ -40,6 +41,7 @@ namespace ClinicApp.Services.Appointment
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
             ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+            IAppSettings appSettings, // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -48,6 +50,7 @@ namespace ClinicApp.Services.Appointment
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _logger = logger?.ForContext<AppointmentBookingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -457,14 +460,38 @@ namespace ClinicApp.Services.Appointment
                 _logger.Error(ex, "خطا در دریافت اسلات‌های در دسترس - پزشک: {DoctorId}, تاریخ: {Date}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
                     doctorId, date.ToString("yyyy/MM/dd"), ex.GetType().Name, ex.Message, ex.StackTrace);
                 
-                // بررسی InnerException
-                if (ex.InnerException != null)
+                return ServiceResult<List<AvailableTimeSlotDto>>.Failed("خطا در دریافت اسلات‌های زمانی. لطفاً دوباره تلاش کنید");
+            }
+        }
+
+        /// <summary>
+        /// دریافت مدت زمان نوبت برای یک پزشک
+        /// ✅ CRITICAL FIX: انتقال از Controller به Service (طبق قرارداد)
+        /// </summary>
+        public async Task<ServiceResult<int>> GetAppointmentDurationAsync(int doctorId)
+        {
+            try
+            {
+                if (doctorId <= 0)
                 {
-                    _logger.Error(ex.InnerException, "InnerException در دریافت اسلات‌های در دسترس - Message: {Message}",
-                        ex.InnerException.Message);
+                    return ServiceResult<int>.Failed("شناسه پزشک نامعتبر است");
                 }
-                
-                return ServiceResult<List<AvailableTimeSlotDto>>.Failed($"خطا در دریافت اسلات‌های در دسترس: {ex.Message}");
+
+                _logger.Information("دریافت مدت زمان نوبت - پزشک: {DoctorId}", doctorId);
+
+                var doctorSchedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
+                var duration = doctorSchedule?.AppointmentDuration 
+                    ?? _appSettings.DefaultAppointmentDurationMinutes;
+
+                _logger.Information("مدت زمان نوبت دریافت شد - پزشک: {DoctorId}, مدت: {Duration} دقیقه", 
+                    doctorId, duration);
+
+                return ServiceResult<int>.Successful(duration);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت مدت زمان نوبت - پزشک: {DoctorId}", doctorId);
+                return ServiceResult<int>.Failed("خطا در دریافت مدت زمان نوبت");
             }
         }
 

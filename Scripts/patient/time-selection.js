@@ -22,6 +22,7 @@
 
             this.bindEvents();
             this.startRealTimeUpdates();
+            this.restoreSelection(); // ✅ CRITICAL FIX: Restore selection from sessionStorage
         },
 
         bindEvents: function () {
@@ -58,6 +59,16 @@
                 displayTime: $card.find('.slot-time strong').text()
             };
 
+            // ✅ CRITICAL FIX: Save to sessionStorage for state management
+            try {
+                sessionStorage.setItem(
+                    `timeSelection_${this.doctorId}_${this.selectedDate}`,
+                    JSON.stringify(this.selectedSlot)
+                );
+            } catch (e) {
+                console.warn('⚠️ [TimeSelection] Failed to save selection to sessionStorage:', e);
+            }
+
             // نمایش اطلاعات انتخاب شده
             this.showSelectedSlotInfo();
             
@@ -70,6 +81,13 @@
             this.selectedSlot = null;
             $('#selectedSlotInfo').removeClass('show');
             $('#continueToConfirmBtn').prop('disabled', true);
+            
+            // ✅ CRITICAL FIX: Clear from sessionStorage
+            try {
+                sessionStorage.removeItem(`timeSelection_${this.doctorId}_${this.selectedDate}`);
+            } catch (e) {
+                console.warn('⚠️ [TimeSelection] Failed to clear selection from sessionStorage:', e);
+            }
         },
 
         handleContinue: function () {
@@ -150,10 +168,10 @@
         },
 
         startRealTimeUpdates: function () {
-            // به‌روزرسانی Real-time هر 30 ثانیه
+            // ✅ CRITICAL FIX: به‌روزرسانی Real-time هر 15 ثانیه (بهینه‌سازی تعادل Performance/Accuracy)
             this.updateInterval = setInterval(() => {
                 this.updateSlotAvailability();
-            }, 30000);
+            }, 15000); // 15 seconds - Better balance between performance and data accuracy
         },
 
         updateSlotAvailability: function () {
@@ -272,6 +290,34 @@
                 toastr.error(message);
             } else {
                 alert(message);
+            }
+        },
+
+        /**
+         * ✅ CRITICAL FIX: Restore selection from sessionStorage
+         * برای حفظ state در صورت refresh/back
+         */
+        restoreSelection: function () {
+            try {
+                const saved = sessionStorage.getItem(`timeSelection_${this.doctorId}_${this.selectedDate}`);
+                if (saved) {
+                    const slot = JSON.parse(saved);
+                    const $card = $(`.time-slot-card[data-start-time="${slot.startTime}"]`);
+                    if ($card.length && $card.hasClass('available')) {
+                        // ✅ Restore selection
+                        $('.time-slot-card').removeClass('selected');
+                        $card.addClass('selected');
+                        this.selectedSlot = slot;
+                        this.showSelectedSlotInfo();
+                        $('#continueToConfirmBtn').prop('disabled', false);
+                        console.log('✅ [TimeSelection] Selection restored from sessionStorage');
+                    } else {
+                        // ✅ Slot no longer available - clear from storage
+                        sessionStorage.removeItem(`timeSelection_${this.doctorId}_${this.selectedDate}`);
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ [TimeSelection] Failed to restore selection from sessionStorage:', e);
             }
         },
 
