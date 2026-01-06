@@ -218,21 +218,21 @@
 }
 
 .time-slots-grid {
-    /* ✅ Mobile-First: در موبایل، یک ستون کامل */
+    /* ✅ Mobile: 2 columns (optimal for touch targets - طبق Healthcare UI Standards) */
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
     margin-top: 2rem;
 }
 
-/* ✅ Tablet: دو ستون */
+/* ✅ Tablet: 2-3 columns */
 @media (min-width: 576px) {
     .time-slots-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
 }
 
-/* ✅ Desktop: سه ستون */
+/* ✅ Desktop: 3-4 columns */
 @media (min-width: 992px) {
     .time-slots-grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -480,6 +480,45 @@
 .time-slot-card.selected .slot-range,
 .time-slot-card.selected .slot-duration {
     color: white;
+}
+
+/* ============================================
+   Sticky Bottom Bar (Mobile Only)
+   ============================================ */
+
+.sticky-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 2px solid var(--medical-border);
+    padding: 1rem;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+}
+
+.sticky-bottom-bar .selected-time-display {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.sticky-bottom-bar .btn {
+    min-width: 120px;
+    min-height: 48px; /* ✅ Touch target ≥48px */
+    font-size: 1rem; /* ✅ حداقل 16px */
+}
+
+/* ✅ Add padding to body to prevent content overlap with sticky bar */
+@media (max-width: 767.98px) {
+    body {
+        padding-bottom: 80px;
+    }
+    
+    .sticky-bottom-bar {
+        display: block;
+    }
 }
 
 /* ============================================

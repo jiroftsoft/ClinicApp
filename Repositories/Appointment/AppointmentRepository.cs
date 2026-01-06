@@ -167,18 +167,23 @@ namespace ClinicApp.Repositories.Appointment
                 var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
 
                 // ✅ STEP 1: بررسی وجود اسلات در DoctorTimeSlots با Status = Available
-                // اگر اسلات در DoctorTimeSlots وجود نداشته باشد یا Status != Available باشد، در دسترس نیست
+                // ⚠️ NOTE: اگر slot در DoctorTimeSlots وجود نداشته باشد، ممکن است از Schedule تولید شده باشد
+                // در این صورت، Service Layer باید از GetAvailableTimeSlotsAsync استفاده کند
+                // این بررسی فقط برای slot‌هایی است که در DoctorTimeSlots ذخیره شده‌اند
+                // ✅ CRITICAL FIX: استفاده از DbFunctions.TruncateTime به جای .Date (LINQ to Entities)
                 var slotExists = await _context.DoctorTimeSlots
                     .AnyAsync(ts => ts.DoctorId == doctorId &&
-                                   ts.AppointmentDate.Date == appointmentDate.Date &&
+                                   DbFunctions.TruncateTime(ts.AppointmentDate) == DbFunctions.TruncateTime(appointmentDate) &&
                                    ts.StartTime == startTime &&
                                    ts.EndTime == endTime &&
                                    ts.Status == AppointmentStatus.Available &&
                                    !ts.IsDeleted);
 
+                // ⚠️ CRITICAL FIX: اگر slot در DoctorTimeSlots وجود نداشت، false برمی‌گردانیم
+                // اما Service Layer باید از GetAvailableTimeSlotsAsync استفاده کند تا slot‌های تولید شده از Schedule را هم بررسی کند
                 if (!slotExists)
                 {
-                    _logger.Warning("⚠️ SLOT NOT FOUND OR NOT AVAILABLE: اسلات {DoctorId}/{Date}/{StartTime}-{EndTime} در DoctorTimeSlots یافت نشد یا در دسترس نیست",
+                    _logger.Debug("⚠️ SLOT NOT FOUND IN DOCTORTIMESLOTS: اسلات {DoctorId}/{Date}/{StartTime}-{EndTime} در DoctorTimeSlots یافت نشد (ممکن است از Schedule تولید شده باشد)",
                         doctorId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime);
                     return false;
                 }

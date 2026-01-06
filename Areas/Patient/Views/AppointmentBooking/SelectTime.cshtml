@@ -102,12 +102,28 @@
     </div>
 </div>
 
-<!-- دکمه ادامه -->
-<div class="text-center mt-4">
+<!-- ✅ Desktop: دکمه ادامه (در موبایل sticky bottom bar نمایش داده می‌شود) -->
+<div class="text-center mt-4 d-none d-md-block">
     <button type="button" class="btn btn-primary btn-lg" id="continueToConfirmBtn" disabled>
         <i class="fas fa-arrow-left me-1"></i>
         ادامه به تایید نهایی
     </button>
+</div>
+
+<!-- ✅ Mobile: Sticky Bottom Bar (فقط در موبایل نمایش داده می‌شود) -->
+<div class="sticky-bottom-bar d-md-none" id="stickyBottomBar">
+    <div class="container-fluid px-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="selected-time-display" id="stickySelectedTime" style="display: none;">
+                <small class="text-muted d-block mb-1">زمان انتخاب شده:</small>
+                <strong id="stickyTimeDisplay"></strong>
+            </div>
+            <button type="button" class="btn btn-primary btn-lg" id="continueToConfirmBtnMobile" disabled>
+                <i class="fas fa-arrow-left me-1"></i>
+                ادامه
+            </button>
+        </div>
+    </div>
 </div>
 
 @Html.AntiForgeryToken()
@@ -116,8 +132,23 @@
 <input type="hidden" id="selectedStartTime" />
 <input type="hidden" id="selectedEndTime" />
 
+@{
+    // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URLs
+    var confirmBookingUrl = Url.Action("ConfirmBooking", "AppointmentBooking", new { area = "Patient" });
+    var checkSlotAvailabilityUrl = Url.Action("CheckSlotAvailability", "DoctorSearchApi", new { area = "Patient" });
+    var getAvailableSlotsUrl = Url.Action("GetAvailableTimeSlots", "DoctorSearchApi", new { area = "Patient" });
+}
+
 @section Scripts {
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script>
+        // ✅ CRITICAL FIX: Pass Route URLs to JavaScript (طبق قرارداد - No Hardcode URLs)
+        window.appConfig = window.appConfig || {};
+        window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
+        window.appConfig.appointmentBooking.confirmBookingUrl = '@confirmBookingUrl';
+        window.appConfig.appointmentBooking.checkSlotAvailabilityUrl = '@checkSlotAvailabilityUrl';
+        window.appConfig.appointmentBooking.getAvailableSlotsUrl = '@getAvailableSlotsUrl';
+    </script>
     <script src="~/Scripts/patient/time-selection.js"></script>
 }
 

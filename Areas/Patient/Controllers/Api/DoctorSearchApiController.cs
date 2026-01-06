@@ -246,8 +246,21 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         {
             try
             {
+                // ✅ CRITICAL FIX: Log request برای دیباگ
+                _logger.Debug("🔍 CheckSlotAvailability - Request: DoctorId={DoctorId}, AppointmentDate={AppointmentDate}, StartTime={StartTime}, EndTime={EndTime}",
+                    request?.DoctorId ?? 0, request?.AppointmentDate.ToString("yyyy/MM/dd") ?? "null", 
+                    request?.StartTime.ToString(@"hh\:mm") ?? "null", request?.EndTime.ToString(@"hh\:mm") ?? "null");
+                
+                // ✅ CRITICAL FIX: Log form data برای دیباگ
+                var formDoctorId = Request.Form["doctorId"] ?? Request["doctorId"];
+                var formAppointmentDate = Request.Form["appointmentDate"] ?? Request["appointmentDate"];
+                var formStartTime = Request.Form["startTime"] ?? Request["startTime"];
+                var formEndTime = Request.Form["endTime"] ?? Request["endTime"];
+                _logger.Debug("🔍 CheckSlotAvailability - Form Data: doctorId={DoctorId}, appointmentDate={AppointmentDate}, startTime={StartTime}, endTime={EndTime}",
+                    formDoctorId, formAppointmentDate, formStartTime, formEndTime);
+                
                 // ✅ اگر request null است یا DoctorId نامعتبر است، سعی می‌کنیم از form data بخوانیم
-                if (request == null || request.DoctorId <= 0)
+                if (request == null || request.DoctorId <= 0 || request.StartTime == TimeSpan.Zero || request.EndTime == TimeSpan.Zero)
                 {
                     var doctorIdStr = Request.Form["doctorId"] ?? Request["doctorId"];
                     var appointmentDateStr = Request.Form["appointmentDate"] ?? Request["appointmentDate"];
@@ -284,10 +297,37 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                         return Json(new { success = false, message = "فرمت تاریخ نامعتبر است" });
                     }
 
-                    // ✅ Parse زمان
-                    if (!TimeSpan.TryParse(startTimeStr, out TimeSpan startTime) ||
-                        !TimeSpan.TryParse(endTimeStr, out TimeSpan endTime))
+                    // ✅ CRITICAL FIX: Parse زمان با پشتیبانی از فرمت hh:mm و HH:mm
+                    // فرمت hh:mm (مثلاً "10:45") باید به TimeSpan تبدیل شود
+                    TimeSpan startTime, endTime;
+                    
+                    // ✅ ابتدا سعی می‌کنیم با parse دستی (برای فرمت hh:mm)
+                    var startParts = startTimeStr.Split(':');
+                    var endParts = endTimeStr.Split(':');
+                    
+                    if (startParts.Length >= 2 && int.TryParse(startParts[0], out int startHours) && 
+                        int.TryParse(startParts[1], out int startMinutes) &&
+                        endParts.Length >= 2 && int.TryParse(endParts[0], out int endHours) && 
+                        int.TryParse(endParts[1], out int endMinutes))
                     {
+                        // ✅ اعتبارسنجی hours و minutes
+                        if (startHours >= 0 && startHours < 24 && startMinutes >= 0 && startMinutes < 60 &&
+                            endHours >= 0 && endHours < 24 && endMinutes >= 0 && endMinutes < 60)
+                        {
+                            startTime = new TimeSpan(startHours, startMinutes, 0);
+                            endTime = new TimeSpan(endHours, endMinutes, 0);
+                            _logger.Debug("✅ Parse موفق (manual hh:mm): StartTime='{StartTimeStr}' -> {StartTime}, EndTime='{EndTimeStr}' -> {EndTime}",
+                                startTimeStr, startTime, endTimeStr, endTime);
+                        }
+                        else
+                        {
+                            return Json(new { success = false, message = "فرمت زمان نامعتبر است (مقادیر خارج از محدوده)" });
+                        }
+                    }
+                    else if (!TimeSpan.TryParse(startTimeStr, out startTime) ||
+                             !TimeSpan.TryParse(endTimeStr, out endTime))
+                    {
+                        // ✅ اگر parse دستی کار نکرد، سعی می‌کنیم با TimeSpan.TryParse
                         return Json(new { success = false, message = "فرمت زمان نامعتبر است" });
                     }
 
@@ -310,14 +350,22 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" });
                 }
 
+                _logger.Debug("🔍 فراخوانی CheckSlotAvailabilityAsync - DoctorId: {DoctorId}, AppointmentDate: {AppointmentDate}, StartTime: {StartTime}, EndTime: {EndTime}",
+                    request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"), request.StartTime, request.EndTime);
+                
                 var result = await _bookingService.CheckSlotAvailabilityAsync(
                     request.DoctorId,
                     request.AppointmentDate,
                     request.StartTime,
                     request.EndTime);
 
+                _logger.Debug("✅ نتیجه CheckSlotAvailabilityAsync - Success: {Success}, IsAvailable: {IsAvailable}, Message: {Message}",
+                    result.Success, result.Data, result.Message);
+
                 if (!result.Success)
                 {
+                    _logger.Warning("⚠️ CheckSlotAvailabilityAsync ناموفق - DoctorId: {DoctorId}, Date: {Date}, Message: {Message}",
+                        request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"), result.Message);
                     return Json(new { success = false, message = result.Message ?? "خطا در بررسی دسترسی‌پذیری" });
                 }
 
@@ -329,8 +377,9 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی دسترسی‌پذیری اسلات");
-                return Json(new { success = false, message = "خطای سرور" });
+                _logger.Error(ex, "❌ EXCEPTION در CheckSlotAvailability - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                    ex.GetType().Name, ex.Message, ex.StackTrace);
+                return Json(new { success = false, message = $"خطای سرور: {ex.Message}" });
             }
         }
 

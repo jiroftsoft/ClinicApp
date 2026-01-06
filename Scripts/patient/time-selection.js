@@ -32,8 +32,8 @@
             // پاک کردن انتخاب
             $('#clearSelectionBtn').on('click', this.handleClearSelection.bind(this));
             
-            // ادامه به تایید
-            $('#continueToConfirmBtn').on('click', this.handleContinue.bind(this));
+            // ادامه به تایید (Desktop + Mobile)
+            $('#continueToConfirmBtn, #continueToConfirmBtnMobile').on('click', this.handleContinue.bind(this));
         },
 
         handleSelectSlot: function (e) {
@@ -72,15 +72,18 @@
             // نمایش اطلاعات انتخاب شده
             this.showSelectedSlotInfo();
             
-            // فعال کردن دکمه ادامه
-            $('#continueToConfirmBtn').prop('disabled', false);
+            // ✅ CRITICAL FIX: فعال کردن دکمه ادامه (Desktop + Mobile)
+            $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false);
         },
 
         handleClearSelection: function () {
             $('.time-slot-card').removeClass('selected');
             this.selectedSlot = null;
             $('#selectedSlotInfo').removeClass('show');
-            $('#continueToConfirmBtn').prop('disabled', true);
+            $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', true);
+            
+            // ✅ CRITICAL FIX: Clear sticky bottom bar
+            $('#stickySelectedTime').hide();
             
             // ✅ CRITICAL FIX: Clear from sessionStorage
             try {
@@ -96,6 +99,14 @@
                 return;
             }
 
+            // ✅ CRITICAL FIX: Prevent double-click/duplicate requests
+            const $btn = $('#continueToConfirmBtn, #continueToConfirmBtnMobile');
+            if ($btn.prop('disabled') || $btn.data('processing')) {
+                return; // Already processing
+            }
+            
+            $btn.prop('disabled', true).data('processing', true);
+
             // بررسی مجدد دسترسی‌پذیری
             this.checkSlotAvailability();
         },
@@ -103,10 +114,13 @@
         checkSlotAvailability: function () {
             showLoading();
 
+            // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URL
+            const checkUrl = window.appConfig?.appointmentBooking?.checkSlotAvailabilityUrl || '/Patient/Api/DoctorSearch/CheckSlotAvailability';
+            
             // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
             // ✅ Note: CSRF Token حذف شد - این یک Read Operation است و AllowAnonymous است
             this.ajaxWithRetry({
-                url: '/Patient/Api/DoctorSearch/CheckSlotAvailability',
+                url: checkUrl,
                 type: 'POST',
                 data: {
                     doctorId: this.doctorId,
@@ -121,15 +135,30 @@
                 retryDelay: 1000, // ✅ 1 ثانیه تاخیر بین تلاش‌ها
                 onSuccess: (response) => {
                     hideLoading();
-                    if (response.success && response.isAvailable) {
+                    // ✅ CRITICAL FIX: Re-enable button after request
+                    $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false).data('processing', false);
+                    
+                    // ✅ CRITICAL FIX: Debug logging
+                    console.log('🔍 [TimeSelection] CheckSlotAvailability response:', response);
+                    console.log('🔍 [TimeSelection] response.success:', response?.success, 'response.isAvailable:', response?.isAvailable);
+                    
+                    // ✅ CRITICAL FIX: Handle both response formats (direct or nested)
+                    const isAvailable = response?.isAvailable === true || response?.data?.isAvailable === true;
+                    const isSuccess = response?.success === true;
+                    
+                    if (isSuccess && isAvailable) {
                         this.proceedToConfirm();
                     } else {
+                        console.warn('⚠️ [TimeSelection] Slot not available - success:', isSuccess, 'isAvailable:', isAvailable);
                         this.showError('این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید');
                         this.updateSlotAvailability();
                     }
                 },
                 onError: (xhr, status, error) => {
                     hideLoading();
+                    // ✅ CRITICAL FIX: Re-enable button on error
+                    $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false).data('processing', false);
+                    
                     let errorMessage = 'خطا در بررسی دسترسی‌پذیری';
                     
                     // ✅ تشخیص نوع خطا و نمایش پیام مناسب
@@ -150,14 +179,22 @@
         },
 
         proceedToConfirm: function () {
+            // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URL
+            const confirmUrl = window.appConfig?.appointmentBooking?.confirmBookingUrl || '/Patient/AppointmentBooking/ConfirmBooking';
+            
+            // ✅ CRITICAL FIX: Log برای دیباگ
+            console.log('🔍 [TimeSelection] proceedToConfirm - doctorId:', this.doctorId, 'selectedDate:', this.selectedDate, 'startTime:', this.selectedSlot.startTime, 'endTime:', this.selectedSlot.endTime);
+            
             const params = new URLSearchParams({
                 doctorId: this.doctorId,
-                appointmentDate: this.selectedDate,
-                startTime: this.selectedSlot.startTime,
-                endTime: this.selectedSlot.endTime
+                appointmentDate: this.selectedDate, // ✅ Format: yyyy-MM-dd (Gregorian)
+                startTime: this.selectedSlot.startTime, // ✅ Format: hh:mm
+                endTime: this.selectedSlot.endTime // ✅ Format: hh:mm
             });
 
-            window.location.href = `/Patient/AppointmentBooking/ConfirmBooking?${params.toString()}`;
+            const fullUrl = `${confirmUrl}?${params.toString()}`;
+            console.log('🔍 [TimeSelection] Navigating to:', fullUrl);
+            window.location.href = fullUrl;
         },
 
         showSelectedSlotInfo: function () {
@@ -165,6 +202,11 @@
             $('#selectedSlotInfo').addClass('show');
             $('#selectedStartTime').val(this.selectedSlot.startTime);
             $('#selectedEndTime').val(this.selectedSlot.endTime);
+            
+            // ✅ CRITICAL FIX: Update sticky bottom bar for mobile
+            $('#stickyTimeDisplay').text(this.selectedSlot.displayTime);
+            $('#stickySelectedTime').show();
+            $('#continueToConfirmBtnMobile').prop('disabled', false);
         },
 
         startRealTimeUpdates: function () {
@@ -175,9 +217,12 @@
         },
 
         updateSlotAvailability: function () {
+            // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URL
+            const slotsUrl = window.appConfig?.appointmentBooking?.getAvailableSlotsUrl || '/Patient/Api/DoctorSearch/GetAvailableTimeSlots';
+            
             // ✅ CRITICAL FIX: بهبود Error Handling برای Real-time Updates
             this.ajaxWithRetry({
-                url: '/Patient/Api/DoctorSearch/GetAvailableTimeSlots',
+                url: slotsUrl,
                 type: 'GET',
                 data: {
                     id: this.doctorId,
@@ -236,8 +281,17 @@
                     type: options.type || 'GET',
                     data: options.data || {},
                     headers: options.headers || {},
+                    dataType: 'json', // ✅ CRITICAL FIX: Explicitly set dataType to JSON
                     timeout: timeout,
                     success: function (response) {
+                        // ✅ CRITICAL FIX: Ensure response is parsed correctly
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ [TimeSelection] Failed to parse JSON response:', e);
+                            }
+                        }
                         if (options.onSuccess) {
                             options.onSuccess(response);
                         }
@@ -309,7 +363,7 @@
                         $card.addClass('selected');
                         this.selectedSlot = slot;
                         this.showSelectedSlotInfo();
-                        $('#continueToConfirmBtn').prop('disabled', false);
+                        $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false);
                         console.log('✅ [TimeSelection] Selection restored from sessionStorage');
                     } else {
                         // ✅ Slot no longer available - clear from storage

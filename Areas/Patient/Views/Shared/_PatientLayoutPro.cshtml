@@ -1,5 +1,6 @@
 @using ClinicApp.Helpers
 @using Microsoft.AspNet.Identity
+@using System.Web
 @{
     var appName = "کلینیک درمانی شفا";
     var title = ViewBag.Title ?? "پنل بیمار";
@@ -848,36 +849,71 @@
                 };
             }
 
-            // ✅ Display TempData Notifications (طبق قرارداد)
-            @if (TempData["Notification_Success"] != null)
+            // ✅ CRITICAL FIX: Display TempData Notifications (طبق قرارداد)
+            // استفاده از NotificationHelper.Get* به جای دسترسی مستقیم به TempData
+            @{
+                var successMsg = ClinicApp.Helpers.NotificationHelper.GetSuccess(TempData);
+                var errorMsg = ClinicApp.Helpers.NotificationHelper.GetError(TempData);
+                var warningMsg = ClinicApp.Helpers.NotificationHelper.GetWarning(TempData);
+                var infoMsg = ClinicApp.Helpers.NotificationHelper.GetInfo(TempData);
+            }
+            @if (successMsg != null)
             {
                 <text>
                 if (typeof Notify !== 'undefined') {
-                    Notify.success('@Html.Raw(TempData["Notification_Success"])');
+                    Notify.success('@Html.Raw(HttpUtility.JavaScriptStringEncode(successMsg.Message))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(successMsg.Title))');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(successMsg.Title))',
+                        text: '@Html.Raw(HttpUtility.JavaScriptStringEncode(successMsg.Message))',
+                        icon: 'success',
+                        confirmButtonText: 'باشه'
+                    });
                 }
                 </text>
             }
-            @if (TempData["Notification_Error"] != null)
+            @if (errorMsg != null)
             {
                 <text>
                 if (typeof Notify !== 'undefined') {
-                    Notify.error('@Html.Raw(TempData["Notification_Error"])');
+                    Notify.error('@Html.Raw(HttpUtility.JavaScriptStringEncode(errorMsg.Message))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(errorMsg.Title))');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(errorMsg.Title))',
+                        text: '@Html.Raw(HttpUtility.JavaScriptStringEncode(errorMsg.Message))',
+                        icon: 'error',
+                        confirmButtonText: 'باشه'
+                    });
                 }
                 </text>
             }
-            @if (TempData["Notification_Warning"] != null)
+            @if (warningMsg != null)
             {
                 <text>
                 if (typeof Notify !== 'undefined') {
-                    Notify.warning('@Html.Raw(TempData["Notification_Warning"])');
+                    Notify.warning('@Html.Raw(HttpUtility.JavaScriptStringEncode(warningMsg.Message))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(warningMsg.Title))');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(warningMsg.Title))',
+                        text: '@Html.Raw(HttpUtility.JavaScriptStringEncode(warningMsg.Message))',
+                        icon: 'warning',
+                        confirmButtonText: 'باشه'
+                    });
                 }
                 </text>
             }
-            @if (TempData["Notification_Info"] != null)
+            @if (infoMsg != null)
             {
                 <text>
                 if (typeof Notify !== 'undefined') {
-                    Notify.info('@Html.Raw(TempData["Notification_Info"])');
+                    Notify.info('@Html.Raw(HttpUtility.JavaScriptStringEncode(infoMsg.Message))', '@Html.Raw(HttpUtility.JavaScriptStringEncode(infoMsg.Title))');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(infoMsg.Title))',
+                        text: '@Html.Raw(HttpUtility.JavaScriptStringEncode(infoMsg.Message))',
+                        icon: 'info',
+                        confirmButtonText: 'باشه'
+                    });
                 }
                 </text>
             }
