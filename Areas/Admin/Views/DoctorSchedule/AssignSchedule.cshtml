@@ -739,6 +739,8 @@
 
 @section Scripts {
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    @* ✅ Enterprise: لود کردن JalaliDatePicker Enterprise Component *@
+    @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
     <script>
         // ✅ Helper Functions برای تبدیل ساعت به فارسی
         function formatTimeToPersian(timeString) {
@@ -965,6 +967,10 @@
                                        placeholder="مثال: 1404/10/17" 
                                        required 
                                        data-index="${specificDateIndex}" 
+                                       data-jdp
+                                       data-jdp-theme="medical"
+                                       data-jdp-size="medium"
+                                       data-no-default-date="true"
                                        autocomplete="off" />
                                 <small class="text-muted d-block mt-1">
                                     <i class="fas fa-info-circle me-1"></i>
@@ -997,37 +1003,39 @@
                 var $newItem = $(specificDateHtml);
                 container.append($newItem);
                 
-                // ✅ Initialize Persian DatePicker for the new input
+                // ✅ Enterprise: Initialize JalaliDatePickerEnterprise for the new input
                 setTimeout(function() {
-                    if (typeof $ !== 'undefined' && typeof $.fn.pDatepicker !== 'undefined') {
+                    if (typeof JalaliDatePickerEnterprise !== 'undefined' && typeof jalaliDatepicker !== 'undefined') {
                         $newItem.find('.persian-date-input').each(function() {
-                            var $input = $(this);
-                            $input.pDatepicker({
-                                initialValue: false,
-                                calendarType: 'persian',
-                                format: 'YYYY/MM/DD',
-                                altField: $input,
-                                altFormat: 'YYYY/MM/DD',
-                                observer: true,
-                                calendar: {
-                                    persian: {
-                                        locale: 'fa',
-                                        showHint: true
-                                    }
-                                }
+                            var input = this;
+                            // ✅ استفاده از Enterprise Component
+                            JalaliDatePickerEnterprise.init(input, {
+                                theme: 'medical',
+                                size: 'medium',
+                                noDefaultDate: true
                             });
                         });
                     } else {
-                        console.warn('Persian DatePicker not loaded yet. Retrying...');
-                        setTimeout(function() {
-                            if (typeof $.fn.pDatepicker !== 'undefined') {
-                                $newItem.find('.persian-date-input').pDatepicker({
-                                    initialValue: false,
-                                    calendarType: 'persian',
-                                    format: 'YYYY/MM/DD'
+                        console.warn('⚠️ JalaliDatePickerEnterprise not loaded yet. Retrying...');
+                        var retryCount = 0;
+                        var maxRetries = 10;
+                        var retryInterval = setInterval(function() {
+                            retryCount++;
+                            if (typeof JalaliDatePickerEnterprise !== 'undefined' && typeof jalaliDatepicker !== 'undefined') {
+                                clearInterval(retryInterval);
+                                $newItem.find('.persian-date-input').each(function() {
+                                    var input = this;
+                                    JalaliDatePickerEnterprise.init(input, {
+                                        theme: 'medical',
+                                        size: 'medium',
+                                        noDefaultDate: true
+                                    });
                                 });
+                            } else if (retryCount >= maxRetries) {
+                                clearInterval(retryInterval);
+                                console.error('❌ JalaliDatePickerEnterprise failed to load after ' + maxRetries + ' retries');
                             }
-                        }, 1000);
+                        }, 200);
                     }
                 }, 100);
                 

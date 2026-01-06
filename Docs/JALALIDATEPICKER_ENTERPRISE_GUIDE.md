@@ -1,5 +1,7 @@
 # 📘 JalaliDatePicker Enterprise Component - راهنمای کامل
 
+> **💡 نکته:** برای به‌روزرسانی ماژول‌های قدیمی، به [راهنمای به‌روزرسانی](./JALALIDATEPICKER_MIGRATION_GUIDE.md) مراجعه کنید.
+
 **تاریخ:** 1404/10/15  
 **نسخه:** 2.0.0  
 **وضعیت:** ✅ Production-Ready

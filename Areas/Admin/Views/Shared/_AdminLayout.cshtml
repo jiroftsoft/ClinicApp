@@ -332,44 +332,55 @@
     <!-- Medical Debug Utilities -->
     <script src="~/Content/js/medical-debug.js" defer></script>
 
-    <!-- Persian DatePicker Integration -->
+    <!-- ✅ JalaliDatePicker Enterprise (Production-Ready) -->
+    <!-- طبق قراردادها - Docs/DEVELOPMENT_CONTRACT.md -->
+    <link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
+    <!-- ✅ CRITICAL: jalaali.js باید قبل از jalalidatepicker.min.js لود شود -->
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.js"></script>
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+    <script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
+    
+    <!-- ✅ Enterprise: Re-initialize for dynamic content -->
     <script>
-        // محافظت jQuery و Persian DatePicker
         (function () {
             'use strict';
-
-            function ensureJQuery(callback) {
-                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
-                    callback();
-                } else {
-                    setTimeout(function () {
-                        ensureJQuery(callback);
-                    }, 50);
+            
+            // ✅ Re-initialize for dynamic content (AJAX loaded content)
+            function reinitializeDatePickers() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.initializeAll();
                 }
             }
-
-            function initializePersianDatePicker() {
-                ensureJQuery(function () {
-                    // Persian DatePicker is now handled by the standard initializer
-                    // No manual initialization needed in layout
-                    console.log('✅ Persian DatePicker will be initialized by standard initializer');
+            
+            // ✅ Listen for dynamically added inputs
+            if (typeof MutationObserver !== 'undefined') {
+                var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) { // Element node
+                                var $node = typeof jQuery !== 'undefined' ? $(node) : null;
+                                if ($node && ($node.is('input[data-jdp]') || $node.find('input[data-jdp]').length > 0)) {
+                                    setTimeout(reinitializeDatePickers, 100);
+                                }
+                            }
+                        });
+                    });
+                });
+                
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            } else if (typeof jQuery !== 'undefined') {
+                // ✅ Fallback for older browsers
+                $(document).on('DOMNodeInserted', function (e) {
+                    var $target = $(e.target);
+                    if ($target.is('input[data-jdp]') || $target.find('input[data-jdp]').length > 0) {
+                        setTimeout(reinitializeDatePickers, 100);
+                    }
                 });
             }
-
-            // Initialize when DOM is ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializePersianDatePicker);
-            } else {
-                initializePersianDatePicker();
-            }
-
-            // Re-initialize for dynamic content
-            $(document).on('DOMNodeInserted', function (e) {
-                if ($(e.target).hasClass('persian-date') ||
-                    $(e.target).find('.persian-date').length > 0) {
-                    setTimeout(initializePersianDatePicker, 100);
-                }
-            });
         })();
     </script>
 
