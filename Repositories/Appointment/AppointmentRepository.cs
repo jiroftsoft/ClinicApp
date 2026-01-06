@@ -270,6 +270,19 @@ namespace ClinicApp.Repositories.Appointment
                 var appointmentDateTime = appointmentDate.Date.Add(startTime);
                 var appointmentEndDateTime = appointmentDate.Date.Add(endTime);
 
+                // ✅ CRITICAL FIX: منطق Overlap صحیح (فرمول استاندارد)
+                // دو بازه زمانی A و B overlap دارند اگر و فقط اگر:
+                // (A.Start < B.End) AND (A.End > B.Start)
+                // 
+                // در اینجا:
+                // - A = نوبت قبلی (AppointmentDate تا AppointmentDate + Duration)
+                // - B = نوبت جدید (@p3 تا @p4)
+                // 
+                // ⚠️ NOTE: استفاده از < و > (نه <= و >=) برای جلوگیری از overlap نوبت‌های مجاور
+                // مثال: نوبت 10:00-10:15 و 10:15-10:30 overlap ندارند
+                // 
+                // ✅ CRITICAL: فقط نوبت‌های فعال (Scheduled, Pending) را در نظر بگیریم
+                // نوبت‌های Completed, NoShow, Cancelled نباید در double booking check لحاظ شوند
                 // ✅ CRITICAL: استفاده از Raw SQL با UPDLOCK برای pessimistic locking
                 // این باعث می‌شود که ردیف‌های مربوطه lock شوند تا Race Condition رخ ندهد
                 var sql = @"
@@ -277,26 +290,62 @@ namespace ClinicApp.Repositories.Appointment
                     FROM Appointments WITH (UPDLOCK, ROWLOCK)
                     WHERE PatientId = @p0
                       AND IsDeleted = 0
-                      AND Status != @p1
-                      AND CAST(AppointmentDate AS DATE) = CAST(@p2 AS DATE)
-                      AND (
-                          (AppointmentDate >= @p3 AND AppointmentDate < @p4) OR
-                          (DATEADD(MINUTE, Duration, AppointmentDate) > @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) <= @p4) OR
-                          (AppointmentDate <= @p3 AND DATEADD(MINUTE, Duration, AppointmentDate) >= @p4)
-                      )";
+                      AND Status IN (@p1, @p2)  -- فقط Scheduled و Pending
+                      AND CAST(AppointmentDate AS DATE) = CAST(@p3 AS DATE)
+                      AND AppointmentDate < @p5
+                      AND DATEADD(MINUTE, Duration, AppointmentDate) > @p4";
 
                 var count = await _context.Database.SqlQuery<int>(sql,
                     new System.Data.SqlClient.SqlParameter("@p0", patientId),
-                    new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Cancelled),
-                    new System.Data.SqlClient.SqlParameter("@p2", appointmentDate.Date),
-                    new System.Data.SqlClient.SqlParameter("@p3", appointmentDateTime),
-                    new System.Data.SqlClient.SqlParameter("@p4", appointmentEndDateTime)
+                    new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Scheduled),
+                    new System.Data.SqlClient.SqlParameter("@p2", (int)AppointmentStatus.Pending),
+                    new System.Data.SqlClient.SqlParameter("@p3", appointmentDate.Date),
+                    new System.Data.SqlClient.SqlParameter("@p4", appointmentDateTime),
+                    new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime)
                 ).FirstOrDefaultAsync();
 
                 var hasOverlap = count > 0;
 
-                _logger.Information("بررسی تداخل نوبت‌های بیمار - PatientId: {PatientId}, تاریخ: {Date}, زمان: {StartTime}-{EndTime}, تداخل: {HasOverlap}",
-                    patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, hasOverlap);
+                // ✅ CRITICAL FIX: Logging دقیق‌تر برای debugging
+                if (hasOverlap)
+                {
+                    // دریافت نوبت‌های overlap برای logging
+                    var overlappingAppointments = await _context.Database.SqlQuery<dynamic>(@"
+                        SELECT AppointmentId, DoctorId, AppointmentDate, Duration, Status
+                        FROM Appointments
+                        WHERE PatientId = @p0
+                          AND IsDeleted = 0
+                          AND Status IN (@p1, @p2)  -- فقط Scheduled و Pending
+                          AND CAST(AppointmentDate AS DATE) = CAST(@p3 AS DATE)
+                          AND AppointmentDate < @p5
+                          AND DATEADD(MINUTE, Duration, AppointmentDate) > @p4",
+                        new System.Data.SqlClient.SqlParameter("@p0", patientId),
+                        new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Scheduled),
+                        new System.Data.SqlClient.SqlParameter("@p2", (int)AppointmentStatus.Pending),
+                        new System.Data.SqlClient.SqlParameter("@p3", appointmentDate.Date),
+                        new System.Data.SqlClient.SqlParameter("@p4", appointmentDateTime),
+                        new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime)
+                    ).ToListAsync();
+
+                    // ✅ CRITICAL FIX: Logging با جزئیات کامل برای debugging
+                    var overlapDetails = overlappingAppointments.Select(a => 
+                    {
+                        var existingStart = ((DateTime)a.AppointmentDate);
+                        var existingEnd = existingStart.AddMinutes((int)a.Duration);
+                        return $"AppointmentId={a.AppointmentId}, DoctorId={a.DoctorId}, ExistingTime={existingStart:HH:mm}-{existingEnd:HH:mm}, Duration={a.Duration}min, Status={a.Status}";
+                    }).ToList();
+
+                    _logger.Warning("⚠️ DOUBLE BOOKING DETECTED: بیمار {PatientId} در تاریخ {Date} زمان {StartTime}-{EndTime} با {Count} نوبت overlap دارد. نوبت جدید: {NewStartTime}-{NewEndTime}. نوبت‌های overlap: {OverlappingAppointments}",
+                        patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime, count,
+                        $"{appointmentDateTime:HH:mm}-{appointmentEndDateTime:HH:mm}",
+                        string.Join(" | ", overlapDetails));
+                }
+                else
+                {
+                    _logger.Debug("✅ NO OVERLAP: بیمار {PatientId} در تاریخ {Date} زمان {StartTime}-{EndTime} (NewTime: {NewStartTime}-{NewEndTime}) هیچ overlap ندارد",
+                        patientId, appointmentDate.ToString("yyyy/MM/dd"), startTime, endTime,
+                        $"{appointmentDateTime:HH:mm}-{appointmentEndDateTime:HH:mm}");
+                }
 
                 return hasOverlap;
             }

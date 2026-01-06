@@ -68,7 +68,7 @@
 
 <!-- فرم پرداخت -->
 <div class="payment-form medical-form">
-    <form id="bookingForm" method="post" action="@Url.Action("Reserve", "AppointmentBooking")">
+    <form id="bookingForm" method="post" action="@Url.Action("Reserve", "AppointmentBooking", new { area = "Patient" })">
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.DoctorId)
         @Html.HiddenFor(m => m.AppointmentDate)
@@ -77,6 +77,8 @@
         @Html.HiddenFor(m => m.Price)
         @Html.HiddenFor(m => m.ServiceCategoryId)
         @Html.HiddenFor(m => m.Description)
+        <!-- ✅ CRITICAL FIX: Idempotency Key for duplicate request prevention -->
+        <input type="hidden" name="idempotencyKey" id="idempotencyKey" value="@Guid.NewGuid().ToString()" />
 
         <fieldset class="medical-form-section">
             <legend>روش پرداخت</legend>
@@ -117,6 +119,12 @@
 </div>
 
 @section Scripts {
+    <script>
+        // ✅ CRITICAL FIX: Pass Reserve URL to JavaScript (instead of hardcoded)
+        window.appConfig = window.appConfig || {};
+        window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
+        window.appConfig.appointmentBooking.reserveUrl = '@Url.Action("Reserve", "AppointmentBooking", new { area = "Patient" })';
+    </script>
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/confirm-booking.js"></script>
     <script src="~/Scripts/patient/appointment-payment.js"></script>

@@ -625,12 +625,26 @@ namespace ClinicApp.Services.Appointment
                     {
                         transaction.Rollback();
                         var errorMessage = string.Join("، ", validationResult.Errors);
+                        
+                        // ✅ CRITICAL FIX: Separate warnings from errors
+                        // Warnings should not be included in error message
                         if (validationResult.Warnings.Any())
                         {
-                            errorMessage += " | هشدارها: " + string.Join("، ", validationResult.Warnings);
+                            _logger.Warning("اعتبارسنجی ناموفق - خطاها: {Errors}, هشدارها: {Warnings}", 
+                                errorMessage, string.Join("، ", validationResult.Warnings));
                         }
-                        _logger.Warning("اعتبارسنجی ناموفق - خطاها: {Errors}", errorMessage);
-                        return ServiceResult<AppointmentEntity>.Failed(errorMessage);
+                        else
+                        {
+                            _logger.Warning("اعتبارسنجی ناموفق - خطاها: {Errors}", errorMessage);
+                        }
+                        
+                        // ✅ Return errors and warnings separately using ServiceResult WithWarning
+                        var result = ServiceResult<AppointmentEntity>.Failed(errorMessage);
+                        foreach (var warning in validationResult.Warnings)
+                        {
+                            result.WithWarning("Validation", warning);
+                        }
+                        return result;
                     }
 
                     // نمایش هشدارها در لاگ

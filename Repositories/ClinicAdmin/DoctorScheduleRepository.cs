@@ -108,10 +108,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ CRITICAL FIX: Include WorkDays برای بررسی DayOfWeek
                 // ✅ استفاده از AsNoTracking() برای جلوگیری از lazy loading Navigation Properties
                 // ✅ این کار از خطای SQL "Invalid column name 'Doctor_DoctorId'" جلوگیری می‌کند
                 return await _context.DoctorSchedules
                     .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
+                    .Include(ds => ds.WorkDays) // ✅ CRITICAL FIX: Include WorkDays برای DayOfWeek validation
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges)) // ✅ Include TimeRanges برای validation
                     .AsNoTracking() // ✅ جلوگیری از lazy loading
                     .FirstOrDefaultAsync();
             }

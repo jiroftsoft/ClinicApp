@@ -213,16 +213,42 @@ namespace ClinicApp.Services.Appointment
                     return ValidationResult.Failed(errors);
                 }
 
-                // بررسی روز کاری
+                // ✅ CRITICAL FIX: بررسی روز کاری
+                // ⚠️ IMPORTANT: .NET DayOfWeek enum: Sunday=0, Monday=1, ..., Saturday=6
+                // ⚠️ IMPORTANT: Database DayOfWeek: یکشنبه=0, دوشنبه=1, ..., شنبه=6
+                // ⚠️ IMPORTANT: Mapping: .NET Sunday (0) → یکشنبه (0), .NET Monday (1) → دوشنبه (1), etc.
+                // ✅ در واقع mapping مستقیم است چون هر دو از 0 شروع می‌شوند و یکشنبه = Sunday
                 var dayOfWeek = (int)appointmentDate.DayOfWeek;
+                
+                _logger.Debug("🔍 بررسی روز کاری - DoctorId: {DoctorId}, AppointmentDate: {Date}, .NET DayOfWeek: {DotNetDayOfWeek}, Database DayOfWeek: {DbDayOfWeek}",
+                    doctorId, appointmentDate.ToString("yyyy/MM/dd"), appointmentDate.DayOfWeek, dayOfWeek);
+                
                 var workDay = schedule.WorkDays?.FirstOrDefault(w => 
                     w.DayOfWeek == dayOfWeek && w.IsActive && !w.IsDeleted);
 
                 if (workDay == null)
                 {
+                    // ✅ CRITICAL FIX: Log تمام WorkDays برای debugging DayOfWeek mapping
+                    var allWorkDays = schedule.WorkDays?.Select(w => new
+                    {
+                        DayOfWeek = w.DayOfWeek,
+                        DayName = GetPersianDayName(w.DayOfWeek),
+                        IsActive = w.IsActive,
+                        IsDeleted = w.IsDeleted
+                    }).ToList();
+                    
+                    var workDaysInfo = allWorkDays != null && allWorkDays.Any()
+                        ? string.Join(", ", allWorkDays.Select(w => $"{w.DayName} (DayOfWeek={w.DayOfWeek}, Active={w.IsActive}, Deleted={w.IsDeleted})"))
+                        : "null";
+                    
+                    _logger.Warning("⚠️ پزشک {DoctorId} در {DayName} (DayOfWeek: {DayOfWeek}) برنامه کاری ندارد. WorkDays موجود: {WorkDays}",
+                        doctorId, GetPersianDayName(dayOfWeek), dayOfWeek, workDaysInfo);
                     errors.Add($"پزشک در {GetPersianDayName(dayOfWeek)} برنامه کاری ندارد");
                     return ValidationResult.Failed(errors);
                 }
+                
+                _logger.Debug("✅ روز کاری یافت شد - DoctorId: {DoctorId}, DayOfWeek: {DayOfWeek}, WorkDayId: {WorkDayId}",
+                    doctorId, dayOfWeek, workDay.WorkDayId);
 
                 // بررسی استثناها (تعطیلات، مرخصی)
                 var exception = schedule.Exceptions?.FirstOrDefault(e =>
