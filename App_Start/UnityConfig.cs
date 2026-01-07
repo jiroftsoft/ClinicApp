@@ -691,7 +691,16 @@ namespace ClinicApp
                     new InjectionConstructor(new ResolvedParameter<Serilog.ILogger>())
                 );
                 
-                // ✅ ثبت WebPaymentService (یکپارچه‌سازی با ZarinPal Driver)
+                // ✅ ثبت Gateway Driver Factory (Factory Pattern)
+                container.RegisterType<Interfaces.Payment.Gateway.Drivers.IGatewayDriverFactory, Services.Payment.Gateway.Drivers.GatewayDriverFactory>(
+                    new PerRequestLifetimeManager(),
+                    new InjectionConstructor(
+                        new ResolvedParameter<Interfaces.Payment.Gateway.Drivers.IGatewayDriver>(), // ZarinPal Driver
+                        new ResolvedParameter<Serilog.ILogger>()
+                    )
+                );
+                
+                // ✅ ثبت WebPaymentService (یکپارچه‌سازی با Gateway Driver Factory)
                 container.RegisterType<Interfaces.Payment.Web.IWebPaymentService, Services.Payment.Web.WebPaymentService>(
                     new PerRequestLifetimeManager(),
                     new InjectionConstructor(
@@ -699,7 +708,7 @@ namespace ClinicApp
                         new ResolvedParameter<Interfaces.Payment.IOnlinePaymentRepository>(),
                         new ResolvedParameter<Interfaces.Payment.IPaymentTransactionRepository>(),
                         new ResolvedParameter<Interfaces.Payment.IPaymentService>(),
-                        new ResolvedParameter<Interfaces.Payment.Gateway.Drivers.IGatewayDriver>(), // ✅ ZarinPal Driver
+                        new ResolvedParameter<Interfaces.Payment.Gateway.Drivers.IGatewayDriverFactory>(), // ✅ Gateway Driver Factory
                         new ResolvedParameter<Serilog.ILogger>()
                     )
                 );

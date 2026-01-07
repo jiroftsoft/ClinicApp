@@ -22,5 +22,7 @@ public enum PaymentGatewayType
     [Display(Name = "سامان")]
     Saman = 7,
     [Display(Name = "سپهر")]
-    Sepah = 8
+    Sepah = 8,
+    [Display(Name = "شبیه‌سازی (تست)")]
+    Simulated = 99
 }

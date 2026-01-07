@@ -1,178 +1,121 @@
-# 📁 Scripts - ClinicApp Database Scripts
+# 🔧 اسکریپت‌های کمکی برای Debug پرداخت
 
-این پوشه شامل اسکریپت‌های SQL برای مدیریت دیتابیس `ClinicDb` است.
-
----
-
-## 📋 **فهرست اسکریپت‌ها:**
-
-### **🔗 خدمات مشترک (SharedServices):**
-
-| اسکریپت | نوع | توضیحات | امنیت |
-|---------|-----|---------|-------|
-| `VIEW_SHARED_SERVICES_TO_DELETE.sql` | 👁️ مشاهده | نمایش خدمات مشترک که قرار است حذف شوند | ✅ 100% |
-| `DELETE_SHARED_SERVICES_SAFE.sql` | 🗑️ حذف | حذف نرم خدمات مشترک (به جز اورژانس و تزریقات) | ⚠️ قابل برگشت |
-| `RESTORE_SHARED_SERVICES.sql` | 🔄 بازگردانی | بازگردانی خدمات مشترک حذف شده | ✅ 100% |
-| `SHARED_SERVICES_DELETE_GUIDE.md` | 📘 راهنما | راهنمای جامع اجرا | - |
-| `QUICK_START.md` | ⚡ راهنمای سریع | دستورات سریع | - |
+این فولدر شامل اسکریپت‌های PowerShell برای Debug و بررسی خطاهای پرداخت است.
 
 ---
 
-### **💳 بیمه (Insurance):**
+## 📋 فایل‌های موجود
 
-| اسکریپت | نوع | توضیحات |
-|---------|-----|---------|
-| `TestPrimaryInsurancePlans.sql` | 🧪 تست | بررسی وضعیت بیمه‌های پایه |
-| `FixInsuranceTypeData.sql` | 🔧 تصحیح | تصحیح نوع بیمه‌ها |
-| `CheckInsuranceTypeStatus.sql` | 📊 گزارش | بررسی وضعیت کلی بیمه‌ها |
+### 1. `FindPaymentError.ps1`
+**هدف:** پیدا کردن خطای دقیق از لاگ‌ها با استفاده از CorrelationId
+
+**استفاده:**
+```powershell
+.\Scripts\FindPaymentError.ps1 -CorrelationId "92c168d6-7a73-4f2e-bf84-1f0fc9e39822"
+```
+
+**خروجی:**
+- نمایش تمام لاگ‌های مرتبط با CorrelationId
+- Context (قبل و بعد) برای هر لاگ
+- مسیر فایل لاگ
 
 ---
 
-## 🚀 **راهنمای سریع:**
+### 2. `CheckPaymentConfig.ps1`
+**هدف:** بررسی تنظیمات پرداخت در Web.config
 
-### **حذف خدمات مشترک:**
+**استفاده:**
+```powershell
+.\Scripts\CheckPaymentConfig.ps1
+```
 
-```bash
-# 1. Backup
-sqlcmd -S . -d ClinicDb -E -Q "BACKUP DATABASE [ClinicDb] TO DISK = N'C:\Backup\ClinicDb_Backup.bak' WITH FORMAT, INIT"
+**خروجی:**
+- بررسی `Payment:BaseUrl`
+- بررسی `ZarinpalMerchantId`
+- بررسی `Zarinpal:IsSandbox`
+- بررسی فایل‌های لاگ
 
-# 2. مشاهده
-cd C:\Users\Developer\source\repos\ClinicApp\Scripts
-sqlcmd -S . -d ClinicDb -E -i "VIEW_SHARED_SERVICES_TO_DELETE.sql"
+---
 
-# 3. حذف (با ویرایش RETURN و UserId)
-sqlcmd -S . -d ClinicDb -E -i "DELETE_SHARED_SERVICES_SAFE.sql"
+## 🚀 نحوه استفاده
 
-# 4. بازگردانی (در صورت نیاز)
-sqlcmd -S . -d ClinicDb -E -i "RESTORE_SHARED_SERVICES.sql"
+### در PowerShell (از مسیر ریشه پروژه):
+
+```powershell
+# 1. بررسی تنظیمات
+.\Scripts\CheckPaymentConfig.ps1
+
+# 2. پیدا کردن خطا با CorrelationId
+.\Scripts\FindPaymentError.ps1 -CorrelationId "YOUR_CORRELATION_ID"
+```
+
+### در Visual Studio (Package Manager Console):
+
+```powershell
+# 1. بررسی تنظیمات
+.\Scripts\CheckPaymentConfig.ps1
+
+# 2. پیدا کردن خطا
+.\Scripts\FindPaymentError.ps1 -CorrelationId "YOUR_CORRELATION_ID"
 ```
 
 ---
 
-## 📘 **راهنماهای دقیق:**
+## 📊 مثال خروجی
 
-- **حذف خدمات مشترک:** `SHARED_SERVICES_DELETE_GUIDE.md` (راهنمای کامل 400+ خط)
-- **دستورات سریع:** `QUICK_START.md` (راهنمای خلاصه)
-- **اتصال دیتابیس:** `../Docs/Database-Connection-Guide.md`
+### FindPaymentError.ps1:
+```
+🔍 جستجوی خطای پرداخت با CorrelationId: 92c168d6-7a73-4f2e-bf84-1f0fc9e39822
+📁 مسیر لاگ: App_Data\Logs
+✅ تعداد فایل‌های لاگ: 5
 
----
+✅ خطا در فایل: clinicapp-20260106.log
+📄 مسیر کامل: C:\...\App_Data\Logs\clinicapp-20260106.log
 
-## ⚠️ **هشدارهای مهم:**
-
-### **قبل از اجرای هر اسکریپت:**
-1. ✅ **Backup کامل** دیتابیس بگیرید
-2. ✅ اسکریپت **مشاهده** را اجرا کنید
-3. ✅ گزارش را **دقیق بررسی** کنید
-4. ✅ **تست** در محیط Development
-5. ✅ در ساعات **خلوت** اجرا کنید
-
-### **اسکریپت‌های خطرناک:**
-- ⚠️ `DELETE_SHARED_SERVICES_SAFE.sql` - حذف دائمی داده‌ها (با Soft Delete)
-- ⚠️ `FixInsuranceTypeData.sql` - تغییر داده‌های بیمه
-
-### **اسکریپت‌های امن:**
-- ✅ `VIEW_*.sql` - فقط مشاهده
-- ✅ `Check*.sql` - فقط گزارش
-- ✅ `Test*.sql` - فقط تست
-
----
-
-## 🔧 **دستورات مفید:**
-
-### **اتصال به دیتابیس:**
-```bash
-# Windows Authentication
-sqlcmd -S . -d ClinicDb -E
-
-# با Username/Password
-sqlcmd -S . -d ClinicDb -U username -P password
+📋 لاگ‌های مرتبط:
+🔗 PAYMENT REQUEST: CallbackUrl تنظیم شد - https://mehranyad.ir/...
+❌ ZarinPal: خطای API - ErrorCode: -9, ErrorMessage: The callback URL domain...
 ```
 
-### **اجرای اسکریپت:**
-```bash
-# از فایل
-sqlcmd -S . -d ClinicDb -E -i "script.sql"
-
-# Query مستقیم
-sqlcmd -S . -d ClinicDb -E -Q "SELECT * FROM SharedServices"
+### CheckPaymentConfig.ps1:
 ```
+🔍 بررسی تنظیمات پرداخت
 
-### **Backup سریع:**
-```bash
-sqlcmd -S . -d ClinicDb -E -Q "BACKUP DATABASE [ClinicDb] TO DISK = N'C:\Backup\ClinicDb_$(date +%Y%m%d_%H%M%S).bak' WITH FORMAT, INIT"
+✅ Web.config یافت شد
+✅ Payment:BaseUrl تنظیم شده است:
+   مقدار: https://mehranyad.ir
+✅ ZarinpalMerchantId تنظیم شده است:
+   مقدار: 156be6cd...
+✅ Zarinpal:IsSandbox تنظیم شده است:
+   مقدار: false
 ```
 
 ---
 
-## 📊 **آمار و گزارش:**
+## ⚠️ نکات مهم
 
-### **تعداد رکوردهای جداول اصلی:**
-```sql
-SELECT 'SharedServices' as TableName, COUNT(*) as Count FROM SharedServices WHERE IsDeleted = 0
-UNION ALL
-SELECT 'Services', COUNT(*) FROM Services WHERE IsDeleted = 0
-UNION ALL
-SELECT 'Departments', COUNT(*) FROM Departments WHERE IsDeleted = 0
-UNION ALL
-SELECT 'InsurancePlans', COUNT(*) FROM InsurancePlans WHERE IsDeleted = 0;
-```
+1. **اجرای اسکریپت‌ها:**
+   - اگر خطای "execution policy" می‌گیرید، از دستور زیر استفاده کنید:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
 
----
+2. **مسیر لاگ‌ها:**
+   - لاگ‌ها در `App_Data\Logs\` ذخیره می‌شوند
+   - فرمت: `clinicapp-{date}.log`
 
-## 📞 **پشتیبانی:**
-
-### **مشکلات رایج:**
-
-1. **خطای اتصال:**
-   - بررسی SQL Server Service
-   - بررسی Connection String
-   - بررسی User Permissions
-
-2. **خطای Transaction:**
-   - بررسی Transaction باز
-   - اجرای `ROLLBACK TRANSACTION;`
-
-3. **خطای Timeout:**
-   - افزایش Command Timeout
-   - بررسی Performance
+3. **CorrelationId:**
+   - CorrelationId در پاسخ JSON به Frontend برگردانده می‌شود
+   - از Console Browser می‌توانید آن را پیدا کنید
 
 ---
 
-## 🔒 **امنیت:**
+## 🔗 مراجع
 
-### **Best Practices:**
-- ✅ همیشه Backup بگیرید
-- ✅ در محیط Test اجرا کنید
-- ✅ گزارش را بررسی کنید
-- ✅ از Transaction استفاده کنید
-- ✅ Log کامل نگه دارید
-
-### **دسترسی‌های مورد نیاز:**
-- `SELECT` - مشاهده داده‌ها
-- `UPDATE` - ویرایش داده‌ها
-- `INSERT` - درج داده‌ها
-- `DELETE` - حذف داده‌ها (برای Hard Delete)
-- `CREATE TABLE` - ایجاد جداول موقت
+- `Docs/PAYMENT_DEBUG_QUICK_FIX.md` - راهنمای سریع
+- `Docs/PAYMENT_ERROR_DIAGNOSIS_STEPS.md` - راهنمای کامل Debug
+- `Docs/PAYMENT_DEBUG_GUIDE.md` - راهنمای جامع
 
 ---
 
-## 📝 **تاریخچه:**
-
-| تاریخ | نسخه | تغییرات |
-|-------|------|---------|
-| 1404/10/05 | 1.0.0 | ایجاد اسکریپت‌های SharedServices |
-| - | - | - |
-
----
-
-## 📚 **منابع مفید:**
-
-- [SQL Server Documentation](https://docs.microsoft.com/en-us/sql/sql-server/)
-- [Backup & Restore Best Practices](https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/)
-- [Transaction Management](https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transactions-transact-sql)
-
----
-
-**📁 Scripts Directory - ClinicApp Database Management**
-
-**🔧 استفاده با احتیاط | 📋 مستندسازی کامل | ✅ Production Ready**
+**نکته:** این اسکریپت‌ها برای Windows PowerShell طراحی شده‌اند. برای PowerShell Core (pwsh) ممکن است نیاز به تغییرات جزئی باشد.

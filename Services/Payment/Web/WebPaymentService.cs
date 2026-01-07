@@ -40,7 +40,7 @@ namespace ClinicApp.Services.Payment.Web
         private readonly IOnlinePaymentRepository _onlinePaymentRepository;
         private readonly IPaymentTransactionRepository _paymentTransactionRepository;
         private readonly IPaymentService _paymentService;
-        private readonly IGatewayDriver _gatewayDriver; // ✅ ZarinPal Driver
+        private readonly IGatewayDriverFactory _driverFactory; // ✅ Gateway Driver Factory
         private readonly ILogger _logger;
 
         #endregion
@@ -52,14 +52,14 @@ namespace ClinicApp.Services.Payment.Web
             IOnlinePaymentRepository onlinePaymentRepository,
             IPaymentTransactionRepository paymentTransactionRepository,
             IPaymentService paymentService,
-            IGatewayDriver gatewayDriver, // ✅ ZarinPal Driver
+            IGatewayDriverFactory driverFactory, // ✅ Gateway Driver Factory
             ILogger logger)
         {
             _paymentGatewayRepository = paymentGatewayRepository ?? throw new ArgumentNullException(nameof(paymentGatewayRepository));
             _onlinePaymentRepository = onlinePaymentRepository ?? throw new ArgumentNullException(nameof(onlinePaymentRepository));
             _paymentTransactionRepository = paymentTransactionRepository ?? throw new ArgumentNullException(nameof(paymentTransactionRepository));
             _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
-            _gatewayDriver = gatewayDriver ?? throw new ArgumentNullException(nameof(gatewayDriver));
+            _driverFactory = driverFactory ?? throw new ArgumentNullException(nameof(driverFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -72,71 +72,108 @@ namespace ClinicApp.Services.Payment.Web
         /// </summary>
         public async Task<ServiceResult<PaymentGatewayResponse>> CreatePaymentRequestAsync(CreatePaymentRequest request)
         {
+            var correlationId = request.CorrelationId ?? Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
-                _logger.Information("💰 WEB PAYMENT: شروع ایجاد درخواست پرداخت در درگاه {GatewayType} برای مبلغ {Amount}", 
-                    request.GatewayType, request.Amount);
+                _logger.Information("💰 WEB PAYMENT REQUEST: شروع ایجاد درخواست پرداخت - GatewayType: {GatewayType}, Amount: {Amount}, OnlinePaymentId: {OnlinePaymentId}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}", 
+                    request.GatewayType, request.Amount, request.OnlinePaymentId, request.CallbackUrl, correlationId);
 
                 // اعتبارسنجی درخواست
                 var validationResult = await ValidateCreatePaymentRequestAsync(request);
                 if (!validationResult.Success)
                 {
-                    _logger.Warning("⚠️ WEB PAYMENT: اعتبارسنجی درخواست پرداخت ناموفق: {Message}", validationResult.Message);
+                    _logger.Warning("⚠️ WEB PAYMENT VALIDATION: اعتبارسنجی درخواست پرداخت ناموفق - Message: {Message}, CorrelationId: {CorrelationId}", 
+                        validationResult.Message, correlationId);
                     return ServiceResult<PaymentGatewayResponse>.Failed(validationResult.Message);
                 }
-
-                // ✅ دریافت اطلاعات درگاه پرداخت با Caching (داده‌هایی که کم تغییر می‌کنند)
-                var cacheKey = $"PaymentGateways_{request.GatewayType}";
-                var cachedGateways = CacheHelper.Get<List<PaymentGateway>>(cacheKey);
                 
-                List<PaymentGateway> gateways;
-                if (cachedGateways != null)
+                _logger.Information("✅ WEB PAYMENT VALIDATION: اعتبارسنجی موفق - Amount: {Amount}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}", 
+                    request.Amount, request.CallbackUrl, correlationId);
+
+                // ✅ CRITICAL FIX: استفاده از GetDefaultPaymentGatewayAsync به جای FirstOrDefault
+                // این متد منطق کامل انتخاب Gateway را دارد (Default → ZarinPal → First Active)
+                _logger.Information("🔍 WEB PAYMENT GATEWAY SELECTION: شروع انتخاب Gateway - CorrelationId: {CorrelationId}", correlationId);
+                
+                var gatewayResult = await GetDefaultPaymentGatewayAsync();
+                if (!gatewayResult.Success || gatewayResult.Data == null)
                 {
-                    _logger.Debug("📦 CACHE HIT: دریافت درگاه‌های پرداخت از Cache - GatewayType: {GatewayType}", request.GatewayType);
-                    gateways = cachedGateways;
-                }
-                else
-                {
-                    _logger.Debug("📦 CACHE MISS: دریافت درگاه‌های پرداخت از Database - GatewayType: {GatewayType}", request.GatewayType);
-                    var gatewaysEnumerable = await _paymentGatewayRepository.GetByTypeAsync(request.GatewayType);
-                    gateways = gatewaysEnumerable?.ToList() ?? new List<PaymentGateway>(); // ✅ تبدیل IEnumerable به List
-                    if (gateways.Any())
-                    {
-                        CacheHelper.Set(cacheKey, gateways, expirationMinutes: 30); // Cache برای 30 دقیقه
-                    }
+                    _logger.Error("❌ WEB PAYMENT GATEWAY SELECTION: درگاه پرداخت پیش‌فرض یافت نشد - ErrorMessage: {ErrorMessage}, CorrelationId: {CorrelationId}", 
+                        gatewayResult.Message, correlationId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed(gatewayResult.Message ?? "درگاه پرداخت پیش‌فرض یافت نشد");
                 }
 
-                if (gateways == null || !gateways.Any())
+                var gateway = gatewayResult.Data;
+                
+                _logger.Information("✅ WEB PAYMENT GATEWAY SELECTION: Gateway انتخاب شد - GatewayId: {GatewayId}, GatewayType: {GatewayType}, Name: {Name}, IsSandbox: {IsSandbox}, IsActive: {IsActive}, CorrelationId: {CorrelationId}", 
+                    gateway.PaymentGatewayId, gateway.GatewayType, gateway.Name, gateway.IsTestMode, gateway.IsActive, correlationId);
+
+                // ✅ بررسی GatewayType Match (اگر request.GatewayType مشخص شده باشد)
+                if (request.GatewayType != PaymentGatewayType.ZarinPal && gateway.GatewayType != request.GatewayType)
                 {
-                    _logger.Warning("⚠️ WEB PAYMENT: درگاه پرداخت {GatewayType} یافت نشد", request.GatewayType);
-                    return ServiceResult<PaymentGatewayResponse>.Failed("درگاه پرداخت یافت نشد");
+                    _logger.Warning("⚠️ WEB PAYMENT: GatewayType mismatch - Request: {RequestType}, Gateway: {GatewayType}",
+                        request.GatewayType, gateway.GatewayType);
+                    // در این حالت، از Gateway یافت شده استفاده می‌کنیم (نه request.GatewayType)
+                    // چون GetDefaultPaymentGatewayAsync بهترین Gateway را انتخاب کرده است
                 }
 
-                var gateway = gateways.FirstOrDefault();
-
-                // بررسی فعال بودن درگاه
-                if (!gateway.IsActive)
+                // ✅ بررسی Driver Support
+                if (!_driverFactory.IsSupported(gateway.GatewayType))
                 {
-                    _logger.Warning("⚠️ WEB PAYMENT: درگاه پرداخت {GatewayType} غیرفعال است", request.GatewayType);
-                    return ServiceResult<PaymentGatewayResponse>.Failed("درگاه پرداخت غیرفعال است");
+                    _logger.Error("❌ WEB PAYMENT DRIVER SUPPORT: GatewayType {GatewayType} پشتیبانی نمی‌شود - CorrelationId: {CorrelationId}", 
+                        gateway.GatewayType, correlationId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed($"درگاه پرداخت {gateway.GatewayType} پشتیبانی نمی‌شود");
                 }
+                
+                _logger.Information("✅ WEB PAYMENT DRIVER SUPPORT: Driver برای GatewayType {GatewayType} پشتیبانی می‌شود - CorrelationId: {CorrelationId}", 
+                    gateway.GatewayType, correlationId);
 
                 // ✅ ایجاد درخواست پرداخت در درگاه با استفاده از Driver
+                _logger.Information("🔧 WEB PAYMENT DRIVER CALL: فراخوانی CreateGatewayPaymentRequestAsync - GatewayId: {GatewayId}, GatewayType: {GatewayType}, Amount: {Amount}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}",
+                    gateway.PaymentGatewayId, gateway.GatewayType, request.Amount, request.CallbackUrl, correlationId);
+                
                 var gatewayResponse = await CreateGatewayPaymentRequestAsync(gateway, request);
+                
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Information("📥 WEB PAYMENT DRIVER RESPONSE: پاسخ CreateGatewayPaymentRequestAsync - Success: {Success}, HasData: {HasData}, Message: {Message}, Code: {Code}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                    gatewayResponse.Success, gatewayResponse.Data != null, gatewayResponse.Message, gatewayResponse.Code, processingTime, correlationId);
+                
                 if (!gatewayResponse.Success)
                 {
-                    _logger.Error("❌ WEB PAYMENT: خطا در ایجاد درخواست پرداخت در درگاه: {Message}", gatewayResponse.Message);
-                    return ServiceResult<PaymentGatewayResponse>.Failed("خطا در ایجاد درخواست پرداخت در درگاه");
+                    _logger.Error("❌ WEB PAYMENT DRIVER ERROR: خطا در ایجاد درخواست پرداخت در درگاه - Success: {Success}, Message: {Message}, Code: {Code}, HasData: {HasData}, DataErrorCode: {DataErrorCode}, DataErrorMessage: {DataErrorMessage}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                        gatewayResponse.Success, gatewayResponse.Message, gatewayResponse.Code, gatewayResponse.Data != null, 
+                        gatewayResponse.Data?.ErrorCode, gatewayResponse.Data?.ErrorMessage, processingTime, correlationId);
+                    
+                    // ✅ CRITICAL FIX: برگرداندن پیام خطای دقیق‌تر از Driver
+                    var errorMessage = gatewayResponse.Data?.ErrorMessage ?? gatewayResponse.Message ?? "خطا در ایجاد درخواست پرداخت در درگاه";
+                    return ServiceResult<PaymentGatewayResponse>.Failed(errorMessage, gatewayResponse.Data?.ErrorCode ?? gatewayResponse.Code);
                 }
 
-                _logger.Information("✅ WEB PAYMENT: درخواست پرداخت با موفقیت در درگاه ایجاد شد. Authority: {Authority}, PaymentUrl: {PaymentUrl}", 
-                    gatewayResponse.Data.GatewayTransactionId, gatewayResponse.Data.PaymentUrl);
+                _logger.Information("✅ WEB PAYMENT SUCCESS: درخواست پرداخت با موفقیت در درگاه ایجاد شد - Authority: {Authority}, PaymentUrl: {PaymentUrl}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                    gatewayResponse.Data.GatewayTransactionId, gatewayResponse.Data.PaymentUrl, processingTime, correlationId);
                 return ServiceResult<PaymentGatewayResponse>.Successful(gatewayResponse.Data, "درخواست پرداخت با موفقیت ایجاد شد");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ WEB PAYMENT: خطا در ایجاد درخواست پرداخت در درگاه {GatewayType}", request.GatewayType);
-                return ServiceResult<PaymentGatewayResponse>.Failed("خطا در ایجاد درخواست پرداخت در درگاه");
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ WEB PAYMENT EXCEPTION: خطای غیرمنتظره در CreatePaymentRequestAsync - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}, GatewayType: {GatewayType}, Amount: {Amount}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                    ex.GetType().Name, ex.Message, ex.StackTrace, request.GatewayType, request.Amount, processingTime, correlationId);
+                
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ WEB PAYMENT EXCEPTION INNER: InnerException - Type: {Type}, Message: {Message}, StackTrace: {StackTrace}, CorrelationId: {CorrelationId}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message, ex.InnerException.StackTrace, correlationId);
+                }
+                
+                // ✅ CRITICAL FIX: برگرداندن پیام خطای دقیق‌تر
+                var errorMessage = $"خطا در ایجاد درخواست پرداخت در درگاه: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" (InnerException: {ex.InnerException.Message})";
+                }
+                
+                return ServiceResult<PaymentGatewayResponse>.Failed(errorMessage, "PAYMENT_REQUEST_EXCEPTION");
             }
         }
 
@@ -158,15 +195,38 @@ namespace ClinicApp.Services.Payment.Web
                     return ServiceResult<PaymentCallbackResult>.Failed(validationResult.Message);
                 }
 
-                // دریافت اطلاعات درگاه پرداخت
-                var gateways = await _paymentGatewayRepository.GetByTypeAsync(gatewayType);
-                if (gateways == null || !gateways.Any())
+                // ✅ CRITICAL FIX: استفاده از GetDefaultPaymentGatewayAsync برای انتخاب Gateway
+                // یا جستجوی Gateway بر اساس نوع
+                PaymentGateway gateway;
+                if (gatewayType == PaymentGatewayType.ZarinPal)
                 {
-                    _logger.Warning("⚠️ WEB PAYMENT: درگاه پرداخت {GatewayType} یافت نشد", gatewayType);
-                    return ServiceResult<PaymentCallbackResult>.Failed("درگاه پرداخت یافت نشد");
+                    var gatewayResult = await GetDefaultPaymentGatewayAsync();
+                    if (!gatewayResult.Success || gatewayResult.Data == null)
+                    {
+                        _logger.Warning("⚠️ WEB PAYMENT: درگاه پرداخت پیش‌فرض یافت نشد - {ErrorMessage}", gatewayResult.Message);
+                        return ServiceResult<PaymentCallbackResult>.Failed(gatewayResult.Message ?? "درگاه پرداخت یافت نشد");
+                    }
+                    gateway = gatewayResult.Data;
+                }
+                else
+                {
+                    // ✅ برای Gateway های دیگر، جستجو بر اساس نوع
+                    var gateways = await _paymentGatewayRepository.GetByTypeAsync(gatewayType);
+                    gateway = gateways?.FirstOrDefault(g => g.IsActive && !g.IsDeleted);
+                    
+                    if (gateway == null)
+                    {
+                        _logger.Warning("⚠️ WEB PAYMENT: درگاه پرداخت {GatewayType} یافت نشد", gatewayType);
+                        return ServiceResult<PaymentCallbackResult>.Failed("درگاه پرداخت یافت نشد");
+                    }
                 }
 
-                var gateway = gateways.FirstOrDefault();
+                // ✅ بررسی Driver Support
+                if (!_driverFactory.IsSupported(gateway.GatewayType))
+                {
+                    _logger.Error("❌ WEB PAYMENT: GatewayType {GatewayType} پشتیبانی نمی‌شود", gateway.GatewayType);
+                    return ServiceResult<PaymentCallbackResult>.Failed($"درگاه پرداخت {gateway.GatewayType} پشتیبانی نمی‌شود");
+                }
 
                 // ✅ پردازش Callback بر اساس نوع درگاه با استفاده از Driver
                 var callbackResult = await ProcessGatewayCallbackAsync(gateway, callbackData);
@@ -345,8 +405,59 @@ namespace ClinicApp.Services.Payment.Web
         /// </summary>
         private async Task<ServiceResult<PaymentGatewayResponse>> CreateGatewayPaymentRequestAsync(PaymentGateway gateway, CreatePaymentRequest request)
         {
+            var correlationId = request.CorrelationId ?? Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
+                _logger.Information("🔧 WEB PAYMENT GATEWAY REQUEST: شروع CreateGatewayPaymentRequestAsync - GatewayId: {GatewayId}, GatewayType: {GatewayType}, Amount: {Amount}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}",
+                    gateway.PaymentGatewayId, gateway.GatewayType, request.Amount, request.CallbackUrl, correlationId);
+
+                // ✅ CRITICAL: Validation قبل از فراخوانی Driver
+                if (gateway == null)
+                {
+                    _logger.Error("❌ WEB PAYMENT: Gateway is null");
+                    return ServiceResult<PaymentGatewayResponse>.Failed("درگاه پرداخت نامعتبر است");
+                }
+
+                if (!gateway.IsActive)
+                {
+                    _logger.Error("❌ WEB PAYMENT: Gateway is not active - GatewayId: {GatewayId}", gateway.PaymentGatewayId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("درگاه پرداخت غیرفعال است");
+                }
+
+                if (gateway.IsDeleted)
+                {
+                    _logger.Error("❌ WEB PAYMENT: Gateway is deleted - GatewayId: {GatewayId}", gateway.PaymentGatewayId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("درگاه پرداخت حذف شده است");
+                }
+
+                // ✅ Validation CallbackUrl
+                if (string.IsNullOrWhiteSpace(request.CallbackUrl))
+                {
+                    _logger.Error("❌ WEB PAYMENT: CallbackUrl is null or empty");
+                    return ServiceResult<PaymentGatewayResponse>.Failed("آدرس Callback الزامی است");
+                }
+
+                if (!Uri.IsWellFormedUriString(request.CallbackUrl, UriKind.Absolute))
+                {
+                    _logger.Error("❌ WEB PAYMENT: CallbackUrl is not a valid absolute URI - CallbackUrl: {CallbackUrl}", request.CallbackUrl);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("آدرس Callback نامعتبر است");
+                }
+
+                // ✅ Validation Amount
+                if (request.Amount <= 0)
+                {
+                    _logger.Error("❌ WEB PAYMENT: Amount is invalid - Amount: {Amount}", request.Amount);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("مبلغ پرداخت باید بیشتر از صفر باشد");
+                }
+
+                if (request.Amount < 1000)
+                {
+                    _logger.Warning("⚠️ WEB PAYMENT: Amount is less than minimum (1000) - Amount: {Amount}", request.Amount);
+                    // ادامه می‌دهیم - Driver خودش validation می‌کند
+                }
+
                 _logger.Debug("🔧 WEB PAYMENT: استفاده از Gateway Driver برای {GatewayType}", gateway.GatewayType);
 
                 // ✅ تبدیل CreatePaymentRequest به PaymentRequest (Driver)
@@ -358,17 +469,74 @@ namespace ClinicApp.Services.Payment.Web
                     Mobile = request.AdditionalData?.ContainsKey("Mobile") == true ? request.AdditionalData["Mobile"] : null,
                     Email = request.AdditionalData?.ContainsKey("Email") == true ? request.AdditionalData["Email"] : null,
                     Metadata = request.AdditionalData != null ? Newtonsoft.Json.JsonConvert.SerializeObject(request.AdditionalData) : null,
-                    AdditionalData = request.AdditionalData
+                    AdditionalData = request.AdditionalData,
+                    CorrelationId = request.CorrelationId // ✅ ENTERPRISE-GRADE: انتقال CorrelationId به Driver
                 };
 
-                // ✅ فراخوانی Driver
-                var driverResult = await _gatewayDriver.RequestPaymentAsync(driverRequest);
+                // ✅ BEST PRACTICE: انتخاب Driver بر اساس PaymentGateway Entity از Factory
+                var driver = _driverFactory.GetDriver(gateway);
+                _logger.Information("🔧 WEB PAYMENT DRIVER SELECTED: Driver انتخاب شد از Entity - GatewayId: {GatewayId}, GatewayType: {GatewayType}, Amount: {Amount}, CallbackUrl: {CallbackUrl}, Description: {Description}, Mobile: {Mobile}, Email: {Email}, CorrelationId: {CorrelationId}",
+                    gateway.PaymentGatewayId, gateway.GatewayType, driverRequest.Amount, driverRequest.CallbackUrl, driverRequest.Description, driverRequest.Mobile, driverRequest.Email, correlationId);
+                
+                var driverCallTime = DateTime.UtcNow;
+                var driverResult = await driver.RequestPaymentAsync(driverRequest);
+                var driverResponseTime = DateTime.UtcNow;
+                var driverDuration = (driverResponseTime - driverCallTime).TotalMilliseconds;
+                
+                _logger.Information("🔧 WEB PAYMENT DRIVER RESPONSE: Driver Response - Success: {Success}, Message: {Message}, HasData: {HasData}, DataSuccess: {DataSuccess}, ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, Duration: {Duration}ms, CorrelationId: {CorrelationId}",
+                    driverResult.Success, driverResult.Message, driverResult.Data != null, 
+                    driverResult.Data?.Success, driverResult.Data?.ErrorCode, driverResult.Data?.ErrorMessage, driverDuration, correlationId);
                 
                 if (!driverResult.Success || driverResult.Data == null)
                 {
-                    _logger.Error("❌ WEB PAYMENT: Driver درخواست پرداخت ناموفق - {Message}", driverResult.Message);
-                    return ServiceResult<PaymentGatewayResponse>.Failed(driverResult.Message ?? "خطا در درخواست پرداخت");
+                    _logger.Error("❌ WEB PAYMENT DRIVER FAILED: Driver درخواست پرداخت ناموفق - Success: {Success}, Message: {Message}, HasData: {HasData}, Duration: {Duration}ms, CorrelationId: {CorrelationId}",
+                        driverResult.Success, driverResult.Message, driverResult.Data != null, driverDuration, correlationId);
+                    
+                    // ✅ CRITICAL FIX: اگر Exception در InnerException است، آن را لاگ می‌کنیم
+                    if (driverResult.Data != null && driverResult.Data.ErrorMessage != null)
+                    {
+                        _logger.Error("❌ WEB PAYMENT DRIVER ERROR DETAILS: Driver Error Details - ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, CorrelationId: {CorrelationId}",
+                            driverResult.Data.ErrorCode, driverResult.Data.ErrorMessage, correlationId);
+                        
+                        // ✅ برگرداندن پیام خطای دقیق‌تر
+                        return ServiceResult<PaymentGatewayResponse>.Failed(
+                            driverResult.Data.ErrorMessage ?? driverResult.Message ?? "خطا در درخواست پرداخت",
+                            driverResult.Data.ErrorCode);
+                    }
+                    
+                    return ServiceResult<PaymentGatewayResponse>.Failed(
+                        driverResult.Message ?? "خطا در درخواست پرداخت");
                 }
+
+                // ✅ بررسی Success flag در Data
+                if (!driverResult.Data.Success)
+                {
+                    _logger.Error("❌ WEB PAYMENT DRIVER DATA FAILED: Driver Data.Success is false - ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, CorrelationId: {CorrelationId}",
+                        driverResult.Data.ErrorCode, driverResult.Data.ErrorMessage, correlationId);
+                    
+                    return ServiceResult<PaymentGatewayResponse>.Failed(
+                        driverResult.Data.ErrorMessage ?? "خطا در درخواست پرداخت",
+                        driverResult.Data.ErrorCode);
+                }
+
+                // ✅ Validation PaymentUrl
+                if (string.IsNullOrWhiteSpace(driverResult.Data.PaymentUrl))
+                {
+                    _logger.Error("❌ WEB PAYMENT VALIDATION: PaymentUrl is null or empty - Authority: {Authority}, CorrelationId: {CorrelationId}",
+                        driverResult.Data.Authority, correlationId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("آدرس درگاه پرداخت دریافت نشد");
+                }
+
+                // ✅ Validation Authority
+                if (string.IsNullOrWhiteSpace(driverResult.Data.Authority))
+                {
+                    _logger.Error("❌ WEB PAYMENT VALIDATION: Authority is null or empty - PaymentUrl: {PaymentUrl}, CorrelationId: {CorrelationId}",
+                        driverResult.Data.PaymentUrl, correlationId);
+                    return ServiceResult<PaymentGatewayResponse>.Failed("کد Authority دریافت نشد");
+                }
+                
+                _logger.Information("✅ WEB PAYMENT VALIDATION: PaymentUrl و Authority معتبر هستند - Authority: {Authority}, PaymentUrl: {PaymentUrl}, CorrelationId: {CorrelationId}",
+                    driverResult.Data.Authority, driverResult.Data.PaymentUrl, correlationId);
 
                 // ✅ تبدیل PaymentRequestResult به PaymentGatewayResponse
                 var response = new PaymentGatewayResponse
@@ -382,15 +550,32 @@ namespace ClinicApp.Services.Payment.Web
                     AdditionalData = driverResult.Data.AdditionalData ?? new Dictionary<string, string>()
                 };
 
-                _logger.Information("✅ WEB PAYMENT: Driver درخواست پرداخت موفق - Authority: {Authority}, PaymentUrl: {PaymentUrl}", 
-                    response.GatewayTransactionId, response.PaymentUrl);
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Information("✅ WEB PAYMENT GATEWAY SUCCESS: Driver درخواست پرداخت موفق - Authority: {Authority}, PaymentUrl: {PaymentUrl}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                    response.GatewayTransactionId, response.PaymentUrl, processingTime, correlationId);
 
                 return ServiceResult<PaymentGatewayResponse>.Successful(response);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ WEB PAYMENT: خطای غیرمنتظره در CreateGatewayPaymentRequestAsync");
-                return ServiceResult<PaymentGatewayResponse>.Failed("خطا در ایجاد درخواست پرداخت در درگاه");
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ WEB PAYMENT GATEWAY EXCEPTION: خطای غیرمنتظره در CreateGatewayPaymentRequestAsync - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}, GatewayId: {GatewayId}, GatewayType: {GatewayType}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
+                    ex.GetType().Name, ex.Message, ex.StackTrace, gateway?.PaymentGatewayId, gateway?.GatewayType, processingTime, correlationId);
+                
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ WEB PAYMENT GATEWAY EXCEPTION INNER: InnerException - Type: {Type}, Message: {Message}, StackTrace: {StackTrace}, CorrelationId: {CorrelationId}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message, ex.InnerException.StackTrace, correlationId);
+                }
+                
+                // ✅ CRITICAL FIX: برگرداندن پیام خطای دقیق‌تر
+                var errorMessage = $"خطا در ایجاد درخواست پرداخت در درگاه: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" (InnerException: {ex.InnerException.Message})";
+                }
+                
+                return ServiceResult<PaymentGatewayResponse>.Failed(errorMessage, "GATEWAY_REQUEST_EXCEPTION");
             }
         }
 
@@ -411,6 +596,9 @@ namespace ClinicApp.Services.Payment.Web
                     return ServiceResult<PaymentCallbackResult>.Failed("پرداخت یافت نشد");
                 }
 
+                // ✅ BEST PRACTICE: انتخاب Driver بر اساس PaymentGateway Entity از Factory
+                var driver = _driverFactory.GetDriver(gateway);
+                
                 // ✅ فراخوانی Driver برای Verify
                 var verifyRequest = new PaymentVerificationRequest
                 {
@@ -418,7 +606,7 @@ namespace ClinicApp.Services.Payment.Web
                     Amount = callbackData.Amount ?? onlinePayment.Amount,
                     AdditionalData = callbackData.AdditionalData
                 };
-                var verifyResult = await _gatewayDriver.VerifyPaymentAsync(verifyRequest);
+                var verifyResult = await driver.VerifyPaymentAsync(verifyRequest);
 
                 if (!verifyResult.Success || verifyResult.Data == null)
                 {
@@ -549,7 +737,7 @@ namespace ClinicApp.Services.Payment.Web
                 _logger.Information("🔍 WEB PAYMENT: بررسی وضعیت پرداخت - GatewayType: {GatewayType}, TransactionId: {TransactionId}", 
                     gatewayType, transactionId);
 
-                // ✅ دریافت OnlinePayment برای Amount
+                // ✅ دریافت OnlinePayment برای Amount و GatewayType
                 var onlinePayment = await _onlinePaymentRepository.GetByPaymentTokenAsync(transactionId);
                 if (onlinePayment == null)
                 {
@@ -557,8 +745,26 @@ namespace ClinicApp.Services.Payment.Web
                     return ServiceResult<PaymentStatus>.Failed("پرداخت یافت نشد");
                 }
 
+                // ✅ دریافت Gateway برای GatewayType
+                var gateway = onlinePayment.PaymentGateway;
+                if (gateway == null)
+                {
+                    _logger.Warning("⚠️ WEB PAYMENT: Gateway برای OnlinePayment {OnlinePaymentId} یافت نشد", onlinePayment.OnlinePaymentId);
+                    return ServiceResult<PaymentStatus>.Failed("درگاه پرداخت یافت نشد");
+                }
+
+                // ✅ بررسی Driver Support
+                if (!_driverFactory.IsSupported(gateway.GatewayType))
+                {
+                    _logger.Error("❌ WEB PAYMENT: GatewayType {GatewayType} پشتیبانی نمی‌شود", gateway.GatewayType);
+                    return ServiceResult<PaymentStatus>.Failed($"درگاه پرداخت {gateway.GatewayType} پشتیبانی نمی‌شود");
+                }
+
+                // ✅ BEST PRACTICE: انتخاب Driver بر اساس PaymentGateway Entity از Factory
+                var driver = _driverFactory.GetDriver(gateway);
+                
                 // ✅ استفاده از Driver برای بررسی وضعیت
-                var statusResult = await _gatewayDriver.CheckPaymentStatusAsync(transactionId, onlinePayment.Amount);
+                var statusResult = await driver.CheckPaymentStatusAsync(transactionId, onlinePayment.Amount);
                 
                 if (!statusResult.Success || statusResult.Data == null)
                 {
@@ -796,6 +1002,24 @@ namespace ClinicApp.Services.Payment.Web
                     return ServiceResult<WebRefundResult>.Failed("پرداخت یافت نشد");
                 }
 
+                // ✅ دریافت Gateway برای GatewayType
+                var gateway = onlinePayment.PaymentGateway;
+                if (gateway == null)
+                {
+                    _logger.Warning("⚠️ WEB PAYMENT: Gateway برای OnlinePayment {OnlinePaymentId} یافت نشد", onlinePayment.OnlinePaymentId);
+                    return ServiceResult<WebRefundResult>.Failed("درگاه پرداخت یافت نشد");
+                }
+
+                // ✅ بررسی Driver Support
+                if (!_driverFactory.IsSupported(gateway.GatewayType))
+                {
+                    _logger.Error("❌ WEB PAYMENT: GatewayType {GatewayType} پشتیبانی نمی‌شود", gateway.GatewayType);
+                    return ServiceResult<WebRefundResult>.Failed($"درگاه پرداخت {gateway.GatewayType} پشتیبانی نمی‌شود");
+                }
+
+                // ✅ BEST PRACTICE: انتخاب Driver بر اساس PaymentGateway Entity از Factory
+                var driver = _driverFactory.GetDriver(gateway);
+
                 // ✅ فراخوانی Driver برای Refund
                 var refundRequest = new RefundRequest
                 {
@@ -808,7 +1032,7 @@ namespace ClinicApp.Services.Payment.Web
                         { "OriginalAmount", onlinePayment.Amount.ToString("F2") }
                     }
                 };
-                var refundResult = await _gatewayDriver.RefundPaymentAsync(refundRequest);
+                var refundResult = await driver.RefundPaymentAsync(refundRequest);
 
                 if (!refundResult.Success || refundResult.Data == null)
                 {
@@ -848,11 +1072,14 @@ namespace ClinicApp.Services.Payment.Web
         {
             try
             {
-                _logger.Debug("🔍 WEB PAYMENT: جستجوی درگاه پرداخت پیش‌فرض...");
+                _logger.Information("🔍 WEB PAYMENT: شروع جستجوی درگاه پرداخت پیش‌فرض...");
 
                 // ✅ STEP 1: جستجوی درگاه پیش‌فرض (IsDefault = true)
                 var defaultGateways = await _paymentGatewayRepository.GetDefaultGatewaysAsync();
                 var defaultGateway = defaultGateways?.FirstOrDefault();
+                
+                _logger.Debug("🔍 WEB PAYMENT: STEP 1 - تعداد درگاه‌های پیش‌فرض: {Count}, اولین درگاه: {GatewayId}",
+                    defaultGateways?.Count() ?? 0, defaultGateway?.PaymentGatewayId);
 
                 if (defaultGateway != null && defaultGateway.IsActive && !defaultGateway.IsDeleted)
                 {
@@ -865,6 +1092,12 @@ namespace ClinicApp.Services.Payment.Web
                 _logger.Debug("⚠️ WEB PAYMENT: درگاه پیش‌فرض یافت نشد. جستجوی درگاه ZarinPal فعال...");
                 var zarinPalGateways = await _paymentGatewayRepository.GetByTypeAsync(PaymentGatewayType.ZarinPal);
                 var activeZarinPalGateway = zarinPalGateways?.FirstOrDefault(g => g.IsActive && !g.IsDeleted);
+                
+                _logger.Debug("🔍 WEB PAYMENT: STEP 2 - تعداد درگاه‌های ZarinPal: {Count}, اولین درگاه فعال: {GatewayId}, IsActive: {IsActive}, IsDeleted: {IsDeleted}",
+                    zarinPalGateways?.Count() ?? 0, 
+                    activeZarinPalGateway?.PaymentGatewayId,
+                    activeZarinPalGateway?.IsActive,
+                    activeZarinPalGateway?.IsDeleted);
 
                 if (activeZarinPalGateway != null)
                 {
@@ -877,6 +1110,11 @@ namespace ClinicApp.Services.Payment.Web
                 _logger.Debug("⚠️ WEB PAYMENT: درگاه ZarinPal یافت نشد. جستجوی اولین درگاه فعال...");
                 var activeGateways = await _paymentGatewayRepository.GetActiveGatewaysAsync();
                 var firstActiveGateway = activeGateways?.FirstOrDefault();
+                
+                _logger.Debug("🔍 WEB PAYMENT: STEP 3 - تعداد درگاه‌های فعال: {Count}, اولین درگاه: {GatewayId}, Type: {Type}",
+                    activeGateways?.Count() ?? 0, 
+                    firstActiveGateway?.PaymentGatewayId,
+                    firstActiveGateway?.GatewayType);
 
                 if (firstActiveGateway != null)
                 {
@@ -890,32 +1128,63 @@ namespace ClinicApp.Services.Payment.Web
                 
                 try
                 {
+                    // ✅ CRITICAL FIX: تنظیم CallbackUrl پیش‌فرض (یک بار تعریف می‌شود و در کل scope استفاده می‌شود)
+                    // این URL نسبی است و در Controller به URL کامل تبدیل می‌شود
+                    var defaultCallbackUrl = "/Patient/AppointmentBooking/PaymentCallback";
+                    
                     // ✅ تلاش برای خواندن Merchant ID از Web.config
                     var merchantId = ZarinPalHelper.GetMerchantId();
+                    _logger.Information("🔍 WEB PAYMENT: STEP 4 - MerchantId از Web.config: {MerchantId} (Length: {Length})",
+                        merchantId?.Substring(0, Math.Min(10, merchantId?.Length ?? 0)) + "...",
+                        merchantId?.Length ?? 0);
+                    
                     if (!string.IsNullOrWhiteSpace(merchantId))
                     {
                         // ✅ بررسی اینکه آیا درگاه با این Merchant ID وجود دارد
                         var existingGateway = await _paymentGatewayRepository.GetByMerchantIdAsync(merchantId);
+                        _logger.Debug("🔍 WEB PAYMENT: STEP 4.1 - بررسی درگاه موجود با MerchantId: {MerchantId}, یافت شد: {Found}, GatewayId: {GatewayId}, IsDeleted: {IsDeleted}",
+                            merchantId?.Substring(0, Math.Min(10, merchantId?.Length ?? 0)) + "...",
+                            existingGateway != null,
+                            existingGateway?.PaymentGatewayId,
+                            existingGateway?.IsDeleted);
+                        
                         if (existingGateway != null)
                         {
+                            // ✅ CRITICAL FIX: اگر CallbackUrl خالی است، آن را تنظیم می‌کنیم
+                            var needsUpdate = false;
+                            
+                            if (string.IsNullOrWhiteSpace(existingGateway.CallbackUrl))
+                            {
+                                existingGateway.CallbackUrl = defaultCallbackUrl;
+                                needsUpdate = true;
+                                _logger.Warning("⚠️ WEB PAYMENT: CallbackUrl برای درگاه {GatewayId} خالی بود، تنظیم شد", existingGateway.PaymentGatewayId);
+                            }
+                            
                             // ✅ اگر درگاه وجود دارد اما غیرفعال است، فعال می‌کنیم
                             if (!existingGateway.IsActive)
                             {
                                 existingGateway.IsActive = true;
-                                await _paymentGatewayRepository.UpdateAsync(existingGateway);
+                                needsUpdate = true;
                                 _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} فعال شد", merchantId);
+                            }
+                            
+                            if (needsUpdate)
+                            {
+                                await _paymentGatewayRepository.UpdateAsync(existingGateway);
+                                _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} به‌روزرسانی شد", merchantId);
                             }
                             
                             if (!existingGateway.IsDeleted)
                             {
-                                _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} یافت شد - GatewayId: {GatewayId}", 
-                                    merchantId, existingGateway.PaymentGatewayId);
+                                _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} یافت شد - GatewayId: {GatewayId}, CallbackUrl: {CallbackUrl}", 
+                                    merchantId, existingGateway.PaymentGatewayId, existingGateway.CallbackUrl);
                                 return ServiceResult<PaymentGateway>.Successful(existingGateway);
                             }
                         }
                         
                         // ✅ اگر درگاه وجود ندارد، ایجاد می‌کنیم
                         var isSandbox = ZarinPalHelper.IsSandbox();
+                        
                         var newGateway = new PaymentGateway
                         {
                             Name = isSandbox ? "زرین‌پال (Sandbox)" : "زرین‌پال (Production)",
@@ -923,27 +1192,51 @@ namespace ClinicApp.Services.Payment.Web
                             MerchantId = merchantId,
                             ApiKey = merchantId, // برای ZarinPal، ApiKey همان MerchantId است
                             GatewayUrl = ZarinPalHelper.GetStartPayUrl(), // ✅ URL برای redirect به درگاه
-                            CallbackUrl = "", // بعداً تنظیم می‌شود (از Controller تنظیم می‌شود)
+                            CallbackUrl = defaultCallbackUrl, // ✅ CRITICAL FIX: تنظیم CallbackUrl پیش‌فرض (در Controller به URL کامل تبدیل می‌شود)
                             IsActive = true,
                             IsDefault = true, // ✅ به عنوان پیش‌فرض تنظیم می‌شود
                             Description = $"درگاه پرداخت زرین‌پال - ایجاد شده خودکار از Web.config (Sandbox: {isSandbox})",
-                            CreatedByUserId = "System",
+                            CreatedByUserId = null, // ✅ CRITICAL FIX: null چون این درگاه خودکار است و User ID واقعی نداریم
                             CreatedAt = DateTime.UtcNow
                         };
                         
                         // ✅ پاک کردن درگاه‌های پیش‌فرض قبلی
                         await _paymentGatewayRepository.ClearDefaultGatewaysAsync();
+                        _logger.Debug("🔍 WEB PAYMENT: STEP 4.2 - درگاه‌های پیش‌فرض قبلی پاک شدند");
+                        
+                        _logger.Information("🔍 WEB PAYMENT: STEP 4.3 - ایجاد درگاه جدید - Name: {Name}, MerchantId: {MerchantId}, CallbackUrl: {CallbackUrl}, IsSandbox: {IsSandbox}",
+                            newGateway.Name,
+                            merchantId?.Substring(0, Math.Min(10, merchantId?.Length ?? 0)) + "...",
+                            newGateway.CallbackUrl,
+                            isSandbox);
                         
                         var createdGateway = await _paymentGatewayRepository.CreateAsync(newGateway);
-                        _logger.Information("✅ WEB PAYMENT: درگاه پرداخت زرین‌پال به صورت خودکار ایجاد شد - GatewayId: {GatewayId}, MerchantId: {MerchantId}", 
-                            createdGateway.PaymentGatewayId, merchantId);
+                        _logger.Information("✅ WEB PAYMENT: درگاه پرداخت زرین‌پال به صورت خودکار ایجاد شد - GatewayId: {GatewayId}, MerchantId: {MerchantId}, CallbackUrl: {CallbackUrl}", 
+                            createdGateway.PaymentGatewayId, 
+                            merchantId?.Substring(0, Math.Min(10, merchantId?.Length ?? 0)) + "...",
+                            createdGateway.CallbackUrl);
                         
                         return ServiceResult<PaymentGateway>.Successful(createdGateway);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "❌ WEB PAYMENT: خطا در ایجاد خودکار درگاه از Web.config");
+                    _logger.Error(ex, "❌ WEB PAYMENT: خطا در ایجاد خودکار درگاه از Web.config - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                        ex.GetType().Name, ex.Message, ex.StackTrace);
+                    
+                    // ✅ CRITICAL FIX: اگر خطای Validation است، جزئیات بیشتری لاگ می‌کنیم
+                    if (ex is System.Data.Entity.Validation.DbEntityValidationException validationEx)
+                    {
+                        foreach (var validationError in validationEx.EntityValidationErrors)
+                        {
+                            foreach (var error in validationError.ValidationErrors)
+                            {
+                                _logger.Error("❌ WEB PAYMENT: Validation Error - Property: {Property}, Error: {Error}",
+                                    error.PropertyName, error.ErrorMessage);
+                            }
+                        }
+                    }
+                    
                     // ادامه می‌دهیم و خطا را برمی‌گردانیم
                 }
                 

@@ -1,6 +1,7 @@
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Payment.Gateway.Drivers;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Payment;
 using Newtonsoft.Json;
 using Serilog;
 using System;
@@ -22,6 +23,7 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
     /// 2. Payment Verification (تأیید پرداخت)
     /// 3. Payment Status Check (بررسی وضعیت)
     /// 4. Refund (برگشت وجه - در صورت پشتیبانی)
+    /// 5. ✅ BEST PRACTICE: استفاده از PaymentGateway Entity برای تنظیمات
     /// 
     /// طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md
     /// </summary>
@@ -42,11 +44,78 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
 
         #region Constructor
 
+        /// <summary>
+        /// ✅ BEST PRACTICE: Constructor جدید - استفاده از PaymentGateway Entity
+        /// تنظیمات از Entity خوانده می‌شود (MerchantId, GatewayUrl, IsTestMode)
+        /// </summary>
+        /// <param name="gateway">PaymentGateway Entity شامل تمام تنظیمات</param>
+        /// <param name="logger">Logger</param>
+        public ZarinPalDriver(PaymentGateway gateway, ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            if (gateway == null)
+                throw new ArgumentNullException(nameof(gateway));
+            
+            if (gateway.GatewayType != Models.Enums.PaymentGatewayType.ZarinPal)
+                throw new ArgumentException($"Gateway type must be ZarinPal, but got {gateway.GatewayType}", nameof(gateway));
+
+            // ✅ BEST PRACTICE: خواندن تنظیمات از PaymentGateway Entity
+            _merchantId = gateway.MerchantId ?? throw new ArgumentException("MerchantId is required", nameof(gateway));
+            _isSandbox = gateway.IsTestMode; // IsTestMode = true = Sandbox
+            
+            // ✅ استفاده از GatewayUrl از Entity با Fallback به Web.config
+            var gatewayUrl = gateway.GatewayUrl;
+            if (string.IsNullOrWhiteSpace(gatewayUrl))
+            {
+                _logger.Warning("⚠️ ZarinPal: GatewayUrl در Entity خالی است، استفاده از Web.config");
+                gatewayUrl = ZarinPalHelper.GetStartPayUrl();
+            }
+            
+            // ✅ استخراج Base URL از GatewayUrl (مثلاً: https://www.zarinpal.com/pg/StartPay/)
+            var baseUrl = ExtractBaseUrl(gatewayUrl);
+            
+            // ✅ ساخت URLs بر اساس Base URL و IsTestMode
+            if (_isSandbox)
+            {
+                _requestUrl = "https://sandbox.zarinpal.com/pg/v4/payment/request.json";
+                _verifyUrl = "https://sandbox.zarinpal.com/pg/v4/payment/verify.json";
+                _startPayUrl = "https://sandbox.zarinpal.com/pg/StartPay/";
+                _statusUrl = "https://sandbox.zarinpal.com/pg/v4/payment/status.json";
+            }
+            else
+            {
+                _requestUrl = "https://api.zarinpal.com/pg/v4/payment/request.json";
+                _verifyUrl = "https://api.zarinpal.com/pg/v4/payment/verify.json";
+                _startPayUrl = "https://www.zarinpal.com/pg/StartPay/";
+                _statusUrl = "https://api.zarinpal.com/pg/v4/payment/status.json";
+            }
+
+            // ایجاد HttpClient
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30) // Timeout 30 ثانیه
+            };
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            _logger.Information("✅ ZarinPal Driver initialized from Entity - GatewayId: {GatewayId}, MerchantId: {MerchantId}, IsSandbox: {IsSandbox}, GatewayUrl: {GatewayUrl}", 
+                gateway.PaymentGatewayId,
+                _merchantId.Substring(0, Math.Min(8, _merchantId.Length)) + "...", 
+                _isSandbox,
+                gatewayUrl);
+        }
+
+        /// <summary>
+        /// ⚠️ DEPRECATED: Constructor قدیمی - استفاده از Web.config
+        /// برای سازگاری با کد قدیمی نگه داشته شده است
+        /// </summary>
+        /// <param name="logger">Logger</param>
+        [Obsolete("Use ZarinPalDriver(PaymentGateway, ILogger) instead. This constructor reads from Web.config.")]
         public ZarinPalDriver(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            // خواندن تنظیمات از Web.config
+            // خواندن تنظیمات از Web.config (Fallback)
             _merchantId = ZarinPalHelper.GetMerchantId();
             _isSandbox = ZarinPalHelper.IsSandbox();
             _requestUrl = ZarinPalHelper.GetRequestUrl();
@@ -61,8 +130,28 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
             };
             _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
-            _logger.Information("✅ ZarinPal Driver initialized - MerchantId: {MerchantId}, IsSandbox: {IsSandbox}", 
+            _logger.Warning("⚠️ ZarinPal Driver initialized from Web.config (DEPRECATED) - MerchantId: {MerchantId}, IsSandbox: {IsSandbox}", 
                 _merchantId.Substring(0, Math.Min(8, _merchantId.Length)) + "...", _isSandbox);
+        }
+
+        /// <summary>
+        /// استخراج Base URL از GatewayUrl
+        /// مثال: https://www.zarinpal.com/pg/StartPay/ → https://www.zarinpal.com
+        /// </summary>
+        private string ExtractBaseUrl(string gatewayUrl)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(gatewayUrl))
+                    return null;
+
+                var uri = new Uri(gatewayUrl);
+                return $"{uri.Scheme}://{uri.Host}";
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         #endregion
@@ -74,18 +163,25 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
         /// </summary>
         public async Task<ServiceResult<PaymentRequestResult>> RequestPaymentAsync(PaymentRequest request)
         {
+            var correlationId = request.CorrelationId ?? Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
-                _logger.Information("💰 ZarinPal: شروع درخواست پرداخت - Amount: {Amount}, Description: {Description}", 
-                    request.Amount, request.Description);
+                _logger.Information("💰 ZarinPal REQUEST: شروع درخواست پرداخت - Amount: {Amount}, Description: {Description}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}", 
+                    request.Amount, request.Description, request.CallbackUrl, correlationId);
 
                 // Validation
                 var validationResult = ValidatePaymentRequest(request);
                 if (!validationResult.Success)
                 {
-                    _logger.Warning("⚠️ ZarinPal: Validation ناموفق - {Message}", validationResult.Message);
+                    _logger.Warning("⚠️ ZarinPal VALIDATION: Validation ناموفق - Message: {Message}, CorrelationId: {CorrelationId}", 
+                        validationResult.Message, correlationId);
                     return ServiceResult<PaymentRequestResult>.Failed(validationResult.Message);
                 }
+                
+                _logger.Information("✅ ZarinPal VALIDATION: Validation موفق - Amount: {Amount}, CallbackUrl: {CallbackUrl}, CorrelationId: {CorrelationId}", 
+                    request.Amount, request.CallbackUrl, correlationId);
 
                 // ساخت Request Body
                 var requestBody = new
@@ -102,27 +198,80 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
                 var jsonContent = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                _logger.Debug("📤 ZarinPal: ارسال درخواست به {Url}", _requestUrl);
+                _logger.Information("📤 ZarinPal HTTP REQUEST: ارسال درخواست به {Url} - MerchantId: {MerchantId}, Amount: {Amount}, CallbackUrl: {CallbackUrl}, Description: {Description}, Mobile: {Mobile}, Email: {Email}, CorrelationId: {CorrelationId}", 
+                    _requestUrl, _merchantId.Substring(0, Math.Min(8, _merchantId.Length)) + "...", requestBody.amount, requestBody.callback_url, requestBody.description, requestBody.mobile, requestBody.email, correlationId);
+                
+                _logger.Debug("📤 ZarinPal REQUEST BODY: Request Body - {RequestBody}, CorrelationId: {CorrelationId}", jsonContent, correlationId);
+                
+                // ✅ CRITICAL DEBUG: لاگ کامل برای Debug
+                _logger.Information("🔍 ZarinPal CONFIG: IsSandbox={IsSandbox}, RequestUrl={RequestUrl}, CallbackUrl={CallbackUrl}, MerchantIdPrefix={MerchantIdPrefix}, GatewayUrl={GatewayUrl}, CorrelationId: {CorrelationId}", 
+                    _isSandbox, _requestUrl, requestBody.callback_url, _merchantId.Substring(0, Math.Min(8, _merchantId.Length)) + "...", _startPayUrl, correlationId);
 
                 // ارسال درخواست
+                var httpRequestTime = DateTime.UtcNow;
                 var response = await _httpClient.PostAsync(_requestUrl, content);
+                var httpResponseTime = DateTime.UtcNow;
+                var httpDuration = (httpResponseTime - httpRequestTime).TotalMilliseconds;
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                _logger.Debug("📥 ZarinPal: پاسخ دریافت شد - StatusCode: {StatusCode}, Content: {Content}", 
-                    response.StatusCode, responseContent);
+                _logger.Information("📥 ZarinPal HTTP RESPONSE: پاسخ دریافت شد - StatusCode: {StatusCode}, IsSuccessStatusCode: {IsSuccess}, ContentLength: {Length}, Duration: {Duration}ms, Content: {Content}, CorrelationId: {CorrelationId}", 
+                    response.StatusCode, response.IsSuccessStatusCode, responseContent?.Length ?? 0, httpDuration, responseContent, correlationId);
 
                 // Parse Response
                 var zarinPalResponse = JsonConvert.DeserializeObject<ZarinPalRequestResponse>(responseContent);
 
                 if (zarinPalResponse == null)
                 {
-                    _logger.Error("❌ ZarinPal: پاسخ نامعتبر - Content: {Content}", responseContent);
+                    _logger.Error("❌ ZarinPal PARSE ERROR: پاسخ نامعتبر - Content: {Content}, CorrelationId: {CorrelationId}", 
+                        responseContent, correlationId);
                     return ServiceResult<PaymentRequestResult>.Failed("پاسخ نامعتبر از درگاه پرداخت");
                 }
 
-                // بررسی Status Code
-                if (zarinPalResponse.data?.code == 100) // 100 = Success
+                _logger.Information("✅ ZarinPal PARSE: Response Parse موفق - HasErrors: {HasErrors}, HasData: {HasData}, CorrelationId: {CorrelationId}", 
+                    zarinPalResponse.errors != null, zarinPalResponse.data != null, correlationId);
+
+                // ✅ CRITICAL FIX: بررسی errors در پاسخ (اگر API خطا بدهد، errors پر می‌شود)
+                if (zarinPalResponse.errors != null)
                 {
+                    var errorCode = zarinPalResponse.errors.code ?? "UNKNOWN";
+                    var errorMessage = zarinPalResponse.errors.message ?? "خطای نامشخص از درگاه پرداخت";
+                    
+                    _logger.Error("❌ ZarinPal API ERROR: خطای API - ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, ResponseContent: {Content}, CorrelationId: {CorrelationId}",
+                        errorCode, errorMessage, responseContent, correlationId);
+                    
+                    return ServiceResult<PaymentRequestResult>.Failed($"خطا از درگاه پرداخت: {errorMessage}");
+                }
+
+                // ✅ CRITICAL FIX: بررسی null بودن data
+                if (zarinPalResponse.data == null)
+                {
+                    _logger.Error("❌ ZarinPal DATA NULL: data در پاسخ null است - ResponseContent: {Content}, CorrelationId: {CorrelationId}", 
+                        responseContent, correlationId);
+                    return ServiceResult<PaymentRequestResult>.Failed("پاسخ نامعتبر از درگاه پرداخت (data is null)");
+                }
+
+                // ✅ CRITICAL FIX: بررسی null بودن code
+                if (!zarinPalResponse.data.code.HasValue)
+                {
+                    _logger.Error("❌ ZarinPal CODE NULL: code در پاسخ null است - ResponseContent: {Content}, DataMessage: {Message}, CorrelationId: {CorrelationId}",
+                        responseContent, zarinPalResponse.data.message, correlationId);
+                    return ServiceResult<PaymentRequestResult>.Failed($"پاسخ نامعتبر از درگاه پرداخت: {zarinPalResponse.data.message ?? "کد خطا نامشخص است"}");
+                }
+                
+                _logger.Information("✅ ZarinPal CODE: Code دریافت شد - Code: {Code}, Message: {Message}, CorrelationId: {CorrelationId}", 
+                    zarinPalResponse.data.code.Value, zarinPalResponse.data.message, correlationId);
+
+                // بررسی Status Code
+                if (zarinPalResponse.data.code == 100) // 100 = Success
+                {
+                    // ✅ CRITICAL FIX: بررسی null بودن authority
+                    if (string.IsNullOrWhiteSpace(zarinPalResponse.data.authority))
+                    {
+                        _logger.Error("❌ ZarinPal AUTHORITY NULL: authority در پاسخ null یا خالی است - ResponseContent: {Content}, CorrelationId: {CorrelationId}",
+                            responseContent, correlationId);
+                        return ServiceResult<PaymentRequestResult>.Failed("کد Authority از درگاه پرداخت دریافت نشد");
+                    }
+
                     var paymentUrl = $"{_startPayUrl}{zarinPalResponse.data.authority}";
                     
                     var result = new PaymentRequestResult
@@ -137,36 +286,63 @@ namespace ClinicApp.Services.Payment.Gateway.Drivers
                         }
                     };
 
-                    _logger.Information("✅ ZarinPal: درخواست پرداخت موفق - Authority: {Authority}, PaymentUrl: {PaymentUrl}", 
-                        result.Authority, result.PaymentUrl);
+                    var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("✅ ZarinPal SUCCESS: درخواست پرداخت موفق - Authority: {Authority}, PaymentUrl: {PaymentUrl}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                        result.Authority, result.PaymentUrl, processingTime, correlationId);
 
                     return ServiceResult<PaymentRequestResult>.Successful(result, "درخواست پرداخت با موفقیت ایجاد شد");
                 }
                 else
                 {
-                    var errorMessage = GetZarinPalErrorMessage(zarinPalResponse.data?.code ?? -1);
+                    var errorCode = zarinPalResponse.data.code.Value;
+                    var errorMessage = GetZarinPalErrorMessage(errorCode);
+                    
+                    // ✅ CRITICAL FIX: استفاده از message از API اگر موجود باشد
+                    if (!string.IsNullOrWhiteSpace(zarinPalResponse.data.message))
+                    {
+                        errorMessage = $"{errorMessage} ({zarinPalResponse.data.message})";
+                    }
                     
                     var result = new PaymentRequestResult
                     {
                         Success = false,
-                        ErrorCode = zarinPalResponse.data?.code?.ToString() ?? "-1",
+                        ErrorCode = errorCode.ToString(),
                         ErrorMessage = errorMessage
                     };
 
-                    _logger.Warning("⚠️ ZarinPal: درخواست پرداخت ناموفق - Code: {Code}, Message: {Message}", 
-                        result.ErrorCode, result.ErrorMessage);
+                    var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Warning("⚠️ ZarinPal FAILED: درخواست پرداخت ناموفق - Code: {Code}, Message: {Message}, ApiMessage: {ApiMessage}, ResponseContent: {Content}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                        result.ErrorCode, result.ErrorMessage, zarinPalResponse.data.message, responseContent, processingTime, correlationId);
 
                     return ServiceResult<PaymentRequestResult>.Failed(errorMessage);
                 }
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error(ex, "❌ ZarinPal: خطا در ارتباط با درگاه پرداخت");
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ ZarinPal HTTP EXCEPTION: خطا در ارتباط با درگاه پرداخت - ExceptionType: {ExceptionType}, Message: {Message}, RequestUrl: {RequestUrl}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                    ex.GetType().Name, ex.Message, _requestUrl, processingTime, correlationId);
+                
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ ZarinPal HTTP EXCEPTION INNER: InnerException - Type: {Type}, Message: {Message}, CorrelationId: {CorrelationId}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message, correlationId);
+                }
+                
                 return ServiceResult<PaymentRequestResult>.Failed("خطا در ارتباط با درگاه پرداخت");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ ZarinPal: خطای غیرمنتظره در درخواست پرداخت");
+                var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Error(ex, "❌ ZarinPal EXCEPTION: خطای غیرمنتظره در درخواست پرداخت - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}", 
+                    ex.GetType().Name, ex.Message, ex.StackTrace, processingTime, correlationId);
+                
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ ZarinPal EXCEPTION INNER: InnerException - Type: {Type}, Message: {Message}, StackTrace: {StackTrace}, CorrelationId: {CorrelationId}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message, ex.InnerException.StackTrace, correlationId);
+                }
+                
                 return ServiceResult<PaymentRequestResult>.Failed("خطا در درخواست پرداخت");
             }
         }

@@ -202,6 +202,10 @@ namespace ClinicApp.Interfaces.Payment.Web
         public string UserIpAddress { get; set; }
         public string UserAgent { get; set; }
         public Dictionary<string, string> AdditionalData { get; set; }
+        /// <summary>
+        /// CorrelationId برای Tracing در لاگ‌ها
+        /// </summary>
+        public string CorrelationId { get; set; }
     }
 
     /// <summary>

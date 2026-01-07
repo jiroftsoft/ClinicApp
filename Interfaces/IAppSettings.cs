@@ -49,6 +49,12 @@ public interface IAppSettings
 
     #region Appointment Settings
     /// <summary>
+    /// مدت زمان انقضای نوبت‌های Pending (به دقیقه)
+    /// بعد از این مدت، نوبت‌های Pending منقضی می‌شوند و اسلات آزاد می‌شود
+    /// </summary>
+    int PendingExpirationMinutes { get; }
+    
+    /// <summary>
     /// حداکثر تعداد تاریخ‌های نوبت موجود برای نمایش در کارت پزشک
     /// </summary>
     int AppointmentAvailableDatesMaxCount { get; }
@@ -75,5 +81,14 @@ public interface IAppSettings
     /// محیط اجرای برنامه (Development, Staging, Production)
     /// </summary>
     string Environment { get; }
+    #endregion
+
+    #region Payment Settings
+    /// <summary>
+    /// Base URL برای ساخت CallbackUrl در درگاه‌های پرداخت
+    /// مثال: https://yourdomain.com (بدون trailing slash)
+    /// اگر تنظیم نشده باشد، از Request.Url استفاده می‌شود (Fallback)
+    /// </summary>
+    string PaymentBaseUrl { get; }
     #endregion
 }

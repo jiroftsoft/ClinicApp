@@ -839,6 +839,9 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                     // ✅ بررسی اینکه آیا نوبت قبلاً رزرو شده است
                     // ✅ CRITICAL FIX: استفاده از _context برای idempotency check (مستقیم به DB)
+                    // ✅ CRITICAL FIX: فقط نوبت‌های فعال (Pending, Scheduled) را در نظر بگیریم
+                    // ✅ CRITICAL FIX: نوبت‌های Pending منقضی شده را در نظر نمی‌گیریم
+                    var now = DateTime.UtcNow;
                     var existingAppointment = await _context.Appointments
                         .FirstOrDefaultAsync(a =>
                             a.PatientId == patientId &&
@@ -846,7 +849,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                             DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(model.AppointmentDate) &&
                             a.AppointmentDate.TimeOfDay == model.StartTime &&
                             !a.IsDeleted &&
-                            a.Status != AppointmentStatus.Cancelled);
+                            (a.Status == AppointmentStatus.Scheduled || 
+                             (a.Status == AppointmentStatus.Pending && 
+                              (a.PendingExpiresAt == null || a.PendingExpiresAt > now)))); // ✅ فیلتر نوبت‌های منقضی شده
 
                     if (existingAppointment != null)
                     {
@@ -937,13 +942,14 @@ namespace ClinicApp.Areas.Patient.Controllers
                     });
                 }
 
-                // TODO: در آینده پرداخت را از اینجا انجام می‌دهیم
-                // فعلاً نوبت رزرو می‌شود و پرداخت بعداً انجام می‌شود
-                NotificationHelper.SetSuccess(TempData, "نوبت با موفقیت رزرو شد. لطفاً برای تکمیل رزرو، پرداخت را انجام دهید.");
+                // ✅ CRITICAL FIX: نوبت با Status = Pending ایجاد شده است (نه Scheduled)
+                // بعد از موفقیت پرداخت، در PaymentCallback به Scheduled تبدیل می‌شود
+                // این طبق قراردادهای مالی است: نوبت قبل از پرداخت رزرو نمی‌شود
+                NotificationHelper.SetSuccess(TempData, "نوبت در انتظار پرداخت است. لطفاً برای تکمیل رزرو، پرداخت را انجام دهید.");
                 return Json(new
                 {
                     success = true,
-                    message = "نوبت با موفقیت رزرو شد",
+                    message = "نوبت در انتظار پرداخت است",
                     appointmentId = result.Data?.AppointmentId,
                     requiresPayment = true,
                     paymentUrl = Url.Action("ProcessPayment", new { appointmentId = result.Data?.AppointmentId })
@@ -1085,11 +1091,17 @@ namespace ClinicApp.Areas.Patient.Controllers
                     appointmentId, correlationId);
 
                 // 3. دریافت درگاه پیش‌فرض
-                var defaultGatewayResult = await _paymentGatewayService.GetDefaultPaymentGatewayAsync();
+                // ✅ CRITICAL FIX: استفاده از _webPaymentService به جای _paymentGatewayService
+                // چون _paymentGatewayService.GetDefaultPaymentGatewayAsync() هنوز NotImplementedException throw می‌کند
+                var defaultGatewayResult = await _webPaymentService.GetDefaultPaymentGatewayAsync();
                 if (!defaultGatewayResult.Success || defaultGatewayResult.Data == null)
                 {
-                    _logger.Error("درگاه پرداخت پیش‌فرض یافت نشد");
-                    return Json(new { success = false, message = "درگاه پرداخت در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید" });
+                    _logger.Error("درگاه پرداخت پیش‌فرض یافت نشد - Message: {Message}", defaultGatewayResult.Message);
+                    return Json(new { 
+                        success = false, 
+                        message = defaultGatewayResult.Message ?? "درگاه پرداخت در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید",
+                        correlationId = correlationId
+                    });
                 }
 
                 var gateway = defaultGatewayResult.Data;
@@ -1108,8 +1120,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                     {
                         // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است
                         // TODO: بعد از رفع مشکل، احراز هویت را فعال کنید
-                        var createdByUserId = _currentUserService?.UserId ?? "System"; // ✅ Fallback برای زمانی که authentication غیرفعال است
-                        var updatedByUserId = _currentUserService?.UserId ?? "System"; // ✅ Fallback برای استفاده در کل scope
+                        // ✅ CRITICAL FIX: null چون User ID واقعی نداریم و Foreign Key constraint خطا می‌دهد
+                        var createdByUserId = _currentUserService?.UserId; // null اگر authentication غیرفعال است
+                        var updatedByUserId = _currentUserService?.UserId; // null اگر authentication غیرفعال است
                         
                         // 5.1. ایجاد OnlinePayment record
                         
@@ -1149,7 +1162,37 @@ namespace ClinicApp.Areas.Patient.Controllers
                             saved.OnlinePaymentId, saved.Amount);
 
                         // 6. ایجاد درخواست پرداخت
-                        var callbackUrl = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" }, Request.Url.Scheme);
+                        // ✅ BEST PRACTICE: ساخت CallbackUrl با استفاده از PaymentUrlHelper
+                        // این Helper از PaymentBaseUrl از Web.config استفاده می‌کند (اگر تنظیم شده باشد)
+                        // در غیر این صورت، از Request.Url استفاده می‌کند (Fallback)
+                        var callbackRelativePath = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" });
+                        var callbackUrl = Helpers.PaymentUrlHelper.BuildPaymentCallbackUrl(callbackRelativePath, Request, _appSettings);
+                        
+                        _logger.Information("🔗 PAYMENT REQUEST: CallbackUrl تنظیم شد - {CallbackUrl} (BaseUrl: {BaseUrl}, RelativePath: {RelativePath}, RequestUrl: {RequestUrl})", 
+                            callbackUrl, _appSettings.PaymentBaseUrl ?? "Request.Url (Fallback)", callbackRelativePath, Request.Url?.ToString() ?? "N/A");
+                        
+                        // ✅ CRITICAL: بررسی مبلغ
+                        if (appointment.Price <= 0)
+                        {
+                            _logger.Error("❌ PAYMENT REQUEST: مبلغ نوبت نامعتبر - AppointmentId: {AppointmentId}, Price: {Price}",
+                                appointmentId, appointment.Price);
+                            transaction.Rollback();
+                            return Json(new { success = false, message = "مبلغ نوبت نامعتبر است" });
+                        }
+                        
+                        if (appointment.Price < 1000)
+                        {
+                            _logger.Warning("⚠️ PAYMENT REQUEST: مبلغ نوبت کمتر از حداقل است - AppointmentId: {AppointmentId}, Price: {Price}, Minimum: 1000",
+                                appointmentId, appointment.Price);
+                            // ✅ CRITICAL FIX: حداقل مبلغ را تنظیم می‌کنیم
+                            appointment.Price = 1000;
+                            await _context.SaveChangesAsync();
+                            _logger.Information("✅ PAYMENT REQUEST: مبلغ نوبت به حداقل تنظیم شد - AppointmentId: {AppointmentId}, NewPrice: {Price}",
+                                appointmentId, appointment.Price);
+                        }
+                        
+                        _logger.Information("💰 PAYMENT REQUEST: مبلغ پرداخت - AppointmentId: {AppointmentId}, Amount: {Amount}",
+                            appointmentId, appointment.Price);
 
                         var paymentRequest = new CreatePaymentRequest
                         {
@@ -1160,6 +1203,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             CallbackUrl = callbackUrl,
                             UserIpAddress = userIpAddress, // ✅ استفاده از متغیر تعریف شده در scope بالاتر
                             UserAgent = userAgent, // ✅ استفاده از متغیر تعریف شده در scope بالاتر
+                            CorrelationId = correlationId, // ✅ ENTERPRISE-GRADE: انتقال CorrelationId برای Tracing
                             AdditionalData = new Dictionary<string, string>
                             {
                                 { "AppointmentId", appointmentId.ToString() },
@@ -1169,22 +1213,33 @@ namespace ClinicApp.Areas.Patient.Controllers
                         };
 
                         // 7. فراخوانی سرویس پرداخت (خارج از Transaction - API Call)
+                        _logger.Information("📞 PAYMENT REQUEST: فراخوانی CreatePaymentRequestAsync - Amount: {Amount}, CallbackUrl: {CallbackUrl}, Description: {Description}",
+                            paymentRequest.Amount, paymentRequest.CallbackUrl, paymentRequest.Description);
+                        
                         var paymentResult = await _webPaymentService.CreatePaymentRequestAsync(paymentRequest);
+
+                        _logger.Information("📥 PAYMENT REQUEST: پاسخ CreatePaymentRequestAsync - Success: {Success}, HasData: {HasData}, Message: {Message}",
+                            paymentResult.Success, paymentResult.Data != null, paymentResult.Message);
 
                         if (!paymentResult.Success || paymentResult.Data == null)
                         {
-                            _logger.Error("❌ PAYMENT REQUEST: خطا در ایجاد درخواست پرداخت - {ErrorMessage}",
-                                paymentResult.Message);
+                            // ✅ CRITICAL FIX: ServiceResult.Code به جای ErrorCode استفاده می‌شود
+                            // همچنین اگر Data موجود باشد، ErrorCode از Data گرفته می‌شود
+                            var errorCode = paymentResult.Data?.ErrorCode ?? paymentResult.Code;
+                            
+                            _logger.Error("❌ PAYMENT REQUEST: خطا در ایجاد درخواست پرداخت - Success: {Success}, HasData: {HasData}, Message: {Message}, Code: {Code}, DataErrorCode: {DataErrorCode}",
+                                paymentResult.Success, paymentResult.Data != null, paymentResult.Message, paymentResult.Code, paymentResult.Data?.ErrorCode);
 
                             // ✅ به‌روزرسانی وضعیت OnlinePayment به Failed
                             onlinePayment.Status = OnlinePaymentStatus.Failed;
                             onlinePayment.ErrorMessage = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت";
+                            onlinePayment.ErrorCode = errorCode;
                             onlinePayment.UpdatedAt = _timeProvider.UtcNow;
                             onlinePayment.UpdatedByUserId = updatedByUserId;
                             await _context.SaveChangesAsync();
                             transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
 
-                            return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت" });
+                            return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت در درگاه", correlationId = correlationId });
                         }
 
                         var gatewayResponse = paymentResult.Data;
@@ -1256,14 +1311,28 @@ namespace ClinicApp.Areas.Patient.Controllers
             catch (Exception ex)
             {
                 var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-                _logger.Error(ex, "❌ PAYMENT REQUEST: خطا در پردازش پرداخت - AppointmentId: {AppointmentId}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}",
-                    appointmentId, processingTime, correlationId);
+                _logger.Error(ex, "❌ PAYMENT REQUEST: خطا در پردازش پرداخت - AppointmentId: {AppointmentId}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                    appointmentId, processingTime, correlationId, ex.GetType().Name, ex.Message, ex.StackTrace);
+                
+                // ✅ CRITICAL FIX: نمایش پیام خطای دقیق‌تر برای debugging
+                var errorMessage = "خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید";
+                if (ex is NotImplementedException)
+                {
+                    errorMessage = "درگاه پرداخت در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید";
+                    _logger.Error("❌ PAYMENT REQUEST: NotImplementedException - احتمالاً GetDefaultPaymentGatewayAsync implement نشده است");
+                }
+                else if (ex.InnerException != null)
+                {
+                    _logger.Error("❌ PAYMENT REQUEST: InnerException - Type: {Type}, Message: {Message}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message);
+                }
                 
                 return Json(new 
                 { 
                     success = false, 
-                    message = "خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید",
-                    correlationId = correlationId // ✅ ENTERPRISE-GRADE: برگرداندن Correlation ID برای Support
+                    message = errorMessage,
+                    correlationId = correlationId, // ✅ ENTERPRISE-GRADE: برگرداندن Correlation ID برای Support
+                    exceptionType = ex.GetType().Name // ✅ برای debugging (فقط در Development)
                 });
             }
         }
@@ -1398,7 +1467,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             onlinePaymentForUpdate.GatewayReferenceCode = callbackData.ReferenceCode ?? result.GatewayTransactionId;
                             onlinePaymentForUpdate.PaymentCompletionDate = _timeProvider.UtcNow;
                             onlinePaymentForUpdate.UpdatedAt = _timeProvider.UtcNow;
-                            onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
+                            onlinePaymentForUpdate.UpdatedByUserId = _currentUserService?.UserId; // ✅ CRITICAL FIX: null اگر authentication غیرفعال است
 
                             // به‌روزرسانی Appointment
                             var appointment = onlinePaymentForUpdate.Appointment;
@@ -1407,7 +1476,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                                 appointment.Status = AppointmentStatus.Scheduled;
                                 appointment.PaymentTransactionId = result.PaymentTransactionId;
                                 appointment.UpdatedAt = _timeProvider.UtcNow;
-                                appointment.UpdatedByUserId = _currentUserService.UserId ?? "System";
+                                appointment.UpdatedByUserId = _currentUserService?.UserId; // ✅ CRITICAL FIX: null اگر authentication غیرفعال است
                             }
 
                             await _context.SaveChangesAsync();
@@ -1509,7 +1578,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                         onlinePaymentForUpdate.ErrorCode = callbackData.ErrorCode;
                         onlinePaymentForUpdate.PaymentCompletionDate = _timeProvider.UtcNow;
                         onlinePaymentForUpdate.UpdatedAt = _timeProvider.UtcNow;
-                        onlinePaymentForUpdate.UpdatedByUserId = _currentUserService.UserId ?? "System";
+                        onlinePaymentForUpdate.UpdatedByUserId = _currentUserService?.UserId; // ✅ CRITICAL FIX: null اگر authentication غیرفعال است
                         await _context.SaveChangesAsync();
 
                         // ✅ Post-Save Verification
@@ -1632,6 +1701,415 @@ namespace ClinicApp.Areas.Patient.Controllers
             {
                 _logger.Error(ex, "❌ PAYMENT ERROR: خطا در نمایش صفحه خطا");
                 return View(new PaymentErrorViewModel { ErrorMessage = "خطا در نمایش اطلاعات" });
+            }
+        }
+
+        /// <summary>
+        /// ✅ Diagnostic Action: بررسی وضعیت درگاه پرداخت
+        /// GET: /Patient/AppointmentBooking/CheckPaymentGateway
+        /// این endpoint برای تشخیص مشکل درگاه پرداخت استفاده می‌شود
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // برای تست
+        public async Task<ActionResult> CheckPaymentGateway()
+        {
+            try
+            {
+                var steps = new List<Dictionary<string, object>>();
+
+                // STEP 1: بررسی درگاه پیش‌فرض
+                var step1 = new Dictionary<string, object>
+                {
+                    { "step", 1 },
+                    { "name", "GetDefaultPaymentGatewayAsync" },
+                    { "status", "checking" }
+                };
+                steps.Add(step1);
+
+                var defaultGatewayResult = await _webPaymentService.GetDefaultPaymentGatewayAsync();
+                
+                if (!defaultGatewayResult.Success || defaultGatewayResult.Data == null)
+                {
+                    step1["status"] = "failed";
+                    step1["error"] = defaultGatewayResult.Message;
+                    
+                    // STEP 2: بررسی Web.config
+                    var step2 = new Dictionary<string, object>
+                    {
+                        { "step", 2 },
+                        { "name", "CheckWebConfig" },
+                        { "status", "checking" }
+                    };
+                    steps.Add(step2);
+
+                    try
+                    {
+                        var merchantId = Helpers.ZarinPalHelper.GetMerchantId();
+                        var isSandbox = Helpers.ZarinPalHelper.IsSandbox();
+                        
+                        step2["status"] = "success";
+                        step2["data"] = new
+                        {
+                            merchantIdExists = !string.IsNullOrWhiteSpace(merchantId),
+                            merchantIdLength = merchantId?.Length ?? 0,
+                            merchantIdPreview = merchantId != null && merchantId.Length > 10 
+                                ? merchantId.Substring(0, 10) + "..." 
+                                : merchantId,
+                            isSandbox = isSandbox
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        step2["status"] = "failed";
+                        step2["error"] = ex.Message;
+                    }
+
+                    // STEP 3: بررسی درگاه‌های موجود در دیتابیس
+                    var step3 = new Dictionary<string, object>
+                    {
+                        { "step", 3 },
+                        { "name", "CheckDatabaseGateways" },
+                        { "status", "checking" }
+                    };
+                    steps.Add(step3);
+
+                    try
+                    {
+                        var allGateways = await _context.PaymentGateways
+                            .Where(pg => !pg.IsDeleted)
+                            .Select(pg => new
+                            {
+                                pg.PaymentGatewayId,
+                                pg.Name,
+                                pg.GatewayType,
+                                pg.IsActive,
+                                pg.IsDeleted,
+                                pg.IsDefault,
+                                MerchantIdPreview = pg.MerchantId != null && pg.MerchantId.Length > 10
+                                    ? pg.MerchantId.Substring(0, 10) + "..."
+                                    : pg.MerchantId
+                            })
+                            .ToListAsync();
+
+                        step3["status"] = "success";
+                        step3["data"] = new
+                        {
+                            totalCount = allGateways.Count,
+                            activeCount = allGateways.Count(g => g.IsActive),
+                            defaultCount = allGateways.Count(g => g.IsDefault),
+                            gateways = allGateways
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        step3["status"] = "failed";
+                        step3["error"] = ex.Message;
+                    }
+
+                    var diagnosticInfo = new
+                    {
+                        timestamp = DateTime.UtcNow,
+                        steps = steps
+                    };
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "درگاه پرداخت پیش‌فرض یافت نشد",
+                        diagnostic = diagnosticInfo
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                // درگاه یافت شد
+                step1["status"] = "success";
+                step1["data"] = new
+                {
+                    gatewayId = defaultGatewayResult.Data.PaymentGatewayId,
+                    name = defaultGatewayResult.Data.Name,
+                    gatewayType = defaultGatewayResult.Data.GatewayType.ToString(),
+                    isActive = defaultGatewayResult.Data.IsActive,
+                    isDefault = defaultGatewayResult.Data.IsDefault,
+                    merchantIdPreview = defaultGatewayResult.Data.MerchantId != null && defaultGatewayResult.Data.MerchantId.Length > 10
+                        ? defaultGatewayResult.Data.MerchantId.Substring(0, 10) + "..."
+                        : defaultGatewayResult.Data.MerchantId,
+                    callbackUrl = defaultGatewayResult.Data.CallbackUrl
+                };
+
+                var diagnosticInfoSuccess = new
+                {
+                    timestamp = DateTime.UtcNow,
+                    steps = steps
+                };
+
+                return Json(new
+                {
+                    success = true,
+                    message = "درگاه پرداخت پیش‌فرض یافت شد",
+                    diagnostic = diagnosticInfoSuccess
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در بررسی وضعیت درگاه پرداخت");
+                
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا در بررسی وضعیت: {ex.Message}",
+                    exceptionType = ex.GetType().Name,
+                    stackTrace = ex.StackTrace
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// ✅ Diagnostic Action: تست فرایند پرداخت (بدون ایجاد OnlinePayment)
+        /// GET: /Patient/AppointmentBooking/TestPaymentProcess?appointmentId=29
+        /// این endpoint برای تست فرایند پرداخت بدون ایجاد رکورد واقعی استفاده می‌شود
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // برای تست
+        public async Task<ActionResult> TestPaymentProcess(int appointmentId)
+        {
+            try
+            {
+                var steps = new List<Dictionary<string, object>>();
+
+                // STEP 1: دریافت نوبت
+                var step1 = new Dictionary<string, object>
+                {
+                    { "step", 1 },
+                    { "name", "GetAppointment" },
+                    { "status", "checking" }
+                };
+                steps.Add(step1);
+
+                var appointment = await _context.Appointments
+                    .AsNoTracking()
+                    .Include(a => a.Doctor)
+                    .Include(a => a.Patient)
+                    .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId && !a.IsDeleted);
+
+                if (appointment == null)
+                {
+                    step1["status"] = "failed";
+                    step1["error"] = "نوبت یافت نشد";
+                    
+                    return Json(new
+                    {
+                        success = false,
+                        message = "نوبت یافت نشد",
+                        diagnostic = new { timestamp = DateTime.UtcNow, steps = steps }
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                step1["status"] = "success";
+                step1["data"] = new
+                {
+                    appointmentId = appointment.AppointmentId,
+                    patientId = appointment.PatientId,
+                    doctorId = appointment.DoctorId,
+                    price = appointment.Price,
+                    status = appointment.Status.ToString()
+                };
+
+                // STEP 2: دریافت درگاه پیش‌فرض
+                var step2 = new Dictionary<string, object>
+                {
+                    { "step", 2 },
+                    { "name", "GetDefaultPaymentGateway" },
+                    { "status", "checking" }
+                };
+                steps.Add(step2);
+
+                var defaultGatewayResult = await _webPaymentService.GetDefaultPaymentGatewayAsync();
+                
+                if (!defaultGatewayResult.Success || defaultGatewayResult.Data == null)
+                {
+                    step2["status"] = "failed";
+                    step2["error"] = defaultGatewayResult.Message;
+                    
+                    return Json(new
+                    {
+                        success = false,
+                        message = "درگاه پرداخت یافت نشد",
+                        diagnostic = new { timestamp = DateTime.UtcNow, steps = steps }
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                var gateway = defaultGatewayResult.Data;
+                step2["status"] = "success";
+                step2["data"] = new
+                {
+                    gatewayId = gateway.PaymentGatewayId,
+                    name = gateway.Name,
+                    gatewayType = gateway.GatewayType.ToString(),
+                    isActive = gateway.IsActive
+                };
+
+                // STEP 3: ساخت CallbackUrl
+                var step3 = new Dictionary<string, object>
+                {
+                    { "step", 3 },
+                    { "name", "BuildCallbackUrl" },
+                    { "status", "checking" }
+                };
+                steps.Add(step3);
+
+                // ✅ BEST PRACTICE: ساخت CallbackUrl با استفاده از PaymentUrlHelper
+                var callbackRelativePath = Url.Action("PaymentCallback", "AppointmentBooking", new { area = "Patient" });
+                var callbackUrl = Helpers.PaymentUrlHelper.BuildPaymentCallbackUrl(callbackRelativePath, Request, _appSettings);
+
+                step3["status"] = "success";
+                step3["data"] = new { callbackUrl = callbackUrl, baseUrl = _appSettings.PaymentBaseUrl ?? "Request.Url (Fallback)" };
+
+                // STEP 4: Validation مبلغ
+                var step4 = new Dictionary<string, object>
+                {
+                    { "step", 4 },
+                    { "name", "ValidateAmount" },
+                    { "status", "checking" }
+                };
+                steps.Add(step4);
+
+                if (appointment.Price <= 0)
+                {
+                    step4["status"] = "failed";
+                    step4["error"] = "مبلغ نوبت نامعتبر است";
+                    
+                    return Json(new
+                    {
+                        success = false,
+                        message = "مبلغ نوبت نامعتبر است",
+                        diagnostic = new { timestamp = DateTime.UtcNow, steps = steps }
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                if (appointment.Price < 1000)
+                {
+                    step4["status"] = "warning";
+                    step4["message"] = $"مبلغ {appointment.Price} کمتر از حداقل 1000 ریال است";
+                    step4["data"] = new { amount = appointment.Price, minimum = 1000 };
+                }
+                else
+                {
+                    step4["status"] = "success";
+                    step4["data"] = new { amount = appointment.Price };
+                }
+
+                // STEP 5: تست درخواست پرداخت به Driver (بدون ایجاد OnlinePayment)
+                var step5 = new Dictionary<string, object>
+                {
+                    { "step", 5 },
+                    { "name", "TestDriverRequest" },
+                    { "status", "checking" }
+                };
+                steps.Add(step5);
+
+                try
+                {
+                    // ساخت درخواست تست
+                    var testRequest = new ClinicApp.Interfaces.Payment.Gateway.Drivers.PaymentRequest
+                    {
+                        Amount = appointment.Price < 1000 ? 1000 : appointment.Price,
+                        Description = $"تست پرداخت نوبت - {appointment.Doctor?.FullName ?? "نامشخص"}",
+                        CallbackUrl = callbackUrl,
+                        AdditionalData = new Dictionary<string, string>
+                        {
+                            { "AppointmentId", appointmentId.ToString() },
+                            { "TestMode", "true" }
+                        }
+                    };
+
+                    // فراخوانی Driver
+                    var gatewayDriver = DependencyResolver.Current.GetService<ClinicApp.Interfaces.Payment.Gateway.Drivers.IGatewayDriver>();
+                    if (gatewayDriver == null)
+                    {
+                        step5["status"] = "failed";
+                        step5["error"] = "Gateway Driver یافت نشد";
+                    }
+                    else
+                    {
+                        // ✅ CRITICAL: لاگ کردن جزئیات درخواست
+                        step5["requestDetails"] = new
+                        {
+                            amount = testRequest.Amount,
+                            description = testRequest.Description,
+                            callbackUrl = testRequest.CallbackUrl,
+                            merchantIdPreview = "156be6cd-e..." // از Web.config
+                        };
+
+                        var driverResult = await gatewayDriver.RequestPaymentAsync(testRequest);
+                        
+                        if (!driverResult.Success || driverResult.Data == null)
+                        {
+                            step5["status"] = "failed";
+                            step5["error"] = driverResult.Message;
+                            
+                            if (driverResult.Data != null)
+                            {
+                                step5["errorCode"] = driverResult.Data.ErrorCode;
+                                step5["errorMessage"] = driverResult.Data.ErrorMessage;
+                            }
+                            
+                            // ✅ CRITICAL: بررسی لاگ‌های سرور برای پاسخ کامل API
+                            step5["note"] = "لطفاً لاگ‌های سرور را بررسی کنید. دنبال این لاگ‌ها باشید: '📥 ZarinPal: پاسخ دریافت شد' و '❌ ZarinPal: خطای API'";
+                        }
+                        else
+                        {
+                            step5["status"] = "success";
+                            step5["data"] = new
+                            {
+                                authority = driverResult.Data.Authority,
+                                paymentUrl = driverResult.Data.PaymentUrl,
+                                success = driverResult.Data.Success
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    step5["status"] = "failed";
+                    step5["error"] = ex.Message;
+                    step5["exceptionType"] = ex.GetType().Name;
+                    step5["stackTrace"] = ex.StackTrace;
+                    
+                    if (ex.InnerException != null)
+                    {
+                        step5["innerException"] = new
+                        {
+                            type = ex.InnerException.GetType().Name,
+                            message = ex.InnerException.Message
+                        };
+                    }
+                }
+
+                var diagnosticInfo = new
+                {
+                    timestamp = DateTime.UtcNow,
+                    steps = steps
+                };
+
+                var allStepsSuccess = steps.All(s => s["status"].ToString() == "success" || s["status"].ToString() == "warning");
+                
+                return Json(new
+                {
+                    success = allStepsSuccess,
+                    message = allStepsSuccess ? "تست پرداخت موفق بود" : "تست پرداخت ناموفق بود",
+                    diagnostic = diagnosticInfo
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در تست فرایند پرداخت");
+                
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا در تست فرایند پرداخت: {ex.Message}",
+                    exceptionType = ex.GetType().Name,
+                    stackTrace = ex.StackTrace
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 

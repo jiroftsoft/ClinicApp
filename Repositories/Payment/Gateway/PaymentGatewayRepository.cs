@@ -68,13 +68,41 @@ namespace ClinicApp.Repositories.Payment.Gateway
         {
             try
             {
+                _logger.Debug("🔍 PAYMENT GATEWAY REPO: ایجاد درگاه جدید - Name: {Name}, MerchantId: {MerchantId}, CallbackUrl: {CallbackUrl}, IsActive: {IsActive}, IsDefault: {IsDefault}",
+                    gateway.Name,
+                    gateway.MerchantId?.Substring(0, Math.Min(10, gateway.MerchantId?.Length ?? 0)) + "...",
+                    gateway.CallbackUrl,
+                    gateway.IsActive,
+                    gateway.IsDefault);
+                
                 _context.PaymentGateways.Add(gateway);
                 await _context.SaveChangesAsync();
+                
+                _logger.Information("✅ PAYMENT GATEWAY REPO: درگاه با موفقیت ایجاد شد - GatewayId: {GatewayId}", gateway.PaymentGatewayId);
                 return gateway;
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException validationEx)
+            {
+                _logger.Error(validationEx, "❌ PAYMENT GATEWAY REPO: خطای Validation در ایجاد درگاه");
+                foreach (var validationError in validationEx.EntityValidationErrors)
+                {
+                    foreach (var error in validationError.ValidationErrors)
+                    {
+                        _logger.Error("Validation Error - Property: {Property}, Error: {Error}",
+                            error.PropertyName, error.ErrorMessage);
+                    }
+                }
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در ایجاد درگاه پرداخت");
+                _logger.Error(ex, "❌ PAYMENT GATEWAY REPO: خطا در ایجاد درگاه پرداخت - ExceptionType: {Type}, Message: {Message}",
+                    ex.GetType().Name, ex.Message);
+                if (ex.InnerException != null)
+                {
+                    _logger.Error("Inner Exception - Type: {Type}, Message: {Message}",
+                        ex.InnerException.GetType().Name, ex.InnerException.Message);
+                }
                 throw;
             }
         }

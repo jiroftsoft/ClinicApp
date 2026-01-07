@@ -101,6 +101,13 @@ public class Appointment : ISoftDelete, ITrackable
     public int Duration { get; set; } = 30;
 
     /// <summary>
+    /// تاریخ انقضای نوبت Pending (اگر Status = Pending باشد)
+    /// بعد از این تاریخ، نوبت به صورت خودکار منقضی می‌شود و اسلات آزاد می‌شود
+    /// این برای جلوگیری از اشغال اسلات‌ها توسط نوبت‌های Pending که پرداخت نشده‌اند
+    /// </summary>
+    public DateTime? PendingExpiresAt { get; set; }
+
+    /// <summary>
     /// اولویت نوبت
     /// </summary>
     [Required(ErrorMessage = "اولویت نوبت الزامی است.")]

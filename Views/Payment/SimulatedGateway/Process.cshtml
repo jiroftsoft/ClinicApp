@@ -1,0 +1,143 @@
+@{
+    ViewBag.Title = "درگاه پرداخت شبیه‌سازی شده";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-credit-card"></i>
+                        درگاه پرداخت شبیه‌سازی شده
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>توجه:</strong> این یک درگاه پرداخت شبیه‌سازی شده است و برای تست و توسعه استفاده می‌شود.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>اطلاعات پرداخت:</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>کد Authority:</th>
+                                <td><code>@ViewBag.Authority</code></td>
+                            </tr>
+                            <tr>
+                                <th>مبلغ:</th>
+                                <td>@(ViewBag.Amount != null ? ViewBag.Amount.ToString("N0") + " تومان" : "نامشخص")</td>
+                            </tr>
+                            <tr>
+                                <th>توضیحات:</th>
+                                <td>@(ViewBag.Description ?? "پرداخت شبیه‌سازی شده")</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <form id="paymentForm" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="authority" value="@ViewBag.Authority" />
+                        <input type="hidden" name="callbackUrl" value="@ViewBag.CallbackUrl" />
+                        <input type="hidden" name="correlationId" value="@ViewBag.CorrelationId" />
+                        <input type="hidden" name="action" id="paymentAction" value="" />
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success btn-lg" data-action="success">
+                                <i class="fas fa-check-circle"></i>
+                                پرداخت موفق (تست)
+                            </button>
+                            
+                            <button type="button" class="btn btn-danger btn-lg" data-action="cancel">
+                                <i class="fas fa-times-circle"></i>
+                                لغو پرداخت (تست)
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>هشدار:</strong> این درگاه فقط برای تست است. در Production از درگاه واقعی استفاده کنید.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('🎭 Simulated Gateway Page Loaded - Authority: @ViewBag.Authority');
+            
+            // ✅ CRITICAL FIX: استفاده از AJAX برای ارسال فرم به جای form submission
+            // این کار برای جلوگیری از مشکل CSP (Content Security Policy) form-action است
+            // AJAX از connect-src استفاده می‌کند که در CSP مجاز است
+            $('#paymentForm button[data-action]').on('click', function(e) {
+                e.preventDefault();
+                
+                var action = $(this).data('action'); // "success" یا "cancel"
+                var $form = $('#paymentForm');
+                var $button = $(this);
+                
+                // Disable button to prevent double submission
+                $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال پردازش...');
+                
+                // Get form data including anti-forgery token
+                var formData = {
+                    authority: $form.find('input[name="authority"]').val(),
+                    callbackUrl: $form.find('input[name="callbackUrl"]').val(),
+                    correlationId: $form.find('input[name="correlationId"]').val(),
+                    action: action,
+                    __RequestVerificationToken: $form.find('input[name="__RequestVerificationToken"]').val()
+                };
+                
+                // Submit via AJAX - this uses connect-src instead of form-action
+                // This bypasses CSP form-action restrictions
+                $.ajax({
+                    url: '@Url.Action("ProcessPayment", "SimulatedGateway", new { area = "" })',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.redirect) {
+                            // Redirect to the callback URL
+                            window.location.href = response.redirect;
+                        } else if (response.success) {
+                            // Fallback: reload if no redirect URL
+                            window.location.reload();
+                        } else {
+                            // Error response
+                            alert(response.message || 'خطا در پردازش پرداخت');
+                            $button.prop('disabled', false);
+                            if (action === 'success') {
+                                $button.html('<i class="fas fa-check-circle"></i> پرداخت موفق (تست)');
+                            } else {
+                                $button.html('<i class="fas fa-times-circle"></i> لغو پرداخت (تست)');
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ Error submitting payment:', error, xhr);
+                        var errorMessage = 'خطا در ارسال درخواست پرداخت. لطفا دوباره تلاش کنید.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        alert(errorMessage);
+                        $button.prop('disabled', false);
+                        if (action === 'success') {
+                            $button.html('<i class="fas fa-check-circle"></i> پرداخت موفق (تست)');
+                        } else {
+                            $button.html('<i class="fas fa-times-circle"></i> لغو پرداخت (تست)');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}
+

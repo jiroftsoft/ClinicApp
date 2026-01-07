@@ -1,5 +1,6 @@
 /**
  * JavaScript Module برای تایید و پرداخت نوبت
+ * ✅ ENTERPRISE-GRADE: بازنویسی کامل با Error Handling پیشرفته
  * رعایت SRP: فقط مدیریت تایید نهایی و پرداخت
  */
 (function ($) {
@@ -45,112 +46,196 @@
             });
         },
 
+        /**
+         * ✅ ENTERPRISE-GRADE: Submit Booking با Error Handling پیشرفته
+         * Flow:
+         * 1. Reserve Appointment (Status = Pending)
+         * 2. Process Payment (Redirect to Gateway)
+         * 3. Payment Callback (Status = Scheduled)
+         */
         submitBooking: function (formData) {
             showLoading();
 
-            // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
-            // ⚠️ Note: برای Reserve، Retry باید با احتیاط باشد (Idempotency)
-            // ✅ CRITICAL FIX: Use dynamic URL from Razor instead of hardcoded
             const reserveUrl = window.appConfig?.appointmentBooking?.reserveUrl || '/Patient/AppointmentBooking/Reserve';
             
-            // ✅ CRITICAL FIX: Ensure idempotency key is included in form data
+            // ✅ CRITICAL: Ensure idempotency key is included
             const idempotencyKey = $('#idempotencyKey').val();
             if (idempotencyKey) {
                 formData += `&idempotencyKey=${encodeURIComponent(idempotencyKey)}`;
             }
             
+            // ✅ ENTERPRISE-GRADE: AJAX Call با Retry Logic
             this.ajaxWithRetry({
                 url: reserveUrl,
                 type: 'POST',
                 data: formData,
-                timeout: 60000, // ✅ 60 ثانیه Timeout برای Reserve (ممکن است طول بکشد)
-                maxRetries: 1, // ✅ فقط 1 بار Retry برای Reserve (به دلیل Idempotency)
-                retryDelay: 2000, // ✅ 2 ثانیه تاخیر
+                timeout: 60000,
+                maxRetries: 1, // فقط 1 بار Retry (Idempotency)
+                retryDelay: 2000,
                 onSuccess: async (response) => {
-                    // ✅ CRITICAL FIX: Wrap entire onSuccess in try-catch to catch unhandled exceptions
+                    // ✅ CRITICAL: Wrap در try-catch برای catch کردن exceptions از processPayment
                     try {
                         hideLoading();
-                        console.log('✅ [ConfirmBooking] Reserve response received:', response);
-                        console.log('🔍 [ConfirmBooking] Response details - success:', response?.success, 'requiresPayment:', response?.requiresPayment, 'appointmentId:', response?.appointmentId);
                         
-                        // ✅ CRITICAL FIX: بررسی دقیق‌تر response
-                        if (response && response.success === true) {
-                            console.log('✅ [ConfirmBooking] Reserve successful - AppointmentId:', response.appointmentId, 'RequiresPayment:', response.requiresPayment);
+                        // ✅ ENTERPRISE-GRADE: Logging کامل
+                        console.log('✅ [ConfirmBooking] Reserve response:', response);
+                        console.log('🔍 [ConfirmBooking] Details - success:', response?.success, 
+                                   'requiresPayment:', response?.requiresPayment, 
+                                   'appointmentId:', response?.appointmentId,
+                                   'message:', response?.message);
+                        
+                        // ✅ CRITICAL: بررسی دقیق response
+                        if (!response) {
+                            console.error('❌ [ConfirmBooking] Response is null or undefined');
+                            this.showError('خطا در دریافت پاسخ از سرور. لطفاً دوباره تلاش کنید.');
+                            return;
+                        }
+
+                        // ✅ CRITICAL: بررسی success flag (با پشتیبانی از string و boolean)
+                        // ⚠️ NOTE: بعضی سرورها success را به صورت string "true" برمی‌گردانند
+                        const isSuccess = response.success === true || response.success === 'true' || response.success === 1;
+                        
+                        if (!isSuccess) {
+                            // ❌ Reserve failed
+                            console.error('❌ [ConfirmBooking] Reserve failed - Message:', response.message, 'Response:', response);
+                            console.error('❌ [ConfirmBooking] Success value:', response.success, 'Type:', typeof response.success);
                             
-                            // ✅ CRITICAL FIX: اگر نیاز به پرداخت دارد، پرداخت را انجام بده
-                            if (response.requiresPayment === true && response.appointmentId) {
-                                console.log('💰 [ConfirmBooking] Starting payment process for AppointmentId:', response.appointmentId);
-                                try {
-                                    await this.processPayment(response.appointmentId);
-                                } catch (error) {
-                                    console.error('❌ [ConfirmBooking] Error in processPayment:', error);
-                                    // ✅ CRITICAL FIX: نمایش خطای پرداخت به صورت جداگانه
-                                    // ✅ CRITICAL FIX: نوبت با موفقیت رزرو شده است، فقط پرداخت خطا دارد
-                                    Swal.fire({
-                                        title: 'خطا در پردازش پرداخت',
-                                        text: 'نوبت شما با موفقیت رزرو شده است. لطفاً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.',
-                                        icon: 'warning',
-                                        confirmButtonText: 'باشه',
-                                        confirmButtonColor: '#2c5aa0'
-                                    }).then(() => {
-                                        window.location.href = '/Patient/Appointment/MyAppointments';
-                                    });
-                                }
-                            } else {
-                                console.log('✅ [ConfirmBooking] No payment required, showing success');
-                                this.showSuccess(response);
-                            }
-                        } else {
-                            // ✅ CRITICAL FIX: Display warnings separately from errors
-                            let errorMessage = response?.message || 'خطا در رزرو نوبت';
-                            console.error('❌ [ConfirmBooking] Reserve failed - Message:', errorMessage, 'Response:', response);
-                            
-                            // Display warnings separately if present
-                            if (response?.warnings && response.warnings.length > 0) {
+                            // ✅ نمایش warnings جداگانه (اگر وجود دارد)
+                            if (response.warnings && response.warnings.length > 0) {
                                 const warningsText = response.warnings.join('\n');
-                                Swal.fire({
+                                await Swal.fire({
                                     title: 'هشدار',
                                     html: `<p>${warningsText}</p>`,
                                     icon: 'warning',
                                     confirmButtonText: 'باشه',
                                     confirmButtonColor: '#2c5aa0'
-                                }).then(() => {
-                                    // After user acknowledges warnings, show error
-                                    this.showError(errorMessage);
                                 });
-                            } else {
-                                this.showError(errorMessage);
                             }
+                            
+                            // ✅ نمایش خطا
+                            const errorMessage = response.message || 'خطا در رزرو نوبت';
+                            this.showError(errorMessage);
+                            return;
                         }
+
+                        // ✅ Reserve successful
+                        console.log('✅ [ConfirmBooking] Reserve successful - AppointmentId:', response.appointmentId, 
+                                   'RequiresPayment:', response.requiresPayment);
+                        
+                        // ✅ CRITICAL: اگر نیاز به پرداخت دارد
+                        if (response.requiresPayment === true && response.appointmentId) {
+                            console.log('💰 [ConfirmBooking] Starting payment process - AppointmentId:', response.appointmentId);
+                            
+                            try {
+                                // ✅ ENTERPRISE-GRADE: پرداخت را انجام بده
+                                await this.processPayment(response.appointmentId);
+                                
+                                // ✅ اگر processPayment موفق بود، redirect انجام می‌شود
+                                // پس این خط اجرا نمی‌شود
+                                console.log('✅ [ConfirmBooking] Payment process completed successfully');
+                                
+                            } catch (paymentError) {
+                                // ❌ خطا در پردازش پرداخت
+                                console.error('❌ [ConfirmBooking] Payment process failed:', paymentError);
+                                console.error('❌ [ConfirmBooking] Payment error details:', {
+                                    message: paymentError.message,
+                                    stack: paymentError.stack,
+                                    response: paymentError.responseJSON
+                                });
+                                
+                                // ✅ CRITICAL: نوبت با موفقیت رزرو شده است (Status = Pending)
+                                // فقط پرداخت خطا دارد
+                                await Swal.fire({
+                                    title: 'خطا در پردازش پرداخت',
+                                    html: `
+                                        <p>نوبت شما با موفقیت ثبت شد و در انتظار پرداخت است.</p>
+                                        <p class="mt-2"><strong>شناسه نوبت: ${response.appointmentId}</strong></p>
+                                        <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.</p>
+                                    `,
+                                    icon: 'warning',
+                                    confirmButtonText: 'باشه',
+                                    confirmButtonColor: '#2c5aa0'
+                                });
+                                
+                                // ✅ CRITICAL FIX: هدایت به صفحه SelectTime به جای MyAppointments
+                                // چون MyAppointments نیاز به احراز هویت دارد
+                                // اما SelectTime با AllowAnonymous است
+                                const doctorId = $('input[name="DoctorId"]').val() || $('#doctorId').val() || '';
+                                const appointmentDate = $('input[name="AppointmentDate"]').val() || $('#selectedDate').val() || '';
+                                
+                                console.log('🔍 [ConfirmBooking] Redirect info - DoctorId:', doctorId, 'AppointmentDate:', appointmentDate);
+                                
+                                if (doctorId && appointmentDate) {
+                                    // ✅ تبدیل تاریخ به فرمت yyyy-MM-dd اگر لازم باشد
+                                    const formattedDate = appointmentDate.includes('/') ? appointmentDate : appointmentDate;
+                                    window.location.href = `/Patient/AppointmentBooking/SelectTime?doctorId=${doctorId}&date=${encodeURIComponent(formattedDate)}`;
+                                } else {
+                                    // ✅ Fallback: هدایت به SelectDoctor (AllowAnonymous)
+                                    console.warn('⚠️ [ConfirmBooking] DoctorId or AppointmentDate not found, redirecting to SelectDoctor');
+                                    window.location.href = '/Patient/AppointmentBooking/SelectDoctor';
+                                }
+                            }
+                            
+                        } else {
+                            // ✅ نیازی به پرداخت نیست
+                            console.log('✅ [ConfirmBooking] No payment required');
+                            this.showSuccess(response);
+                        }
+                        
                     } catch (error) {
-                        // ✅ CRITICAL FIX: Catch any unhandled exceptions in onSuccess
+                        // ❌ خطای غیرمنتظره در onSuccess
                         hideLoading();
-                        console.error('❌ [ConfirmBooking] Unhandled error in onSuccess:', error);
+                        console.error('❌ [ConfirmBooking] Unexpected error in onSuccess:', error);
                         console.error('❌ [ConfirmBooking] Error stack:', error.stack);
                         console.error('❌ [ConfirmBooking] Response was:', response);
                         
-                        // ✅ CRITICAL FIX: If response was successful but error occurred, show payment error
-                        if (response && response.success === true && response.requiresPayment === true) {
-                            Swal.fire({
+                        // ✅ CRITICAL: بررسی اینکه آیا Reserve موفق بود یا نه (با پشتیبانی از string و boolean)
+                        const isSuccess = response && (response.success === true || response.success === 'true' || response.success === 1);
+                        const requiresPayment = response && (response.requiresPayment === true || response.requiresPayment === 'true' || response.requiresPayment === 1);
+                        
+                        if (isSuccess && requiresPayment) {
+                            // ✅ Reserve موفق بود، فقط پرداخت خطا دارد
+                            await Swal.fire({
                                 title: 'خطا در پردازش پرداخت',
-                                text: 'نوبت شما با موفقیت رزرو شده است. لطفاً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.',
+                                html: `
+                                    <p>نوبت شما با موفقیت ثبت شد و در انتظار پرداخت است.</p>
+                                    <p class="mt-2"><strong>شناسه نوبت: ${response.appointmentId}</strong></p>
+                                    <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.</p>
+                                `,
                                 icon: 'warning',
                                 confirmButtonText: 'باشه',
                                 confirmButtonColor: '#2c5aa0'
-                            }).then(() => {
-                                window.location.href = '/Patient/Appointment/MyAppointments';
                             });
+                            
+                            // ✅ CRITICAL FIX: هدایت به صفحه SelectTime به جای MyAppointments
+                            // چون MyAppointments نیاز به احراز هویت دارد
+                            // اما SelectTime با AllowAnonymous است
+                            const doctorId = $('input[name="DoctorId"]').val() || $('#doctorId').val() || '';
+                            const appointmentDate = $('input[name="AppointmentDate"]').val() || $('#selectedDate').val() || '';
+                            
+                            console.log('🔍 [ConfirmBooking] Redirect info (catch block) - DoctorId:', doctorId, 'AppointmentDate:', appointmentDate);
+                            
+                            if (doctorId && appointmentDate) {
+                                // ✅ تبدیل تاریخ به فرمت yyyy-MM-dd اگر لازم باشد
+                                const formattedDate = appointmentDate.includes('/') ? appointmentDate : appointmentDate;
+                                window.location.href = `/Patient/AppointmentBooking/SelectTime?doctorId=${doctorId}&date=${encodeURIComponent(formattedDate)}`;
+                            } else {
+                                // ✅ Fallback: هدایت به SelectDoctor (AllowAnonymous)
+                                console.warn('⚠️ [ConfirmBooking] DoctorId or AppointmentDate not found, redirecting to SelectDoctor');
+                                window.location.href = '/Patient/AppointmentBooking/SelectDoctor';
+                            }
                         } else {
-                            // ✅ CRITICAL FIX: Generic error for other cases
+                            // ❌ Reserve ناموفق بود
                             this.showError('خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.');
                         }
                     }
                 },
                 onError: (xhr, status, error) => {
                     hideLoading();
+                    
+                    // ✅ ENTERPRISE-GRADE: تشخیص نوع خطا
                     let errorMessage = 'خطا در ارتباط با سرور';
                     
-                    // ✅ تشخیص نوع خطا و نمایش پیام مناسب
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     } else if (status === 'timeout') {
@@ -163,47 +248,40 @@
                         errorMessage = 'اطلاعات ارسالی نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
                     }
                     
+                    console.error('❌ [ConfirmBooking] AJAX Error:', { status, error, xhr, responseJSON: xhr.responseJSON });
                     this.showError(errorMessage);
-                    console.error('❌ [ConfirmBooking] AJAX Error:', { status, error, xhr });
                 }
             });
         },
 
+        /**
+         * ✅ ENTERPRISE-GRADE: Process Payment با Error Handling پیشرفته
+         * Flow:
+         * 1. ارسال درخواست پرداخت به ProcessPayment action
+         * 2. دریافت paymentUrl از درگاه
+         * 3. هدایت به درگاه پرداخت
+         */
         processPayment: async function (appointmentId) {
-            console.log('💰 ConfirmBooking: processPayment called - AppointmentId:', appointmentId);
+            console.log('💰 [ConfirmBooking] processPayment called - AppointmentId:', appointmentId);
             
-            // ✅ CRITICAL FIX: بررسی وجود AppointmentPayment Module
-            if (window.AppointmentPayment && typeof window.AppointmentPayment.processPayment === 'function') {
-                console.log('✅ ConfirmBooking: Using AppointmentPayment module');
-                try {
-                    // ✅ CRITICAL FIX: AppointmentPayment.processPayment یک Promise برنمی‌گرداند
-                    // پس باید از fallback استفاده کنیم یا آن را wrap کنیم
-                    // فعلاً از fallback استفاده می‌کنیم تا error handling بهتری داشته باشیم
-                    // window.AppointmentPayment.processPayment(appointmentId);
-                    // return;
-                    console.warn('⚠️ ConfirmBooking: AppointmentPayment module found but using fallback for better error handling');
-                } catch (error) {
-                    console.error('❌ ConfirmBooking: Error in AppointmentPayment.processPayment:', error);
-                    // Fallback to direct AJAX call
-                }
-            } else {
-                console.warn('⚠️ ConfirmBooking: AppointmentPayment module not available, using fallback');
+            if (!appointmentId) {
+                throw new Error('شناسه نوبت نامعتبر است');
             }
-
-            // ✅ Fallback: استفاده از کد قبلی
+            
             showLoading();
 
             try {
+                // ✅ CRITICAL: بررسی AntiForgeryToken
                 const token = $('input[name="__RequestVerificationToken"]').val();
                 if (!token) {
-                    console.error('❌ ConfirmBooking: AntiForgeryToken not found');
+                    console.error('❌ [ConfirmBooking] AntiForgeryToken not found');
                     hideLoading();
-                    // ✅ CRITICAL FIX: Throw exception برای catch block در submitBooking
                     throw new Error('خطا در دریافت توکن امنیتی. لطفاً صفحه را نوسازی کنید.');
                 }
 
-                console.log('💰 ConfirmBooking: Sending payment request - AppointmentId:', appointmentId);
+                console.log('💰 [ConfirmBooking] Sending payment request - AppointmentId:', appointmentId);
                 
+                // ✅ ENTERPRISE-GRADE: AJAX Call با Error Handling
                 const response = await $.ajax({
                     url: '/Patient/AppointmentBooking/ProcessPayment',
                     type: 'POST',
@@ -217,44 +295,74 @@
                 });
 
                 hideLoading();
-                console.log('✅ ConfirmBooking: Payment response received:', response);
-                console.log('🔍 [ConfirmBooking] Payment response details - success:', response?.success, 'paymentUrl:', response?.paymentUrl);
+                
+                // ✅ ENTERPRISE-GRADE: Logging کامل
+                console.log('✅ [ConfirmBooking] Payment response received:', response);
+                console.log('🔍 [ConfirmBooking] Payment details - success:', response?.success, 
+                           'paymentUrl:', response?.paymentUrl,
+                           'message:', response?.message);
 
-                if (response && response.success === true && response.paymentUrl) {
-                    // هدایت به درگاه پرداخت
-                    console.log('🔄 ConfirmBooking: Redirecting to payment gateway:', response.paymentUrl);
-                    
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'در حال هدایت به درگاه پرداخت',
-                            text: 'لطفاً صبر کنید...',
-                            icon: 'info',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            showConfirmButton: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    }
+                // ✅ CRITICAL: بررسی response
+                if (!response) {
+                    throw new Error('خطا در دریافت پاسخ از سرور');
+                }
 
-                    // هدایت به درگاه پس از 1 ثانیه
-                    setTimeout(() => {
-                        window.location.href = response.paymentUrl;
-                    }, 1000);
-                } else {
-                    // ✅ CRITICAL FIX: نمایش خطای پرداخت به صورت جداگانه (نه "خطا در رزرو نوبت")
-                    const errorMessage = response?.message || 'خطا در ایجاد درخواست پرداخت';
-                    console.error('❌ ConfirmBooking: Payment request failed - Message:', errorMessage, 'Response:', response);
-                    
-                    // ✅ CRITICAL FIX: Throw exception برای catch block در submitBooking
+                // ✅ CRITICAL: بررسی success flag (با پشتیبانی از string و boolean)
+                const isSuccess = response.success === true || response.success === 'true' || response.success === 1;
+                
+                if (!isSuccess) {
+                    // ❌ Payment request failed
+                    const errorMessage = response.message || 'خطا در ایجاد درخواست پرداخت';
+                    console.error('❌ [ConfirmBooking] Payment request failed - Message:', errorMessage, 'Response:', response);
+                    console.error('❌ [ConfirmBooking] Success value:', response.success, 'Type:', typeof response.success);
                     throw new Error(errorMessage);
                 }
+
+                if (!response.paymentUrl) {
+                    // ❌ PaymentUrl موجود نیست
+                    console.error('❌ [ConfirmBooking] PaymentUrl is missing in response:', response);
+                    throw new Error('خطا در دریافت آدرس درگاه پرداخت');
+                }
+
+                // ✅ Payment successful - Redirect to gateway
+                console.log('🔄 [ConfirmBooking] Redirecting to payment gateway:', response.paymentUrl);
+                
+                // ✅ نمایش پیام هدایت
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'در حال هدایت به درگاه پرداخت',
+                        text: 'لطفاً صبر کنید...',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                }
+
+                // ✅ هدایت به درگاه پس از 1 ثانیه
+                setTimeout(() => {
+                    window.location.href = response.paymentUrl;
+                }, 1000);
+                
             } catch (error) {
                 hideLoading();
-                console.error('❌ ConfirmBooking: AJAX Error in processPayment:', error);
                 
+                // ✅ ENTERPRISE-GRADE: Error Handling پیشرفته
+                console.error('❌ [ConfirmBooking] Error in processPayment:', error);
+                console.error('❌ [ConfirmBooking] Error details:', {
+                    message: error.message,
+                    status: error.status,
+                    statusText: error.statusText,
+                    responseJSON: error.responseJSON,
+                    stack: error.stack
+                });
+                
+                // ✅ تشخیص نوع خطا
                 let errorMessage = 'خطا در پردازش پرداخت';
+                
                 if (error.responseJSON && error.responseJSON.message) {
                     errorMessage = error.responseJSON.message;
                 } else if (error.message) {
@@ -267,7 +375,7 @@
                     errorMessage = 'اطلاعات ارسالی نامعتبر است. لطفاً صفحه را رفرش کنید و دوباره تلاش کنید.';
                 }
                 
-                // ✅ CRITICAL FIX: Throw exception برای catch block در submitBooking
+                // ✅ CRITICAL: Throw exception برای catch block در submitBooking
                 throw new Error(errorMessage);
             }
         },
@@ -279,69 +387,10 @@
                 icon: 'success',
                 confirmButtonText: 'باشه',
                 allowOutsideClick: false,
-                allowEscapeKey: false
+                confirmButtonColor: '#2c5aa0'
             }).then(() => {
-                // هدایت به صفحه نوبت‌های من
                 window.location.href = '/Patient/Appointment/MyAppointments';
             });
-        },
-
-        /**
-         * ✅ CRITICAL FIX: AJAX Helper با Retry Logic و Timeout Handling
-         * طبق قراردادها: Bulletproof Error Handling
-         */
-        ajaxWithRetry: function (options) {
-            const self = this;
-            let retryCount = 0;
-            const maxRetries = options.maxRetries || 3;
-            const retryDelay = options.retryDelay || 1000;
-            const timeout = options.timeout || 30000;
-
-            function makeRequest() {
-                $.ajax({
-                    url: options.url,
-                    type: options.type || 'GET',
-                    data: options.data || {},
-                    headers: options.headers || {},
-                    timeout: timeout,
-                    success: function (response) {
-                        if (options.onSuccess) {
-                            options.onSuccess(response);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        // ✅ تشخیص نوع خطا
-                        const isNetworkError = status === 'timeout' || 
-                                             status === 'error' && xhr.status === 0 ||
-                                             status === 'abort';
-                        
-                        const isServerError = xhr.status >= 500;
-                        const isClientError = xhr.status >= 400 && xhr.status < 500;
-
-                        // ✅ Retry Logic برای Network Errors و Server Errors (نه Client Errors)
-                        if (retryCount < maxRetries && (isNetworkError || isServerError) && !isClientError) {
-                            retryCount++;
-                            console.warn(`⚠️ [ConfirmBooking] Retry attempt ${retryCount}/${maxRetries} for ${options.url}`);
-                            
-                            // ✅ Exponential Backoff
-                            const delay = retryDelay * Math.pow(2, retryCount - 1);
-                            
-                            setTimeout(function () {
-                                makeRequest();
-                            }, delay);
-                        } else {
-                            // ✅ تمام تلاش‌ها انجام شد یا خطای Client Error
-                            if (options.onError) {
-                                options.onError(xhr, status, error);
-                            } else {
-                                self.showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
-                            }
-                        }
-                    }
-                });
-            }
-
-            makeRequest();
         },
 
         showError: function (message) {
@@ -353,11 +402,67 @@
                     confirmButtonText: 'باشه',
                     confirmButtonColor: '#2c5aa0'
                 });
-            } else if (typeof toastr !== 'undefined') {
-                toastr.error(message);
             } else {
-                alert(message);
+                alert('خطا: ' + message);
             }
+        },
+
+        /**
+         * ✅ ENTERPRISE-GRADE: AJAX با Retry Logic و JSON Parsing
+         * CRITICAL FIX: اضافه کردن dataType: 'json' و parse کردن response اگر string باشد
+         */
+        ajaxWithRetry: function (options) {
+            const self = this;
+            let retryCount = 0;
+            const maxRetries = options.maxRetries || 0;
+            const retryDelay = options.retryDelay || 1000;
+
+            function attempt() {
+                $.ajax({
+                    url: options.url,
+                    type: options.type || 'POST',
+                    data: options.data,
+                    dataType: 'json', // ✅ CRITICAL FIX: Explicitly set dataType to JSON
+                    timeout: options.timeout || 30000,
+                    headers: options.headers || {},
+                    success: function (response) {
+                        // ✅ CRITICAL FIX: Ensure response is parsed correctly
+                        // اگر response به صورت string برگردد، parse می‌کنیم
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                                console.log('✅ [ConfirmBooking] Parsed JSON response:', response);
+                            } catch (e) {
+                                console.error('❌ [ConfirmBooking] Failed to parse JSON response:', e);
+                                console.error('❌ [ConfirmBooking] Raw response:', response);
+                            }
+                        }
+                        
+                        // ✅ CRITICAL FIX: Log response برای debugging
+                        console.log('✅ [ConfirmBooking] AJAX Success - Response type:', typeof response, 'Response:', response);
+                        
+                        if (options.onSuccess) {
+                            options.onSuccess(response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // ✅ Retry logic
+                        if (retryCount < maxRetries && (status === 'timeout' || xhr.status >= 500)) {
+                            retryCount++;
+                            console.warn(`⚠️ [ConfirmBooking] Retry attempt ${retryCount}/${maxRetries} after ${retryDelay}ms`);
+                            setTimeout(attempt, retryDelay);
+                        } else {
+                            if (options.onError) {
+                                options.onError(xhr, status, error);
+                            } else {
+                                self.showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+                            }
+                        }
+                    }
+                });
+            }
+
+            attempt();
         }
     };
 
@@ -366,8 +471,7 @@
         ConfirmBooking.init();
     });
 
-    // Export for global access
+    // Export for global access (if needed)
     window.ConfirmBooking = ConfirmBooking;
 
 })(jQuery);
-

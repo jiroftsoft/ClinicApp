@@ -83,6 +83,7 @@ namespace ClinicApp.Helpers
         public int AppointmentAvailableDatesMaxCount { get; set; }
         public int AppointmentAvailableDatesDaysToCheck { get; set; }
         public int AppointmentDoctorsPageSize { get; set; }
+        public int PendingExpirationMinutes { get; set; } // ✅ مدت زمان انقضای نوبت‌های Pending (به دقیقه)
 
         #endregion
 
@@ -90,6 +91,17 @@ namespace ClinicApp.Helpers
 
         public string ApplicationVersion { get; set; }
         public string Environment { get; set; }
+
+        #endregion
+
+        #region Payment Settings (تنظیمات پرداخت)
+
+        /// <summary>
+        /// Base URL برای ساخت CallbackUrl در درگاه‌های پرداخت
+        /// مثال: https://yourdomain.com (بدون trailing slash)
+        /// اگر تنظیم نشده باشد، از Request.Url استفاده می‌شود (Fallback)
+        /// </summary>
+        public string PaymentBaseUrl { get; set; }
 
         #endregion
 
@@ -103,6 +115,7 @@ namespace ClinicApp.Helpers
             LoadMedicalSystemSettings();
             LoadAppointmentSettings();
             LoadApplicationInformationSettings();
+            LoadPaymentSettings();
 
             _log.Information("تنظیمات سیستم با موفقیت بارگذاری شدند");
         }
@@ -314,6 +327,15 @@ namespace ClinicApp.Helpers
                 20,
                 "اندازه پیش‌فرض صفحه‌بندی برای لیست پزشکان",
                 5, 100);
+
+            // PendingExpirationMinutes
+            // ✅ مدت زمان انقضای نوبت‌های Pending (به دقیقه)
+            // بعد از این مدت، نوبت‌های Pending منقضی می‌شوند و اسلات آزاد می‌شود
+            // مقدار پیش‌فرض: 5 دقیقه (حداقل زمان ممکن)
+            PendingExpirationMinutes = GetIntSetting("Appointment:PendingExpirationMinutes",
+                5, // ✅ مقدار پیش‌فرض: 5 دقیقه (حداقل زمان ممکن)
+                "مدت زمان انقضای نوبت‌های Pending",
+                3, 60); // ✅ محدوده: 3 تا 60 دقیقه
         }
 
         private void LoadApplicationInformationSettings()
@@ -327,6 +349,23 @@ namespace ClinicApp.Helpers
             Environment = GetStringSetting("Application:Environment",
                 System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
                 "محیط اجرای برنامه");
+        }
+
+        private void LoadPaymentSettings()
+        {
+            // PaymentBaseUrl
+            // ✅ Base URL برای ساخت CallbackUrl در درگاه‌های پرداخت
+            // مثال: https://yourdomain.com (بدون trailing slash)
+            // اگر تنظیم نشده باشد، null است و از Request.Url استفاده می‌شود (Fallback)
+            PaymentBaseUrl = GetStringSetting("Payment:BaseUrl",
+                null, // ✅ null = استفاده از Request.Url (Fallback)
+                "Base URL برای ساخت CallbackUrl در درگاه‌های پرداخت");
+            
+            // ✅ اگر BaseUrl تنظیم شده است، trailing slash را حذف می‌کنیم
+            if (!string.IsNullOrWhiteSpace(PaymentBaseUrl))
+            {
+                PaymentBaseUrl = PaymentBaseUrl.TrimEnd('/');
+            }
         }
 
         #endregion
@@ -449,6 +488,8 @@ namespace ClinicApp.Helpers
             LoadNotificationSettings();
             LoadMedicalSystemSettings();
             LoadAppointmentSettings();
+            LoadApplicationInformationSettings();
+            LoadPaymentSettings();
             _log.Information("تنظیمات با موفقیت به‌روزرسانی شدند");
         }
 

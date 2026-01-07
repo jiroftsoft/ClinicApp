@@ -238,12 +238,17 @@ namespace ClinicApp.Repositories.Appointment
             {
                 // ✅ CRITICAL FIX: فیلتر کردن همه Status‌های غیرفعال (نه فقط Cancelled)
                 // فقط Scheduled و Pending را در نظر می‌گیریم
+                // ✅ CRITICAL FIX: فیلتر کردن نوبت‌های Pending منقضی شده
+                // نوبت‌های Pending که PendingExpiresAt آن‌ها گذشته است، نباید در نظر گرفته شوند
+                var now = DateTime.UtcNow;
                 var appointments = await _context.Appointments
                     .Where(a =>
                         a.DoctorId == doctorId &&
                         !a.IsDeleted &&
                         DbFunctions.TruncateTime(a.AppointmentDate) == DbFunctions.TruncateTime(date) &&
-                        (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Pending))
+                        (a.Status == AppointmentStatus.Scheduled || 
+                         (a.Status == AppointmentStatus.Pending && 
+                          (a.PendingExpiresAt == null || a.PendingExpiresAt > now)))) // ✅ فیلتر نوبت‌های منقضی شده
                     .OrderBy(a => a.AppointmentDate)
                     .ToListAsync();
 
@@ -288,25 +293,32 @@ namespace ClinicApp.Repositories.Appointment
                 // 
                 // ✅ CRITICAL: فقط نوبت‌های فعال (Scheduled, Pending) را در نظر بگیریم
                 // نوبت‌های Completed, NoShow, Cancelled نباید در double booking check لحاظ شوند
+                // ✅ CRITICAL FIX: نوبت‌های Pending منقضی شده نیز نباید در نظر گرفته شوند
                 // ✅ CRITICAL: استفاده از Raw SQL با UPDLOCK برای pessimistic locking
                 // این باعث می‌شود که ردیف‌های مربوطه lock شوند تا Race Condition رخ ندهد
+                var now = DateTime.UtcNow;
                 var sql = @"
                     SELECT COUNT(*) 
                     FROM Appointments WITH (UPDLOCK, ROWLOCK)
                     WHERE PatientId = @p0
                       AND IsDeleted = 0
-                      AND Status IN (@p1, @p2)  -- فقط Scheduled و Pending
+                      AND (
+                          Status = @p1  -- Scheduled
+                          OR (Status = @p2 AND (PendingExpiresAt IS NULL OR PendingExpiresAt > @p6))  -- Pending که منقضی نشده
+                      )
                       AND CAST(AppointmentDate AS DATE) = CAST(@p3 AS DATE)
                       AND AppointmentDate < @p5
                       AND DATEADD(MINUTE, Duration, AppointmentDate) > @p4";
 
+                // ✅ CRITICAL FIX: استفاده از متغیر now که قبلاً تعریف شده است (خط 299)
                 var count = await _context.Database.SqlQuery<int>(sql,
                     new System.Data.SqlClient.SqlParameter("@p0", patientId),
                     new System.Data.SqlClient.SqlParameter("@p1", (int)AppointmentStatus.Scheduled),
                     new System.Data.SqlClient.SqlParameter("@p2", (int)AppointmentStatus.Pending),
                     new System.Data.SqlClient.SqlParameter("@p3", appointmentDate.Date),
                     new System.Data.SqlClient.SqlParameter("@p4", appointmentDateTime),
-                    new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime)
+                    new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime),
+                    new System.Data.SqlClient.SqlParameter("@p6", now) // ✅ CRITICAL FIX: زمان فعلی برای چک Expiration
                 ).FirstOrDefaultAsync();
 
                 var hasOverlap = count > 0;
@@ -314,13 +326,16 @@ namespace ClinicApp.Repositories.Appointment
                 // ✅ CRITICAL FIX: Logging دقیق‌تر برای debugging
                 if (hasOverlap)
                 {
-                    // دریافت نوبت‌های overlap برای logging
+                    // ✅ CRITICAL FIX: دریافت نوبت‌های overlap برای logging (با فیلتر Expiration)
                     var overlappingAppointments = await _context.Database.SqlQuery<dynamic>(@"
-                        SELECT AppointmentId, DoctorId, AppointmentDate, Duration, Status
+                        SELECT AppointmentId, DoctorId, AppointmentDate, Duration, Status, PendingExpiresAt
                         FROM Appointments
                         WHERE PatientId = @p0
                           AND IsDeleted = 0
-                          AND Status IN (@p1, @p2)  -- فقط Scheduled و Pending
+                          AND (
+                              Status = @p1  -- Scheduled
+                              OR (Status = @p2 AND (PendingExpiresAt IS NULL OR PendingExpiresAt > @p6))  -- Pending که منقضی نشده
+                          )
                           AND CAST(AppointmentDate AS DATE) = CAST(@p3 AS DATE)
                           AND AppointmentDate < @p5
                           AND DATEADD(MINUTE, Duration, AppointmentDate) > @p4",
@@ -329,7 +344,8 @@ namespace ClinicApp.Repositories.Appointment
                         new System.Data.SqlClient.SqlParameter("@p2", (int)AppointmentStatus.Pending),
                         new System.Data.SqlClient.SqlParameter("@p3", appointmentDate.Date),
                         new System.Data.SqlClient.SqlParameter("@p4", appointmentDateTime),
-                        new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime)
+                        new System.Data.SqlClient.SqlParameter("@p5", appointmentEndDateTime),
+                        new System.Data.SqlClient.SqlParameter("@p6", now) // ✅ CRITICAL FIX: زمان فعلی برای چک Expiration
                     ).ToListAsync();
 
                     // ✅ CRITICAL FIX: Logging با جزئیات کامل برای debugging

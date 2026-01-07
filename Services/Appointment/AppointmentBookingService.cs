@@ -434,23 +434,61 @@ namespace ClinicApp.Services.Appointment
                 var bookedAppointments = await _appointmentRepository.GetDoctorAppointmentsByDateAsync(doctorId, date);
                 _logger.Information("نوبت‌های رزرو شده دریافت شد - Count: {Count}", bookedAppointments?.Count() ?? 0);
 
+                // ✅ CRITICAL FIX: دریافت زمان فعلی ایران برای فیلتر کردن اسلات‌های گذشته
+                var iranNow = _timeProvider.GetIranNow();
+                var iranToday = _timeProvider.GetIranToday();
+                var isToday = date.Date == iranToday.Date;
+                
+                _logger.Debug("🔍 فیلتر اسلات‌های گذشته - Date: {Date}, IranToday: {IranToday}, IsToday: {IsToday}, IranNow: {IranNow}, CurrentTime: {CurrentTime}",
+                    date.ToString("yyyy/MM/dd"), iranToday.ToString("yyyy/MM/dd"), isToday, iranNow.ToString("yyyy/MM/dd HH:mm:ss"), iranNow.TimeOfDay);
+
                 // ✅ ENTERPRISE-GRADE: تبدیل به DTO و بررسی دسترسی‌پذیری با منطق Overlap صحیح
                 // ⚠️ NOTE: bookedAppointments از Repository فقط Scheduled و Pending را برمی‌گرداند
-                var slotDtos = availableSlots.Select(slot =>
-                {
-                    // ✅ منطق Overlap صحیح (فرمول استاندارد):
-                    // دو بازه زمانی A و B overlap دارند اگر و فقط اگر:
-                    // (A.Start < B.End) AND (A.End > B.Start)
-                    // 
-                    // در اینجا:
-                    // - A = slot (StartTime تا EndTime)
-                    // - B = appointment (AppointmentDate.TimeOfDay تا AppointmentDate.TimeOfDay + Duration)
-                    var isBooked = bookedAppointments.Any(a =>
+                var slotDtos = availableSlots
+                    .Where(slot =>
                     {
-                        // ✅ Repository قبلاً Status را فیلتر کرده است (فقط Scheduled و Pending)
-                        // اما برای اطمینان بیشتر، دوباره چک می‌کنیم
-                        if (a.Status != AppointmentStatus.Scheduled && a.Status != AppointmentStatus.Pending)
-                            return false;
+                        // ✅ CRITICAL FIX: فیلتر کردن اسلات‌های گذشته (فقط برای امروز)
+                        if (isToday)
+                        {
+                            // اگر اسلات تمام شده است (EndTime <= CurrentTime)، آن را فیلتر می‌کنیم
+                            var slotEndTime = slot.EndTime;
+                            var currentTime = iranNow.TimeOfDay;
+                            
+                            if (slotEndTime <= currentTime)
+                            {
+                                _logger.Debug("⏰ اسلات گذشته فیلتر شد - Slot: {StartTime}-{EndTime}, CurrentTime: {CurrentTime}",
+                                    slot.StartTime, slot.EndTime, currentTime);
+                                return false; // اسلات گذشته را فیلتر می‌کنیم
+                            }
+                        }
+                        
+                        return true; // اسلات معتبر است
+                    })
+                    .Select(slot =>
+                    {
+                        // ✅ منطق Overlap صحیح (فرمول استاندارد):
+                        // دو بازه زمانی A و B overlap دارند اگر و فقط اگر:
+                        // (A.Start < B.End) AND (A.End > B.Start)
+                        // 
+                        // در اینجا:
+                        // - A = slot (StartTime تا EndTime)
+                        // - B = appointment (AppointmentDate.TimeOfDay تا AppointmentDate.TimeOfDay + Duration)
+                        var isBooked = bookedAppointments.Any(a =>
+                    {
+                    // ✅ Repository قبلاً Status را فیلتر کرده است (فقط Scheduled و Pending)
+                    // اما برای اطمینان بیشتر، دوباره چک می‌کنیم
+                    // ✅ CRITICAL FIX: نوبت‌های Pending منقضی شده را در نظر نمی‌گیریم
+                    if (a.Status == AppointmentStatus.Scheduled)
+                        // Scheduled همیشه معتبر است
+                        ;
+                    else if (a.Status == AppointmentStatus.Pending)
+                    {
+                        // ✅ چک Expiration: اگر PendingExpiresAt گذشته است، نوبت منقضی شده است
+                        if (a.PendingExpiresAt.HasValue && a.PendingExpiresAt.Value <= _timeProvider.UtcNow)
+                            return false; // نوبت منقضی شده است
+                    }
+                    else
+                        return false; // Status نامعتبر
 
                         var appointmentStart = a.AppointmentDate.TimeOfDay;
                         // ✅ CRITICAL FIX: استفاده از Duration واقعی نوبت (یا default 15 دقیقه)
@@ -706,7 +744,13 @@ namespace ClinicApp.Services.Appointment
                         DoctorId = request.DoctorId,
                         PatientId = request.PatientId,
                         AppointmentDate = appointmentDateTime,
-                        Status = AppointmentStatus.Scheduled,
+                        Status = AppointmentStatus.Pending, // ✅ CRITICAL FIX: نوبت در انتظار پرداخت (نه Scheduled)
+                        // بعد از موفقیت پرداخت، در PaymentCallback به Scheduled تبدیل می‌شود
+                        // این طبق قراردادهای مالی است: نوبت قبل از پرداخت رزرو نمی‌شود
+                        PendingExpiresAt = _timeProvider.UtcNow.AddMinutes(_appSettings.PendingExpirationMinutes), // ✅ CRITICAL: استفاده از تنظیمات AppSettings
+                        // بعد از مدت زمان تعیین شده در AppSettings، نوبت منقضی می‌شود و اسلات آزاد می‌شود
+                        // این برای جلوگیری از اشغال اسلات‌ها توسط نوبت‌های Pending که پرداخت نشده‌اند
+                        // مقدار پیش‌فرض: 5 دقیقه (قابل تنظیم در Web.config: Appointment:PendingExpirationMinutes)
                         Price = priceResult.Data,
                         Description = request.Description,
                         IsOnlineBooking = true,

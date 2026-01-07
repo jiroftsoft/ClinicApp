@@ -63,6 +63,10 @@ namespace ClinicApp.Interfaces.Payment.Gateway.Drivers
         public string Email { get; set; }
         public string Metadata { get; set; }
         public Dictionary<string, string> AdditionalData { get; set; }
+        /// <summary>
+        /// CorrelationId برای Tracing در لاگ‌ها
+        /// </summary>
+        public string CorrelationId { get; set; }
     }
 
     /// <summary>

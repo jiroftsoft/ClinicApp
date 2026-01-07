@@ -65,7 +65,10 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // ✅ CRITICAL FIX: استفاده از AsNoTracking() برای جلوگیری از DbContext concurrency issues
+                // این متد فقط برای خواندن داده است و نیازی به tracking ندارد
                 return await _context.Doctors
+                    .AsNoTracking() // ✅ FIX: جلوگیری از concurrency issues در async operations
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
                     .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .Include(d => d.DoctorDepartments.Select(dd => dd.Department))

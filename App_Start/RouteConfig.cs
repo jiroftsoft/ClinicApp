@@ -555,6 +555,14 @@ namespace ClinicApp
                 namespaces: new[] { "ClinicApp.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
+            // ✅ SimulatedGateway Route - باید قبل از Payment_Controllers باشد
+            routes.MapRoute(
+                name: "Payment_SimulatedGateway",
+                url: "Payment/SimulatedGateway/{action}/{id}",
+                defaults: new { controller = "SimulatedGateway", action = "Process", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Controllers.Payment" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // مثال: /Payment/CashierReport/DailyReport -> CashierReportController.DailyReport
             // مثال: /Payment/Payment -> PaymentController.Index
             // ⚠️ محدود به controller های خاص Payment برای جلوگیری از conflict با AccountController
