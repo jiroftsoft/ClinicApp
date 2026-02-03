@@ -209,6 +209,58 @@
                 </div>
             </div>
             
+            <!-- تنظیمات عمومی برنامه کاری -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="fas fa-cog me-2"></i>
+                        تنظیمات عمومی
+                    </h4>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock me-2"></i>
+                            مدت زمان هر نوبت (دقیقه)
+                        </label>
+                        @Html.TextBoxFor(m => m.AppointmentDuration, 
+                            new { 
+                                @class = "form-control", 
+                                type = "number",
+                                min = "5",
+                                max = "120",
+                                step = "5",
+                                placeholder = "مثال: 30"
+                            })
+                        @Html.ValidationMessageFor(m => m.AppointmentDuration, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            مدت زمان هر نوبت به دقیقه (حداقل 5 و حداکثر 120 دقیقه)
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            هزینه ویزیت (ریال)
+                        </label>
+                        @Html.TextBoxFor(m => m.ConsultationFee, 
+                            new { 
+                                @class = "form-control", 
+                                type = "number",
+                                min = "0",
+                                max = "10000000",
+                                step = "1000",
+                                placeholder = "مثال: 500000"
+                            })
+                        @Html.ValidationMessageFor(m => m.ConsultationFee, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            هزینه ویزیت به ریال (مثال: 500000 = 500 هزار تومان)
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <a href="@Url.Action("Details", "DoctorSchedule", new { area = "Admin", id = Model.Id })" class="btn btn-secondary btn-action">

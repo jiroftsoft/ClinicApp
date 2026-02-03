@@ -159,7 +159,7 @@ public class AppointmentSlotConfiguration : EntityTypeConfiguration<AppointmentS
             .IsRequired();
 
         Property(aps => aps.Price)
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0); // ✅ CRITICAL FIX: decimal(18,0) برای مبالغ IRR (طبق قرارداد مالی)
 
         Property(aps => aps.Notes)
             .HasMaxLength(500);

@@ -314,49 +314,123 @@ if (confirm('مطمئنید؟')) {  // ❌ ممنوع
 
 ---
 
-## 📅 تقویم شمسی (Persian DatePicker)
+## 📅 تقویم شمسی (JalaliDatePicker Enterprise) - Enterprise-Grade
 
-### ✅ در View (استفاده از Partial)
+**⚠️ CRITICAL:** فقط از **JalaliDatePicker Enterprise** استفاده کنید. الگوی قدیمی (Persian DatePicker - babakhani) حذف شده است.
+
+**مرجع:** `Docs/Jalili/JALALIDATEPICKER_ENTERPRISE_GUIDE.md`
+
+**🔴 الزامی:** طبق `Docs/ENTERPRISE_DATE_MIGRATION_GUIDE.md`
+
+### ✅ در View (استفاده از Partial - الزامی)
 
 ```razor
-@* ✅ درست *@
+@* ✅ ENTERPRISE-GRADE: استفاده از JalaliDatePicker Enterprise (الزامی) *@
+@* ✅ طبق Docs/Jalili/JALALIDATEPICKER_ENTERPRISE_GUIDE.md *@
 @{
     ViewBag.PersianDatePickerId = "startDatePicker";
     ViewBag.PersianDatePickerName = "StartDate";
-    ViewBag.PersianDatePickerValue = Model.StartDate;
+    ViewBag.PersianDatePickerValue = Model.StartDate; // DateTime? (UTC از دیتابیس)
     ViewBag.PersianDatePickerLabel = "تاریخ شروع";
-    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع (اختیاری)";
-    ViewBag.PersianDatePickerRequired = false;
+    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع را انتخاب کنید";
+    ViewBag.PersianDatePickerHelpText = "";
+    ViewBag.PersianDatePickerRequired = true;
+    ViewBag.PersianDatePickerCssClass = "form-control";
 }
 @Html.Partial("_PersianDatePicker")
 
 @section Scripts {
+    @* ✅ ENTERPRISE-GRADE: استفاده از JalaliDatePicker Enterprise *@
+    @* ❌ ممنوع: persian-datepicker.min.js (الگوی قدیمی حذف شده) *@
     @Html.Partial("_PersianDatePickerScript")
 }
 ```
 
-### ✅ در Controller (Parse از Hidden Input)
+### ❌ ممنوع در View:
+
+```html
+<!-- ❌ ممنوع - استفاده از datetime-local -->
+<input type="datetime-local" name="StartDate" />
+
+<!-- ❌ ممنوع - استفاده از date -->
+<input type="date" name="StartDate" />
+```
+
+### ✅ در Controller (Parse از Hidden Input - Enterprise-Grade)
 
 ```csharp
-// ✅ درست
+// ✅ ENTERPRISE-GRADE: Parse تاریخ از hidden input
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<ActionResult> Create(MyViewModel model)
 {
-    // Parse تاریخ از hidden input
+    // ✅ Parse تاریخ از hidden input (تبدیل شمسی → میلادی)
     model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
     model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
     
+    // ✅ تبدیل به UTC قبل از ذخیره در دیتابیس
+    if (model.StartDate.HasValue)
+    {
+        model.StartDate = model.StartDate.Value.ToUniversalTime();
+    }
+    
     // ادامه عملیات...
+}
+```
+
+### ✅ در Services (استفاده از ITimeProvider - Enterprise-Grade)
+
+```csharp
+// ✅ ENTERPRISE-GRADE: استفاده از ITimeProvider
+public class AppointmentBookingService
+{
+    private readonly ITimeProvider _timeProvider;
+    
+    public AppointmentBookingService(ITimeProvider timeProvider, ...)
+    {
+        _timeProvider = timeProvider;
+    }
+    
+    public async Task<ServiceResult> ReserveAppointmentAsync(...)
+    {
+        // ✅ استفاده از UTC
+        var utcNow = _timeProvider.UtcNow;
+        var iranToday = _timeProvider.GetIranToday(); // برای Validation
+        
+        // ✅ Validation بر اساس timezone ایران
+        if (request.AppointmentDate.Date < iranToday)
+        {
+            return ServiceResult.Failed("...");
+        }
+        
+        // ✅ ذخیره در دیتابیس به صورت UTC
+        var appointment = new Appointment
+        {
+            AppointmentDate = request.AppointmentDate.ToUniversalTime(),
+            CreatedAt = _timeProvider.UtcNow // ✅ UTC
+        };
+    }
 }
 ```
 
 ### ✅ نمایش تاریخ شمسی
 
 ```razor
-@* ✅ درست - نمایش تاریخ شمسی *@
+@* ✅ نمایش تاریخ شمسی (از UTC دیتابیس) *@
 @PersianDateHelper.ToPersianDate(item.Date)
+
+@* ✅ نمایش با فرمت سفارشی *@
+@PersianDateHelper.ToPersianDateString(item.Date, "yyyy/MM/dd - HH:mm")
 ```
+
+### 🚨 قانون طلایی Enterprise-Grade:
+
+> **"همیشه UTC در دیتابیس، تبدیل به timezone محلی فقط برای نمایش"**
+
+### 📚 مراجع:
+
+- `Docs/ENTERPRISE_DATE_MIGRATION_GUIDE.md` - راهنمای کامل (الزامی)
+- `Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md` - راهنمای Helpers
 
 ### ❌ ممنوع
 
@@ -669,8 +743,10 @@ document.querySelectorAll('.medical-form input').forEach(input => {
 - [ ] هیچ `alert()` یا `confirm()` وجود ندارد
 - [ ] هیچ Alert Bootstrap وجود ندارد
 
-### Persian DatePicker
+### JalaliDatePicker Enterprise
 - [ ] تمام فیلدهای تاریخ از `_PersianDatePicker` استفاده می‌کنند
+- [ ] فقط از JalaliDatePicker Enterprise استفاده می‌شود (الگوی قدیمی حذف شده)
+- [ ] `persian-datepicker.min.js` حذف شده و از `_PersianDatePickerScript` استفاده می‌شود
 - [ ] تمام Controller ها از `ParseDateFromHiddenInput` استفاده می‌کنند
 - [ ] هیچ `datetime-local` وجود ندارد
 

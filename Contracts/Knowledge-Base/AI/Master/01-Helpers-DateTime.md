@@ -466,8 +466,248 @@ model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
 
 ---
 
-**نسخه:** 1.0.0  
-**آخرین به‌روزرسانی:** 1404/10/05
+## 🔄 **8️⃣ Enterprise-Grade Date Management (الزامی)**
+
+**مرجع:** `Docs/ENTERPRISE_DATE_MIGRATION_GUIDE.md`  
+**اولویت:** 🔴 **CRITICAL - Production Deployment**  
+**وضعیت:** ✅ **الزامی برای تمام DatePicker ها**
+
+### 📋 **قانون طلایی:**
+> **"همیشه UTC در دیتابیس، تبدیل به timezone محلی فقط برای نمایش"**
+
+---
+
+### **STEP 1: Dependency Injection Setup**
+
+```csharp
+// ✅ در Global.asax.cs یا UnityConfig.cs
+// تزریق ITimeProvider به DI Container
+container.RegisterType<ITimeProvider, DefaultTimeProvider>(new ContainerControlledLifetimeManager());
+```
+
+---
+
+### **STEP 2: در Services (Backend)**
+
+#### **❌ قبل (اشتباه):**
+```csharp
+public class AppointmentBookingService
+{
+    public async Task<ServiceResult> ReserveAppointmentAsync(...)
+    {
+        if (date < DateTime.Today) // ❌ مشکل timezone
+        {
+            return ServiceResult.Failed("...");
+        }
+        
+        var appointment = new Appointment
+        {
+            CreatedAt = DateTime.Now // ❌ مشکل timezone
+        };
+    }
+}
+```
+
+#### **✅ بعد (درست - Enterprise-Grade):**
+```csharp
+public class AppointmentBookingService
+{
+    private readonly ITimeProvider _timeProvider;
+    
+    public AppointmentBookingService(
+        ITimeProvider timeProvider,
+        ...)
+    {
+        _timeProvider = timeProvider;
+    }
+    
+    public async Task<ServiceResult> ReserveAppointmentAsync(...)
+    {
+        // ✅ استفاده از UTC
+        var utcNow = _timeProvider.UtcNow;
+        var iranToday = _timeProvider.GetIranToday(); // برای Validation
+        
+        // ✅ Validation بر اساس timezone ایران
+        if (request.AppointmentDate.Date < iranToday)
+        {
+            return ServiceResult.Failed("...");
+        }
+        
+        // ✅ ذخیره در دیتابیس به صورت UTC
+        var appointment = new Appointment
+        {
+            AppointmentDate = request.AppointmentDate.ToUniversalTime(),
+            CreatedAt = _timeProvider.UtcNow // ✅ UTC
+        };
+    }
+}
+```
+
+---
+
+### **STEP 3: در Controllers (API Endpoints)**
+
+#### **❌ قبل (اشتباه):**
+```csharp
+public JsonResult GetToday()
+{
+    var today = DateTime.Today; // ❌ مشکل timezone
+    var persianToday = PersianDateHelper.ToPersianDate(today);
+    return Json(new { persianDate = persianToday });
+}
+```
+
+#### **✅ بعد (درست - Enterprise-Grade):**
+```csharp
+public JsonResult GetToday()
+{
+    // ✅ ENTERPRISE: استفاده از UTC و تبدیل به timezone ایران
+    var utcNow = DateTime.UtcNow;
+    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+    var iranNow = TimeZoneInfo.ConvertTimeFromUtc(utcNow, iranTimeZone);
+    var iranToday = iranNow.Date;
+    
+    var persianToday = PersianDateHelper.ToPersianDate(iranToday);
+    
+    return Json(new
+    {
+        success = true,
+        persianDate = persianToday,
+        gregorianDate = iranToday.ToString("yyyy-MM-dd"),
+        utcTimestamp = utcNow,
+        timezone = "Iran Standard Time (UTC+3:30)"
+    });
+}
+```
+
+---
+
+### **STEP 4: در Views (DatePicker)**
+
+#### **✅ استفاده از JalaliDatePicker Enterprise (الزامی):**
+
+**⚠️ CRITICAL:** فقط از **JalaliDatePicker Enterprise** استفاده کنید. الگوی قدیمی (Persian DatePicker - babakhani) حذف شده است.
+
+**مرجع:** `Docs/Jalili/JALALIDATEPICKER_ENTERPRISE_GUIDE.md`
+
+```razor
+@* ✅ ENTERPRISE-GRADE: استفاده از JalaliDatePicker Enterprise *@
+@* ✅ طبق Docs/Jalili/JALALIDATEPICKER_ENTERPRISE_GUIDE.md *@
+@{
+    ViewBag.PersianDatePickerId = "startDatePicker";
+    ViewBag.PersianDatePickerName = "StartDate";
+    ViewBag.PersianDatePickerValue = Model.StartDate; // DateTime? (UTC از دیتابیس)
+    ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+    ViewBag.PersianDatePickerPlaceholder = "تاریخ شروع را انتخاب کنید";
+    ViewBag.PersianDatePickerHelpText = "";
+    ViewBag.PersianDatePickerRequired = true;
+    ViewBag.PersianDatePickerCssClass = "form-control";
+}
+@Html.Partial("_PersianDatePicker")
+
+@section Scripts {
+    @* ✅ ENTERPRISE-GRADE: استفاده از JalaliDatePicker Enterprise *@
+    @* ❌ ممنوع: persian-datepicker.min.js (الگوی قدیمی حذف شده) *@
+    @Html.Partial("_PersianDatePickerScript")
+}
+```
+
+#### **❌ ممنوع:**
+```html
+<!-- ❌ ممنوع - استفاده از datetime-local -->
+<input type="datetime-local" name="StartDate" />
+
+<!-- ❌ ممنوع - استفاده از date -->
+<input type="date" name="StartDate" />
+```
+
+---
+
+### **STEP 5: Parse در Controller (POST)**
+
+```csharp
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> Create(MyViewModel model)
+{
+    // ✅ Parse تاریخ از hidden input (تبدیل شمسی → میلادی)
+    model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
+    model.EndDate = this.ParseDateFromHiddenInput("EndDate", _logger);
+    
+    // ✅ تبدیل به UTC قبل از ذخیره در دیتابیس
+    if (model.StartDate.HasValue)
+    {
+        model.StartDate = model.StartDate.Value.ToUniversalTime();
+    }
+    
+    // ادامه عملیات...
+}
+```
+
+---
+
+### **STEP 6: نمایش در View (Index/Details)**
+
+```razor
+@* ✅ نمایش تاریخ شمسی (از UTC دیتابیس) *@
+@PersianDateHelper.ToPersianDate(Model.StartDate)
+
+@* ✅ نمایش با فرمت سفارشی *@
+@PersianDateHelper.ToPersianDateString(Model.StartDate, "yyyy/MM/dd - HH:mm")
+```
+
+---
+
+### ✅ **چک‌لیست Enterprise-Grade Date Management:**
+
+```
+□ Dependency Injection برای ITimeProvider تنظیم شده
+□ تمام Services از ITimeProvider استفاده می‌کنند
+□ تمام DateTime.Now به _timeProvider.UtcNow تبدیل شده
+□ تمام DateTime.Today به _timeProvider.GetIranToday() تبدیل شده
+□ تمام تاریخ‌ها در دیتابیس UTC هستند
+□ تمام DatePicker ها از _PersianDatePicker استفاده می‌کنند
+□ Parse در Controller با ParseDateFromHiddenInput انجام می‌شود
+□ تبدیل به UTC قبل از ذخیره در دیتابیس
+□ نمایش با PersianDateHelper.ToPersianDate()
+□ تست در timezone‌های مختلف انجام شده
+```
+
+---
+
+### 🚨 **ممنوعیت‌های مطلق:**
+
+```csharp
+// ❌ ممنوع: استفاده مستقیم از DateTime.Now
+var now = DateTime.Now;
+
+// ❌ ممنوع: استفاده مستقیم از DateTime.Today
+var today = DateTime.Today;
+
+// ❌ ممنوع: ذخیره تاریخ بدون UTC
+appointment.CreatedAt = DateTime.Now;
+
+// ❌ ممنوع: استفاده از datetime-local در View
+<input type="datetime-local" />
+
+// ❌ ممنوع: Parse مستقیم از Model (بدون ParseDateFromHiddenInput)
+model.StartDate = // مستقیم از Model
+```
+
+---
+
+### 📚 **مراجع:**
+
+- `Docs/ENTERPRISE_DATE_MIGRATION_GUIDE.md` - راهنمای کامل Migration
+- `Helpers/PersianDateHelper.cs` - Helper تبدیل تاریخ
+- `Helpers/ITimeProvider.cs` - Interface برای Time Provider
+- `Helpers/DefaultTimeProvider.cs` - Implementation Time Provider
+- `Areas/Admin/Views/Shared/_PersianDatePicker.cshtml` - Partial View DatePicker
+
+---
+
+**نسخه:** 1.1.0  
+**آخرین به‌روزرسانی:** 2026-01-08
 
 ---
 

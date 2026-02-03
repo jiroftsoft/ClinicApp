@@ -514,6 +514,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PromotionalEventController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Security\LoginHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
@@ -532,6 +533,7 @@
     <Compile Include="Areas\Patient\Controllers\Api\AppointmentBookingApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\DoctorSearchApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\MedicalRecordApiController.cs" />
+    <Compile Include="Areas\Patient\Controllers\Api\MehranController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\PatientAppointmentApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\PatientDashboardApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\ProfileApiController.cs" />
@@ -864,6 +866,8 @@
     <Compile Include="Interfaces\Payment\Security\IPaymentSecurityService.cs" />
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
     <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
+    <Compile Include="Interfaces\PromotionalEvent\IPromotionalEventRepository.cs" />
+    <Compile Include="Interfaces\PromotionalEvent\IPromotionalEventService.cs" />
     <Compile Include="Interfaces\Reception\IMedicalEmergencyService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionBusinessRules.cs" />
     <Compile Include="Interfaces\Reception\IReceptionCalculationService.cs" />
@@ -1001,6 +1005,14 @@
     <Compile Include="Migrations\202601061758126_AddPendingExpiresAt.Designer.cs">
       <DependentUpon>202601061758126_AddPendingExpiresAt.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202601081230295_editPricetype.cs" />
+    <Compile Include="Migrations\202601081230295_editPricetype.Designer.cs">
+      <DependentUpon>202601081230295_editPricetype.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601081512167_AddPromotionalEventModule.cs" />
+    <Compile Include="Migrations\202601081512167_AddPromotionalEventModule.Designer.cs">
+      <DependentUpon>202601081512167_AddPromotionalEventModule.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
@@ -1019,6 +1031,7 @@
     <Compile Include="Models\DTOs\Payment\DiscrepancyReport.cs" />
     <Compile Include="Models\DTOs\Payment\DiscrepancySummary.cs" />
     <Compile Include="Models\DTOs\Payment\ReconciliationReport.cs" />
+    <Compile Include="Models\DTOs\PromotionalEvent\DiscountResult.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Models\Entities\CMS\AboutPage.cs" />
     <Compile Include="Models\Entities\CMS\Announcement.cs" />
@@ -1046,10 +1059,12 @@
     <Compile Include="Models\Entities\Payment\CashierPerformanceMetrics.cs" />
     <Compile Include="Models\Entities\Payment\CashSessionAuditLog.cs" />
     <Compile Include="Models\Entities\Payment\PaymentDiscrepancy.cs" />
+    <Compile Include="Models\Entities\PromotionalEvent\PromotionalEvent.cs" />
     <Compile Include="Models\Entities\Security\UserLoginHistory.cs" />
     <Compile Include="Models\Enums\ContactFormCategory.cs" />
     <Compile Include="Models\Enums\ContactFormStatus.cs" />
     <Compile Include="Models\Enums\DepartmentType.cs" />
+    <Compile Include="Models\Enums\DiscountType.cs" />
     <Compile Include="Models\Enums\DiscrepancyStatus.cs" />
     <Compile Include="Models\Enums\DiscrepancyType.cs" />
     <Compile Include="Models\Enums\NewsletterCampaignStatus.cs" />
@@ -1401,6 +1416,7 @@
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Models\SystemSettings\SystemSetting.cs" />
     <Compile Include="Repositories\Payment\Management\PaymentManagementRepository.cs" />
+    <Compile Include="Repositories\PromotionalEvent\PromotionalEventRepository.cs" />
     <Compile Include="Repositories\Reception\ClinicManagementRepository.cs" />
     <Compile Include="Repositories\Reception\DoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IClinicManagementRepository.cs" />
@@ -1486,6 +1502,7 @@
     <Compile Include="Services\Pricing\Interfaces\ITariffResolver.cs" />
     <Compile Include="Services\Pricing\Models\PricingDtos.cs" />
     <Compile Include="Services\Pricing\Resolvers\TariffResolver.cs" />
+    <Compile Include="Services\PromotionalEvent\PromotionalEventService.cs" />
     <Compile Include="Services\Reception\ReceptionConstants.cs" />
     <Compile Include="Repositories\Base\BaseRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
@@ -1804,6 +1821,8 @@
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementDtos.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
+    <Compile Include="ViewModels\PromotionalEventVM\PromotionalEventViewModels.cs" />
+    <Compile Include="ViewModels\PromotionalEventVM\PromotionalEventViewModelValidator.cs" />
     <Compile Include="ViewModels\Reception\AccordionSectionViewModel.cs" />
     <Compile Include="ViewModels\Reception\CashPaymentRequestViewModel.cs" />
     <Compile Include="ViewModels\Reception\CashPaymentResponseViewModel.cs" />
@@ -5042,6 +5061,43 @@
     <Content Include="Contracts\1015\CLINICAPP_APPOINTMENT_BOOKING_MODULE_PROMPT.md" />
     <Content Include="Contracts\1015\CLINICAPP_CURSOR_7ROLES_CONTRACT_PROMPT_OPTIMIZED.md" />
     <Content Include="Contracts\1015\CLINICAPP_RULES_SNAPSHOT_ONE_PAGE.md" />
+    <Content Include="Contracts\1018\CLINICAPP_MASTER_CONTRACT_BRAIN_FOR_CURSOR.md" />
+    <Content Include="Contracts\AI_PREFLIGHT_REMINDER.md" />
+    <Content Include="Contracts\CONTRACTS_ENGINEERING_REPORT.md" />
+    <Content Include="Contracts\AI_CORE_COMMITMENT.md" />
+    <Content Include="Docs\ENTERPRISE_DATE_MIGRATION_GUIDE.md" />
+    <Content Include="Docs\ENTERPRISE_DATE_TIMEZONE_STRATEGY.md" />
+    <Content Include="Areas\Admin\Views\PromotionalEvent\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PromotionalEvent\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\PromotionalEvent\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\PromotionalEvent\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\PromotionalEvent\Index.cshtml" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_ENTERPRISE_GUIDE.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_ENTERPRISE_SUMMARY.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_FINAL_REVIEW.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_MIGRATION_COMPLETE.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_MIGRATION_GUIDE.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_MIGRATION_PLAN.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_PRODUCTION_CHECKLIST.md" />
+    <Content Include="Docs\Jalili\JALALIDATEPICKER_QUICK_REFERENCE.md" />
+    <Content Include="Docs\JALALIDATEPICKER_README.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_COMPREHENSIVE_AUDIT.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_COMPREHENSIVE_AUDIT_FINAL.md" />
+    <Content Include="Docs\APPOINTMENT_BOOKING_CRITICAL_REVIEW.md" />
+    <Content Include="Docs\APPOINTMENT_DATE_TIMEZONE_AUDIT.md" />
+    <Content Include="Docs\APPOINTMENT_DATE_TIMEZONE_FIX_COMPLETE.md" />
+    <Content Include="Docs\APPOINTMENT_DATE_TIMEZONE_FIX_FINAL.md" />
+    <Content Include="Docs\APPOINTMENT_DATE_TIMEZONE_FIX_SUMMARY.md" />
+    <Content Include="Docs\APPOINTMENT_PAST_SLOTS_FILTER_FIX.md" />
+    <Content Include="Docs\APPOINTMENT_PAYMENT_UI_UX_IMPLEMENTATION.md" />
+    <Content Include="Docs\APPOINTMENT_PENDING_EXPIRATION_ANALYSIS.md" />
+    <Content Include="Docs\APPOINTMENT_PENDING_EXPIRATION_QUICK_START.md" />
+    <Content Include="Docs\APPOINTMENT_PENDING_EXPIRATION_SETTINGS.md" />
+    <Content Include="Docs\APPOINTMENT_PRICE_FIX_REPORT.md" />
+    <Content Include="Docs\APPOINTMENT_PRICING_ANALYSIS.md" />
+    <Content Include="Docs\APPOINTMENT_SLOT_PRICE_ANALYSIS.md" />
+    <Content Include="Docs\DATABASE_REVIEW_REPORT.md" />
+    <Content Include="Docs\MOBILE_UX_AND_ERROR_HANDLING_AUDIT.md" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6837,6 +6893,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202601061758126_AddPendingExpiresAt.resx">
       <DependentUpon>202601061758126_AddPendingExpiresAt.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601081230295_editPricetype.resx">
+      <DependentUpon>202601081230295_editPricetype.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601081512167_AddPromotionalEventModule.resx">
+      <DependentUpon>202601081512167_AddPromotionalEventModule.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces.PromotionalEvent;
+using ClinicApp.Models.DTOs.PromotionalEvent;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models;
@@ -17,6 +19,7 @@ namespace ClinicApp.Services.Appointment
     public class AppointmentPricingService
     {
         private readonly IDoctorScheduleRepository _doctorScheduleRepository;
+        private readonly IPromotionalEventService _promotionalEventService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
@@ -25,10 +28,12 @@ namespace ClinicApp.Services.Appointment
 
         public AppointmentPricingService(
             IDoctorScheduleRepository doctorScheduleRepository,
+            IPromotionalEventService promotionalEventService,
             ApplicationDbContext context,
             ILogger logger)
         {
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
+            _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger?.ForContext<AppointmentPricingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -39,18 +44,21 @@ namespace ClinicApp.Services.Appointment
         public async Task<AppointmentPriceResult> CalculatePriceAsync(
             int doctorId,
             int? serviceCategoryId = null,
-            int? patientId = null)
+            int? patientId = null,
+            DateTime? appointmentDate = null)
         {
             try
             {
-                _logger.Information("شروع محاسبه قیمت نوبت - DoctorId: {DoctorId}, ServiceCategoryId: {ServiceCategoryId}, PatientId: {PatientId}",
-                    doctorId, serviceCategoryId, patientId);
+                _logger.Information("💰 PRICING: شروع محاسبه قیمت نوبت - DoctorId: {DoctorId}, ServiceCategoryId: {ServiceCategoryId}, PatientId: {PatientId}, AppointmentDate: {AppointmentDate}",
+                    doctorId, serviceCategoryId, patientId, appointmentDate);
 
                 // 1. دریافت قیمت پایه از برنامه کاری پزشک
                 var basePrice = await GetBasePriceAsync(doctorId, serviceCategoryId);
 
-                // 2. محاسبه تخفیف‌ها
-                var discount = await CalculateDiscountAsync(doctorId, patientId, basePrice);
+                // 2. محاسبه تخفیف‌ها (با جزئیات برای PromotionalEventId)
+                var discountResult = await CalculateDiscountWithDetailsAsync(doctorId, patientId, basePrice, appointmentDate);
+                var discount = discountResult.TotalDiscount;
+                var promotionalEventId = discountResult.PromotionalEventId;
 
                 // 3. محاسبه قیمت پس از تخفیف
                 var priceAfterDiscount = basePrice - discount;
@@ -71,7 +79,8 @@ namespace ClinicApp.Services.Appointment
                     TaxRate = taxRate,
                     TaxAmount = taxAmount,
                     FinalPrice = finalPrice,
-                    Currency = "IRR" // ریال
+                    Currency = "IRR", // ریال
+                    PromotionalEventId = promotionalEventId // ✅ برای ذخیره در Appointment
                 };
 
                 _logger.Information("محاسبه قیمت نوبت تکمیل شد - BasePrice: {BasePrice}, Discount: {Discount}, FinalPrice: {FinalPrice}",
@@ -121,30 +130,41 @@ namespace ClinicApp.Services.Appointment
         }
 
         /// <summary>
-        /// محاسبه تخفیف‌ها
+        /// محاسبه تخفیف‌ها با جزئیات (شامل PromotionalEventId)
         /// </summary>
-        private async Task<decimal> CalculateDiscountAsync(int doctorId, int? patientId, decimal basePrice)
+        private async Task<DiscountResult> CalculateDiscountWithDetailsAsync(int doctorId, int? patientId, decimal basePrice, DateTime? appointmentDate = null)
         {
-            decimal totalDiscount = 0m;
-
             try
             {
+                _logger.Information("💰 PRICING: شروع محاسبه تخفیف با جزئیات - DoctorId: {DoctorId}, PatientId: {PatientId}, BasePrice: {BasePrice}, AppointmentDate: {AppointmentDate}",
+                    doctorId, patientId, basePrice, appointmentDate);
+
+                // ✅ محاسبه تخفیف از ایونت‌های تبلیغاتی (با جزئیات)
+                var discountResult = await _promotionalEventService.CalculateDiscountWithDetailsAsync(doctorId, basePrice, appointmentDate);
+                
+                if (!discountResult.Success)
+                {
+                    _logger.Warning("⚠️ PRICING: خطا در محاسبه تخفیف از ایونت‌های تبلیغاتی: {Error}", discountResult.Message);
+                    return new DiscountResult { TotalDiscount = 0m, PromotionalEventId = null, PromotionalEventTitle = null };
+                }
+
+                var result = discountResult.Data;
+
                 // TODO: در آینده می‌توان تخفیف‌های زیر را اضافه کرد:
                 // 1. تخفیف بیمه (بر اساس نوع بیمه بیمار)
                 // 2. تخفیف ویژه پزشک
                 // 3. تخفیف دوره‌ای (مثلاً تخفیف 10% برای اولین نوبت)
                 // 4. تخفیف گروهی (مثلاً تخفیف برای اعضای خانواده)
 
-                // فعلاً تخفیف 0 است
-                _logger.Debug("محاسبه تخفیف - DoctorId: {DoctorId}, PatientId: {PatientId}, BasePrice: {BasePrice}, Discount: {Discount}",
-                    doctorId, patientId, basePrice, totalDiscount);
+                _logger.Information("✅ PRICING: محاسبه تخفیف تکمیل شد - DoctorId: {DoctorId}, BasePrice: {BasePrice}, TotalDiscount: {TotalDiscount}, PromotionalEventId: {PromotionalEventId}",
+                    doctorId, basePrice, result.TotalDiscount, result.PromotionalEventId);
 
-                return totalDiscount;
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در محاسبه تخفیف");
-                return 0m;
+                _logger.Error(ex, "❌ PRICING: خطا در محاسبه تخفیف - DoctorId: {DoctorId}, BasePrice: {BasePrice}", doctorId, basePrice);
+                return new DiscountResult { TotalDiscount = 0m, PromotionalEventId = null, PromotionalEventTitle = null };
             }
         }
 
@@ -197,6 +217,11 @@ namespace ClinicApp.Services.Appointment
         public string Currency { get; set; }
 
         /// <summary>
+        /// شناسه ایونت تبلیغاتی که تخفیف از آن اعمال شده است (اختیاری)
+        /// </summary>
+        public int? PromotionalEventId { get; set; }
+
+        /// <summary>
         /// نمایش قیمت به صورت فرمت شده
         /// </summary>
         public string GetFormattedPrice()
@@ -228,4 +253,5 @@ namespace ClinicApp.Services.Appointment
         }
     }
 }
+
 

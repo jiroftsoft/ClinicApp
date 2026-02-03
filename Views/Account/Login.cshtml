@@ -166,9 +166,13 @@
         // --- CORE EVENT HANDLERS ---
         function handleCheckUserSubmit(e) {
             e.preventDefault();
+            console.log('🔍 DEBUG: handleCheckUserSubmit called');
             const form = $(this);
             state.nationalCode = form.find('#NationalCode').val();
+            console.log('🔍 DEBUG: NationalCode extracted:', state.nationalCode ? state.nationalCode.substring(0, 3) + '****' : 'null');
+            
             if (state.nationalCode.length !== 10 || !/^\d{10}$/.test(state.nationalCode)) {
+                console.warn('⚠️ DEBUG: Invalid NationalCode format');
                 $('[data-valmsg-for="NationalCode"]').text('کد ملی باید ۱۰ رقم باشد.');
                 return;
             }
@@ -177,16 +181,11 @@
             submitAjax(form,
                 // onSuccess Callback
                 (response) => {
-                    state.isRegistrationFlow = true;
-                    toastr.success(response.message);
-                    $('#card-subtitle').text("این کد ملی ثبت‌نام نشده. لطفاً شماره موبایل خود را وارد کنید.");
-                    ui.forms.sendRegOtp.find('input[name="NationalCode"]').val(state.nationalCode);
-                    ui.showPanel(ui.panels.registerPhone);
-                    $('#PhoneNumber').focus();
-                },
-                // onError Callback
-                (response) => {
-                    if (response.code === 'USER_ALREADY_EXISTS') {
+                    console.log('✅ DEBUG: handleCheckUserSubmit onSuccess - Response:', response);
+                    // ✅ CRITICAL FIX: بررسی code برای تشخیص نوع کاربر
+                    if (response && response.code === 'USER_ALREADY_EXISTS') {
+                        // کاربر موجود است - باید لاگین کند
+                        console.log('✅ DEBUG: User already exists, calling sendLoginOtp');
                         state.isRegistrationFlow = false;
                         toastr.info(response.message);
                         // ✅ اطمینان از اینکه spinner قبلی بسته شده است
@@ -194,11 +193,29 @@
                         showButtonSpinner(button, false);
                         // ✅ فراخوانی sendLoginOtp با کمی تاخیر برای اطمینان از بسته شدن spinner
                         setTimeout(() => {
+                            console.log('⏰ DEBUG: Executing sendLoginOtp after timeout');
                             sendLoginOtp();
                         }, 100);
+                    } else if (response && response.code === 'USER_IS_NEW') {
+                        // کاربر جدید است - باید ثبت‌نام کند
+                        console.log('✅ DEBUG: New user, showing registration form');
+                        state.isRegistrationFlow = true;
+                        toastr.success(response.message);
+                        $('#card-subtitle').text("این کد ملی ثبت‌نام نشده. لطفاً شماره موبایل خود را وارد کنید.");
+                        ui.forms.sendRegOtp.find('input[name="NationalCode"]').val(state.nationalCode);
+                        ui.showPanel(ui.panels.registerPhone);
+                        $('#PhoneNumber').focus();
                     } else {
-                        toastr.error(response.message);
+                        // Fallback برای سایر موارد
+                        console.log('✅ DEBUG: Fallback case - showing success message');
+                        toastr.success(response && response.message ? response.message : "عملیات موفقیت‌آمیز بود!");
                     }
+                },
+                // onError Callback (برای خطاهای واقعی)
+                (response) => {
+                    console.error('❌ DEBUG: handleCheckUserSubmit onError - Response:', response);
+                    const errorMessage = response && response.message ? response.message : "خطایی رخ داده است.";
+                    toastr.error(errorMessage);
                 }
             );
         }
@@ -279,12 +296,14 @@
         function sendLoginOtp() {
             // ✅ اطمینان از اینکه nationalCode تنظیم شده است
             if (!state.nationalCode || state.nationalCode.length !== 10) {
+                console.error('❌ DEBUG: Invalid nationalCode in sendLoginOtp', state.nationalCode);
                 toastr.error("کد ملی معتبر نیست. لطفاً دوباره تلاش کنید.");
                 return;
             }
 
             const token = ui.forms.checkUser.find('input[name="__RequestVerificationToken"]').val();
             if (!token) {
+                console.error('❌ DEBUG: Missing anti-forgery token in sendLoginOtp');
                 toastr.error("خطای امنیتی. لطفاً صفحه را رفرش کنید.");
                 return;
             }
@@ -296,11 +315,21 @@
             const button = ui.panels.nationalCode.find('button[type="submit"]');
             showButtonSpinner(button, true);
 
+            console.log('📤 DEBUG: SendLoginOtp Request Starting', {
+                url: '@Url.Action("SendLoginOtp", "Account")',
+                nationalCode: state.nationalCode ? state.nationalCode.substring(0, 3) + '****' : 'null'
+            });
+
             $.ajax({
                 url: '@Url.Action("SendLoginOtp", "Account")',
                 type: 'POST',
                 data: data,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response) {
+                    console.log('📥 DEBUG: SendLoginOtp Response Received:', response);
+                    showButtonSpinner(button, false);
                     if(response && response.success) {
                         $('#otp-prompt').text("کد ورود به شماره موبایل ثبت شده شما ارسال شد.");
                         ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
@@ -308,12 +337,25 @@
                         ui.otpInputs.first().focus();
                         startCountdown();
                     } else {
-                        toastr.error(response && response.message ? response.message : "خطا در ارسال کد ورود.");
+                        const errorMessage = response && response.message ? response.message : "خطا در ارسال کد ورود.";
+                        console.error('❌ DEBUG: SendLoginOtp failed', {response, errorMessage});
+                        toastr.error(errorMessage);
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('SendLoginOtp Error:', {xhr: xhr, status: status, error: error});
-                    toastr.error("خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.");
+                    console.error('💥 DEBUG: SendLoginOtp AJAX Error:', {
+                        xhr: xhr,
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText,
+                        statusCode: xhr.status
+                    });
+                    showButtonSpinner(button, false);
+                    let errorMessage = "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage);
                 },
                 complete: function() {
                     showButtonSpinner(button, false);
@@ -322,7 +364,11 @@
         }
 
         function submitAjax(form, onSuccess, onError) {
-            if (!form.valid()) return;
+            // ✅ CRITICAL FIX: بررسی validation قبل از ارسال
+            if (!form.valid()) {
+                console.warn('⚠️ DEBUG: Form validation failed', form.validate().errorList);
+                return;
+            }
             const button = form.find('button[type="submit"]');
             showButtonSpinner(button, true);
             
@@ -344,18 +390,30 @@
                 },
                 success: function(response) {
                     console.log('📥 DEBUG: AJAX Response Received:', response);
-                    if (response.success) {
-                        onSuccess(response);
+                    showButtonSpinner(button, false); // ✅ CRITICAL FIX: بستن spinner در success
+                    if (response && response.success) {
+                        if (onSuccess) {
+                            onSuccess(response);
+                        } else {
+                            toastr.success(response.message || "عملیات موفقیت‌آمیز بود!");
+                        }
                     } else {
-                        if (onError) onError(response);
-                        else toastr.error(response.message || "خطایی رخ داده است.");
+                        if (onError) {
+                            onError(response);
+                        } else {
+                            toastr.error(response && response.message ? response.message : "خطایی رخ داده است.");
+                        }
                     }
                 },
                 error: (xhr, status, error) => {
-                    console.error('💥 DEBUG: AJAX Error:', {xhr, status, error});
+                    console.error('💥 DEBUG: AJAX Error:', {xhr, status, error, responseText: xhr.responseText});
+                    showButtonSpinner(button, false); // ✅ CRITICAL FIX: بستن spinner در error
                     toastr.error("خطای شبکه یا سرور. لطفاً دقایقی دیگر تلاش کنید.");
                 },
-                complete: () => showButtonSpinner(button, false)
+                complete: () => {
+                    // ✅ CRITICAL FIX: اطمینان از بسته شدن spinner در complete
+                    showButtonSpinner(button, false);
+                }
             });
         }
 

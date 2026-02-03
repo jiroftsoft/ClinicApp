@@ -511,6 +511,10 @@ namespace ClinicApp
                 // Register Appointment Booking Service
                 container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
                 container.RegisterType<ClinicApp.Interfaces.Appointment.IDoctorMappingService, ClinicApp.Services.Appointment.DoctorMappingService>(new PerRequestLifetimeManager());
+                
+                // ✅ ثبت Promotional Event Repository و Service (برای تخفیف‌های تبلیغاتی)
+                container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventRepository, Repositories.PromotionalEvent.PromotionalEventRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventService, Services.PromotionalEvent.PromotionalEventService>(new PerRequestLifetimeManager());
 
                 // Register Schedule Optimization Service and Strategies
                 container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());

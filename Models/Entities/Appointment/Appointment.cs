@@ -62,6 +62,18 @@ public class Appointment : ISoftDelete, ITrackable
     public decimal Price { get; set; }
 
     /// <summary>
+    /// شناسه ایونت تبلیغاتی (در صورت اعمال تخفیف)
+    /// </summary>
+    public int? PromotionalEventId { get; set; }
+
+    /// <summary>
+    /// مبلغ تخفیف اعمال شده (ریال)
+    /// طبق قرارداد مالی: decimal(18,0) برای مبالغ IRR
+    /// Note: Precision در AppointmentConfig تنظیم می‌شود
+    /// </summary>
+    public decimal DiscountAmount { get; set; } = 0;
+
+    /// <summary>
     /// شناسه تراکنش پرداخت
     /// </summary>
     public int? PaymentTransactionId { get; set; }
@@ -205,6 +217,11 @@ public class Appointment : ISoftDelete, ITrackable
     /// ارجاع به دسته‌بندی خدمت
     /// </summary>
     public virtual ServiceCategory ServiceCategory { get; set; }
+
+    /// <summary>
+    /// ارجاع به ایونت تبلیغاتی (در صورت اعمال تخفیف)
+    /// </summary>
+    public virtual PromotionalEvent.PromotionalEvent PromotionalEvent { get; set; }
     #endregion
 }
 /// <summary>
@@ -231,7 +248,16 @@ public class AppointmentConfig : EntityTypeConfiguration<Appointment>
 
         Property(a => a.Price)
             .IsRequired()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0); // ✅ CRITICAL FIX: decimal(18,0) برای مبالغ IRR (طبق قرارداد مالی)
+
+        Property(a => a.PromotionalEventId)
+            .IsOptional()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Appointment_PromotionalEventId")));
+
+        Property(a => a.DiscountAmount)
+            .IsRequired()
+            .HasPrecision(18, 0); // ✅ CRITICAL: decimal(18,0) برای مبالغ IRR (طبق قرارداد مالی)
 
         Property(a => a.Description)
             .IsOptional()

@@ -79,6 +79,13 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public TimeSpan? DefaultEndTime { get; set; }
 
         /// <summary>
+        /// هزینه ویزیت پایه (ریال)
+        /// </summary>
+        [Range(0, 10000000, ErrorMessage = "هزینه ویزیت باید بین 0 تا 10,000,000 ریال باشد.")]
+        [Display(Name = "هزینه ویزیت (ریال)")]
+        public decimal ConsultationFee { get; set; } = 0;
+
+        /// <summary>
         /// تاریخ ایجاد برنامه کاری
         /// </summary>
         public DateTime CreatedAt { get; set; }
@@ -296,6 +303,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                     AppointmentDuration = doctorSchedule.AppointmentDuration,
                     DefaultStartTime = doctorSchedule.DefaultStartTime,
                     DefaultEndTime = doctorSchedule.DefaultEndTime,
+                    ConsultationFee = doctorSchedule.ConsultationFee, // ✅ اضافه شد
                     CreatedAt = doctorSchedule.CreatedAt,
                     CreatedBy = doctorSchedule.CreatedByUserId,
                     UpdatedAt = doctorSchedule.UpdatedAt,
@@ -353,6 +361,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 AppointmentDuration = this.AppointmentDuration,
                 DefaultStartTime = this.DefaultStartTime,
                 DefaultEndTime = this.DefaultEndTime,
+                ConsultationFee = this.ConsultationFee, // ✅ اضافه شد
                 CreatedAt = this.CreatedAt,
                 CreatedByUserId = this.CreatedBy,
                 UpdatedAt = this.UpdatedAt,
@@ -641,6 +650,15 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .InclusiveBetween(5, 120)
                 .WithMessage("مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")
                 .WithErrorCode("INVALID_APPOINTMENT_DURATION");
+
+            // اعتبارسنجی هزینه ویزیت
+            RuleFor(x => x.ConsultationFee)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("هزینه ویزیت نمی‌تواند منفی باشد.")
+                .WithErrorCode("INVALID_CONSULTATION_FEE_NEGATIVE")
+                .LessThanOrEqualTo(10000000)
+                .WithMessage("هزینه ویزیت نمی‌تواند بیش از 10,000,000 ریال باشد.")
+                .WithErrorCode("INVALID_CONSULTATION_FEE_MAX");
 
             // ✅ اعتبارسنجی WorkDays (اصلی) - فقط اگر تاریخ خاصی وجود نداشته باشد
             // ✅ اگر تاریخ خاصی وجود دارد، نیازی به WorkDays نیست

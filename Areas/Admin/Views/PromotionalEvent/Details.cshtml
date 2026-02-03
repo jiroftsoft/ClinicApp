@@ -1,0 +1,272 @@
+@model ClinicApp.ViewModels.PromotionalEventVM.PromotionalEventDetailsViewModel
+@using ClinicApp.Helpers
+@using ClinicApp.Models.Enums
+@{
+    ViewBag.Title = "جزئیات ایونت تبلیغاتی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Promotional Event Details - Production Ready
+   ============================================
+   - SRP: نمایش جزئیات ایونت تبلیغاتی
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-gift text-primary"></i> جزئیات ایونت تبلیغاتی
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-warning">
+                <i class="fas fa-edit"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Delete", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-danger">
+                <i class="fas fa-trash"></i> حذف
+            </a>
+            <a href="@Url.Action("Index", "PromotionalEvent", new { area = "Admin" })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- اطلاعات ایونت -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> اطلاعات ایونت
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">عنوان:</dt>
+                        <dd class="col-sm-8"><strong>@Model.Title</strong></dd>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <dt class="col-sm-4">توضیحات:</dt>
+                            <dd class="col-sm-8">@Model.Description</dd>
+                        }
+
+                        <dt class="col-sm-4">تاریخ شروع:</dt>
+                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.StartDate)</dd>
+
+                        <dt class="col-sm-4">تاریخ پایان:</dt>
+                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.EndDate)</dd>
+
+                        <dt class="col-sm-4">نوع تخفیف:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge badge-info">@Model.DiscountTypeDisplay</span>
+                        </dd>
+
+                        <dt class="col-sm-4">مقدار تخفیف:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.DiscountType == DiscountType.Percentage)
+                            {
+                                <span class="badge badge-success">@Model.DiscountValue.ToString("F0")%</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">@Model.DiscountValue.ToString("N0") ریال</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">تعداد استفاده:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge badge-primary">@Model.SlotsDisplay</span>
+                            @if (Model.TotalSlots.HasValue)
+                            {
+                                <span class="text-muted">(باقیمانده: @Model.RemainingSlots)</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">محدودیت پزشک:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.IsDoctorSpecific)
+                            {
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-user-md"></i> محدود به پزشکان خاص
+                                </span>
+                                if (Model.DoctorNames != null && Model.DoctorNames.Any())
+                                {
+                                    <ul class="list-unstyled mt-2">
+                                        @foreach (var doctorName in Model.DoctorNames)
+                                        {
+                                            <li><i class="fas fa-user-md text-primary"></i> @doctorName</li>
+                                        }
+                                    </ul>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-users"></i> همه پزشکان
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">وضعیت:</dt>
+                        <dd class="col-sm-8">
+                            @{
+                                var statusClass = Model.IsActive ? "badge-success" : "badge-secondary";
+                                var statusIcon = Model.IsActive ? "fa-check-circle" : "fa-times-circle";
+                            }
+                            <span class="badge @statusClass">
+                                <i class="fas @statusIcon"></i> @(Model.IsActive ? "فعال" : "غیرفعال")
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">تاریخ ایجاد:</dt>
+                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.CreatedAt)</dd>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.CreatedByUserName))
+                        {
+                            <dt class="col-sm-4">ایجاد کننده:</dt>
+                            <dd class="col-sm-8">@Model.CreatedByUserName</dd>
+                        }
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <dt class="col-sm-4">تاریخ آخرین ویرایش:</dt>
+                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</dd>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.UpdatedByUserName))
+                        {
+                            <dt class="col-sm-4">ویرایش کننده:</dt>
+                            <dd class="col-sm-8">@Model.UpdatedByUserName</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <!-- نوبت‌های استفاده شده -->
+            @if (Model.Appointments != null && Model.Appointments.Any())
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-calendar-check"></i> نوبت‌های استفاده شده
+                            <span class="badge badge-primary">@Model.Appointments.Count</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>شناسه نوبت</th>
+                                        <th>پزشک</th>
+                                        <th>بیمار</th>
+                                        <th>تاریخ نوبت</th>
+                                        <th>قیمت</th>
+                                        <th>تخفیف</th>
+                                        <th>تاریخ استفاده</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model.Appointments)
+                                    {
+                                        <tr>
+                                            <td>@appointment.AppointmentId</td>
+                                            <td>@appointment.DoctorName</td>
+                                            <td>@appointment.PatientName</td>
+                                            <td>@PersianDateHelper.ToPersianDate(appointment.AppointmentDate)</td>
+                                            <td>@appointment.Price.ToString("N0") ریال</td>
+                                            <td>
+                                                <span class="badge badge-success">@appointment.DiscountAmount.ToString("N0") ریال</span>
+                                            </td>
+                                            <td>@PersianDateHelper.ToPersianDate(appointment.CreatedAt)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i> هنوز هیچ نوبتی از این ایونت استفاده نکرده است.
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <!-- آمار و اطلاعات -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar"></i> آمار
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="h2 text-primary">@Model.UsedSlots</div>
+                        <div class="text-muted">نوبت استفاده شده</div>
+                    </div>
+                    @if (Model.TotalSlots.HasValue)
+                    {
+                        <div class="progress mb-3" style="height: 20px;">
+                            @{
+                                var percentage = Model.TotalSlots.Value > 0 ? (Model.UsedSlots * 100 / Model.TotalSlots.Value) : 0;
+                            }
+                            <div class="progress-bar" role="progressbar" style="width: @percentage%" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
+                                @percentage%
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted">از @Model.TotalSlots.Value نوبت</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center">
+                            <small class="text-muted">نامحدود</small>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- عملیات سریع -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> عملیات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Edit", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-warning btn-block">
+                            <i class="fas fa-edit"></i> ویرایش ایونت
+                        </a>
+                        <a href="@Url.Action("Delete", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-danger btn-block">
+                            <i class="fas fa-trash"></i> حذف ایونت
+                        </a>
+                        <a href="@Url.Action("Index", "PromotionalEvent", new { area = "Admin" })" class="btn btn-secondary btn-block">
+                            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('🎁 Promotional Event Details Page Loaded');
+        });
+    </script>
+}
+

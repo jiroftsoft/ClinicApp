@@ -301,7 +301,7 @@
                 data: $form.serialize(),
                 dataType: 'json', // Ensure JSON parsing
                 success: function(response) {
-                    // Handle USER_ALREADY_EXISTS even if success: false (MUST be first check)
+                    // ✅ Handle USER_ALREADY_EXISTS - کاربر موجود است، باید لاگین کند (MUST be first check)
                     if (response && response.code === 'USER_ALREADY_EXISTS') {
                         // ✅ Reset registration flow state for login
                         state.isRegistrationFlow = false;

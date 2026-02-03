@@ -339,13 +339,23 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // ✅ PromotionalEvent Routes - طبق 08-MVC-Routing-Best-Practices.md
+            // Route خاص قبل از CMS route برای جلوگیری از match شدن به CMS
+            // ⚠️ CRITICAL: باید قبل از Admin_CMS_Default باشد (خاص قبل از عمومی)
+            context.MapRoute(
+                name: "Admin_PromotionalEvent_Routes",
+                url: "Admin/PromotionalEvent/{action}/{id}",
+                defaults: new { controller = "PromotionalEvent", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق Best Practices
+
             // CMS Routes - مسیرهای CMS (باید قبل از Admin default باشد تا اولویت داشته باشد)
             context.MapRoute(
                 name: "Admin_CMS_Default",
                 url: "Admin/CMS/{controller}/{action}/{id}",
                 defaults: new { action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.CMS" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق Best Practices
 
             // Admin default route - باید بعد از CMS route باشد
             context.MapRoute(
@@ -353,7 +363,7 @@ namespace ClinicApp.Areas.Admin
                 "Admin/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
-            );
+            ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق Best Practices - اضافه شد
         }
     }
 }

@@ -3,6 +3,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Triage;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Entities.PromotionalEvent;
 using ClinicApp.Models.Entities.CMS;
 using EntityFramework.DynamicFilters;
 using Microsoft.AspNet.Identity;
@@ -107,6 +108,7 @@ namespace ClinicApp.Models
         
         // Payment System - Using existing PaymentTransaction model
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<PromotionalEvent> PromotionalEvents { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<CashSession> CashSessions { get; set; }
         public DbSet<PosTerminal> PosTerminals { get; set; }

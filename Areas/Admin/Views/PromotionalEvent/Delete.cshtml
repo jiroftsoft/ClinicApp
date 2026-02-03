@@ -1,0 +1,127 @@
+@model ClinicApp.ViewModels.PromotionalEventVM.PromotionalEventDetailsViewModel
+@using ClinicApp.Helpers
+@using ClinicApp.Models.Enums
+@{
+    ViewBag.Title = "حذف ایونت تبلیغاتی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* ============================================
+   Promotional Event Delete - Production Ready
+   ============================================
+   - SRP: فرم تأیید حذف ایونت تبلیغاتی
+   - Strongly-Typed: استفاده از ViewModel
+   - UI/UX: طراحی ماژولار و کامپوننت محور
+   ============================================ *@
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-trash text-danger"></i> حذف ایونت تبلیغاتی
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-info">
+                <i class="fas fa-eye"></i> جزئیات
+            </a>
+            <a href="@Url.Action("Index", "PromotionalEvent", new { area = "Admin" })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow mb-4 border-danger">
+                <div class="card-header py-3" style="background-color: var(--medical-danger); color: white;">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> تأیید حذف
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>هشدار!</strong> آیا مطمئن هستید که می‌خواهید این ایونت را حذف کنید؟
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">@Model.Title</h5>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">تاریخ شروع:</dt>
+                                <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.StartDate)</dd>
+
+                                <dt class="col-sm-4">تاریخ پایان:</dt>
+                                <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.EndDate)</dd>
+
+                                <dt class="col-sm-4">نوع تخفیف:</dt>
+                                <dd class="col-sm-8">@Model.DiscountTypeDisplay</dd>
+
+                                <dt class="col-sm-4">مقدار تخفیف:</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.DiscountType == DiscountType.Percentage)
+                                    {
+                                        <text>@Model.DiscountValue.ToString("F0")%</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@Model.DiscountValue.ToString("N0") ریال</text>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">تعداد استفاده:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge badge-primary">@Model.SlotsDisplay</span>
+                                </dd>
+
+                                <dt class="col-sm-4">وضعیت:</dt>
+                                <dd class="col-sm-8">
+                                    @{
+                                        var statusClass = Model.IsActive ? "badge-success" : "badge-secondary";
+                                    }
+                                    <span class="badge @statusClass">
+                                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    @if (Model.Appointments != null && Model.Appointments.Any())
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>توجه:</strong> این ایونت در @Model.Appointments.Count نوبت استفاده شده است. 
+                            با حذف ایونت، اطلاعات تخفیف در نوبت‌ها حفظ می‌شود اما ایونت دیگر فعال نخواهد بود.
+                        </div>
+                    }
+
+                    @using (Html.BeginForm("Delete", "PromotionalEvent", new { area = "Admin" }, FormMethod.Post, new { @class = "form-horizontal" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("id", Model.EventId)
+
+                        <div class="form-group">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-trash"></i> بله، حذف کن
+                                </button>
+                                <a href="@Url.Action("Details", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-times"></i> انصراف
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('🎁 Promotional Event Delete Page Loaded');
+        });
+    </script>
+}
+

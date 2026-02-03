@@ -7,6 +7,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.PromotionalEvent;
 using ClinicApp.Models.DTOs.Appointment;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
 using ClinicApp.Models.Enums;
@@ -31,6 +32,7 @@ namespace ClinicApp.Services.Appointment
         private readonly ILogger _logger;
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
         private readonly IAppSettings _appSettings; // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
+        private readonly IPromotionalEventService _promotionalEventService; // ✅ برای محاسبه تخفیف‌های تبلیغاتی
         // ✅ CRITICAL: Cache حذف شد - در محیط درمانی، داده‌ها باید Real-time باشند
         // این ماژول قرار است به صورت گسترده استفاده شود و نیاز به داده‌های به‌روز دارد
 
@@ -42,6 +44,7 @@ namespace ClinicApp.Services.Appointment
             ApplicationDbContext context,
             ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             IAppSettings appSettings, // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
+            IPromotionalEventService promotionalEventService, // ✅ برای محاسبه تخفیف‌های تبلیغاتی
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -51,6 +54,7 @@ namespace ClinicApp.Services.Appointment
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
+            _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
             _logger = logger?.ForContext<AppointmentBookingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -726,19 +730,34 @@ namespace ClinicApp.Services.Appointment
                             string.Join("، ", validationResult.Warnings));
                     }
 
-                    // محاسبه قیمت
-                    var priceResult = await GetAppointmentPriceAsync(request.DoctorId, request.ServiceCategoryId);
-                    if (!priceResult.Success)
+                    // ✅ محاسبه قیمت با جزئیات (شامل تخفیف و PromotionalEventId)
+                    var pricingService = new AppointmentPricingService(
+                        _doctorScheduleRepository,
+                        _promotionalEventService,
+                        _context,
+                        _logger);
+
+                    var patient = await _currentUserService.GetPatientInfoAsync();
+                    var patientId = patient?.PatientId;
+                    var appointmentDateTime = request.AppointmentDate.Date.Add(request.StartTime);
+                    
+                    var priceResult = await pricingService.CalculatePriceAsync(
+                        request.DoctorId,
+                        request.ServiceCategoryId,
+                        patientId,
+                        appointmentDateTime);
+
+                    if (priceResult == null)
                     {
                         transaction.Rollback();
-                        _logger.Warning("خطا در محاسبه قیمت: {Message}", priceResult.Message);
-                        return ServiceResult<AppointmentEntity>.Failed(priceResult.Message ?? "خطا در محاسبه قیمت");
+                        _logger.Warning("خطا در محاسبه قیمت: نتیجه null است");
+                        return ServiceResult<AppointmentEntity>.Failed("خطا در محاسبه قیمت");
                     }
 
                     // محاسبه تاریخ و زمان نوبت
-                    var appointmentDateTime = request.AppointmentDate.Date.Add(request.StartTime);
+                    // appointmentDateTime قبلاً محاسبه شد
 
-                    // ایجاد نوبت
+                    // ✅ ایجاد نوبت با اطلاعات تخفیف
                     var appointment = new AppointmentEntity
                     {
                         DoctorId = request.DoctorId,
@@ -751,7 +770,9 @@ namespace ClinicApp.Services.Appointment
                         // بعد از مدت زمان تعیین شده در AppSettings، نوبت منقضی می‌شود و اسلات آزاد می‌شود
                         // این برای جلوگیری از اشغال اسلات‌ها توسط نوبت‌های Pending که پرداخت نشده‌اند
                         // مقدار پیش‌فرض: 5 دقیقه (قابل تنظیم در Web.config: Appointment:PendingExpirationMinutes)
-                        Price = priceResult.Data,
+                        Price = priceResult.FinalPrice, // ✅ قیمت نهایی (بعد از تخفیف)
+                        DiscountAmount = priceResult.DiscountAmount, // ✅ مبلغ تخفیف
+                        PromotionalEventId = priceResult.PromotionalEventId, // ✅ شناسه ایونت تبلیغاتی
                         Description = request.Description,
                         IsOnlineBooking = true,
                         Duration = (int)(request.EndTime - request.StartTime).TotalMinutes,
@@ -768,8 +789,34 @@ namespace ClinicApp.Services.Appointment
                     await _context.SaveChangesAsync();
                     transaction.Commit();
 
-                    _logger.Information("✅ نوبت {AppointmentId} با موفقیت رزرو شد (Transaction Committed) - پزشک: {DoctorId}, بیمار: {PatientId}",
-                        createdAppointment.AppointmentId, request.DoctorId, request.PatientId);
+                    _logger.Information("✅ نوبت {AppointmentId} با موفقیت رزرو شد (Transaction Committed) - پزشک: {DoctorId}, بیمار: {PatientId}, قیمت: {Price}, تخفیف: {Discount}, PromotionalEventId: {PromotionalEventId}",
+                        createdAppointment.AppointmentId, request.DoctorId, request.PatientId, appointment.Price, appointment.DiscountAmount, appointment.PromotionalEventId);
+
+                    // ✅ افزایش تعداد استفاده شده برای ایونت تبلیغاتی (بعد از Commit موفق)
+                    if (appointment.PromotionalEventId.HasValue)
+                    {
+                        try
+                        {
+                            var incrementResult = await _promotionalEventService.IncrementUsedSlotsAsync(appointment.PromotionalEventId.Value);
+                            if (incrementResult.Success)
+                            {
+                                _logger.Information("✅ تعداد استفاده ایونت تبلیغاتی افزایش یافت - EventId: {EventId}, AppointmentId: {AppointmentId}",
+                                    appointment.PromotionalEventId.Value, createdAppointment.AppointmentId);
+                            }
+                            else
+                            {
+                                _logger.Warning("⚠️ خطا در افزایش تعداد استفاده ایونت تبلیغاتی - EventId: {EventId}, Error: {Error}",
+                                    appointment.PromotionalEventId.Value, incrementResult.Message);
+                                // ⚠️ این خطا نباید رزرو را متوقف کند (Fire and Forget)
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "❌ خطا در افزایش تعداد استفاده ایونت تبلیغاتی - EventId: {EventId}, AppointmentId: {AppointmentId}",
+                                appointment.PromotionalEventId.Value, createdAppointment.AppointmentId);
+                            // ⚠️ این خطا نباید رزرو را متوقف کند (Fire and Forget)
+                        }
+                    }
 
                     // ارسال اعلان رزرو موفق (به صورت Async - بدون انتظار)
                     // ✅ Note: Notification خارج از transaction است (Fire and Forget)
@@ -828,9 +875,11 @@ namespace ClinicApp.Services.Appointment
         {
             try
             {
-                // استفاده از AppointmentPricingService برای محاسبه قیمت
+                // ✅ استفاده از AppointmentPricingService برای محاسبه قیمت
+                // ✅ طبق قرارداد: Dependency Injection برای IPromotionalEventService
                 var pricingService = new AppointmentPricingService(
                     _doctorScheduleRepository,
+                    _promotionalEventService,
                     _context,
                     _logger);
 

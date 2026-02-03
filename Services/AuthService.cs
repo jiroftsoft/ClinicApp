@@ -462,12 +462,14 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// Checks if a user with the given national code already exists.
-        /// Returns a Success result if the user is NEW, and a Failed result if they already exist.
+        /// Returns Success result with code "USER_IS_NEW" if the user is NEW, 
+        /// and Success result with code "USER_ALREADY_EXISTS" if they already exist.
         /// </summary>
         // در فایل AuthService.cs
         /// <summary>
         /// بررسی می‌کند که آیا کاربری با کد ملی داده شده وجود دارد یا خیر.
-        /// برای کاربر جدید Success=true و برای کاربر موجود Success=false برمی‌گرداند.
+        /// برای کاربر جدید: Success=true با code="USER_IS_NEW"
+        /// برای کاربر موجود: Success=true با code="USER_ALREADY_EXISTS" (برای لاگین)
         /// </summary>
         public async Task<ServiceResult> CheckUserExistsAsync(string nationalCode)
         {
@@ -484,11 +486,12 @@ namespace ClinicApp.Services
                 if (user != null)
                 {
                     _log.Information("کاربر موجود با کد ملی {NationalCode} شناسایی شد.", normalizedCode);
-                    // ✅ نتیجه ناموفق با کد مشخص برای کاربر موجود
-                    return ServiceResult.Failed(
+                    // ✅ CRITICAL FIX: برای کاربر موجود، باید یک نتیجه موفق برگردانیم
+                    // چون این یک وضعیت عادی است (کاربر می‌خواهد لاگین کند، نه ثبت‌نام)
+                    // استفاده از Successful با کد USER_ALREADY_EXISTS برای تشخیص در JavaScript
+                    return ServiceResult.Successful(
                         "کاربر شناسایی شد. در حال ارسال کد ورود...",
-                        "USER_ALREADY_EXISTS",
-                        ErrorCategory.BusinessLogic); // این یک خطای بیزینسی است، نه سیستمی
+                        "USER_ALREADY_EXISTS"); // کد برای تشخیص در JavaScript
                 }
                 else
                 {
