@@ -1,0 +1,112 @@
+@model ClinicApp.ViewModels.PromotionalEventVM.PromotionalEventSendSmsViewModel
+@using ClinicApp.Models.Enums
+@{
+    ViewBag.Title = "ارسال پیامک به مشتریان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-sms text-primary"></i> ارسال پیامک به مشتریان
+        </h1>
+        <div>
+            <a href="@Url.Action("Details", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت به جزئیات
+            </a>
+            <a href="@Url.Action("Index", "PromotionalEvent", new { area = "Admin" })" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> لیست ایونت‌ها
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.WarningMessage))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @Model.WarningMessage
+            <button type="button" class="close" data-dismiss="alert" aria-label="بستن"><span aria-hidden="true">&times;</span></button>
+        </div>
+    }
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-gift"></i> ایونت: @Model.EventTitle
+            </h6>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">مخاطبان و تعداد تقریبی دریافت‌کننده را انتخاب کنید. متن پیامک حداکثر ۱۶۰ کاراکتر است.</p>
+
+            @if (Model.PatientsWithPhoneCount == 0 && Model.NewsletterSubscribersCount == 0)
+            {
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>چرا تعداد صفر است؟</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>بیماران:</strong> فقط بیمارانی که در سیستم ثبت شده‌اند و فیلد «شماره موبایل» آن‌ها پر شده است (و حذف نشده‌اند) شمرده می‌شوند.</li>
+                        <li><strong>مشترکین خبرنامه:</strong> فقط اشتراک‌های <strong>فعال</strong> و <strong>تأییدشده</strong> که شماره موبایل دارند در نظر گرفته می‌شوند.</li>
+                    </ul>
+                    <p class="mb-0 mt-2 small">اگر هنوز بیمار یا مشترک خبرنامه با شماره موبایل ثبت نکرده‌اید، پس از ثبت، این اعداد به‌روز می‌شوند. پیام‌های موفقیت و خطا پس از ارسال از طریق اعلان (Toastr) در بالای صفحه نمایش داده می‌شوند.</p>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="بستن"><span aria-hidden="true">&times;</span></button>
+                </div>
+            }
+
+            @using (Html.BeginForm("SendSms", "PromotionalEvent", new { area = "Admin" }, FormMethod.Post, new { id = "sendSmsForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger", role = "alert" })
+                @Html.HiddenFor(m => m.EventId)
+
+                <div class="form-group">
+                    <label class="font-weight-bold">انتخاب مخاطب</label>
+                    <div class="border rounded p-3 bg-light">
+                        <div class="custom-control custom-radio mb-2">
+                            @Html.RadioButtonFor(m => m.Audience, PromotionalEventAudience.PatientsWithPhone, new { id = "Audience_PatientsWithPhone", @class = "custom-control-input" })
+                            <label class="custom-control-label" for="Audience_PatientsWithPhone">
+                                بیماران دارای شماره موبایل — <strong>@Model.PatientsWithPhoneCount</strong> نفر
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio mb-2">
+                            @Html.RadioButtonFor(m => m.Audience, PromotionalEventAudience.NewsletterSubscribers, new { id = "Audience_NewsletterSubscribers", @class = "custom-control-input" })
+                            <label class="custom-control-label" for="Audience_NewsletterSubscribers">
+                                مشترکین خبرنامه — <strong>@Model.NewsletterSubscribersCount</strong> نفر
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            @Html.RadioButtonFor(m => m.Audience, PromotionalEventAudience.Both, new { id = "Audience_Both", @class = "custom-control-input" })
+                            <label class="custom-control-label" for="Audience_Both">
+                                بیماران + مشترکین خبرنامه (بدون تکراری) — <strong>@Model.BothCount</strong> نفر
+                            </label>
+                        </div>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Audience, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.CustomMessage, "متن سفارشی پیامک (اختیاری — در صورت خالی بودن، قالب پیش‌فرض استفاده می‌شود)")
+                    @Html.TextAreaFor(m => m.CustomMessage, new { @class = "form-control", rows = 3, maxlength = 160, placeholder = "حداکثر ۱۶۰ کاراکتر. در صورت خالی بودن، متن پیش‌فرض ایونت ارسال می‌شود." })
+                    <small class="form-text text-muted">حداکثر ۱۶۰ کاراکتر (SMS استاندارد)</small>
+                    @Html.ValidationMessageFor(m => m.CustomMessage, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-0">
+                    <button type="submit" class="btn btn-primary" id="btnSend">
+                        <i class="fas fa-paper-plane"></i> ارسال پیامک
+                    </button>
+                    <a href="@Url.Action("Details", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-secondary">انصراف</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('#sendSmsForm').on('submit', function () {
+                var btn = $('#btnSend');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ارسال...');
+            });
+        });
+    </script>
+}

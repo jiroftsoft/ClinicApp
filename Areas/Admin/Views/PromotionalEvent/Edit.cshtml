@@ -92,6 +92,9 @@
             <i class="fas fa-edit text-primary"></i> ویرایش ایونت تبلیغاتی
         </h1>
         <div>
+            <a href="@Url.Action("SendSms", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-outline-info">
+                <i class="fas fa-sms"></i> ارسال پیامک به مشتریان
+            </a>
             <a href="@Url.Action("Details", "PromotionalEvent", new { area = "Admin", id = Model.EventId })" class="btn btn-info">
                 <i class="fas fa-eye"></i> جزئیات
             </a>

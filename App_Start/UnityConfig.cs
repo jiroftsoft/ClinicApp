@@ -515,6 +515,7 @@ namespace ClinicApp
                 // ✅ ثبت Promotional Event Repository و Service (برای تخفیف‌های تبلیغاتی)
                 container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventRepository, Repositories.PromotionalEvent.PromotionalEventRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventService, Services.PromotionalEvent.PromotionalEventService>(new PerRequestLifetimeManager());
+                container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventSmsService, Services.PromotionalEvent.PromotionalEventSmsService>(new PerRequestLifetimeManager());
 
                 // Register Schedule Optimization Service and Strategies
                 container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());

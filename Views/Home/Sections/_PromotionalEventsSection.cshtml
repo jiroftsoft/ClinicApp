@@ -1,0 +1,53 @@
+@model List<ClinicApp.ViewModels.PromotionalEventVM.PromotionalEventPublicViewModel>
+@{
+    if (Model == null || !Model.Any())
+    {
+        return;
+    }
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/css/promotional-events-section.css")" />
+
+<section class="promotional-events-section animate-fade-in" aria-label="تخفیف‌ها و جشنواره‌های ویژه">
+    <div class="container">
+        <div class="promotional-events-header">
+            <h2 class="promotional-events-title" id="promotional-events-heading">تخفیف‌ها و جشنواره‌های ویژه</h2>
+            <p class="promotional-events-subtitle">از تخفیف‌های دوره‌ای و ایونت‌های ویژه کلینیک بهره‌مند شوید</p>
+        </div>
+
+        <div class="promotional-events-grid" role="list">
+            @foreach (var ev in Model)
+            {
+                <article class="promotional-event-card" role="listitem" aria-labelledby="promo-title-@ev.EventId">
+                    <div class="promotional-event-card-header">
+                        <div class="promotional-event-icon" aria-hidden="true">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <h3 class="promotional-event-title" id="promo-title-@ev.EventId">@ev.Title</h3>
+                    </div>
+                    <p class="promotional-event-date" aria-label="بازه زمانی">
+                        از @ev.StartDateDisplay تا @ev.EndDateDisplay
+                    </p>
+                    <div class="promotional-event-body">
+                        @if (!string.IsNullOrEmpty(ev.DiscountDisplayText))
+                        {
+                            <p class="promotional-event-discount">@ev.DiscountDisplayText</p>
+                        }
+                        @if (!string.IsNullOrEmpty(ev.Description))
+                        {
+                            <p class="promotional-event-description">@ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(ev.Description, 120)</p>
+                        }
+                    </div>
+                    @{
+                        var ctaUrl = ev.CtaUrl ?? "/Patient/Appointment/Available";
+                        var ctaAriaLabel = "رزرو نوبت برای " + ev.Title;
+                    }
+                    <a href="@ctaUrl" class="promotional-event-cta" title="رزرو نوبت" aria-label="@ctaAriaLabel">
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                        <span>رزرو نوبت</span>
+                    </a>
+                </article>
+            }
+        </div>
+    </div>
+</section>

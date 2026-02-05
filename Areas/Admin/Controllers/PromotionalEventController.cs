@@ -7,6 +7,8 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.PromotionalEvent;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.PromotionalEventVM;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
@@ -15,23 +17,27 @@ using MvcSelectListItem = System.Web.Mvc.SelectListItem; // ✅ برای رفع 
 namespace ClinicApp.Areas.Admin.Controllers
 {
     /// <summary>
-    /// کنترلر مدیریت ایونت‌های تبلیغاتی
-    /// طراحی شده بر اساس اصول SRP و Strongly-Typed
+    /// کنترلر مدیریت ایونت‌های تبلیغاتی.
+    /// طراحی شده بر اساس اصول SRP و Strongly-Typed.
+    /// قرارداد (03-Development-Contract-Quick-Guide): داده‌های اصلی فقط از طریق ViewModel؛ ViewBag/ViewData فقط برای موارد کم‌اهمیت (Title، تنظیمات DatePicker در View).
     /// </summary>
-    //[Authorize(Roles = "Admin,ClinicAdmin")]
+    //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     public class PromotionalEventController : Controller
     {
         private readonly IPromotionalEventService _promotionalEventService;
+        private readonly IPromotionalEventSmsService _promotionalEventSmsService;
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
         public PromotionalEventController(
             IPromotionalEventService promotionalEventService,
+            IPromotionalEventSmsService promotionalEventSmsService,
             IDoctorCrudService doctorCrudService,
             ICurrentUserService currentUserService)
         {
             _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
+            _promotionalEventSmsService = promotionalEventSmsService ?? throw new ArgumentNullException(nameof(promotionalEventSmsService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = Log.ForContext<PromotionalEventController>();
@@ -453,6 +459,119 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Error(ex, "❌ PROMOTIONAL EVENT: خطا در حذف ایونت - EventId: {EventId}", id);
                 NotificationHelper.SetError(TempData, "خطا در حذف ایونت");
                 return RedirectToAction("Delete", "PromotionalEvent", new { area = "Admin", id = id });
+            }
+        }
+
+        #endregion
+
+        #region Send SMS
+
+        /// <summary>
+        /// نمایش صفحه تأیید ارسال پیامک (عنوان ایونت، تعداد مخاطب هر گزینه، هشدار هزینه)
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> SendSms(int id)
+        {
+            try
+            {
+                _logger.Information("🎁 PROMOTIONAL EVENT: درخواست صفحه ارسال پیامک - EventId: {EventId}", id);
+
+                var result = await _promotionalEventService.GetByIdAsync(id);
+                if (!result.Success || result.Data == null || result.Data.IsDeleted)
+                {
+                    NotificationHelper.SetError(TempData, result.Message ?? "ایونت یافت نشد.");
+                    return RedirectToAction("Index", "PromotionalEvent", new { area = "Admin" });
+                }
+
+                var counts = await _promotionalEventSmsService.GetAudienceCountsAsync();
+                var model = new PromotionalEventSendSmsViewModel
+                {
+                    EventId = id,
+                    EventTitle = result.Data.Title,
+                    PatientsWithPhoneCount = counts?.PatientsWithPhoneCount ?? 0,
+                    NewsletterSubscribersCount = counts?.NewsletterSubscribersCount ?? 0,
+                    BothCount = counts?.BothCount ?? 0,
+                    WarningMessage = "ارسال پیامک برای هر مخاطب هزینه دارد. از ارسال به لیست‌های بزرگ بدون تأیید مدیریت خودداری کنید.",
+                    Audience = PromotionalEventAudience.PatientsWithPhone,
+                    CustomMessage = null
+                };
+
+                return View(GetViewPath("SendSms"), model);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ PROMOTIONAL EVENT: خطا در نمایش صفحه ارسال پیامک - EventId: {EventId}", id);
+                NotificationHelper.SetError(TempData, "خطا در بارگذاری صفحه ارسال پیامک");
+                return RedirectToAction("Index", "PromotionalEvent", new { area = "Admin" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک ایونت به مخاطبان انتخاب‌شده
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SendSms(PromotionalEventSendSmsPostViewModel model)
+        {
+            if (model == null || model.EventId <= 0)
+            {
+                NotificationHelper.SetError(TempData, "اطلاعات ارسال نامعتبر است.");
+                return RedirectToAction("Index", "PromotionalEvent", new { area = "Admin" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var eventResult = await _promotionalEventService.GetByIdAsync(model.EventId);
+                if (!eventResult.Success || eventResult.Data == null)
+                {
+                    NotificationHelper.SetError(TempData, "ایونت یافت نشد.");
+                    return RedirectToAction("Index", "PromotionalEvent", new { area = "Admin" });
+                }
+                var counts = await _promotionalEventSmsService.GetAudienceCountsAsync();
+                var sendSmsModel = new PromotionalEventSendSmsViewModel
+                {
+                    EventId = model.EventId,
+                    EventTitle = eventResult.Data.Title,
+                    PatientsWithPhoneCount = counts?.PatientsWithPhoneCount ?? 0,
+                    NewsletterSubscribersCount = counts?.NewsletterSubscribersCount ?? 0,
+                    BothCount = counts?.BothCount ?? 0,
+                    WarningMessage = "ارسال پیامک برای هر مخاطب هزینه دارد. از ارسال به لیست‌های بزرگ بدون تأیید مدیریت خودداری کنید.",
+                    Audience = model.Audience,
+                    CustomMessage = model.CustomMessage
+                };
+                return View(GetViewPath("SendSms"), sendSmsModel);
+            }
+
+            try
+            {
+                _logger.Information("🎁 PROMOTIONAL EVENT: درخواست ارسال پیامک - EventId: {EventId}, Audience: {Audience}", model.EventId, model.Audience);
+
+                var sendResult = await _promotionalEventSmsService.SendEventSmsToCustomersAsync(
+                    model.EventId,
+                    model.Audience,
+                    model.CustomMessage);
+
+                if (sendResult.Success && sendResult.Data != null)
+                {
+                    var msg = sendResult.Data.SentCount > 0
+                        ? $"پیامک به {sendResult.Data.SentCount} مخاطب ارسال شد."
+                        : sendResult.Message;
+                    if (sendResult.Data.FailedCount > 0)
+                        msg += $" ({sendResult.Data.FailedCount} مورد ناموفق)";
+                    NotificationHelper.SetSuccess(TempData, msg);
+                }
+                else
+                {
+                    NotificationHelper.SetError(TempData, sendResult.Message ?? "ارسال پیامک انجام نشد.");
+                }
+
+                return RedirectToAction("Details", "PromotionalEvent", new { area = "Admin", id = model.EventId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ PROMOTIONAL EVENT: خطا در ارسال پیامک - EventId: {EventId}", model.EventId);
+                NotificationHelper.SetError(TempData, "خطا در ارسال پیامک.");
+                return RedirectToAction("SendSms", "PromotionalEvent", new { area = "Admin", id = model.EventId });
             }
         }
 

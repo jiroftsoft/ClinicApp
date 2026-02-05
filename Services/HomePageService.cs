@@ -7,6 +7,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.CMS;
+using ClinicApp.Interfaces.PromotionalEvent;
 using ClinicApp.ViewModels.CMS;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models;
@@ -14,6 +15,9 @@ using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.CMS;
+using ClinicApp.ViewModels.PromotionalEventVM;
+using ClinicApp.Models.Enums;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Services
@@ -45,6 +49,7 @@ namespace ClinicApp.Services
         private readonly IEmergencyContactService _emergencyContactService;
         private readonly IAboutPageService _aboutPageService;
         private readonly IStoryService _storyService;
+        private readonly IPromotionalEventRepository _promotionalEventRepository;
 
         public HomePageService(
             ApplicationDbContext context,
@@ -67,7 +72,8 @@ namespace ClinicApp.Services
             IMedicalServiceInfoService medicalServiceInfoService,
             IEmergencyContactService emergencyContactService,
             IAboutPageService aboutPageService = null,
-            IStoryService storyService = null)
+            IStoryService storyService = null,
+            IPromotionalEventRepository promotionalEventRepository = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -90,6 +96,7 @@ namespace ClinicApp.Services
             _emergencyContactService = emergencyContactService ?? throw new ArgumentNullException(nameof(emergencyContactService));
             _aboutPageService = aboutPageService; // Optional - اگر null باشد، از داده‌های پیش‌فرض استفاده می‌شود
             _storyService = storyService; // Optional - اگر null باشد، Stories لود نمی‌شود
+            _promotionalEventRepository = promotionalEventRepository; // Optional - اگر null باشد، ایونت‌ها لود نمی‌شوند
         }
 
         /// <summary>
@@ -126,6 +133,9 @@ namespace ClinicApp.Services
                 // لود Stories Section
                 var storiesTask = GetStoriesSectionAsync();
                 
+                // لود ایونت‌های تبلیغاتی فعال
+                var promotionalEventsTask = GetPromotionalEventsSectionAsync(effectiveClinicId);
+                
                 // لود Slider Sections
                 var sidebarSlidersTask = GetSidebarSlidersAsync();
                 var footerSlidersTask = GetFooterSlidersAsync();
@@ -143,7 +153,7 @@ namespace ClinicApp.Services
                     testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
                     medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
                     insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask,
-                    storiesTask, sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
+                    storiesTask, promotionalEventsTask, sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
 
                 var viewModel = new HomePageViewModel
                 {
@@ -165,6 +175,7 @@ namespace ClinicApp.Services
                     MedicalServiceInfos = await medicalServiceInfosTask,
                     EmergencyContacts = await emergencyContactsTask,
                     Stories = await storiesTask,
+                    PromotionalEvents = await promotionalEventsTask,
                     SidebarSliders = await sidebarSlidersTask,
                     FooterSliders = await footerSlidersTask,
                     Sidebar = await sidebarTask,
@@ -714,6 +725,62 @@ namespace ClinicApp.Services
                         PhoneNumber = "034-3222-1234"
                     }
                 };
+            }
+        }
+
+        /// <summary>
+        /// دریافت ایونت‌های تبلیغاتی فعال برای نمایش در صفحه اصلی
+        /// </summary>
+        public async Task<List<PromotionalEventPublicViewModel>> GetPromotionalEventsSectionAsync(int? clinicId = null)
+        {
+            try
+            {
+                if (_promotionalEventRepository == null)
+                {
+                    _logger.Warning("IPromotionalEventRepository در HomePageService تزریق نشده؛ ایونت‌های تبلیغاتی لود نمی‌شوند.");
+                    return new List<PromotionalEventPublicViewModel>();
+                }
+
+                var now = DateTime.Now;
+                var events = await _promotionalEventRepository.GetActiveEventsAsync(now);
+                if (events == null || !events.Any())
+                    return new List<PromotionalEventPublicViewModel>();
+
+                const string ctaUrl = "/Patient/Appointment/Available";
+                var list = events.Select(e =>
+                {
+                    string discountDisplayText;
+                    if (e.DiscountType == DiscountType.Percentage)
+                        discountDisplayText = $"{e.DiscountValue:N0}٪ تخفیف";
+                    else
+                        discountDisplayText = $"{e.DiscountValue:N0} ریال تخفیف";
+
+                    return new PromotionalEventPublicViewModel
+                    {
+                        EventId = e.EventId,
+                        Title = e.Title,
+                        Description = e.Description,
+                        StartDate = e.StartDate,
+                        EndDate = e.EndDate,
+                        StartDateDisplay = PersianDateHelper.ToPersianDate(e.StartDate),
+                        EndDateDisplay = PersianDateHelper.ToPersianDate(e.EndDate),
+                        DiscountType = e.DiscountType,
+                        DiscountValue = e.DiscountValue,
+                        DiscountDisplayText = discountDisplayText,
+                        CtaUrl = ctaUrl,
+                        TotalSlots = e.TotalSlots,
+                        UsedSlots = e.UsedSlots,
+                        RemainingSlots = e.TotalSlots.HasValue ? e.TotalSlots.Value - e.UsedSlots : (int?)null
+                    };
+                }).ToList();
+
+                _logger.Information("ایونت‌های تبلیغاتی فعال برای صفحه اصلی: {Count} مورد", list.Count);
+                return list;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت ایونت‌های تبلیغاتی برای صفحه اصلی");
+                return new List<PromotionalEventPublicViewModel>();
             }
         }
 

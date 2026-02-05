@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Extensions;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Appointment;
@@ -384,15 +385,17 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
 
         /// <summary>
-        /// دریافت قیمت نوبت
+        /// دریافت قیمت نوبت (شامل تخفیف ایونت تبلیغاتی در صورت ارسال تاریخ نوبت)
         /// GET: /Patient/Api/DoctorSearch/GetAppointmentPrice
         /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login قیمت نوبت را ببینند
         /// </summary>
+        /// <param name="appointmentDate">تاریخ نوبت (اختیاری؛ برای اعمال صحیح تخفیف ایونت مثلاً عید نوروز)</param>
         [HttpGet]
         [AllowAnonymous]
         public async Task<JsonResult> GetAppointmentPrice(
             int id,
-            int? serviceCategoryId = null)
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null)
         {
             try
             {
@@ -401,7 +404,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     return Json(new { success = false, message = "شناسه پزشک نامعتبر است" }, JsonRequestBehavior.AllowGet);
                 }
 
-                var result = await _bookingService.GetAppointmentPriceAsync(id, serviceCategoryId);
+                var result = await _bookingService.GetAppointmentPriceAsync(id, serviceCategoryId, appointmentDate);
 
                 if (!result.Success)
                 {
@@ -417,6 +420,58 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در محاسبه قیمت نوبت - پزشک: {DoctorId}", id);
+                return Json(new { success = false, message = "خطای سرور" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات قیمت نوبت (پایه، تخفیف، نهایی) برای نمایش در صفحه انتخاب نوبت
+        /// GET: /Patient/Api/DoctorSearch/GetAppointmentPriceBreakdown
+        /// </summary>
+        /// <param name="date">تاریخ نوبت به صورت شمسی (مثلاً 1404/11/17) یا میلادی</param>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<JsonResult> GetAppointmentPriceBreakdown(
+            int id,
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null,
+            string date = null)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return Json(new { success = false, message = "شناسه پزشک نامعتبر است" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // پشتیبانی از تاریخ شمسی از فرانت (مثلاً 1404/11/17)
+                if (appointmentDate == null && !string.IsNullOrWhiteSpace(date))
+                {
+                    appointmentDate = this.ParsePersianDateSafe(date.Trim(), _logger);
+                }
+
+                var result = await _bookingService.GetAppointmentPriceBreakdownAsync(id, serviceCategoryId, appointmentDate);
+
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message ?? "خطا در محاسبه قیمت" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var d = result.Data;
+                return Json(new
+                {
+                    success = true,
+                    basePrice = d.BasePrice,
+                    discountAmount = d.DiscountAmount,
+                    discountPercentage = d.DiscountPercentage,
+                    finalPrice = d.FinalPrice,
+                    promotionalEventTitle = d.PromotionalEventTitle ?? "",
+                    hasDiscount = d.HasDiscount
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جزئیات قیمت نوبت - پزشک: {DoctorId}", id);
                 return Json(new { success = false, message = "خطای سرور" }, JsonRequestBehavior.AllowGet);
             }
         }

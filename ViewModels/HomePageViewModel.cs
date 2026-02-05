@@ -24,6 +24,8 @@ namespace ClinicApp.ViewModels
         
         // بخش‌های اضافی که قبلاً از Html.Action استفاده می‌شدند (Strongly-Typed)
         public List<ClinicApp.ViewModels.CMS.AnnouncementIndexViewModel> Announcements { get; set; }
+        /// <summary>ایونت‌های تبلیغاتی فعال برای نمایش در صفحه اصلی</summary>
+        public List<ClinicApp.ViewModels.PromotionalEventVM.PromotionalEventPublicViewModel> PromotionalEvents { get; set; }
         public List<ClinicApp.ViewModels.CMS.FAQPublicViewModel> FAQs { get; set; }
         public List<ClinicApp.ViewModels.CMS.HealthTipPublicViewModel> HealthTips { get; set; }
         public List<ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel> InsuranceInfos { get; set; }

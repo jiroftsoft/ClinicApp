@@ -14,6 +14,14 @@
                 </section>
             }
 
+            <!-- Promotional Events Section (تخفیف‌ها و جشنواره‌های ویژه) -->
+            @if (Model.PromotionalEvents != null && Model.PromotionalEvents.Any())
+            {
+                <section class="promotional-events-section" data-lazy-load="true" data-section-type="promotional-events" data-section-id="promotional-events">
+                    @Html.Partial("~/Views/Home/Sections/_PromotionalEventsSection.cshtml", Model.PromotionalEvents)
+                </section>
+            }
+
             <!-- Hero Section (Critical - Above-the-fold) -->
             @if (Model.Hero != null)
             {

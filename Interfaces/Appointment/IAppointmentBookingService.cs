@@ -121,14 +121,24 @@ namespace ClinicApp.Interfaces.Appointment
             AppointmentBookingRequestDto request);
 
         /// <summary>
-        /// محاسبه قیمت نوبت
+        /// محاسبه قیمت نوبت (شامل تخفیف ایونت تبلیغاتی بر اساس تاریخ نوبت)
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="serviceCategoryId">شناسه دسته‌بندی خدمت (اختیاری)</param>
+        /// <param name="appointmentDate">تاریخ نوبت (اختیاری؛ برای اعمال صحیح تخفیف ایونت مثلاً عید نوروز)</param>
         /// <returns>قیمت نوبت</returns>
         Task<ServiceResult<decimal>> GetAppointmentPriceAsync(
             int doctorId,
-            int? serviceCategoryId = null);
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null);
+
+        /// <summary>
+        /// دریافت جزئیات قیمت نوبت (پایه، تخفیف، نهایی) برای نمایش در صفحه انتخاب نوبت
+        /// </summary>
+        Task<ServiceResult<Models.DTOs.Appointment.AppointmentPriceBreakdownDto>> GetAppointmentPriceBreakdownAsync(
+            int doctorId,
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null);
 
         /// <summary>
         /// بررسی تداخل نوبت‌های بیمار (Double Booking Prevention)

@@ -871,12 +871,12 @@ namespace ClinicApp.Services.Appointment
 
         public async Task<ServiceResult<decimal>> GetAppointmentPriceAsync(
             int doctorId,
-            int? serviceCategoryId = null)
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null)
         {
             try
             {
-                // ✅ استفاده از AppointmentPricingService برای محاسبه قیمت
-                // ✅ طبق قرارداد: Dependency Injection برای IPromotionalEventService
+                // ✅ استفاده از AppointmentPricingService برای محاسبه قیمت (شامل تخفیف ایونت بر اساس تاریخ نوبت)
                 var pricingService = new AppointmentPricingService(
                     _doctorScheduleRepository,
                     _promotionalEventService,
@@ -885,10 +885,10 @@ namespace ClinicApp.Services.Appointment
 
                 var patient = await _currentUserService.GetPatientInfoAsync();
                 var patientId = patient?.PatientId;
-                var priceResult = await pricingService.CalculatePriceAsync(doctorId, serviceCategoryId, patientId);
+                var priceResult = await pricingService.CalculatePriceAsync(doctorId, serviceCategoryId, patientId, appointmentDate);
 
-                _logger.Information("قیمت نوبت برای پزشک {DoctorId}: {FinalPrice} تومان (قیمت پایه: {BasePrice}, تخفیف: {Discount})",
-                    doctorId, priceResult.FinalPrice, priceResult.BasePrice, priceResult.DiscountAmount);
+                _logger.Information("قیمت نوبت برای پزشک {DoctorId}: {FinalPrice} ریال (قیمت پایه: {BasePrice}, تخفیف: {Discount}, تاریخ نوبت: {AppointmentDate})",
+                    doctorId, priceResult.FinalPrice, priceResult.BasePrice, priceResult.DiscountAmount, appointmentDate);
 
                 return ServiceResult<decimal>.Successful(priceResult.FinalPrice);
             }
@@ -896,6 +896,41 @@ namespace ClinicApp.Services.Appointment
             {
                 _logger.Error(ex, "خطا در محاسبه قیمت نوبت");
                 return ServiceResult<decimal>.Failed("خطا در محاسبه قیمت");
+            }
+        }
+
+        public async Task<ServiceResult<AppointmentPriceBreakdownDto>> GetAppointmentPriceBreakdownAsync(
+            int doctorId,
+            int? serviceCategoryId = null,
+            DateTime? appointmentDate = null)
+        {
+            try
+            {
+                var pricingService = new AppointmentPricingService(
+                    _doctorScheduleRepository,
+                    _promotionalEventService,
+                    _context,
+                    _logger);
+
+                var patient = await _currentUserService.GetPatientInfoAsync();
+                var patientId = patient?.PatientId;
+                var priceResult = await pricingService.CalculatePriceAsync(doctorId, serviceCategoryId, patientId, appointmentDate);
+
+                var dto = new AppointmentPriceBreakdownDto
+                {
+                    BasePrice = priceResult.BasePrice,
+                    DiscountAmount = priceResult.DiscountAmount,
+                    DiscountPercentage = priceResult.DiscountPercentage,
+                    FinalPrice = priceResult.FinalPrice,
+                    PromotionalEventTitle = priceResult.PromotionalEventTitle
+                };
+
+                return ServiceResult<AppointmentPriceBreakdownDto>.Successful(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جزئیات قیمت نوبت - DoctorId: {DoctorId}", doctorId);
+                return ServiceResult<AppointmentPriceBreakdownDto>.Failed("خطا در محاسبه قیمت");
             }
         }
 

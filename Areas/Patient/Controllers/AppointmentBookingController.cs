@@ -732,7 +732,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDoctor");
                 }
 
-                var priceResult = await _bookingService.GetAppointmentPriceAsync(doctorId, serviceCategoryId);
+                // ✅ پاس دادن تاریخ نوبت برای اعمال صحیح تخفیف ایونت تبلیغاتی (مثلاً عید نوروز)
+                var priceResult = await _bookingService.GetAppointmentPriceAsync(doctorId, serviceCategoryId, parsedAppointmentDate);
                 if (!priceResult.Success)
                 {
                     NotificationHelper.SetError(TempData, priceResult.Message ?? "خطا در محاسبه قیمت");

@@ -55,10 +55,11 @@ namespace ClinicApp.Services.Appointment
                 // 1. دریافت قیمت پایه از برنامه کاری پزشک
                 var basePrice = await GetBasePriceAsync(doctorId, serviceCategoryId);
 
-                // 2. محاسبه تخفیف‌ها (با جزئیات برای PromotionalEventId)
+                // 2. محاسبه تخفیف‌ها (با جزئیات برای PromotionalEventId و عنوان ایونت)
                 var discountResult = await CalculateDiscountWithDetailsAsync(doctorId, patientId, basePrice, appointmentDate);
                 var discount = discountResult.TotalDiscount;
                 var promotionalEventId = discountResult.PromotionalEventId;
+                var promotionalEventTitle = discountResult.PromotionalEventTitle;
 
                 // 3. محاسبه قیمت پس از تخفیف
                 var priceAfterDiscount = basePrice - discount;
@@ -80,7 +81,8 @@ namespace ClinicApp.Services.Appointment
                     TaxAmount = taxAmount,
                     FinalPrice = finalPrice,
                     Currency = "IRR", // ریال
-                    PromotionalEventId = promotionalEventId // ✅ برای ذخیره در Appointment
+                    PromotionalEventId = promotionalEventId,
+                    PromotionalEventTitle = promotionalEventTitle
                 };
 
                 _logger.Information("محاسبه قیمت نوبت تکمیل شد - BasePrice: {BasePrice}, Discount: {Discount}, FinalPrice: {FinalPrice}",
@@ -220,6 +222,11 @@ namespace ClinicApp.Services.Appointment
         /// شناسه ایونت تبلیغاتی که تخفیف از آن اعمال شده است (اختیاری)
         /// </summary>
         public int? PromotionalEventId { get; set; }
+
+        /// <summary>
+        /// عنوان ایونت تبلیغاتی (برای نمایش در UI بیمار)
+        /// </summary>
+        public string PromotionalEventTitle { get; set; }
 
         /// <summary>
         /// نمایش قیمت به صورت فرمت شده

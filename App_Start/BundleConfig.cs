@@ -1,4 +1,4 @@
-﻿using System.Web;
+using System.Web;
 using System.Web.Optimization;
 
 namespace ClinicApp
@@ -143,6 +143,7 @@ namespace ClinicApp
                 "~/Content/css/blog-section.css",
                 "~/Content/css/health-tips-section.css",
                 "~/Content/css/medical-equipment-section.css",
+                "~/Content/css/promotional-events-section.css",
                 "~/Content/css/insurance-info-section.css",
                 "~/Content/css/contact-section.css",
                 "~/Content/css/medical-sidebar.css"

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.ViewModels;
 
@@ -72,6 +73,12 @@ namespace ClinicApp.Interfaces
         /// دریافت داده‌های بخش Contact
         /// </summary>
         Task<ContactSectionViewModel> GetContactSectionAsync(int? clinicId = null);
+
+        /// <summary>
+        /// دریافت ایونت‌های تبلیغاتی فعال برای نمایش در صفحه اصلی
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک (اختیاری)</param>
+        Task<List<ViewModels.PromotionalEventVM.PromotionalEventPublicViewModel>> GetPromotionalEventsSectionAsync(int? clinicId = null);
 
         /// <summary>
         /// دریافت داده‌های Footer برای استفاده در تمام صفحات

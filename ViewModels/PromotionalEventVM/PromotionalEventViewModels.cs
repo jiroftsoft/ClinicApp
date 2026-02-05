@@ -58,6 +58,32 @@ namespace ClinicApp.ViewModels.PromotionalEventVM
         public DateTime? ToDate { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel برای نمایش عمومی ایونت تبلیغاتی در صفحه اصلی و صفحات بیمار
+    /// </summary>
+    public class PromotionalEventPublicViewModel
+    {
+        public int EventId { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        /// <summary>تاریخ شروع شمسی برای نمایش</summary>
+        public string StartDateDisplay { get; set; }
+        /// <summary>تاریخ پایان شمسی برای نمایش</summary>
+        public string EndDateDisplay { get; set; }
+        public DiscountType DiscountType { get; set; }
+        public decimal DiscountValue { get; set; }
+        /// <summary>متن نمایشی تخفیف (مثلاً "۲۰٪ تخفیف" یا "۱۰۰,۰۰۰ ریال تخفیف")</summary>
+        public string DiscountDisplayText { get; set; }
+        /// <summary>آدرس دکمه CTA (رزرو نوبت)</summary>
+        public string CtaUrl { get; set; }
+        public int? TotalSlots { get; set; }
+        public int UsedSlots { get; set; }
+        /// <summary>ظرفیت باقی‌مانده برای نمایش (اختیاری)</summary>
+        public int? RemainingSlots { get; set; }
+    }
+
     #endregion
 
     #region Create & Edit ViewModels
@@ -159,6 +185,44 @@ namespace ClinicApp.ViewModels.PromotionalEventVM
         public decimal Price { get; set; }
         public decimal DiscountAmount { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    #endregion
+
+    #region Send SMS ViewModels
+
+    /// <summary>
+    /// ViewModel برای صفحه تأیید ارسال پیامک (GET SendSms) و فرم ارسال — Strongly-Typed
+    /// </summary>
+    public class PromotionalEventSendSmsViewModel
+    {
+        public int EventId { get; set; }
+        public string EventTitle { get; set; }
+        public int PatientsWithPhoneCount { get; set; }
+        public int NewsletterSubscribersCount { get; set; }
+        public int BothCount { get; set; }
+        public string WarningMessage { get; set; }
+        /// <summary>نوع مخاطب (برای فرم ارسال)</summary>
+        public ClinicApp.Models.Enums.PromotionalEventAudience Audience { get; set; } = ClinicApp.Models.Enums.PromotionalEventAudience.PatientsWithPhone;
+        /// <summary>متن سفارشی پیامک (اختیاری — حداکثر ۱۶۰ کاراکتر)</summary>
+        [MaxLength(160, ErrorMessage = "متن پیامک حداکثر ۱۶۰ کاراکتر است.")]
+        public string CustomMessage { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای فرم ارسال پیامک (POST SendSms)
+    /// </summary>
+    public class PromotionalEventSendSmsPostViewModel
+    {
+        public int EventId { get; set; }
+
+        [Required(ErrorMessage = "انتخاب مخاطب الزامی است.")]
+        [Display(Name = "نوع مخاطب")]
+        public ClinicApp.Models.Enums.PromotionalEventAudience Audience { get; set; }
+
+        [MaxLength(160, ErrorMessage = "متن پیامک حداکثر ۱۶۰ کاراکتر است.")]
+        [Display(Name = "متن سفارشی پیامک")]
+        public string CustomMessage { get; set; }
     }
 
     #endregion
