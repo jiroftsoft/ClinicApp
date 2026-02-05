@@ -435,6 +435,28 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
+        /// <summary>
+        /// بازگرداندن نمایش مبلغ حق ویزیت برای راهنمای منشی (تومان + مبلغ به حروف).
+        /// منطق نمایش در MoneyDisplayHelper (SRP).
+        /// </summary>
+        [HttpGet]
+        public JsonResult GetConsultationFeeDisplay(decimal? amountRial)
+        {
+            try
+            {
+                var rial = amountRial ?? 0;
+                if (rial < 0) rial = 0;
+                var tomanDisplay = MoneyDisplayHelper.FormatTomanDisplay(rial);
+                var amountInWords = MoneyDisplayHelper.AmountToWordsToman(rial);
+                return Json(new { success = true, tomanDisplay, amountInWords }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "خطا در نمایش مبلغ حق ویزیت");
+                return Json(new { success = false, tomanDisplay = "", amountInWords = "" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
 
         #region Assignment Operations

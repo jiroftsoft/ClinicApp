@@ -1,5 +1,6 @@
 @* صفحه ویرایش برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی *@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "ویرایش برنامه کاری پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -9,9 +10,10 @@
     <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
+        /* ✅ پالت رسمی درمانی — طبق 03-Development-Contract-Quick-Guide، بدون گرادینت فانتزی */
         .doctor-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-radius: 15px;
+            background-color: #2c5aa0;
+            border-radius: 12px;
             padding: 2rem;
             color: white;
             margin-bottom: 2rem;
@@ -22,7 +24,8 @@
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #dee2e6;
         }
         
         .work-day-section {
@@ -30,7 +33,7 @@
             border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            border-left: 4px solid #28a745;
+            border-right: 4px solid #2c5aa0;
         }
         
         .time-range-section {
@@ -38,7 +41,7 @@
             border-radius: 6px;
             padding: 1rem;
             margin-bottom: 0.5rem;
-            border-left: 3px solid #4facfe;
+            border-right: 3px solid #2c5aa0;
         }
         
         .action-buttons {
@@ -50,13 +53,8 @@
         
         .btn-action {
             padding: 0.75rem 1.5rem;
-            border-radius: 25px;
+            border-radius: 8px;
             font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-action:hover {
-            transform: scale(1.05);
         }
         
         .form-group {
@@ -65,19 +63,18 @@
         
         .form-label {
             font-weight: 600;
-            color: #333;
+            color: #212529;
             margin-bottom: 0.5rem;
         }
         
         .form-control {
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
         }
         
         .form-control:focus {
-            border-color: #4facfe;
-            box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
         }
     </style>
 }
@@ -93,7 +90,11 @@
                 </h2>
                 <p class="mb-0 opacity-75">@(Model.DoctorName ?? "پزشک")</p>
             </div>
-            <div class="col-md-4 text-end">
+                    <div class="col-md-4 text-end">
+                <a href="@Url.Action("AssignSchedule", "DoctorSchedule", new { area = "Admin", doctorId = Model.DoctorId })" class="btn btn-light me-2">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    تنظیم برنامه
+                </a>
                 <a href="@Url.Action("Details", "DoctorSchedule", new { area = "Admin", id = Model.Id })" class="btn btn-light">
                     <i class="fas fa-arrow-left me-2"></i>
                     بازگشت به جزئیات
@@ -104,12 +105,13 @@
 
     <!-- Edit Form -->
     <div class="edit-form">
-        @using (Html.BeginForm("AssignSchedule", "DoctorSchedule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+        @using (Html.BeginForm("AssignSchedule", "DoctorSchedule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate", id = "editScheduleForm" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.Id)
             @Html.HiddenFor(m => m.DoctorId)
             <input type="hidden" name="operation" value="update" />
+            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
             
             <div class="row">
                 <div class="col-12">
@@ -181,7 +183,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-md-1">
-                                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)">
+                                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)" title="حذف بازه زمانی" aria-label="حذف بازه زمانی">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </div>
@@ -242,7 +244,7 @@
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-money-bill-wave me-2"></i>
-                            هزینه ویزیت (ریال)
+                            مبلغ حق ویزیت (ریال)
                         </label>
                         @Html.TextBoxFor(m => m.ConsultationFee, 
                             new { 
@@ -251,12 +253,26 @@
                                 min = "0",
                                 max = "10000000",
                                 step = "1000",
-                                placeholder = "مثال: 500000"
+                                placeholder = "مثال: 500000",
+                                id = "consultationFeeInput"
                             })
                         @Html.ValidationMessageFor(m => m.ConsultationFee, "", new { @class = "text-danger" })
                         <small class="form-text text-muted">
-                            هزینه ویزیت به ریال (مثال: 500000 = 500 هزار تومان)
+                            مبلغ حق ویزیت به ریال. در نوبت‌دهی و محاسبه قیمت استفاده می‌شود.
                         </small>
+                        <div id="consultationFeeGuide" class="alert alert-light border mt-2 mb-0" style="border-right: 4px solid #2c5aa0; background-color: #f8f9fa;">
+                            <strong class="text-primary"><i class="fas fa-calculator me-2"></i>راهنما برای منشی:</strong>
+                            <span id="consultationFeeGuideText">
+                                @if (Model.ConsultationFee > 0)
+                                {
+                                    <text>معادل <strong>@MoneyDisplayHelper.FormatTomanDisplay(Model.ConsultationFee)</strong> — مبلغ به حروف: <strong>@MoneyDisplayHelper.AmountToWordsToman(Model.ConsultationFee)</strong></text>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>
+                                }
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -305,7 +321,7 @@
                         </div>
                     </div>
                     <div class="col-md-1">
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)" title="حذف بازه زمانی" aria-label="حذف بازه زمانی">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -322,19 +338,55 @@
             timeRangeSection.remove();
         }
         
+        // ✅ راهنمای مبلغ حق ویزیت (تومان + مبلغ به حروف) — به‌روزرسانی زنده برای منشی
+        function updateConsultationFeeGuide() {
+            var rial = parseInt($('#consultationFeeInput').val(), 10) || 0;
+            if (rial < 0) rial = 0;
+            var $text = $('#consultationFeeGuideText');
+            if (rial === 0) {
+                $text.html('<span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>');
+                return;
+            }
+            $.ajax({
+                url: '@Url.Action("GetConsultationFeeDisplay", "DoctorSchedule", new { area = "Admin" })',
+                data: { amountRial: rial },
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    var ok = data.success === true || data.Success === true;
+                    var toman = data.tomanDisplay || data.TomanDisplay || '';
+                    var words = data.amountInWords || data.AmountInWords || '';
+                    if (ok && toman && words) {
+                        $('#consultationFeeGuideText').html('معادل <strong>' + toman + '</strong> — مبلغ به حروف: <strong>' + words + '</strong>');
+                    }
+                },
+                error: function() {
+                    $('#consultationFeeGuideText').html('<span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>');
+                }
+            });
+        }
+        $(document).ready(function() {
+            $('#consultationFeeInput').on('blur input', function() {
+                var self = this;
+                clearTimeout(self._consultationFeeGuideTimer);
+                self._consultationFeeGuideTimer = setTimeout(updateConsultationFeeGuide, 350);
+            });
+            if ($('#consultationFeeInput').val() && parseInt($('#consultationFeeInput').val(), 10) > 0) {
+                updateConsultationFeeGuide();
+            }
+        });
+
         // اعتبارسنجی فرم
-        document.querySelector('form').addEventListener('submit', function(e) {
+        $('#editScheduleForm').on('submit', function(e) {
             if (!this.checkValidity()) {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا در فرم',
                     text: 'لطفاً تمام فیلدهای الزامی را پر کنید.'
                 });
             }
-            
             this.classList.add('was-validated');
         });
     </script>

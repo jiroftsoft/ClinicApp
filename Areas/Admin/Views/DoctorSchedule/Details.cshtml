@@ -1,5 +1,6 @@
-@* صفحه جزئیات برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی *@
+@* صفحه جزئیات برنامه کاری پزشک — طراحی رسمی و خوانا مطابق قراردادهای پروژه *@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "جزئیات برنامه کاری پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -8,9 +9,10 @@
 @section Styles {
     <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
+        /* پالت رسمی درمانی — بدون گرادینت فانتزی، مطابق 03-Development-Contract-Quick-Guide */
         .doctor-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-radius: 15px;
+            background-color: var(--medical-primary, #2c5aa0);
+            border-radius: 12px;
             padding: 2rem;
             color: white;
             margin-bottom: 2rem;
@@ -21,7 +23,13 @@
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #dee2e6;
+        }
+        
+        .schedule-details h4, .schedule-details h5 {
+            color: #212529;
+            font-weight: 600;
         }
         
         .work-day-card {
@@ -29,180 +37,246 @@
             border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            border-left: 4px solid #28a745;
+            border-right: 4px solid var(--medical-primary, #2c5aa0);
         }
         
         .work-day-card.inactive {
-            border-left-color: #dc3545;
-            opacity: 0.7;
+            border-right-color: #6c757d;
+            opacity: 0.85;
         }
         
         .time-range-item {
             background: white;
             border-radius: 6px;
-            padding: 1rem;
+            padding: 1rem 1.25rem;
             margin-bottom: 0.5rem;
-            border-left: 3px solid #4facfe;
+            border-right: 3px solid var(--medical-primary, #2c5aa0);
+            border: 1px solid #e9ecef;
         }
         
         .action-buttons {
             display: flex;
-            gap: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
             justify-content: flex-end;
             margin-top: 2rem;
         }
         
         .btn-action {
-            padding: 0.75rem 1.5rem;
-            border-radius: 25px;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
             font-weight: 500;
-            transition: all 0.3s ease;
         }
         
-        .btn-action:hover {
-            transform: scale(1.05);
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            min-width: 100px;
+        }
+        
+        .stat-item .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .stat-item .label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .settings-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            border-right: 4px solid var(--medical-primary, #2c5aa0);
+        }
+        
+        .settings-card .row dd, .settings-card .row dt {
+            padding: 0.25rem 0;
+        }
+        
+        .settings-card dt {
+            font-weight: 600;
+            color: #495057;
         }
     </style>
 }
 
 <div class="container-fluid">
-    <!-- Doctor Header -->
+    <!-- هدر پزشک -->
     <div class="doctor-header">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h2 class="mb-2">
-                    <i class="fas fa-user-md me-2"></i>
+                    <i class="fas fa-user-md me-2" aria-hidden="true"></i>
                     @(Model.DoctorName ?? "پزشک")
                 </h2>
                 <p class="mb-0 opacity-75">جزئیات برنامه کاری و زمان‌بندی</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })" class="btn btn-light">
-                    <i class="fas fa-arrow-left me-2"></i>
+                <a href="@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })" class="btn btn-light" title="بازگشت به لیست برنامه‌ها" aria-label="بازگشت به لیست برنامه‌ها">
+                    <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
                     بازگشت به لیست
                 </a>
             </div>
         </div>
         
-        <div class="row mt-3">
-            <div class="col-md-3">
-                <div class="text-center">
-                    <div class="h4 mb-1">@Model.TotalSchedules</div>
-                    <div class="small opacity-75">کل برنامه‌ها</div>
-                </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="value">@Model.TotalSchedules</div>
+                <div class="label">کل برنامه‌ها</div>
             </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <div class="h4 mb-1">@Model.ActiveSchedules</div>
-                    <div class="small opacity-75">برنامه‌های فعال</div>
-                </div>
+            <div class="stat-item">
+                <div class="value">@Model.ActiveSchedules</div>
+                <div class="label">برنامه‌های فعال</div>
             </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <div class="h4 mb-1">@Model.TotalTimeSlots</div>
-                    <div class="small opacity-75">زمان‌های کاری</div>
-                </div>
+            <div class="stat-item">
+                <div class="value">@Model.TotalTimeSlots</div>
+                <div class="label">زمان‌های کاری</div>
             </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <div class="h4 mb-1">@Model.WeeklyHours</div>
-                    <div class="small opacity-75">ساعت هفتگی</div>
-                </div>
+            <div class="stat-item">
+                <div class="value">@Model.WeeklyHours</div>
+                <div class="label">ساعت هفتگی</div>
             </div>
         </div>
     </div>
 
-    <!-- Schedule Details -->
+    <!-- تنظیمات نوبت‌دهی -->
     <div class="schedule-details">
-        <div class="row">
-            <div class="col-12">
-                <h4 class="mb-3">
-                    <i class="fas fa-calendar-alt me-2"></i>
-                    جزئیات برنامه کاری
-                </h4>
-                
-                @if (Model.WorkDays != null && Model.WorkDays.Any())
-                {
-                    foreach (var workDay in Model.WorkDays.OrderBy(w => w.DayOrder))
+        <h4 class="mb-3">
+            <i class="fas fa-cog me-2" aria-hidden="true"></i>
+            تنظیمات نوبت‌دهی
+        </h4>
+        <div class="settings-card">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">مدت نوبت (دقیقه)</dt>
+                        <dd class="col-sm-8">@Model.AppointmentDuration</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">حق ویزیت (ریال)</dt>
+                        <dd class="col-sm-8">@(Model.ConsultationFee > 0 ? Model.ConsultationFee.ToString("N0") : "—")</dd>
+                    </dl>
+                    @if (Model.ConsultationFee > 0)
                     {
-                        <div class="work-day-card @(!workDay.IsActive ? "inactive" : "")">
-                            <div class="row align-items-center">
-                                <div class="col-md-3">
-                                    <h6 class="mb-2">@workDay.DayName</h6>
-                                    <span class="badge bg-@(workDay.IsActive ? "success" : "danger")">
-                                        @(workDay.IsActive ? "فعال" : "غیرفعال")
-                                    </span>
-                                </div>
-                                <div class="col-md-9">
-                                    @if (workDay.TimeRanges != null && workDay.TimeRanges.Any())
-                                    {
-                                        foreach (var timeRange in workDay.TimeRanges.OrderBy(t => t.StartTime))
-                                        {
-                                            if (timeRange.StartTime != TimeSpan.Zero && timeRange.EndTime != TimeSpan.Zero)
-                                            {
-                                                <div class="time-range-item">
-                                                    <div class="row align-items-center">
-                                                        <div class="col-md-4">
-                                                            <strong>
-                                                                @timeRange.StartTime.ToString(@"hh\:mm") - @timeRange.EndTime.ToString(@"hh\:mm")
-                                                            </strong>
-                                                        </div>
-
-                                                        <div class="col-md-4">
-                                                            <span class="badge bg-@(timeRange.IsActive ? "success" : "danger")">
-                                                                @(timeRange.IsActive ? "فعال" : "غیرفعال")
-                                                            </span>
-                                                        </div>
-                                                        <div class="col-md-4 text-end">
-                                                            <small class="text-muted">
-                                                                مدت: @((timeRange.EndTime - timeRange.StartTime).TotalMinutes) دقیقه
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <div class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            هیچ بازه زمانی تعریف نشده است
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+                        <p class="mb-0 mt-1 text-muted small">
+                            معادل <strong>@MoneyDisplayHelper.FormatTomanDisplay(Model.ConsultationFee)</strong>
+                            — مبلغ به حروف: <strong>@MoneyDisplayHelper.AmountToWordsToman(Model.ConsultationFee)</strong>
+                        </p>
                     }
-                }
-                else
-                {
-                    <div class="text-center text-muted py-5">
-                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
-                        <h5>هیچ برنامه کاری تعریف نشده است</h5>
-                        <p>برای این پزشک هنوز برنامه کاری تنظیم نشده است.</p>
-                    </div>
-                }
+                </div>
             </div>
         </div>
+
+        <h4 class="mb-3 mt-4">
+            <i class="fas fa-calendar-alt me-2" aria-hidden="true"></i>
+            برنامه هفتگی
+        </h4>
         
-        <!-- Action Buttons -->
+        @if (Model.WorkDays != null && Model.WorkDays.Any())
+        {
+            foreach (var workDay in Model.WorkDays.OrderBy(w => w.DayOrder))
+            {
+                <div class="work-day-card @(!workDay.IsActive ? "inactive" : "")">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="mb-2">@workDay.DayName</h6>
+                            <span class="badge bg-@(workDay.IsActive ? "success" : "secondary")">
+                                @(workDay.IsActive ? "فعال" : "غیرفعال")
+                            </span>
+                        </div>
+                        <div class="col-md-9">
+                            @if (workDay.TimeRanges != null && workDay.TimeRanges.Any())
+                            {
+                                foreach (var timeRange in workDay.TimeRanges.OrderBy(t => t.StartTime))
+                                {
+                                    if (timeRange.StartTime != TimeSpan.Zero && timeRange.EndTime != TimeSpan.Zero)
+                                    {
+                                        <div class="time-range-item">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4">
+                                                    <strong>
+                                                        @timeRange.StartTime.ToString(@"hh\:mm") – @timeRange.EndTime.ToString(@"hh\:mm")
+                                                    </strong>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <span class="badge bg-@(timeRange.IsActive ? "success" : "secondary")">
+                                                        @(timeRange.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <small class="text-muted">
+                                                        مدت: @((timeRange.EndTime - timeRange.StartTime).TotalMinutes) دقیقه
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                                    هیچ بازه زمانی تعریف نشده است
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-calendar-times fa-3x mb-3" aria-hidden="true"></i>
+                <h5>هیچ برنامه کاری تعریف نشده است</h5>
+                <p class="mb-0">برای این پزشک هنوز برنامه کاری تنظیم نشده است.</p>
+            </div>
+        }
+        
+        <!-- دکمه‌های عملیات -->
         <div class="action-buttons">
             @Html.AntiForgeryToken()
-            <a href="@Url.Action("Edit", "DoctorSchedule", new { area = "Admin", id = Model.Id })" class="btn btn-primary btn-action">
-                <i class="fas fa-edit me-2"></i>
+            <a href="@Url.Action("Edit", "DoctorSchedule", new { area = "Admin", id = Model.Id })" 
+               class="btn btn-primary btn-action" 
+               title="ویرایش برنامه کاری" 
+               aria-label="ویرایش برنامه کاری">
+                <i class="fas fa-edit me-2" aria-hidden="true"></i>
                 ویرایش برنامه
             </a>
-            <a href="@Url.Action("Schedule", "DoctorSchedule", new { area = "Admin", doctorId = Model.DoctorId })" class="btn btn-info btn-action">
-                <i class="fas fa-calendar me-2"></i>
+            <a href="@Url.Action("Schedule", "DoctorSchedule", new { area = "Admin", doctorId = Model.DoctorId })" 
+               class="btn btn-info btn-action" 
+               title="مشاهده برنامه در تقویم" 
+               aria-label="مشاهده برنامه در تقویم">
+                <i class="fas fa-calendar me-2" aria-hidden="true"></i>
                 مشاهده برنامه
             </a>
-            <button class="btn btn-warning btn-action" onclick="deactivateSchedule(@Model.Id)">
-                <i class="fas fa-pause me-2"></i>
+            <button type="button" class="btn btn-warning btn-action" 
+                    onclick="deactivateSchedule(@Model.Id)" 
+                    title="غیرفعال کردن برنامه" 
+                    aria-label="غیرفعال کردن برنامه">
+                <i class="fas fa-pause me-2" aria-hidden="true"></i>
                 غیرفعال کردن
             </button>
-            <button class="btn btn-danger btn-action" onclick="removeSchedule(@Model.Id)">
-                <i class="fas fa-trash me-2"></i>
+            <button type="button" class="btn btn-danger btn-action" 
+                    onclick="removeSchedule(@Model.Id)" 
+                    title="حذف برنامه (غیرقابل بازگشت)" 
+                    aria-label="حذف برنامه">
+                <i class="fas fa-trash me-2" aria-hidden="true"></i>
                 حذف برنامه
             </button>
         </div>
@@ -221,7 +295,7 @@
                 confirmButtonText: 'بله، غیرفعال کن',
                 cancelButtonText: 'انصراف',
                 reverseButtons: true
-            }).then((result) => {
+            }).then(function(result) {
                 if (result.isConfirmed) {
                     $.ajax({
                         url: '@Url.Action("DeactivateSchedule", "DoctorSchedule", new { area = "Admin" })',
@@ -238,7 +312,7 @@
                                     text: 'برنامه با موفقیت غیرفعال شد',
                                     timer: 2000,
                                     showConfirmButton: false
-                                }).then(() => {
+                                }).then(function() {
                                     location.reload();
                                 });
                             } else {
@@ -265,16 +339,16 @@
             Swal.fire({
                 title: 'حذف برنامه',
                 text: 'آیا از حذف این برنامه اطمینان دارید؟ این عملیات غیرقابل بازگشت است.',
-                icon: 'error',
+                icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'بله، حذف کن',
                 cancelButtonText: 'انصراف',
                 reverseButtons: true,
                 confirmButtonColor: '#dc3545'
-            }).then((result) => {
+            }).then(function(result) {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: '@Url.Action("RemoveSchedule")',
+                        url: '@Url.Action("RemoveSchedule", "DoctorSchedule", new { area = "Admin" })',
                         type: 'POST',
                         data: { 
                             scheduleId: scheduleId,
@@ -288,7 +362,7 @@
                                     text: 'برنامه با موفقیت حذف شد',
                                     timer: 2000,
                                     showConfirmButton: false
-                                }).then(() => {
+                                }).then(function() {
                                     window.location.href = '@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })';
                                 });
                             } else {

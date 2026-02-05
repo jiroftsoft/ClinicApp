@@ -1,4 +1,5 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "تنظیم برنامه کاری پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -530,6 +531,38 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-12 mt-3">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.ConsultationFee, "مبلغ حق ویزیت (ریال)", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.ConsultationFee,
+                                        new {
+                                            @class = "form-control",
+                                            type = "number",
+                                            min = "0",
+                                            max = "10000000",
+                                            step = "1000",
+                                            placeholder = "مثال: 500000",
+                                            id = "consultationFeeInput"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.ConsultationFee, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">
+                                        مبلغ حق ویزیت برای نوبت‌های این برنامه به ریال. در نوبت‌دهی و محاسبه قیمت استفاده می‌شود.
+                                    </small>
+                                    <div id="consultationFeeGuide" class="alert alert-light border mt-2 mb-0 consultation-fee-guide" style="border-right: 4px solid var(--medical-primary); background-color: #f8f9fa;">
+                                        <strong class="text-primary"><i class="fas fa-calculator me-2"></i>راهنما برای منشی:</strong>
+                                        <span id="consultationFeeGuideText">
+                                            @if (Model.ConsultationFee > 0)
+                                            {
+                                                <text>معادل <strong>@MoneyDisplayHelper.FormatTomanDisplay(Model.ConsultationFee)</strong> — مبلغ به حروف: <strong>@MoneyDisplayHelper.AmountToWordsToman(Model.ConsultationFee)</strong></text>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -801,6 +834,43 @@
             $(document).on('change', '.time-input', function() {
                 updateTimeDisplay(this);
             });
+
+            // ✅ راهنمای مبلغ حق ویزیت (تومان + مبلغ به حروف) — به‌روزرسانی زنده برای منشی
+            function updateConsultationFeeGuide() {
+                var rial = parseInt($('#consultationFeeInput').val(), 10) || 0;
+                if (rial < 0) rial = 0;
+                var $text = $('#consultationFeeGuideText');
+                if (rial === 0) {
+                    $text.html('<span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>');
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("GetConsultationFeeDisplay", "DoctorSchedule", new { area = "Admin" })',
+                    data: { amountRial: rial },
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        var ok = data.success === true || data.Success === true;
+                        var toman = data.tomanDisplay || data.TomanDisplay || '';
+                        var words = data.amountInWords || data.AmountInWords || '';
+                        if (ok && toman && words) {
+                            $('#consultationFeeGuideText').html('معادل <strong>' + toman + '</strong> — مبلغ به حروف: <strong>' + words + '</strong>');
+                        }
+                    },
+                    error: function() {
+                        $('#consultationFeeGuideText').html('<span class="text-muted">مبلغ را وارد کنید تا معادل تومان و مبلغ به حروف نمایش داده شود.</span>');
+                    }
+                });
+            }
+            $('#consultationFeeInput').on('blur input', function() {
+                var self = this;
+                clearTimeout(self._consultationFeeGuideTimer);
+                self._consultationFeeGuideTimer = setTimeout(updateConsultationFeeGuide, 350);
+            });
+            // ✅ بار اول: اگر فیلد از قبل مقدار دارد، راهنما را به‌روز کن
+            if ($('#consultationFeeInput').val() && parseInt($('#consultationFeeInput').val(), 10) > 0) {
+                updateConsultationFeeGuide();
+            }
 
             // ✅ Toggle work day active state - با ایجاد خودکار TimeRange پیش‌فرض
             $('.work-day-toggle').on('change', function() {

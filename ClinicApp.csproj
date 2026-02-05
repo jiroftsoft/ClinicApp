@@ -676,6 +676,7 @@
     <Compile Include="Helpers\LoggingHelper.cs" />
     <Compile Include="Helpers\MaskHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
+    <Compile Include="Helpers\MoneyDisplayHelper.cs" />
     <Compile Include="Helpers\NotificationHelper.cs" />
     <Compile Include="Helpers\PaymentUrlHelper.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
@@ -1012,6 +1013,10 @@
     <Compile Include="Migrations\202601081512167_AddPromotionalEventModule.cs" />
     <Compile Include="Migrations\202601081512167_AddPromotionalEventModule.Designer.cs">
       <DependentUpon>202601081512167_AddPromotionalEventModule.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202602051735082_chnageConsultationFee.cs" />
+    <Compile Include="Migrations\202602051735082_chnageConsultationFee.Designer.cs">
+      <DependentUpon>202602051735082_chnageConsultationFee.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
@@ -6899,6 +6904,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202601081512167_AddPromotionalEventModule.resx">
       <DependentUpon>202601081512167_AddPromotionalEventModule.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602051735082_chnageConsultationFee.resx">
+      <DependentUpon>202602051735082_chnageConsultationFee.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

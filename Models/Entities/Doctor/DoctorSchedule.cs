@@ -1,4 +1,4 @@
-﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -88,13 +88,11 @@ public class DoctorSchedule : ISoftDelete, ITrackable
     /// <summary>
     /// هزینه ویزیت پایه (ریال)
     /// </summary>
-    [Range(0, 10000000, ErrorMessage = "هزینه ویزیت باید بین 0 تا 10,000,000 ریال باشد.")]
     public decimal ConsultationFee { get; set; } = 0;
 
     /// <summary>
     /// هزینه لغو نوبت (ریال)
     /// </summary>
-    [Range(0, 1000000, ErrorMessage = "هزینه لغو باید بین 0 تا 1,000,000 ریال باشد.")]
     public decimal CancellationFee { get; set; } = 0;
 
     /// <summary>
@@ -244,6 +242,15 @@ public class DoctorScheduleConfiguration : EntityTypeConfiguration<DoctorSchedul
             .IsRequired()
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_IsActive")));
+
+        // ✅ مبالغ IRR: decimal(18,0) بدون اعشار (طبق قرارداد مالی و پایگاه دانش)
+        Property(ds => ds.ConsultationFee)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(ds => ds.CancellationFee)
+            .IsRequired()
+            .HasPrecision(18, 0);
 
         // پیاده‌سازی ISoftDelete
         Property(ds => ds.IsDeleted)
