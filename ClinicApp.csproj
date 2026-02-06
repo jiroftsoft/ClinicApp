@@ -481,6 +481,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\ContactFormController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\EmergencyContactController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\FAQController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\FooterController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\GalleryController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\HealthTipController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\InsuranceInfoController.cs" />
@@ -568,6 +569,7 @@
     <Compile Include="Controllers\ContactController.cs" />
     <Compile Include="Controllers\DiagnosticsController.cs" />
     <Compile Include="Controllers\FAQController.cs" />
+    <Compile Include="Controllers\GalleryController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\HealthTipController.cs" />
     <Compile Include="Controllers\InsuranceInfoController.cs" />
@@ -606,6 +608,7 @@
     <Compile Include="Controllers\Reception\ReceptionStatisticsController.cs" />
     <Compile Include="Controllers\Reception\ReceptionTriageIntegrationController.cs" />
     <Compile Include="Controllers\RedirectController.cs" />
+    <Compile Include="Controllers\ServicesController.cs" />
     <Compile Include="Controllers\TokenTestController.cs" />
     <Compile Include="Controllers\Triage\TriageController.cs" />
     <Compile Include="Controllers\Triage\TriageDashboardController.cs" />
@@ -701,6 +704,7 @@
     <Compile Include="Helpers\TemplateRenderResult.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\UrlHelper.cs" />
+    <Compile Include="Helpers\UrlSecurityHelper.cs" />
     <Compile Include="Helpers\ValidationHelper.cs" />
     <Compile Include="Helpers\Validation\IdentityValidators.cs" />
     <Compile Include="Helpers\ZarinPalHelper.cs" />
@@ -767,6 +771,11 @@
     <Compile Include="Interfaces\CMS\IEmergencyContactService.cs" />
     <Compile Include="Interfaces\CMS\IFAQRepository.cs" />
     <Compile Include="Interfaces\CMS\IFAQService.cs" />
+    <Compile Include="Interfaces\CMS\IFooterCertificationRepository.cs" />
+    <Compile Include="Interfaces\CMS\IFooterLinkRepository.cs" />
+    <Compile Include="Interfaces\CMS\IFooterService.cs" />
+    <Compile Include="Interfaces\CMS\IFooterSettingsRepository.cs" />
+    <Compile Include="Interfaces\CMS\IFooterSocialRepository.cs" />
     <Compile Include="Interfaces\CMS\IGalleryItemRepository.cs" />
     <Compile Include="Interfaces\CMS\IGalleryService.cs" />
     <Compile Include="Interfaces\CMS\IHealthTipRepository.cs" />
@@ -1019,6 +1028,10 @@
     <Compile Include="Migrations\202602051735082_chnageConsultationFee.Designer.cs">
       <DependentUpon>202602051735082_chnageConsultationFee.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202602060640393_AddFooterTables.cs" />
+    <Compile Include="Migrations\202602060640393_AddFooterTables.Designer.cs">
+      <DependentUpon>202602060640393_AddFooterTables.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
@@ -1049,6 +1062,10 @@
     <Compile Include="Models\Entities\CMS\ContactForm.cs" />
     <Compile Include="Models\Entities\CMS\EmergencyContact.cs" />
     <Compile Include="Models\Entities\CMS\FAQ.cs" />
+    <Compile Include="Models\Entities\CMS\FooterCertification.cs" />
+    <Compile Include="Models\Entities\CMS\FooterLink.cs" />
+    <Compile Include="Models\Entities\CMS\FooterSettings.cs" />
+    <Compile Include="Models\Entities\CMS\FooterSocial.cs" />
     <Compile Include="Models\Entities\CMS\GalleryItem.cs" />
     <Compile Include="Models\Entities\CMS\HealthTip.cs" />
     <Compile Include="Models\Entities\CMS\InsuranceInfo.cs" />
@@ -1094,6 +1111,10 @@
     <Compile Include="Repositories\CMS\ContactFormRepository.cs" />
     <Compile Include="Repositories\CMS\EmergencyContactRepository.cs" />
     <Compile Include="Repositories\CMS\FAQRepository.cs" />
+    <Compile Include="Repositories\CMS\FooterCertificationRepository.cs" />
+    <Compile Include="Repositories\CMS\FooterLinkRepository.cs" />
+    <Compile Include="Repositories\CMS\FooterSettingsRepository.cs" />
+    <Compile Include="Repositories\CMS\FooterSocialRepository.cs" />
     <Compile Include="Repositories\CMS\GalleryItemRepository.cs" />
     <Compile Include="Repositories\CMS\HealthTipRepository.cs" />
     <Compile Include="Repositories\CMS\InsuranceInfoRepository.cs" />
@@ -1459,6 +1480,7 @@
     <Compile Include="Services\CMS\ContactFormService.cs" />
     <Compile Include="Services\CMS\EmergencyContactService.cs" />
     <Compile Include="Services\CMS\FAQService.cs" />
+    <Compile Include="Services\CMS\FooterService.cs" />
     <Compile Include="Services\CMS\GalleryService.cs" />
     <Compile Include="Services\CMS\HealthTipService.cs" />
     <Compile Include="Services\CMS\InsuranceInfoService.cs" />
@@ -1693,6 +1715,8 @@
     <Compile Include="ViewModels\CMS\ContactFormViewModels.cs" />
     <Compile Include="ViewModels\CMS\EmergencyContactViewModels.cs" />
     <Compile Include="ViewModels\CMS\FAQViewModels.cs" />
+    <Compile Include="ViewModels\CMS\FooterAdminItemsViewModels.cs" />
+    <Compile Include="ViewModels\CMS\FooterSettingsViewModels.cs" />
     <Compile Include="ViewModels\CMS\GalleryItemViewModels.cs" />
     <Compile Include="ViewModels\CMS\HealthTipViewModels.cs" />
     <Compile Include="ViewModels\CMS\InsuranceInfoViewModels.cs" />
@@ -1930,6 +1954,7 @@
     <Compile Include="ViewModels\Reception\TriageToReceptionTransferViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\DoctorsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\PatientController.cs" />
@@ -2042,6 +2067,7 @@
     <Content Include="Content\css\appointment-booking-views.css" />
     <Content Include="Content\css\appointment-views.css" />
     <Content Include="Content\css\blog-section.css" />
+    <Content Include="Content\css\blog-pages.css" />
     <Content Include="Content\css\breadcrumb-medical.css" />
     <Content Include="Content\css\cashier-reports.css" />
     <Content Include="Content\css\contact-form-page.css" />
@@ -2051,11 +2077,14 @@
     <Content Include="Content\css\design-system.css" />
     <Content Include="Content\css\details-page-medical.css" />
     <Content Include="Content\css\details-standards.css" />
+    <Content Include="Content\css\medical-service-info-pages.css" />
+    <Content Include="Content\css\patient-education.css" />
     <Content Include="Content\css\doctor-assignment-index.css" />
     <Content Include="Content\css\doctor-timeslot.css" />
     <Content Include="Content\css\doctors-section.css" />
     <Content Include="Content\css\emergency-contacts-section.css" />
     <Content Include="Content\css\faq-section.css" />
+    <Content Include="Content\css\faq-pages.css" />
     <Content Include="Content\css\footer-slider-section.css" />
     <Content Include="Content\css\footer.css" />
     <Content Include="Content\css\form-standards.css" />
@@ -5113,6 +5142,19 @@
     <Content Include="Documentation\PROMOTIONAL_EVENT_FULL_REVIEW.md" />
     <Content Include="Documentation\DoctorSchedule_PromotionalEvent_Integration.md" />
     <Content Include="Documentation\PROMOTIONAL_EVENT_HOMEPAGE_AND_SMS_ROADMAP.md" />
+    <Content Include="Docs\RESERVE_MODULE_DEEP_REVIEW.md" />
+    <Content Include="Docs\RESERVE_PAYMENT_FIX_APPLIED.md" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\CertificationCreate.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\CertificationEdit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\CertificationIndex.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\EditSettings.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\LinkCreate.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\LinkEdit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\LinkIndex.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\SocialCreate.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\SocialEdit.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\Footer\SocialIndex.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -6644,6 +6686,7 @@
     <Content Include="temp\Persian Web Toolkit_files\vue.min.js.download" />
     <Content Include="Views\Payment\SimulatedGateway\Process.cshtml" />
     <Content Include="Views\Home\Sections\_PromotionalEventsSection.cshtml" />
+    <Content Include="Views\Gallery\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -6918,6 +6961,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602051735082_chnageConsultationFee.resx">
       <DependentUpon>202602051735082_chnageConsultationFee.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602060640393_AddFooterTables.resx">
+      <DependentUpon>202602060640393_AddFooterTables.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -31,10 +32,16 @@ namespace ClinicApp.ViewModels.CMS
         public DateTime CreatedAt { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel صفحه عمومی Index مطالب آموزشی (Strongly-Typed - بدون ViewBag برای داده).
+    /// قرارداد: 03-Development-Contract-Quick-Guide
+    /// </summary>
     public class PatientEducationMaterialIndexPageViewModel
     {
         public PagedResult<PatientEducationMaterialIndexViewModel> Materials { get; set; }
         public PatientEducationMaterialSearchViewModel SearchModel { get; set; }
+        public IEnumerable<PatientEducationCategory> Categories { get; set; } = Array.Empty<PatientEducationCategory>();
+        public string ErrorMessage { get; set; }
     }
 
     #endregion

@@ -6,9 +6,8 @@
     }
 }
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/promotional-events-section.css")" />
-
-<section class="promotional-events-section animate-fade-in" aria-label="تخفیف‌ها و جشنواره‌های ویژه">
+@* CSS از باندل homepage-sections لود می‌شود *@
+<div class="promotional-events-inner animate-fade-in">
     <div class="container">
         <div class="promotional-events-header">
             <h2 class="promotional-events-title" id="promotional-events-heading">تخفیف‌ها و جشنواره‌های ویژه</h2>
@@ -39,7 +38,7 @@
                         }
                     </div>
                     @{
-                        var ctaUrl = ev.CtaUrl ?? "/Patient/Appointment/Available";
+                        var ctaUrl = !string.IsNullOrEmpty(ev.CtaUrl) ? ev.CtaUrl : Url.Action("Available", "Appointment", new { area = "Patient" });
                         var ctaAriaLabel = "رزرو نوبت برای " + ev.Title;
                     }
                     <a href="@ctaUrl" class="promotional-event-cta" title="رزرو نوبت" aria-label="@ctaAriaLabel">
@@ -50,4 +49,4 @@
             }
         </div>
     </div>
-</section>
+</div>

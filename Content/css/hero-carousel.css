@@ -60,6 +60,13 @@
     z-index: 2;
 }
 
+/* نمایش اسلاید اول قبل از اجرای JS (جلوگیری از خالی بودن در بار اول) */
+.hero-carousel .carousel-inner > .carousel-item:first-child.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+}
+
 /* ============================================
    SLIDE STYLES
    ============================================ */

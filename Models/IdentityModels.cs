@@ -183,6 +183,10 @@ namespace ClinicApp.Models
         public DbSet<NewsletterCampaignRecipient> NewsletterCampaignRecipients { get; set; }
         public DbSet<AboutPage> AboutPages { get; set; }
         public DbSet<Story> Stories { get; set; }
+        public DbSet<FooterSettings> FooterSettings { get; set; }
+        public DbSet<FooterLink> FooterLinks { get; set; }
+        public DbSet<FooterSocial> FooterSocials { get; set; }
+        public DbSet<FooterCertification> FooterCertifications { get; set; }
 
         // ========== موجودیت‌های Identity ==========
         public DbSet<IdentityUserRole> UserRoles { get; set; }

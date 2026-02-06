@@ -1,0 +1,418 @@
+/**
+ * Patient Education - Index & Details
+ * حرفه‌ای، کاربرپسند، جذاب، رسمی
+ * استفاده در: /PatientEducation/Index و /PatientEducation/Details
+ */
+
+:root {
+    --pe-primary: #2c6e7d;
+    --pe-primary-dark: #1e4d5a;
+    --pe-success: #28a745;
+    --pe-bg: #ffffff;
+    --pe-bg-subtle: #f8f9fa;
+    --pe-border: rgba(0, 0, 0, 0.08);
+    --pe-text: #212529;
+    --pe-text-muted: #6c757d;
+}
+
+/* ========== Page Wrap ========== */
+.patient-education-wrap {
+    min-height: 70vh;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%);
+    padding: clamp(1.5rem, 4vw, 3rem) 0;
+}
+
+.patient-education-wrap .container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ========== Header ========== */
+.patient-education-header {
+    text-align: center;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.patient-education-title {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    font-weight: 700;
+    color: var(--pe-text);
+    margin-bottom: 0.5rem;
+    line-height: 1.25;
+}
+
+.patient-education-subtitle {
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    color: var(--pe-text-muted);
+    margin: 0;
+}
+
+/* ========== Filter (Category Pills) ========== */
+.patient-education-filter {
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.patient-education-filter-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--pe-text);
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.patient-education-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.patient-education-filter-list a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--pe-primary);
+    background: var(--pe-bg);
+    border: 2px solid var(--pe-primary);
+    border-radius: 9999px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.patient-education-filter-list a:hover {
+    background: rgba(44, 110, 125, 0.08);
+    color: var(--pe-primary-dark);
+}
+
+.patient-education-filter-list a:focus {
+    outline: 3px solid var(--pe-primary);
+    outline-offset: 2px;
+}
+
+.patient-education-filter-list a.is-active {
+    background: var(--pe-primary);
+    color: #fff;
+    border-color: var(--pe-primary);
+}
+
+/* ========== Materials Grid ========== */
+.patient-education-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.25rem, 3vw, 2rem);
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 576px) {
+    .patient-education-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .patient-education-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+}
+
+/* ========== Material Card ========== */
+.patient-education-card {
+    background: var(--pe-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--pe-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.patient-education-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: rgba(44, 110, 125, 0.2);
+}
+
+.patient-education-card:focus-within {
+    outline: 3px solid var(--pe-primary);
+    outline-offset: 4px;
+}
+
+.patient-education-card-img-wrap {
+    position: relative;
+    width: 100%;
+    height: clamp(180px, 40vw, 240px);
+    overflow: hidden;
+    background: linear-gradient(135deg, #e8f0f5 0%, #f0f4f8 100%);
+}
+
+.patient-education-card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.patient-education-card:hover .patient-education-card-img-wrap img {
+    transform: scale(1.05);
+}
+
+.patient-education-card-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--pe-primary) 0%, var(--pe-success) 100%);
+}
+
+.patient-education-card-placeholder i {
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.patient-education-card-body {
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.patient-education-card-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--pe-primary);
+    background: rgba(44, 110, 125, 0.1);
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    width: fit-content;
+}
+
+.patient-education-card-title {
+    font-size: clamp(1.0625rem, 2vw, 1.25rem);
+    font-weight: 600;
+    color: var(--pe-text);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.patient-education-card-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.patient-education-card-title a:hover {
+    color: var(--pe-primary);
+}
+
+.patient-education-card-description {
+    font-size: 0.9375rem;
+    color: var(--pe-text-muted);
+    line-height: 1.65;
+    margin: 0 0 1rem 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.patient-education-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    margin-top: auto;
+    border-top: 1px solid var(--pe-border);
+}
+
+.patient-education-card-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--pe-text-muted);
+}
+
+.patient-education-card-stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.patient-education-card-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--pe-primary) 0%, var(--pe-success) 100%);
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.patient-education-card-btn:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.35);
+}
+
+.patient-education-card-btn:focus {
+    outline: 3px solid var(--pe-primary);
+    outline-offset: 2px;
+}
+
+/* ========== Empty State ========== */
+.patient-education-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--pe-bg-subtle);
+    border-radius: 16px;
+    grid-column: 1 / -1;
+}
+
+.patient-education-empty i {
+    font-size: 3rem;
+    color: var(--pe-text-muted);
+    margin-bottom: 1rem;
+}
+
+.patient-education-empty h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--pe-text);
+    margin-bottom: 0.5rem;
+}
+
+.patient-education-empty p {
+    margin: 0;
+    color: var(--pe-text-muted);
+}
+
+/* ========== Alert (Error Message) ========== */
+.patient-education-alert {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    background: rgba(220, 53, 69, 0.08);
+    color: #721c24;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.patient-education-alert i {
+    flex-shrink: 0;
+}
+
+/* ========== Pagination ========== */
+.patient-education-pagination-wrap {
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.patient-education-pagination-wrap .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.patient-education-pagination-wrap .page-item {
+    margin: 0;
+}
+
+.patient-education-pagination-wrap .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--pe-primary);
+    background: var(--pe-bg);
+    border: 1px solid rgba(44, 110, 125, 0.2);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.patient-education-pagination-wrap .page-link:hover {
+    background: rgba(44, 110, 125, 0.08);
+    color: var(--pe-primary-dark);
+    border-color: var(--pe-primary);
+}
+
+.patient-education-pagination-wrap .page-item.active .page-link,
+.patient-education-pagination-wrap .page-item.disabled .page-link {
+    cursor: default;
+}
+
+.patient-education-pagination-wrap .page-item.active .page-link {
+    background: var(--pe-primary);
+    color: #fff;
+    border-color: var(--pe-primary);
+}
+
+.patient-education-pagination-wrap .page-item.disabled .page-link {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.patient-education-pagination-wrap .page-link:focus {
+    outline: 3px solid var(--pe-primary);
+    outline-offset: 2px;
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+    .patient-education-card,
+    .patient-education-card-img-wrap img,
+    .patient-education-card-btn,
+    .patient-education-filter-list a {
+        transition: none;
+    }
+    .patient-education-card:hover {
+        transform: none;
+    }
+    .patient-education-card:hover .patient-education-card-img-wrap img {
+        transform: none;
+    }
+}

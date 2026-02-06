@@ -11,104 +11,29 @@
    ============================================ *@
 
 @{
-    // ============================================
-    // INITIALIZATION & VALIDATION
-    // ============================================
     var hasModel = Model != null;
     var hasSlides = hasModel && Model.Slides != null && Model.Slides.Any();
     var validSlides = new List<ClinicApp.ViewModels.HeroSlideViewModel>();
-    
-    // Console Logging برای Debug
-    <script>
-        console.group('🔍 Hero Section - Initialization');
-        console.log('Model is null:', @(hasModel ? "false" : "true"));
-        console.log('Has Slides:', @(hasSlides ? "true" : "false"));
-        
-        @if (hasModel)
-        {
-            <text>
-            console.log('Model.Slides count:', @(Model.Slides?.Count ?? 0));
-            </text>
-        }
-    </script>
-    
     if (hasSlides)
     {
-        // فیلتر کردن اسلایدهای معتبر (فقط اسلایدهایی که تصویر دارند)
         validSlides = Model.Slides
             .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl) || !string.IsNullOrWhiteSpace(s.ThumbnailUrl))
             .ToList();
-            
-        <script>
-            console.log('Valid Slides Count:', @validSlides.Count);
-            @for (int i = 0; i < validSlides.Count && i < 5; i++)
-            {
-                var slide = validSlides[i];
-                <text>
-                console.log('Slide @(i + 1):', {
-                    id: @slide.SliderId,
-                    title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.Title ?? ""))',
-                    imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.ImageUrl ?? ""))',
-                    thumbnailUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.ThumbnailUrl ?? ""))'
-                });
-                </text>
-            }
-        </script>
     }
-    
-    <script>
-        console.log('Will Render Hero Section:', @(validSlides.Any() ? "true" : "false"));
-        console.groupEnd();
-    </script>
 }
 
 @* ============================================
    RENDERING LOGIC
    ============================================ *@
-@if (!hasModel)
+@if (!hasModel || !validSlides.Any())
 {
-    @* Model null است - چیزی نمایش نمی‌دهیم *@
-    <script>
-        console.warn('⚠️ Hero Section: Model is null - Skipping render');
-    </script>
-}
-else if (!validSlides.Any())
-{
-    @* هیچ اسلاید معتبری وجود ندارد *@
-    <script>
-        console.warn('⚠️ Hero Section: No valid slides found - Skipping render');
-        @if (hasSlides)
-        {
-            <text>
-            console.warn('⚠️ Hero Section: Total slides:', @Model.Slides.Count, 'but none have valid images');
-            </text>
-        }
-    </script>
+    @* Model null یا بدون اسلاید معتبر - چیزی رندر نمی‌شود *@
 }
 else
 {
-    @* ============================================
-       STYLES LOADING
-       ============================================ *@
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/hero-section.css")" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/hero-carousel.css")" />
-    
-    <script>
-        console.log('✅ Hero Section: Loading stylesheets');
-    </script>
-    
-    @* ============================================
-       CAROUSEL vs SINGLE SLIDE
-       ============================================ *@
+    @* CSS از باندل homepage-sections در Index لود می‌شود *@
     if (validSlides.Count > 1)
     {
-        @* ============================================
-           MULTIPLE SLIDES - CAROUSEL
-           ============================================ *@
-        <script>
-            console.log('🎠 Hero Section: Rendering Carousel with', @validSlides.Count, 'slides');
-        </script>
-        
         <div id="heroCarousel" 
              class="hero-carousel" 
              role="region" 
@@ -174,33 +99,6 @@ else
                             </div>
                         </div>
                     </div>
-                    
-                    <script>
-                        console.log('✅ Slide @(i + 1) rendered:', {
-                            id: @slide.SliderId,
-                            title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide.Title ?? ""))',
-                            imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))',
-                            isActive: @(i == 0 ? "true" : "false"),
-                            computedStyle: 'url(\'@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))\')'
-                        });
-                        
-                        // Verify image exists
-                        @if (!string.IsNullOrWhiteSpace(imageUrl))
-                        {
-                            <text>
-                            (function() {
-                                var img = new Image();
-                                img.onload = function() {
-                                    console.log('✅ Image @(i + 1) loaded successfully:', '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))');
-                                };
-                                img.onerror = function() {
-                                    console.error('❌ Image @(i + 1) FAILED to load:', '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))');
-                                };
-                                img.src = '@Html.Raw(HttpUtility.JavaScriptStringEncode(imageUrl ?? ""))';
-                            })();
-                            </text>
-                        }
-                    </script>
                 }
             </div>
             
@@ -243,53 +141,13 @@ else
                 }
             </ol>
         </div>
-        
-        <script>
-            console.log('✅ Hero Carousel: HTML structure rendered');
-            console.log('✅ Hero Carousel: Controls and indicators added');
-        </script>
-        
-        @* Load Carousel Script Immediately - Inline for immediate execution *@
-        <script>
-            console.log('📜 Hero Section: Loading carousel script immediately');
-        </script>
         <script src="@Url.Content("~/Content/js/hero-carousel.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
         <script>
-            console.log('✅ Hero Section: Carousel script loaded');
-            
-            // Immediate verification and manual init if needed
             (function() {
-                var checkCount = 0;
-                var maxChecks = 10;
-                
-                function checkCarousel() {
-                    checkCount++;
-                    console.log('[Hero Carousel] Check attempt', checkCount);
-                    
-                    if (typeof window.HeroCarousel !== 'undefined') {
-                        console.log('✅ Hero Carousel API available');
-                        console.log('Current slide:', window.HeroCarousel.getCurrentIndex() + 1, 'of', window.HeroCarousel.getTotalSlides());
-                        return;
-                    }
-                    
-                    if (typeof window.initHeroCarousel === 'function') {
-                        console.log('[Hero Carousel] Manual initialization available');
-                        // Try manual init after a short delay
-                        setTimeout(function() {
-                            window.initHeroCarousel();
-                        }, 500);
-                        return;
-                    }
-                    
-                    if (checkCount < maxChecks) {
-                        setTimeout(checkCarousel, 200);
-                    } else {
-                        console.error('❌ Hero Carousel: Failed to initialize after', maxChecks, 'attempts');
-                    }
-                }
-                
-                // Start checking
-                setTimeout(checkCarousel, 100);
+                if (typeof window.initHeroCarousel !== 'function') return;
+                window.addEventListener('load', function() {
+                    window.setTimeout(window.initHeroCarousel, 150);
+                });
             })();
         </script>
     }
@@ -321,20 +179,9 @@ else
             singleImageUrl = singleImageUrl.Trim();
         }
         
-        <script>
-            console.log('📄 Hero Section: Rendering Single Slide');
-            console.log('Single Slide Data:', {
-                id: @(slide?.SliderId ?? 0),
-                title: '@Html.Raw(HttpUtility.JavaScriptStringEncode(slide?.Title ?? ""))',
-                imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(singleImageUrl ?? ""))'
-            });
-        </script>
-        
         if (slide != null && !string.IsNullOrWhiteSpace(singleImageUrl))
         {
-            <section class="hero-section animate-fade-in" 
-                     role="banner" 
-                     aria-label="بخش اصلی صفحه">
+            <div class="hero-single animate-fade-in" role="region" aria-label="بخش اصلی صفحه">
                 @if (!string.IsNullOrWhiteSpace(singleImageUrl))
                 {
                     <div class="background-overlay" 
@@ -387,52 +234,8 @@ else
                         </div>
                     </div>
                 </div>
-            </section>
-            
-            <script>
-                console.log('✅ Hero Section: Single slide rendered successfully');
-            </script>
+            </div>
         }
-        else
-        {
-            <script>
-                console.error('❌ Hero Section: Single slide data is invalid', {
-                    slide: @(slide != null ? "exists" : "null"),
-                    imageUrl: '@Html.Raw(HttpUtility.JavaScriptStringEncode(singleImageUrl ?? ""))'
-                });
-            </script>
-        }
-    }
-    
-    <script>
-        console.log('✅ Hero Section: Rendering completed');
-    </script>
-}
-
-@* ============================================
-   SCRIPTS LOADING - Additional verification
-   ============================================ *@
-@section scripts {
-    @* Additional debug scripts if needed *@
-    @if (validSlides.Count > 1)
-    {
-        <script>
-            // Verify carousel is initialized after a delay
-            setTimeout(function() {
-                console.log('[Hero Carousel] 🔍 Verification check...');
-                if (typeof window.HeroCarousel !== 'undefined') {
-                    console.log('✅ Hero Carousel: Verified initialized');
-                    console.log('Current slide:', window.HeroCarousel.getCurrentIndex() + 1, 'of', window.HeroCarousel.getTotalSlides());
-                } else {
-                    console.warn('⚠️ Hero Carousel: Not initialized - attempting manual init');
-                    if (typeof window.initHeroCarousel === 'function') {
-                        window.initHeroCarousel();
-                    } else {
-                        console.error('❌ Hero Carousel: initHeroCarousel function not found');
-                    }
-                }
-            }, 3000);
-        </script>
     }
 }
 

@@ -6,9 +6,8 @@
     }
 }
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/announcements-section.css")" />
-
-<section class="announcements-section animate-fade-in" aria-label="اطلاعیه‌های مهم">
+@* سکشن اصلی در Index است؛ اینجا فقط محتوا برای جلوگیری از تکراری بودن landmark *@
+<div class="announcements-inner animate-fade-in">
     <div class="container">
         <div class="announcements-carousel">
             <div id="announcementsCarousel" class="carousel slide" data-ride="carousel" data-interval="5000" role="region" aria-label="اسلایدر اطلاعیه‌ها">
@@ -31,7 +30,7 @@
                                         @if (announcement.IsImportant)
                                         {
                                             <span class="important-badge">
-                                                <i class="fas fa-exclamation-triangle"></i> مهم:
+                                                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> مهم:
                                             </span>
                                         }
                                         <strong class="announcement-title">@announcement.Title</strong>
@@ -83,5 +82,5 @@
             </div>
         </div>
     </div>
-</section>
+</div>
 

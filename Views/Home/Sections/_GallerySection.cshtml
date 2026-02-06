@@ -1,9 +1,8 @@
 @model ClinicApp.ViewModels.GallerySectionViewModel
 
-@if (Model.Items != null && Model.Items.Any())
-{
-    <section class="gallery-section" aria-label="گالری تصاویر کلینیک">
-        <div class="container">
+@if (Model == null || Model.Items == null || !Model.Items.Any()) { return; }
+<div class="gallery-inner">
+    <div class="container">
             <div class="gallery-header">
                 <h2 class="gallery-title">@Model.SectionTitle</h2>
                 <p class="gallery-subtitle">@Model.SectionSubtitle</p>
@@ -25,7 +24,7 @@
                                      class="gallery-image" 
                                      alt="@(item.Title ?? "تصویر گالری")"
                                      loading="lazy"
-                                     onerror="this.onerror=null; this.src='@(item.ImageUrl ?? "/Content/Images/default-gallery.jpg")'">
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-gallery.jpg'">
                             }
                             else if (!string.IsNullOrEmpty(item.ImageUrl))
                             {
@@ -62,38 +61,25 @@
                 }
             </div>
         </div>
-    </section>
-}
-
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/gallery-section.css")" />
-}
-
-@section Scripts {
-    <script src="@Url.Content("~/Content/js/gallery-lightbox.js")"></script>
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const items = document.querySelectorAll('.gallery-item');
-            
+</div>
+@* CSS از باندل homepage-sections لود می‌شود. اسکریپت لایت‌باکس و انیمیشن زیر *@
+<script src="@Url.Content("~/Content/js/gallery-lightbox.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+<script>
+    (function() {
+        function run() {
+            var items = document.querySelectorAll('.gallery-item');
             if (items.length === 0) return;
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('animate-in');
                         observer.unobserve(entry.target);
                     }
                 });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            });
-            
-            items.forEach(item => {
-                observer.observe(item);
-            });
-        });
-    </script>
-}
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+            items.forEach(function(el) { observer.observe(el); });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+    })();
+</script>
 

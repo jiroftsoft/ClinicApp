@@ -9,10 +9,8 @@
     var tipsToShow = Model.Take(4).ToList();
 }
 
-@* CSS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/css/health-tips-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-
-<section class="health-tips-section" aria-label="نکات سلامت">
+@* CSS از باندل homepage-sections لود می‌شود *@
+<div class="health-tips-inner">
     <div class="container">
         <div class="health-tips-header">
             <h2 class="health-tips-title">
@@ -64,4 +62,4 @@
             }
         </div>
     </div>
-</section>
+</div>

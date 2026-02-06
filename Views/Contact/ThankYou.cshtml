@@ -1,15 +1,8 @@
+@model ClinicApp.ViewModels.CMS.ContactThankYouViewModel
 @{
     ViewBag.Title = "پیام شما ارسال شد";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
-@* ============================================
-   Thank You Page - Production-Grade
-   ============================================
-   - نمایش Tracking ID
-   - زمان تقریبی پاسخ
-   - CTA برای بازگشت
-   ============================================ *@
 
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-thankyou-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
@@ -28,15 +21,15 @@
                 از اینکه با ما تماس گرفتید متشکریم. پیام شما دریافت شده و در اسرع وقت بررسی خواهد شد.
             </p>
 
-            @if (ViewBag.TrackingId != null)
+            @if (!string.IsNullOrEmpty(Model?.TrackingId))
             {
                 <div class="tracking-id-box">
                     <div class="tracking-id-label">
                         <i class="fas fa-barcode" aria-hidden="true"></i>
                         <span>شماره پیگیری:</span>
                     </div>
-                    <div class="tracking-id-value" id="trackingId" aria-label="شماره پیگیری: @ViewBag.TrackingId">
-                        @ViewBag.TrackingId
+                    <div class="tracking-id-value" id="trackingId" aria-label="شماره پیگیری: @Model.TrackingId">
+                        @Model.TrackingId
                     </div>
                     <button type="button" class="btn-copy-tracking" onclick="copyTrackingId()" aria-label="کپی شماره پیگیری">
                         <i class="fas fa-copy" aria-hidden="true"></i>
@@ -49,7 +42,7 @@
                 <i class="fas fa-clock" aria-hidden="true"></i>
                 <div class="response-time-content">
                     <strong>زمان تقریبی پاسخ:</strong>
-                    <p>@(ViewBag.ResponseTime ?? "در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)")</p>
+                    <p>@(Model?.ResponseTime ?? "در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)")</p>
                 </div>
             </div>
 

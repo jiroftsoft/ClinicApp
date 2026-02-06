@@ -6,8 +6,7 @@
     }
 }
 
-<link rel="stylesheet" href="@Url.Content("~/Content/css/faq-section.css")" />
-
+@* CSS از باندل homepage-sections لود می‌شود *@
 <section class="faq-section animate-fade-in" aria-label="سوالات متداول">
     <div class="container">
         <div class="text-center mb-5">
@@ -91,8 +90,5 @@
         </div>
     </div>
 </section>
-
-@section Scripts {
-    <script src="~/Content/js/faq-accordion.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
-}
+@* اسکریپت faq-accordion از Index Scripts لود می‌شود (در پارشال @section اجرا نمی‌شود) *@
 

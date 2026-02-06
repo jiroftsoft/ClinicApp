@@ -1,70 +1,48 @@
 @model ClinicApp.ViewModels.CMS.FAQPublicViewModel
 @{
     ViewBag.Title = Model.Question;
+    ViewBag.MetaDescription = Model.Question;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="faq-detail-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/faq-pages.css")" />
+
+<div class="faq-page-wrap" role="main" aria-label="جزئیات سوال متداول">
     <div class="container">
-        <div class="row">
-            <div class="col-lg-8 offset-lg-2">
-                <div class="card shadow-lg">
-                    <div class="card-header bg-primary text-white">
-                        <h2 class="mb-0">
-                            <i class="fas fa-question-circle"></i>
-                            @Model.Question
-                        </h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <span class="badge badge-info">@Model.CategoryDisplayName</span>
-                            @if (Model.Tags != null && Model.Tags.Any())
-                            {
-                                foreach (var tag in Model.Tags)
-                                {
-                                    <span class="badge badge-secondary mr-1">@tag</span>
-                                }
-                            }
-                        </div>
-
-                        <div class="faq-answer-content">
-                            @Html.Raw(Model.Answer)
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+        <article class="faq-detail-article" itemscope itemtype="https://schema.org/Question">
+            <header class="faq-detail-header">
+                <h1 class="faq-detail-title" itemprop="name">@Model.Question</h1>
+                <div class="faq-detail-meta">
+                    <span class="badge badge-primary">@Model.CategoryDisplayName</span>
+                    @if (Model.Tags != null && Model.Tags.Any())
+                    {
+                        foreach (var tag in Model.Tags)
                         {
-                            <div class="mt-4">
-                                <a href="@Model.RelatedLinkUrl" class="btn btn-primary">
-                                    <i class="fas fa-external-link-alt"></i> اطلاعات بیشتر
-                                </a>
-                            </div>
+                            <span class="badge badge-secondary">@tag</span>
                         }
-
-                        <div class="mt-4 pt-3 border-top">
-                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-right"></i> بازگشت به لیست سوالات
-                            </a>
-                        </div>
+                    }
+                </div>
+            </header>
+            <div class="faq-detail-body">
+                <div class="faq-detail-content" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+                    <div itemprop="text">
+                        @Html.Raw(Model.Answer)
                     </div>
                 </div>
+                @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+                {
+                    <a href="@Model.RelatedLinkUrl" target="_blank" rel="noopener noreferrer" class="faq-detail-more" aria-label="اطلاعات بیشتر">
+                        <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                        اطلاعات بیشتر
+                    </a>
+                }
+                <div class="faq-detail-actions">
+                    <a href="@Url.Action("Index")" class="faq-detail-back" aria-label="بازگشت به لیست سوالات متداول">
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        بازگشت به لیست سوالات
+                    </a>
+                </div>
             </div>
-        </div>
+        </article>
     </div>
-</section>
-
-<style>
-    .faq-detail-page {
-        position: relative;
-    }
-
-    .faq-answer-content {
-        line-height: 2;
-        color: #495057;
-        font-size: 1.1rem;
-    }
-
-    .card.shadow-lg {
-        border-radius: 15px;
-    }
-</style>
-
+</div>

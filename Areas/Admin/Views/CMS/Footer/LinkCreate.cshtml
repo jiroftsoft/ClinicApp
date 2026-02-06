@@ -1,0 +1,67 @@
+@model ClinicApp.ViewModels.CMS.FooterLinkCreateEditViewModel
+@{
+    ViewBag.Title = "افزودن لینک فوتر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var clinicId = ViewBag.ClinicId as int?;
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-plus text-success"></i> افزودن لینک فوتر</h1>
+        <a href="@Url.Action("LinkIndex", new { type = Model.LinkType, clinicId })" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @using (Html.BeginForm("LinkCreate", "Footer", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                @Html.HiddenFor(m => m.LinkType)
+                @Html.Hidden("clinicId", clinicId)
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Title)
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Url)
+                    @Html.TextBoxFor(m => m.Url, new { @class = "form-control", placeholder = "/About یا https://..." })
+                    @Html.ValidationMessageFor(m => m.Url, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Icon)
+                    @Html.TextBoxFor(m => m.Icon, new { @class = "form-control", placeholder = "مثال: fas fa-home" })
+                    @Html.ValidationMessageFor(m => m.Icon, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(m => m.DisplayOrder)
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0" })
+                    </div>
+                    <div class="form-group col-md-4 d-flex align-items-center">
+                        <div class="form-check mt-4">
+                            @Html.CheckBoxFor(m => m.IsExternal, new { @class = "form-check-input", id = "IsExternal" })
+                            <label class="form-check-label" for="IsExternal">خارجی</label>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-4 d-flex align-items-center">
+                        <div class="form-check mt-4">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
+                            <label class="form-check-label" for="IsActive">فعال</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> ذخیره</button>
+            }
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,109 @@
+@model ClinicApp.ViewModels.GallerySectionViewModel
+@{
+    ViewBag.Title = "گالری تصاویر";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/css/gallery-section.css")" />
+
+<main class="gallery-section gallery-page-wrap" role="main" aria-label="گالری تصاویر کلینیک">
+    <div class="container">
+        <header class="gallery-header">
+            <h1 class="gallery-title" id="gallery-page-heading">
+                <i class="fas fa-images" aria-hidden="true"></i>
+                @(Model?.SectionTitle ?? "گالری محیط کلینیک")
+            </h1>
+            <p class="gallery-subtitle">@(Model?.SectionSubtitle ?? "محیطی آرام و درمانی برای بیماران")</p>
+        </header>
+
+        @if (Model != null && Model.Items != null && Model.Items.Any())
+        {
+            <div class="gallery-grid">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="gallery-item animate-slide-up" 
+                             tabindex="0" 
+                             role="button" 
+                             aria-label="@(string.IsNullOrEmpty(item.Title) ? "تصویر گالری" : item.Title)"
+                             data-image-url="@item.ImageUrl"
+                             data-title="@(item.Title ?? "")">
+                        <div class="gallery-image-wrapper">
+                            @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                            {
+                                <img src="@item.ThumbnailUrl" 
+                                     class="gallery-image" 
+                                     alt="@(item.Title ?? "تصویر گالری")"
+                                     loading="lazy"
+                                     width="400"
+                                     height="300"
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-gallery.jpg'">
+                            }
+                            else if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" 
+                                     class="gallery-image" 
+                                     alt="@(item.Title ?? "تصویر گالری")"
+                                     loading="lazy"
+                                     width="400"
+                                     height="300"
+                                     onerror="this.onerror=null; this.src='/Content/Images/default-gallery.jpg'">
+                            }
+                            else
+                            {
+                                <div class="gallery-image-placeholder">
+                                    <i class="fas fa-image" aria-hidden="true"></i>
+                                </div>
+                            }
+                            <div class="gallery-image-overlay">
+                                <i class="fas fa-search-plus gallery-image-overlay-icon" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.Title) || !string.IsNullOrEmpty(item.Description))
+                        {
+                            <div class="gallery-content">
+                                @if (!string.IsNullOrEmpty(item.Title))
+                                {
+                                    <h3 class="gallery-title-text">@item.Title</h3>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <p class="gallery-description">@item.Description</p>
+                                }
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="gallery-empty-state" role="status" aria-live="polite">
+                <i class="fas fa-images gallery-empty-icon" aria-hidden="true"></i>
+                <p class="gallery-empty-message">در حال حاضر تصویری در گالری موجود نیست.</p>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-medical-primary">بازگشت به صفحه اصلی</a>
+            </div>
+        }
+    </div>
+</main>
+
+<script src="@Url.Content("~/Content/js/gallery-lightbox.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+@section Scripts {
+    <script>
+        (function() {
+            function run() {
+                var items = document.querySelectorAll('.gallery-section .gallery-item');
+                if (items.length === 0) return;
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('animate-in');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+                items.forEach(function(el) { observer.observe(el); });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+        })();
+    </script>
+}

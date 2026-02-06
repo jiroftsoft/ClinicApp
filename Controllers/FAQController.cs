@@ -35,20 +35,25 @@ namespace ClinicApp.Controllers
                 var faqsResult = await _faqService.GetPublicFAQsAsync(category);
                 var categoriesResult = await _faqService.GetCategoriesAsync();
 
-                ViewBag.Categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
-                ViewBag.SelectedCategory = category;
-
-                if (!faqsResult.Success)
+                var categories = categoriesResult.Success ? categoriesResult.Data : new System.Collections.Generic.List<FAQCategoryViewModel>();
+                var viewModel = new FAQPublicIndexPageViewModel
                 {
-                    return View(new System.Collections.Generic.List<FAQPublicViewModel>());
-                }
-
-                return View(faqsResult.Data);
+                    Items = faqsResult.Success ? faqsResult.Data : new System.Collections.Generic.List<FAQPublicViewModel>(),
+                    Categories = categories,
+                    SelectedCategory = category,
+                    ErrorMessage = faqsResult.Success ? null : (faqsResult.Message ?? "خطا در بارگذاری سوالات متداول")
+                };
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه FAQ");
-                return View(new System.Collections.Generic.List<FAQPublicViewModel>());
+                return View(new FAQPublicIndexPageViewModel
+                {
+                    Items = new System.Collections.Generic.List<FAQPublicViewModel>(),
+                    Categories = new System.Collections.Generic.List<FAQCategoryViewModel>(),
+                    ErrorMessage = "خطا در بارگذاری سوالات متداول"
+                });
             }
         }
 

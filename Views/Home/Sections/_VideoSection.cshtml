@@ -1,9 +1,8 @@
 @model ClinicApp.ViewModels.VideoSectionViewModel
 
-@if (Model.Videos != null && Model.Videos.Any())
-{
-    <section class="video-section" aria-label="ویدیوهای کلینیک">
-        <div class="video-container">
+@if (Model == null || Model.Videos == null || !Model.Videos.Any()) { return; }
+<div class="video-inner">
+    <div class="video-container">
             <div class="container">
                 <div class="video-header">
                     <h2 class="video-title">@Model.SectionTitle</h2>
@@ -17,7 +16,7 @@
                                  tabindex="0" 
                                  role="button" 
                                  aria-label="پخش ویدیو @video.Title">
-                            <div class="video-thumbnail-wrapper" 
+                            <div class="video-thumbnail-wrapper video-thumbnail-container" 
                                  data-video-id="@video.VideoId" 
                                  data-embed-url="@video.EmbedUrl" 
                                  data-video-type="@video.VideoType">
@@ -86,41 +85,27 @@
                 </div>
             </div>
         </div>
-    </section>
-}
-
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/video-section.css")" />
-}
-
-@section Scripts {
-    <script src="@Url.Content("~/Content/js/video-modal.js")"></script>
-    <script>
-        // Intersection Observer for animations
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.video-card');
-            
+</div>
+@* CSS از باندل؛ اسکریپت و انیمیشن زیر *@
+<script src="@Url.Content("~/Content/js/video-modal.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+<script>
+    (function() {
+        function run() {
+            var cards = document.querySelectorAll('.video-card');
             if (cards.length === 0) return;
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('animate-in');
                         observer.unobserve(entry.target);
                     }
                 });
-            }, {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            });
-            
-            cards.forEach(card => {
-                observer.observe(card);
-            });
-        });
-    </script>
-}
-
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+            cards.forEach(function(c) { observer.observe(c); });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+    })();
+</script>
 <style>
     .video-card:hover {
         transform: translateY(-5px);
@@ -189,10 +174,7 @@
                     var videoType = this.getAttribute('data-video-type');
                     var videoId = this.getAttribute('data-video-id');
                     
-                    if (!embedUrl) {
-                        console.error('Embed URL not found');
-                        return;
-                    }
+                    if (!embedUrl) return;
                     
                     // تنظیم iframe در Modal
                     var iframe = document.getElementById('videoModalIframe');
@@ -226,12 +208,7 @@
                     
                     // افزایش تعداد بازدید (AJAX)
                     if (videoId) {
-                        makeRequest('/api/Video/IncrementViewCount', 'POST', { videoId: parseInt(videoId) }, function(error, response) {
-                            if (error) {
-                                console.error('Error incrementing view count:', error);
-                            }
-                            // Refresh view count if needed
-                        });
+                        makeRequest('/api/Video/IncrementViewCount', 'POST', { videoId: parseInt(videoId) }, function() { });
                     }
                 });
             });

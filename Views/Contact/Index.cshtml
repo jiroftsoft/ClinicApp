@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/css/contact-form-page.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
 }
 
-<section class="contact-form-page-section" aria-label="فرم تماس با کلینیک">
+<section class="contact-form-page-section" role="main" aria-label="فرم تماس با کلینیک">
     <div class="container">
         <div class="row mb-5">
             <div class="col-12 text-center">
@@ -301,7 +301,7 @@
                 updateCharCounter(); // Initial count
             }
 
-            // Form Validation Enhancement
+            // Form submit: disable button, show loading
             var contactForm = document.getElementById('contactForm');
             if (contactForm) {
                 contactForm.addEventListener('submit', function(e) {
@@ -310,6 +310,15 @@
                         submitButton.disabled = true;
                         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> <span>در حال ارسال...</span>';
                     }
+                });
+                // Scroll به اولین خطا پس از validation
+                contactForm.addEventListener('submit', function scrollToFirstError() {
+                    setTimeout(function() {
+                        var firstError = document.querySelector('.field-validation-error');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100);
                 });
             }
         });

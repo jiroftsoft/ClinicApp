@@ -1,149 +1,120 @@
-@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.CMS.BlogPostIndexViewModel>
+@model ClinicApp.ViewModels.CMS.BlogIndexPageViewModel
+@using ClinicApp.ViewModels.Shared
 @{
     ViewBag.Title = "مقالات و آموزش سلامت";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var posts = Model?.Posts;
+    var pagination = new PaginationViewModel
+    {
+        CurrentPage = posts?.PageNumber ?? 1,
+        TotalPages = posts?.TotalPages ?? 0,
+        TotalCount = posts?.TotalItems ?? 0,
+        PageSize = posts?.PageSize ?? 12,
+        ActionName = "Index",
+        ControllerName = "Blog"
+    };
+    if (!string.IsNullOrEmpty(Model?.Category))
+    {
+        pagination.RouteValues["category"] = Model.Category;
+    }
 }
 
-<section class="blog-index-page py-5" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%); min-height: 70vh;">
-    <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h1 class="display-4 mb-3">
-                    <i class="fas fa-book-medical text-primary"></i>
-                    مقالات و آموزش سلامت
-                </h1>
-                <p class="lead text-muted">پنجره دانش پزشکی معتبر کلینیک</p>
-            </div>
-        </div>
+<link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")" />
+<link rel="stylesheet" href="@Url.Content("~/Content/css/blog-pages.css")" />
 
-        @* Blog Posts Grid *@
-        <div class="row" id="blogPostsContainer">
-            @if (Model != null && Model.Items != null && Model.Items.Any())
+<main class="blog-page-wrap" role="main" aria-label="مقالات و آموزش سلامت">
+    <div class="container">
+        <header class="blog-page-header">
+            <h1 class="blog-page-title">
+                <i class="fas fa-book-medical" aria-hidden="true"></i>
+                مقالات و آموزش سلامت
+            </h1>
+            <p class="blog-page-subtitle">پنجره دانش پزشکی معتبر کلینیک</p>
+        </header>
+
+        <div class="blog-posts-grid" id="blogPostsContainer">
+            @if (posts != null && posts.Items != null && posts.Items.Any())
             {
-                foreach (var post in Model.Items)
+                foreach (var post in posts.Items)
                 {
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <article class="card blog-index-card h-100 shadow-lg border-0">
-                            <div class="blog-index-image-wrapper">
-                                @if (!string.IsNullOrEmpty(post.ImageUrl))
-                                {
-                                    <img src="@post.ImageUrl" class="card-img-top" alt="@post.Title" style="height: 240px; object-fit: cover;" loading="lazy">
-                                }
-                                else if (!string.IsNullOrEmpty(post.ThumbnailUrl))
-                                {
-                                    <img src="@post.ThumbnailUrl" class="card-img-top" alt="@post.Title" style="height: 240px; object-fit: cover;" loading="lazy">
-                                }
-                                else
-                                {
-                                    <div class="blog-index-image-placeholder d-flex align-items-center justify-content-center" style="height: 240px;">
-                                        <i class="fas fa-stethoscope fa-3x text-white"></i>
-                                    </div>
-                                }
-                            </div>
-                            
-                            <div class="card-body d-flex flex-column">
-                                @if (!string.IsNullOrEmpty(post.CategoryName))
-                                {
-                                    <div class="mb-2">
-                                        <span class="badge badge-primary">
-                                            <i class="fas fa-tag"></i>
-                                            @post.CategoryName
-                                        </span>
-                                    </div>
-                                }
-                                
-                                <h5 class="card-title font-weight-bold">@post.Title</h5>
-                                
-                                @if (!string.IsNullOrEmpty(post.Summary))
-                                {
-                                    <p class="card-text text-muted flex-grow-1">
-                                        @{
-                                            var summary = post.Summary;
-                                            var maxLength = 150;
-                                            if (summary.Length > maxLength)
-                                            {
-                                                summary = summary.Substring(0, maxLength) + "...";
-                                            }
-                                        }
-                                        @summary
-                                    </p>
-                                }
-                                
-                                <div class="mt-auto pt-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        @if (post.PublishedAt.HasValue)
-                                        {
-                                            <small class="text-muted">
-                                                <i class="fas fa-calendar-alt"></i>
-                                                @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)
-                                            </small>
-                                        }
-                                        <small class="text-muted">
-                                            <i class="fas fa-eye"></i> @post.ViewCount
-                                        </small>
-                                    </div>
-                                    
-                                    <a href="@Url.Action("Post", "Blog", new { slug = !string.IsNullOrEmpty(post.Slug) ? post.Slug : post.BlogPostId.ToString() })" class="btn btn-primary btn-block">
-                                        <i class="fas fa-arrow-left"></i> مطالعه مقاله
-                                    </a>
+                    <article class="blog-page-card" aria-label="@post.Title">
+                        <div class="blog-page-card-img-wrap">
+                            @if (!string.IsNullOrEmpty(post.ImageUrl))
+                            {
+                                <img src="@post.ImageUrl" alt="@post.Title" loading="lazy" width="400" height="260" />
+                            }
+                            else if (!string.IsNullOrEmpty(post.ThumbnailUrl))
+                            {
+                                <img src="@post.ThumbnailUrl" alt="@post.Title" loading="lazy" width="400" height="260" />
+                            }
+                            else
+                            {
+                                <div class="blog-page-card-placeholder">
+                                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
                                 </div>
+                            }
+                        </div>
+                        <div class="blog-page-card-body">
+                            @if (!string.IsNullOrEmpty(post.CategoryName))
+                            {
+                                <span class="blog-page-card-category">
+                                    <i class="fas fa-tag" aria-hidden="true"></i>
+                                    @post.CategoryName
+                                </span>
+                            }
+                            <h2 class="blog-page-card-title">@post.Title</h2>
+                            @if (!string.IsNullOrEmpty(post.Summary))
+                            {
+                                var summary = post.Summary.Length > 150 ? post.Summary.Substring(0, 150) + "…" : post.Summary;
+                                <p class="blog-page-card-summary">@summary</p>
+                            }
+                            <div class="blog-page-card-meta">
+                                @if (post.PublishedAt.HasValue)
+                                {
+                                    <span>
+                                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                        @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(post.PublishedAt.Value)
+                                    </span>
+                                }
+                                <span>
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                    @post.ViewCount
+                                </span>
                             </div>
-                        </article>
-                    </div>
+                            <a href="@Url.Action("Post", "Blog", new { slug = !string.IsNullOrEmpty(post.Slug) ? post.Slug : post.BlogPostId.ToString() })"
+                               class="blog-page-card-btn"
+                               aria-label="مطالعه مقاله: @post.Title">
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                مطالعه مقاله
+                            </a>
+                        </div>
+                    </article>
                 }
             }
             else
             {
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h4>هیچ مقاله‌ای یافت نشد</h4>
-                        <p class="mb-0">در حال حاضر مقاله‌ای برای نمایش وجود ندارد.</p>
-                    </div>
+                <div class="blog-page-empty" style="grid-column: 1 / -1;">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <h4>هیچ مقاله‌ای یافت نشد</h4>
+                    <p>در حال حاضر مقاله‌ای برای نمایش وجود ندارد.</p>
                 </div>
             }
         </div>
 
-        @* Pagination *@
-        @if (Model != null && Model.TotalPages > 1)
+        @if (posts != null && posts.TotalPages > 1)
         {
-            <div class="row mt-4">
-                <div class="col-12">
-                    @Html.Partial("_PaginationPartial", Model)
-                </div>
-            </div>
+            <nav class="blog-pagination-wrap" aria-label="صفحه‌بندی مقالات">
+                @Html.Partial("_PaginationPartial", pagination)
+            </nav>
         }
     </div>
-</section>
+</main>
 
-@section Styles {
-    <style>
-        .blog-index-page {
-            position: relative;
-        }
-
-        .blog-index-card {
-            border-radius: 15px;
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .blog-index-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
-        }
-
-        .blog-index-image-wrapper {
-            overflow: hidden;
-        }
-
-        .blog-index-card:hover .blog-index-image-wrapper img {
-            transform: scale(1.1);
-            transition: transform 0.3s ease;
-        }
-
-        .blog-index-image-placeholder {
-            background: linear-gradient(135deg, #2c6e7d 0%, #28a745 100%);
-        }
-    </style>
-}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var cards = document.querySelectorAll('.blog-page-card[aria-label]');
+        cards.forEach(function (card, i) {
+            card.style.animationDelay = (i * 0.05) + 's';
+        });
+    });
+</script>

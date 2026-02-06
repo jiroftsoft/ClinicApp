@@ -33,20 +33,22 @@ namespace ClinicApp.Controllers
             try
             {
                 var servicesResult = await _medicalServiceInfoService.GetPublicServiceInfosAsync(serviceCategoryId);
-
-                ViewBag.SelectedCategoryId = serviceCategoryId;
-
-                if (!servicesResult.Success)
+                var viewModel = new MedicalServiceInfoPublicIndexPageViewModel
                 {
-                    return View(new System.Collections.Generic.List<MedicalServiceInfoPublicViewModel>());
-                }
-
-                return View(servicesResult.Data);
+                    Items = servicesResult.Success ? servicesResult.Data : new System.Collections.Generic.List<MedicalServiceInfoPublicViewModel>(),
+                    SelectedCategoryId = serviceCategoryId,
+                    ErrorMessage = servicesResult.Success ? null : (servicesResult.Message ?? "خطا در بارگذاری خدمات پزشکی")
+                };
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه خدمات پزشکی");
-                return View(new System.Collections.Generic.List<MedicalServiceInfoPublicViewModel>());
+                return View(new MedicalServiceInfoPublicIndexPageViewModel
+                {
+                    Items = new System.Collections.Generic.List<MedicalServiceInfoPublicViewModel>(),
+                    ErrorMessage = "خطا در بارگذاری خدمات پزشکی"
+                });
             }
         }
 

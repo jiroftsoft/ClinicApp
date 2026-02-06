@@ -47,16 +47,23 @@ namespace ClinicApp.Controllers
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست مقالات: {ErrorMessage}", result.Message);
-                    return View(new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, page, 12));
+                    return View(new BlogIndexPageViewModel
+                    {
+                        Posts = new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, page, 12),
+                        Category = category
+                    });
                 }
 
-                ViewBag.Category = category;
-                return View(result.Data);
+                return View(new BlogIndexPageViewModel { Posts = result.Data, Category = category });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش صفحه مقالات");
-                return View(new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, 1, 12));
+                return View(new BlogIndexPageViewModel
+                {
+                    Posts = new PagedResult<BlogPostIndexViewModel>(new System.Collections.Generic.List<BlogPostIndexViewModel>(), 0, 1, 12),
+                    Category = category
+                });
             }
         }
 

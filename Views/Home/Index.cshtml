@@ -9,144 +9,180 @@
             <!-- Announcements Section (Important Announcements) - Lazy Load -->
             @if (Model.Announcements != null && Model.Announcements.Any())
             {
-                <section class="announcements-section" data-lazy-load="true" data-section-type="announcements" data-section-id="announcements">
-                    @Html.Partial("~/Views/Home/Sections/_AnnouncementsSection.cshtml", Model.Announcements)
+                <section class="announcements-section" data-lazy-load="true" data-section-type="announcements" data-section-id="announcements" aria-label="اطلاعیه‌های مهم">
+                    @{
+                        Html.RenderPartial("Sections/_AnnouncementsSection", Model.Announcements);
+                    }
                 </section>
             }
 
             <!-- Promotional Events Section (تخفیف‌ها و جشنواره‌های ویژه) -->
             @if (Model.PromotionalEvents != null && Model.PromotionalEvents.Any())
             {
-                <section class="promotional-events-section" data-lazy-load="true" data-section-type="promotional-events" data-section-id="promotional-events">
-                    @Html.Partial("~/Views/Home/Sections/_PromotionalEventsSection.cshtml", Model.PromotionalEvents)
+                <section class="promotional-events-section" data-lazy-load="true" data-section-type="promotional-events" data-section-id="promotional-events" aria-label="تخفیف‌ها و جشنواره‌ها">
+                    @{
+                        Html.RenderPartial("Sections/_PromotionalEventsSection", Model.PromotionalEvents);
+                    }
                 </section>
             }
 
             <!-- Hero Section (Critical - Above-the-fold) -->
             @if (Model.Hero != null)
             {
-                <section class="hero-section">
-                    @Html.Partial("~/Views/Home/Sections/_HeroSection.cshtml", Model.Hero)
+                <section class="hero-section" aria-label="اسلایدر صفحه اصلی">
+                    @{
+                        Html.RenderPartial("Sections/_HeroSection", Model.Hero);
+                    }
                 </section>
             }
 
             <!-- Value Proposition Section (Critical - Above-the-fold) -->
             @if (Model.ValueProposition != null)
             {
-                <section class="value-proposition-section">
-                    @Html.Partial("~/Views/Home/Sections/_ValuePropositionSection.cshtml", Model.ValueProposition)
+                <section class="value-proposition-section" aria-label="ویژگی‌های کلینیک">
+                    @{
+                        Html.RenderPartial("Sections/_ValuePropositionSection", Model.ValueProposition);
+                    }
                 </section>
             }
 
             <!-- Services Section - Lazy Load -->
             @if (Model.Services != null && Model.Services.Services != null && Model.Services.Services.Any())
             {
-                <section class="services-section" data-lazy-load="true" data-section-type="services" data-section-id="services">
-                    @Html.Partial("~/Views/Home/Sections/_ServicesSection.cshtml", Model.Services)
+                <section class="services-section" data-lazy-load="true" data-section-type="services" data-section-id="services" aria-label="@Model.Services.SectionTitle">
+                    @{
+                        Html.RenderPartial("Sections/_ServicesSection", Model.Services);
+                    }
                 </section>
             }
 
             <!-- Medical Services Info Section - Lazy Load -->
             @if (Model.MedicalServiceInfos != null && Model.MedicalServiceInfos.Any())
             {
-                <section class="medical-services-section" data-lazy-load="true" data-section-type="medical-services" data-section-id="medical-services">
-                    @Html.Partial("~/Views/Home/Sections/_MedicalServicesSection.cshtml", Model.MedicalServiceInfos)
+                <section class="medical-services-section" data-lazy-load="true" data-section-type="medical-services" data-section-id="medical-services" aria-label="خدمات پزشکی">
+                    @{
+                        Html.RenderPartial("Sections/_MedicalServicesSection", Model.MedicalServiceInfos);
+                    }
                 </section>
             }
 
             <!-- Medical Equipment Section - Lazy Load -->
             @if (Model.MedicalEquipments != null && Model.MedicalEquipments.Any())
             {
-                <section class="medical-equipment-section" data-lazy-load="true" data-section-type="medical-equipment" data-section-id="medical-equipment">
-                    @Html.Partial("~/Views/Home/Sections/_MedicalEquipmentSection.cshtml", Model)
+                <section class="medical-equipment-section" data-lazy-load="true" data-section-type="medical-equipment" data-section-id="medical-equipment" aria-label="تجهیزات پزشکی">
+                    @{
+                        Html.RenderPartial("Sections/_MedicalEquipmentSection", Model);
+                    }
                 </section>
             }
 
             <!-- Insurance Info Section - Lazy Load -->
             @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
             {
-                <section class="insurance-carousel-section" data-lazy-load="true" data-section-type="insurance" data-section-id="insurance">
-                    @Html.Partial("~/Views/Home/Sections/_InsuranceInfoSection.cshtml", Model.InsuranceInfos)
+                <section class="insurance-carousel-section" data-lazy-load="true" data-section-type="insurance" data-section-id="insurance" aria-label="بیمه‌های طرف قرارداد">
+                    @{
+                        Html.RenderPartial("Sections/_InsuranceInfoSection", Model.InsuranceInfos);
+                    }
                 </section>
             }
 
             <!-- Doctors Section - Lazy Load -->
             @if (Model.Doctors != null && Model.Doctors.Doctors != null && Model.Doctors.Doctors.Any())
             {
-                <section class="doctors-section" data-lazy-load="true" data-section-type="doctors" data-section-id="doctors">
-                    @Html.Partial("~/Views/Home/Sections/_DoctorsSection.cshtml", Model.Doctors)
+                <section class="doctors-section" data-lazy-load="true" data-section-type="doctors" data-section-id="doctors" aria-label="پزشکان کلینیک">
+                    @{
+                        Html.RenderPartial("Sections/_DoctorsSection", Model.Doctors);
+                    }
                 </section>
             }
 
             <!-- Quick Appointment Section (Critical - Above-the-fold) -->
             @if (Model.QuickAppointment != null)
             {
-                <section class="quick-appointment-section">
-                    @Html.Partial("~/Views/Home/Sections/_QuickAppointmentSection.cshtml", Model.QuickAppointment)
+                <section class="quick-appointment-section" aria-label="رزرو نوبت سریع">
+                    @{
+                        Html.RenderPartial("Sections/_QuickAppointmentSection", Model.QuickAppointment);
+                    }
                 </section>
             }
 
             <!-- Testimonials Section - Lazy Load -->
             @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
             {
-                <section class="testimonials-section" data-lazy-load="true" data-section-type="testimonials" data-section-id="testimonials">
-                    @Html.Partial("~/Views/Home/Sections/_TestimonialsSection.cshtml", Model.Testimonials)
+                <section class="testimonials-section" data-lazy-load="true" data-section-type="testimonials" data-section-id="testimonials" aria-label="نظرات بیماران">
+                    @{
+                        Html.RenderPartial("Sections/_TestimonialsSection", Model.Testimonials);
+                    }
                 </section>
             }
 
             <!-- Gallery Section - Lazy Load -->
             @if (Model.Gallery != null && Model.Gallery.Items != null && Model.Gallery.Items.Any())
             {
-                <section class="gallery-section" data-lazy-load="true" data-section-type="gallery" data-section-id="gallery">
-                    @Html.Partial("~/Views/Home/Sections/_GallerySection.cshtml", Model.Gallery)
+                <section class="gallery-section" data-lazy-load="true" data-section-type="gallery" data-section-id="gallery" aria-label="گالری تصاویر">
+                    @{
+                        Html.RenderPartial("Sections/_GallerySection", Model.Gallery);
+                    }
                 </section>
             }
 
             <!-- Blog Section - Lazy Load -->
             @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
             {
-                <section class="blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog">
-                    @Html.Partial("~/Views/Home/Sections/_BlogSection.cshtml", Model.Blog)
+                <section class="blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog" aria-label="مقالات و اخبار">
+                    @{
+                        Html.RenderPartial("Sections/_BlogSection", Model.Blog);
+                    }
                 </section>
             }
 
             <!-- Health Tips Section - Lazy Load -->
             @if (Model.HealthTips != null && Model.HealthTips.Any())
             {
-                <section class="health-tips-section" data-lazy-load="true" data-section-type="health-tips" data-section-id="health-tips">
-                    @Html.Partial("~/Views/Home/Sections/_HealthTipsSection.cshtml", Model.HealthTips)
+                <section class="health-tips-section" data-lazy-load="true" data-section-type="health-tips" data-section-id="health-tips" aria-label="نکات سلامت">
+                    @{
+                        Html.RenderPartial("Sections/_HealthTipsSection", Model.HealthTips);
+                    }
                 </section>
             }
 
             <!-- Video Section - Lazy Load -->
             @if (Model.Videos != null)
             {
-                <section class="video-section" data-lazy-load="true" data-section-type="video" data-section-id="video">
-                    @Html.Partial("~/Views/Home/Sections/_VideoSection.cshtml", Model.Videos)
+                <section class="video-section" data-lazy-load="true" data-section-type="video" data-section-id="video" aria-label="ویدئوها">
+                    @{
+                        Html.RenderPartial("Sections/_VideoSection", Model.Videos);
+                    }
                 </section>
             }
 
             <!-- Stories Section - Lazy Load -->
             @if (Model.Stories != null && Model.Stories.Any())
             {
-                <section class="stories-section" data-lazy-load="true" data-section-type="stories" data-section-id="stories">
-                    @Html.Partial("~/Views/Home/Sections/_StoriesSection.cshtml", Model.Stories)
+                <section class="stories-section" data-lazy-load="true" data-section-type="stories" data-section-id="stories" aria-label="داستان‌های بیماران">
+                    @{
+                        Html.RenderPartial("Sections/_StoriesSection", Model.Stories);
+                    }
                 </section>
             }
 
             <!-- FAQ Section - Lazy Load -->
             @if (Model.FAQs != null && Model.FAQs.Any())
             {
-                <section class="faq-section" data-lazy-load="true" data-section-type="faq" data-section-id="faq">
-                    @Html.Partial("~/Views/Home/Sections/_FAQSection.cshtml", Model.FAQs)
+                <section class="faq-section" data-lazy-load="true" data-section-type="faq" data-section-id="faq" aria-label="سوالات متداول">
+                    @{
+                        Html.RenderPartial("Sections/_FAQSection", Model.FAQs);
+                    }
                 </section>
             }
 
             <!-- Contact Section - Lazy Load -->
             @if (Model.Contact != null)
             {
-                <section class="contact-section" data-lazy-load="true" data-section-type="contact" data-section-id="contact">
-                    @Html.Partial("~/Views/Home/Sections/_ContactSection.cshtml", Model.Contact)
+                <section class="contact-section" data-lazy-load="true" data-section-type="contact" data-section-id="contact" aria-label="تماس با ما">
+                    @{
+                        Html.RenderPartial("Sections/_ContactSection", Model.Contact);
+                    }
                 </section>
             }
 
@@ -156,14 +192,17 @@
         @if (Model.Sidebar != null)
         {
             <aside class="homepage-sidebar" role="complementary" aria-label="منوی کناری کلینیک">
-                @Html.Partial("~/Views/Home/Sections/_SidebarSection.cshtml", Model.Sidebar)
+                @{
+                    Html.RenderPartial("Sections/_SidebarSection", Model.Sidebar);
+                }
             </aside>
         }
         else if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
         {
-            @* Fallback to old sidebar sliders if new sidebar is not available *@
             <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
-                @Html.Partial("~/Views/Home/Sections/_SidebarSliderSection.cshtml", Model.SidebarSliders)
+                @{
+                    Html.RenderPartial("Sections/_SidebarSliderSection", Model.SidebarSliders);
+                }
             </aside>
         }
     </div>
@@ -171,7 +210,7 @@
     <!-- Footer Slider Section (Outside Homepage Layout) -->
     @if (Model.FooterSliders != null && Model.FooterSliders.Any())
     {
-        @Html.Partial("~/Views/Home/Sections/_FooterSliderSection.cshtml", Model.FooterSliders)
+        Html.RenderPartial("Sections/_FooterSliderSection", Model.FooterSliders);
     }
 
     @section Styles {
@@ -185,6 +224,7 @@
     }
 
     @section Scripts {
+        <script src="@Url.Content("~/Content/js/faq-accordion.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
         <script src="@Url.Content("~/Content/js/homepage-animations.js")"></script>
         <script src="@Url.Content("~/Content/js/homepage-lazy-load.js")"></script>
         <script src="@Url.Content("~/Content/js/homepage-section-manager.js")"></script>

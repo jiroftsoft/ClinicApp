@@ -1,8 +1,12 @@
 /**
  * Contact Thank You Page Styles - Production-Grade
- * 
- * طراحی حرفه‌ای برای صفحه تشکر پس از ارسال فرم تماس
+ * رنگ اصلی هماهنگ با سایت: #2c6e7d
  */
+
+:root {
+    --medical-primary: #2c6e7d;
+    --medical-primary-dark: #1e4d5a;
+}
 
 .thank-you-section {
     background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #e0f2f1 100%);
@@ -34,7 +38,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(90deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
 }
 
 .thank-you-icon {
@@ -99,7 +103,7 @@
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
     font-size: var(--font-size-2xl, 1.5rem);
     font-weight: var(--font-weight-bold, 700);
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     letter-spacing: 2px;
     padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
     background: #ffffff;
@@ -108,7 +112,7 @@
 }
 
 .btn-copy-tracking {
-    background: var(--medical-primary, #2c5aa0);
+    background: var(--medical-primary, #2c6e7d);
     color: #ffffff;
     border: none;
     border-radius: var(--radius-sm, 4px);
@@ -124,7 +128,7 @@
 }
 
 .btn-copy-tracking:hover {
-    background: var(--medical-primary-dark, #1e3d6f);
+    background: var(--medical-primary-dark, #1e4d5a);
     transform: translateY(-1px);
 }
 
@@ -144,7 +148,7 @@
 }
 
 .response-time-info i {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     font-size: 1.25rem;
     margin-top: 0.125rem;
     flex-shrink: 0;
@@ -194,13 +198,13 @@
 }
 
 .btn-home {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
     color: #ffffff;
     border: none;
 }
 
 .btn-home:hover {
-    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e4d5a) 0%, var(--medical-info-dark, #138496) 100%);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
     color: #ffffff;
@@ -209,25 +213,25 @@
 
 .btn-contact-again {
     background: #ffffff;
-    color: var(--medical-primary, #2c5aa0);
-    border: 2px solid var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
+    border: 2px solid var(--medical-primary, #2c6e7d);
 }
 
 .btn-contact-again:hover {
     background: rgba(44, 90, 160, 0.08);
     transform: translateY(-2px);
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     text-decoration: none;
 }
 
 .btn-track-status {
-    background: linear-gradient(135deg, var(--medical-info, #17a2b8) 0%, var(--medical-primary, #2c5aa0) 100%);
+    background: linear-gradient(135deg, var(--medical-info, #17a2b8) 0%, var(--medical-primary, #2c6e7d) 100%);
     color: #ffffff;
     border: none;
 }
 
 .btn-track-status:hover {
-    background: linear-gradient(135deg, var(--medical-info-dark, #138496) 0%, var(--medical-primary-dark, #1e3d6f) 100%);
+    background: linear-gradient(135deg, var(--medical-info-dark, #138496) 0%, var(--medical-primary-dark, #1e4d5a) 100%);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
     color: #ffffff;

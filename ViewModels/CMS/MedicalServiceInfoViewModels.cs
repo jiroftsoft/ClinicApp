@@ -182,6 +182,17 @@ namespace ClinicApp.ViewModels.CMS
 
     #region Medical Service Info Public (برای نمایش در سایت)
 
+    /// <summary>
+    /// ViewModel صفحه عمومی Index خدمات پزشکی (Strongly-Typed - بدون ViewBag برای داده).
+    /// قرارداد: 03-Development-Contract-Quick-Guide
+    /// </summary>
+    public class MedicalServiceInfoPublicIndexPageViewModel
+    {
+        public List<MedicalServiceInfoPublicViewModel> Items { get; set; } = new List<MedicalServiceInfoPublicViewModel>();
+        public int? SelectedCategoryId { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     public class MedicalServiceInfoPublicViewModel
     {
         public int MedicalServiceInfoId { get; set; }

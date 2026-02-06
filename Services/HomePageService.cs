@@ -50,6 +50,7 @@ namespace ClinicApp.Services
         private readonly IAboutPageService _aboutPageService;
         private readonly IStoryService _storyService;
         private readonly IPromotionalEventRepository _promotionalEventRepository;
+        private readonly IFooterService _footerService;
 
         public HomePageService(
             ApplicationDbContext context,
@@ -73,7 +74,8 @@ namespace ClinicApp.Services
             IEmergencyContactService emergencyContactService,
             IAboutPageService aboutPageService = null,
             IStoryService storyService = null,
-            IPromotionalEventRepository promotionalEventRepository = null)
+            IPromotionalEventRepository promotionalEventRepository = null,
+            IFooterService footerService = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -97,6 +99,7 @@ namespace ClinicApp.Services
             _aboutPageService = aboutPageService; // Optional - اگر null باشد، از داده‌های پیش‌فرض استفاده می‌شود
             _storyService = storyService; // Optional - اگر null باشد، Stories لود نمی‌شود
             _promotionalEventRepository = promotionalEventRepository; // Optional - اگر null باشد، ایونت‌ها لود نمی‌شوند
+            _footerService = footerService; // Optional - اگر null باشد، فوتر از منطق قبلی (هاردکد) لود می‌شود
         }
 
         /// <summary>
@@ -387,7 +390,7 @@ namespace ClinicApp.Services
                     SectionTitle = "پزشکان باتجربه ما",
                     SectionSubtitle = "تیمی از پزشکان متخصص که سلامت شما را در اولویت قرار داده‌اند",
                     Doctors = doctorCards,
-                    ViewAllDoctorsUrl = "/Patient/Appointment/Doctors"
+                    ViewAllDoctorsUrl = "/Patient/Appointment/Available"
                 };
             }
             catch (Exception ex)
@@ -1186,18 +1189,25 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// دریافت داده‌های Footer برای صفحه اصلی و تمام صفحات
+        /// اگر داده از CMS فوتر موجود باشد استفاده می‌شود، وگرنه fallback به منطق قبلی
         /// </summary>
         public async Task<FooterViewModel> GetFooterDataAsync(int? clinicId = null)
         {
             try
             {
                 var effectiveClinicId = clinicId ?? 1;
-                
-                // لود Contact و Emergency Contacts به صورت موازی
+
+                // اول از CMS فوتر بخوان؛ اگر رکورد FooterSettings وجود داشت از آن استفاده کن
+                if (_footerService != null)
+                {
+                    var cmsFooter = await _footerService.GetPublicFooterAsync(effectiveClinicId);
+                    if (cmsFooter != null)
+                        return cmsFooter;
+                }
+
+                // Fallback: لود Contact و Emergency Contacts به صورت موازی و ساخت فوتر از داده‌های قبلی
                 var contactTask = GetContactSectionAsync(effectiveClinicId);
                 var emergencyContactsTask = GetEmergencyContactsSectionAsync();
-                
-                // استفاده از Task ها برای GetFooterDataInternalAsync
                 return await GetFooterDataInternalAsync(effectiveClinicId, contactTask, emergencyContactsTask);
             }
             catch (Exception ex)

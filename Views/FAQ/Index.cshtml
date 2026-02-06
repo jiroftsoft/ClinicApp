@@ -1,243 +1,221 @@
-@model List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>
+@model ClinicApp.ViewModels.CMS.FAQPublicIndexPageViewModel
 @{
     ViewBag.Title = "سوالات متداول";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="faq-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
+<link rel="stylesheet" href="@Url.Content("~/Content/css/faq-pages.css")" />
+
+<div class="faq-page-wrap" role="main" aria-label="سوالات متداول">
+    @Html.AntiForgeryToken()
     <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h1 class="display-4 mb-3">
-                    <i class="fas fa-question-circle text-primary"></i>
-                    سوالات متداول
-                </h1>
-                <p class="lead text-muted">پاسخ به سوالات رایج شما درباره کلینیک و خدمات</p>
+        <header class="faq-page-header">
+            <h1 class="faq-page-title">
+                <i class="fas fa-question-circle" aria-hidden="true"></i>
+                سوالات متداول
+            </h1>
+            <p class="faq-page-subtitle">پاسخ به سوالات رایج شما درباره کلینیک و خدمات</p>
+        </header>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="faq-page-empty" role="alert" style="margin-bottom: 1.5rem;">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                <p class="mb-0">@Model.ErrorMessage</p>
             </div>
+        }
+
+        @if (Model.Categories != null && Model.Categories.Any())
+        {
+            <nav class="faq-page-filter" aria-label="فیلتر دسته‌بندی">
+                <span class="faq-page-filter-label">
+                    <i class="fas fa-filter" aria-hidden="true"></i>
+                    دسته‌بندی
+                </span>
+                <ul class="faq-page-filter-list">
+                    <li>
+                        <a href="@Url.Action("Index")"
+                           class="@(string.IsNullOrEmpty(Model.SelectedCategory) ? "is-active" : "")"
+                           aria-current="@(string.IsNullOrEmpty(Model.SelectedCategory) ? "true" : null)">
+                            همه
+                        </a>
+                    </li>
+                    @foreach (var cat in Model.Categories)
+                    {
+                        var isActive = Model.SelectedCategory == cat.Category;
+                        <li>
+                            <a href="@Url.Action("Index", new { category = cat.Category })"
+                               class="@(isActive ? "is-active" : "")"
+                               aria-current="@(isActive ? "true" : null)">
+                                @cat.DisplayName (@cat.Count)
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+
+        <div class="faq-page-search">
+            <form class="faq-page-search-form" role="search" aria-label="جستجو در سوالات" onsubmit="return false;">
+                <label for="faqSearchInput" class="sr-only">جستجو در سوالات متداول</label>
+                <input type="search"
+                       id="faqSearchInput"
+                       class="faq-page-search-input"
+                       placeholder="جستجو در سوالات متداول..."
+                       aria-label="جستجو در سوالات متداول"
+                       autocomplete="off" />
+                <button type="button" class="faq-page-search-btn" id="faqSearchBtn" aria-label="اجرای جستجو">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    جستجو
+                </button>
+            </form>
         </div>
 
-        <!-- Category Filter -->
-        @if (ViewBag.Categories != null && ((List<ClinicApp.ViewModels.CMS.FAQCategoryViewModel>)ViewBag.Categories).Any())
-        {
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="btn-group flex-wrap" role="group">
-                                <a href="@Url.Action("Index")" class="btn btn-@(ViewBag.SelectedCategory == null ? "primary" : "outline-primary") mb-2">
-                                    همه (@(((List<ClinicApp.ViewModels.CMS.FAQPublicViewModel>)Model)?.Count ?? 0))
-                                </a>
-                                @foreach (var cat in ViewBag.Categories)
+        <div id="faqAccordionContainer">
+            @if (Model.Items != null && Model.Items.Any())
+            {
+                <div class="faq-page-accordion" id="faqAccordion" role="tablist" aria-multiselectable="true">
+                    @for (var i = 0; i < Model.Items.Count; i++)
+                    {
+                        var faq = Model.Items[i];
+                        var collapseId = "faqCollapse" + i;
+                        var headingId = "faqHeading" + i;
+                        <div class="faq-page-card" role="tab" aria-expanded="false">
+                            <div class="faq-page-question-wrap">
+                                <button type="button"
+                                        class="faq-page-question-btn"
+                                        id="@headingId"
+                                        data-toggle="collapse"
+                                        data-target="#@collapseId"
+                                        data-parent="#faqAccordion"
+                                        aria-expanded="false"
+                                        aria-controls="@collapseId"
+                                        aria-label="باز کردن پاسخ: @faq.Question"
+                                        data-faq-id="@faq.FAQId">
+                                    <span class="faq-page-question-text">
+                                        <strong>@faq.Question</strong>
+                                        @if (faq.Tags != null && faq.Tags.Any())
+                                        {
+                                            <span class="faq-page-tags">
+                                                @foreach (var tag in faq.Tags.Take(2))
+                                                {
+                                                    <span class="faq-page-tag">@tag</span>
+                                                }
+                                            </span>
+                                        }
+                                    </span>
+                                    <i class="fas fa-chevron-down faq-page-chevron" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div id="@collapseId"
+                                 class="collapse faq-page-answer-wrap"
+                                 role="tabpanel"
+                                 aria-labelledby="@headingId"
+                                 data-parent="#faqAccordion">
+                                <div class="faq-page-answer">
+                                    @Html.Raw(faq.Answer)
+                                </div>
+                                @if (!string.IsNullOrEmpty(faq.RelatedLinkUrl))
                                 {
-                                    <a href="@Url.Action("Index", new { category = cat.Category })" class="btn btn-@(ViewBag.SelectedCategory == cat.Category ? "primary" : "outline-primary") mb-2">
-                                        @cat.DisplayName (@cat.Count)
-                                    </a>
+                                    <div class="faq-page-related">
+                                        <a href="@faq.RelatedLinkUrl" target="_blank" rel="noopener noreferrer" aria-label="اطلاعات بیشتر درباره این سوال">
+                                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                            اطلاعات بیشتر
+                                        </a>
+                                    </div>
                                 }
                             </div>
                         </div>
-                    </div>
+                    }
                 </div>
-            </div>
-        }
-
-        <!-- Search Box -->
-        <div class="row mb-4">
-            <div class="col-md-8 offset-md-2">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="input-group">
-                            <input type="text" id="faqSearchInput" class="form-control form-control-lg" placeholder="جستجو در سوالات متداول...">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary btn-lg" type="button" onclick="searchFAQs()">
-                                    <i class="fas fa-search"></i> جستجو
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            }
+            else
+            {
+                <div class="faq-page-empty">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <h2>هیچ سوال متداولی یافت نشد</h2>
+                    <p>لطفاً دسته‌بندی دیگری را انتخاب کنید یا کلمه جستجوی دیگری وارد کنید.</p>
                 </div>
-            </div>
-        </div>
-
-        <!-- FAQs List -->
-        <div class="row">
-            <div class="col-lg-10 offset-lg-1">
-                @if (Model != null && Model.Any())
-                {
-                    <div class="accordion" id="faqAccordion">
-                        @for (int i = 0; i < Model.Count; i++)
-                        {
-                            var faq = Model[i];
-                            var collapseId = $"faqCollapse{i}";
-                            var headingId = $"faqHeading{i}";
-                            
-                            <div class="card mb-3 shadow-sm faq-card">
-                                <div class="card-header bg-white" id="@headingId">
-                                    <h5 class="mb-0">
-                                        <button class="btn btn-link btn-block text-left text-dark" type="button" 
-                                                data-toggle="collapse" data-target="#@collapseId" 
-                                                aria-expanded="false" 
-                                                aria-controls="@collapseId"
-                                                onclick="incrementFAQView(@faq.FAQId)">
-                                            <i class="fas fa-chevron-right mr-2"></i>
-                                            <strong>@faq.Question</strong>
-                                            @if (faq.Tags != null && faq.Tags.Any())
-                                            {
-                                                <span class="float-left">
-                                                    @foreach (var tag in faq.Tags.Take(2))
-                                                    {
-                                                        <span class="badge badge-secondary badge-sm mr-1">@tag</span>
-                                                    }
-                                                </span>
-                                            }
-                                        </button>
-                                    </h5>
-                                </div>
-                                <div id="@collapseId" class="collapse" 
-                                     aria-labelledby="@headingId" data-parent="#faqAccordion">
-                                    <div class="card-body">
-                                        <div class="faq-answer">
-                                            @Html.Raw(faq.Answer)
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(faq.RelatedLinkUrl))
-                                        {
-                                            <div class="mt-3">
-                                                <a href="@faq.RelatedLinkUrl" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-external-link-alt"></i> اطلاعات بیشتر
-                                                </a>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h4>هیچ سوال متداولی یافت نشد</h4>
-                        <p class="mb-0">لطفاً دسته‌بندی دیگری را انتخاب کنید یا کلمه جستجوی دیگری وارد کنید.</p>
-                    </div>
-                }
-            </div>
+            }
         </div>
     </div>
-</section>
+</div>
 
 @section Scripts {
     <script>
-        function incrementFAQView(faqId) {
-            $.ajax({
-                url: '@Url.Action("IncrementView", "FAQ")',
-                type: 'POST',
-                data: { id: faqId },
-                success: function() {
-                    // ViewCount افزایش یافت
-                }
+        (function() {
+            var indexUrl = '@Url.Action("Index")';
+            var searchUrl = '@Url.Action("Search", "FAQ")';
+            var incrementUrl = '@Url.Action("IncrementView", "FAQ")';
+
+            function incrementView(faqId) {
+                if (!faqId) return;
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', incrementUrl, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.setRequestHeader('RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+                xhr.send('id=' + encodeURIComponent(faqId));
+            }
+
+            document.querySelectorAll('.faq-page-question-btn[data-faq-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = this.getAttribute('data-faq-id');
+                    if (id) incrementView(id);
+                });
             });
-        }
 
-        function searchFAQs() {
-            var searchTerm = $('#faqSearchInput').val();
-            if (!searchTerm || searchTerm.trim() === '') {
-                alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
-                return;
-            }
-
-            $.ajax({
-                url: '@Url.Action("Search", "FAQ")',
-                type: 'POST',
-                data: { searchTerm: searchTerm },
-                success: function(response) {
-                    if (response.success && response.data && response.data.length > 0) {
-                        // نمایش نتایج جستجو
-                        displaySearchResults(response.data);
-                    } else {
-                        alert('نتیجه‌ای یافت نشد');
-                    }
-                },
-                error: function() {
-                    alert('خطا در جستجو');
-                }
+            document.getElementById('faqSearchBtn').addEventListener('click', doSearch);
+            document.getElementById('faqSearchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
             });
-        }
 
-        function displaySearchResults(results) {
-            // پیاده‌سازی نمایش نتایج جستجو
-            var html = '';
-            for (var i = 0; i < results.length; i++) {
-                var faq = results[i];
-                html += '<div class="card mb-3 shadow-sm faq-card">';
-                html += '<div class="card-header bg-white">';
-                html += '<h5 class="mb-0"><strong>' + faq.Question + '</strong></h5>';
-                html += '</div>';
-                html += '<div class="card-body">';
-                html += '<div class="faq-answer">' + faq.Answer + '</div>';
-                html += '</div>';
-                html += '</div>';
+            function doSearch() {
+                var term = (document.getElementById('faqSearchInput').value || '').trim();
+                if (!term) {
+                    alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
+                    return;
+                }
+                var container = document.getElementById('faqAccordionContainer');
+                container.innerHTML = '<div class="faq-page-empty"><i class="fas fa-spinner fa-spin"></i><p>در حال جستجو...</p></div>';
+                var formData = new FormData();
+                formData.append('searchTerm', term);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+                fetch(searchUrl, { method: 'POST', body: formData })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.data && data.data.length > 0) {
+                            var html = '<div class="faq-page-results-label">';
+                            html += 'نمایش نتایج جستجو برای «' + escapeHtml(term) + '» — ';
+                            html += '<a href="' + indexUrl + '">پاک کردن و بازگشت به لیست</a></div>';
+                            html += '<div class="faq-page-accordion">';
+                            data.data.forEach(function(faq) {
+                                html += '<div class="faq-page-card faq-page-card--expanded">';
+                                html += '<div class="faq-page-question-wrap"><div class="faq-page-question-btn">';
+                                html += '<span class="faq-page-question-text"><strong>' + escapeHtml(faq.Question) + '</strong></span>';
+                                html += '</div></div>';
+                                html += '<div class="faq-page-answer-wrap"><div class="faq-page-answer">' + (faq.Answer || '') + '</div>';
+                                if (faq.RelatedLinkUrl) {
+                                    html += '<div class="faq-page-related"><a href="' + escapeHtml(faq.RelatedLinkUrl) + '" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> اطلاعات بیشتر</a></div>';
+                                }
+                                html += '</div></div>';
+                            });
+                            html += '</div>';
+                            container.innerHTML = html;
+                        } else {
+                            container.innerHTML = '<div class="faq-page-empty"><i class="fas fa-info-circle"></i><h2>نتیجه‌ای یافت نشد</h2><p>لطفاً عبارت دیگری جستجو کنید یا <a href="' + indexUrl + '">به لیست بازگردید</a>.</p></div>';
+                        }
+                    })
+                    .catch(function() {
+                        container.innerHTML = '<div class="faq-page-empty"><i class="fas fa-exclamation-triangle"></i><h2>خطا در جستجو</h2><p><a href="' + indexUrl + '">بارگذاری مجدد صفحه</a></p></div>';
+                    });
             }
-            $('#faqAccordion').html(html);
-        }
 
-        // انیمیشن برای باز و بسته شدن FAQ
-        $('#faqAccordion').on('show.bs.collapse', function (e) {
-            $(e.target).prev('.card-header').find('.fa-chevron-right').removeClass('fa-chevron-right').addClass('fa-chevron-down');
-        });
-
-        $('#faqAccordion').on('hide.bs.collapse', function (e) {
-            $(e.target).prev('.card-header').find('.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-right');
-        });
-
-        // جستجو با Enter
-        $('#faqSearchInput').on('keypress', function(e) {
-            if (e.which === 13) {
-                searchFAQs();
+            function escapeHtml(s) {
+                if (!s) return '';
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
             }
-        });
+        })();
     </script>
-
-    <style>
-        .faq-page {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .faq-card {
-            border: none;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .faq-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
-        }
-
-        .faq-card .card-header {
-            border-bottom: 2px solid #e9ecef;
-            border-radius: 10px 10px 0 0 !important;
-        }
-
-        .faq-card .btn-link {
-            text-decoration: none;
-            color: #2c3e50;
-            font-weight: 600;
-            padding: 1rem;
-        }
-
-        .faq-card .btn-link:hover {
-            color: #007bff;
-        }
-
-        .faq-card .btn-link:focus {
-            box-shadow: none;
-        }
-
-        .faq-answer {
-            line-height: 1.8;
-            color: #495057;
-        }
-    </style>
 }
-

@@ -226,6 +226,21 @@ namespace ClinicApp.ViewModels.CMS
 
     #endregion
 
+    #region Contact Thank You Page (Strongly-Typed - بدون ViewBag)
+
+    /// <summary>
+    /// ViewModel صفحه تشکر پس از ارسال فرم تماس (Strongly-Typed - بدون ViewBag برای داده).
+    /// قرارداد: 03-Development-Contract-Quick-Guide
+    /// </summary>
+    public class ContactThankYouViewModel
+    {
+        public string TrackingId { get; set; }
+        public int? ContactFormId { get; set; }
+        public string ResponseTime { get; set; }
+    }
+
+    #endregion
+
     #region Contact Form Tracking (برای کاربران عمومی)
 
     /// <summary>

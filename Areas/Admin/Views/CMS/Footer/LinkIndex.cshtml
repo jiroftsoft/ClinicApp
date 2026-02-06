@@ -1,0 +1,188 @@
+@model ClinicApp.ViewModels.CMS.FooterLinksIndexViewModel
+@{
+    ViewBag.Title = Model.LinkTypeTitle;
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var clinicId = ViewBag.ClinicId as int?;
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-link text-primary"></i>
+            @Model.LinkTypeTitle
+        </h1>
+        <div>
+            <a href="@Url.Action("LinkCreate", new { type = Model.LinkType, clinicId })" class="btn btn-success">
+                <i class="fas fa-plus"></i> افزودن
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" action="@Url.Action("LinkIndex")" class="form-inline">
+                <input type="hidden" name="type" value="@Model.LinkType" />
+                <label class="mr-2">ClinicId</label>
+                <input class="form-control mr-2" type="number" name="clinicId" value="@(clinicId?.ToString() ?? "")" placeholder="خالی = سراسری" />
+                <button class="btn btn-outline-primary" type="submit">اعمال</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width:44px;" aria-label="کشیدن برای تغییر ترتیب"></th>
+                            <th style="width:80px;">ترتیب</th>
+                            <th>عنوان</th>
+                            <th>URL</th>
+                            <th style="width:140px;">آیکن</th>
+                            <th style="width:90px;">خارجی</th>
+                            <th style="width:90px;">فعال</th>
+                            <th style="width:220px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items != null && Model.Items.Any())
+                        {
+                            foreach (var item in Model.Items.OrderBy(i => i.DisplayOrder))
+                            {
+                                <tr class="js-footer-row" data-id="@item.FooterLinkId">
+                                    <td class="text-center align-middle">
+                                        <span class="js-drag-handle px-1" draggable="true" role="button" tabindex="0" aria-label="کشیدن برای تغییر ترتیب"><i class="fas fa-grip-vertical text-muted"></i></span>
+                                    </td>
+                                    <td class="js-order">@item.DisplayOrder</td>
+                                    <td>@item.Title</td>
+                                    <td><code>@item.Url</code></td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.Icon))
+                                        {
+                                            <i class="@item.Icon"></i>
+                                            <span class="text-muted ml-1">@item.Icon</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>@(item.IsExternal ? "بله" : "خیر")</td>
+                                    <td>@(item.IsActive ? "بله" : "خیر")</td>
+                                    <td>
+                                        <a class="btn btn-sm btn-primary" href="@Url.Action("LinkEdit", new { id = item.FooterLinkId })">
+                                            <i class="fas fa-edit"></i> ویرایش
+                                        </a>
+                                        @using (Html.BeginForm("LinkDelete", "Footer", FormMethod.Post, new { style = "display:inline-block" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            @Html.Hidden("id", item.FooterLinkId)
+                                            @Html.Hidden("type", Model.LinkType)
+                                            @Html.Hidden("clinicId", clinicId)
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟');">
+                                                <i class="fas fa-trash"></i> حذف
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="8" class="text-center text-muted">آیتمی یافت نشد.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section styles {
+    <style>
+        .js-drag-handle { cursor: grab; user-select: none; }
+        .js-drag-handle:active { cursor: grabbing; }
+        .js-footer-row.dragging { opacity: 0.6; }
+    </style>
+}
+@section Scripts {
+    <script>
+        (function() {
+            var table = document.querySelector('table');
+            if (!table) return;
+            var dragged = null;
+
+            function rows() {
+                return Array.prototype.slice.call(table.querySelectorAll('tbody tr.js-footer-row'));
+            }
+
+            table.addEventListener('dragstart', function(e) {
+                if (!e.target.closest('.js-drag-handle')) return;
+                var tr = e.target.closest('tr.js-footer-row');
+                if (!tr) return;
+                dragged = tr;
+                tr.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', tr.getAttribute('data-id'));
+            });
+
+            table.addEventListener('dragover', function(e) {
+                if (!dragged) return;
+                e.preventDefault();
+                var tr = e.target.closest('tr.js-footer-row');
+                if (!tr || tr === dragged) return;
+                var tbody = tr.parentNode;
+                var rect = tr.getBoundingClientRect();
+                var next = (e.clientY - rect.top) > (rect.height / 2);
+                tbody.insertBefore(dragged, next ? tr.nextSibling : tr);
+            });
+
+            table.addEventListener('dragend', function() {
+                if (!dragged) return;
+                dragged.classList.remove('dragging');
+                dragged = null;
+                persistOrder();
+            });
+
+            function persistOrder() {
+                var rs = rows();
+                var ids = [];
+                var orders = [];
+                for (var i = 0; i < rs.length; i++) {
+                    ids.push(parseInt(rs[i].getAttribute('data-id'), 10));
+                    orders.push(i + 1);
+                    var cell = rs[i].querySelector('.js-order');
+                    if (cell) cell.textContent = (i + 1).toString();
+                }
+
+                var tokenInput = document.querySelector('input[name=\"__RequestVerificationToken\"]');
+                if (!tokenInput) {
+                    var tokenHtml = '@Html.AntiForgeryToken().ToHtmlString()';
+                    var div = document.createElement('div');
+                    div.innerHTML = tokenHtml;
+                    document.body.appendChild(div);
+                    tokenInput = div.querySelector('input[name=\"__RequestVerificationToken\"]');
+                }
+
+                var token = tokenInput ? tokenInput.value : '';
+                var form = new FormData();
+                for (var j = 0; j < ids.length; j++) form.append('ids', ids[j]);
+                for (var k = 0; k < orders.length; k++) form.append('orders', orders[k]);
+                form.append('__RequestVerificationToken', token);
+
+                fetch('@Url.Action("LinkReorder", "Footer")', {
+                    method: 'POST',
+                    body: form,
+                    credentials: 'same-origin'
+                }).then(function(r) { return r.json(); }).then(function(res) {
+                    if (!res || !res.success) console.warn('Order save failed', res);
+                }).catch(function() {});
+            }
+        })();
+    </script>
+}
+

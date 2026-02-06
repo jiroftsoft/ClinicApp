@@ -1,0 +1,174 @@
+@model ClinicApp.ViewModels.CMS.FooterSettingsEditViewModel
+@{
+    ViewBag.Title = "تنظیمات فوتر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-weight: 700;
+            color: #2c5aa0;
+            margin: 1.5rem 0 .75rem;
+        }
+        .hint {
+            color: #6c757d;
+            font-size: .9rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-edit text-primary"></i>
+            تنظیمات فوتر
+        </h1>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="form-container">
+        @using (Html.BeginForm("EditSettings", "Footer", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.FooterSettingsId)
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="section-title"><i class="fas fa-id-card text-primary"></i> برند</div>
+            <p class="hint">اطلاعات هویت کلینیک در فوتر.</p>
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.BrandClinicName)
+                    @Html.TextBoxFor(m => m.BrandClinicName, new { @class = "form-control", placeholder = "کلینیک شفا جیرفت" })
+                    @Html.ValidationMessageFor(m => m.BrandClinicName, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.BrandHomeUrl)
+                    @Html.TextBoxFor(m => m.BrandHomeUrl, new { @class = "form-control", placeholder = "/" })
+                    @Html.ValidationMessageFor(m => m.BrandHomeUrl, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.BrandLogoUrl)
+                    @Html.TextBoxFor(m => m.BrandLogoUrl, new { @class = "form-control", placeholder = "/Content/Images/logo/logo.png" })
+                    @Html.ValidationMessageFor(m => m.BrandLogoUrl, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.BrandTagline)
+                    @Html.TextBoxFor(m => m.BrandTagline, new { @class = "form-control", placeholder = "شعار کوتاه" })
+                    @Html.ValidationMessageFor(m => m.BrandTagline, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-12 form-group">
+                    @Html.LabelFor(m => m.BrandDescription)
+                    @Html.TextAreaFor(m => m.BrandDescription, 3, 10, new { @class = "form-control", placeholder = "توضیح کوتاه درباره کلینیک" })
+                    @Html.ValidationMessageFor(m => m.BrandDescription, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-phone-alt text-primary"></i> اطلاعات تماس</div>
+            <p class="hint">شماره‌ها و آدرس در فوتر نمایش داده می‌شود.</p>
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.ContactPhone)
+                    @Html.TextBoxFor(m => m.ContactPhone, new { @class = "form-control", placeholder = "034-xxxxxxx" })
+                    @Html.ValidationMessageFor(m => m.ContactPhone, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.ContactEmergencyPhone)
+                    @Html.TextBoxFor(m => m.ContactEmergencyPhone, new { @class = "form-control", placeholder = "115" })
+                    @Html.ValidationMessageFor(m => m.ContactEmergencyPhone, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.ContactWhatsAppNumber)
+                    @Html.TextBoxFor(m => m.ContactWhatsAppNumber, new { @class = "form-control", placeholder = "0912xxxxxxx" })
+                    @Html.ValidationMessageFor(m => m.ContactWhatsAppNumber, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.ContactEmail)
+                    @Html.TextBoxFor(m => m.ContactEmail, new { @class = "form-control", placeholder = "info@clinic.com" })
+                    @Html.ValidationMessageFor(m => m.ContactEmail, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.ContactAddress)
+                    @Html.TextBoxFor(m => m.ContactAddress, new { @class = "form-control", placeholder = "آدرس" })
+                    @Html.ValidationMessageFor(m => m.ContactAddress, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-gavel text-primary"></i> حقوقی</div>
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.LegalCopyrightText)
+                    @Html.TextBoxFor(m => m.LegalCopyrightText, new { @class = "form-control", placeholder = "© 2026 ..." })
+                    @Html.ValidationMessageFor(m => m.LegalCopyrightText, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.LegalMedicalPrivacyNotice)
+                    @Html.TextAreaFor(m => m.LegalMedicalPrivacyNotice, 3, 10, new { @class = "form-control", placeholder = "متن محرمانگی پزشکی" })
+                    @Html.ValidationMessageFor(m => m.LegalMedicalPrivacyNotice, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.LegalPrivacyPolicyUrl)
+                    @Html.TextBoxFor(m => m.LegalPrivacyPolicyUrl, new { @class = "form-control", placeholder = "/Privacy" })
+                    @Html.ValidationMessageFor(m => m.LegalPrivacyPolicyUrl, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.LegalTermsOfServiceUrl)
+                    @Html.TextBoxFor(m => m.LegalTermsOfServiceUrl, new { @class = "form-control", placeholder = "/Terms" })
+                    @Html.ValidationMessageFor(m => m.LegalTermsOfServiceUrl, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 form-group">
+                    @Html.LabelFor(m => m.LegalComplaintsUrl)
+                    @Html.TextBoxFor(m => m.LegalComplaintsUrl, new { @class = "form-control", placeholder = "/Complaints" })
+                    @Html.ValidationMessageFor(m => m.LegalComplaintsUrl, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-clock text-primary"></i> ساعات کاری</div>
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.LabelFor(m => m.WorkingHoursTitle)
+                    @Html.TextBoxFor(m => m.WorkingHoursTitle, new { @class = "form-control", placeholder = "ساعات کاری" })
+                    @Html.ValidationMessageFor(m => m.WorkingHoursTitle, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6 form-group d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
+                        <label class="form-check-label" for="IsActive">فعال</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a class="btn btn-secondary" href="@Url.Action("Index")">
+                    انصراف
+                </a>
+            </div>
+        }
+    </div>
+</div>
+

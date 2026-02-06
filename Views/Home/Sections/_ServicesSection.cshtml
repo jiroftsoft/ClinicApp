@@ -61,7 +61,7 @@
 
             @* View All Button *@
             <div class="modern-services-view-all">
-                <a href="/Services" class="modern-services-view-all-button" aria-label="مشاهده تمام خدمات">
+                <a href="@Url.Action("Index", "MedicalServiceInfo")" class="modern-services-view-all-button" aria-label="مشاهده تمام خدمات">
                     <span>مشاهده تمام خدمات</span>
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                 </a>
@@ -75,8 +75,5 @@
         }
     </div>
 </section>
-
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/css/modern-services-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-}
+@* CSS از باندل homepage-sections لود می‌شود *@
 

@@ -146,105 +146,185 @@
     overflow: hidden;
 }
 
-/* Lightbox Styles */
+/* ========== Lightbox - طراحی مدرن و حرفه‌ای ========== */
 .gallery-lightbox {
-    display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
+    inset: 0;
     z-index: 10000;
-    opacity: 0;
-    transition: opacity var(--transition-normal) var(--ease-out);
-}
-
-.gallery-lightbox.active {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: var(--spacing-xl);
+    box-sizing: border-box;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s linear 0.25s, opacity 0.25s ease-out;
+    pointer-events: none;
+}
+
+/* پس‌زمینه نیمه‌شفاف با بلور (backdrop) - ظاهر مدرن */
+.gallery-lightbox::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: -1;
+}
+
+.gallery-lightbox.active {
+    visibility: visible;
     opacity: 1;
+    transition: visibility 0s, opacity 0.25s ease-out;
+    pointer-events: auto;
 }
 
 .gallery-lightbox-content {
     position: relative;
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 92vw;
+    max-height: 88vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-md);
+    animation: galleryLightboxContentIn 0.3s ease-out;
+}
+
+@keyframes galleryLightboxContentIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.gallery-lightbox-image-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 200px;
+    min-height: 200px;
+    max-width: 90vw;
+    max-height: 75vh;
+}
+
+.gallery-lightbox-loading {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-lg);
+}
+
+.gallery-lightbox-loading::after {
+    content: '';
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    animation: galleryLightboxSpinner 0.8s linear infinite;
+}
+
+@keyframes galleryLightboxSpinner {
+    to { transform: rotate(360deg); }
 }
 
 .gallery-lightbox-image {
     max-width: 100%;
-    max-height: 80vh;
+    max-height: 75vh;
+    width: auto;
+    height: auto;
     object-fit: contain;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-2xl);
-    animation: scaleIn var(--transition-normal) var(--ease-out);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+.gallery-lightbox-image.loaded {
+    opacity: 1;
 }
 
 .gallery-lightbox-title {
-    color: white;
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-semibold);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
     text-align: center;
-    margin-top: var(--spacing-md);
+    margin: 0;
+    padding: 0 var(--spacing-md);
+    max-width:  min(90vw, 600px);
+    line-height: 1.4;
 }
 
+.gallery-lightbox-counter {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-xs);
+}
+
+/* دکمه بستن - گوشه بالا */
 .gallery-lightbox-close {
     position: absolute;
     top: var(--spacing-lg);
     left: var(--spacing-lg);
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    border-radius: var(--radius-full);
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: var(--radius-full);
     cursor: pointer;
-    transition: all var(--transition-normal) var(--ease-out);
-    font-size: var(--font-size-xl);
-    backdrop-filter: blur(10px);
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 1.25rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .gallery-lightbox-close:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.05);
 }
 
 .gallery-lightbox-close:focus {
-    outline: 2px solid white;
+    outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
 }
 
+/* دکمه‌های قبلی/بعدی */
 .gallery-lightbox-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    border-radius: var(--radius-full);
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: var(--radius-full);
     cursor: pointer;
-    transition: all var(--transition-normal) var(--ease-out);
-    font-size: var(--font-size-xl);
-    backdrop-filter: blur(10px);
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 1.25rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .gallery-lightbox-nav:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-50%) scale(1.1);
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-50%) scale(1.05);
 }
 
 .gallery-lightbox-nav.prev {
@@ -256,7 +336,7 @@
 }
 
 .gallery-lightbox-nav:focus {
-    outline: 2px solid white;
+    outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
 }
 
@@ -342,5 +422,31 @@
 .gallery-item[tabindex="0"]:focus {
     outline: 2px solid var(--medical-primary);
     outline-offset: 4px;
+}
+
+/* صفحه گالری عمومی (Full Page) */
+.gallery-page-wrap {
+    min-height: 50vh;
+}
+
+.gallery-empty-state {
+    text-align: center;
+    padding: var(--spacing-xxxl) var(--spacing-lg);
+    background-color: var(--medical-bg);
+    border: 1px dashed var(--medical-border);
+    border-radius: var(--radius-lg);
+}
+
+.gallery-empty-icon {
+    font-size: 4rem;
+    color: var(--medical-text-muted);
+    margin-bottom: var(--spacing-lg);
+    display: block;
+}
+
+.gallery-empty-message {
+    font-size: var(--font-size-lg);
+    color: var(--medical-text-muted);
+    margin-bottom: var(--spacing-xl);
 }
 

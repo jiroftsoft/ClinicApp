@@ -1,8 +1,12 @@
 /**
  * Contact Track Page Styles - Production-Grade
- * 
- * طراحی حرفه‌ای برای صفحه پیگیری وضعیت پیام با Tracking ID
+ * رنگ اصلی هماهنگ با سایت: #2c6e7d
  */
+
+:root {
+    --medical-primary: #2c6e7d;
+    --medical-primary-dark: #1e4d5a;
+}
 
 .track-contact-section,
 .track-result-section {
@@ -15,9 +19,9 @@
 .track-contact-card,
 .track-result-card {
     background: #ffffff;
-    border: 1px solid rgba(44, 90, 160, 0.15);
+    border: 1px solid rgba(44, 110, 125, 0.15);
     border-radius: var(--radius-lg, 12px);
-    box-shadow: 0 8px 32px rgba(44, 90, 160, 0.15);
+    box-shadow: 0 8px 32px rgba(44, 110, 125, 0.15);
     padding: var(--spacing-xxxl, 4rem);
     max-width: 700px;
     width: 100%;
@@ -34,7 +38,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(90deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
 }
 
 .track-contact-header {
@@ -47,7 +51,7 @@
     width: 80px;
     height: 80px;
     margin: 0 auto var(--spacing-lg, 1.5rem);
-    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
+    background: linear-gradient(135deg, rgba(44, 110, 125, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
     border-radius: var(--radius-full, 9999px);
     display: flex;
     align-items: center;
@@ -57,7 +61,7 @@
 .track-icon i,
 .track-result-icon i {
     font-size: 2rem;
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -104,7 +108,7 @@
     font-size: var(--font-size-lg, 1.125rem);
     font-weight: var(--font-weight-normal, 400);
     padding: var(--spacing-md, 1rem);
-    border: 2px solid rgba(44, 90, 160, 0.2);
+    border: 2px solid rgba(44, 110, 125, 0.2);
     border-radius: var(--radius-md, 8px);
     transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
     min-height: 50px;
@@ -114,13 +118,13 @@
 }
 
 .track-form .form-control:focus {
-    border-color: var(--medical-primary, #2c5aa0);
-    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    border-color: var(--medical-primary, #2c6e7d);
+    box-shadow: 0 0 0 3px rgba(44, 110, 125, 0.1);
     outline: none;
 }
 
 .btn-track {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
     color: #ffffff;
     border: none;
     border-radius: var(--radius-md, 8px);
@@ -136,20 +140,20 @@
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm, 0.5rem);
-    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.3);
 }
 
 .btn-track:hover {
-    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e4d5a) 0%, var(--medical-info-dark, #138496) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+    box-shadow: 0 6px 20px rgba(44, 110, 125, 0.4);
     color: #ffffff;
     text-decoration: none;
 }
 
 .track-help {
-    background: rgba(44, 90, 160, 0.05);
-    border: 1px solid rgba(44, 90, 160, 0.15);
+    background: rgba(44, 110, 125, 0.05);
+    border: 1px solid rgba(44, 110, 125, 0.15);
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-lg, 1.5rem);
     margin-top: var(--spacing-xl, 2rem);
@@ -184,7 +188,7 @@
 }
 
 .track-help li i {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     margin-top: 0.25rem;
     flex-shrink: 0;
 }
@@ -194,7 +198,7 @@
     text-align: center;
     margin-bottom: var(--spacing-xl, 2rem);
     padding-bottom: var(--spacing-lg, 1.5rem);
-    border-bottom: 2px solid rgba(44, 90, 160, 0.15);
+    border-bottom: 2px solid rgba(44, 110, 125, 0.15);
 }
 
 .track-result-content {
@@ -206,7 +210,7 @@
     align-items: flex-start;
     gap: var(--spacing-md, 1rem);
     padding: var(--spacing-md, 1rem) 0;
-    border-bottom: 1px solid rgba(44, 90, 160, 0.1);
+    border-bottom: 1px solid rgba(44, 110, 125, 0.1);
 }
 
 .track-info-row:last-child {
@@ -214,7 +218,7 @@
 }
 
 .track-info-row.status-row {
-    background: rgba(44, 90, 160, 0.05);
+    background: rgba(44, 110, 125, 0.05);
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-md, 1rem);
     margin-top: var(--spacing-md, 1rem);
@@ -233,7 +237,7 @@
 }
 
 .track-info-label i {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     font-size: 1.125rem;
 }
 
@@ -338,7 +342,7 @@
     justify-content: center;
     flex-wrap: wrap;
     padding-top: var(--spacing-lg, 1.5rem);
-    border-top: 2px solid rgba(44, 90, 160, 0.15);
+    border-top: 2px solid rgba(44, 110, 125, 0.15);
 }
 
 .btn-track-again,
@@ -358,43 +362,43 @@
 }
 
 .btn-track-status {
-    background: linear-gradient(135deg, var(--medical-info, #17a2b8) 0%, var(--medical-primary, #2c5aa0) 100%);
+    background: linear-gradient(135deg, var(--medical-info, #17a2b8) 0%, var(--medical-primary, #2c6e7d) 100%);
     color: #ffffff;
     border: none;
 }
 
 .btn-track-status:hover {
-    background: linear-gradient(135deg, var(--medical-info-dark, #138496) 0%, var(--medical-primary-dark, #1e3d6f) 100%);
+    background: linear-gradient(135deg, var(--medical-info-dark, #138496) 0%, var(--medical-primary-dark, #1e4d5a) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.3);
     color: #ffffff;
     text-decoration: none;
 }
 
 .btn-track-again {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
     color: #ffffff;
     border: none;
 }
 
 .btn-track-again:hover {
-    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
+    background: linear-gradient(135deg, var(--medical-primary-dark, #1e4d5a) 0%, var(--medical-info-dark, #138496) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.3);
     color: #ffffff;
     text-decoration: none;
 }
 
 .btn-contact-again {
     background: #ffffff;
-    color: var(--medical-primary, #2c5aa0);
-    border: 2px solid var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
+    border: 2px solid var(--medical-primary, #2c6e7d);
 }
 
 .btn-contact-again:hover {
-    background: rgba(44, 90, 160, 0.08);
+    background: rgba(44, 110, 125, 0.08);
     transform: translateY(-2px);
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     text-decoration: none;
 }
 

@@ -5,10 +5,9 @@
 
 @* CSS در Index.cshtml لود می‌شود *@
 
-@if (equipments != null && equipments.Any())
-{
-    <section class="medical-equipment-showcase" aria-label="تجهیزات پزشکی مدرن">
-        <div class="container">
+@if (equipments == null || !equipments.Any()) { return; }
+<div class="medical-equipment-inner">
+    <div class="container">
             @* Header Section *@
             <div class="equipment-showcase-header">
                 <h2 class="equipment-showcase-title">تجهیزات پزشکی مدرن</h2>
@@ -100,5 +99,4 @@
                 </p>
             </div>
         </div>
-    </section>
-}
+</div>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -46,20 +47,32 @@ namespace ClinicApp.Controllers
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست مطالب آموزشی: {ErrorMessage}", result.Message);
-                    ViewBag.ErrorMessage = "خطا در بارگذاری مطالب آموزشی";
-                    return View(new PagedResult<PatientEducationMaterialIndexViewModel>(new System.Collections.Generic.List<PatientEducationMaterialIndexViewModel>(), 0, page, 12));
+                    return View(new PatientEducationMaterialIndexPageViewModel
+                    {
+                        Materials = new PagedResult<PatientEducationMaterialIndexViewModel>(new System.Collections.Generic.List<PatientEducationMaterialIndexViewModel>(), 0, page, 12),
+                        SearchModel = searchModel,
+                        Categories = (IEnumerable<PatientEducationCategory>)System.Enum.GetValues(typeof(PatientEducationCategory)),
+                        ErrorMessage = result.Message ?? "خطا در بارگذاری مطالب آموزشی"
+                    });
                 }
 
-                ViewBag.Category = category;
-                ViewBag.Categories = System.Enum.GetValues(typeof(ClinicApp.Models.Enums.PatientEducationCategory));
-
-                return View(result.Data);
+                return View(new PatientEducationMaterialIndexPageViewModel
+                {
+                    Materials = result.Data,
+                    SearchModel = searchModel,
+                    Categories = (IEnumerable<PatientEducationCategory>)System.Enum.GetValues(typeof(PatientEducationCategory))
+                });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست مطالب آموزشی");
-                ViewBag.ErrorMessage = "خطا در بارگذاری مطالب آموزشی";
-                return View(new PagedResult<PatientEducationMaterialIndexViewModel>(new System.Collections.Generic.List<PatientEducationMaterialIndexViewModel>(), 0, page, 12));
+                return View(new PatientEducationMaterialIndexPageViewModel
+                {
+                    Materials = new PagedResult<PatientEducationMaterialIndexViewModel>(new System.Collections.Generic.List<PatientEducationMaterialIndexViewModel>(), 0, page, 12),
+                    SearchModel = new PatientEducationMaterialSearchViewModel { PageNumber = page, PageSize = 12, Category = category, IsPublished = true },
+                    Categories = (IEnumerable<PatientEducationCategory>)System.Enum.GetValues(typeof(PatientEducationCategory)),
+                    ErrorMessage = "خطا در بارگذاری مطالب آموزشی"
+                });
             }
         }
 

@@ -34,6 +34,16 @@ namespace ClinicApp.ViewModels.CMS
         public string Slug { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel صفحه عمومی Index مقالات (Strongly-Typed - بدون ViewBag برای داده).
+    /// قرارداد: 03-Development-Contract-Quick-Guide
+    /// </summary>
+    public class BlogIndexPageViewModel
+    {
+        public ClinicApp.Interfaces.PagedResult<BlogPostIndexViewModel> Posts { get; set; }
+        public string Category { get; set; }
+    }
+
     #endregion
 
     #region BlogPost Create & Edit

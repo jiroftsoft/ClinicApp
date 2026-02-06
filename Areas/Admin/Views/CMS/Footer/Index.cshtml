@@ -1,0 +1,101 @@
+@model ClinicApp.ViewModels.CMS.FooterSettingsEditViewModel
+@{
+    ViewBag.Title = "مدیریت فوتر";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .footer-admin-card {
+            background: #fff;
+            border: 1px solid #e3e6f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            padding: 1.5rem;
+        }
+        .kv {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: .5rem 1rem;
+        }
+        .kv .k { color: #6c757d; }
+        .kv .v { color: #212529; font-weight: 600; }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-shoe-prints text-primary"></i>
+            مدیریت فوتر
+        </h1>
+        <div>
+            <a href="@Url.Action("EditSettings")" class="btn btn-primary">
+                <i class="fas fa-edit"></i> تنظیمات اصلی
+            </a>
+            <a href="@Url.Action("LinkIndex", new { type = 1 })" class="btn btn-outline-primary">
+                <i class="fas fa-link"></i> لینک‌های سریع
+            </a>
+            <a href="@Url.Action("LinkIndex", new { type = 2 })" class="btn btn-outline-primary">
+                <i class="fas fa-stethoscope"></i> لینک‌های خدمات
+            </a>
+            <a href="@Url.Action("SocialIndex")" class="btn btn-outline-primary">
+                <i class="fab fa-instagram"></i> شبکه‌های اجتماعی
+            </a>
+            <a href="@Url.Action("CertificationIndex")" class="btn btn-outline-primary">
+                <i class="fas fa-certificate"></i> مجوزها
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="footer-admin-card">
+        <h5 class="mb-3">
+            <i class="fas fa-info-circle text-info"></i>
+            خلاصه تنظیمات فعلی
+        </h5>
+
+        <div class="kv">
+            <div class="k">نام کلینیک</div>
+            <div class="v">@(!string.IsNullOrWhiteSpace(Model.BrandClinicName) ? Model.BrandClinicName : "—")</div>
+
+            <div class="k">شعار</div>
+            <div class="v">@(!string.IsNullOrWhiteSpace(Model.BrandTagline) ? Model.BrandTagline : "—")</div>
+
+            <div class="k">تلفن</div>
+            <div class="v">@(!string.IsNullOrWhiteSpace(Model.ContactPhone) ? Model.ContactPhone : "—")</div>
+
+            <div class="k">ایمیل</div>
+            <div class="v">@(!string.IsNullOrWhiteSpace(Model.ContactEmail) ? Model.ContactEmail : "—")</div>
+
+            <div class="k">عنوان ساعات کاری</div>
+            <div class="v">@(!string.IsNullOrWhiteSpace(Model.WorkingHoursTitle) ? Model.WorkingHoursTitle : "—")</div>
+
+            <div class="k">فعال</div>
+            <div class="v">@(Model.IsActive ? "بله" : "خیر")</div>
+        </div>
+
+        <hr />
+
+        <p class="mb-0 text-muted">مدیریت لینک‌ها، شبکه‌های اجتماعی و مجوزها از همین صفحه قابل دسترسی است.</p>
+    </div>
+</div>
+

@@ -1,9 +1,8 @@
 @model ClinicApp.ViewModels.BlogSectionViewModel
 
-@if (Model.Posts != null && Model.Posts.Any())
-{
-    <section class="blog-section" aria-label="مقالات و آموزش سلامت">
-        <div class="container">
+@if (Model == null || Model.Posts == null || !Model.Posts.Any()) { return; }
+<div class="blog-inner">
+    <div class="container">
             <div class="blog-header">
                 <h2 class="blog-title">@Model.SectionTitle</h2>
                 <p class="blog-subtitle">@Model.SectionSubtitle</p>
@@ -99,33 +98,23 @@
                 </p>
             </div>
         </div>
-    </section>
-}
-
-@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-
+</div>
+@* CSS از باندل homepage-sections لود می‌شود *@
 <script>
-    // Intersection Observer for animations
-    document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.blog-card');
-        
-        if (cards.length === 0) return;
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-        
-        cards.forEach(card => {
-            observer.observe(card);
-        });
-    });
+    (function() {
+        function run() {
+            var cards = document.querySelectorAll('.blog-card');
+            if (cards.length === 0) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+            cards.forEach(function(c) { observer.observe(c); });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+    })();
 </script>

@@ -10,11 +10,9 @@
     var insurances = Model.OrderBy(i => i.InsuranceInfoId).ToList();
 }
 
-@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-<link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-
-<section class="insurance-info-section" aria-label="بیمه‌های طرف قرارداد">
+@* CSS insurance از باندل؛ Swiper CSS زیر *@
+<link rel="stylesheet" href="@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]" />
+<div class="insurance-info-inner">
     <div class="container">
         @* Header *@
         <div class="insurance-info-header">
@@ -113,7 +111,7 @@
             </p>
         </div>
     </div>
-</section>
+</div>
 
 <script>
     (function() {
@@ -133,35 +131,25 @@
                 console.log('✅ Swiper.js loaded successfully for Insurance Info');
                 if (callback) callback();
             };
-            script.onerror = function() {
-                console.error('❌ Failed to load Swiper.js for Insurance Info');
-            };
+            script.onerror = function() { };
             document.head.appendChild(script);
         }
         
         function initInsuranceSlider() {
             const sliderElement = document.getElementById('insuranceLogoSlider');
-            if (!sliderElement) {
-                console.warn('Insurance logo slider element not found.');
-                return;
-            }
+            if (!sliderElement) return;
             
             if (typeof Swiper === 'undefined') {
-                console.warn('Swiper.js is not loaded. Retrying in 500ms...');
                 setTimeout(initInsuranceSlider, 500);
                 return;
             }
-            
-            if (sliderElement.swiper) {
-                console.log('Insurance logo slider already initialized.');
-                return;
-            }
+            if (sliderElement.swiper) return;
             
             try {
                 // ✅ شمارش تعداد slides برای تصمیم‌گیری در مورد loop mode
                 const slides = sliderElement.querySelectorAll('.swiper-slide');
                 const slidesCount = slides ? slides.length : 0;
-                const shouldLoop = slidesCount > 6; // فقط اگر بیش از 6 slide باشد، loop فعال می‌شود
+                const shouldLoop = slidesCount >= 7; // فقط اگر ۷ اسلاید یا بیشتر، loop فعال می‌شود
                 
                 const insuranceSlider = new Swiper('#insuranceLogoSlider', {
                     direction: 'horizontal',
@@ -212,9 +200,7 @@
                 });
                 
                 console.log('✅ Insurance logo slider initialized successfully');
-            } catch (error) {
-                console.error('❌ Error initializing insurance logo slider:', error);
-            }
+            } catch (e) { }
         }
         
         // Initialize when DOM is ready

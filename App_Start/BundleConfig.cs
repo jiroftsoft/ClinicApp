@@ -135,18 +135,29 @@ namespace ClinicApp
             bundles.Add(new ScriptBundle("~/bundles/reception-main").Include(
                 "~/Scripts/reception/reception-main.js"));
 
-            // Homepage CSS Bundle - All section CSS files combined
+            // Homepage CSS Bundle - All section CSS (پارشال‌ها @section ندارند؛ لود از Index)
             bundles.Add(new StyleBundle("~/Content/css/homepage-sections").Include(
+                "~/Content/css/hero-section.css",
+                "~/Content/css/hero-carousel.css",
+                "~/Content/css/value-proposition-section.css",
+                "~/Content/css/quick-appointment-section.css",
+                "~/Content/css/announcements-section.css",
+                "~/Content/css/faq-section.css",
+                "~/Content/css/modern-services-section.css",
                 "~/Content/css/medical-services-section.css",
                 "~/Content/css/doctors-section.css",
                 "~/Content/css/testimonials-section.css",
                 "~/Content/css/blog-section.css",
+                "~/Content/css/gallery-section.css",
+                "~/Content/css/video-section.css",
                 "~/Content/css/health-tips-section.css",
                 "~/Content/css/medical-equipment-section.css",
                 "~/Content/css/promotional-events-section.css",
                 "~/Content/css/insurance-info-section.css",
                 "~/Content/css/contact-section.css",
-                "~/Content/css/medical-sidebar.css"
+                "~/Content/css/medical-sidebar.css",
+                "~/Content/css/sidebar-slider-section.css",
+                "~/Content/css/footer-slider-section.css"
             ));
 
             // FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - اضافه کردن Bundle های پزشکی

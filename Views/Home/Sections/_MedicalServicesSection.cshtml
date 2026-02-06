@@ -103,9 +103,7 @@
     </div>
 </section>
 
-@* CSS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/css/medical-services-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-
+@* CSS از باندل homepage-sections لود می‌شود *@
 <script>
     // Intersection Observer for animations
     document.addEventListener('DOMContentLoaded', function() {

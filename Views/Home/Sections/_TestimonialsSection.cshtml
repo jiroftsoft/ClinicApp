@@ -1,9 +1,8 @@
 @model ClinicApp.ViewModels.TestimonialsSectionViewModel
 
-@if (Model.Testimonials != null && Model.Testimonials.Any())
-{
-    <section class="testimonials-section" aria-label="تجربه بیماران از کلینیک">
-        <div class="container">
+@if (Model == null || Model.Testimonials == null || !Model.Testimonials.Any()) { return; }
+<div class="testimonials-inner">
+    <div class="container">
             <div class="testimonials-header">
                 <h2 class="testimonials-title">@Model.SectionTitle</h2>
                 <p class="testimonials-subtitle">@Model.SectionSubtitle</p>
@@ -14,8 +13,11 @@
                 <div class="swiper-wrapper">
                     @foreach (var testimonial in Model.Testimonials)
                     {
+                        var tName = testimonial.PatientName ?? "";
+                        var tFirst = tName.Split(' ').FirstOrDefault() ?? tName;
+                        var tService = !string.IsNullOrEmpty(testimonial.DoctorName) ? testimonial.DoctorName : "خدمات کلینیک";
                         <div class="swiper-slide">
-                            <article class="testimonial-card" tabindex="0" role="article" aria-label="نظر بیمار">
+                            <article class="testimonial-card" tabindex="0" role="article" aria-label="نظر @tFirst درباره @tService">
                                 @* 1. Rating (اختیاری) *@
                                 @if (testimonial.Rating > 0)
                                 {
@@ -57,14 +59,9 @@
                                 @* 3. Patient Info (Privacy Friendly: نام کوچک + شهر/سن) *@
                                 <div class="testimonial-patient-info">
                                     @{
-                                        // استخراج نام کوچک از نام کامل (اولین کلمه)
                                         var patientName = testimonial.PatientName ?? "";
                                         var firstName = patientName.Split(' ').FirstOrDefault() ?? patientName;
-                                        
-                                        // نوع خدمت (DoctorName)
-                                        var serviceType = !string.IsNullOrEmpty(testimonial.DoctorName) 
-                                            ? testimonial.DoctorName 
-                                            : "خدمات کلینیک";
+                                        var serviceType = !string.IsNullOrEmpty(testimonial.DoctorName) ? testimonial.DoctorName : "خدمات کلینیک";
                                     }
                                     
                                     <div class="testimonial-avatar">
@@ -115,12 +112,9 @@
                 </p>
             </div>
         </div>
-    </section>
-}
-
-@* CSS و JS را مستقیماً در Partial View لود می‌کنیم چون @section در Partial View کار نمی‌کند *@
-<link rel="stylesheet" href="@Url.Content("~/Content/css/testimonials-section.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
-<link rel="stylesheet" href="@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks" />
+</div>
+@* CSS testimonials از باندل؛ Swiper CSS زیر *@
+<link rel="stylesheet" href="@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.css")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]" />
 
 <script>
     (function() {
@@ -137,34 +131,20 @@
             script.src = '@Url.Content("~/Content/js/plugins/Swiper/swiper-bundle.min.js")?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]&t=@DateTime.Now.Ticks';
             script.async = false;
             script.defer = false;
-            script.onload = function() {
-                console.log('✅ Swiper.js loaded successfully for Testimonials');
-                if (callback) callback();
-            };
-            script.onerror = function() {
-                console.error('❌ Failed to load Swiper.js for Testimonials');
-            };
+            script.onload = function() { if (callback) callback(); };
+            script.onerror = function() { };
             document.head.appendChild(script);
         }
         
         function initTestimonialsCarousel() {
             const carouselElement = document.getElementById('testimonialsCarousel');
-            if (!carouselElement) {
-                console.warn('Testimonials carousel element not found.');
-                return;
-            }
+            if (!carouselElement) return;
             
             if (typeof Swiper === 'undefined') {
-                console.warn('Swiper.js is not loaded. Retrying in 500ms...');
                 setTimeout(initTestimonialsCarousel, 500);
                 return;
             }
-            
-            // Check if already initialized
-            if (carouselElement.swiper) {
-                console.log('Testimonials carousel already initialized.');
-                return;
-            }
+            if (carouselElement.swiper) return;
             
             try {
                 const testimonialsCarousel = new Swiper('#testimonialsCarousel', {
@@ -223,11 +203,7 @@
                         paginationBulletMessage: 'برو به اسلاید {{index}}',
                     }
                 });
-                
-                console.log('✅ Testimonials carousel initialized successfully');
-            } catch (error) {
-                console.error('❌ Error initializing testimonials carousel:', error);
-            }
+            } catch (e) { }
         }
         
         // Load Swiper first, then initialize carousel

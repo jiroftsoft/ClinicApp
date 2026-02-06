@@ -1,33 +1,66 @@
 /**
- * Contact Form Page Styles - Production-Grade & GDPR-Compliant
- * 
- * طراحی حرفه‌ای برای فرم تماس کلینیک درمانی
- * مطابق با استانداردهای UI/UX و اصول Medical Contact Form Design
- * 
- * ویژگی‌ها:
- * - Formal, calming, medical-friendly colors
- * - RTL: Complete Persian support
- * - Accessibility: WCAG AA compliance
- * - Security: GDPR compliance, Privacy Notice
- * - Performance: Optimized, minimal DOM
- * - Responsive: Mobile-first design
+ * Contact Form Page Styles - Medical Form UX Checklist
+ *
+ * چک‌لیست حرفه‌ای فرم درمانی کلینیک:
+ * - کنتراست WCAG AA، رنگ متن/خطا/موفقیت ملایم پزشکی
+ * - انیمیشن فقط برای کارت‌ها؛ بدون انیمیشن روی input/validation
+ * - Validation UX: پیام زیر فیلد، border خطا ملایم
+ * - Flat + Soft Elevation، تایپوگرافی Vazirmatn با وزن‌های استاندارد
+ * - RTL-safe، Section/Stepper برای فرم طولانی
  */
 
 /* ============================================
-   BASE STYLES - طبق Design System
+   DESIGN TOKENS - WCAG AA / Medical Form UX
+   ============================================ */
+:root {
+    /* Primary (هماهنگ با سایت) */
+    --medical-primary: #2c6e7d;
+    --medical-primary-dark: #1e4d5a;
+
+    /* Text - کنتراست خوانا، سلسله‌مراتب بصری */
+    --text-primary: hsl(215, 25%, 20%);
+    --text-secondary: hsl(215, 15%, 40%);
+    --text-disabled: hsl(215, 10%, 60%);
+
+    /* Error / Success - ملایم پزشکی (نه قرمز تند) */
+    --error: hsl(0, 55%, 48%);
+    --error-bg: hsl(0, 55%, 96%);
+    --success: hsl(152, 40%, 38%);
+    --success-bg: hsl(152, 40%, 96%);
+
+    /* Typography - Vazirmatn */
+    --font-weight-body: 400;
+    --font-weight-label: 500;
+    --font-weight-heading: 600;
+    --font-size-base: 1rem;       /* حداقل 14px معادل */
+    --line-height-body: 1.6;
+    --line-height-relaxed: 1.75;
+
+    /* Elevation - Flat + Soft (نه سایه عمیق تجاری) */
+    --elevation-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --elevation-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --elevation-focus: 0 0 0 3px rgba(44, 110, 125, 0.2);
+}
+
+/* ============================================
+   BASE STYLES - Design System فرم درمانی
    ============================================ */
 .contact-form-page-section {
-    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #e0f2f1 100%);
+    background: #f8fafb; /* پس‌زمینه سفید/خاکستری ملایم، نه گرادیان شلوغ */
     padding: var(--spacing-xxxl, 4rem) 0;
     min-height: calc(100vh - 200px);
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    line-height: var(--line-height-body);
+    color: var(--text-primary);
 }
 
 .contact-page-title {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: #1a365d;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
     margin-bottom: var(--spacing-md, 1rem);
     display: flex;
     align-items: center;
@@ -36,21 +69,18 @@
 }
 
 .contact-page-title i {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 2.5rem;
+    color: var(--medical-primary);
+    font-size: 1.75rem;
 }
 
 .contact-page-subtitle {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-lg, 1.125rem);
-    font-weight: var(--font-weight-normal, 400);
-    color: #2d4a5f;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    color: var(--text-secondary);
     max-width: 700px;
     margin: 0 auto;
-    line-height: var(--line-height-relaxed, 1.75);
+    line-height: var(--line-height-relaxed);
 }
 
 .contact-page-actions {
@@ -62,16 +92,15 @@
 }
 
 .btn-track-link {
-    background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
-    color: var(--medical-primary, #2c5aa0);
-    border: 2px solid rgba(44, 90, 160, 0.3);
+    background: rgba(44, 110, 125, 0.08);
+    color: var(--medical-primary);
+    border: 1px solid rgba(44, 110, 125, 0.25);
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-semibold, 600);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-heading);
     text-decoration: none;
-    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
@@ -79,11 +108,9 @@
 }
 
 .btn-track-link:hover {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
-    color: #ffffff;
-    border-color: var(--medical-primary, #2c5aa0);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    background: var(--medical-primary);
+    color: #fff;
+    border-color: var(--medical-primary);
     text-decoration: none;
 }
 
@@ -95,12 +122,12 @@
    EMERGENCY WARNING ALERT
    ============================================ */
 .emergency-warning-alert {
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.1) 100%);
-    border: 2px solid var(--medical-warning, #ffc107);
+    background: rgba(255, 193, 7, 0.12);
+    border: 1px solid var(--medical-warning, #e6ac00);
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-md, 1rem);
     margin-bottom: var(--spacing-xl, 2rem);
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    box-shadow: var(--elevation-soft);
 }
 
 .emergency-warning-alert .alert-content {
@@ -131,11 +158,24 @@
 /* ============================================
    CONTACT FORM CARD
    ============================================ */
+/* انیمیشن فقط برای کارت‌ها؛ بدون انیمیشن روی input/validation */
+@media (prefers-reduced-motion: no-preference) {
+    .contact-form-card,
+    .contact-info-sidebar {
+        animation: medical-card-in 0.25s ease-out;
+    }
+}
+
+@keyframes medical-card-in {
+    from { opacity: 0.98; }
+    to { opacity: 1; }
+}
+
 .contact-form-card {
-    background: #ffffff;
-    border: 1px solid rgba(44, 90, 160, 0.15);
+    background: #fff;
+    border: 1px solid rgba(44, 110, 125, 0.12);
     border-radius: var(--radius-lg, 12px);
-    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    box-shadow: var(--elevation-card);
     padding: var(--spacing-xxl, 3rem);
     position: relative;
     overflow: hidden;
@@ -148,14 +188,14 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
+    background: linear-gradient(90deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-info, #17a2b8) 100%);
 }
 
 .contact-form-card-title {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-2xl, 1.5rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: #1a365d;
+    font-size: 1.375rem;
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
     margin-bottom: var(--spacing-xl, 2rem);
     display: flex;
     align-items: center;
@@ -163,11 +203,8 @@
 }
 
 .contact-form-card-title i {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 1.75rem;
+    color: var(--medical-primary);
+    font-size: 1.5rem;
 }
 
 /* ============================================
@@ -187,45 +224,92 @@
 
 .form-label {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-semibold, 600);
-    color: #1a365d;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-label);
+    color: var(--text-primary);
     margin-bottom: var(--spacing-xs, 0.25rem);
 }
 
 .form-label.required::after {
     content: ' *';
-    color: var(--medical-danger, #dc3545);
-    font-weight: var(--font-weight-bold, 700);
+    color: var(--error);
+    font-weight: var(--font-weight-heading);
 }
 
 .form-control {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-normal, 400);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    line-height: var(--line-height-body);
     padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-    border: 1px solid rgba(44, 90, 160, 0.2);
+    border: 1px solid hsl(215, 15%, 75%);
     border-radius: var(--radius-md, 8px);
-    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
-    min-height: 44px; /* Touch target مناسب */
+    min-height: 44px;
+    color: var(--text-primary);
+    background: #fff;
 }
-
+/* بدون انیمیشن روی input - محیط درمانی */
 .form-control:focus {
-    border-color: var(--medical-primary, #2c5aa0);
-    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    border-color: var(--medical-primary);
+    box-shadow: var(--elevation-focus);
     outline: none;
 }
 
 .form-control::placeholder {
-    color: #6c757d;
+    color: var(--text-disabled);
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.form-control:disabled {
+    color: var(--text-disabled);
+    background: hsl(215, 10%, 96%);
 }
 
 .form-text {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-sm, 0.875rem);
-    color: #6c757d;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
     margin-top: var(--spacing-xs, 0.25rem);
+}
+
+/* ============================================
+   VALIDATION UX - خطا/موفقیت ملایم پزشکی
+   پیام زیر فیلد، border خطا، رنگ ملایم
+   ============================================ */
+.form-group.has-error .form-control,
+.form-control.input-validation-error {
+    border-color: var(--error);
+    background-color: var(--error-bg);
+}
+.form-group.has-error .form-control:focus,
+.form-control.input-validation-error:focus {
+    box-shadow: 0 0 0 3px rgba(200, 80, 80, 0.2);
+}
+
+.field-validation-error,
+.text-danger {
+    display: block;
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: 0.875rem;
+    color: var(--error);
+    margin-top: var(--spacing-xs, 0.25rem);
+    line-height: var(--line-height-body);
+}
+
+.form-group.is-valid .form-control {
+    border-color: var(--success);
+    background-color: var(--success-bg);
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+/* پیام خطای کلی صفحه (TempData) - رنگ ملایم پزشکی */
+.contact-form-page-section .alert.alert-danger {
+    background: var(--error-bg);
+    border-color: rgba(200, 80, 80, 0.3);
+    color: var(--error);
 }
 
 .char-counter {
@@ -237,21 +321,21 @@
    GDPR WARNING BOX
    ============================================ */
 .gdpr-warning-box {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.08) 0%, rgba(220, 53, 69, 0.05) 100%);
-    border: 1px solid rgba(220, 53, 69, 0.2);
+    background: var(--error-bg);
+    border: 1px solid rgba(200, 80, 80, 0.25);
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
     margin-top: var(--spacing-sm, 0.5rem);
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-sm, 0.875rem);
-    color: #721c24;
+    font-size: 0.875rem;
+    color: var(--error);
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-xs, 0.25rem);
 }
 
 .gdpr-warning-box i {
-    color: var(--medical-danger, #dc3545);
+    color: var(--error);
     margin-top: 0.125rem;
     flex-shrink: 0;
 }
@@ -290,31 +374,31 @@
 
 .form-check-label {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-normal, 400);
-    color: #1a365d;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    color: var(--text-primary);
     cursor: pointer;
-    line-height: var(--line-height-normal, 1.5);
+    line-height: var(--line-height-body);
     flex: 1;
     margin: 0;
 }
 
 .required-indicator {
-    color: var(--medical-danger, #dc3545);
-    font-weight: var(--font-weight-bold, 700);
-    margin-right: var(--spacing-xs, 0.25rem);
+    color: var(--error);
+    font-weight: var(--font-weight-heading);
+    margin-inline-end: var(--spacing-xs, 0.25rem);
     display: inline;
 }
 
 .privacy-policy-link {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     text-decoration: none;
     font-weight: var(--font-weight-semibold, 600);
     transition: color var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
 }
 
 .privacy-policy-link:hover {
-    color: var(--medical-primary-dark, #1e3d6f);
+    color: var(--medical-primary-dark, #1e4d5a);
     text-decoration: underline;
 }
 
@@ -327,52 +411,26 @@
    SUBMIT BUTTON
    ============================================ */
 .btn-contact-submit {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
-    color: #ffffff;
+    background: var(--medical-primary);
+    color: #fff;
     border: none;
     border-radius: var(--radius-md, 8px);
     padding: var(--spacing-md, 1rem) var(--spacing-xl, 2rem);
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-lg, 1.125rem);
-    font-weight: var(--font-weight-semibold, 600);
-    transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-heading);
     cursor: pointer;
     min-height: 48px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm, 0.5rem);
-    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    box-shadow: var(--elevation-soft);
     position: relative;
-    overflow: hidden;
-}
-
-.btn-contact-submit::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s ease, height 0.6s ease;
 }
 
 .btn-contact-submit:hover {
-    background: linear-gradient(135deg, var(--medical-primary-dark, #1e3d6f) 0%, var(--medical-info-dark, #138496) 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
-}
-
-.btn-contact-submit:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.btn-contact-submit:active {
-    transform: translateY(0);
+    background: var(--medical-primary-dark);
 }
 
 .btn-contact-submit:disabled {
@@ -388,10 +446,10 @@
    CONTACT INFO SIDEBAR
    ============================================ */
 .contact-info-sidebar {
-    background: #ffffff;
-    border: 1px solid rgba(44, 90, 160, 0.15);
+    background: #fff;
+    border: 1px solid rgba(44, 110, 125, 0.12);
     border-radius: var(--radius-lg, 12px);
-    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.1);
+    box-shadow: var(--elevation-card);
     padding: var(--spacing-xl, 2rem);
     position: sticky;
     top: 120px;
@@ -399,23 +457,20 @@
 
 .contact-info-title {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-xl, 1.25rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: #1a365d;
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
     margin-bottom: var(--spacing-lg, 1.5rem);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 0.5rem);
     padding-bottom: var(--spacing-md, 1rem);
-    border-bottom: 2px solid rgba(44, 90, 160, 0.15);
+    border-bottom: 1px solid rgba(44, 110, 125, 0.12);
 }
 
 .contact-info-title i {
-    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 1.5rem;
+    color: var(--medical-primary);
+    font-size: 1.25rem;
 }
 
 .contact-info-item {
@@ -440,7 +495,7 @@
     min-height: 48px;
     border-radius: var(--radius-full, 9999px);
     background: linear-gradient(135deg, rgba(44, 90, 160, 0.1) 0%, rgba(23, 162, 184, 0.08) 100%);
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -454,24 +509,24 @@
 
 .contact-info-content strong {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: #1a365d;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
     display: block;
     margin-bottom: var(--spacing-xs, 0.25rem);
 }
 
 .contact-info-content p {
     font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-normal, 400);
-    color: #2d4a5f;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    color: var(--text-secondary);
     margin: 0;
-    line-height: var(--line-height-relaxed, 1.75);
+    line-height: var(--line-height-relaxed);
 }
 
 .contact-info-link {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--medical-primary, #2c6e7d);
     text-decoration: none;
     font-weight: var(--font-weight-medium, 500);
     transition: color var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
@@ -481,7 +536,7 @@
 }
 
 .contact-info-link:hover {
-    color: var(--medical-primary-dark, #1e3d6f);
+    color: var(--medical-primary-dark, #1e4d5a);
     text-decoration: underline;
 }
 
@@ -528,25 +583,140 @@
     }
     
     .contact-page-subtitle {
-        font-size: var(--font-size-base, 1rem);
+        font-size: var(--font-size-base);
+    }
+    
+    /* Sticky Submit در موبایل - فاصله لمس 44px */
+    .contact-form .form-group:last-of-type {
+        position: sticky;
+        bottom: 0;
+        padding-top: var(--spacing-md, 1rem);
+        background: #fff;
+        z-index: 5;
+    }
+    
+    .btn-contact-submit {
+        min-height: 48px;
+        width: 100%;
     }
 }
 
 /* ============================================
-   ACCESSIBILITY
+   ACCESSIBILITY - WCAG / Focus / Reduced Motion
    ============================================ */
 .form-control:focus-visible,
 .form-check-input:focus-visible,
-.btn-contact-submit:focus-visible {
-    outline: 3px solid var(--medical-primary, #2c5aa0);
-    outline-offset: 3px;
-    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.3);
+.btn-contact-submit:focus-visible,
+.btn-track-link:focus-visible {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .form-control,
     .btn-contact-submit,
-    .contact-info-link {
+    .btn-track-link,
+    .contact-info-link,
+    .privacy-policy-link,
+    .contact-form-card,
+    .contact-info-sidebar {
         transition: none !important;
+        animation: none !important;
     }
+}
+
+/* ============================================
+   RTL - آیکون‌ها، Stepper، Progress از راست
+   ============================================ */
+[dir="rtl"] .contact-form-page-section,
+[dir="rtl"] .contact-form-card,
+[dir="rtl"] .contact-info-sidebar {
+    text-align: right;
+}
+
+[dir="rtl"] .contact-page-title,
+[dir="rtl"] .contact-form-card-title,
+[dir="rtl"] .contact-info-title {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .contact-info-item,
+[dir="rtl"] .form-check {
+    flex-direction: row-reverse;
+}
+
+/* Progress bar از راست پر شود (فرم طولانی) */
+[dir="rtl"] .form-progress-bar-fill {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Stepper از راست به چپ */
+[dir="rtl"] .form-stepper {
+    flex-direction: row-reverse;
+}
+
+/* ============================================
+   LONG FORM - Section / Stepper / Progress
+   (برای فرم‌های بیش از ۸ فیلد)
+   ============================================ */
+.form-section {
+    margin-bottom: var(--spacing-xl, 2rem);
+    padding-bottom: var(--spacing-xl, 2rem);
+    border-bottom: 1px solid rgba(44, 110, 125, 0.1);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.form-section-title {
+    font-family: 'Vazir', 'Vazirmatn', 'Tahoma', sans-serif;
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.form-section-divider {
+    height: 1px;
+    background: rgba(44, 110, 125, 0.12);
+    margin: var(--spacing-lg, 1.5rem) 0;
+}
+
+.form-stepper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.form-stepper-step {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.25rem);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.form-stepper-step.is-active {
+    color: var(--medical-primary);
+    font-weight: var(--font-weight-label);
+}
+
+.form-progress-bar {
+    height: 4px;
+    background: hsl(215, 15%, 92%);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.form-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--medical-primary);
+    border-radius: 2px;
 }

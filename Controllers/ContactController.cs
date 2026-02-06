@@ -149,12 +149,13 @@ namespace ClinicApp.Controllers
             {
                 var trackingId = TempData["TrackingId"] as string ?? (id.HasValue ? $"CF-{id.Value:D6}" : "نامشخص");
                 var contactFormId = TempData["ContactFormId"] as int? ?? id;
-
-                ViewBag.TrackingId = trackingId;
-                ViewBag.ContactFormId = contactFormId;
-                ViewBag.ResponseTime = "در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)";
-
-                return View();
+                var viewModel = new ContactThankYouViewModel
+                {
+                    TrackingId = trackingId,
+                    ContactFormId = contactFormId,
+                    ResponseTime = "در ساعات کاری (شنبه تا پنجشنبه: 8:00 - 20:00)"
+                };
+                return View(viewModel);
             }
             catch (Exception ex)
             {

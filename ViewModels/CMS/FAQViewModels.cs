@@ -144,6 +144,18 @@ namespace ClinicApp.ViewModels.CMS
         public int Count { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel صفحه عمومی Index سوالات متداول (Strongly-Typed - بدون ViewBag برای داده).
+    /// قرارداد: 03-Development-Contract-Quick-Guide
+    /// </summary>
+    public class FAQPublicIndexPageViewModel
+    {
+        public List<FAQPublicViewModel> Items { get; set; } = new List<FAQPublicViewModel>();
+        public List<FAQCategoryViewModel> Categories { get; set; } = new List<FAQCategoryViewModel>();
+        public string SelectedCategory { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     #endregion
 }
 

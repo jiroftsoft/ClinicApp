@@ -7,8 +7,8 @@
     }
 }
 
-@* CSS و JavaScript در Layout لود می‌شوند *@
-<section class="stories-section" role="region" aria-label="استوری‌ها">
+@* سکشن اصلی در Index است؛ محتوا بدون تکراری بودن landmark *@
+<div class="stories-inner" role="region" aria-label="استوری‌ها">
     <div class="stories-container">
         <div class="stories-scroll-wrapper">
             <div class="stories-list" id="storiesList">
@@ -34,12 +34,12 @@
                             else
                             {
                                 <div class="story-thumbnail-placeholder">
-                                    <i class="fas fa-video"></i>
+                                    <i class="fas fa-video" aria-hidden="true"></i>
                                 </div>
                             }
                             <div class="story-overlay">
                                 <div class="story-play-icon">
-                                    <i class="fas fa-play"></i>
+                                    <i class="fas fa-play" aria-hidden="true"></i>
                                 </div>
                             </div>
                             @if (story.Duration.HasValue)
@@ -57,7 +57,7 @@
             </div>
         </div>
     </div>
-</section>
+</div>
 
 @* Video Player Modal - بهینه‌سازی شده برای RTL و Production *@
 <div class="modal fade" id="storyVideoModal" tabindex="-1" role="dialog" aria-labelledby="storyVideoModalLabel" aria-hidden="true" data-backdrop="true" data-keyboard="true">
