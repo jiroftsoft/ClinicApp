@@ -1,9 +1,13 @@
-﻿@model System.Web.Mvc.HandleErrorInfo
+@model System.Web.Mvc.HandleErrorInfo
 
 @{
-    ViewBag.Title = "Error";
+    ViewBag.Title = "خطا";
+    var message = ViewBag.ErrorMessage as string;
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
-
+<h1 class="text-danger">خطا</h1>
+<h2 class="text-danger">در پردازش درخواست شما خطایی رخ داده است.</h2>
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <p class="alert alert-warning mt-3" role="alert">@message</p>
+}

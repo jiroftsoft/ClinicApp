@@ -37,6 +37,18 @@ namespace ClinicApp.Interfaces.Reception
             int financialYearId, 
             int? basePlanId, 
             int? suppPlanId);
+
+        /// <summary>
+        /// ✅ وضعیت تعیین‌ست بیمه برای چند خدمت (برای نمایش در لیست انتخاب خدمت)
+        /// </summary>
+        /// <param name="serviceIds">لیست شناسه خدمات</param>
+        /// <param name="basePlanId">بیمه پایه (اختیاری)</param>
+        /// <param name="suppPlanId">بیمه تکمیلی (اختیاری)</param>
+        /// <returns>برای هر serviceId: (hasTariffSet, warningMessage)</returns>
+        Task<Dictionary<int, (bool hasTariffSet, string warning)>> GetServicesTariffStatusAsync(
+            IReadOnlyList<int> serviceIds,
+            int? basePlanId,
+            int? suppPlanId);
     }
 }
 

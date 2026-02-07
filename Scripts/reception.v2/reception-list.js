@@ -169,14 +169,20 @@
             currentPage = page;
             isLoading = true;
             
+            // ✅ تاریخ‌ها از DatePicker Enterprise (شمسی) - سرور با ToDateTimeNullable پارس می‌کند
+            var dateFromVal = $('#filterDateFrom').val();
+            var dateToVal = $('#filterDateTo').val();
+            if (typeof dateFromVal === 'string') dateFromVal = dateFromVal.trim();
+            if (typeof dateToVal === 'string') dateToVal = dateToVal.trim();
+
             const filters = {
                 NationalCode: $('#filterNationalCode').val()?.trim() || null,
                 PatientName: $('#filterPatientName').val()?.trim() || null,
-                DateFrom: $('#filterDateFrom').val()?.trim() || null,
-                DateTo: $('#filterDateTo').val()?.trim() || null,
-                Status: $('#filterStatus').val() ? parseInt($('#filterStatus').val()) : null,
-                ReceptionNo: $('#filterReceptionNo').val()?.trim() || null, // 🏥 MEDICAL: فیلتر شماره پذیرش
-                ElectronicReceptionNumber: $('#filterElectronicReceptionNumber').val()?.trim() || null // 🏥 MEDICAL: فیلتر شماره الکترونیکی
+                DateFrom: (dateFromVal && dateFromVal.length > 0) ? dateFromVal : null,
+                DateTo: (dateToVal && dateToVal.length > 0) ? dateToVal : null,
+                Status: $('#filterStatus').val() ? parseInt($('#filterStatus').val(), 10) : null,
+                ReceptionNo: $('#filterReceptionNo').val()?.trim() || null,
+                ElectronicReceptionNumber: $('#filterElectronicReceptionNumber').val()?.trim() || null
             };
 
             // حذف null values برای بهینه‌سازی
@@ -1766,16 +1772,31 @@
             }, 500);
         });
 
-        // 🏥 MEDICAL: Reset filters - شامل فیلترهای جدید
+        // 🏥 MEDICAL: Reset filters - پاک کردن همه فیلترها و DatePickerهای Enterprise
         $('#btnReset').on('click', function(e) {
             e.preventDefault();
             $('#filterNationalCode').val('');
             $('#filterPatientName').val('');
-            $('#filterDateFrom').val('');
-            $('#filterDateTo').val('');
             $('#filterStatus').val('');
-            $('#filterReceptionNo').val(''); // 🏥 MEDICAL: پاک کردن فیلتر شماره پذیرش
-            $('#filterElectronicReceptionNumber').val(''); // 🏥 MEDICAL: پاک کردن فیلتر شماره الکترونیکی
+            $('#filterReceptionNo').val('');
+            $('#filterElectronicReceptionNumber').val('');
+            // ✅ پاک کردن تاریخ‌ها با استفاده از JalaliDatePickerEnterprise
+            var fromEl = document.getElementById('filterDateFrom');
+            var toEl = document.getElementById('filterDateTo');
+            if (fromEl) {
+                fromEl.value = '';
+                if (typeof window.JalaliDatePickerEnterprise !== 'undefined') {
+                    var instFrom = window.JalaliDatePickerEnterprise.getInstance(fromEl);
+                    if (instFrom && instFrom.setDate) instFrom.setDate('');
+                }
+            }
+            if (toEl) {
+                toEl.value = '';
+                if (typeof window.JalaliDatePickerEnterprise !== 'undefined') {
+                    var instTo = window.JalaliDatePickerEnterprise.getInstance(toEl);
+                    if (instTo && instTo.setDate) instTo.setDate('');
+                }
+            }
             if (!isLoading) {
                 loadReceptionList(1);
             }

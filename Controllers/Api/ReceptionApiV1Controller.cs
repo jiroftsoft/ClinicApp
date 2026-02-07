@@ -63,19 +63,8 @@ namespace ClinicApp.Controllers.Api
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        /// <summary>
-        /// Fallback ctor (اگر DI هنوز ثبت نشده)
-        /// </summary>
-        public ReceptionApiV1Controller()
-            : this(
-                  DependencyResolver.Current.GetService<IFinancialYearService>(),
-                  DependencyResolver.Current.GetService<IReceptionFacade>(),
-                  DependencyResolver.Current.GetService<IReceptionPricingService>(),
-                  DependencyResolver.Current.GetService<IInsuranceStatusCheckerService>(),
-                  DependencyResolver.Current.GetService<ILogger>(),
-                  DependencyResolver.Current.GetService<ApplicationDbContext>())
-        {
-        }
+        // ✅ Production: Fallback ctor حذف شد تا در صورت نقص DI خطا در startup رخ دهد، نه در اولین درخواست با 500.
+        // تمام وابستگی‌ها باید از DI تزریق شوند (UnityConfig).
 
         #endregion
 
@@ -836,14 +825,15 @@ namespace ClinicApp.Controllers.Api
 
         /// <summary>
         /// GET /api/v1/reception/services/by-department
-        /// دریافت خدمات یک دپارتمان
+        /// دریافت خدمات یک دپارتمان؛ در صورت ارسال basePlanId/suppPlanId وضعیت تعیین‌ست برای هر خدمت برمی‌گردد.
         /// </summary>
         [HttpGet, Route("services/by-department")]
-        public async Task<ActionResult> GetServicesByDepartment(int? deptId)
+        public async Task<ActionResult> GetServicesByDepartment(int? deptId, int? basePlanId, int? suppPlanId)
         {
             try
             {
-                _logger?.Information("🏥 V1 API: دریافت خدمات - DeptId: {DeptId}", deptId);
+                _logger?.Information("🏥 V1 API: دریافت خدمات - DeptId: {DeptId}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
+                    deptId, basePlanId, suppPlanId);
 
                 if (!deptId.HasValue || deptId.Value <= 0)
                 {
@@ -854,17 +844,32 @@ namespace ClinicApp.Controllers.Api
                 
                 if (result.Success && result.Data != null)
                 {
-                    // تبدیل به فرمت مورد نیاز frontend
+                    var services = result.Data.Services;
+                    var serviceIds = services.Select(s => s.ServiceId).ToList();
+                    Dictionary<int, (bool hasTariffSet, string warning)> tariffStatus = null;
+                    if (_pricing != null && (basePlanId.HasValue || suppPlanId.HasValue) && serviceIds.Any())
+                    {
+                        tariffStatus = await _pricing.GetServicesTariffStatusAsync(serviceIds, basePlanId, suppPlanId);
+                    }
+
                     var payload = new
                     {
-                        services = result.Data.Services.Select(s => new
+                        services = services.Select(s =>
                         {
-                            serviceId = s.ServiceId,
-                            serviceCode = s.ServiceCode,
-                            serviceName = s.ServiceName,
-                            price = s.UnitPrice,
-                            unitPriceIRR = s.UnitPrice, // Alias
-                            isActive = s.IsActive
+                            var status = tariffStatus != null && tariffStatus.ContainsKey(s.ServiceId)
+                                ? tariffStatus[s.ServiceId]
+                                : (hasTariffSet: true, warning: (string)null);
+                            return new
+                            {
+                                serviceId = s.ServiceId,
+                                serviceCode = s.ServiceCode,
+                                serviceName = s.ServiceName,
+                                price = s.UnitPrice,
+                                unitPriceIRR = s.UnitPrice,
+                                isActive = s.IsActive,
+                                hasTariffSet = status.hasTariffSet,
+                                tariffWarning = status.warning
+                            };
                         }).ToList()
                     };
                     

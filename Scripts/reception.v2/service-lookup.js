@@ -3,32 +3,29 @@
 
   /**
    * بارگذاری خدمات یک دپارتمان
-   * پشتیبانی از PascalCase و camelCase
+   * اگر basePlanId یا suppPlanId ارسال شود، وضعیت تعیین‌ست برای هر خدمت برمی‌گردد و خدمات بدون تعیین‌ست با رنگ متفاوت نمایش داده می‌شوند.
    */
-  function loadServices(deptId) {
+  function loadServices(deptId, basePlanId, suppPlanId) {
     if (!deptId || deptId === '' || deptId === '0') {
       console.warn('🏥 V2: Cannot load services - invalid department ID:', deptId);
       $("#ServiceId").empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
       return;
     }
-    
-    console.log('🏥 V2: Loading services for department:', deptId);
-    
-    // ✅ Store request for cancellation
-    currentServiceRequest = API.get("/services/by-department", { deptId: deptId });
-    
+
+    var params = { deptId: deptId };
+    if (basePlanId) params.basePlanId = basePlanId;
+    if (suppPlanId) params.suppPlanId = suppPlanId;
+    var cacheKey = deptId + '_b' + (basePlanId || '') + '_s' + (suppPlanId || '');
+
+    console.log('🏥 V2: Loading services for department:', deptId, 'basePlanId:', basePlanId, 'suppPlanId:', suppPlanId);
+
+    currentServiceRequest = API.get("/services/by-department", params);
+
     currentServiceRequest
       .then(function(fullResponse) {
-        currentServiceRequest = null; // ✅ Clear request reference
-        
-        console.log('🏥 V2: Services raw response:', fullResponse);
-        
-        // Extract data using API.ok (handles ServiceResult structure)
+        currentServiceRequest = null;
+
         const response = API.ok(fullResponse);
-        console.log('🏥 V2: Services extracted data:', response);
-        
-        // پشتیبانی از PascalCase و camelCase
-        // services ممکن است یک array باشد یا یک object با property Services
         let services = [];
         if (Array.isArray(response)) {
           services = response;
@@ -37,97 +34,121 @@
         } else if (response.Data && Array.isArray(response.Data)) {
           services = response.Data;
         }
-        
-        console.log('🏥 V2: Services parsed:', services.length);
-        
-        // ✅ Cache services
-        serviceCache.set(deptId, services);
-        
-        // ✅ Populate select
+
+        serviceCache.set(cacheKey, services);
         populateServiceSelect(services);
       })
       .catch(function(err) {
-        currentServiceRequest = null; // ✅ Clear request reference
-        
-        // ✅ Ignore aborted requests
-        if (err && err.status === 'abort') {
-          console.log('ℹ️ V2: Service load request was aborted');
-          return;
-        }
-        
+        currentServiceRequest = null;
+        if (err && err.status === 'abort') return;
         console.error('🏥 V2: Services load error:', err);
         toastr.error('خطا در بارگذاری خدمات');
         $("#ServiceId").empty().append('<option value="">خطا در بارگذاری</option>');
       });
   }
-  
-  // ✅ Performance: Cache برای Service List (10 دقیقه)
+
+  // ✅ Cache key شامل deptId و بیمه‌ها (وضعیت تعیین‌ست وابسته به بیمه است)
   const serviceCache = {
     data: {},
-    get: function(deptId) {
-      const cached = this.data[deptId];
-      if (cached && Date.now() - cached.timestamp < 600000) { // 10 minutes
-        return cached.data;
-      }
+    get: function(cacheKey) {
+      const cached = this.data[cacheKey];
+      if (cached && Date.now() - cached.timestamp < 600000) return cached.data;
       return null;
     },
-    set: function(deptId, data) {
-      this.data[deptId] = {
-        data: data,
-        timestamp: Date.now()
-      };
+    set: function(cacheKey, data) {
+      this.data[cacheKey] = { data: data, timestamp: Date.now() };
     }
   };
   
   let currentServiceRequest = null; // ✅ برای Cancel کردن Request های قبلی
   let serviceLoadDebounceTimer = null; // ✅ برای Debouncing
-  
-  // ✅ Performance: Load services with Cache, Debouncing, and Request Cancellation
+
+  // ✅ انتخاب خدمت با کد: لیست خدمات دپارتمان فعلی (برای جستجو با کد)
+  let currentDepartmentServices = [];
+
   function loadServicesOptimized(deptId) {
-    // Cancel previous request
     if (currentServiceRequest && currentServiceRequest.abort) {
-      console.log('🔄 V2: Canceling previous service load request...');
       currentServiceRequest.abort();
       currentServiceRequest = null;
     }
-    
-    // Clear debounce timer
     if (serviceLoadDebounceTimer) {
       clearTimeout(serviceLoadDebounceTimer);
       serviceLoadDebounceTimer = null;
     }
-    
-    // Check cache first
-    const cached = serviceCache.get(deptId);
+
+    var basePlanId = $("#BasePlanId").val() || null;
+    var suppPlanId = $("#SuppPlanId").val() || null;
+    var cacheKey = deptId + '_b' + (basePlanId || '') + '_s' + (suppPlanId || '');
+    var cached = serviceCache.get(cacheKey);
     if (cached) {
-      console.log('✅ V2: Using cached services for department:', deptId);
+      console.log('✅ V2: Using cached services:', cacheKey);
       populateServiceSelect(cached);
       return;
     }
-    
-    // Debounce: 300ms delay
+
     serviceLoadDebounceTimer = setTimeout(function() {
       serviceLoadDebounceTimer = null;
-      loadServices(deptId);
+      loadServices(deptId, basePlanId, suppPlanId);
     }, 300);
   }
-  
-  // ✅ Helper: Populate service select
+
+  // ✅ Populate service select با نمایش کد و تمایز خدمات بدون تعیین‌ست (رنگ متفاوت)
   function populateServiceSelect(services) {
+    currentDepartmentServices = services && Array.isArray(services) ? services : [];
     const $serviceSelect = $("#ServiceId");
     $serviceSelect.empty().append('<option value="">انتخاب کنید</option>');
-    
-    if (services && services.length > 0) {
-      services.forEach(function(service) {
+
+    if (currentDepartmentServices.length > 0) {
+      currentDepartmentServices.forEach(function(service) {
+        if (!service) return;
         const serviceId = service.serviceId || service.ServiceId;
+        const serviceCode = (service.serviceCode || service.ServiceCode || service.code || service.Code || '').toString().trim() || '—';
         const serviceName = service.serviceName || service.ServiceName || service.name || service.Name || '';
         const price = service.price || service.Price || service.unitPriceIRR || service.UnitPriceIRR || 0;
-        $serviceSelect.append(`<option value="${serviceId}">${serviceName} - ${U.toIRR(price)}</option>`);
+        const hasTariffSet = service.hasTariffSet !== false;
+        const tariffWarning = service.tariffWarning || service.TariffWarning || null;
+        let text = serviceCode + ' - ' + serviceName + ' - ' + U.toIRR(price);
+        if (!hasTariffSet) {
+          text += ' \u26A0\uFE0F ' + (tariffWarning || 'تعیین ست نشده'); // ⚠️ emoji برای نمایش رنگی
+        }
+        const opt = $('<option></option>').val(serviceId).text(text);
+        if (!hasTariffSet) {
+          opt.addClass('service-no-tariff').attr('data-tariff-warning', tariffWarning || '');
+        }
+        $serviceSelect.append(opt);
       });
-      console.log('✅ V2: Services filled:', services.length);
+      console.log('✅ V2: Services filled:', currentDepartmentServices.length);
     } else {
-      console.warn('🏥 V2: No services found');
       $serviceSelect.append('<option value="">خدمتی یافت نشد</option>');
+    }
+  }
+
+  // ✅ انتخاب خدمت با کد: جستجو در لیست دپارتمان فعلی و set کردن dropdown
+  function applyServiceByCode() {
+    const codeInput = ($("#ServiceCodeSearch").val() || '').toString().trim();
+    if (!codeInput) {
+      toastr.warning('کد خدمت را وارد کنید');
+      return;
+    }
+    const deptId = $("#DepartmentId").val();
+    if (!deptId || deptId === '' || deptId === '0') {
+      toastr.warning('ابتدا دپارتمان را انتخاب کنید');
+      $("#ServiceCodeSearch").val('');
+      return;
+    }
+    const codeLower = codeInput.toLowerCase();
+    const found = currentDepartmentServices.find(function(s) {
+      const sc = (s.serviceCode || s.ServiceCode || s.code || s.Code || '').toString().trim().toLowerCase();
+      return sc === codeLower;
+    });
+    if (found) {
+      const serviceId = found.serviceId || found.ServiceId;
+      $("#ServiceId").val(serviceId).trigger('change');
+      $("#ServiceCodeSearch").val('');
+      $("#Quantity").focus();
+      toastr.success('خدمت انتخاب شد');
+    } else {
+      toastr.warning('خدمتی با این کد در دپارتمان انتخاب‌شده یافت نشد.');
     }
   }
   
@@ -137,11 +158,32 @@
     console.log('🏥 V2: Department changed, loading services for:', deptId);
     if (deptId) {
       loadServicesOptimized(deptId);
-      // Reset service selection when department changes
       $("#ServiceId").val('').trigger('change');
     } else {
+      currentDepartmentServices = [];
       $("#ServiceId").empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+      $("#ServiceCodeSearch").val('');
     }
+  });
+
+  // ✅ با تغییر بیمه (پایه/تکمیلی)، لیست خدمات دوباره لود شود تا وضعیت تعیین‌ست با بیمه جدید به‌روز شود
+  $("#BasePlanId, #SuppPlanId").on('change', function() {
+    const deptId = $("#DepartmentId").val();
+    if (deptId && deptId !== '' && deptId !== '0') {
+      loadServicesOptimized(deptId);
+    }
+  });
+
+  // ✅ انتخاب خدمت با کد: Enter در فیلد کد
+  $("#ServiceCodeSearch").on('keypress', function(e) {
+    if (e.which === 13) {
+      e.preventDefault();
+      applyServiceByCode();
+    }
+  });
+
+  $("#BtnApplyServiceCode").on('click', function() {
+    applyServiceByCode();
   });
 
   // ✅ Load eligible doctors when service changes + هوشمندسازی: اگر ReceptionId وجود دارد، Reprice

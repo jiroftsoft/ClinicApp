@@ -1,19 +1,32 @@
 @model ClinicApp.ViewModels.Reception.ServicePickerSectionVM
 <div class="card mb-3">
   <div class="card-header">انتخاب خدمت</div>
-  <div class="card-body row g-2 align-items-end">
-    <div class="col-md-8">
-      @Html.LabelFor(m => m.ServiceId, new { @class = "form-label" })
-      @Html.DropDownListFor(m => m.ServiceId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "ServiceId" })
-      @Html.ValidationMessageFor(m => m.ServiceId, null, new { @class = "text-danger small" })
+  <div class="card-body">
+    <div class="row g-2 align-items-end mb-2">
+      <div class="col-md-6">
+        <label class="form-label" for="ServiceCodeSearch">کد خدمت (جستجو)</label>
+        <input type="text" class="form-control" id="ServiceCodeSearch" placeholder="کد را وارد کنید و Enter بزنید" autocomplete="off" />
+        <small class="form-text text-muted">با وارد کردن کد خدمت، همان خدمت در لیست انتخاب می‌شود.</small>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label d-none d-md-block">&nbsp;</label>
+        <button type="button" id="BtnApplyServiceCode" class="btn btn-outline-primary w-100">اعمال کد</button>
+      </div>
     </div>
-    <div class="col-md-2">
-      @Html.LabelFor(m => m.Quantity, new { @class = "form-label" })
-      @Html.TextBoxFor(m => m.Quantity, new { @class = "form-control", id = "Quantity" })
-      @Html.ValidationMessageFor(m => m.Quantity, null, new { @class = "text-danger small" })
-    </div>
-    <div class="col-md-2">
-      <button id="BtnAddItem" class="btn btn-success w-100">افزودن</button>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-8">
+        @Html.LabelFor(m => m.ServiceId, new { @class = "form-label" })
+        @Html.DropDownListFor(m => m.ServiceId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "ServiceId" })
+        @Html.ValidationMessageFor(m => m.ServiceId, null, new { @class = "text-danger small" })
+      </div>
+      <div class="col-md-2">
+        @Html.LabelFor(m => m.Quantity, new { @class = "form-label" })
+        @Html.TextBoxFor(m => m.Quantity, new { @class = "form-control", id = "Quantity" })
+        @Html.ValidationMessageFor(m => m.Quantity, null, new { @class = "text-danger small" })
+      </div>
+      <div class="col-md-2">
+        <button id="BtnAddItem" class="btn btn-success w-100">افزودن</button>
+      </div>
     </div>
   </div>
 </div>

@@ -59,12 +59,18 @@ namespace ClinicApp.Controllers.ReceptionV2
                 _logger.Information("🏥 V2: بارگذاری فرم پذیرش V2");
 
                 // بارگذاری داده‌های اولیه از Facade
-                var model = await _receptionFacade.LoadInitialAsync(1, null);
-                
+                var loadResult = await _receptionFacade.LoadInitialAsync(1, null);
+                if (!loadResult.Success)
+                {
+                    _logger.Warning("⚠️ V2: LoadInitialAsync ناموفق - Message: {Message}", loadResult.Message);
+                    ViewBag.ErrorMessage = loadResult.Message ?? "در حال حاضر امکان بارگذاری فرم پذیرش وجود ندارد. لطفاً کمی بعد تلاش کنید.";
+                    return View("Error");
+                }
+
                 // دریافت سال مالی جاری از سرویس
                 var financialYear = _financialYearService.GetCurrentYear();
-                
-                // تبدیل به ReceptionFormVM
+
+                // تبدیل به ReceptionFormVM (داده اولیه از طریق API/bootstrap در فرانت لود می‌شود)
                 var vm = new ReceptionFormVM
                 {
                     Bootstrap = new BootstrapVM
@@ -78,6 +84,7 @@ namespace ClinicApp.Controllers.ReceptionV2
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بارگذاری فرم پذیرش V2");
+                ViewBag.ErrorMessage = "خطا در بارگذاری فرم پذیرش. لطفاً مجدداً تلاش کنید.";
                 return View("Error");
             }
         }
@@ -201,11 +208,17 @@ namespace ClinicApp.Controllers.ReceptionV2
                 _logger.Information("🏥 V2: بارگذاری صفحه ویرایش پذیرش - ReceptionId: {Id}", id);
 
                 // بارگذاری داده‌های اولیه از Facade
-                var model = await _receptionFacade.LoadInitialAsync(1, null);
-                
+                var loadResult = await _receptionFacade.LoadInitialAsync(1, null);
+                if (!loadResult.Success)
+                {
+                    _logger.Warning("⚠️ V2: LoadInitialAsync ناموفق در Edit - Message: {Message}", loadResult.Message);
+                    ViewBag.ErrorMessage = loadResult.Message ?? "در حال حاضر امکان بارگذاری فرم ویرایش وجود ندارد. لطفاً کمی بعد تلاش کنید.";
+                    return View("Error");
+                }
+
                 // دریافت سال مالی جاری از سرویس
                 var financialYear = _financialYearService.GetCurrentYear();
-                
+
                 // تبدیل به ReceptionFormVM
                 var vm = new ReceptionFormVM
                 {
@@ -223,6 +236,7 @@ namespace ClinicApp.Controllers.ReceptionV2
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بارگذاری صفحه ویرایش پذیرش - ReceptionId: {Id}", id);
+                ViewBag.ErrorMessage = "خطا در بارگذاری صفحه ویرایش. لطفاً مجدداً تلاش کنید.";
                 return View("Error");
             }
         }

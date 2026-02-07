@@ -595,6 +595,71 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
+        /// ✅ وضعیت تعیین‌ست بیمه برای چند خدمت (یک بار کوئری برای لیست)
+        /// </summary>
+        public async Task<Dictionary<int, (bool hasTariffSet, string warning)>> GetServicesTariffStatusAsync(
+            IReadOnlyList<int> serviceIds,
+            int? basePlanId,
+            int? suppPlanId)
+        {
+            var result = new Dictionary<int, (bool hasTariffSet, string warning)>();
+            if (serviceIds == null || serviceIds.Count == 0)
+                return result;
+
+            var idList = serviceIds.Distinct().ToList();
+            var baseSet = new HashSet<int>();
+            var suppSet = new HashSet<int>();
+
+            if (basePlanId.HasValue)
+            {
+                var baseServiceIds = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => idList.Contains(t.ServiceId) &&
+                               t.InsurancePlanId == basePlanId.Value &&
+                               t.InsuranceType == Models.Entities.Insurance.InsuranceType.Primary &&
+                               t.IsActive && !t.IsDeleted)
+                    .Select(t => t.ServiceId)
+                    .ToListAsync();
+                foreach (var id in baseServiceIds) baseSet.Add(id);
+            }
+
+            if (suppPlanId.HasValue)
+            {
+                var suppServiceIds = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => idList.Contains(t.ServiceId) &&
+                               t.InsurancePlanId == suppPlanId.Value &&
+                               t.InsuranceType == Models.Entities.Insurance.InsuranceType.Supplementary &&
+                               t.IsActive && !t.IsDeleted)
+                    .Select(t => t.ServiceId)
+                    .ToListAsync();
+                foreach (var id in suppServiceIds) suppSet.Add(id);
+            }
+
+            foreach (var sid in idList)
+            {
+                var hasBase = !basePlanId.HasValue || baseSet.Contains(sid);
+                var hasSupp = !suppPlanId.HasValue || suppSet.Contains(sid);
+                var hasTariffSet = hasBase && hasSupp;
+                string warning = null;
+                if (!hasTariffSet)
+                {
+                    if (!hasBase && !hasSupp)
+                        warning = "تعیین ست پایه و تکمیلی نشده";
+                    else if (!hasBase)
+                        warning = "تعیین ست بیمه پایه نشده";
+                    else
+                        warning = "تعیین ست بیمه تکمیلی نشده";
+                }
+                result[sid] = (hasTariffSet, warning);
+            }
+
+            _logger.Information("✅ PRICING SERVICE: GetServicesTariffStatus - Services: {Count}, WithTariffSet: {WithSet}", 
+                idList.Count, result.Count(r => r.Value.hasTariffSet));
+            return result;
+        }
+
+        /// <summary>
         /// ✅ ساخت CoverageDetails از مقادیر محاسبه شده
         /// </summary>
         private CoverageDetailsDto BuildCoverageDetails(

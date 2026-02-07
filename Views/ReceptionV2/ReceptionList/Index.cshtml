@@ -52,11 +52,15 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">تاریخ از</label>
-                    <input type="text" class="form-control persian-datepicker" id="filterDateFrom" placeholder="از تاریخ">
+                    <input type="text" class="form-control" id="filterDateFrom" placeholder="از تاریخ (شمسی)"
+                           data-jdp data-jdp-theme="medical" data-jdp-size="medium" data-no-default-date="true"
+                           autocomplete="off" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">تاریخ تا</label>
-                    <input type="text" class="form-control persian-datepicker" id="filterDateTo" placeholder="تا تاریخ">
+                    <input type="text" class="form-control" id="filterDateTo" placeholder="تا تاریخ (شمسی)"
+                           data-jdp data-jdp-theme="medical" data-jdp-size="medium" data-no-default-date="true"
+                           autocomplete="off" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">وضعیت</label>
@@ -411,8 +415,15 @@
 </div>
 
 @Styles.Render("~/content/reception.v2")
+@* ✅ JalaliDatePicker Enterprise - طبق قرارداد پروژه *@
+<link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+<link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
 @Scripts.Render("~/bundles/jquery")
 @Scripts.Render("~/bundles/bootstrap")
+@* ✅ JalaliDatePicker Enterprise - jalaali قبل از jalalidatepicker *@
+<script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.js"></script>
+<script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+<script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
 @* SignalR و ماژول‌های POS Payment *@
 <script src="~/Scripts/jquery.signalR-2.4.2.min.js"></script>
 <script src="~/Scripts/pos-payment/pos-payment-client.js"></script>

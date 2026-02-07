@@ -225,3 +225,11 @@ tr.row-bad {
     padding: 6px 4px;
   }
 }
+
+/* ✅ خدمات بدون تعیین‌ست برای بیمه انتخاب‌شده - هشدار بصری برای منشی (رنگ‌دار و مشخص) */
+#ServiceId option.service-no-tariff {
+  color: #664d03;
+  background-color: #fff3cd;
+  font-weight: 600;
+}
+/* در مرورگرهایی که از استایل option پشتیبانی می‌کنند، ایموجی ⚠️ به‌صورت رنگی نمایش داده می‌شود */
