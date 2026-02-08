@@ -7,57 +7,57 @@
     }
 }
 
-@* سکشن اصلی در Index است؛ محتوا بدون تکراری بودن landmark *@
-<div class="stories-inner" role="region" aria-label="استوری‌ها">
-    <div class="stories-container">
-        <div class="stories-scroll-wrapper">
-            <div class="stories-list" id="storiesList">
-                @foreach (var story in Model)
-                {
-                    <div class="story-item" 
-                         data-story-id="@story.StoryId"
-                         data-video-url="@story.VideoUrl"
-                         data-video-type="@story.VideoType"
-                         data-link-url="@(story.LinkUrl ?? "")"
-                         data-button-text="@(story.ButtonText ?? "")"
-                         role="button"
-                         tabindex="0"
-                         aria-label="استوری: @story.Title">
-                        <div class="story-thumbnail-wrapper">
-                            @if (!string.IsNullOrEmpty(story.ThumbnailUrl))
-                            {
-                                <img src="@Url.Content(story.ThumbnailUrl)" 
-                                     alt="@story.Title" 
-                                     class="story-thumbnail"
-                                     loading="lazy" />
-                            }
-                            else
-                            {
-                                <div class="story-thumbnail-placeholder">
-                                    <i class="fas fa-video" aria-hidden="true"></i>
-                                </div>
-                            }
-                            <div class="story-overlay">
-                                <div class="story-play-icon">
-                                    <i class="fas fa-play" aria-hidden="true"></i>
+@* استوری‌ها — الگو: دیجی‌کالا، اینستاگرام (حلقه گرادینت، اسکرول افقی، اسنپ) *@
+<section class="stories-section" role="region" aria-label="استوری‌های کلینیک">
+    <div class="stories-inner">
+        <div class="stories-container">
+            <div class="stories-scroll-wrapper" id="storiesScrollWrapper">
+                <div class="stories-list" id="storiesList">
+                    @foreach (var story in Model)
+                    {
+                        <div class="story-item" 
+                             data-story-id="@story.StoryId"
+                             data-video-url="@(story.VideoUrl ?? "")"
+                             data-video-type="@(story.VideoType ?? "")"
+                             data-link-url="@(story.LinkUrl ?? "")"
+                             data-button-text="@(story.ButtonText ?? "")"
+                             role="button"
+                             tabindex="0"
+                             aria-label="استوری: @story.Title">
+                            <div class="story-ring">
+                                <div class="story-thumbnail-wrapper">
+                                    @if (!string.IsNullOrEmpty(story.ThumbnailUrl))
+                                    {
+                                        <img src="@Url.Content(story.ThumbnailUrl)" 
+                                             alt="@story.Title" 
+                                             class="story-thumbnail"
+                                             loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <div class="story-thumbnail-placeholder">
+                                            <i class="fas fa-video" aria-hidden="true"></i>
+                                        </div>
+                                    }
+                                    <div class="story-overlay">
+                                        <span class="story-play-icon" aria-hidden="true">
+                                            <i class="fas fa-play"></i>
+                                        </span>
+                                    </div>
+                                    @if (story.Duration.HasValue)
+                                    {
+                                        <span class="story-duration">@FormatDuration(story.Duration.Value)</span>
+                                    }
                                 </div>
                             </div>
-                            @if (story.Duration.HasValue)
-                            {
-                                <div class="story-duration">
-                                    @FormatDuration(story.Duration.Value)
-                                </div>
-                            }
+                            <span class="story-title">@story.Title</span>
                         </div>
-                        <div class="story-title">
-                            @story.Title
-                        </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @* Video Player Modal - بهینه‌سازی شده برای RTL و Production *@
 <div class="modal fade" id="storyVideoModal" tabindex="-1" role="dialog" aria-labelledby="storyVideoModalLabel" aria-hidden="true" data-backdrop="true" data-keyboard="true">

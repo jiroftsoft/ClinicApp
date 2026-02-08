@@ -198,23 +198,8 @@
 
         </main>
 
-        <!-- Professional Medical Sidebar -->
-        @if (Model.Sidebar != null)
-        {
-            <aside class="homepage-sidebar" role="complementary" aria-label="منوی کناری کلینیک">
-                @{
-                    Html.RenderPartial("Sections/_SidebarSection", Model.Sidebar);
-                }
-            </aside>
-        }
-        else if (Model.SidebarSliders != null && Model.SidebarSliders.Any())
-        {
-            <aside class="homepage-sidebar" role="complementary" aria-label="اسلایدر سایدبار">
-                @{
-                    Html.RenderPartial("Sections/_SidebarSliderSection", Model.SidebarSliders);
-                }
-            </aside>
-        }
+        @* سایدبار از صفحهٔ اصلی حذف شده است (طبق Docs/HOMEPAGE-SIDEBAR-DECISION.md) برای خوانایی بیشتر و هماهنگی با بهترین روش‌های سایت‌های مرجع. رزرو نوبت در منو و هیرو؛ تماس و ساعات در فوتر. *@
+        @* در صورت نیاز می‌توان سایدبار را در صفحات دیگر (مثلاً تماس با ما) با RenderPartial("Sections/_SidebarSection", ...) نمایش داد. *@
     </div>
 
     <!-- Footer Slider Section (Outside Homepage Layout) -->

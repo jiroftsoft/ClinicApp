@@ -38,7 +38,9 @@ else
              class="hero-carousel" 
              role="region" 
              aria-label="اسلایدر صفحه اصلی"
-             data-slides-count="@validSlides.Count">
+             aria-roledescription="carousel"
+             data-slides-count="@validSlides.Count"
+             tabindex="0">
             <div class="carousel-inner">
                 @for (int i = 0; i < validSlides.Count; i++)
                 {
@@ -70,7 +72,7 @@ else
                          data-slide-index="@i"
                          data-slide-id="@slide.SliderId">
                         <div class="hero-slide" 
-                             style="background-image: url('@imageUrl'); background-size: cover; background-position: center; background-repeat: no-repeat;" 
+                             style="background-size: cover; background-position: center; background-repeat: no-repeat;@(i == 0 ? " background-image: url('" + imageUrl + "');" : "")"
                              data-image-url="@imageUrl"
                              data-slide-index="@i"
                              role="img"

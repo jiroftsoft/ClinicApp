@@ -237,11 +237,11 @@
 }
 
 .hero-carousel-controls.prev {
-    right: var(--space-lg, 1.5rem);
+    right: var(--spacing-lg, 1.5rem);
 }
 
 .hero-carousel-controls.next {
-    left: var(--space-lg, 1.5rem);
+    left: var(--spacing-lg, 1.5rem);
 }
 
 /* ============================================
@@ -249,7 +249,7 @@
    ============================================ */
 .hero-carousel-indicators {
     position: absolute;
-    bottom: var(--space-lg, 1.5rem);
+    bottom: var(--spacing-lg, 1.5rem);
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -291,7 +291,7 @@
 }
 
 /* ============================================
-   PROGRESS BAR
+   PROGRESS BAR — نوار پیشرفت (هماهنگ با RTL)
    ============================================ */
 .hero-carousel-progress {
     position: absolute;
@@ -299,10 +299,16 @@
     left: 0;
     width: 0%;
     height: 4px;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.9);
     z-index: 12;
     transition: width 0.1s linear;
     border-radius: 0 0 var(--radius-xl, 16px) 0;
+}
+
+[dir="rtl"] .hero-carousel-progress {
+    left: auto;
+    right: 0;
+    border-radius: 0 0 0 var(--radius-xl, 16px);
 }
 
 /* ============================================
@@ -310,8 +316,8 @@
    ============================================ */
 .hero-carousel-status {
     position: absolute;
-    top: var(--space-md, 1rem);
-    left: var(--space-md, 1rem);
+    top: var(--spacing-md, 1rem);
+    left: var(--spacing-md, 1rem);
     z-index: 11;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
@@ -327,8 +333,8 @@
    ============================================ */
 .hero-carousel-autoplay-toggle {
     position: absolute;
-    top: var(--space-md, 1rem);
-    right: var(--space-md, 1rem);
+    top: var(--spacing-md, 1rem);
+    right: var(--spacing-md, 1rem);
     z-index: 11;
     background-color: rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -522,34 +528,43 @@
 }
 
 [dir="rtl"] .hero-carousel-controls.prev {
-    left: var(--space-lg, 1.5rem);
+    left: var(--spacing-lg, 1.5rem);
     right: auto;
 }
 
 [dir="rtl"] .hero-carousel-controls.next {
-    right: var(--space-lg, 1.5rem);
+    right: var(--spacing-lg, 1.5rem);
     left: auto;
 }
 
 [dir="rtl"] .hero-carousel-status {
-    right: var(--space-md, 1rem);
+    right: var(--spacing-md, 1rem);
     left: auto;
 }
 
 [dir="rtl"] .hero-carousel-autoplay-toggle {
-    left: var(--space-md, 1rem);
+    left: var(--spacing-md, 1rem);
     right: auto;
 }
 
 /* ============================================
    FOCUS VISIBLE - Keyboard navigation
    ============================================ */
+.hero-carousel:focus {
+    outline: none;
+}
+
+.hero-carousel:focus-visible {
+    outline: 3px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+
 .hero-carousel-controls:focus-visible,
 .hero-carousel-indicator:focus-visible,
 .hero-carousel-autoplay-toggle:focus-visible {
-    outline: 3px solid var(--medical-primary, #2563eb);
-    outline-offset: 3px;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+    outline: 3px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.3);
 }
 
 /* ============================================

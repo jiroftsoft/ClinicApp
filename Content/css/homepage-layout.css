@@ -1,4 +1,4 @@
-/* Homepage Layout Styles */
+/* Homepage Layout Styles - تک‌ستون تمام‌عرض (بدون سایدبار) برای خوانایی و Best Practice */
 .homepage-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -10,11 +10,13 @@
 
 .homepage-main-content {
     width: 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xxxl, 4rem);
 }
 
+/* سایدبار فقط وقتی استفاده شود که کلاس has-sidebar روی layout باشد (صفحات دیگر) */
 .homepage-sidebar {
     width: 100%;
 }
@@ -35,19 +37,15 @@
     padding: 0 var(--spacing-md, 1rem);
 }
 
-/* Desktop Layout: Sidebar در سمت راست (RTL) */
+/* دو ستون فقط وقتی سایدبار وجود دارد (.has-sidebar) — فعلاً در صفحهٔ اصلی استفاده نمی‌شود */
 @media (min-width: 1200px) {
-    .homepage-layout {
-        grid-template-columns: 320px 1fr; /* در RTL: sidebar سمت راست (320px)، main content سمت چپ (1fr) */
+    .homepage-layout.has-sidebar {
+        grid-template-columns: 320px 1fr;
         gap: var(--spacing-xxl, 3rem);
     }
-    
-    .homepage-main-content {
-        order: 2; /* main content در سمت چپ */
-    }
-    
-    .homepage-sidebar {
-        order: 1; /* sidebar در سمت راست */
+    .homepage-layout.has-sidebar .homepage-main-content { order: 2; }
+    .homepage-layout.has-sidebar .homepage-sidebar {
+        order: 1;
         position: sticky;
         top: 100px;
         align-self: start;
@@ -56,19 +54,14 @@
     }
 }
 
-/* Tablet Layout: Sidebar در سمت راست (RTL) */
 @media (min-width: 992px) and (max-width: 1199.98px) {
-    .homepage-layout {
-        grid-template-columns: 280px 1fr; /* در RTL: sidebar سمت راست (280px)، main content سمت چپ (1fr) */
+    .homepage-layout.has-sidebar {
+        grid-template-columns: 280px 1fr;
         gap: var(--spacing-xl, 2rem);
     }
-    
-    .homepage-main-content {
-        order: 2; /* main content در سمت چپ */
-    }
-    
-    .homepage-sidebar {
-        order: 1; /* sidebar در سمت راست */
+    .homepage-layout.has-sidebar .homepage-main-content { order: 2; }
+    .homepage-layout.has-sidebar .homepage-sidebar {
+        order: 1;
         position: sticky;
         top: 100px;
         align-self: start;
@@ -77,50 +70,42 @@
     }
 }
 
-/* Mobile Layout: Stack vertically - Optimized for Above-the-Fold */
+/* Mobile Layout: تک‌ستون، بهینه برای Above-the-Fold */
 @media (max-width: 991.98px) {
     .homepage-layout {
         grid-template-columns: 1fr;
-        gap: var(--spacing-lg, 1.5rem); /* Reduced from 2rem for above-the-fold */
+        gap: var(--spacing-lg, 1.5rem);
     }
-    
-    .homepage-sidebar {
-        order: -1; /* Show sidebar first on mobile */
-    }
-    
-    /* Ensure Quick Actions is visible above-the-fold */
+    .homepage-layout.has-sidebar .homepage-sidebar { order: -1; }
     .homepage-main-content {
-        gap: var(--spacing-lg, 1.5rem); /* Reduced from 4rem */
+        gap: var(--spacing-lg, 1.5rem);
     }
-    
     .main-menu-quick-actions {
         margin-top: 0;
         padding-top: var(--spacing-lg, 1.5rem);
     }
-    
-    /* Reduce Hero Section height on mobile for better above-the-fold visibility */
     .homepage-main-content > section.hero-section {
         padding: var(--spacing-lg, 1.5rem) 0;
         min-height: auto;
     }
 }
 
-/* Scrollbar Styling for Sidebar */
-.homepage-sidebar::-webkit-scrollbar {
+/* Scrollbar Styling for Sidebar (وقتی در صفحات دیگر استفاده شود) */
+.homepage-layout.has-sidebar .homepage-sidebar::-webkit-scrollbar {
     width: 6px;
 }
 
-.homepage-sidebar::-webkit-scrollbar-track {
+.homepage-layout.has-sidebar .homepage-sidebar::-webkit-scrollbar-track {
     background: var(--medical-secondary-lighter, #f8f9fa);
     border-radius: var(--radius-full, 9999px);
 }
 
-.homepage-sidebar::-webkit-scrollbar-thumb {
+.homepage-layout.has-sidebar .homepage-sidebar::-webkit-scrollbar-thumb {
     background: var(--medical-border, #dee2e6);
     border-radius: var(--radius-full, 9999px);
 }
 
-.homepage-sidebar::-webkit-scrollbar-thumb:hover {
+.homepage-layout.has-sidebar .homepage-sidebar::-webkit-scrollbar-thumb:hover {
     background: var(--medical-text, #212529);
 }
 

@@ -573,6 +573,15 @@
             heroCarousel.addEventListener('touchstart', handleTouchStart, { passive: true });
             heroCarousel.addEventListener('touchend', handleTouchEnd, { passive: true });
         }
+
+        // Pause when tab is hidden (Page Visibility API)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                pauseAutoSlide();
+            } else if (!isPaused && CONFIG.autoPlay && !CONFIG.reducedMotion && carouselItems.length > 1) {
+                startAutoSlide();
+            }
+        });
     }
 
     function handleNextClick(e) {
@@ -596,10 +605,9 @@
     }
 
     function handleKeyboardNavigation(e) {
-        // Only handle if carousel is focused or hovered
-        if (!heroCarousel.matches(':hover') && document.activeElement !== heroCarousel) {
-            return;
-        }
+        if (!heroCarousel) return;
+        var focusInside = heroCarousel.contains(document.activeElement);
+        if (!focusInside) return;
 
         switch(e.key) {
             case 'ArrowRight':
@@ -695,7 +703,7 @@
         if (!document.getElementById('heroCarousel')) return;
         if (!isInitialized) {
             tryInit();
-        } else if (carouselItems && carouselItems.length > 0) {
+        } else if (carouselItems && carouselItems.length > 0 && isInitialized) {
             showSlide(currentIndex, false);
             if (carouselItems.length > 1 && !isPaused && !autoSlideInterval && CONFIG.autoPlay && !CONFIG.reducedMotion) {
                 startAutoSlide();

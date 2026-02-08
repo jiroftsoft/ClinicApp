@@ -1,103 +1,139 @@
-/* ============================================
-   📋 Stories Section - استایل‌های استوری‌ها
-   ============================================
-   طراحی شده مشابه دیجی‌کالا - مدرن و زیبا
-   ============================================ */
+/**
+ * استوری‌ها — الگو: دیجی‌کالا، اینستاگرام
+ *
+ * - حلقه گرادینت دور آواتار (سبک دیجی‌کالا)
+ * - اسکرول افقی با اسنپ
+ * - فید لبه‌ها برای القای اسکرول
+ * - موبایل‌فرست، لمس روان
+ */
 
-/* ✅ Container اصلی - رسمی و مینیمال */
+/* ========== Section & Container ========== */
 .stories-section {
-    background: #ffffff; /* سفید ساده */
-    border-bottom: 1px solid #e9ecef;
-    padding: 1rem 0;
-    margin-bottom: 0;
+    background: var(--medical-bg, #fff);
+    border-bottom: 1px solid var(--medical-border-light, #e9ecef);
+    padding: var(--spacing-md, 1rem) 0;
+    margin: 0;
     position: relative;
     overflow: hidden;
+}
+
+.stories-inner {
+    position: relative;
 }
 
 .stories-container {
     max-width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 var(--spacing-md, 1rem);
 }
 
-/* ✅ Scroll Wrapper */
+/* ========== Scroll Wrapper — اسکرول افقی + اسنپ (دیجی‌کالا) ========== */
 .stories-scroll-wrapper {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e0 #f7fafc;
-    padding: 0.5rem 0;
+    scrollbar-color: var(--medical-border, #dee2e6) var(--medical-light, #f8f9fa);
+    padding: var(--spacing-sm, 0.5rem) 0;
+    margin: 0 calc(-1 * var(--spacing-md, 1rem));
+    padding-left: var(--spacing-md, 1rem);
+    padding-right: var(--spacing-md, 1rem);
 }
 
 .stories-scroll-wrapper::-webkit-scrollbar {
-    height: 6px;
+    height: 4px;
 }
 
 .stories-scroll-wrapper::-webkit-scrollbar-track {
-    background: #f7fafc;
-    border-radius: 10px;
+    background: var(--medical-light, #f8f9fa);
+    border-radius: var(--radius-full, 9999px);
 }
 
 .stories-scroll-wrapper::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 10px;
+    background: var(--medical-border, #dee2e6);
+    border-radius: var(--radius-full, 9999px);
 }
 
 .stories-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: var(--medical-text-muted, #adb5bd);
 }
 
-/* ✅ Stories List */
+/* مخفی کردن اسکرولبار در موبایل برای ظاهر تمیزتر (اختیاری) */
+@media (max-width: 767.98px) {
+    .stories-scroll-wrapper {
+        scrollbar-width: none;
+    }
+    .stories-scroll-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* ========== List — Flex + اسنپ آیتم‌ها ========== */
 .stories-list {
     display: flex;
-    gap: 1rem;
-    padding: 0.5rem 0;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-sm, 0.5rem) 0;
     min-width: max-content;
 }
 
-/* ✅ Story Item */
+/* ========== Story Item — اسنپ شروع هر آیتم ========== */
 .story-item {
     flex: 0 0 auto;
-    width: 90px;
+    width: 80px;
     cursor: pointer;
     transition: transform 0.2s ease, opacity 0.2s ease;
     position: relative;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .story-item:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
 }
 
 .story-item:active {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
-.story-item:focus {
+.story-item:focus-visible {
     outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
-    border-radius: 50%; /* دایره کامل */
+    border-radius: var(--radius-lg, 12px);
 }
 
-/* ✅ Thumbnail Wrapper - Instagram Style (دایره‌ای کامل) */
+/* ========== حلقه گرادینت (سبک دیجی‌کالا) ========== */
+.story-ring {
+    padding: 3px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--medical-primary, #2c5aa0) 0%, var(--medical-info, #17a2b8) 50%, var(--medical-primary-light, #4a7bc8) 100%);
+    display: inline-flex;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.story-item:hover .story-ring {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.35);
+}
+
+/* ========== Thumbnail Wrapper — دایره سفید داخل رینگ ========== */
 .story-thumbnail-wrapper {
     position: relative;
-    width: 90px;
-    height: 90px;
-    border-radius: 50%; /* دایره کامل */
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
     overflow: hidden;
-    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 3px solid #ffffff;
-    transition: all 0.3s ease;
+    background: var(--medical-primary, #2c5aa0);
+    border: 2px solid var(--medical-bg, #fff);
+    transition: border-color 0.2s ease;
 }
 
 .story-item:hover .story-thumbnail-wrapper {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.95);
 }
 
-/* ✅ Thumbnail Image */
 .story-thumbnail {
     width: 100%;
     height: 100%;
@@ -111,42 +147,38 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
-    color: #ffffff;
-    font-size: 2rem;
+    background: var(--medical-primary, #2c5aa0);
+    color: #fff;
+    font-size: 1.5rem;
 }
 
-/* ✅ Overlay - دایره‌ای */
+/* ========== Overlay + آیکون پخش ========== */
 .story-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 50%; /* دایره کامل */
+    transition: opacity 0.25s ease;
+    border-radius: 50%;
 }
 
 .story-item:hover .story-overlay {
     opacity: 1;
 }
 
-/* ✅ Play Icon */
 .story-play-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.9);
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--medical-primary, #2c5aa0);
-    font-size: 1.2rem;
+    font-size: 0.85rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease;
 }
@@ -156,43 +188,105 @@
 }
 
 .story-play-icon i {
-    margin-left: 2px; /* برای RTL */
+    margin-right: 2px;
 }
 
-/* ✅ Duration Badge */
+/* ========== مدت زمان ویدیو ========== */
 .story-duration {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
-    background: rgba(0, 0, 0, 0.7);
-    color: #ffffff;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.7rem;
+    bottom: 3px;
+    left: 3px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 2px 5px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.65rem;
     font-weight: 600;
-    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+    font-family: var(--font-family-body, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
 }
 
-/* ✅ Story Title */
+/* ========== عنوان استوری (زیر دایره، حداکثر ۲ خط) ========== */
 .story-title {
-    margin-top: 0.5rem;
+    margin-top: var(--spacing-sm, 0.5rem);
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
-    color: #495057;
-    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
-    line-height: 1.3;
+    color: var(--medical-text, #495057);
+    font-family: var(--font-family-body, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
+    line-height: 1.35;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    min-height: 2.6em;
+    min-height: 2.5em;
+    padding: 0 2px;
 }
 
-/* ✅ Video Player Modal - Production Ready */
+/* ========== فید لبه‌ها (القای اسکرول — مثل دیجی‌کالا) ========== */
+.stories-section::before,
+.stories-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+[dir="rtl"] .stories-section::before {
+    right: 0;
+    background: linear-gradient(to left, var(--medical-bg, #fff), transparent);
+}
+
+[dir="rtl"] .stories-section::after {
+    left: 0;
+    background: linear-gradient(to right, var(--medical-bg, #fff), transparent);
+}
+
+[dir="ltr"] .stories-section::before {
+    left: 0;
+    background: linear-gradient(to right, var(--medical-bg, #fff), transparent);
+}
+
+[dir="ltr"] .stories-section::after {
+    right: 0;
+    background: linear-gradient(to left, var(--medical-bg, #fff), transparent);
+}
+
+/* ========== ریسپانسیو — سایز دایره و فاصله ========== */
+@media (min-width: 576px) {
+    .story-item { width: 88px; }
+    .story-thumbnail-wrapper { width: 82px; height: 82px; }
+    .story-ring { padding: 3px; }
+    .story-title { font-size: 0.75rem; }
+}
+
+@media (min-width: 768px) {
+    .story-item { width: 92px; }
+    .story-thumbnail-wrapper { width: 86px; height: 86px; }
+    .story-play-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+    .story-title { font-size: 0.8rem; }
+    .stories-list { gap: 1.25rem; }
+}
+
+@media (min-width: 992px) {
+    .stories-section { padding: var(--spacing-lg, 1.5rem) 0; }
+    .story-item { width: 96px; }
+    .story-thumbnail-wrapper { width: 90px; height: 90px; }
+    .story-title { font-size: 0.8125rem; }
+    .stories-list { gap: 1.5rem; }
+}
+
+@media (min-width: 1200px) {
+    .stories-container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+    .stories-scroll-wrapper { margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* ========== ویدیو مودال ========== */
 #storyVideoModal .modal-content {
-    border-radius: 12px;
+    border-radius: var(--radius-lg, 12px);
     overflow: hidden;
     border: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -204,293 +298,83 @@
 
 #storyVideoModal .modal-body {
     padding: 0;
-    background: #000000;
+    background: #000;
 }
 
 #storyVideoModal .modal-header {
-    background: var(--medical-primary, #2c5aa0); /* رنگ رسمی پزشکی */
-    color: #ffffff;
+    background: var(--medical-primary, #2c5aa0);
+    color: #fff;
     border-bottom: none;
-    padding: 1rem 1.5rem;
+    padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: relative;
-    z-index: 1055;
 }
 
 #storyVideoModal .modal-title {
-    font-family: 'Vazir', 'Shabnam', 'Yekan', 'Tahoma', 'Arial', sans-serif;
+    font-family: var(--font-family-heading, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
     font-weight: 600;
     margin: 0;
     flex: 1;
 }
 
-/* ✅ دکمه بستن (X) - بهینه شده برای RTL و کاملاً Clickable */
 #storyVideoModal .modal-close-btn {
-    position: relative;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     margin: 0;
-    margin-left: 1rem; /* فاصله از سمت راست (RTL) */
+    margin-right: var(--spacing-sm, 0.5rem);
     background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 50%;
-    color: #ffffff;
+    color: #fff;
     font-size: 1.25rem;
-    line-height: 1;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    order: -1; /* قرار دادن در سمت راست برای RTL */
-    z-index: 1060; /* بالاتر از Modal */
-    pointer-events: auto; /* اطمینان از clickable بودن */
-    opacity: 1;
-    flex-shrink: 0;
 }
 
 #storyVideoModal .modal-close-btn:hover {
     background: rgba(255, 255, 255, 0.4);
-    transform: scale(1.15);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
 }
 
-#storyVideoModal .modal-close-btn:active {
-    transform: scale(0.9);
-    background: rgba(255, 255, 255, 0.5);
-}
-
-#storyVideoModal .modal-close-btn:focus {
-    outline: 2px solid rgba(255, 255, 255, 0.7);
+#storyVideoModal .modal-close-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
-    background: rgba(255, 255, 255, 0.3);
-}
-
-#storyVideoModal .modal-close-btn i {
-    font-size: 1rem;
-    pointer-events: none; /* فقط دکمه clickable باشد، نه آیکون */
 }
 
 .story-video-player {
     position: relative;
     width: 100%;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-    background: #000000;
+    padding-bottom: 56.25%;
+    background: #000;
     overflow: hidden;
 }
 
 .story-video-player iframe,
 .story-video-player video {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     border: none;
 }
 
-/* ✅ Loading State for Video */
-.story-video-player.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+@media (max-width: 767.98px) {
+    #storyVideoModal .modal-dialog { max-width: 95%; margin: 0.5rem auto; }
+    #storyVideoModal .modal-header { padding: 0.75rem 1rem; }
+    #storyVideoModal .modal-close-btn { width: 32px; height: 32px; }
 }
 
-/* ✅ Modal Backdrop */
-#storyVideoModal.modal.fade .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.85);
+@media (max-width: 575.98px) {
+    #storyVideoModal .modal-dialog { max-width: 100%; margin: 0; min-height: 100vh; }
+    #storyVideoModal .modal-content { border-radius: 0; min-height: 100vh; }
 }
 
-/* ✅ Modal Responsive */
-@media (max-width: 991px) {
-    #storyVideoModal .modal-dialog {
-        max-width: 90%;
-        margin: 1rem auto;
-    }
-}
-
-@media (max-width: 767px) {
-    #storyVideoModal .modal-dialog {
-        max-width: 95%;
-        margin: 0.5rem auto;
-    }
-    
-    #storyVideoModal .modal-header {
-        padding: 0.75rem 1rem;
-    }
-    
-    #storyVideoModal .modal-title {
-        font-size: 1rem;
-    }
-    
-    #storyVideoModal .modal-close-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 1rem;
-    }
-    
-    #storyVideoModal .modal-close-btn i {
-        font-size: 0.875rem;
-    }
-}
-
-@media (max-width: 575px) {
-    #storyVideoModal .modal-dialog {
-        max-width: 100%;
-        margin: 0;
-        min-height: 100vh;
-    }
-    
-    #storyVideoModal .modal-content {
-        border-radius: 0;
-        min-height: 100vh;
-    }
-    
-    #storyVideoModal .modal-header {
-        border-radius: 0;
-    }
-}
-
-/* ✅ Responsive Design - 100% برای تمام مانیتورها */
-
-/* Large Desktop (1920px+) */
-@media (min-width: 1920px) {
-    .stories-container {
-        max-width: 1920px;
-        padding: 0 2rem;
-    }
-    
-    .story-item {
-        width: 100px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .story-title {
-        font-size: 0.8rem;
-    }
-}
-
-/* Desktop (1200px - 1919px) */
-@media (min-width: 1200px) and (max-width: 1919px) {
-    .stories-container {
-        max-width: 1400px;
-    }
-    
-    .story-item {
-        width: 90px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 90px;
-        height: 90px;
-    }
-}
-
-/* Tablet (768px - 1199px) */
-@media (max-width: 1199px) and (min-width: 768px) {
-    .story-item {
-        width: 85px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 85px;
-        height: 85px;
-    }
-    
-    .story-title {
-        font-size: 0.72rem;
-    }
-    
-    .stories-list {
-        gap: 0.8rem;
-    }
-}
-
-/* Mobile Landscape (576px - 767px) */
-@media (max-width: 767px) and (min-width: 576px) {
-    .story-item {
-        width: 80px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .story-title {
-        font-size: 0.7rem;
-    }
-    
-    .stories-list {
-        gap: 0.75rem;
-    }
-}
-
-/* Mobile Portrait (< 576px) */
-@media (max-width: 575px) {
-    .story-item {
-        width: 70px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .story-title {
-        font-size: 0.65rem;
-        min-height: 2.4em;
-    }
-    
-    .stories-list {
-        gap: 0.5rem;
-    }
-    
-    .stories-container {
-        padding: 0 0.5rem;
-    }
-}
-
-/* Ultra Wide (2560px+) */
-@media (min-width: 2560px) {
-    .stories-container {
-        max-width: 2400px;
-    }
-    
-    .story-item {
-        width: 110px;
-    }
-    
-    .story-thumbnail-wrapper {
-        width: 110px;
-        height: 110px;
-    }
-    
-    .story-title {
-        font-size: 0.85rem;
-    }
-    
-    .stories-list {
-        gap: 1.25rem;
-    }
-}
-
-/* ✅ Loading State */
+/* ========== Loading ========== */
 .story-item.loading {
     opacity: 0.6;
     pointer-events: none;
@@ -499,39 +383,28 @@
 .story-item.loading .story-thumbnail-wrapper::after {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
+    inset: 50%;
     transform: translate(-50%, -50%);
     width: 20px;
     height: 20px;
-    border: 2px solid #ffffff;
+    border: 2px solid #fff;
     border-top-color: transparent;
     border-radius: 50%;
-    animation: spin 0.6s linear infinite;
+    animation: story-spin 0.6s linear infinite;
 }
 
-@keyframes spin {
-    to {
-        transform: translate(-50%, -50%) rotate(360deg);
-    }
+@keyframes story-spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* ✅ Accessibility */
-.story-item:focus-visible {
-    outline: 3px solid var(--medical-primary, #2c5aa0);
-    outline-offset: 3px;
-}
-
-/* ✅ Reduced Motion */
+/* ========== کاهش حرکت ========== */
 @media (prefers-reduced-motion: reduce) {
     .story-item,
-    .story-thumbnail-wrapper,
+    .story-ring,
     .story-overlay,
     .story-play-icon {
         transition: none;
     }
-    
-    .story-item:hover {
-        transform: none;
-    }
+    .story-item:hover { transform: none; }
+    .story-item:hover .story-ring { transform: none; }
 }
