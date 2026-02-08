@@ -425,11 +425,22 @@ namespace ClinicApp.Controllers.Api
                 }
 
                 // ✅ بررسی اعتبار کد ملی (10 رقم)
-                if (request.NationalCode.Length != 10 || !System.Text.RegularExpressions.Regex.IsMatch(request.NationalCode, @"^\d{10}$"))
+                if (request.NationalCode.Length != 10 || !Regex.IsMatch(request.NationalCode, @"^\d{10}$"))
                 {
                     return Json(ServiceResult<PatientLookupResponseDto>
                         .Failed("کد ملی باید 10 رقم عددی باشد.", ReceptionApiCodes.VALIDATION)
                         .WithValidationError("NationalCode", "کد ملی باید 10 رقم عددی باشد."));
+                }
+
+                // ✅ اعتبارسنجی کامل کد ملی ایرانی (الگوریتم استاندارد + رقم کنترل) - جلوگیری از پذیرش هر عدد 10 رقمی
+                var ncValidation = IranianNationalCodeValidator.Validate(request.NationalCode);
+                if (!ncValidation.IsValid)
+                {
+                    _logger?.Warning("🏥 V1 API: کد ملی نامعتبر - NationalCode: {NationalCode}, Message: {Message}", 
+                        request.NationalCode, ncValidation.Message);
+                    return Json(ServiceResult<PatientLookupResponseDto>
+                        .Failed(ncValidation.Message ?? "کد ملی نامعتبر است.", ReceptionApiCodes.VALIDATION)
+                        .WithValidationError("NationalCode", ncValidation.Message ?? "کد ملی نامعتبر است."));
                 }
 
                 // ✅ بررسی اینکه آیا این Lookup است یا Quick Create

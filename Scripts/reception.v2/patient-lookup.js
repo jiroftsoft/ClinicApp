@@ -1,6 +1,76 @@
 (function($, API, U) {
   'use strict';
 
+  // Fallback when toastr failed to load (e.g. 404) - use NotificationHelper or alert
+  if (typeof window.toastr === 'undefined') {
+    window.toastr = {
+      error: function(msg, title, opts) {
+        if (window.NotificationHelper && window.NotificationHelper.error) {
+          window.NotificationHelper.error(msg, title || 'خطا', opts);
+        } else {
+          alert((title || 'خطا') + ': ' + (msg || 'خطایی رخ داده است'));
+        }
+      },
+      success: function(msg, title, opts) {
+        if (window.NotificationHelper && window.NotificationHelper.success) {
+          window.NotificationHelper.success(msg, title || 'موفقیت', opts);
+        } else {
+          alert((title || 'موفقیت') + ': ' + (msg || ''));
+        }
+      },
+      warning: function(msg, title, opts) {
+        if (window.NotificationHelper && window.NotificationHelper.warning) {
+          window.NotificationHelper.warning(msg, title || 'هشدار', opts);
+        } else {
+          alert((title || 'هشدار') + ': ' + (msg || ''));
+        }
+      },
+      info: function(msg, title, opts) {
+        if (window.NotificationHelper && window.NotificationHelper.info) {
+          window.NotificationHelper.info(msg, title || 'اطلاعات', opts);
+        } else {
+          alert((title ? title + ': ' : '') + (msg || ''));
+        }
+      },
+      options: {}
+    };
+  }
+
+  /**
+   * اعتبارسنجی کد ملی ایرانی (الگوریتم استاندارد + دفاع در عمق)
+   * استفاده از ReceptionValidator در صورت وجود؛ وگرنه پیاده‌سازی محلی یکسان
+   * @param {string} code - کد ملی 10 رقمی
+   * @returns {{ isValid: boolean, message: string }}
+   */
+  function validateIranianNationalCode(code) {
+    if (window.ReceptionValidator && typeof window.ReceptionValidator.validateNationalCode === 'function') {
+      return window.ReceptionValidator.validateNationalCode(code);
+    }
+    var c = String(code || '').trim().replace(/[\u06F0-\u06F9]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - 0x06F0 + 0x0030); }).replace(/[\u0660-\u0669]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - 0x0660 + 0x0030); });
+    if (!c) return { isValid: false, message: 'کد ملی الزامی است' };
+    if (c.length !== 10 || !/^\d{10}$/.test(c)) return { isValid: false, message: 'کد ملی باید 10 رقم باشد' };
+    if (/^(\d)\1{9}$/.test(c)) return { isValid: false, message: 'کد ملی نامعتبر است' };
+    var sum = 0; for (var i = 0; i < 9; i++) sum += parseInt(c[i], 10) * (10 - i);
+    var r = sum % 11, last = parseInt(c[9], 10);
+    var ok = (r < 2 && last === r) || (r >= 2 && last === 11 - r);
+    return { isValid: ok, message: ok ? '' : 'کد ملی نامعتبر است (رقم کنترل اشتباه)' };
+  }
+
+  /** نمایش خطای کد ملی نامعتبر: SweetAlert2 در اولویت، در غیر این صورت toastr */
+  function showNationalCodeError(message) {
+    var msg = message || 'کد ملی وارد شده معتبر نیست. لطفاً کد ملی صحیح را وارد کنید.';
+    if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+      Swal.fire({
+        icon: 'error',
+        title: 'کد ملی نامعتبر',
+        text: msg,
+        confirmButtonText: 'متوجه شدم'
+      });
+    } else {
+      toastr.error(msg, 'کد ملی نامعتبر', { timeOut: 5000 });
+    }
+  }
+
   // References to form fields
   const $nc = $('#Patient_NationalCode');
   const $pid = $('#Patient_PatientId');
@@ -118,15 +188,22 @@
 
   /**
    * جستجوی بیمار بر اساس کد ملی
-   * ✅ Realtime - هیچ cache استفاده نمی‌شود
+   * ✅ اعتبارسنجی کامل کد ملی ایرانی قبل از فراخوانی API؛ جلوگیری از باز شدن مودال برای کد نامعتبر
    */
   function lookup() {
     const nc = ($nc.val() || '').trim();
     
-    // اعتبارسنجی کد ملی
-    if (!/^\d{10}$/.test(nc)) {
-      console.warn('🏥 V2: کد ملی نامعتبر:', nc);
+    if (nc.length !== 10 || !/^\d{10}$/.test(nc)) {
+      console.warn('🏥 V2: کد ملی ناقص یا غیرعددی:', nc);
       toastr.warning('کد ملی باید 10 رقم باشد');
+      return $.Deferred().reject('Invalid national code').promise();
+    }
+
+    var ncResult = validateIranianNationalCode(nc);
+    if (!ncResult.isValid) {
+      console.warn('🏥 V2: کد ملی نامعتبر (الگوریتم ایرانی):', nc, ncResult.message);
+      showNationalCodeError(ncResult.message);
+      $nc.addClass('is-invalid').focus();
       return $.Deferred().reject('Invalid national code').promise();
     }
 
@@ -205,8 +282,14 @@
           
           console.warn('🏥 V2: Patient lookup failed:', errorCode, errorMsg, responseObj);
           
-          // اگر NOT_FOUND است، Modal را باز کن
+          // اگر NOT_FOUND است، فقط در صورت معتبر بودن کد ملی Modal را باز کن (دفاع در عمق)
           if (errorCode === 'NOT_FOUND' || errorCode === 'NotFound') {
+            var ncCheck = validateIranianNationalCode(nc);
+            if (!ncCheck.isValid) {
+              showNationalCodeError(ncCheck.message);
+              $nc.addClass('is-invalid').focus();
+              return;
+            }
             console.log('🏥 V2: Patient not found, opening Fast Create Modal...');
             openFastCreateModal(nc);
           } else {
@@ -317,12 +400,72 @@
   }
 
   /**
+   * مقداردهی DatePicker تاریخ تولد در مودال ثبت سریع با JalaliDatePickerEnterprise
+   * الگوی استاندارد: maxDate = امروز، minDate = گذشته دور، بدون تاریخ پیش‌فرض
+   * چون اینپوت مودال data-jdp ندارد، کتابخانهٔ پایه روی focus باز نمی‌کند؛ با focus/click دستی show فراخوانی می‌شود.
+   */
+  function initFastCreateModalBirthDatePicker() {
+    var fcBirth = document.getElementById('fc_birth');
+    if (!fcBirth) return;
+    if (typeof window.JalaliDatePickerEnterprise === 'undefined' || typeof window.jalaliDatepicker === 'undefined') return;
+
+    var JDP = window.JalaliDatePickerEnterprise;
+
+    function bindShowPicker() {
+      if (fcBirth.dataset.jdpShowBound === 'true') return;
+      function showPicker() {
+        if (typeof window.jalaliDatepicker !== 'undefined') {
+          window.jalaliDatepicker.show(fcBirth);
+        }
+      }
+      fcBirth.addEventListener('focus', showPicker);
+      fcBirth.addEventListener('click', showPicker);
+      fcBirth.dataset.jdpShowBound = 'true';
+    }
+
+    if (fcBirth.dataset && fcBirth.dataset.jdpInitialized === 'true') {
+      bindShowPicker();
+      return;
+    }
+
+    JDP.getTodayFromServer()
+      .then(function(todayStr) {
+        var todayObj = JDP.parsePersianDate(todayStr);
+        if (!todayObj) return;
+        JDP.init(fcBirth, {
+          maxDate: todayObj,
+          minDate: { year: 1280, month: 1, day: 1 },
+          theme: 'medical',
+          size: 'medium',
+          noDefaultDate: true
+        });
+        setTimeout(bindShowPicker, 150);
+      })
+      .catch(function() {
+        JDP.init(fcBirth, {
+          theme: 'medical',
+          size: 'medium',
+          noDefaultDate: true
+        });
+        setTimeout(bindShowPicker, 150);
+      });
+  }
+
+  /**
    * باز کردن Modal ثبت سریع بیمار
-   * @param {string} nc - کد ملی (اختیاری)
+   * @param {string} nc - کد ملی (اختیاری)؛ در صورت ارسال، اعتبارسنجی می‌شود و در صورت نامعتبر بودن مودال باز نمی‌شود
    */
   function openFastCreateModal(nc) {
+    if (nc) {
+      var ncResult = validateIranianNationalCode(nc);
+      if (!ncResult.isValid) {
+        showNationalCodeError(ncResult.message);
+        $nc.addClass('is-invalid').focus();
+        return;
+      }
+    }
     console.log('🏥 V2: Opening Fast Create Modal, NationalCode:', nc || 'empty');
-    
+
     // لود کردن لیست پلن‌های بیمه برای dropdowns در Modal
     if (window.insPanel && window.insPanel.loadPlans) {
       window.insPanel.loadPlans()
@@ -357,19 +500,10 @@
           if (nc) {
             $('#fc_nationalCode').val(nc);
           }
-          
-          // Initialize Persian DatePicker for birth date
-          const $fcBirth = $('#fc_birth');
-          if (typeof $.fn.persianDatepicker !== 'undefined' && !$fcBirth.data('persian-datepicker-initialized')) {
-            $fcBirth.persianDatepicker({
-              observer: true,
-              format: 'YYYY/MM/DD',
-              altField: '#fc_birth',
-              altFormat: 'YYYY/MM/DD'
-            });
-            $fcBirth.data('persian-datepicker-initialized', true);
-          }
-          
+
+          // ✅ تاریخ تولد: JalaliDatePicker Enterprise (الگوی جدید)
+          initFastCreateModalBirthDatePicker();
+
           // Show modal
           const modalElement = document.getElementById('patientFastCreateModal');
           if (!modalElement) {
@@ -410,11 +544,12 @@
         .catch(function(err) {
           console.error('🏥 V2: Error loading insurance plans for modal:', err);
           toastr.warning('خطا در بارگذاری لیست بیمه‌ها');
-          
-          // Show modal anyway
+
           if (nc) {
             $('#fc_nationalCode').val(nc);
           }
+          initFastCreateModalBirthDatePicker();
+
           const modalElement = document.getElementById('patientFastCreateModal');
           if (modalElement) {
             const modal = new bootstrap.Modal(modalElement);
@@ -443,6 +578,8 @@
       if (nc) {
         $('#fc_nationalCode').val(nc);
       }
+      initFastCreateModalBirthDatePicker();
+
       const modalElement = document.getElementById('patientFastCreateModal');
       if (modalElement) {
         const modal = new bootstrap.Modal(modalElement);
@@ -474,17 +611,19 @@
   function submitFastCreate() {
     console.log('🏥 V2: Submitting Fast Create form...');
     
-    // Validation
+    // Validation - اعتبارسنجی کامل کد ملی ایرانی
     const nc = ($('#fc_nationalCode').val() || '').trim();
     const fn = ($('#fc_firstName').val() || '').trim();
     const ln = ($('#fc_lastName').val() || '').trim();
     const mb = ($('#fc_mobile').val() || '').trim();
-    
-    if (!/^\d{10}$/.test(nc)) {
-      toastr.error('کد ملی باید 10 رقم باشد');
+
+    var ncResult = validateIranianNationalCode(nc);
+    if (!ncResult.isValid) {
+      showNationalCodeError(ncResult.message);
       $('#fc_nationalCode').addClass('is-invalid').focus();
       return;
     }
+    $('#fc_nationalCode').removeClass('is-invalid');
     
     if (!fn) {
       toastr.error('نام الزامی است');
@@ -757,11 +896,16 @@
       lookupTimeout = null;
     }
     
-    // اگر کد ملی کامل نیست، skip کن
-    if (!/^\d{10}$/.test(nc)) {
+    // اگر کد ملی کامل نیست یا معتبر نیست (الگوریتم ایرانی)، skip کن
+    if (!/^\d{10}$/.test(nc)) return;
+    var ncResult = validateIranianNationalCode(nc);
+    if (!ncResult.isValid) {
+      showNationalCodeError(ncResult.message);
+      $nc.addClass('is-invalid').focus();
       return;
     }
-    
+    $nc.removeClass('is-invalid');
+
     // اگر قبلاً lookup شده (PatientId وجود دارد) و کد ملی تغییر نکرده، skip کن
     if ($pid.val() && $nc.data('last-looked-up') === nc) {
       console.log('🏥 V2: Patient already loaded for this national code, skipping lookup');
@@ -790,10 +934,15 @@
     }
     
     const nc = ($nc.val() || '').trim();
-    if (!/^\d{10}$/.test(nc)) {
+    if (!/^\d{10}$/.test(nc)) return;
+    var ncResult = validateIranianNationalCode(nc);
+    if (!ncResult.isValid) {
+      showNationalCodeError(ncResult.message);
+      $nc.addClass('is-invalid').focus();
       return;
     }
-    
+    $nc.removeClass('is-invalid');
+
     isLookingUp = true;
     
     // نمایش loading state
@@ -918,6 +1067,18 @@
       } else {
         console.log('🏥 V2: ✅ btnFastCreateSave found:', $btn[0]);
       }
+    });
+
+    // پاک‌سازی فرم ثبت سریع (دکمه «پاک‌سازی فرم» داخل مودال)
+    $('#btnFastCreateReset').on('click', function() {
+      var $form = $('#patientFastCreateForm');
+      if ($form.length) {
+        $form.trigger('reset');
+        $form.find('input, select').removeClass('is-invalid');
+      }
+      $('#fc_insurancePanel').removeClass('show');
+      var fcBirth = document.getElementById('fc_birth');
+      if (fcBirth && fcBirth.value) fcBirth.value = '';
     });
 
     $('#patientFastCreateModal').on('hidden.bs.modal', function() {
