@@ -44,7 +44,33 @@ namespace ClinicApp.ViewModels
         
         // Footer (Professional Medical Footer)
         public FooterViewModel Footer { get; set; }
+        
+        /// <summary>پربازدیدترین تخصص‌ها (لینک به نوبت‌دهی بر اساس دپارتمان)</summary>
+        public PopularSpecialtiesSectionViewModel PopularSpecialties { get; set; }
     }
+    
+    #region Popular Specialties Section (پربازدیدترین تخصص‌ها)
+    
+    /// <summary>
+    /// ViewModel برای بخش پربازدیدترین تخصص‌ها (مشابه دکترتو)
+    /// </summary>
+    public class PopularSpecialtiesSectionViewModel
+    {
+        public string SectionTitle { get; set; } = "پربازدیدترین تخصص‌ها";
+        public string SectionSubtitle { get; set; } = "مشاهده همه";
+        public string ViewAllUrl { get; set; }
+        public List<PopularSpecialtyItemViewModel> Items { get; set; } = new List<PopularSpecialtyItemViewModel>();
+    }
+    
+    public class PopularSpecialtyItemViewModel
+    {
+        public int DepartmentId { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public string Slug { get; set; }
+    }
+    
+    #endregion
 
     #region Hero Section
 

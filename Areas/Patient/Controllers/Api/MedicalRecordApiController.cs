@@ -58,6 +58,9 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     return ErrorJsonResult(result.Message);
                 }
                 
+                var list = result.Data ?? new List<MedicalHistoryViewModel>();
+                _logger.Information("GetMedicalHistories - PatientId: {PatientId}, Count: {Count}", patientId.Value, list.Count);
+                
                 return SuccessJsonResult(result.Data, result.Message);
             }
             catch (Exception ex)
@@ -211,6 +214,14 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var model = new MedicalHistoryCreateEditViewModel();
                 TryUpdateModel(model);
                 
+                // ✅ طبق قرارداد 01-Helpers-DateTime: تبدیل تاریخ شمسی از فرم به DateTime
+                var startStr = Request.Form["StartDate"];
+                var endStr = Request.Form["EndDate"];
+                if (!string.IsNullOrWhiteSpace(startStr))
+                    model.StartDate = PersianDateHelper.ParsePersianDate(startStr.Trim());
+                if (!string.IsNullOrWhiteSpace(endStr))
+                    model.EndDate = PersianDateHelper.ParsePersianDate(endStr.Trim());
+                
                 // ✅ Handle file uploads
                 var attachmentPaths = new List<string>();
                 if (Request.Files != null && Request.Files.Count > 0)
@@ -271,6 +282,14 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 // ✅ Parse form data
                 var model = new MedicalHistoryCreateEditViewModel();
                 TryUpdateModel(model);
+                
+                // ✅ طبق قرارداد 01-Helpers-DateTime: تبدیل تاریخ شمسی از فرم به DateTime
+                var startStr = Request.Form["StartDate"];
+                var endStr = Request.Form["EndDate"];
+                if (!string.IsNullOrWhiteSpace(startStr))
+                    model.StartDate = PersianDateHelper.ParsePersianDate(startStr.Trim());
+                if (!string.IsNullOrWhiteSpace(endStr))
+                    model.EndDate = PersianDateHelper.ParsePersianDate(endStr.Trim());
                 
                 // ✅ Handle file uploads (append to existing attachments)
                 var attachmentPaths = new List<string>();

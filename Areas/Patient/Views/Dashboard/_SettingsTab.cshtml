@@ -1,7 +1,25 @@
-@* ✅ Settings Tab Content - Placeholder *@
+@model ClinicApp.ViewModels.Patient.PatientSettingsViewModel
+@{
+    Layout = null;
+    var settingsUrl = Url.Action("Index", "Settings", new { area = "Patient" });
+}
+<style>
+    /* تنظیمات تب داشبورد - اسکوپ شده */
+    .settings-tab-container .settings-section-title { font-size: 1.1rem; font-weight: 600; color: #212529; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef; }
+    .settings-tab-container .settings-item { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .settings-tab-container .settings-item-content { flex: 1; min-width: 0; }
+    .settings-tab-container .settings-item-title { font-weight: 600; color: #212529; margin-bottom: 0.2rem; }
+    .settings-tab-container .settings-item-description { font-size: 0.8rem; color: #6c757d; margin: 0; }
+    .settings-tab-container .settings-item-action { margin-right: 0; margin-top: 0.25rem; }
+    .settings-tab-container .custom-switch { position: relative; display: inline-block; width: 48px; height: 24px; }
+    .settings-tab-container .custom-switch input { opacity: 0; width: 0; height: 0; }
+    .settings-tab-container .switch-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: 0.3s; border-radius: 24px; }
+    .settings-tab-container .switch-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; transition: 0.3s; border-radius: 50%; }
+    .settings-tab-container input:checked + .switch-slider { background: var(--medical-success, #28a745); }
+    .settings-tab-container input:checked + .switch-slider:before { transform: translateX(24px); }
+</style>
 
 <div class="settings-tab-container">
-    
     <div class="tab-header mb-4">
         <h2 class="tab-title">
             <i class="fas fa-cog ml-2"></i>
@@ -10,10 +28,77 @@
         <p class="tab-subtitle text-muted">تنظیمات حساب کاربری و اعلان‌ها</p>
     </div>
 
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle ml-2"></i>
-        <strong>در حال توسعه</strong> - این بخش به زودی فعال خواهد شد.
+    <!-- حساب کاربری -->
+    <div class="settings-section mb-4">
+        <h3 class="settings-section-title">
+            <i class="fas fa-user-circle ml-1"></i>
+            حساب کاربری
+        </h3>
+        <div class="settings-item">
+            <div class="settings-item-content">
+                <div class="settings-item-title">@(Model?.FullName ?? "بیمار")</div>
+                <p class="settings-item-description">مدیریت پروفایل، حریم خصوصی و امنیت از صفحه تنظیمات کامل</p>
+            </div>
+            <div class="settings-item-action">
+                <a href="@settingsUrl" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt ml-1"></i>
+                    تنظیمات کامل
+                </a>
+            </div>
+        </div>
     </div>
 
+    <!-- اعلان‌ها -->
+    <div class="settings-section">
+        <h3 class="settings-section-title">
+            <i class="fas fa-bell ml-1"></i>
+            تنظیمات اعلان‌ها
+        </h3>
+        @using (Html.BeginForm("UpdateNotifications", "Settings", new { area = "Patient" }, FormMethod.Post, new { id = "settingsNotificationsForm", data_ajax = "true" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">اعلان‌های ایمیل</div>
+                    <p class="settings-item-description">دریافت اعلان‌ها از طریق ایمیل</p>
+                </div>
+                <div class="settings-item-action">
+                    <label class="custom-switch">
+                        <input type="checkbox" name="emailNotifications" id="emailNotifications" value="true" @(Model != null && Model.EmailNotifications ? "checked" : "")>
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">اعلان‌های پیامکی</div>
+                    <p class="settings-item-description">دریافت اعلان‌ها از طریق پیامک</p>
+                </div>
+                <div class="settings-item-action">
+                    <label class="custom-switch">
+                        <input type="checkbox" name="smsNotifications" id="smsNotifications" value="true" @(Model != null && Model.SmsNotifications ? "checked" : "")>
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">یادآوری نوبت</div>
+                    <p class="settings-item-description">دریافت یادآوری قبل از نوبت پزشکی</p>
+                </div>
+                <div class="settings-item-action">
+                    <label class="custom-switch">
+                        <input type="checkbox" name="appointmentReminders" id="appointmentReminders" value="true" @(Model != null && Model.AppointmentReminders ? "checked" : "")>
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save ml-1"></i>
+                    ذخیره تغییرات
+                </button>
+            </div>
+        }
+    </div>
 </div>
-

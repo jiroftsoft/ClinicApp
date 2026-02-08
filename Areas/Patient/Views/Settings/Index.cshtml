@@ -240,7 +240,7 @@
                             <p class="settings-item-description">مشاهده و ویرایش اطلاعات شخصی</p>
                         </div>
                         <div class="settings-item-action">
-                            <a href="@Url.Action("Profile", "Account", new { area = "" })" class="btn btn-outline-primary btn-sm">
+                            <a href="@(Url.Action("Index", "Dashboard", new { area = "Patient" }))#profile" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-edit me-1"></i>
                                 ویرایش
                             </a>
@@ -249,14 +249,11 @@
 
                     <div class="settings-item">
                         <div class="settings-item-content">
-                            <div class="settings-item-title">تغییر رمز عبور</div>
-                            <p class="settings-item-description">تغییر رمز عبور حساب کاربری</p>
+                                <div class="settings-item-title">ورود با کد یکبار مصرف (OTP)</div>
+                            <p class="settings-item-description">ورود شما با ارسال کد تأیید به موبایل انجام می‌شود؛ نیازی به رمز عبور نیست.</p>
                         </div>
                         <div class="settings-item-action">
-                            <a href="@Url.Action("ChangePassword", "Manage", new { area = "" })" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-key me-1"></i>
-                                تغییر رمز
-                            </a>
+                            <span class="badge bg-success">فعال</span>
                         </div>
                     </div>
                 </div>
@@ -371,14 +368,11 @@
                     
                     <div class="settings-item">
                         <div class="settings-item-content">
-                            <div class="settings-item-title">تغییر رمز عبور</div>
-                            <p class="settings-item-description">تغییر رمز عبور برای امنیت بیشتر حساب</p>
+                            <div class="settings-item-title">ورود با کد یکبار مصرف (OTP)</div>
+                            <p class="settings-item-description">ورود شما با ارسال کد تأیید به شماره موبایل ثبت‌شده انجام می‌شود.</p>
                         </div>
                         <div class="settings-item-action">
-                            <a href="@Url.Action("ChangePassword", "Manage", new { area = "" })" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-key me-1"></i>
-                                تغییر رمز
-                            </a>
+                            <span class="badge bg-success">فعال</span>
                         </div>
                     </div>
 
@@ -392,9 +386,9 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-warning mt-3">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>نکته امنیتی:</strong> هیچ‌گاه رمز عبور خود را با دیگران به اشتراک نگذارید.
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-mobile-alt me-1"></i>
+                        <strong>نکته امنیتی:</strong> کد تأیید ارسال‌شده به موبایل را با دیگران به اشتراک نگذارید.
                     </div>
                 </div>
             </div>

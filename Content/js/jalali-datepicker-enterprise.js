@@ -64,7 +64,7 @@
             retryDelay: 100,
             maxRetries: 30,
             
-            // ✅ Default JalaliDatePicker Options
+            // ✅ Default JalaliDatePicker Options (zIndex بالاتر از مودال Bootstrap ~1050 تا تقویم روی مودال باز شود)
             defaultOptions: {
                 date: true,
                 time: false,
@@ -77,6 +77,8 @@
                 autoReadOnlyInput: true,
                 useDropDownYears: true,
                 persianDigits: false,
+                container: 'body',
+                zIndex: 1060,
                 separatorChars: {
                     date: '/',
                     between: ' ',
@@ -695,6 +697,17 @@
             if (count > 0) {
                 self.logger.success('Initialized DatePickers:', count + ' instances');
             }
+        },
+
+        /**
+         * ✅ اجرای مجدد startWatch برای اینپوتهای داخل مودال/محتوای لودشده با AJAX
+         * وقتی مودال تاریخچه پزشکی یا هر محتوای داینامیک با [data-jdp] بعد از لود صفحه اضافه می‌شود، این متد را صدا بزنید.
+         */
+        startWatchAgain: function() {
+            if (typeof jalaliDatepicker === 'undefined') return;
+            var opts = JalaliDatePickerEnterprise.config.defaultOptions;
+            jalaliDatepicker.startWatch(opts);
+            JalaliDatePickerEnterprise.initializeAll();
         }
     };
 
@@ -708,9 +721,10 @@
     function initializeEnterprise() {
         if (typeof jalaliDatepicker !== 'undefined') {
             try {
-                // ✅ فقط یک بار startWatch را فراخوانی می‌کنیم
+                // ✅ هر بار startWatch صدا زده شود تا اینپوتهای لودشده با AJAX (مثلاً داخل مودال) هم به تقویم وصل شوند
+                var opts = JalaliDatePickerEnterprise.config.defaultOptions;
+                jalaliDatepicker.startWatch(opts);
                 if (!enterpriseInitialized) {
-                    jalaliDatepicker.startWatch(JalaliDatePickerEnterprise.config.defaultOptions);
                     enterpriseInitialized = true;
                 }
                 JalaliDatePickerEnterprise.initializeAll();

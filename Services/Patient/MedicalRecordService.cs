@@ -9,6 +9,8 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces.Repositories;
 using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Entities.Triage;
+using ClinicApp.Services.Triage;
 using ClinicApp.ViewModels.Patient.MedicalRecord;
 using Serilog;
 
@@ -24,6 +26,7 @@ namespace ClinicApp.Services.Patient
         private readonly IMedicalRecordRepository _repository;
         private readonly IPatientService _patientService;
         private readonly IAppointmentBookingService _appointmentService;
+        private readonly ITriageService _triageService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
         
@@ -31,12 +34,14 @@ namespace ClinicApp.Services.Patient
             IMedicalRecordRepository repository,
             IPatientService patientService,
             IAppointmentBookingService appointmentService,
+            ITriageService triageService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _appointmentService = appointmentService ?? throw new ArgumentNullException(nameof(appointmentService));
+            _triageService = triageService ?? throw new ArgumentNullException(nameof(triageService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger?.ForContext<MedicalRecordService>();
         }
@@ -659,9 +664,25 @@ namespace ClinicApp.Services.Patient
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 50) pageSize = 50;
                 
-                // FIXME(Phase 2): دریافت از TriageService یا Repository
-                // فعلاً لیست خالی برمی‌گردانیم
-                var viewModels = new List<MedicalRecordTriageViewModel>();
+                // ✅ دریافت از TriageService + Factory Method
+                var triageResult = await _triageService.GetPatientTriageAssessmentsAsync(patientId, includeCompleted: true);
+                if (!triageResult.Success)
+                {
+                    return ServiceResult<List<MedicalRecordTriageViewModel>>.Failed(
+                        triageResult.Message,
+                        triageResult.Code ?? "TRIAGE_LOAD_FAILED");
+                }
+                
+                var allAssessments = triageResult.Data ?? new List<TriageAssessment>();
+                var paged = allAssessments
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                
+                var viewModels = paged.Select(ta => MedicalRecordFactory.ToViewModel(
+                    ta,
+                    ta.VitalSigns?.OrderByDescending(v => v.MeasurementTime).FirstOrDefault(),
+                    ta.Assessor?.FullName ?? ta.Assessor?.UserName)).ToList();
                 
                 return ServiceResult<List<MedicalRecordTriageViewModel>>.Successful(
                     viewModels,

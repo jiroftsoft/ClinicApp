@@ -3,8 +3,12 @@
     Layout = null; // ✅ Partial View - No Layout
 }
 
+@* ✅ URLهای API از سرور برای جلوگیری از 404 (virtual path / route changes) *@
 <!-- ✅ Medical Record Shell - Component-Based Architecture -->
-<div id="medicalRecordShell" class="medical-record-shell">
+<div id="medicalRecordShell" class="medical-record-shell"
+     data-api-create="@Url.Action("CreateMedicalHistory", "MedicalRecordApi", new { area = "Patient" })"
+     data-api-update="@Url.Action("UpdateMedicalHistory", "MedicalRecordApi", new { area = "Patient" })"
+     data-api-base="@(Url.Action("GetMedicalHistories", "MedicalRecordApi", new { area = "Patient" })?.Replace("/GetMedicalHistories", "") ?? "/Patient/Api/MedicalRecord")">
     
     <!-- ✅ Header Section -->
     <section class="medical-record-header">
@@ -57,8 +61,8 @@
                                 <i class="fas fa-history ml-2"></i>
                                 تاریخچه پزشکی
                             </h3>
-                            <button class="btn btn-link btn-sm add-medical-history" data-toggle="modal" data-target="#medicalHistoryModal">
-                                <i class="fas fa-plus ml-1"></i>
+                            <button type="button" class="btn btn-link btn-sm add-medical-history" data-bs-toggle="modal" data-bs-target="#medicalHistoryModal" aria-label="افزودن تاریخچه پزشکی">
+                                <i class="fas fa-plus me-1"></i>
                                 افزودن
                             </button>
                         </div>
@@ -79,8 +83,8 @@
                                     <br>
                                     هیچ تاریخچه پزشکی ثبت نشده است
                                     <br>
-                                    <button class="btn btn-primary btn-sm mt-3 add-medical-history" data-toggle="modal" data-target="#medicalHistoryModal">
-                                        <i class="fas fa-plus ml-1"></i>
+                                    <button type="button" class="btn btn-primary btn-sm mt-3 add-medical-history" data-bs-toggle="modal" data-bs-target="#medicalHistoryModal">
+                                        <i class="fas fa-plus me-1"></i>
                                         افزودن تاریخچه پزشکی
                                     </button>
                                 </p>
@@ -186,9 +190,49 @@
                     </div>
                 </div>
 
+                <!-- ✅ Component: Triage / علائم حیاتی (AJAX Loaded) -->
+                <div class="col-12 mb-4">
+                    <div class="medical-record-card" data-medical-record-section="triage">
+                        <div class="medical-record-card-header">
+                            <h3 class="medical-record-card-title">
+                                <i class="fas fa-stethoscope ml-2"></i>
+                                ارزیابی تریاژ و علائم حیاتی
+                            </h3>
+                        </div>
+                        <div class="medical-record-card-body">
+                            <div class="medical-record-section-loading">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <span class="ml-2">در حال بارگذاری ارزیابی تریاژ...</span>
+                            </div>
+                            <div class="medical-record-section-content" style="display: none;"></div>
+                            <div class="medical-record-section-empty" style="display: none;">
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-stethoscope fa-2x mb-2"></i>
+                                    <br>
+                                    هیچ ارزیابی تریاژی ثبت نشده است
+                                </p>
+                            </div>
+                            <div class="medical-record-section-error" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    <span class="error-message">خطا در بارگذاری</span>
+                                    <button class="btn btn-sm btn-outline-danger mt-2 reload-section" data-section="triage">
+                                        تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
+
+    <!-- ✅ مودال تاریخچه پزشکی داخل Shell تا در داشبورد (AJAX) هم موجود باشد - مسیر کامل چون از Dashboard لود می‌شود -->
+    @Html.Partial("~/Areas/Patient/Views/MedicalRecord/_MedicalHistoryModal.cshtml", new ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryCreateEditViewModel())
 
 </div>
 

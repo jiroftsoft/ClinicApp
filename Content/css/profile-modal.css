@@ -1,0 +1,145 @@
+/**
+ * Profile Modal - Production-Ready Medical Environment
+ * مودال پروفایل در صفحه اصلی - بهینه برای پروداکشن درمانی
+ *
+ * طبق: 03-Development-Contract-Quick-Guide, --medical-* پالت، بدون گرادینت
+ */
+
+:root {
+    --profile-modal-primary: var(--medical-primary, #2c5aa0);
+    --profile-modal-primary-dark: var(--medical-primary-dark, #1e3d6f);
+    --profile-modal-border: var(--medical-border, #dee2e6);
+    --profile-modal-bg: #fff;
+    --profile-modal-text: var(--medical-text, #212529);
+    --profile-modal-text-muted: var(--medical-text-muted, #6c757d);
+}
+
+/* Backdrop */
+.profile-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.profile-modal-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal container */
+.profile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.profile-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Dialog */
+.profile-modal-dialog {
+    margin: 0 auto;
+    max-width: 560px;
+    width: 100%;
+    max-height: calc(100vh - 2rem);
+}
+
+.profile-modal-content {
+    background: var(--profile-modal-bg);
+    border-radius: 12px;
+    border: 1px solid var(--profile-modal-border);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 2rem);
+}
+
+/* Header - رنگ ساده درمانی بدون گرادینت */
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background-color: var(--profile-modal-primary);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.profile-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: 'Vazirmatn', 'Vazir', Tahoma, sans-serif;
+}
+
+.profile-modal-close {
+    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+    border: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    opacity: 0.9;
+    border-radius: 4px;
+}
+
+.profile-modal-close:hover {
+    opacity: 1;
+}
+
+/* Body */
+.profile-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 120px;
+}
+
+.profile-modal-loading {
+    min-height: 160px;
+}
+
+/* Card inside modal - هماهنگ با پالت */
+.profile-modal .profile-card .card-header {
+    background-color: var(--profile-modal-primary);
+    color: #fff;
+}
+
+.profile-modal .btn-primary {
+    background-color: var(--profile-modal-primary);
+    border-color: var(--profile-modal-primary);
+}
+
+.profile-modal .btn-primary:hover {
+    background-color: var(--profile-modal-primary-dark);
+    border-color: var(--profile-modal-primary-dark);
+}
+
+/* RTL */
+[dir="rtl"] .profile-modal-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .profile-modal-close {
+    margin-right: 0;
+    margin-left: auto;
+}

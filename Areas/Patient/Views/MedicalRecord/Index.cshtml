@@ -8,9 +8,6 @@
     @Html.Partial("_MedicalRecordShell", Model)
 </div>
 
-<!-- ✅ Medical History Modal -->
-@Html.Partial("_MedicalHistoryModal", new ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryCreateEditViewModel())
-
 @section Styles {
     <link href="~/Content/css/medical-record.css" rel="stylesheet" />
 }

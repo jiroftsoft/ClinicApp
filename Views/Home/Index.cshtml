@@ -106,6 +106,16 @@
                 </section>
             }
 
+            <!-- پربازدیدترین تخصص‌ها (مشابه دکترتو) -->
+            @if (Model.PopularSpecialties != null && Model.PopularSpecialties.Items != null && Model.PopularSpecialties.Items.Any())
+            {
+                <section class="popular-specialties-section" data-lazy-load="true" data-section-type="popular-specialties" data-section-id="popular-specialties" aria-label="@Model.PopularSpecialties.SectionTitle">
+                    @{
+                        Html.RenderPartial("Sections/_PopularSpecialtiesSection", Model.PopularSpecialties);
+                    }
+                </section>
+            }
+
             <!-- Testimonials Section - Lazy Load -->
             @if (Model.Testimonials != null && Model.Testimonials.Testimonials != null && Model.Testimonials.Testimonials.Any())
             {
@@ -129,7 +139,7 @@
             <!-- Blog Section - Lazy Load -->
             @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
             {
-                <section class="blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog" aria-label="مقالات و اخبار">
+                <section class="blog-section magazine-blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog" aria-label="@(Model.Blog?.SectionTitle ?? "آخرین مطالب مجلهٔ سلامت")">
                     @{
                         Html.RenderPartial("Sections/_BlogSection", Model.Blog);
                     }

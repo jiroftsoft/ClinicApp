@@ -25,11 +25,33 @@
                 url: '/GetReceptions',
                 container: '[data-medical-record-section="receptions"]',
                 partial: '_ReceptionsSection'
+            },
+            triage: {
+                url: '/GetTriageAssessments',
+                container: '[data-medical-record-section="triage"]',
+                partial: '_TriageSection'
             }
         },
         retryAttempts: 3,
         retryDelay: 2000
     };
+    
+    /** ✅ URL از سرور (data-* روی #medicalRecordShell) برای جلوگیری از 404 / virtual path */
+    function getApiBaseUrl() {
+        var $shell = $('#medicalRecordShell');
+        if ($shell.length && $shell.data('api-base')) return $shell.data('api-base');
+        return config.apiBaseUrl;
+    }
+    function getCreateMedicalHistoryUrl() {
+        var $shell = $('#medicalRecordShell');
+        if ($shell.length && $shell.data('api-create')) return $shell.data('api-create');
+        return config.apiBaseUrl + '/CreateMedicalHistory';
+    }
+    function getUpdateMedicalHistoryUrl() {
+        var $shell = $('#medicalRecordShell');
+        if ($shell.length && $shell.data('api-update')) return $shell.data('api-update');
+        return config.apiBaseUrl + '/UpdateMedicalHistory';
+    }
     
     // ✅ MedicalRecord - Enterprise-Grade Module
     var MedicalRecord = {
@@ -52,7 +74,8 @@
             Promise.all([
                 this.loadSection('medicalHistory'),
                 this.loadSection('appointments'),
-                this.loadSection('receptions')
+                this.loadSection('receptions'),
+                this.loadSection('triage')
             ]).catch(function(error) {
                 console.error('Error loading medical record sections:', error);
             });
@@ -71,7 +94,9 @@
                 return Promise.reject('Unknown section');
             }
             
-            var $container = $(section.container);
+            // ✅ همیشه بخش را داخل Shell جستجو کن تا در داشبورد به‌درستی به‌روز شود
+            var $shell = $('#medicalRecordShell');
+            var $container = $shell.length ? $shell.find(section.container).first() : $(section.container);
             if ($container.length === 0) {
                 console.warn('Container not found for section:', sectionName);
                 return Promise.reject('Container not found');
@@ -80,8 +105,8 @@
             // ✅ Show loading state
             this.showLoading($container);
             
-            // ✅ Build URL
-            var url = config.apiBaseUrl + section.url;
+            // ✅ Build URL (ترجیح از data-api-base سرور)
+            var url = getApiBaseUrl() + section.url;
             
             // ✅ AJAX request
             return $.ajax({
@@ -95,10 +120,21 @@
                 cache: false,
                 timeout: 30000
             }).then(function(response) {
-                if (response && response.success && response.data) {
-                    self.renderSection($container, section.partial, response.data);
+                var ok = response && (response.success === true || response.Success === true);
+                var data = response && (response.data !== undefined ? response.data : response.Data);
+                if (ok) {
+                    var list = Array.isArray(data) ? data : (data && (data.items || data.Items) ? (data.items || data.Items) : []);
+                    if (!Array.isArray(list)) list = [];
+                    if (sectionName === 'medicalHistory') {
+                        if (list.length > 0) {
+                            console.log('✅ Medical history loaded:', list.length, 'item(s)');
+                        } else {
+                            console.warn('⚠️ GetMedicalHistories returned success but 0 items. Check Patient.ApplicationUserId for PatientId 7127.');
+                        }
+                    }
+                    self.renderSection($container, section.partial, list);
                 } else {
-                    self.showError($container, response?.message || 'خطا در بارگذاری');
+                    self.showError($container, (response && (response.message || response.Message)) || 'خطا در بارگذاری');
                 }
             }).catch(function(xhr, status, error) {
                 console.error('AJAX Error for section:', sectionName, { xhr: xhr, status: status, error: error });
@@ -149,6 +185,12 @@
             } else {
                 // ✅ Render content via AJAX (load partial view)
                 var renderUrl = '/Patient/MedicalRecord/RenderPartial?partialName=' + encodeURIComponent(partialName);
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+                var ajaxHeaders = {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-AJAX-Request': 'true'
+                };
+                if (token) ajaxHeaders['RequestVerificationToken'] = token;
                 
                 $.ajax({
                     url: renderUrl,
@@ -156,6 +198,7 @@
                     data: JSON.stringify(data),
                     contentType: 'application/json',
                     dataType: 'html',
+                    headers: ajaxHeaders,
                     success: function(html) {
                         $cardBody.find('.medical-record-section-content').html(html).show();
                         $cardBody.find('.medical-record-section-empty').hide();
@@ -300,16 +343,27 @@
             }
             
             // Reset form
-            $('#medicalHistoryForm')[0].reset();
+            var form = $('#medicalHistoryForm')[0];
+            if (form) form.reset();
             $('#MedicalHistoryId').val('');
+            $('#Title').val('');
             $('#modalTitle').text('افزودن تاریخچه پزشکی');
             $('#attachmentsPreview').empty();
+            $('#startDatePicker').val('');
+            $('#endDatePicker').val('');
             
-            // Show modal
+            // ✅ DatePicker شمسی: اجرای مجدد startWatch تا تقویم روی کلیک باز شود (به‌خصوص وقتی مودال با AJAX لود شده)
+            if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.startWatchAgain) {
+                setTimeout(function() {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }, 100);
+            }
+            
+            // Show modal (Bootstrap 5)
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                var modal = new bootstrap.Modal($modal[0]);
-                modal.show();
-            } else {
+                var modalInstance = bootstrap.Modal.getOrCreateInstance($modal[0]);
+                modalInstance.show();
+            } else if ($modal.modal) {
                 $modal.modal('show');
             }
         },
@@ -321,7 +375,7 @@
             var self = this;
             
             $.ajax({
-                url: config.apiBaseUrl + '/GetMedicalHistory',
+                url: getApiBaseUrl() + '/GetMedicalHistory',
                 method: 'GET',
                 data: { id: medicalHistoryId },
                 dataType: 'json',
@@ -332,9 +386,9 @@
                         
                         var $modal = $('#medicalHistoryModal');
                         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                            var modal = new bootstrap.Modal($modal[0]);
-                            modal.show();
-                        } else {
+                            var modalInstance = bootstrap.Modal.getOrCreateInstance($modal[0]);
+                            modalInstance.show();
+                        } else if ($modal.modal) {
                             $modal.modal('show');
                         }
                     } else {
@@ -366,8 +420,9 @@
             $('#Type').val(data.Type);
             $('#Title').val(data.Title);
             $('#Description').val(data.Description);
-            $('#StartDate').val(data.StartDate ? new Date(data.StartDate).toISOString().split('T')[0] : '');
-            $('#EndDate').val(data.EndDate ? new Date(data.EndDate).toISOString().split('T')[0] : '');
+            // ✅ طبق قرارداد: DatePicker شمسی - مقدار از API به صورت شمسی (StartDateShamsi / EndDateShamsi)
+            $('#startDatePicker').val(data.StartDateShamsi || '');
+            $('#endDatePicker').val(data.EndDateShamsi || '');
             $('#Severity').val(data.Severity);
             $('#IsActive').prop('checked', data.IsActive);
             $('#DoctorName').val(data.DoctorName);
@@ -387,19 +442,16 @@
             // Disable button
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin ml-1"></i> در حال ذخیره...');
             
-            // Get form data
+            // Get form data (FormData شامل __RequestVerificationToken داخل همین فرم است)
             var formData = new FormData($form[0]);
-            
-            // ✅ Add anti-forgery token
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            if (token) {
+            // ✅ اگر توکن داخل فرم نبود (مثلاً لود AJAX)، از همین فرم بگیر تا با کوکی سرور جور باشد
+            var token = $form.find('input[name="__RequestVerificationToken"]').val();
+            if (token && !formData.has('__RequestVerificationToken')) {
                 formData.append('__RequestVerificationToken', token);
             }
             
-            // Determine URL
-            var url = isEdit 
-                ? config.apiBaseUrl + '/UpdateMedicalHistory'
-                : config.apiBaseUrl + '/CreateMedicalHistory';
+            // ✅ URL از سرور (data-api-create / data-api-update) برای جلوگیری از 404
+            var url = isEdit ? getUpdateMedicalHistoryUrl() : getCreateMedicalHistoryUrl();
             
             $.ajax({
                 url: url,
@@ -419,9 +471,9 @@
                             // Close modal
                             var $modal = $('#medicalHistoryModal');
                             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                                var modal = bootstrap.Modal.getInstance($modal[0]);
-                                if (modal) modal.hide();
-                            } else {
+                                var modalInstance = bootstrap.Modal.getInstance($modal[0]);
+                                if (modalInstance) modalInstance.hide();
+                            } else if ($modal.modal) {
                                 $modal.modal('hide');
                             }
                             
@@ -474,7 +526,7 @@
             }).then(function(result) {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: config.apiBaseUrl + '/DeleteMedicalHistory',
+                        url: getApiBaseUrl() + '/DeleteMedicalHistory',
                         method: 'POST',
                         data: { id: medicalHistoryId },
                         dataType: 'json',

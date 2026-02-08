@@ -220,7 +220,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 };
 
                 var result = await _settingsService.UpdateNotificationSettingsAsync(patientId.Value, dto);
-                
+
                 if (result.Success)
                 {
                     _logger.Information("تنظیمات اعلان‌ها به‌روزرسانی شد - PatientId: {PatientId}", patientId);
@@ -231,13 +231,23 @@ namespace ClinicApp.Areas.Patient.Controllers
                     _logger.Warning("خطا در به‌روزرسانی تنظیمات - PatientId: {PatientId}, Error: {Error}", patientId, result.Message);
                     NotificationHelper.SetError(TempData, result.Message);
                 }
-                
+
+                // ✅ AJAX: بازگشت JSON برای تب تنظیمات داشبورد (بدون رفرش)
+                if (Request.IsAjaxRequest() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = result.Success, message = result.Message }, JsonRequestBehavior.DenyGet);
+                }
+
                 return RedirectToAction("Index", new { tab = "notifications" });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در به‌روزرسانی تنظیمات اعلان‌ها");
                 NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی تنظیمات اعلان‌ها");
+                if (Request.IsAjaxRequest() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "خطا در به‌روزرسانی تنظیمات اعلان‌ها" }, JsonRequestBehavior.DenyGet);
+                }
                 return RedirectToAction("Index", new { tab = "notifications" });
             }
         }

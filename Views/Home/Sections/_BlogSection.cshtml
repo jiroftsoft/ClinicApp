@@ -2,15 +2,22 @@
 
 @if (Model == null || Model.Posts == null || !Model.Posts.Any()) { return; }
 <div class="blog-inner">
-    <div class="container">
-            <div class="blog-header">
+        <div class="container">
+            @* هدر مجله‌ای: عنوان + لینک «همه مقالات» (مشابه دکترتو) *@
+            <div class="blog-header blog-header-magazine">
                 <h2 class="blog-title">@Model.SectionTitle</h2>
-                <p class="blog-subtitle">@Model.SectionSubtitle</p>
+                @if (!string.IsNullOrEmpty(Model.ViewAllPostsUrl))
+                {
+                    <a href="@Model.ViewAllPostsUrl" class="blog-view-all-link" aria-label="@Model.SectionSubtitle">
+                        @Model.SectionSubtitle
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                    </a>
+                }
             </div>
 
-            @* Grid سه‌ستونه - حداکثر 3-4 مقاله *@
+            @* گرید مقالات - تا ۶ کارت *@
             <div class="blog-grid">
-                @foreach (var post in Model.Posts.Take(3))
+                @foreach (var post in Model.Posts.Take(6))
                 {
                     <article class="blog-card" tabindex="0" role="article" aria-label="@post.Title">
                         @* تصویر شاخص (ملایم، درمانی) *@
@@ -35,13 +42,13 @@
                             @* عنوان مقاله (حداکثر 2 خط) *@
                             <h3 class="blog-post-title">@post.Title</h3>
                             
-                            @* خلاصه علمی کوتاه (2-3 خط، 300-400 کاراکتر) *@
+                            @* خلاصه کوتاه (حداکثر ۲ خط در مجله) *@
                             @if (!string.IsNullOrEmpty(post.Summary))
                             {
                                 <p class="blog-post-summary">
                                     @{
                                         var summary = post.Summary;
-                                        var maxLength = 350; // 300-400 کاراکتر
+                                        var maxLength = 120;
                                         if (summary.Length > maxLength)
                                         {
                                             summary = summary.Substring(0, maxLength) + "...";
@@ -51,7 +58,7 @@
                                 </p>
                             }
                             
-                            @* دسته‌بندی | تاریخ شمسی *@
+                            @* متا: دسته‌بندی و تاریخ شمسی *@
                             <div class="blog-meta">
                                 @if (!string.IsNullOrEmpty(post.CategoryName))
                                 {
@@ -78,17 +85,6 @@
                     </article>
                 }
             </div>
-
-            @* View All Button *@
-            @if (!string.IsNullOrEmpty(Model.ViewAllPostsUrl))
-            {
-                <div class="blog-view-all">
-                    <a href="@Model.ViewAllPostsUrl" class="blog-view-all-button" aria-label="مشاهده همه مقالات">
-                        <i class="fas fa-book-medical" aria-hidden="true"></i>
-                        <span>مشاهده همه مقالات</span>
-                    </a>
-                </div>
-            }
 
             @* Legal Notice - ملاحظات حقوقی و پزشکی *@
             <div class="blog-legal-notice">

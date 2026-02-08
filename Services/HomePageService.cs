@@ -118,9 +118,10 @@ namespace ClinicApp.Services
                 var servicesTask = GetServicesSectionAsync(6, effectiveClinicId);
                 var doctorsTask = GetDoctorsSectionAsync(4, effectiveClinicId);
                 var quickAppointmentTask = GetQuickAppointmentSectionAsync(effectiveClinicId);
+                var popularSpecialtiesTask = GetPopularSpecialtiesSectionAsync(effectiveClinicId);
                 var testimonialsTask = GetTestimonialsSectionAsync(3, effectiveClinicId);
                 var galleryTask = GetGallerySectionAsync(6, effectiveClinicId);
-                var blogTask = GetBlogSectionAsync(3, effectiveClinicId);
+                var blogTask = GetBlogSectionAsync(6, effectiveClinicId);
                 var videosTask = GetVideoSectionAsync(6, "endoscopy", effectiveClinicId);
                 var contactTask = GetContactSectionAsync(effectiveClinicId);
                 var medicalEquipmentsTask = GetMedicalEquipmentsSectionAsync(6);
@@ -153,7 +154,7 @@ namespace ClinicApp.Services
                 // انتظار برای تمام Task ها
                 await Task.WhenAll(
                     heroTask, valuePropTask, servicesTask, doctorsTask, quickAppointmentTask,
-                    testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
+                    popularSpecialtiesTask, testimonialsTask, galleryTask, blogTask, videosTask, contactTask,
                     medicalEquipmentsTask, announcementsTask, faqsTask, healthTipsTask,
                     insuranceInfosTask, medicalServiceInfosTask, emergencyContactsTask,
                     storiesTask, promotionalEventsTask, sidebarSlidersTask, footerSlidersTask, sidebarTask, footerTask);
@@ -165,6 +166,7 @@ namespace ClinicApp.Services
                     Services = await servicesTask,
                     Doctors = await doctorsTask,
                     QuickAppointment = await quickAppointmentTask,
+                    PopularSpecialties = await popularSpecialtiesTask,
                     Testimonials = await testimonialsTask,
                     Gallery = await galleryTask,
                     Blog = await blogTask,
@@ -446,6 +448,51 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// پربازدیدترین تخصص‌ها (دپارتمان‌های درمانی برای نوبت‌دهی - مشابه دکترتو)
+        /// </summary>
+        public async Task<PopularSpecialtiesSectionViewModel> GetPopularSpecialtiesSectionAsync(int? clinicId = null)
+        {
+            try
+            {
+                var effectiveClinicId = clinicId ?? 1;
+                const string selectDoctorBaseUrl = "/Patient/Appointment/Book/SelectDoctor";
+                var departments = await _context.Departments
+                    .AsNoTracking()
+                    .Where(d => d.ClinicId == effectiveClinicId && !d.IsDeleted && d.IsActive
+                        && d.Type != DepartmentType.Administrative && d.Type != DepartmentType.AdmissionDischarge)
+                    .OrderBy(d => d.Name)
+                    .Take(24)
+                    .Select(d => new PopularSpecialtyItemViewModel
+                    {
+                        DepartmentId = d.DepartmentId,
+                        Name = d.Name,
+                        Slug = d.Code ?? d.Name,
+                        Url = selectDoctorBaseUrl + "?departmentId=" + d.DepartmentId
+                    })
+                    .ToListAsync();
+
+                return new PopularSpecialtiesSectionViewModel
+                {
+                    SectionTitle = "پربازدیدترین تخصص‌ها",
+                    SectionSubtitle = "مشاهده همه",
+                    ViewAllUrl = selectDoctorBaseUrl,
+                    Items = departments
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پربازدیدترین تخصص‌ها");
+                return new PopularSpecialtiesSectionViewModel
+                {
+                    SectionTitle = "پربازدیدترین تخصص‌ها",
+                    SectionSubtitle = "مشاهده همه",
+                    ViewAllUrl = "/Patient/Appointment/Book/SelectDoctor",
+                    Items = new List<PopularSpecialtyItemViewModel>()
+                };
+            }
+        }
+
+        /// <summary>
         /// دریافت داده‌های بخش Testimonials
         /// </summary>
         public async Task<TestimonialsSectionViewModel> GetTestimonialsSectionAsync(int count = 3, int? clinicId = null)
@@ -546,8 +593,8 @@ namespace ClinicApp.Services
 
                 return new BlogSectionViewModel
                 {
-                    SectionTitle = "مقالات و آموزش سلامت",
-                    SectionSubtitle = "آخرین مقالات و آموزش‌های سلامت",
+                    SectionTitle = "آخرین مطالب مجلهٔ سلامت",
+                    SectionSubtitle = "همه مقالات",
                     Posts = blogViewModels,
                     ViewAllPostsUrl = "/Blog"
                 };
@@ -557,8 +604,8 @@ namespace ClinicApp.Services
                 _logger.Error(ex, "خطا در دریافت داده‌های Blog Section");
                 return new BlogSectionViewModel
                 {
-                    SectionTitle = "مقالات و آموزش سلامت",
-                    SectionSubtitle = "آخرین مقالات و آموزش‌های سلامت",
+                    SectionTitle = "آخرین مطالب مجلهٔ سلامت",
+                    SectionSubtitle = "همه مقالات",
                     Posts = new List<BlogPostViewModel>(),
                     ViewAllPostsUrl = "/Blog"
                 };

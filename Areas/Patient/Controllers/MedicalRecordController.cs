@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -146,7 +147,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var allowedPartials = new[] { 
                     "_MedicalHistorySection",
                     "_AppointmentsSection",
-                    "_ReceptionsSection"
+                    "_ReceptionsSection",
+                    "_TriageSection"
                 };
                 
                 if (!allowedPartials.Contains(partialName))
@@ -154,25 +156,55 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return new HttpStatusCodeResult(403, "Partial not allowed");
                 }
                 
-                // ✅ Read JSON data from request body
+                // ✅ Read JSON data from request body (Reset stream در صورت مصرف شدن توسط فیلتر/مدل‌بایندر)
                 string jsonData = null;
-                using (var reader = new System.IO.StreamReader(Request.InputStream))
+                if (Request.InputStream != null)
                 {
-                    jsonData = reader.ReadToEnd();
+                    if (Request.InputStream.CanSeek)
+                        Request.InputStream.Position = 0;
+                    using (var reader = new System.IO.StreamReader(Request.InputStream, System.Text.Encoding.UTF8, true, 1024, true))
+                    {
+                        jsonData = reader.ReadToEnd();
+                    }
                 }
                 
                 object model = null;
                 if (!string.IsNullOrWhiteSpace(jsonData))
                 {
+                    var jsonSettings = new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                    };
                     try
                     {
-                        model = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonData);
+                        // ✅ Strongly-typed deserialization for partial views
+                        if (partialName == "_TriageSection")
+                        {
+                            model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalRecordTriageViewModel>>(jsonData, jsonSettings)
+                                ?? new List<MedicalRecordTriageViewModel>();
+                        }
+                        else if (partialName == "_MedicalHistorySection")
+                        {
+                            model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalHistoryViewModel>>(jsonData, jsonSettings)
+                                ?? new List<MedicalHistoryViewModel>();
+                        }
+                        else
+                        {
+                            model = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonData, jsonSettings);
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // If JSON parsing fails, use empty model
+                        _logger.Warning(ex, "RenderPartial deserialization failed for {PartialName}, using empty list. JsonLength: {Length}", partialName, jsonData?.Length ?? 0);
+                        if (partialName == "_TriageSection")
+                            model = new List<MedicalRecordTriageViewModel>();
+                        else if (partialName == "_MedicalHistorySection")
+                            model = new List<MedicalHistoryViewModel>();
                     }
                 }
+                
+                if (partialName == "_MedicalHistorySection" && model is List<MedicalHistoryViewModel> list)
+                    _logger.Debug("RenderPartial _MedicalHistorySection - Model count: {Count}", list.Count);
                 
                 return PartialView(partialName, model);
             }

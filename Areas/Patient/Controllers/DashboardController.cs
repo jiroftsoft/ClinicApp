@@ -8,6 +8,7 @@ using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient;
+using ClinicApp.ViewModels.Patient.MedicalRecord;
 using Microsoft.AspNet.Identity;
 using Serilog;
 using System.Web.Mvc.Async;
@@ -26,14 +27,17 @@ namespace ClinicApp.Areas.Patient.Controllers
     public class DashboardController : BasePatientController
     {
         private readonly IPatientDashboardService _dashboardService;
+        private readonly IPatientSettingsService _settingsService;
 
         public DashboardController(
             IPatientDashboardService dashboardService,
+            IPatientSettingsService settingsService,
             ILogger logger,
             ICurrentUserService currentUserService)
             : base(logger, currentUserService)
         {
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         }
 
         /// <summary>
@@ -191,7 +195,9 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 _logger.Information("📄 Loading Medical Record Tab - PatientId: {PatientId}", patientId.Value);
                 
-                return PartialView("_MedicalRecordTab");
+                // ✅ بازگرداندن همان Shell پرونده الکترونیک برای یکپارچگی با صفحه اختصاصی
+                var shellModel = new MedicalRecordIndexViewModel { PatientId = patientId.Value };
+                return PartialView("~/Areas/Patient/Views/MedicalRecord/_MedicalRecordShell.cshtml", shellModel);
             }
             catch (Exception ex)
             {
@@ -201,8 +207,9 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
-        /// ✅ UNIFIED DASHBOARD: Settings Tab Content
+        /// ✅ UNIFIED DASHBOARD: Settings Tab Content (حساب کاربری و اعلان‌ها)
         /// GET: /Patient/Dashboard/SettingsTab
+        /// طبق SRP: داده از IPatientSettingsService، بدون منطق کسب‌وکار در Controller
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> SettingsTab()
@@ -216,8 +223,15 @@ namespace ClinicApp.Areas.Patient.Controllers
                 }
 
                 _logger.Information("📄 Loading Settings Tab - PatientId: {PatientId}", patientId.Value);
-                
-                return PartialView("_SettingsTab");
+
+                var result = await _settingsService.GetSettingsAsync(patientId.Value);
+                if (!result.Success || result.Data == null)
+                {
+                    _logger.Warning("تنظیمات بارگذاری نشد - PatientId: {PatientId}, Message: {Message}", patientId, result?.Message);
+                    return Content("<div class='alert alert-warning'><i class='fas fa-exclamation-triangle ml-2'></i> " + (result?.Message ?? "خطا در بارگذاری تنظیمات") + "</div>");
+                }
+
+                return PartialView("_SettingsTab", result.Data);
             }
             catch (Exception ex)
             {

@@ -1,0 +1,60 @@
+@model List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalRecordTriageViewModel>
+@{
+    Layout = null;
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="triage-empty">
+        <p class="text-muted text-center py-4">
+            <i class="fas fa-stethoscope fa-2x mb-2"></i>
+            <br>
+            هیچ ارزیابی تریاژی ثبت نشده است
+        </p>
+    </div>
+}
+else
+{
+    <div class="triage-list">
+        @foreach (var item in Model)
+        {
+            <div class="triage-item" data-triage-id="@item.TriageAssessmentId">
+                <div class="triage-item-header">
+                    <span class="badge badge-info ml-2">@item.LevelText</span>
+                    @if (!string.IsNullOrWhiteSpace(item.AssessmentNumber))
+                    {
+                        <span class="text-muted small">@item.AssessmentNumber</span>
+                    }
+                    <span class="text-muted small">@item.ArrivalAtShamsi</span>
+                </div>
+                <div class="triage-item-body">
+                    @if (!string.IsNullOrWhiteSpace(item.ChiefComplaint))
+                    {
+                        <p class="mb-1"><strong>شکایت اصلی:</strong> @item.ChiefComplaint</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(item.AssessorName))
+                    {
+                        <p class="mb-1 small text-muted">ارزیاب: @item.AssessorName</p>
+                    }
+                    @if (item.VitalSigns != null && (item.VitalSigns.HeartRate.HasValue || item.VitalSigns.Temperature.HasValue || item.VitalSigns.SystolicBP.HasValue))
+                    {
+                        <div class="vital-signs-summary small mt-2">
+                            @if (item.VitalSigns.SystolicBP.HasValue || item.VitalSigns.DiastolicBP.HasValue)
+                            {
+                                <span class="mr-2">فشار خون: @(item.VitalSigns.SystolicBP)/@(item.VitalSigns.DiastolicBP)</span>
+                            }
+                            @if (item.VitalSigns.HeartRate.HasValue)
+                            {
+                                <span class="mr-2">نبض: @(item.VitalSigns.HeartRate)</span>
+                            }
+                            @if (item.VitalSigns.Temperature.HasValue)
+                            {
+                                <span class="mr-2">دما: @(item.VitalSigns.Temperature)°C</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

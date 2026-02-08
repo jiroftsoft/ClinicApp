@@ -457,6 +457,119 @@ model.StartDate = this.ParseDateFromHiddenInput("StartDate", _logger);
 
 ---
 
+## 📌 **۹. استفاده از DatePicker داخل مودال (JalaliDatePicker Enterprise)**
+
+**مشکل:** وقتی فیلدهای تاریخ با `[data-jdp]` داخل یک مودال Bootstrap قرار دارند، ممکن است با کلیک روی اینپوت **تقویم باز نشود** یا **پشت مودال پنهان** شود.
+
+**علت‌ها:**
+1. **z-index:** پیش‌فرض کتابخانه (مثلاً 1000) پایین‌تر از مودال Bootstrap (1050) است و تقویم پشت مودال می‌ماند.
+2. **زمان اتصال:** اگر مودال با AJAX لود شود، اینپوتها بعد از اجرای اولیهٔ `startWatch` به DOM اضافه می‌شوند و به تقویم وصل نمی‌شوند.
+
+### ✅ **راه‌حل (ضد گلوله برای پروداکشن)**
+
+#### **۱. تنظیم options پیش‌فرض (یک بار در پروژه)**
+
+در **`Content/js/jalali-datepicker-enterprise.js`** در `config.defaultOptions` مقدارهای زیر را اضافه کنید:
+
+```javascript
+defaultOptions: {
+    // ... سایر options
+    container: 'body',   // تقویم به body اضافه شود (خارج از مودال)
+    zIndex: 1060         // بالاتر از مودال Bootstrap (~1050)
+}
+```
+
+- **`container: 'body'`** → تقویم به `body` append می‌شود و پشت مودال نمی‌ماند.
+- **`zIndex: 1060`** → تقویم همیشه بالاتر از مودال نمایش داده می‌شود.
+
+#### **۲. اجرای مجدد startWatch برای اینپوتهای داخل مودال / محتوای AJAX**
+
+در **`jalali-datepicker-enterprise.js`** یک متد عمومی اضافه کنید:
+
+```javascript
+startWatchAgain: function() {
+    if (typeof jalaliDatepicker === 'undefined') return;
+    var opts = JalaliDatePickerEnterprise.config.defaultOptions;
+    jalaliDatepicker.startWatch(opts);
+    JalaliDatePickerEnterprise.initializeAll();
+}
+```
+
+این متد را در دو حالت فراخوانی کنید:
+
+**الف) هنگام باز شدن مودال (در اسکریپت مربوط به همان مودال):**
+
+```javascript
+// مثال: هنگام باز کردن مودال تاریخچه پزشکی
+$('#medicalHistoryModal').on('shown.bs.modal', function() {
+    if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.startWatchAgain) {
+        setTimeout(function() {
+            JalaliDatePickerEnterprise.startWatchAgain();
+        }, 100);
+    }
+});
+```
+
+یا مستقیماً در تابعی که مودال را باز می‌کند (بعد از `modal.show()`):
+
+```javascript
+if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.startWatchAgain) {
+    setTimeout(function() {
+        JalaliDatePickerEnterprise.startWatchAgain();
+    }, 100);
+}
+```
+
+**ب) بعد از لود محتوای تب با AJAX (اگر مودال داخل آن محتواست):**
+
+```javascript
+// مثال: بعد از لود تب «پرونده پزشکی» در داشبورد
+if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.startWatchAgain) {
+    JalaliDatePickerEnterprise.startWatchAgain();
+}
+```
+
+#### **۳. در View مودال**
+
+از همان پارشال استاندارد DatePicker استفاده کنید (با مسیر کامل در صورت لود از Area دیگر):
+
+```razor
+@{
+    ViewBag.PersianDatePickerId = "startDatePicker";
+    ViewBag.PersianDatePickerName = "StartDate";
+    ViewBag.PersianDatePickerValue = Model?.StartDate;
+    ViewBag.PersianDatePickerLabel = "تاریخ شروع";
+    ViewBag.PersianDatePickerPlaceholder = "مثال: 1400/01/01";
+    ViewBag.PersianDatePickerRequired = false;
+    ViewBag.PersianDatePickerCssClass = "form-control";
+}
+@Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+```
+
+#### **۴. سمت سرور (دریافت تاریخ شمسی از فرم)**
+
+اگر فرم با AJAX ارسال می‌شود، مقدار فیلد با نام `StartDate` به صورت رشتهٔ شمسی (مثلاً `1402/06/15`) می‌آید. در Controller آن را با `PersianDateHelper.ParsePersianDate` به `DateTime?` تبدیل کنید:
+
+```csharp
+var startStr = Request.Form["StartDate"];
+if (!string.IsNullOrWhiteSpace(startStr))
+    model.StartDate = PersianDateHelper.ParsePersianDate(startStr.Trim());
+```
+
+### 📋 **چک‌لیست استفاده از DatePicker در مودال**
+
+- [ ] در `defaultOptions` مقدارهای `container: 'body'` و `zIndex: 1060` تنظیم شده است.
+- [ ] متد `startWatchAgain()` در ماژول Enterprise وجود دارد و پس از باز شدن مودال یا لود AJAX فراخوانی می‌شود.
+- [ ] در View مودال از پارشال `_PersianDatePicker` (با مسیر صحیح) استفاده شده است.
+- [ ] در Controller برای فیلدهای تاریخ ارسالی از فرم از `PersianDateHelper.ParsePersianDate` استفاده شده است.
+
+### 📚 **مراجع مرتبط**
+
+- `Docs/Jalili/JALALIDATEPICKER_ENTERPRISE_GUIDE.md`
+- همین سند، بخش ۸ (Enterprise-Grade Date Management)
+
+---
+
 ## 📚 مراجع
 
 - `Docs/PERSIAN_DATEPICKER_MODULE_GUIDE.md` - راهنمای کامل DatePicker

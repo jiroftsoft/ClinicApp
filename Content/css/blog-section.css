@@ -50,6 +50,45 @@
     margin-bottom: var(--spacing-xxl, 3rem) !important;
 }
 
+/* هدر مجله‌ای: عنوان + لینک «همه مقالات» در یک ردیف (مشابه دکترتو) */
+.blog-header-magazine {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+    text-align: right !important;
+    margin-bottom: 1.75rem !important;
+}
+
+.blog-header-magazine .blog-title {
+    margin-bottom: 0 !important;
+}
+
+.blog-header-magazine .blog-title::after {
+    display: none !important;
+}
+
+.blog-view-all-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    color: var(--medical-primary, #2c5aa0) !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    text-decoration: none !important;
+    transition: opacity 0.2s !important;
+}
+
+.blog-view-all-link:hover {
+    opacity: 0.85;
+    text-decoration: underline !important;
+}
+
+[dir="rtl"] .blog-view-all-link i {
+    transform: scaleX(-1);
+}
+
 .blog-title {
     font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
     font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
@@ -61,7 +100,7 @@
     display: inline-block !important;
 }
 
-.blog-title::after {
+.blog-header:not(.blog-header-magazine) .blog-title::after {
     content: '';
     position: absolute;
     bottom: -0.5rem;
@@ -200,11 +239,11 @@
     margin: 0 0 var(--spacing-lg, 1.5rem) 0 !important;
     flex: 1 !important;
     display: -webkit-box !important;
-    -webkit-line-clamp: 3 !important;
+    -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    min-height: 5.25em !important;
+    min-height: 3.5em !important;
     font-weight: var(--font-weight-normal, 400) !important;
     text-align: justify !important;
 }
@@ -408,10 +447,12 @@
 }
 
 /* Stagger Animation */
-.blog-card:nth-child(1) { animation-delay: 0.1s !important; }
-.blog-card:nth-child(2) { animation-delay: 0.2s !important; }
-.blog-card:nth-child(3) { animation-delay: 0.3s !important; }
-.blog-card:nth-child(4) { animation-delay: 0.4s !important; }
+.blog-card:nth-child(1) { animation-delay: 0.05s !important; }
+.blog-card:nth-child(2) { animation-delay: 0.1s !important; }
+.blog-card:nth-child(3) { animation-delay: 0.15s !important; }
+.blog-card:nth-child(4) { animation-delay: 0.2s !important; }
+.blog-card:nth-child(5) { animation-delay: 0.25s !important; }
+.blog-card:nth-child(6) { animation-delay: 0.3s !important; }
 
 /* ============================================
    ACCESSIBILITY

@@ -1,0 +1,85 @@
+/**
+ * پربازدیدترین تخصص‌ها - استایل بخش (مشابه دکترتو)
+ */
+
+.popular-specialties-section {
+    padding: 2rem 0;
+    background: linear-gradient(to bottom, #f8fafc 0%, #fff 100%);
+}
+
+.popular-specialties-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.popular-specialties-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.popular-specialties-title {
+    font-size: var(--font-size-3xl, 1.75rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--medical-primary, #2c5aa0);
+    margin: 0;
+}
+
+.popular-specialties-view-all {
+    color: var(--medical-primary, #2c5aa0);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.popular-specialties-view-all:hover {
+    text-decoration: underline;
+}
+
+.popular-specialties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+}
+
+.popular-specialty-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md, 0.5rem);
+    text-decoration: none;
+    color: #334155;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.popular-specialty-card:hover {
+    border-color: var(--medical-primary, #2c5aa0);
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.12);
+}
+
+.popular-specialty-name {
+    font-weight: 500;
+}
+
+.popular-specialty-arrow {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+[dir="rtl"] .popular-specialty-arrow {
+    transform: scaleX(-1);
+}
+
+@media (max-width: 576px) {
+    .popular-specialties-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

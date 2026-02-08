@@ -1,0 +1,31 @@
+@model ClinicApp.ViewModels.PopularSpecialtiesSectionViewModel
+@{
+    if (Model == null || Model.Items == null || !Model.Items.Any())
+    {
+        return;
+    }
+}
+<section class="popular-specialties-section" aria-label="@Model.SectionTitle">
+    <div class="popular-specialties-container container">
+        <div class="popular-specialties-header">
+            <h2 class="popular-specialties-title">@Model.SectionTitle</h2>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="popular-specialties-view-all" aria-label="مشاهده همه تخصص‌ها">
+                    @Model.SectionSubtitle
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </a>
+            }
+        </div>
+        <div class="popular-specialties-grid">
+            @foreach (var item in Model.Items)
+            {
+                <a href="@item.Url" class="popular-specialty-card" aria-label="نوبت @item.Name">
+                    <span class="popular-specialty-name">@item.Name</span>
+                    <i class="fas fa-chevron-left popular-specialty-arrow" aria-hidden="true"></i>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+@* CSS از باندل homepage-sections لود می‌شود *@

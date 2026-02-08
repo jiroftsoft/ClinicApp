@@ -1,4 +1,4 @@
-﻿using ClinicApp.Constants;
+using ClinicApp.Constants;
 using ClinicApp.Core;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
@@ -10,6 +10,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Account;
 using Microsoft.AspNet.Identity;
+using Microsoft.Owin.Host.SystemWeb;
 using Microsoft.Owin.Security.DataProtection;
 using Serilog;
 using System;
@@ -647,8 +648,27 @@ namespace ClinicApp.Controllers
                 }
             }
 
+            // ✅ خروج با OWIN context همین درخواست تا کوکی در همین پاسخ باطل شود (جلوگیری از نمایش لاگین در صفحه اصلی)
+            try
+            {
+                var owinCtx = HttpContext?.GetOwinContext();
+                if (owinCtx?.Authentication != null)
+                {
+                    owinCtx.Authentication.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+                    owinCtx.Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning(ex, "OWIN SignOut failed, falling back to AuthService. UserId: {UserId}", userId);
+            }
             _authService.SignOut();
             _log.Information("User {UserId} logged off.", userId);
+            // ✅ جلوگیری از کش شدن صفحه اصلی بعد از ریدایرکت
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            Response.AppendHeader("Pragma", "no-cache");
+            Response.AppendHeader("Expires", "0");
             return RedirectToAction("Index", "Home");
         }
 

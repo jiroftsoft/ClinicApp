@@ -576,7 +576,7 @@
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#settings"><i class="fas fa-cog ml-2"></i> تنظیمات</a></li>
                     <li>
-                        <form method="POST" action="@Url.Action("LogOff", "Account")" id="topbarLogoutForm">
+                        <form method="POST" action="@Url.Action("LogOff", "Account", new { area = "" })" id="topbarLogoutForm">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="dropdown-item text-danger">
                                 <i class="fas fa-sign-out-alt ml-2"></i> خروج
@@ -605,14 +605,14 @@
             </div>
 
             <div class="sidebar-nav-item">
-                <a href="@Url.Action("Profile", "Account", new { area = "" })" class="sidebar-nav-link">
+                <a href="@(Url.Action("Index", "Dashboard", new { area = "Patient" }))#profile" class="sidebar-nav-link" data-dashboard-tab="profile">
                     <i class="sidebar-nav-icon fas fa-user"></i>
                     <span class="sidebar-nav-text">پروفایل من</span>
                 </a>
             </div>
 
             <div class="sidebar-nav-item">
-                <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="sidebar-nav-link">
+                <a href="@(Url.Action("Index", "Dashboard", new { area = "Patient" }))#appointments" class="sidebar-nav-link" data-dashboard-tab="appointments">
                     <i class="sidebar-nav-icon fas fa-calendar-check"></i>
                     <span class="sidebar-nav-text">نوبت‌های من</span>
                 </a>
@@ -626,7 +626,7 @@
             </div>
 
             <div class="sidebar-nav-item">
-                <a href="@Url.Action("Index", "MedicalRecord", new { area = "Patient" })" class="sidebar-nav-link">
+                <a href="@(Url.Action("Index", "Dashboard", new { area = "Patient" }))#medical-record" class="sidebar-nav-link" data-dashboard-tab="medical-record">
                     <i class="sidebar-nav-icon fas fa-file-medical"></i>
                     <span class="sidebar-nav-text">پرونده الکترونیک</span>
                 </a>
@@ -640,7 +640,7 @@
             </div>
 
             <div class="sidebar-nav-item">
-                <a href="@Url.Action("Index", "Settings", new { area = "Patient" })" class="sidebar-nav-link">
+                <a href="@(Url.Action("Index", "Dashboard", new { area = "Patient" }))#settings" class="sidebar-nav-link" data-dashboard-tab="settings">
                     <i class="sidebar-nav-icon fas fa-cog"></i>
                     <span class="sidebar-nav-text">تنظیمات</span>
                 </a>
@@ -649,21 +649,20 @@
             <hr style="margin: 1rem 1rem; border-color: var(--sidebar-border);" />
 
             <div class="sidebar-nav-item">
-                <a href="#" class="sidebar-nav-link">
+                <a href="#" class="sidebar-nav-link" id="sidebarHelpLink" data-bs-toggle="modal" data-bs-target="#patientHelpModal" aria-label="راهنما">
                     <i class="sidebar-nav-icon fas fa-question-circle"></i>
                     <span class="sidebar-nav-text">راهنما</span>
                 </a>
             </div>
 
             <div class="sidebar-nav-item">
-                @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutFormSidebar", style = "margin: 0;" }))
-                {
+                <form id="logoutFormSidebar" method="post" action="@Url.Content("~/Account/LogOff")" style="margin: 0;">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="sidebar-nav-link" style="width: 100%; background: none; border: none; cursor: pointer; text-align: right;">
+                    <button type="submit" id="sidebarLogoutBtn" class="sidebar-nav-link" style="width: 100%; background: none; border: none; cursor: pointer; text-align: right; font: inherit;">
                         <i class="sidebar-nav-icon fas fa-sign-out-alt"></i>
                         <span class="sidebar-nav-text">خروج</span>
                     </button>
-                }
+                </form>
             </div>
         </nav>
     </aside>
@@ -706,6 +705,72 @@
             © @DateTime.Now.Year
         </p>
     </footer>
+
+    <!-- ✅ مودال راهنمای داشبورد بیمار -->
+    <div class="modal fade" id="patientHelpModal" tabindex="-1" aria-labelledby="patientHelpModalLabel" aria-hidden="true" dir="rtl">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--medical-primary, #2c5aa0); color: white;">
+                    <h5 class="modal-title" id="patientHelpModalLabel">
+                        <i class="fas fa-question-circle me-2"></i>
+                        راهنمای پنل بیمار
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-home me-1"></i>
+                            خانه (داشبورد)
+                        </h6>
+                        <p class="text-muted small mb-0">خلاصه وضعیت، نوبت‌های پیش‌رو و دسترسی سریع به بخش‌های مختلف را مشاهده می‌کنید.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-user me-1"></i>
+                            پروفایل من
+                        </h6>
+                        <p class="text-muted small mb-0">اطلاعات شخصی، شماره تماس، ایمیل و تاریخ تولد را ویرایش کنید.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            نوبت‌های من
+                        </h6>
+                        <p class="text-muted small mb-0">لیست نوبت‌های رزرو شده، فیلتر بر اساس تاریخ و وضعیت، و امکان مشاهده جزئیات هر نوبت.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-calendar-plus me-1"></i>
+                            رزرو نوبت جدید
+                        </h6>
+                        <p class="text-muted small mb-0">انتخاب پزشک، تاریخ و ساعت برای رزرو نوبت جدید.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-file-medical me-1"></i>
+                            پرونده الکترونیک
+                        </h6>
+                        <p class="text-muted small mb-0">مشاهده تریاژ، سوابق ویزیت‌ها و اطلاعات پرونده پزشکی شما.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">
+                            <i class="fas fa-cog me-1"></i>
+                            تنظیمات
+                        </h6>
+                        <p class="text-muted small mb-0">تنظیمات حساب کاربری و اعلان‌ها (ایمیل، پیامک، یادآوری نوبت).</p>
+                    </div>
+                    <div class="alert alert-info mb-0 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        برای پشتیبانی با واحد پذیرش کلینیک تماس بگیرید.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ============================================
          JavaScript Loading Order (Enterprise Pattern)
@@ -829,15 +894,23 @@
                 });
             }
 
-            // ✅ Active Menu Highlighting
+            // ✅ Active Menu Highlighting (فقط لینک‌های <a> تا با دکمه خروج تداخل نگیرد)
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.sidebar-nav-link');
-
+            const navLinks = document.querySelectorAll('.sidebar-nav-item a.sidebar-nav-link');
             navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
+                var href = link.getAttribute('href') || '';
+                if (href === currentPath || (currentPath.indexOf('/Patient/Dashboard') !== -1 && href.indexOf('#') !== -1 && link.getAttribute('data-dashboard-tab'))) {
                     link.classList.add('active');
                 }
             });
+
+            // ✅ راهنما: جلوگیری از اضافه شدن # به آدرس با کلیک روی لینک راهنما
+            var helpLink = document.getElementById('sidebarHelpLink');
+            if (helpLink) {
+                helpLink.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') === '#') e.preventDefault();
+                });
+            }
 
             // ✅ Toastr Configuration
             if (typeof toastr !== 'undefined') {

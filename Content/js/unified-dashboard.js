@@ -35,7 +35,7 @@
             appointments: {
                 name: 'appointments',
                 title: 'نوبت‌ها',
-                url: '/Patient/Dashboard/AppointmentsTab',
+                url: '/Patient/Appointment/MyAppointments',
                 requiresAuth: true,
                 cacheable: false
             },
@@ -71,6 +71,8 @@
             this.bindEvents();
             this.handleInitialTab();
             this.setupHistoryListener();
+            this.setupHashChangeListener();
+            this.bindSidebarDashboardLinks();
             
             console.log('✅ UnifiedDashboard: Initialized successfully');
         },
@@ -122,6 +124,37 @@
                 if (event.state && event.state.tab) {
                     console.log('⬅️ History: Back/Forward to tab:', event.state.tab);
                     self.switchTab(event.state.tab, true); // true = skip pushState
+                }
+            });
+        },
+
+        /**
+         * وقتی از سایدبار لینک داشبورد با هش کلیک می‌شود (همان صفحه)، فقط تب عوض شود بدون رفرش
+         */
+        setupHashChangeListener: function() {
+            var self = this;
+            window.addEventListener('hashchange', function() {
+                var hash = window.location.hash.replace('#', '');
+                if (hash && config.tabs[hash]) {
+                    console.log('🔗 Hash changed to tab:', hash);
+                    self.switchTab(hash, true);
+                }
+            });
+        },
+
+        /**
+         * لینک‌های سایدبار با data-dashboard-tab: در همان داشبورد با کلیک فقط تب عوض شود
+         */
+        bindSidebarDashboardLinks: function() {
+            var self = this;
+            $(document).on('click', 'a[data-dashboard-tab]', function(e) {
+                var pathname = window.location.pathname || '';
+                var isDashboard = pathname.indexOf('/Patient/Dashboard') !== -1;
+                if (!isDashboard) return; // در صفحه دیگری هستیم، اجازه ناوبری عادی
+                var tabName = $(this).data('dashboard-tab');
+                if (tabName && config.tabs[tabName]) {
+                    e.preventDefault();
+                    self.switchTab(tabName);
                 }
             });
         },
@@ -299,6 +332,59 @@
                 } else {
                     console.warn('⚠️ PatientProfile module not found or profileForm not found');
                 }
+            }
+            
+            // ✅ تب پرونده پزشکی: لود بخش‌ها via AJAX (همان منطق صفحه اختصاصی پرونده)
+            if (tabName === 'medical-record') {
+                if (typeof window.MedicalRecord !== 'undefined' && $('#medicalRecordShell').length > 0) {
+                    console.log('✅ Initializing MedicalRecord module in dashboard tab...');
+                    setTimeout(function() {
+                        window.MedicalRecord.loadAllSections();
+                        window.MedicalRecord.bindEvents();
+                        if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.startWatchAgain) {
+                            JalaliDatePickerEnterprise.startWatchAgain();
+                        }
+                    }, 100);
+                }
+            }
+
+            // ✅ تب نوبت‌های من: محتوا از MyAppointments لود شده؛ فرم فیلتر و صفحه‌بندی را با AJAX در همان تب نگه می‌داریم
+            if (tabName === 'appointments') {
+                if (typeof window.initializePersianDatepickers === 'function') {
+                    window.initializePersianDatepickers();
+                }
+                if (typeof PersianDatePickerComponent !== 'undefined') {
+                    PersianDatePickerComponent.initializeAll();
+                }
+                var $aptPane = $('#content-appointments');
+                var $aptArea = $aptPane.find('.tab-content-area');
+                function loadAppointmentsIntoTab(url) {
+                    $.ajax({
+                        url: url,
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        dataType: 'html'
+                    }).done(function(html) {
+                        $aptArea.html(html);
+                        if (typeof window.initializePersianDatepickers === 'function') window.initializePersianDatepickers();
+                        if (typeof PersianDatePickerComponent !== 'undefined') PersianDatePickerComponent.initializeAll();
+                    }).fail(function() {
+                        if (window.toastr) toastr.error('خطا در بارگذاری نوبت‌ها');
+                    });
+                }
+                $aptArea.off('submit.appointmentsFilter').on('submit.appointmentsFilter', '#filterForm', function(e) {
+                    e.preventDefault();
+                    var $form = $(this);
+                    var action = $form.attr('action') || '/Patient/Appointment/MyAppointments';
+                    var qs = $form.serialize();
+                    var url = qs ? (action + (action.indexOf('?') !== -1 ? '&' : '?') + qs) : action;
+                    loadAppointmentsIntoTab(url);
+                });
+                $aptArea.off('click.appointmentsPagination').on('click.appointmentsPagination', '.pagination a.page-link', function(e) {
+                    e.preventDefault();
+                    var href = $(this).attr('href');
+                    if (href && href !== '#') loadAppointmentsIntoTab(href);
+                });
             }
             
             // Dispatch custom event

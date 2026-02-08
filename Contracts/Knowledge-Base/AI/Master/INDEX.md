@@ -107,6 +107,10 @@
 → Helper: PersianDateHelper.ToPersianDate()
 → مثال: PersianDateHelper.ToPersianDate(DateTime.Now)
 → خروجی: "1404/10/05"
+
+نیاز: DatePicker داخل مودال (تقویم باز نشود / پشت مودال)
+→ فایل: 01-Helpers-DateTime.md، بخش «۹. استفاده از DatePicker داخل مودال»
+→ راه‌حل: container: 'body'، zIndex: 1060، و فراخوانی startWatchAgain() پس از باز شدن مودال یا لود AJAX
 ```
 
 ### **اعتبارسنجی:**

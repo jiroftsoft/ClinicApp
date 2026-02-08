@@ -373,6 +373,15 @@ JalaliDatePickerEnterprise.init('#myDateInput', {
 2. بررسی کنید که theme name صحیح است
 3. بررسی console برای خطاها
 
+### مشکل: DatePicker داخل مودال باز نمی‌شود یا تقویم پشت مودال پنهان است
+
+**علت:** z-index پیش‌فرض پایین‌تر از مودال Bootstrap است؛ یا اینپوتها بعد از اجرای اولیهٔ `startWatch` (مثلاً با AJAX) به DOM اضافه شده‌اند.
+
+**راه حل (خلاصه):**
+1. در `config.defaultOptions` مقدارهای `container: 'body'` و `zIndex: 1060` را تنظیم کنید.
+2. متد `startWatchAgain()` را در ماژول اضافه کنید و آن را **بعد از باز شدن مودال** یا **بعد از لود محتوای AJAX** فراخوانی کنید.
+3. جزئیات کامل و چک‌لیست: **پایگاه دانش** → [01-Helpers-DateTime.md](../../Contracts/Knowledge-Base/AI/Master/01-Helpers-DateTime.md) → بخش **«۹. استفاده از DatePicker داخل مودال»**.
+
 ---
 
 ## 📚 **مراجع**

@@ -194,6 +194,7 @@ Root/
 **محتوا:**
 - `PersianDateHelper.cs` - تبدیل میلادی ↔ شمسی
 - `PersianDatePickerHelper.cs` - DatePicker در View
+- **استفاده از DatePicker داخل مودال** (بخش ۹) - z-index، container، و `startWatchAgain()` برای مودال و محتوای AJAX
 - `DateTimeExtensions.cs` - Extension برای DateTime
 - `PersianDateExtensions.cs` - Extension تاریخ شمسی
 - `TimeFormatHelper.cs` - فرمت زمان

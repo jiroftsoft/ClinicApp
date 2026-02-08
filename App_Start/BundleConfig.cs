@@ -141,6 +141,7 @@ namespace ClinicApp
                 "~/Content/css/hero-carousel.css",
                 "~/Content/css/value-proposition-section.css",
                 "~/Content/css/quick-appointment-section.css",
+                "~/Content/css/popular-specialties-section.css",
                 "~/Content/css/announcements-section.css",
                 "~/Content/css/faq-section.css",
                 "~/Content/css/modern-services-section.css",
