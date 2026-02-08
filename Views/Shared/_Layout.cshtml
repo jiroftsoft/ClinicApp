@@ -414,6 +414,8 @@
                 </div>
             </div>
         </nav>
+        @* Backdrop برای منوی موبایل - کلیک برای بستن *@
+        <div class="navbar-backdrop" id="navbarBackdrop" aria-hidden="true" tabindex="-1"></div>
     </header>
 
     @* Layout Data - Strongly-Typed (بدون ViewBag) *@
@@ -919,8 +921,8 @@
                 elements.forEach(el => observer.observe(el));
             }
 
-            // --- 2. Navbar color change on scroll ---
-            const navbar = document.querySelector('.main-navbar');
+            // --- 2. Navbar color change on scroll (منوی اصلی: modern-navbar) ---
+            const navbar = document.querySelector('.modern-navbar');
             if (navbar) {
                 window.addEventListener('scroll', function() {
                     if (window.scrollY > 50) {
@@ -928,7 +930,7 @@
                     } else {
                         navbar.classList.remove('scrolled');
                     }
-                });
+                }, { passive: true });
             }
 
             // --- 3. Professional Login Modal Manager ---
