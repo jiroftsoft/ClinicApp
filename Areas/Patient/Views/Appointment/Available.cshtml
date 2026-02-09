@@ -564,9 +564,10 @@
                            class="form-control form-control-medical"
                            placeholder="نام، تخصص یا کد نظام پزشکی..." 
                            autocomplete="off"
-                           value="" />
+                           value="@(Model?.SearchTerm ?? "")" />
                 </div>
                 
+                <input type="hidden" name="page" id="filterPage" value="1" />
                 <!-- انتخاب پزشک -->
                 <div class="col-12 col-md-6 col-lg-4">
                     <label class="form-label text-medical-text font-weight-medium">
@@ -677,6 +678,36 @@
                         <i class="fas fa-stethoscope"></i>
                         <span>@doctor.Specialization</span>
                     </div>
+                    @* امتیاز و رضایت (دکترتو/پذیرش۲۴) *@
+                    <div class="doctor-rating-block-available" aria-label="امتیاز و رضایت بیماران">
+                        @{
+                            var r = doctor.Rating ?? 0;
+                            var rc = doctor.ReviewCount ?? 0;
+                            var fullS = (int)Math.Floor(r);
+                            var halfS = r - fullS >= 0.25m && r - fullS < 0.75m;
+                            var dispR = r > 0 ? r.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) : "—";
+                        }
+                        <div class="doctor-stars-available">
+                            @for (var i = 1; i <= 5; i++)
+                            {
+                                if (i <= fullS) { <i class="fas fa-star doctor-star-full" aria-hidden="true"></i> }
+                                else if (i == fullS + 1 && halfS) { <i class="fas fa-star-half-alt doctor-star-full" aria-hidden="true"></i> }
+                                else { <i class="far fa-star doctor-star-empty" aria-hidden="true"></i> }
+                            }
+                        </div>
+                        <span class="doctor-rating-num">@dispR</span>
+                        <span class="doctor-rating-caption">@(rc > 0 ? "بر اساس " + rc.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) + " نظر بیماران" : "هنوز نظری ثبت نشده")</span>
+                    </div>
+                    @* اولین نوبت (اعتماد/Conversion) *@
+                    @if (doctor.AvailableDates != null && doctor.AvailableDates.Any())
+                    {
+                        var first = doctor.AvailableDates.First();
+                        var firstLabel = !string.IsNullOrEmpty(first.DayName) ? first.DayName + " " + (first.ShortDate ?? first.PersianDate) : (first.PersianDate ?? "");
+                        <div class="doctor-first-slot-badge">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>اولین نوبت: @firstLabel</span>
+                        </div>
+                    }
                 </div>
                 
                 <!-- ✅ Body Section -->
@@ -786,6 +817,43 @@ else
         <p>لطفاً فیلتر جستجو را تغییر دهید</p>
     </div>
 }
+        
+        @* صفحه‌بندی (مشابه دکترتو/پذیرش۲۴) *@
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            <nav class="appointment-pagination-wrap" aria-label="صفحه‌بندی پزشکان">
+                <ul class="pagination appointment-pagination justify-content-center flex-wrap">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Available", new { doctorId = Model.SelectedDoctorId, date = persianSelectedDate, searchTerm = Model.SearchTerm, page = Model.PageNumber - 1 })" aria-label="صفحه قبل">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        if (p == Model.PageNumber)
+                        {
+                            <li class="page-item active" aria-current="page"><span class="page-link">@p.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"))</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item"><a class="page-link" href="@Url.Action("Available", new { doctorId = Model.SelectedDoctorId, date = persianSelectedDate, searchTerm = Model.SearchTerm, page = p })">@p.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"))</a></li>
+                        }
+                    }
+                    @if (Model.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Available", new { doctorId = Model.SelectedDoctorId, date = persianSelectedDate, searchTerm = Model.SearchTerm, page = Model.PageNumber + 1 })" aria-label="صفحه بعد">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+                <p class="text-center text-muted small mt-2 mb-0">پزشک @((Model.PageNumber - 1) * Model.PageSize + 1).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"))) از @Model.TotalCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"))</p>
+            </nav>
+        }
         </div>
     </div>
 </section>
@@ -1340,16 +1408,38 @@ else if (Model.SelectedDoctorId.HasValue)
                         }
                         html += '</div>';
                         
-                        // ✅ Header Section - نام و تخصص
+                        // ✅ Header Section - نام، تخصص، امتیاز، اولین نوبت
                         html += '<div class="doctor-card-header">';
                         html += '<h3 class="doctor-name">' + (doctor.fullName || 'نام نامشخص') + '</h3>';
                         html += '<div class="doctor-specialization">';
                         html += '<i class="fas fa-stethoscope"></i>';
                         html += '<span>' + (doctor.specialization || 'تخصص نامشخص') + '</span>';
                         html += '</div>';
+                        // امتیاز و رضایت
+                        var rating = doctor.rating != null ? parseFloat(doctor.rating) : 0;
+                        var reviewCount = doctor.reviewCount != null ? parseInt(doctor.reviewCount, 10) : 0;
+                        var fullStars = Math.floor(rating);
+                        var hasHalf = (rating - fullStars) >= 0.25 && (rating - fullStars) < 0.75;
+                        var displayRating = rating > 0 ? rating.toFixed(1) : '—';
+                        html += '<div class="doctor-rating-block-available" aria-label="امتیاز و رضایت بیماران">';
+                        html += '<div class="doctor-stars-available">';
+                        for (var s = 1; s <= 5; s++) {
+                            if (s <= fullStars) html += '<i class="fas fa-star doctor-star-full" aria-hidden="true"></i>';
+                            else if (s === fullStars + 1 && hasHalf) html += '<i class="fas fa-star-half-alt doctor-star-full" aria-hidden="true"></i>';
+                            else html += '<i class="far fa-star doctor-star-empty" aria-hidden="true"></i>';
+                        }
+                        html += '</div>';
+                        html += '<span class="doctor-rating-num">' + displayRating + '</span>';
+                        html += '<span class="doctor-rating-caption">' + (reviewCount > 0 ? 'بر اساس ' + reviewCount + ' نظر بیماران' : 'هنوز نظری ثبت نشده') + '</span>';
+                        html += '</div>';
+                        if (doctor.availableDates && doctor.availableDates.length > 0) {
+                            var firstDate = doctor.availableDates[0];
+                            var firstLabel = (firstDate.dayName || '') + ' ' + (firstDate.shortDate || firstDate.persianDate || '');
+                            firstLabel = firstLabel.trim() || (firstDate.persianDate || '');
+                            html += '<div class="doctor-first-slot-badge"><i class="fas fa-calendar-check"></i><span>اولین نوبت: ' + firstLabel + '</span></div>';
+                        }
                         html += '</div>';
                         
-                        // ✅ Body Section
                         html += '<div class="doctor-card-body">';
                         
                         // Bio

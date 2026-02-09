@@ -1,386 +1,317 @@
 /**
- * 💬 Testimonials Section - Professional & Ethical Design
- * 
- * طراحی حرفه‌ای و اخلاق‌مدار برای بخش "تجربه بیماران از کلینیک"
- * مطابق با اصول Trust Building و Privacy Protection
- * 
- * ویژگی‌ها:
- * - Card Design با 4 عنصر (امتیاز، متن، نام+شهر، خدمت)
- * - رنگ‌بندی رسمی (سفید/خاکستری، سبز/آبی ملایم)
- * - Privacy Friendly (فقط نام کوچک + شهر/سن)
- * - Swiper.js با AutoPlay خاموش
- * - Typography رسمی (Vazirmatn/IRANSansX)
- * - Trust Building Design
+ * سکشن «نظرات بیماران ما» — الگو: دکترتو، پذیرش۲۴، دیجی‌کالا
+ * Social Proof، Grid دسکتاپ ۳ کارت، موبایل Swipe (scroll-snap)، بدون Swiper
+ * حداکثر ۶ نظر، نام مخفف، مراجعه به دکتر/خدمت، اختیاری بیمار تأییدشده
  */
 
-/* ============================================
-   BASE SECTION STYLES
-   ============================================ */
+:root {
+    --tm-primary: #2c5aa0;
+    --tm-success: #28a745;
+    --tm-star: #f0ad4e;
+    --tm-star-empty: #dee2e6;
+    --tm-bg: #ffffff;
+    --tm-bg-subtle: #f8f9fa;
+    --tm-text: #212529;
+    --tm-text-muted: #6c757d;
+    --tm-border: #e9ecef;
+    --tm-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
+
+/* ========== Section ========== */
 .testimonials-section {
-    padding: var(--spacing-xxxl, 4rem) 0 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+    padding: clamp(2.5rem, 5vw, 4rem) 0 !important;
+    background: var(--tm-bg) !important;
     position: relative !important;
     overflow: hidden !important;
 }
 
-.testimonials-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 10% 20%, rgba(40, 167, 69, 0.02) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(44, 110, 125, 0.02) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.testimonials-section .container {
+.testimonials-inner {
     position: relative;
     z-index: 1;
 }
 
-/* ============================================
-   HEADER SECTION
-   ============================================ */
+.testimonials-container {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ========== Header ========== */
 .testimonials-header {
-    text-align: center !important;
-    margin-bottom: var(--spacing-xxl, 3rem) !important;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 .testimonials-title {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    line-height: var(--line-height-tight, 1.2) !important;
-    position: relative !important;
-    display: inline-block !important;
+    font-family: var(--tm-font) !important;
+    font-size: clamp(1.5rem, 4vw, 2.25rem) !important;
+    font-weight: 700 !important;
+    color: var(--tm-text) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
 }
 
-.testimonials-title::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    right: 50%;
-    transform: translateX(50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--medical-success, #28a745), transparent);
-    border-radius: var(--radius-full, 9999px);
+.testimonials-title i {
+    color: var(--tm-primary);
 }
 
 .testimonials-subtitle {
     font-size: clamp(1rem, 2vw, 1.125rem) !important;
-    color: #6c757d !important;
-    max-width: 700px !important;
-    margin: var(--spacing-md, 1rem) auto 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    color: var(--tm-text-muted) !important;
+    max-width: 640px !important;
+    margin: 0 auto !important;
+    line-height: 1.6 !important;
 }
 
-/* ============================================
-   SWIPER CAROUSEL
-   ============================================ */
-.testimonials-carousel {
-    width: 100% !important;
-    padding: var(--spacing-lg, 1.5rem) 0 var(--spacing-xxl, 3rem) 0 !important;
-    overflow: visible !important;
+/* ========== Grid (Desktop/Tablet) + Horizontal Scroll (Mobile) ========== */
+.testimonials-grid-wrap {
+    margin-bottom: 1.5rem;
 }
 
-.testimonials-carousel .swiper-wrapper {
-    align-items: stretch !important;
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
 }
 
-.testimonials-carousel .swiper-slide {
-    height: auto !important;
-    display: flex !important;
+@media (min-width: 576px) {
+    .testimonials-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem;
+    }
 }
 
-/* ============================================
-   TESTIMONIAL CARD - Professional Design
-   ============================================ */
+@media (min-width: 992px) {
+    .testimonials-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+}
+
+/* موبایل: Swipe افقی با scroll-snap */
+@media (max-width: 575.98px) {
+    .testimonials-grid-wrap {
+        overflow: hidden;
+        margin-inline: calc(-1 * clamp(1rem, 3vw, 1.5rem));
+    }
+    .testimonials-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 1rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: clamp(1rem, 3vw, 1.5rem);
+        -webkit-overflow-scrolling: touch;
+        padding: 0.25rem clamp(1rem, 3vw, 1.5rem);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .testimonials-grid::-webkit-scrollbar {
+        display: none;
+    }
+    .testimonials-grid .testimonial-card {
+        flex: 0 0 85%;
+        max-width: 85%;
+        scroll-snap-align: start;
+    }
+}
+
+/* ========== Card ========== */
 .testimonial-card {
-    background: #ffffff !important;
-    border-radius: var(--radius-lg, 20px) !important;
-    padding: var(--spacing-xl, 2rem) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    position: relative !important;
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: var(--tm-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--tm-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 220px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
 .testimonial-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08) !important;
-    border-color: rgba(40, 167, 69, 0.15) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--tm-primary);
 }
 
-/* ============================================
-   1. RATING (اختیاری)
-   ============================================ */
-.testimonial-rating {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    padding: var(--spacing-sm, 0.5rem) !important;
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 152, 0, 0.08) 100%) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(255, 193, 7, 0.15) !important;
+/* ستاره‌ها */
+.testimonial-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-bottom: 0.75rem;
 }
 
-.testimonial-rating-star {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    transition: transform var(--transition-fast, 0.2s) !important;
+.testimonial-star {
+    font-size: 0.875rem;
 }
 
-.testimonial-rating-star.filled {
-    color: #ffc107 !important;
+.testimonial-star.filled,
+.testimonial-star.half {
+    color: var(--tm-star);
 }
 
-.testimonial-rating-star.half {
-    color: #ffc107 !important;
-    opacity: 0.7 !important;
+.testimonial-star.empty {
+    color: var(--tm-star-empty);
 }
 
-.testimonial-rating-star.empty {
-    color: #dee2e6 !important;
+/* متن نظر */
+.testimonial-quote {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--tm-text);
+    margin: 0 0 1rem 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* ============================================
-   2. COMMENT (متن کوتاه - 2-3 خط)
-   ============================================ */
-.testimonial-comment {
-    font-size: var(--font-size-base, 1rem) !important;
-    color: #495057 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    margin: 0 0 var(--spacing-lg, 1.5rem) 0 !important;
-    flex: 1 !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 3 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    min-height: 4.5em !important;
-    font-weight: var(--font-weight-normal, 400) !important;
-    text-align: justify !important;
+.testimonial-quote--empty {
+    min-height: 0;
+    margin: 0;
+    -webkit-line-clamp: 0;
+    line-clamp: 0;
+    visibility: hidden;
 }
 
-/* ============================================
-   3. PATIENT INFO (Privacy Friendly)
-   ============================================ */
-.testimonial-patient-info {
-    display: flex !important;
-    align-items: center !important;
-    gap: var(--spacing-md, 1rem) !important;
-    margin-top: auto !important;
-    padding-top: var(--spacing-md, 1rem) !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+/* نویسنده: آواتار + نام و خدمت */
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .testimonial-avatar {
-    width: 56px !important;
-    height: 56px !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-success, #28a745) 100%) !important;
-    color: #ffffff !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    font-size: var(--font-size-lg, 1.125rem) !important;
-    flex-shrink: 0 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    position: relative !important;
-    overflow: hidden !important;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--tm-bg-subtle);
+    border: 1px solid var(--tm-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
-.testimonial-avatar-image {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    object-fit: cover !important;
+.testimonial-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.testimonial-avatar-fallback {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+.testimonial-avatar-initials {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--tm-primary);
 }
 
-.testimonial-patient-details {
-    flex: 1 !important;
-    min-width: 0 !important;
+.testimonial-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
-.testimonial-patient-name {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: var(--font-size-base, 1rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    color: #212529 !important;
-    margin: 0 0 var(--spacing-xs, 0.5rem) 0 !important;
-    line-height: var(--line-height-tight, 1.3) !important;
+.testimonial-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--tm-text);
 }
 
-.testimonial-service-type {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: var(--medical-success, #28a745) !important;
-    margin: 0 !important;
-    font-weight: var(--font-weight-medium, 500) !important;
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.08) 0%, rgba(44, 110, 125, 0.08) 100%) !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    display: inline-block !important;
-    border: 1px solid rgba(40, 167, 69, 0.15) !important;
+.testimonial-service {
+    font-size: 0.8125rem;
+    color: var(--tm-primary);
 }
 
-/* ============================================
-   SWIPER NAVIGATION
-   ============================================ */
-.testimonials-carousel-next,
-.testimonials-carousel-prev {
-    width: 44px !important;
-    height: 44px !important;
-    background: #ffffff !important;
-    border: 2px solid var(--medical-success, #28a745) !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    color: var(--medical-success, #28a745) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    transition: all var(--transition-normal, 0.3s) !important;
+/* بیمار تأییدشده */
+.testimonial-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--tm-success);
 }
 
-.testimonials-carousel-next:hover,
-.testimonials-carousel-prev:hover {
-    background: var(--medical-success, #28a745) !important;
-    color: #ffffff !important;
-    transform: scale(1.1) !important;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
+.testimonial-verified i {
+    font-size: 0.875rem;
 }
 
-.testimonials-carousel-next::after,
-.testimonials-carousel-prev::after {
-    font-size: 16px !important;
-    font-weight: 700 !important;
+/* ========== Legal ========== */
+.testimonials-legal {
+    text-align: center;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    font-size: 0.8125rem;
+    color: var(--tm-text-muted);
+    line-height: 1.5;
+    font-family: var(--tm-font);
 }
 
-/* ============================================
-   SWIPER PAGINATION
-   ============================================ */
-.testimonials-carousel-pagination {
-    position: relative !important;
-    margin-top: var(--spacing-lg, 1.5rem) !important;
-    bottom: auto !important;
+.testimonials-legal i {
+    color: var(--tm-primary);
+    margin-inline-start: 0.35rem;
 }
 
-.testimonials-carousel-pagination .swiper-pagination-bullet {
-    width: 10px !important;
-    height: 10px !important;
-    background: var(--medical-border, #dee2e6) !important;
-    opacity: 1 !important;
-    transition: all var(--transition-normal, 0.3s) !important;
+/* ========== Focus (تعاملی‌ها) ========== */
+.testimonial-card:focus-visible {
+    outline: 2px solid var(--tm-primary);
+    outline-offset: 2px;
 }
 
-.testimonials-carousel-pagination .swiper-pagination-bullet-active {
-    background: var(--medical-success, #28a745) !important;
-    width: 24px !important;
-    border-radius: var(--radius-full, 9999px) !important;
-}
-
-/* ============================================
-   LEGAL NOTICE
-   ============================================ */
-.testimonials-legal-notice {
-    text-align: center !important;
-    margin-top: var(--spacing-xl, 2rem) !important;
-    padding: var(--spacing-md, 1rem) !important;
-    background: rgba(40, 167, 69, 0.05) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(40, 167, 69, 0.1) !important;
-}
-
-.testimonials-legal-text {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: #6c757d !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-}
-
-.testimonials-legal-text i {
-    color: var(--medical-success, #28a745) !important;
-    font-size: var(--font-size-base, 1rem) !important;
-}
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 767.98px) {
-    .testimonials-section {
-        padding: var(--spacing-xxl, 2.5rem) 0 !important;
+/* ========== Print ========== */
+@media print {
+    .testimonials-grid-wrap {
+        overflow: visible;
+        margin-left: 0;
+        margin-right: 0;
     }
-    
-    .testimonials-header {
-        margin-bottom: var(--spacing-xl, 2rem) !important;
+    .testimonials-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr);
+        overflow: visible;
+        scroll-snap-type: none;
+        padding: 0;
     }
-    
-    .testimonial-card {
-        padding: var(--spacing-lg, 1.5rem) !important;
+    .testimonials-grid .testimonial-card {
+        flex: none;
+        max-width: none;
+        break-inside: avoid;
     }
-    
-    .testimonial-avatar {
-        width: 48px !important;
-        height: 48px !important;
-        font-size: var(--font-size-base, 1rem) !important;
-    }
-    
-    .testimonials-carousel {
-        padding: var(--spacing-md, 1rem) 0 var(--spacing-xl, 2rem) 0 !important;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .testimonials-carousel {
-        padding: var(--spacing-lg, 1.5rem) 0 var(--spacing-xxl, 3rem) 0 !important;
-    }
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-.testimonial-card:focus-within {
-    outline: 3px solid var(--medical-success, #28a745) !important;
-    outline-offset: 4px !important;
-    border-radius: var(--radius-lg, 20px) !important;
-}
-
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    .testimonial-card,
-    .testimonials-carousel-next,
-    .testimonials-carousel-prev {
-        transition: none !important;
-    }
-    
     .testimonial-card:hover {
-        transform: none !important;
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 }
 
-/* High Contrast Mode Support */
+/* ========== High contrast ========== */
 @media (prefers-contrast: high) {
     .testimonial-card {
-        border: 2px solid #000000 !important;
+        border-width: 2px;
+        border-color: var(--tm-text);
+    }
+    .testimonial-card:hover {
+        border-color: var(--tm-primary);
+    }
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+    .testimonial-card {
+        transition: none;
+    }
+    .testimonial-card:hover {
+        transform: none;
     }
 }

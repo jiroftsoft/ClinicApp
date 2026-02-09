@@ -1,36 +1,36 @@
 /**
- * Hero Carousel Manager - Medical Environment Production Ready
- * 
- * ویژگی‌های کلیدی:
- * 1. Accessibility (اولویت اول): ARIA, keyboard navigation, WCAG AA
- * 2. Privacy & Security: GDPR compliance, no sensitive data
- * 3. Performance: Image optimization, lazy loading, GPU-accelerated
- * 4. UX: Auto-play control, pause on hover/focus, clear controls
- * 5. Responsive & Touch: Aspect ratio, touch targets >=44px, swipe, RTL
- * 6. Design: Calming colors, soft animations, professional
- * 7. Controls: Auto-play toggle, status text, progress bar
- * 8. Maintainability: API, lazy-fetch, reduced motion support
+ * Hero Carousel - کلینیک شفا
+ *
+ * اهداف (طبق Docs/HERO-CAROUSEL-GUIDE.md):
+ * - معرفی سریع کلینیک، هدایت به نوبت‌دهی، ایجاد اعتماد، کم‌بار شناختی
+ * - الگو: Cleveland Clinic, One Medical, Mayo Clinic
+ *
+ * مشخصات فنی:
+ * - بدون Auto-play پیش‌فرض (کنترل کامل دست کاربر - Mayo Clinic)
+ * - Transition آرام 300–500ms
+ * - حداکثر ۳ اسلاید توصیه‌شده
+ * - Swipe موبایل، کیبورد، Lazy loading
  */
 (function() {
     'use strict';
 
     // ============================================
-    // CONFIGURATION - تنظیمات استاندارد برای محیط درمانی
+    // CONFIGURATION - محیط درمانی (No Auto-play پیش‌فرض)
     // ============================================
     const CONFIG = {
         // Timing
-        autoSlideDelay: 6500,        // 6.5 seconds - زمان مناسب برای خواندن
-        transitionDuration: 800,     // 0.8 seconds - transition نرم
-        initDelay: 2000,             // 2 seconds - تاخیر برای لود تصاویر
+        autoSlideDelay: 6000,        // در صورت فعال بودن autoplay
+        transitionDuration: 400,     // 300–500ms آرام (Best Practice پزشکی)
+        initDelay: 500,
         
-        // Behavior
-        autoPlay: true,              // Auto-play (قابل کنترل توسط کاربر)
-        pauseOnHover: true,          // توقف هنگام hover
-        pauseOnFocus: true,          // توقف هنگام focus (accessibility)
-        loop: true,                  // Loop بین اسلایدها
-        keyboardNavigation: true,    // Navigation با کیبورد
-        touchSwipe: true,            // Swipe برای موبایل
-        swipeThreshold: 50,          // حداقل فاصله برای swipe
+        // Behavior — بدون Auto-play پیش‌فرض (Mayo Clinic / UX پزشکی)
+        autoPlay: false,             // کنترل دست کاربر؛ دکمه Play اختیاری
+        pauseOnHover: true,
+        pauseOnFocus: true,
+        loop: true,
+        keyboardNavigation: true,
+        touchSwipe: true,
+        swipeThreshold: 50,
         
         // Accessibility
         announceSlideChanges: true,  // اعلان تغییر اسلاید برای screen readers
@@ -92,15 +92,15 @@
 
         if (carouselItems.length === 0) return false;
 
-        // Setup accessibility
         setupAccessibility();
-
-        // Initialize carousel
         setupEventListeners();
-        showSlide(0, false); // Show first slide without transition
+        showSlide(0, false);
 
         if (carouselItems.length > 1 && CONFIG.autoPlay && !CONFIG.reducedMotion) {
             setTimeout(function() { startAutoSlide(); }, CONFIG.initDelay);
+        } else {
+            isPaused = true;
+            if (autoPlayToggle) updateAutoPlayToggle(false);
         }
 
         isInitialized = true;

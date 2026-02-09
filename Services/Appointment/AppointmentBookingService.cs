@@ -323,14 +323,16 @@ namespace ClinicApp.Services.Appointment
                         FullName = doctor.FullName,
                         Specialization = specialization,
                         MedicalCouncilCode = doctor.MedicalCouncilCode ?? "",
-                        DepartmentId = null, // DoctorIndexViewModel اطلاعات دپارتمان به صورت مستقیم ندارد
-                        DepartmentName = "", // DoctorIndexViewModel اطلاعات دپارتمان به صورت مستقیم ندارد
+                        DepartmentId = null,
+                        DepartmentName = "",
                         HasActiveSchedule = hasActiveSchedule,
                         ScheduleInfo = hasActiveSchedule ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
-                        BasePrice = 0, // در آینده از تنظیمات پزشک دریافت می‌شود
+                        BasePrice = 0,
                         ProfileImageUrl = doctor.ProfileImageUrl,
                         Bio = bio,
-                        ExperienceYears = doctor.ExperienceYears
+                        ExperienceYears = doctor.ExperienceYears,
+                        Rating = null,   // TODO: از جدول نظرات/امتیاز پر شود
+                        ReviewCount = 0
                     };
 
                     doctorDtos.Add(dto);
@@ -384,7 +386,9 @@ namespace ClinicApp.Services.Appointment
                     BasePrice = 0,
                     ProfileImageUrl = doctor.ProfileImageUrl,
                     Bio = doctor.Bio,
-                    ExperienceYears = doctor.ExperienceYears
+                    ExperienceYears = doctor.ExperienceYears,
+                    Rating = null,
+                    ReviewCount = 0
                 };
 
                 return ServiceResult<DoctorSearchResultDto>.Successful(dto);

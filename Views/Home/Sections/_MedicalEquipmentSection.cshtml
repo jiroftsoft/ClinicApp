@@ -1,102 +1,76 @@
 @model ClinicApp.ViewModels.HomePageViewModel
 @{
-    var equipments = Model?.MedicalEquipments ?? new List<ClinicApp.ViewModels.CMS.MedicalEquipmentPublicViewModel>();
+    var equipments = (Model?.MedicalEquipments ?? new List<ClinicApp.ViewModels.CMS.MedicalEquipmentPublicViewModel>()).Take(4).ToList();
 }
 
-@* CSS در Index.cshtml لود می‌شود *@
-
+@* سکشن تجهیزات پزشکی — Trust Signal (ر.ک. Docs/MEDICAL-EQUIPMENT-SECTION-GUIDE.md) *@
+@* الگو: Mayo / Cleveland — غیرتبلیغاتی، توضیح ساده برای بیمار، Grid نه Carousel *@
 @if (equipments == null || !equipments.Any()) { return; }
-<div class="medical-equipment-inner">
+
+<div class="medical-equipment-inner medical-equipment-showcase">
     <div class="container">
-            @* Header Section *@
-            <div class="equipment-showcase-header">
-                <h2 class="equipment-showcase-title">تجهیزات پزشکی مدرن</h2>
-                <p class="equipment-showcase-subtitle">
-                    استفاده از تجهیزات پیشرفته برای تشخیص دقیق‌تر و خدمات ایمن‌تر
-                </p>
-            </div>
+        <header class="equipment-showcase-header section-header" aria-labelledby="equipment-section-heading">
+            <h2 class="equipment-showcase-title section-title" id="equipment-section-heading">تجهیزات پیشرفته، تشخیص دقیق‌تر</h2>
+            <p class="equipment-showcase-subtitle section-subtitle">
+                در کلینیک شفا از تجهیزات مدرن و استاندارد استفاده می‌شود تا دقت تشخیص و ایمنی درمان در بالاترین سطح باشد.
+            </p>
+        </header>
 
-            @* Equipment Grid *@
-            <div class="equipment-showcase-grid">
-                @foreach (var equipment in equipments.Take(6))
-                {
-                    <article class="equipment-showcase-card" role="article" aria-labelledby="equipment-title-@equipment.MedicalEquipmentId">
-                        @* Equipment Image *@
-                        <div class="equipment-card-image-wrapper">
-                            @if (!string.IsNullOrEmpty(equipment.ImageUrl))
-                            {
-                                <img src="@equipment.ImageUrl" 
-                                     alt="@equipment.EquipmentName"
-                                     class="equipment-card-image"
-                                     loading="lazy"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            }
-                            <div class="equipment-card-image-placeholder" style="@(string.IsNullOrEmpty(equipment.ImageUrl) ? "display: flex;" : "display: none;")">
-                                <i class="fas fa-x-ray" aria-hidden="true"></i>
-                            </div>
-                        </div>
-
-                        @* Equipment Content *@
-                        <div class="equipment-card-content">
-                            @* Equipment Name *@
-                            <h3 class="equipment-card-name" id="equipment-title-@equipment.MedicalEquipmentId">
-                                @equipment.EquipmentName
-                            </h3>
-
-                            @* Equipment Model *@
-                            @if (!string.IsNullOrEmpty(equipment.Model))
-                            {
-                                <p class="equipment-card-model" aria-label="مدل: @equipment.Model">
-                                    <span class="equipment-model-label">مدل:</span>
-                                    <span class="equipment-model-value">@equipment.Model</span>
-                                </p>
-                            }
-
-                            @* Equipment Features (3-4 مورد) *@
-                            @if (equipment.Features != null && equipment.Features.Any())
-                            {
-                                <ul class="equipment-card-features" role="list">
-                                    @foreach (var feature in equipment.Features.Take(4))
-                                    {
-                                        <li class="equipment-feature-item" role="listitem">
-                                            <i class="fas fa-check-circle" aria-hidden="true"></i>
-                                            <span>@feature</span>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-
-                            @* CTA Button *@
-                            <a href="@Url.Action("Details", "MedicalEquipment", new { slug = equipment.Slug })" 
-                               class="equipment-card-button" 
-                               aria-label="مشاهده جزئیات @equipment.EquipmentName">
-                                <span>مشاهده جزئیات</span>
-                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </article>
-                }
-            </div>
-
-            @* View All Button *@
-            @if (equipments.Count > 6)
+        <div class="equipment-showcase-grid" role="list">
+            @foreach (var equipment in equipments)
             {
-                <div class="equipment-showcase-footer">
-                    <a href="@Url.Action("Index", "MedicalEquipment")" 
-                       class="equipment-showcase-view-all" 
-                       aria-label="مشاهده تمام تجهیزات">
-                        <span>مشاهده تمام تجهیزات</span>
-                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                    </a>
-                </div>
+                var patientText = !string.IsNullOrWhiteSpace(equipment.ShortDescription)
+                    ? equipment.ShortDescription
+                    : (string.IsNullOrWhiteSpace(equipment.Description) ? null : ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(equipment.Description, 100));
+                <article class="equipment-showcase-card" role="listitem" aria-labelledby="equipment-title-@equipment.MedicalEquipmentId">
+                    <div class="equipment-card-image-wrapper">
+                        @if (!string.IsNullOrEmpty(equipment.ImageUrl))
+                        {
+                            <img src="@equipment.ImageUrl"
+                                 alt="@(equipment.EquipmentName + " در کلینیک شفا")"
+                                 class="equipment-card-image"
+                                 loading="lazy"
+                                 decoding="async"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        }
+                        <div class="equipment-card-image-placeholder" style="@(string.IsNullOrEmpty(equipment.ImageUrl) ? "display: flex;" : "display: none;")">
+                            <i class="fas fa-x-ray" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    <div class="equipment-card-content">
+                        <h3 class="equipment-card-name" id="equipment-title-@equipment.MedicalEquipmentId">@equipment.EquipmentName</h3>
+                        @if (!string.IsNullOrWhiteSpace(patientText))
+                        {
+                            <p class="equipment-card-use">@patientText</p>
+                        }
+                        <a href="@Url.Action("Details", "MedicalEquipment", new { slug = equipment.Slug })"
+                           class="equipment-card-button"
+                           aria-label="مشاهده جزئیات @equipment.EquipmentName">
+                            <span>مشاهده جزئیات</span>
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </article>
             }
-
-            @* Legal Notice *@
-            <div class="equipment-showcase-legal-notice">
-                <p class="equipment-legal-text">
-                    <i class="fas fa-info-circle" aria-hidden="true"></i>
-                    <span>اطلاعات تجهیزات صرفاً جهت آشنایی مراجعین بوده و به‌معنای تشخیص یا توصیه درمانی نیست.</span>
-                </p>
-            </div>
         </div>
+
+        @if ((Model?.MedicalEquipments?.Count ?? 0) > 4)
+        {
+            <div class="equipment-showcase-footer">
+                <a href="@Url.Action("Index", "MedicalEquipment")"
+                   class="equipment-showcase-view-all"
+                   aria-label="مشاهده همه تجهیزات">
+                    <span>مشاهده همه تجهیزات</span>
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                </a>
+            </div>
+        }
+
+        <div class="equipment-showcase-legal-notice">
+            <p class="equipment-legal-text">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <span>اطلاعات تجهیزات صرفاً جهت آشنایی مراجعین بوده و به‌معنای تشخیص یا توصیه درمانی نیست.</span>
+            </p>
+        </div>
+    </div>
 </div>

@@ -373,6 +373,66 @@
     font-size: 1rem;
 }
 
+/* ✅ امتیاز و رضایت بیماران (دکترتو/پذیرش۲۴) */
+.doctor-rating-block-available {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(44, 90, 160, 0.12);
+}
+
+.doctor-stars-available {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.doctor-stars-available .doctor-star-full {
+    color: #f0ad4e;
+    font-size: 0.875rem;
+}
+
+.doctor-stars-available .doctor-star-empty {
+    color: #dee2e6;
+    font-size: 0.875rem;
+}
+
+.doctor-rating-num {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--medical-text);
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+}
+
+.doctor-rating-caption {
+    font-size: 0.75rem;
+    color: var(--medical-text-muted);
+    width: 100%;
+    flex-basis: 100%;
+}
+
+/* ✅ اولین نوبت (Trust/Conversion) */
+.doctor-first-slot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(40, 167, 69, 0.12);
+    border: 1px solid rgba(40, 167, 69, 0.35);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--medical-success);
+}
+
+.doctor-first-slot-badge i {
+    font-size: 0.9rem;
+}
+
 /* ✅ Body Section - Mobile First */
 .doctor-card-body {
     padding: 1rem;
@@ -1150,11 +1210,42 @@
     outline-offset: 2px;
 }
 
+/* ✅ صفحه‌بندی لیست پزشکان (دکترتو/پذیرش۲۴) */
+.appointment-pagination-wrap {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.appointment-pagination {
+    gap: 0.25rem;
+}
+
+.appointment-pagination .page-link {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    color: var(--medical-primary);
+    border: 1px solid var(--medical-border);
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+}
+
+.appointment-pagination .page-item.active .page-link {
+    background: var(--medical-primary);
+    border-color: var(--medical-primary);
+    color: #fff;
+}
+
+.appointment-pagination .page-link:hover {
+    background: rgba(44, 90, 160, 0.08);
+    border-color: var(--medical-primary);
+    color: var(--medical-primary);
+}
+
 /* ✅ 1️⃣9️⃣ Print Styles */
 @media print {
     .appointment-filter-section,
     .btn-medical-primary,
-    .btn-time-slot-medical {
+    .btn-time-slot-medical,
+    .appointment-pagination-wrap {
         display: none;
     }
 }

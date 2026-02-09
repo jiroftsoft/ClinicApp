@@ -1,99 +1,87 @@
 /**
- * 👨‍⚕️ Doctors Section - Ultra Modern Professional Design
- * 
- * طراحی فوق‌العاده مدرن و حرفه‌ای برای بخش "پزشکان باتجربه ما"
- * مطابق با آخرین استانداردهای UI/UX 2024-2025
- * 
- * ویژگی‌ها:
- * - Premium Card Design با Image Overlay
- * - Glassmorphism Effects
- * - Advanced Hover Animations
- * - Professional Rating Display
- * - Modern Typography
- * - Responsive Grid
- * - Micro-interactions
+ * سکشن «پزشکان باتجربه ما» — Trust + Conversion
+ * ر.ک. Docs/DOCTORS-SECTION-GUIDE.md
+ *
+ * الگو: Cleveland / Mayo — Grid نه Carousel، CTA رزرو نوبت، اطلاعات حداقلی
  */
 
-/* ============================================
-   BASE SECTION STYLES
-   ============================================ */
+:root {
+    --dr-primary: #2c5aa0;
+    --dr-primary-dark: #1e3f73;
+    --dr-success: #28a745;
+    --dr-bg: #ffffff;
+    --dr-bg-subtle: #f8f9fa;
+    --dr-text: #212529;
+    --dr-text-muted: #6c757d;
+    --dr-border: #e9ecef;
+    --dr-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
+
+/* ========== Section ========== */
 .doctors-section {
-    padding: var(--spacing-xxxl, 4rem) 0 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+    padding: clamp(2.5rem, 5vw, 4rem) 0 !important;
+    background: var(--dr-bg) !important;
     position: relative !important;
     overflow: hidden !important;
 }
 
-.doctors-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 10% 20%, rgba(44, 110, 125, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(0, 123, 255, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.doctors-section .container {
+.doctors-section-container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
     position: relative;
     z-index: 1;
 }
 
-/* ============================================
-   HEADER SECTION
-   ============================================ */
+/* ========== Header ========== */
 .doctors-header {
     text-align: center;
-    margin-bottom: var(--spacing-xxl, 3rem) !important;
+    margin-bottom: 2rem;
 }
 
 .doctors-title {
-    font-family: var(--font-family-heading, 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    line-height: var(--line-height-tight, 1.2) !important;
-    position: relative !important;
-    display: inline-block !important;
+    font-family: var(--dr-font) !important;
+    font-size: clamp(1.5rem, 4vw, 2.25rem) !important;
+    font-weight: 700 !important;
+    color: var(--dr-text) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
 }
 
-.doctors-title::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    right: 50%;
-    transform: translateX(50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--medical-primary, #2c6e7d), transparent);
-    border-radius: var(--radius-full, 9999px);
+.doctors-title i {
+    color: var(--dr-primary);
 }
 
 .doctors-subtitle {
     font-size: clamp(1rem, 2vw, 1.125rem) !important;
-    color: #6c757d !important;
-    max-width: 700px !important;
-    margin: var(--spacing-md, 1rem) auto 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    color: var(--dr-text-muted) !important;
+    max-width: 640px !important;
+    margin: 0 auto !important;
+    line-height: 1.6 !important;
+    font-weight: 400 !important;
 }
 
-/* ============================================
-   DOCTORS GRID
-   ============================================ */
+.doctors-trust {
+    font-size: 0.9375rem !important;
+    color: var(--dr-text-muted) !important;
+    margin: 0.5rem auto 0 !important;
+}
+
+/* ========== Grid (نه Carousel) ========== */
 .doctors-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: var(--spacing-xl, 2rem) !important;
-    margin-bottom: var(--spacing-xl, 2rem) !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    margin-bottom: 2rem !important;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 576px) {
     .doctors-grid {
         grid-template-columns: repeat(2, 1fr) !important;
     }
@@ -102,93 +90,59 @@
 @media (min-width: 992px) {
     .doctors-grid {
         grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1.75rem !important;
     }
 }
 
 @media (min-width: 1200px) {
     .doctors-grid {
         grid-template-columns: repeat(4, 1fr) !important;
+        gap: 2rem !important;
     }
 }
 
-/* ============================================
-   DOCTOR CARD - Premium Design
-   ============================================ */
+/* ========== Card ========== */
 .doctor-card {
-    background: #ffffff !important;
-    border-radius: var(--radius-lg, 24px) !important;
+    background: var(--dr-bg) !important;
+    border-radius: 16px !important;
     overflow: hidden !important;
-    transition: all var(--transition-normal, 0.4s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid var(--dr-border) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease !important;
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
-    position: relative !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-.doctor-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--medical-primary, #2c6e7d), var(--medical-success, #28a745));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform var(--transition-normal, 0.4s) cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
 }
 
 .doctor-card:hover {
-    transform: translateY(-12px) scale(1.02) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(44, 110, 125, 0.1) !important;
-    border-color: rgba(44, 110, 125, 0.2) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--dr-primary) !important;
 }
 
-.doctor-card:hover::before {
-    transform: scaleX(1);
+.doctor-card:focus-within {
+    outline: 2px solid var(--dr-primary);
+    outline-offset: 2px;
 }
 
-/* ============================================
-   DOCTOR IMAGE WRAPPER - Premium
-   ============================================ */
+/* ========== Image ========== */
 .doctor-image-wrapper {
     position: relative !important;
     width: 100% !important;
-    height: 320px !important;
+    height: 240px !important;
     overflow: hidden !important;
-    background: linear-gradient(135deg, rgba(44, 110, 125, 0.1) 0%, rgba(0, 123, 255, 0.1) 100%) !important;
+    background: var(--dr-bg-subtle) !important;
 }
 
 .doctor-image {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    transition: transform var(--transition-slow, 0.6s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: transform 0.3s ease !important;
 }
 
 .doctor-card:hover .doctor-image {
-    transform: scale(1.15) !important;
-}
-
-/* Overlay Gradient on Hover */
-.doctor-image-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
-    opacity: 0;
-    transition: opacity var(--transition-normal, 0.4s);
-    pointer-events: none;
-}
-
-.doctor-card:hover .doctor-image-wrapper::after {
-    opacity: 1;
+    transform: scale(1.04) !important;
 }
 
 .doctor-image-placeholder {
@@ -197,340 +151,220 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-success, #28a745) 100%) !important;
+    background: var(--dr-bg-subtle) !important;
 }
 
 .doctor-image-placeholder i {
-    font-size: 5rem !important;
-    color: #ffffff !important;
-    opacity: 0.9 !important;
+    font-size: 3.5rem !important;
+    color: #adb5bd !important;
 }
 
-/* ============================================
-   DOCTOR CONTENT
-   ============================================ */
+/* ========== Content ========== */
 .doctor-content {
-    padding: var(--spacing-lg, 1.5rem) !important;
-    text-align: center !important;
+    padding: 1.25rem 1.5rem !important;
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
-    gap: var(--spacing-md, 1rem) !important;
+    gap: 0.5rem !important;
 }
 
 .doctor-name {
-    font-family: var(--font-family-heading, 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: var(--font-size-xl, 1.25rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
+    font-family: var(--dr-font) !important;
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    color: var(--dr-text) !important;
     margin: 0 !important;
-    line-height: var(--line-height-tight, 1.3) !important;
-    transition: color var(--transition-normal, 0.3s) !important;
-}
-
-.doctor-card:hover .doctor-name {
-    color: var(--medical-primary, #2c6e7d) !important;
+    line-height: 1.35 !important;
 }
 
 .doctor-specialization {
-    font-size: var(--font-size-base, 1rem) !important;
-    color: var(--medical-success, #28a745) !important;
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    color: var(--dr-primary) !important;
     margin: 0 !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(0, 123, 255, 0.1) 100%) !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    display: inline-block !important;
-    border: 1px solid rgba(40, 167, 69, 0.2) !important;
 }
 
-/* ============================================
-   DOCTOR RATING - Premium Display
-   ============================================ */
-.doctor-rating {
+/* ========== امتیاز و رضایت بیماران (دکترتو / پذیرش۲۴) ========== */
+.doctor-rating-block {
     display: flex !important;
-    justify-content: center !important;
+    flex-wrap: wrap !important;
     align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    margin: var(--spacing-sm, 0.5rem) 0 !important;
-    padding: var(--spacing-sm, 0.5rem) !important;
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(255, 193, 7, 0.2) !important;
+    gap: 0.35rem 0.5rem !important;
+    margin: 0.25rem 0 0 !important;
+    padding: 0.5rem 0 !important;
+    border-top: 1px solid var(--dr-border) !important;
+    border-bottom: 1px solid var(--dr-border) !important;
 }
 
-.doctor-rating-star {
-    font-size: var(--font-size-base, 1rem) !important;
-    transition: transform var(--transition-fast, 0.2s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+.doctor-stars {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.15rem !important;
 }
 
-.doctor-rating-star.filled {
-    color: #ffc107 !important;
-    text-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
+.doctor-star {
+    font-size: 0.875rem !important;
+    line-height: 1 !important;
 }
 
-.doctor-rating-star.half {
-    color: #ffc107 !important;
-    opacity: 0.7 !important;
+.doctor-star-full {
+    color: #f0ad4e !important;
 }
 
-.doctor-rating-star.empty {
+.doctor-star-half {
+    color: #f0ad4e !important;
+}
+
+.doctor-star-empty {
     color: #dee2e6 !important;
 }
 
-.doctor-rating-star:hover {
-    transform: scale(1.3) rotate(10deg) !important;
+.doctor-rating-value {
+    font-size: 0.9375rem !important;
+    font-weight: 700 !important;
+    color: var(--dr-text) !important;
+    font-family: var(--dr-font) !important;
 }
 
-.doctor-rating-text {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: #6c757d !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    font-family: 'Segoe UI', Tahoma, sans-serif !important;
+.doctor-rating-label {
+    font-size: 0.8125rem !important;
+    color: var(--dr-text-muted) !important;
+    width: 100% !important;
+    flex-basis: 100% !important;
 }
 
-/* ============================================
-   DOCTOR BIO
-   ============================================ */
-.doctor-bio {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: #6c757d !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
+.doctor-rating-no-reviews {
+    font-style: normal !important;
+}
+
+.doctor-trust-line {
+    font-size: 0.875rem !important;
+    color: var(--dr-text-muted) !important;
+    line-height: 1.5 !important;
     margin: 0 !important;
-    min-height: 3.5em !important;
+    flex: 1 !important;
     display: -webkit-box !important;
-    -webkit-line-clamp: 3 !important;
+    -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    flex: 1 !important;
 }
 
-/* ============================================
-   DOCTOR BUTTON - Premium CTA
-   ============================================ */
-.doctor-button {
-    width: 100% !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, #1e4a52 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: var(--radius-md, 12px) !important;
-    padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem) !important;
-    font-size: var(--font-size-base, 1rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    text-decoration: none !important;
-    display: flex !important;
+/* ========== CTA (رزرو نوبت) ========== */
+.doctor-cta {
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: var(--spacing-sm, 0.5rem) !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 6px rgba(44, 110, 125, 0.2) !important;
-    position: relative !important;
-    overflow: hidden !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    font-family: var(--dr-font) !important;
+    color: #fff !important;
+    background: var(--dr-primary) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    text-decoration: none !important;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
     margin-top: auto !important;
 }
 
-.doctor-button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.doctor-button:hover {
-    background: linear-gradient(135deg, #1e4a52 0%, var(--medical-primary, #2c6e7d) 100%) !important;
+.doctor-cta:hover {
+    color: #fff !important;
+    background: var(--dr-primary-dark) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 15px rgba(44, 110, 125, 0.3) !important;
-    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3) !important;
 }
 
-.doctor-button:hover::before {
-    width: 300px;
-    height: 300px;
+.doctor-cta:focus {
+    outline: 3px solid var(--dr-primary) !important;
+    outline-offset: 2px !important;
 }
 
-.doctor-button:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 4px 6px rgba(44, 110, 125, 0.2) !important;
-}
-
-.doctor-button i {
-    transition: transform var(--transition-normal, 0.3s) !important;
-}
-
-.doctor-button:hover i {
-    transform: translateX(-4px) !important;
-}
-
-/* ============================================
-   VIEW ALL BUTTON
-   ============================================ */
+/* ========== مشاهده همه ========== */
 .doctors-view-all {
-    text-align: center !important;
-    margin-top: var(--spacing-xxl, 3rem) !important;
+    text-align: center;
+    margin-top: 0.5rem;
 }
 
 .doctors-view-all-button {
     display: inline-flex !important;
     align-items: center !important;
-    gap: var(--spacing-sm, 0.5rem) !important;
-    padding: var(--spacing-md, 1rem) var(--spacing-xxl, 2.5rem) !important;
-    background: #ffffff !important;
-    color: var(--medical-primary, #2c6e7d) !important;
-    border: 2px solid var(--medical-primary, #2c6e7d) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    font-size: var(--font-size-lg, 1.125rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    font-family: var(--dr-font) !important;
+    color: var(--dr-primary) !important;
+    background: var(--dr-bg) !important;
+    border: 2px solid var(--dr-primary) !important;
+    border-radius: 12px !important;
     text-decoration: none !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 4px 6px rgba(44, 110, 125, 0.1) !important;
+    transition: background 0.2s ease, color 0.2s ease !important;
 }
 
 .doctors-view-all-button:hover {
-    background: var(--medical-primary, #2c6e7d) !important;
-    color: #ffffff !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 15px rgba(44, 110, 125, 0.3) !important;
+    background: var(--dr-primary) !important;
+    color: #fff !important;
 }
 
-.doctors-view-all-button i {
-    transition: transform var(--transition-normal, 0.3s) !important;
-}
-
-.doctors-view-all-button:hover i {
-    transform: scale(1.2) !important;
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.doctor-card {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-.doctor-card.animate-in {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-.doctor-card.animate-slide-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-.doctor-card.animate-scale-in {
-    animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-/* Stagger Animation */
-.doctor-card:nth-child(1) { animation-delay: 0.1s !important; }
-.doctor-card:nth-child(2) { animation-delay: 0.2s !important; }
-.doctor-card:nth-child(3) { animation-delay: 0.3s !important; }
-.doctor-card:nth-child(4) { animation-delay: 0.4s !important; }
-.doctor-card:nth-child(5) { animation-delay: 0.5s !important; }
-.doctor-card:nth-child(6) { animation-delay: 0.6s !important; }
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 767.98px) {
-    .doctors-section {
-        padding: var(--spacing-xxl, 2.5rem) 0 !important;
-    }
-    
-    .doctors-header {
-        margin-bottom: var(--spacing-xl, 2rem) !important;
-    }
-    
-    .doctors-grid {
-        grid-template-columns: 1fr !important;
-        gap: var(--spacing-lg, 1.5rem) !important;
-    }
-    
-    .doctor-image-wrapper {
-        height: 280px !important;
-    }
-    
-    .doctor-name {
-        font-size: var(--font-size-lg, 1.125rem) !important;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .doctors-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-}
-
-@media (min-width: 992px) and (max-width: 1199.98px) {
-    .doctors-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-.doctor-card:focus-within {
-    outline: 3px solid var(--medical-primary, #2c6e7d) !important;
-    outline-offset: 4px !important;
-    border-radius: var(--radius-lg, 24px) !important;
-}
-
-.doctor-button:focus {
-    outline: 3px solid rgba(44, 110, 125, 0.5) !important;
+.doctors-view-all-button:focus {
+    outline: 3px solid var(--dr-primary) !important;
     outline-offset: 2px !important;
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    .doctor-card,
-    .doctor-image,
-    .doctor-button,
-    .doctor-rating-star {
-        animation: none !important;
-        transition: none !important;
+/* ========== Animation ========== */
+@keyframes doctorsFadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.doctor-card.animate-slide-up {
+    opacity: 0;
+}
+
+.doctor-card.animate-in {
+    animation: doctorsFadeIn 0.45s ease-out forwards;
+}
+
+.doctor-card.animate-in:nth-child(1) { animation-delay: 0.05s; }
+.doctor-card.animate-in:nth-child(2) { animation-delay: 0.1s; }
+.doctor-card.animate-in:nth-child(3) { animation-delay: 0.15s; }
+.doctor-card.animate-in:nth-child(4) { animation-delay: 0.2s; }
+
+/* ========== Responsive ========== */
+@media (max-width: 575.98px) {
+    .doctors-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
     }
-    
-    .doctor-card:hover {
-        transform: none !important;
+    .doctor-image-wrapper {
+        height: 220px !important;
     }
 }
 
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-    .doctor-card {
-        border: 2px solid #000000 !important;
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+    .doctor-card,
+    .doctor-image,
+    .doctor-cta,
+    .doctors-view-all-button {
+        transition: none !important;
     }
-    
-    .doctor-button {
-        border: 2px solid #000000 !important;
+    .doctor-card:hover {
+        transform: none !important;
+    }
+    .doctor-card:hover .doctor-image {
+        transform: none !important;
+    }
+    .doctor-cta:hover {
+        transform: none !important;
+    }
+    .doctor-card.animate-slide-up {
+        opacity: 1;
+    }
+    .doctor-card.animate-in {
+        animation: none !important;
     }
 }

@@ -1,221 +1,285 @@
 @model ClinicApp.ViewModels.CMS.InsuranceInfoIndexPageViewModel
 @{
     ViewBag.Title = "بیمه‌های طرف قرارداد";
+    ViewBag.MetaDescription = "لیست بیمه‌های طرف قرارداد با کلینیک شفا. برای اطلاع از جزئیات پوشش قبل از مراجعه با پذیرش هماهنگ کنید.";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var hasItems = Model?.InsuranceInfos != null && Model.InsuranceInfos.Any();
 }
 
-<section class="insurance-info-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
-    <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h1 class="display-4 mb-3">
-                    <i class="fas fa-shield-alt text-primary"></i>
-                    بیمه‌های طرف قرارداد
-                </h1>
-                <p class="lead text-muted">بیمه‌هایی که با کلینیک ما همکاری می‌کنند</p>
-            </div>
+<link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-index.css")" />
+
+<main class="insurance-index-wrap" role="main" aria-label="لیست بیمه‌های طرف قرارداد">
+    @Html.AntiForgeryToken()
+    <div class="insurance-index-container">
+        <nav class="insurance-index-nav" aria-label="مسیر بازگشت">
+            <a href="@Url.Action("Index", "Home")" class="insurance-index-back-link" aria-label="بازگشت به صفحه اصلی">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                <span>بازگشت به صفحه اصلی</span>
+            </a>
+        </nav>
+
+        <header class="insurance-index-header">
+            <h1 class="insurance-index-title" id="insurance-page-title">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                بیمه‌های طرف قرارداد
+            </h1>
+            <p class="insurance-index-subtitle">همکاری رسمی با بیمه‌های معتبر کشور</p>
+            <p class="insurance-index-trust">برای اطلاع از جزئیات پوشش و خدمات مشمول، قبل از مراجعه با پذیرش هماهنگ کنید.</p>
+        </header>
+
+        <div class="insurance-index-cta-strip">
+            <a href="@Url.Action("Available", "Appointment", new { area = "Patient" })" class="insurance-index-cta-primary" aria-label="رزرو نوبت آنلاین">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>رزرو نوبت آنلاین</span>
+            </a>
+            <a href="@Url.Action("Index", "Contact")" class="insurance-index-cta-secondary" aria-label="تماس با کلینیک">
+                <i class="fas fa-phone" aria-hidden="true"></i>
+                <span>تماس با کلینیک</span>
+            </a>
         </div>
 
-        <!-- Type Filter -->
         @if (Model.InsuranceTypes != null && Model.InsuranceTypes.Any())
         {
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="btn-group flex-wrap" role="group">
-                                <a href="@Url.Action("Index")" class="btn btn-@(Model.SelectedType == null ? "primary" : "outline-primary") mb-2">
-                                    <i class="fas fa-list"></i> همه (@(Model.InsuranceInfos?.Count ?? 0))
-                                </a>
-                                @foreach (var type in Model.InsuranceTypes)
-                                {
-                                    <a href="@Url.Action("Index", new { insuranceType = type.InsuranceType })" class="btn btn-@(Model.SelectedType == type.InsuranceType ? "primary" : "outline-primary") mb-2">
-                                        <i class="@type.IconClass"></i> @type.DisplayName (@type.Count)
-                                    </a>
-                                }
-                            </div>
-                        </div>
-                    </div>
+            <section class="insurance-index-filter" aria-label="فیلتر نوع بیمه">
+                <div class="insurance-index-filter-tabs" role="tablist">
+                    <a href="@Url.Action("Index")"
+                       class="insurance-index-tab @(Model.SelectedType == null ? "insurance-index-tab-active" : "")"
+                       role="tab"
+                       aria-selected="@(Model.SelectedType == null ? "true" : "false")"
+                       aria-label="همه بیمه‌ها">
+                        <i class="fas fa-list" aria-hidden="true"></i>
+                        <span>همه</span>
+                        <span class="insurance-index-tab-count">@(Model.InsuranceInfos?.Count ?? 0)</span>
+                    </a>
+                    @foreach (var type in Model.InsuranceTypes)
+                    {
+                        <a href="@Url.Action("Index", new { insuranceType = type.InsuranceType })"
+                           class="insurance-index-tab @(Model.SelectedType == type.InsuranceType ? "insurance-index-tab-active" : "")"
+                           role="tab"
+                           aria-selected="@(Model.SelectedType == type.InsuranceType ? "true" : "false")"
+                           aria-label="@type.DisplayName">
+                            <i class="@(type.IconClass ?? "fas fa-shield-alt")" aria-hidden="true"></i>
+                            <span>@type.DisplayName</span>
+                            <span class="insurance-index-tab-count">@type.Count</span>
+                        </a>
+                    }
                 </div>
-            </div>
+            </section>
         }
 
-        <!-- Search Box -->
-        <div class="row mb-4">
-            <div class="col-md-8 offset-md-2">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="input-group">
-                            <input type="text" id="insuranceSearchInput" class="form-control form-control-lg" placeholder="جستجو در بیمه‌ها...">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary btn-lg" type="button" onclick="searchInsurances()">
-                                    <i class="fas fa-search"></i> جستجو
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <section class="insurance-index-search-card" aria-label="جستجو در بیمه‌ها">
+            <form class="insurance-index-search-form" role="search" aria-label="جستجو در بیمه‌های طرف قرارداد" onsubmit="return false;">
+                <label for="insuranceSearchInput" class="sr-only">عبارت جستجو</label>
+                <input type="search"
+                       id="insuranceSearchInput"
+                       class="insurance-index-search-input"
+                       placeholder="جستجو در نام یا توضیحات بیمه‌ها..."
+                       aria-label="عبارت جستجو"
+                       autocomplete="off" />
+                <button type="button" class="insurance-index-search-btn" id="insuranceSearchBtn" aria-label="اجرای جستجو">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span>جستجو</span>
+                </button>
+            </form>
+        </section>
 
-        <!-- Insurance Infos Grid -->
-        <div class="row" id="insuranceContainer">
-            @if (Model.InsuranceInfos != null && Model.InsuranceInfos.Any())
-            {
-                foreach (var insurance in Model.InsuranceInfos)
+        <section class="insurance-index-grid-wrap" aria-labelledby="insurance-page-title">
+            <div class="insurance-index-grid" id="insuranceContainer" role="list" aria-live="polite" aria-atomic="false">
+                @if (hasItems)
                 {
-                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                        <div class="card insurance-card h-100 shadow-lg border-0">
-                            <div class="card-body text-center p-4">
+                    foreach (var insurance in Model.InsuranceInfos)
+                    {
+                        <article class="insurance-index-card" role="listitem" aria-labelledby="insurance-card-title-@insurance.InsuranceInfoId">
+                            <div class="insurance-index-card-logo-wrap">
                                 @if (!string.IsNullOrEmpty(insurance.LogoUrl))
                                 {
-                                    <img src="@insurance.LogoUrl" alt="@insurance.InsuranceName" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                    <img src="@insurance.LogoUrl"
+                                         alt="@(insurance.InsuranceName + " طرف قرارداد با کلینیک شفا")"
+                                         class="insurance-index-card-logo"
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.onerror=null; this.style.display='none'; var p=this.nextElementSibling; if(p) p.style.display='flex';">
                                 }
                                 else if (!string.IsNullOrEmpty(insurance.ThumbnailUrl))
                                 {
-                                    <img src="@insurance.ThumbnailUrl" alt="@insurance.InsuranceName" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                    <img src="@insurance.ThumbnailUrl"
+                                         alt="@(insurance.InsuranceName + " طرف قرارداد با کلینیک شفا")"
+                                         class="insurance-index-card-logo"
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.onerror=null; this.style.display='none'; var p=this.nextElementSibling; if(p) p.style.display='flex';">
                                 }
-                                else
-                                {
-                                    <div class="mb-3">
-                                        <i class="fas fa-shield-alt fa-3x text-primary"></i>
-                                    </div>
-                                }
-                                
-                                <h5 class="card-title font-weight-bold mb-2">@insurance.InsuranceName</h5>
-                                
-                                <div class="mb-2">
-                                    <span class="badge badge-info">
-                                        <i class="@GetTypeIcon(insurance.InsuranceType)"></i>
-                                        @insurance.TypeDisplayName
-                                    </span>
-                                </div>
-                                
-                                @if (insurance.CoveragePercentage.HasValue)
-                                {
-                                    <div class="mb-3">
-                                        <span class="badge badge-success badge-lg">
-                                            <i class="fas fa-percentage"></i>
-                                            پوشش @insurance.CoveragePercentage.Value%
-                                        </span>
-                                    </div>
-                                }
-                                
-                                @if (!string.IsNullOrEmpty(insurance.Description))
-                                {
-                                    <p class="card-text text-muted small mb-3">
-                                        @(insurance.Description.Length > 100 ? insurance.Description.Substring(0, 100) + "..." : insurance.Description)
-                                    </p>
-                                }
-                                
-                                <div class="mt-auto">
-                                    <a href="@Url.Action("Details", new { slug = insurance.Slug })" class="btn btn-outline-primary btn-sm btn-block" onclick="incrementInsuranceView(@insurance.InsuranceInfoId)">
-                                        <i class="fas fa-info-circle"></i> اطلاعات بیشتر
-                                    </a>
+                                <div class="insurance-index-card-placeholder" style="@(string.IsNullOrEmpty(insurance.LogoUrl) && string.IsNullOrEmpty(insurance.ThumbnailUrl) ? "display: flex;" : "display: none;")">
+                                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
                                 </div>
                             </div>
-                        </div>
+                            <div class="insurance-index-card-body">
+                                <h2 class="insurance-index-card-title" id="insurance-card-title-@insurance.InsuranceInfoId">@insurance.InsuranceName</h2>
+                                <div class="insurance-index-card-meta">
+                                    <span class="insurance-index-card-badge">
+                                        <i class="@GetTypeIcon(insurance.InsuranceType)" aria-hidden="true"></i>
+                                        @(insurance.TypeDisplayName ?? "بیمه")
+                                    </span>
+                                    @if (insurance.CoveragePercentage.HasValue && insurance.CoveragePercentage.Value > 0)
+                                    {
+                                        <span class="insurance-index-card-coverage">
+                                            <i class="fas fa-percentage" aria-hidden="true"></i>
+                                            پوشش @insurance.CoveragePercentage.Value%
+                                        </span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(insurance.Description))
+                                {
+                                    var desc = insurance.Description.Length > 100 ? insurance.Description.Substring(0, 100).Trim() + "…" : insurance.Description;
+                                    <p class="insurance-index-card-description">@desc</p>
+                                }
+                                <a href="@Url.Action("Details", "InsuranceInfo", new { slug = insurance.Slug })"
+                                   class="insurance-index-card-btn"
+                                   aria-label="اطلاعات بیشتر: @insurance.InsuranceName"
+                                   data-insurance-id="@insurance.InsuranceInfoId">
+                                    <span>اطلاعات بیشتر</span>
+                                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <div class="insurance-index-empty" role="status">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                        <h3 class="insurance-index-empty-title">هیچ بیمه‌ای یافت نشد</h3>
+                        <p class="insurance-index-empty-text">نوع دیگری انتخاب کنید یا عبارت جستجو را تغییر دهید.</p>
+                        <a href="@Url.Action("Index")" class="insurance-index-empty-link" aria-label="نمایش همه بیمه‌ها">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            نمایش همه بیمه‌ها
+                        </a>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h4>هیچ بیمه‌ای یافت نشد</h4>
-                        <p class="mb-0">لطفاً نوع بیمه دیگری را انتخاب کنید یا کلمه جستجوی دیگری وارد کنید.</p>
-                    </div>
-                </div>
-            }
-        </div>
+            </div>
+        </section>
     </div>
-</section>
+</main>
 
 @section Scripts {
     <script>
-        function incrementInsuranceView(insuranceInfoId) {
-            $.ajax({
-                url: '@Url.Action("IncrementView", "InsuranceInfo")',
-                type: 'POST',
-                data: { id: insuranceInfoId },
-                success: function() {
-                    // ViewCount افزایش یافت
-                }
-            });
-        }
+        (function () {
+            var detailsUrlBase = '@Url.Action("Details", "InsuranceInfo")';
+            var searchUrl = '@Url.Action("Search", "InsuranceInfo")';
+            var incrementUrl = '@Url.Action("IncrementView", "InsuranceInfo")';
 
-        function searchInsurances() {
-            var searchTerm = $('#insuranceSearchInput').val();
-            if (!searchTerm || searchTerm.trim() === '') {
-                alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
-                return;
+            function getTypeIcon(type) {
+                var map = { basic: 'fas fa-shield-alt', supplementary: 'fas fa-plus-circle', private: 'fas fa-building', government: 'fas fa-landmark' };
+                return map[type] || 'fas fa-info-circle';
             }
 
-            $.ajax({
-                url: '@Url.Action("Search", "InsuranceInfo")',
-                type: 'POST',
-                data: { searchTerm: searchTerm },
-                success: function(response) {
-                    if (response.success && response.data && response.data.length > 0) {
-                        displaySearchResults(response.data);
-                    } else {
-                        alert('نتیجه‌ای یافت نشد');
+            function getTypeDisplayName(type) {
+                var map = { basic: 'بیمه پایه', supplementary: 'بیمه تکمیلی', private: 'بیمه خصوصی', government: 'بیمه دولتی' };
+                return map[type] || type || 'بیمه';
+            }
+
+            function buildCardHtml(insurance) {
+                var id = insurance.InsuranceInfoId || 0;
+                var name = insurance.InsuranceName || '';
+                var slug = insurance.Slug || '';
+                var logoUrl = insurance.LogoUrl || insurance.ThumbnailUrl || '';
+                var typeDisplay = insurance.TypeDisplayName || getTypeDisplayName(insurance.InsuranceType);
+                var typeIcon = getTypeIcon(insurance.InsuranceType);
+                var coverage = insurance.CoveragePercentage;
+                var desc = insurance.Description ? (insurance.Description.length > 100 ? insurance.Description.substring(0, 100).trim() + '…' : insurance.Description) : '';
+                var detailsLink = detailsUrlBase + (slug ? '?slug=' + encodeURIComponent(slug) : '');
+
+                var logoHtml = logoUrl
+                    ? '<img src="' + logoUrl + '" alt="' + name + ' طرف قرارداد با کلینیک شفا" class="insurance-index-card-logo" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.display=\'none\';var p=this.nextElementSibling;if(p)p.style.display=\'flex\';"><div class="insurance-index-card-placeholder" style="display:none"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>'
+                    : '<div class="insurance-index-card-placeholder" style="display:flex"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>';
+
+                var coverageHtml = (coverage != null && coverage > 0)
+                    ? '<span class="insurance-index-card-coverage"><i class="fas fa-percentage" aria-hidden="true"></i> پوشش ' + coverage + '%</span>'
+                    : '';
+
+                var descHtml = desc ? '<p class="insurance-index-card-description">' + desc + '</p>' : '';
+
+                return '<article class="insurance-index-card" role="listitem" aria-labelledby="insurance-card-title-' + id + '">' +
+                    '<div class="insurance-index-card-logo-wrap">' + logoHtml + '</div>' +
+                    '<div class="insurance-index-card-body">' +
+                    '<h2 class="insurance-index-card-title" id="insurance-card-title-' + id + '">' + name + '</h2>' +
+                    '<div class="insurance-index-card-meta">' +
+                    '<span class="insurance-index-card-badge"><i class="' + typeIcon + '" aria-hidden="true"></i> ' + typeDisplay + '</span>' +
+                    coverageHtml +
+                    '</div>' + descHtml +
+                    '<a href="' + detailsLink + '" class="insurance-index-card-btn" aria-label="اطلاعات بیشتر: ' + name + '" data-insurance-id="' + id + '">' +
+                    '<span>اطلاعات بیشتر</span><i class="fas fa-arrow-left" aria-hidden="true"></i></a>' +
+                    '</div></article>';
+            }
+
+            function incrementView(id) {
+                if (!id) return;
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', incrementUrl, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.setRequestHeader('RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]') && document.querySelector('input[name="__RequestVerificationToken"]').value || '');
+                xhr.send('id=' + encodeURIComponent(id));
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var container = document.getElementById('insuranceContainer');
+                var searchInput = document.getElementById('insuranceSearchInput');
+                var searchBtn = document.getElementById('insuranceSearchBtn');
+
+                container.addEventListener('click', function (e) {
+                    var link = e.target.closest('a[data-insurance-id]');
+                    if (link) incrementView(link.getAttribute('data-insurance-id'));
+                });
+
+                function doSearch() {
+                    var term = searchInput && searchInput.value ? searchInput.value.trim() : '';
+                    if (!term) {
+                        if (typeof alert === 'function') alert('لطفاً عبارت جستجو را وارد کنید.');
+                        return;
                     }
-                },
-                error: function() {
-                    alert('خطا در جستجو');
+                    if (typeof $ !== 'undefined' && $.ajax) {
+                        $.ajax({
+                            url: searchUrl,
+                            type: 'POST',
+                            data: { searchTerm: term, __RequestVerificationToken: document.querySelector('input[name="__RequestVerificationToken"]') && document.querySelector('input[name="__RequestVerificationToken"]').value },
+                            success: function (response) {
+                                if (response && response.success && response.data && response.data.length > 0) {
+                                    container.innerHTML = response.data.map(function (ins) { return buildCardHtml(ins); }).join('');
+                                } else {
+                                    container.innerHTML = '<div class="insurance-index-empty" role="status"><i class="fas fa-search" aria-hidden="true"></i><h3 class="insurance-index-empty-title">نتیجه‌ای یافت نشد</h3><p class="insurance-index-empty-text">عبارت جستجو را تغییر دهید.</p></div>';
+                                }
+                            },
+                            error: function () {
+                                if (typeof alert === 'function') alert('خطا در جستجو.');
+                            }
+                        });
+                    } else {
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('POST', searchUrl, true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                        xhr.setRequestHeader('RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]') && document.querySelector('input[name="__RequestVerificationToken"]').value || '');
+                        xhr.onload = function () {
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response && response.success && response.data && response.data.length > 0) {
+                                    container.innerHTML = response.data.map(function (ins) { return buildCardHtml(ins); }).join('');
+                                } else {
+                                    container.innerHTML = '<div class="insurance-index-empty" role="status"><i class="fas fa-search" aria-hidden="true"></i><h3 class="insurance-index-empty-title">نتیجه‌ای یافت نشد</h3><p class="insurance-index-empty-text">عبارت جستجو را تغییر دهید.</p></div>';
+                                }
+                            } catch (err) {
+                                if (typeof alert === 'function') alert('خطا در جستجو.');
+                            }
+                        };
+                        xhr.send('searchTerm=' + encodeURIComponent(term) + '&__RequestVerificationToken=' + encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]') && document.querySelector('input[name="__RequestVerificationToken"]').value || ''));
+                    }
                 }
+
+                if (searchBtn) searchBtn.addEventListener('click', doSearch);
+                if (searchInput) searchInput.addEventListener('keypress', function (e) { if (e.which === 13) { e.preventDefault(); doSearch(); } });
             });
-        }
-
-        function displaySearchResults(results) {
-            var html = '';
-            for (var i = 0; i < results.length; i++) {
-                var insurance = results[i];
-                html += '<div class="col-lg-3 col-md-4 col-sm-6 mb-4">';
-                html += '<div class="card insurance-card h-100 shadow-lg border-0">';
-                html += '<div class="card-body text-center p-4">';
-                if (insurance.LogoUrl) {
-                    html += '<img src="' + insurance.LogoUrl + '" alt="' + insurance.InsuranceName + '" class="mb-3" style="max-height: 80px; max-width: 100%; object-fit: contain;">';
-                } else {
-                    html += '<div class="mb-3"><i class="fas fa-shield-alt fa-3x text-primary"></i></div>';
-                }
-                html += '<h5 class="card-title font-weight-bold mb-2">' + insurance.InsuranceName + '</h5>';
-                html += '<a href="/InsuranceInfo/Details?slug=' + insurance.Slug + '" class="btn btn-outline-primary btn-sm btn-block"><i class="fas fa-info-circle"></i> اطلاعات بیشتر</a>';
-                html += '</div></div></div>';
-            }
-            $('#insuranceContainer').html(html);
-        }
-
-        // جستجو با Enter
-        $('#insuranceSearchInput').on('keypress', function(e) {
-            if (e.which === 13) {
-                searchInsurances();
-            }
-        });
+        })();
     </script>
-
-    <style>
-        .insurance-info-page {
-            position: relative;
-        }
-
-        .insurance-card {
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .insurance-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
-        }
-
-        .badge-lg {
-            font-size: 1rem;
-            padding: 0.5rem 1rem;
-        }
-    </style>
 }
 
 @functions {
@@ -231,4 +295,3 @@
         };
     }
 }
-

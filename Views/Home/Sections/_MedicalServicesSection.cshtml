@@ -4,98 +4,102 @@
     {
         return;
     }
+    var appointmentUrl = Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" });
 }
 
 <section class="medical-services-section" aria-label="خدمات پزشکی">
     <div class="medical-services-container">
         <div class="container">
-            <div class="medical-services-header">
-                <h2 class="medical-services-title">
+            <header class="medical-services-header">
+                <h2 class="medical-services-title" id="medical-services-heading">
                     <i class="fas fa-stethoscope" aria-hidden="true"></i>
                     خدمات پزشکی ما
                 </h2>
                 <p class="medical-services-subtitle">خدمات تخصصی و حرفه‌ای برای سلامت شما</p>
+                <p class="medical-services-trust">در کلینیک شفا با امکانات و کادر مجرب در خدمت شما هستیم.</p>
+            </header>
+
+            <div class="medical-services-cta-strip">
+                <a href="@appointmentUrl" class="medical-services-cta-primary" aria-label="رزرو نوبت آنلاین">
+                    <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                    <span>رزرو نوبت آنلاین</span>
+                </a>
+                <a href="@Url.Action("Index", "MedicalServiceInfo")" class="medical-services-cta-secondary" aria-label="مشاهده همه خدمات">
+                    <i class="fas fa-list" aria-hidden="true"></i>
+                    <span>مشاهده همه خدمات</span>
+                </a>
             </div>
 
-            <div class="medical-services-grid">
+            <div class="medical-services-grid" role="list">
                 @foreach (var service in Model)
                 {
-                    <article class="medical-service-card animate-slide-up" tabindex="0" role="article" aria-label="@service.ServiceTitle">
-                        <div class="medical-service-image-wrapper">
-                            @if (!string.IsNullOrEmpty(service.ThumbnailUrl))
-                            {
-                                <img src="@service.ThumbnailUrl" class="medical-service-image" alt="@service.ServiceTitle" loading="lazy">
-                            }
-                            else if (!string.IsNullOrEmpty(service.ImageUrl))
-                            {
-                                <img src="@service.ImageUrl" class="medical-service-image" alt="@service.ServiceTitle" loading="lazy">
-                            }
-                            else
-                            {
-                                <div class="medical-service-image-placeholder">
-                                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(service.ServiceCategoryName))
-                            {
-                                <span class="medical-service-category-badge" aria-label="دسته‌بندی: @service.ServiceCategoryName">
-                                    <i class="fas fa-tag" aria-hidden="true"></i>
-                                    <span>@service.ServiceCategoryName</span>
-                                </span>
-                            }
-                        </div>
-                        
-                        <div class="medical-service-content">
-                            <h3 class="medical-service-title">@service.ServiceTitle</h3>
-                            
-                            @if (!string.IsNullOrEmpty(service.Description))
-                            {
-                                <p class="medical-service-description">@(service.Description.Length > 120 ? service.Description.Substring(0, 120) + "..." : service.Description)</p>
-                            }
-                            
-                            @if (service.Features != null && service.Features.Any())
-                            {
-                                <div class="medical-service-features">
-                                    @foreach (var feature in service.Features.Take(3))
+                    <article class="medical-service-card animate-slide-up" role="listitem" aria-labelledby="ms-title-@service.MedicalServiceInfoId">
+                        <a href="@Url.Action("Details", "MedicalServiceInfo", new { slug = service.Slug })" class="medical-service-card-link" aria-label="مشاهده جزئیات @service.ServiceTitle">
+                            <div class="medical-service-image-wrapper">
+                                @if (!string.IsNullOrEmpty(service.ThumbnailUrl))
+                                {
+                                    <img src="@service.ThumbnailUrl" class="medical-service-image" alt="@(service.ServiceTitle + " در کلینیک شفا")" loading="lazy" decoding="async">
+                                }
+                                else if (!string.IsNullOrEmpty(service.ImageUrl))
+                                {
+                                    <img src="@service.ImageUrl" class="medical-service-image" alt="@(service.ServiceTitle + " در کلینیک شفا")" loading="lazy" decoding="async">
+                                }
+                                else
+                                {
+                                    <div class="medical-service-image-placeholder">
+                                        <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(service.ServiceCategoryName))
+                                {
+                                    <span class="medical-service-category-badge">@service.ServiceCategoryName</span>
+                                }
+                            </div>
+                            <div class="medical-service-content">
+                                <h3 class="medical-service-title" id="ms-title-@service.MedicalServiceInfoId">@service.ServiceTitle</h3>
+                                @if (!string.IsNullOrEmpty(service.Description))
+                                {
+                                    <p class="medical-service-description">@(service.Description.Length > 120 ? service.Description.Substring(0, 120) + "…" : service.Description)</p>
+                                }
+                                @if (service.Features != null && service.Features.Any())
+                                {
+                                    <ul class="medical-service-features" aria-label="ویژگی‌ها">
+                                        @foreach (var feature in service.Features.Take(3))
+                                        {
+                                            <li><i class="fas fa-check-circle" aria-hidden="true"></i> @feature</li>
+                                        }
+                                    </ul>
+                                }
+                                <div class="medical-service-footer">
+                                    @if (service.Price.HasValue)
                                     {
-                                        <span class="medical-service-feature" aria-label="ویژگی: @feature">
-                                            <i class="fas fa-check-circle" aria-hidden="true"></i>
-                                            <span>@feature</span>
+                                        <span class="medical-service-price" aria-label="@(service.Price.Value.ToString("N0")) ریال">
+                                            <i class="fas fa-money-bill-wave" aria-hidden="true"></i>
+                                            <span>@(service.Price.Value.ToString("N0"))</span>
+                                            <span>ریال</span>
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(service.EstimatedDuration))
+                                    {
+                                        <span class="medical-service-duration" aria-label="مدت: @service.EstimatedDuration">
+                                            <i class="fas fa-clock" aria-hidden="true"></i>
+                                            <span>@service.EstimatedDuration</span>
                                         </span>
                                     }
                                 </div>
-                            }
-                            
-                            <div class="medical-service-footer">
-                                @if (service.Price.HasValue)
-                                {
-                                    <span class="medical-service-price" aria-label="@(service.Price.Value.ToString("N0")) ریال">
-                                        <i class="fas fa-money-bill-wave" aria-hidden="true"></i>
-                                        <span>@(service.Price.Value.ToString("N0"))</span>
-                                        <span>ریال</span>
-                                    </span>
-                                }
-                                @if (!string.IsNullOrEmpty(service.EstimatedDuration))
-                                {
-                                    <span class="medical-service-duration" aria-label="مدت زمان: @service.EstimatedDuration">
-                                        <i class="fas fa-clock" aria-hidden="true"></i>
-                                        <span>@service.EstimatedDuration</span>
-                                    </span>
-                                }
+                                <span class="medical-service-button">
+                                    <span>اطلاعات بیشتر</span>
+                                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                </span>
                             </div>
-                            
-                            <a href="@Url.Action("Details", "MedicalServiceInfo", new { slug = service.Slug })" class="medical-service-button" aria-label="مشاهده جزئیات @service.ServiceTitle">
-                                <span>اطلاعات بیشتر</span>
-                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                            </a>
-                        </div>
+                        </a>
                     </article>
                 }
             </div>
 
             <div class="medical-services-view-all">
-                <a href="@Url.Action("Index", "MedicalServiceInfo")" class="medical-services-view-all-button" aria-label="مشاهده همه خدمات">
-                    <i class="fas fa-list" aria-hidden="true"></i>
+                <a href="@Url.Action("Index", "MedicalServiceInfo")" class="medical-services-view-all-button" aria-label="مشاهده همه خدمات پزشکی">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     <span>مشاهده همه خدمات</span>
                 </a>
             </div>
@@ -103,29 +107,18 @@
     </div>
 </section>
 
-@* CSS از باندل homepage-sections لود می‌شود *@
 <script>
-    // Intersection Observer for animations
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.medical-service-card');
-        
+        var cards = document.querySelectorAll('.medical-services-section .medical-service-card');
         if (cards.length === 0) return;
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animate-in');
                     observer.unobserve(entry.target);
                 }
             });
-        }, {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-        
-        cards.forEach(card => {
-            observer.observe(card);
-        });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        cards.forEach(function(card) { observer.observe(card); });
     });
 </script>
-

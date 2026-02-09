@@ -1,162 +1,171 @@
 @model ClinicApp.ViewModels.CMS.InsuranceInfoPublicViewModel
 @{
     ViewBag.Title = Model.InsuranceName;
+    ViewBag.MetaDescription = string.IsNullOrEmpty(Model.Description) ? Model.InsuranceName + " — طرف قرارداد با کلینیک شفا" : (Model.Description.Length > 160 ? Model.Description.Substring(0, 157) + "…" : Model.Description);
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="insurance-detail-page py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 70vh;">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 offset-lg-2">
-                <div class="card shadow-lg border-0">
-                    <div class="card-header bg-primary text-white py-4">
-                        <div class="d-flex align-items-center">
-                            @if (!string.IsNullOrEmpty(Model.LogoUrl))
-                            {
-                                <img src="@Model.LogoUrl" alt="@Model.InsuranceName" class="mr-3" style="max-height: 60px;">
-                            }
-                            else if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
-                            {
-                                <img src="@Model.ThumbnailUrl" alt="@Model.InsuranceName" class="mr-3" style="max-height: 60px;">
-                            }
-                            <div>
-                                <h2 class="mb-0">@Model.InsuranceName</h2>
-                                <span class="badge badge-light">
-                                    <i class="@GetTypeIcon(Model.InsuranceType)"></i>
-                                    @Model.TypeDisplayName
-                                </span>
-                            </div>
+<link rel="stylesheet" href="@Url.Content("~/Content/css/insurance-info-details.css")" />
+
+<main class="insurance-detail-wrap" role="main" aria-label="جزئیات بیمه طرف قرارداد">
+    <div class="insurance-detail-container">
+        <nav class="insurance-detail-nav" aria-label="مسیر بازگشت">
+            <a href="@Url.Action("Index", "InsuranceInfo")" class="insurance-detail-back-link" aria-label="بازگشت به لیست بیمه‌ها">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                <span>بازگشت به لیست بیمه‌ها</span>
+            </a>
+        </nav>
+
+        <article class="insurance-detail-article" itemscope itemtype="https://schema.org/InsuranceAgency">
+            <header class="insurance-detail-hero" aria-labelledby="insurance-detail-title">
+                <div class="insurance-detail-hero-media">
+                    @if (!string.IsNullOrEmpty(Model.LogoUrl))
+                    {
+                        <img src="@Model.LogoUrl"
+                             alt="@(Model.InsuranceName + " طرف قرارداد با کلینیک شفا")"
+                             loading="lazy"
+                             decoding="async"
+                             itemprop="image"
+                             class="insurance-detail-logo">
+                    }
+                    else if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                    {
+                        <img src="@Model.ThumbnailUrl"
+                             alt="@(Model.InsuranceName + " طرف قرارداد با کلینیک شفا")"
+                             loading="lazy"
+                             decoding="async"
+                             itemprop="image"
+                             class="insurance-detail-logo">
+                    }
+                    else
+                    {
+                        <div class="insurance-detail-hero-placeholder" aria-hidden="true">
+                            <i class="fas fa-shield-alt"></i>
                         </div>
+                    }
+                </div>
+                <div class="insurance-detail-hero-content">
+                    <div class="insurance-detail-meta">
+                        <span class="insurance-detail-badge" itemprop="name">
+                            <i class="@GetTypeIcon(Model.InsuranceType)" aria-hidden="true"></i>
+                            @(Model.TypeDisplayName ?? "بیمه")
+                        </span>
                     </div>
-                    <div class="card-body p-4">
-                        @if (!string.IsNullOrEmpty(Model.Description))
+                    <h1 class="insurance-detail-title" id="insurance-detail-title" itemprop="name">@Model.InsuranceName</h1>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="insurance-detail-lead" itemprop="description">@Model.Description</p>
+                    }
+                </div>
+            </header>
+
+            <div class="insurance-detail-layout">
+                <div class="insurance-detail-main">
+                    @if (Model.CoveragePercentage.HasValue && Model.CoveragePercentage.Value > 0)
+                    {
+                        <section class="insurance-detail-block insurance-detail-coverage-block" aria-labelledby="insurance-coverage-head">
+                            <h2 class="insurance-detail-block-title" id="insurance-coverage-head">
+                                <i class="fas fa-percentage" aria-hidden="true"></i>
+                                پوشش بیمه
+                            </h2>
+                            <p class="insurance-detail-coverage-value">@Model.CoveragePercentage.Value%</p>
+                            <p class="insurance-detail-coverage-note">برای اطلاع از جزئیات پوشش و خدمات مشمول، قبل از مراجعه با پذیرش هماهنگ کنید.</p>
+                        </section>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.FullDescription))
+                    {
+                        <section class="insurance-detail-block" aria-labelledby="insurance-full-desc-head">
+                            <h2 class="insurance-detail-block-title" id="insurance-full-desc-head">اطلاعات کامل</h2>
+                            <div class="insurance-detail-content">
+                                @Html.Raw(Model.FullDescription)
+                            </div>
+                        </section>
+                    }
+
+                    <section class="insurance-detail-contact-cards" aria-label="راه‌های تماس">
+                        @if (!string.IsNullOrEmpty(Model.ContactPhone))
                         {
-                            <div class="alert alert-info mb-4">
-                                <strong>توضیحات:</strong> @Model.Description
+                            <div class="insurance-detail-contact-card">
+                                <h3 class="insurance-detail-contact-title">
+                                    <i class="fas fa-phone" aria-hidden="true"></i>
+                                    تماس بیمه
+                                </h3>
+                                <a href="tel:@Model.ContactPhone" class="insurance-detail-contact-link" aria-label="تماس با @Model.InsuranceName">
+                                    @Model.ContactPhone
+                                </a>
                             </div>
                         }
-
-                        @if (Model.CoveragePercentage.HasValue)
+                        @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
                         {
-                            <div class="mb-4 text-center">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body">
-                                        <h3 class="mb-0">
-                                            <i class="fas fa-percentage"></i>
-                                            پوشش بیمه: @Model.CoveragePercentage.Value%
-                                        </h3>
-                                    </div>
-                                </div>
+                            <div class="insurance-detail-contact-card">
+                                <h3 class="insurance-detail-contact-title">
+                                    <i class="fas fa-globe" aria-hidden="true"></i>
+                                    وب‌سایت
+                                </h3>
+                                <a href="@Model.WebsiteUrl" target="_blank" rel="noopener noreferrer" class="insurance-detail-contact-link" aria-label="بازدید از وب‌سایت @Model.InsuranceName">
+                                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                    بازدید از وب‌سایت
+                                </a>
                             </div>
                         }
+                    </section>
 
-                        @if (!string.IsNullOrEmpty(Model.FullDescription))
-                        {
-                            <div class="mb-4">
-                                <h4>اطلاعات کامل</h4>
-                                <div class="insurance-content">
-                                    @Html.Raw(Model.FullDescription)
-                                </div>
-                            </div>
-                        }
+                    @if (!string.IsNullOrEmpty(Model.Address))
+                    {
+                        <section class="insurance-detail-block" aria-labelledby="insurance-address-head">
+                            <h2 class="insurance-detail-block-title" id="insurance-address-head">
+                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                آدرس
+                            </h2>
+                            <p class="insurance-detail-content">@Model.Address</p>
+                        </section>
+                    }
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="card border-left-primary">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-phone text-primary"></i>
-                                            تماس
-                                        </h5>
-                                        @if (!string.IsNullOrEmpty(Model.ContactPhone))
-                                        {
-                                            <p class="card-text">
-                                                <a href="tel:@Model.ContactPhone" class="btn btn-outline-primary">
-                                                    <i class="fas fa-phone"></i> @Model.ContactPhone
-                                                </a>
-                                            </p>
-                                        }
-                                        else
-                                        {
-                                            <p class="text-muted">اطلاعاتی موجود نیست</p>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card border-left-info">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-globe text-info"></i>
-                                            وب‌سایت
-                                        </h5>
-                                        @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
-                                        {
-                                            <p class="card-text">
-                                                <a href="@Model.WebsiteUrl" target="_blank" class="btn btn-outline-info">
-                                                    <i class="fas fa-external-link-alt"></i> بازدید از وب‌سایت
-                                                </a>
-                                            </p>
-                                        }
-                                        else
-                                        {
-                                            <p class="text-muted">اطلاعاتی موجود نیست</p>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(Model.Address))
-                        {
-                            <div class="mb-4">
-                                <h5>
-                                    <i class="fas fa-map-marker-alt text-danger"></i>
-                                    آدرس
-                                </h5>
-                                <p class="text-muted">@Model.Address</p>
-                            </div>
-                        }
-
-                        <div class="border-top pt-4 mt-4">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-eye text-muted mr-2"></i>
-                                        <span class="text-muted">@Model.ViewCount بازدید</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 text-right">
-                                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-right"></i> بازگشت به لیست بیمه‌ها
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="insurance-detail-footer-links">
+                        <span class="insurance-detail-views" aria-label="تعداد بازدید">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                            @Model.ViewCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) بازدید
+                        </span>
+                        <a href="@Url.Action("Index", "InsuranceInfo")" class="insurance-detail-back" aria-label="بازگشت به لیست بیمه‌ها">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            بازگشت به لیست بیمه‌ها
+                        </a>
                     </div>
                 </div>
+
+                <aside class="insurance-detail-sidebar" aria-label="نوبت و تماس با کلینیک">
+                    <div class="insurance-detail-trust-card">
+                        <p class="insurance-detail-trust-title">این بیمه در کلینیک شفا</p>
+                        <p class="insurance-detail-trust-sub">طرف قرارداد است. برای جزئیات پوشش با پذیرش هماهنگ کنید.</p>
+                    </div>
+
+                    <div class="insurance-detail-cta-card">
+                        <div class="insurance-detail-cta-card-head">
+                            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                            نوبت و تماس
+                        </div>
+                        <div class="insurance-detail-cta-card-body">
+                            <a href="@Url.Action("Available", "Appointment", new { area = "Patient" })" class="insurance-detail-cta-primary" aria-label="رزرو نوبت آنلاین">
+                                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                رزرو نوبت
+                            </a>
+                            <a href="@Url.Action("Index", "Contact")" class="insurance-detail-cta-secondary" aria-label="تماس با کلینیک">
+                                <i class="fas fa-phone" aria-hidden="true"></i>
+                                تماس با کلینیک
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="insurance-detail-legal">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        <span>برای اطلاع از جزئیات پوشش بیمه و خدمات مشمول، لطفاً قبل از مراجعه با پذیرش هماهنگ کنید.</span>
+                    </div>
+                </aside>
             </div>
-        </div>
+        </article>
     </div>
-</section>
-
-@section Scripts {
-    <style>
-        .insurance-detail-page {
-            position: relative;
-        }
-
-        .insurance-content {
-            line-height: 2;
-            color: #495057;
-            font-size: 1.1rem;
-        }
-
-        .card.shadow-lg {
-            border-radius: 15px;
-        }
-    </style>
-}
+</main>
 
 @functions {
     private string GetTypeIcon(string insuranceType)
@@ -171,4 +180,3 @@
         };
     }
 }
-

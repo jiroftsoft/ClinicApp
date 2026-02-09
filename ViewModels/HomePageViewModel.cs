@@ -237,6 +237,8 @@ namespace ClinicApp.ViewModels
         public string DoctorName { get; set; }
         public string VideoUrl { get; set; }
         public string PhotoUrl { get; set; }
+        /// <summary>بیمار دارای سابقه مراجعه (PatientId متصل است) — الگوی پذیرش۲۴</summary>
+        public bool IsVerified { get; set; }
     }
 
     #endregion

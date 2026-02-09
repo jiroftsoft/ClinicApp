@@ -1,23 +1,29 @@
 /**
- * 🧪 Medical Equipment Showcase - Production-Grade Professional Design
- * 
- * طراحی حرفه‌ای و Production-Ready برای بخش "تجهیزات پزشکی مدرن"
- * مطابق با استانداردهای UI/UX و اصول Medical Equipment Display
- * 
- * ویژگی‌ها:
- * - اعتمادساز و رسمی
- * - بدون اغراق بصری
- * - مینیمال و مبتنی بر اطلاعات معتبر
- * - رنگ‌های درمانی (آبی/سبز)
- * - Responsive و Accessible
- * - Production-Ready
+ * 🧪 Medical Equipment Showcase - Trust Signal Section
+ * ر.ک. Docs/MEDICAL-EQUIPMENT-SECTION-GUIDE.md
+ *
+ * الگو: Mayo / Cleveland — غیرتبلیغاتی، Grid نه Carousel، متن بیمارپسند
+ * طراحی: پس‌زمینه سفید/خاکستری روشن، آبی/سبز پزشکی، متن خاکستری تیره
  */
+
+/* Design tokens (قابل override از Design System) */
+:root {
+    --medical-bg: #ffffff;
+    --medical-bg-subtle: #f8f9fa;
+    --medical-text: #212529;
+    --medical-text-muted: #495057;
+    --medical-accent: #2c5aa0;
+    --medical-accent-green: #28a745;
+    --medical-border: #e9ecef;
+    --font-family-heading: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+    --font-family-body: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
 
 /* ============================================
    BASE SECTION STYLES
    ============================================ */
 .medical-equipment-showcase {
-    background: #ffffff !important; /* سفید خالص */
+    background: var(--medical-bg) !important;
     padding: 4rem 0 !important;
     margin: 0 !important;
     position: relative !important;
@@ -39,19 +45,19 @@
 }
 
 .equipment-showcase-title {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
-    font-size: 2rem !important; /* 32px */
-    font-weight: 700 !important; /* SemiBold */
-    color: #212529 !important; /* --medical-text */
+    font-family: var(--font-family-heading) !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: var(--medical-text) !important;
     margin: 0 0 1rem 0 !important;
     line-height: 1.3 !important;
 }
 
 .equipment-showcase-subtitle {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
-    font-size: 1rem !important; /* 16px */
-    font-weight: 400 !important; /* Regular */
-    color: #6c757d !important; /* --medical-text-muted */
+    font-family: var(--font-family-body) !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    color: var(--medical-text-muted) !important;
     margin: 0 !important;
     line-height: 1.6 !important;
     max-width: 700px !important;
@@ -71,7 +77,13 @@
 
 @media (min-width: 992px) {
     .equipment-showcase-grid {
-        grid-template-columns: repeat(3, 1fr) !important; /* 3 ستونه در دسکتاپ */
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    .equipment-showcase-grid {
+        grid-template-columns: repeat(4, 1fr) !important; /* 4 ستون در دسکتاپ بزرگ */
     }
 }
 
@@ -93,8 +105,8 @@
    EQUIPMENT CARD
    ============================================ */
 .equipment-showcase-card {
-    background: #ffffff !important;
-    border: 1px solid #e9ecef !important; /* Border ظریف */
+    background: var(--medical-bg) !important;
+    border: 1px solid var(--medical-border) !important;
     border-radius: 8px !important; /* Radius کم */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important; /* Shadow بسیار ملایم */
     overflow: hidden !important;
@@ -105,8 +117,8 @@
 }
 
 .equipment-showcase-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important; /* Shadow ملایم در Hover */
-    border-color: #2c5aa0 !important; /* آبی درمانی */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--medical-accent) !important;
     transform: translateY(-2px) !important;
 }
 
@@ -117,7 +129,7 @@
     position: relative !important;
     width: 100% !important;
     height: 240px !important;
-    background: #f8f9fa !important; /* پس‌زمینه خنثی */
+    background: var(--medical-bg-subtle) !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
@@ -138,7 +150,7 @@
 .equipment-card-image-placeholder {
     width: 100% !important;
     height: 100% !important;
-    background: #f8f9fa !important;
+    background: var(--medical-bg-subtle) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -162,66 +174,26 @@
 
 /* Equipment Name */
 .equipment-card-name {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
-    font-size: 1.125rem !important; /* 18px */
-    font-weight: 600 !important; /* SemiBold */
-    color: #212529 !important;
-    margin: 0 !important;
+    font-family: var(--font-family-heading, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif) !important;
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: var(--medical-text, #212529) !important;
+    margin: 0 0 0.5rem 0 !important;
     line-height: 1.4 !important;
 }
 
-/* Equipment Model */
-.equipment-card-model {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
-    font-size: 0.875rem !important; /* 14px */
-    font-weight: 400 !important; /* Regular */
-    color: #6c757d !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-}
-
-.equipment-model-label {
-    font-weight: 500 !important;
-}
-
-.equipment-model-value {
-    color: #2c5aa0 !important; /* آبی درمانی */
-    font-weight: 500 !important;
-}
-
-/* Equipment Features */
-.equipment-card-features {
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.75rem !important;
-    flex-grow: 1 !important;
-}
-
-.equipment-feature-item {
-    font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
-    font-size: 0.875rem !important; /* 14px */
-    font-weight: 400 !important; /* Regular */
-    color: #495057 !important;
-    display: flex !important;
-    align-items: flex-start !important;
-    gap: 0.5rem !important;
-    line-height: 1.5 !important;
-}
-
-.equipment-feature-item i {
-    font-size: 0.875rem !important;
-    color: #28a745 !important; /* سبز درمانی */
-    margin-top: 0.125rem !important;
-    flex-shrink: 0 !important;
-}
-
-.equipment-feature-item span {
-    flex: 1 !important;
+/* کاربرد ساده برای بیمار (Patient-Friendly) — بدون مدل/تخصصی */
+.equipment-card-use {
+    font-family: var(--font-family-body, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif) !important;
+    font-size: 0.9375rem !important;
+    font-weight: 400 !important;
+    color: var(--medical-text-muted, #495057) !important;
+    margin: 0 0 1rem 0 !important;
+    line-height: 1.6 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 /* ============================================
@@ -234,8 +206,8 @@
     gap: 0.5rem !important;
     padding: 0.75rem 1.5rem !important;
     background: #ffffff !important;
-    color: #2c5aa0 !important; /* آبی درمانی */
-    border: 1.5px solid #2c5aa0 !important;
+    color: var(--medical-accent) !important;
+    border: 1.5px solid var(--medical-accent) !important;
     border-radius: 6px !important;
     font-family: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif !important;
     font-size: 0.875rem !important; /* 14px */
@@ -247,7 +219,7 @@
 }
 
 .equipment-card-button:hover {
-    background: #2c5aa0 !important;
+    background: var(--medical-accent) !important;
     color: #ffffff !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2) !important;
@@ -280,7 +252,7 @@
     justify-content: center !important;
     gap: 0.5rem !important;
     padding: 0.875rem 2rem !important;
-    background: #2c5aa0 !important; /* آبی درمانی */
+    background: var(--medical-accent) !important; /* آبی درمانی */
     color: #ffffff !important;
     border: none !important;
     border-radius: 6px !important;

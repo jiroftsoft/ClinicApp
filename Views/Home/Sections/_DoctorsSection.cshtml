@@ -1,121 +1,127 @@
 @model ClinicApp.ViewModels.DoctorsSectionViewModel
+@{
+    if (Model?.Doctors == null || !Model.Doctors.Any())
+    {
+        return;
+    }
+}
+@* سکشن پزشکان باتجربه — Trust + Conversion (ر.ک. Docs/DOCTORS-SECTION-GUIDE.md) *@
+@* الگو: Cleveland / Mayo — Grid نه Carousel، CTA رزرو نوبت، اطلاعات حداقلی *@
+@* wrapper از Index: section.doctors-section *@
 
-@if (Model.Doctors != null && Model.Doctors.Any())
-{
-    <section class="doctors-section" aria-label="پزشکان کلینیک">
-        <div class="container">
-            <div class="doctors-header">
-                <h2 class="doctors-title">@Model.SectionTitle</h2>
-                <p class="doctors-subtitle">@Model.SectionSubtitle</p>
-            </div>
+<div class="doctors-section-container">
+        <header class="doctors-header">
+            <h2 class="doctors-title" id="doctors-section-heading">
+                <i class="fas fa-user-md" aria-hidden="true"></i>
+                @(Model.SectionTitle ?? "پزشکان باتجربه ما")
+            </h2>
+            <p class="doctors-subtitle">@(Model.SectionSubtitle ?? "تیمی از پزشکان متخصص که سلامت شما را در اولویت قرار داده‌اند")</p>
+            <p class="doctors-trust">اعتماد و تخصص در یک تیم.</p>
+        </header>
 
-            <div class="doctors-grid">
-                @foreach (var doctor in Model.Doctors)
-                {
-                    <article class="doctor-card animate-slide-up" tabindex="0" role="article" aria-label="@doctor.FullName - @doctor.Specialization">
-                        <div class="doctor-image-wrapper">
-                            @if (!string.IsNullOrEmpty(doctor.PhotoUrl))
-                            {
-                                <img src="@doctor.PhotoUrl" 
-                                     class="doctor-image" 
-                                     alt="@doctor.FullName - @doctor.Specialization"
-                                     loading="lazy"
-                                     onerror="this.onerror=null; this.src='/Content/Images/default-doctor.jpg'">
-                            }
-                            else
-                            {
-                                <div class="doctor-image-placeholder">
-                                    <i class="fas fa-user-md" aria-hidden="true"></i>
-                                </div>
-                            }
-                        </div>
-                        
-                        <div class="doctor-content">
-                            <h3 class="doctor-name">@doctor.FullName</h3>
-                            @if (!string.IsNullOrEmpty(doctor.Specialization))
-                            {
-                                <p class="doctor-specialization" aria-label="تخصص: @doctor.Specialization">@doctor.Specialization</p>
-                            }
-                            
-                            @if (doctor.Rating.HasValue)
-                            {
-                                <div class="doctor-rating" role="img" aria-label="امتیاز @doctor.Rating.Value از 5">
-                                    @if (doctor.ReviewCount.HasValue && doctor.ReviewCount.Value > 0)
-                                    {
-                                        <span class="doctor-rating-text">@doctor.Rating.Value.ToString("F1")</span>
-                                    }
-                                    @for (int i = 1; i <= 5; i++)
-                                    {
-                                        if (i <= Math.Floor(doctor.Rating.Value))
-                                        {
-                                            <i class="fas fa-star doctor-rating-star filled" aria-hidden="true"></i>
-                                        }
-                                        else if (i - 0.5 <= (double)doctor.Rating.Value)
-                                        {
-                                            <i class="fas fa-star-half-alt doctor-rating-star half" aria-hidden="true"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="far fa-star doctor-rating-star empty" aria-hidden="true"></i>
-                                        }
-                                    }
-                                    @if (doctor.ReviewCount.HasValue && doctor.ReviewCount.Value > 0)
-                                    {
-                                        <span class="doctor-rating-text">(@doctor.ReviewCount.Value نظر)</span>
-                                    }
-                                </div>
-                            }
-                            
-                            @if (!string.IsNullOrEmpty(doctor.Bio))
-                            {
-                                <p class="doctor-bio">@doctor.Bio</p>
-                            }
-                            
-                            <a href="@doctor.ProfileUrl" class="doctor-button" aria-label="مشاهده پروفایل @doctor.FullName">
-                                <span>مشاهده پروفایل</span>
-                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </article>
-                }
-            </div>
-
-            @if (!string.IsNullOrEmpty(Model.ViewAllDoctorsUrl))
+        <div class="doctors-grid" role="list">
+            @foreach (var doctor in Model.Doctors)
             {
-                <div class="doctors-view-all">
-                    <a href="@Model.ViewAllDoctorsUrl" class="doctors-view-all-button" aria-label="مشاهده تمامی پزشکان">
-                        <i class="fas fa-user-md" aria-hidden="true"></i>
-                        <span>مشاهده تمامی پزشکان</span>
-                    </a>
-                </div>
+                var trustLine = !string.IsNullOrWhiteSpace(doctor.Bio) && doctor.Bio.Length > 60
+                    ? doctor.Bio.Substring(0, 60).Trim() + "…"
+                    : doctor.Bio;
+                <article class="doctor-card animate-slide-up" role="listitem" aria-labelledby="doctor-name-@doctor.DoctorId">
+                    <div class="doctor-image-wrapper">
+                        @if (!string.IsNullOrEmpty(doctor.PhotoUrl))
+                        {
+                            <img src="@doctor.PhotoUrl"
+                                 class="doctor-image"
+                                 alt="@(doctor.FullName + " " + (doctor.Specialization ?? "") + " در کلینیک شفا")"
+                                 loading="lazy"
+                                 decoding="async"
+                                 onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        }
+                        <div class="doctor-image-placeholder" style="@(string.IsNullOrEmpty(doctor.PhotoUrl) ? "display: flex;" : "display: none;")">
+                            <i class="fas fa-user-md" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    <div class="doctor-content">
+                        <h3 class="doctor-name" id="doctor-name-@doctor.DoctorId">@doctor.FullName</h3>
+                        @if (!string.IsNullOrEmpty(doctor.Specialization))
+                        {
+                            <p class="doctor-specialization">@doctor.Specialization</p>
+                        }
+                        @* امتیاز و رضایت بیماران (مشابه دکترتو / پذیرش۲۴) *@
+                        <div class="doctor-rating-block" aria-label="امتیاز و رضایت بیماران">
+                            @{
+                                var rating = doctor.Rating ?? 0;
+                                var reviewCount = doctor.ReviewCount ?? 0;
+                                var fullStars = (int)Math.Floor(rating);
+                                var hasHalf = rating - fullStars >= 0.25m && rating - fullStars < 0.75m;
+                                var displayRating = rating > 0 ? rating.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) : "—";
+                            }
+                            <div class="doctor-stars" aria-hidden="true">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    if (i <= fullStars)
+                                    {
+                                        <i class="fas fa-star doctor-star doctor-star-full" aria-hidden="true"></i>
+                                    }
+                                    else if (i == fullStars + 1 && hasHalf)
+                                    {
+                                        <i class="fas fa-star-half-alt doctor-star doctor-star-half" aria-hidden="true"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="far fa-star doctor-star doctor-star-empty" aria-hidden="true"></i>
+                                    }
+                                }
+                            </div>
+                            <span class="doctor-rating-value">@displayRating</span>
+                            <span class="doctor-rating-label">
+                                @if (reviewCount > 0)
+                                {
+                                    <span>بر اساس @reviewCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) نظر بیماران</span>
+                                }
+                                else
+                                {
+                                    <span class="doctor-rating-no-reviews">هنوز نظری ثبت نشده</span>
+                                }
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(trustLine))
+                        {
+                            <p class="doctor-trust-line">@trustLine</p>
+                        }
+                        <a href="@(doctor.ProfileUrl ?? Url.Action("DoctorDetails", "Appointment", new { area = "Patient", doctorId = doctor.DoctorId }))"
+                           class="doctor-cta"
+                           aria-label="رزرو نوبت @doctor.FullName">
+                            <span>رزرو نوبت</span>
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </article>
             }
         </div>
-    </section>
-}
 
-@* CSS از باندل homepage-sections لود می‌شود *@
+        @if (!string.IsNullOrEmpty(Model.ViewAllDoctorsUrl))
+        {
+            <div class="doctors-view-all">
+                <a href="@Model.ViewAllDoctorsUrl" class="doctors-view-all-button" aria-label="مشاهده همه پزشکان">
+                    <i class="fas fa-user-md" aria-hidden="true"></i>
+                    <span>مشاهده همه پزشکان</span>
+                </a>
+            </div>
+        }
+</div>
+
 <script>
-    // Intersection Observer for animations
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.doctor-card');
-        
+        var cards = document.querySelectorAll('.doctors-section .doctor-card');
         if (cards.length === 0) return;
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animate-in');
                     observer.unobserve(entry.target);
                 }
             });
-        }, {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-        
-        cards.forEach(card => {
-            observer.observe(card);
-        });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        cards.forEach(function(card) { observer.observe(card); });
     });
 </script>
-

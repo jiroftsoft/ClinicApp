@@ -1,40 +1,28 @@
 /**
- * 🏥 Medical Services Section - Modern Professional Design
- * 
- * طراحی مدرن و حرفه‌ای برای بخش "خدمات پزشکی ما"
- * مطابق با آخرین استانداردهای UI/UX 2024-2025
- * 
- * ویژگی‌ها:
- * - Card-based Design با Image Support
- * - Light Background (نه تیره)
- * - Modern Hover Effects
- * - Professional Badge Placement
- * - Clean Typography
- * - Responsive Grid
+ * 🏥 خدمات پزشکی ما — الگوی ایرانی (پذیرش24، دکترتو، درمانکده)
+ * اعتمادسازی، نوبت‌دهی سریع، UX غیرتکنیکال، رنگ و ساختار شفاف
  */
+
+:root {
+    --ms-primary: #2c5aa0;
+    --ms-primary-dark: #1e3f73;
+    --ms-success: #28a745;
+    --ms-bg: #ffffff;
+    --ms-bg-subtle: #f8f9fa;
+    --ms-text: #212529;
+    --ms-text-muted: #6c757d;
+    --ms-border: #e9ecef;
+    --ms-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
 
 /* ============================================
    BASE SECTION STYLES
    ============================================ */
 .medical-services-section {
-    padding: var(--spacing-xxxl, 4rem) 0 !important;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f0f4f8 100%) !important;
+    padding: clamp(2.5rem, 5vw, 4rem) 0 !important;
+    background: var(--ms-bg) !important;
     position: relative !important;
     overflow: hidden !important;
-}
-
-.medical-services-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 20% 30%, rgba(40, 167, 69, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(0, 123, 255, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
 }
 
 .medical-services-container {
@@ -42,52 +30,122 @@
     z-index: 1;
 }
 
+.medical-services-section .container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
+}
+
 /* ============================================
-   HEADER SECTION
+   HEADER + TRUST + CTA STRIP
    ============================================ */
 .medical-services-header {
     text-align: center;
-    margin-bottom: var(--spacing-xxl, 3rem);
+    margin-bottom: 1.5rem;
 }
 
 .medical-services-title {
-    font-family: var(--font-family-heading, 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    line-height: var(--line-height-tight, 1.2) !important;
+    font-family: var(--ms-font) !important;
+    font-size: clamp(1.5rem, 4vw, 2.25rem) !important;
+    font-weight: 700 !important;
+    color: var(--ms-text) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.3 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: var(--spacing-sm, 0.5rem) !important;
-    position: relative !important;
-}
-
-.medical-services-title::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    right: 50%;
-    transform: translateX(50%);
-    width: 80px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--medical-success, #28a745), transparent);
-    border-radius: var(--radius-full, 9999px);
+    gap: 0.5rem !important;
 }
 
 .medical-services-title i {
-    font-size: 2rem;
-    color: var(--medical-success, #28a745);
+    font-size: 1.5rem;
+    color: var(--ms-primary);
 }
 
 .medical-services-subtitle {
     font-size: clamp(1rem, 2vw, 1.125rem) !important;
-    color: #6c757d !important;
-    max-width: 700px !important;
-    margin: var(--spacing-md, 1rem) auto 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    color: var(--ms-text-muted) !important;
+    max-width: 640px !important;
+    margin: 0 auto !important;
+    line-height: 1.6 !important;
+    font-weight: 400 !important;
+}
+
+.medical-services-trust {
+    font-size: 0.9375rem !important;
+    color: var(--ms-text-muted) !important;
+    margin: 0.5rem auto 0 !important;
+    max-width: 520px;
+    line-height: 1.5;
+}
+
+.medical-services-cta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.medical-services-cta-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.65rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--ms-font);
+    color: #fff;
+    background: var(--ms-success);
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.medical-services-cta-primary:hover {
+    background: #218838;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
+}
+
+.medical-services-cta-primary:focus {
+    outline: 3px solid var(--ms-success);
+    outline-offset: 2px;
+}
+
+.medical-services-cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.65rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--ms-font);
+    color: var(--ms-primary);
+    background: var(--ms-bg);
+    border: 2px solid var(--ms-primary);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.medical-services-cta-secondary:hover {
+    background: var(--ms-primary);
+    color: #fff;
+}
+
+.medical-services-cta-secondary:focus {
+    outline: 3px solid var(--ms-primary);
+    outline-offset: 2px;
 }
 
 /* ============================================
@@ -113,43 +171,42 @@
 }
 
 /* ============================================
-   SERVICE CARD
+   SERVICE CARD (کل کارت کلیک‌پذیر — الگوی دکترتو)
    ============================================ */
 .medical-service-card {
-    background: #ffffff !important;
-    border-radius: var(--radius-lg, 20px) !important;
+    background: var(--ms-bg) !important;
+    border-radius: 16px !important;
     overflow: hidden !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
     position: relative !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-.medical-service-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--medical-success, #28a745), var(--medical-primary, #007bff));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1;
+    border: 1px solid var(--ms-border) !important;
 }
 
 .medical-service-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: rgba(40, 167, 69, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--ms-primary);
 }
 
-.medical-service-card:hover::before {
-    transform: scaleX(1);
+.medical-service-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.medical-service-card-link:focus {
+    outline: none;
+}
+
+.medical-service-card:focus-within {
+    outline: 2px solid var(--ms-primary);
+    outline-offset: 2px;
 }
 
 /* ============================================
@@ -158,20 +215,26 @@
 .medical-service-image-wrapper {
     position: relative !important;
     width: 100% !important;
-    height: 220px !important;
+    height: 200px !important;
     overflow: hidden !important;
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(0, 123, 255, 0.1) 100%) !important;
+    background: var(--ms-bg-subtle) !important;
+}
+
+@media (min-width: 768px) {
+    .medical-service-image-wrapper {
+        height: 220px !important;
+    }
 }
 
 .medical-service-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform var(--transition-slow, 0.5s) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s ease;
 }
 
 .medical-service-card:hover .medical-service-image {
-    transform: scale(1.1);
+    transform: scale(1.04);
 }
 
 .medical-service-image-placeholder {
@@ -180,231 +243,142 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--medical-success, #28a745) 0%, var(--medical-primary, #007bff) 100%);
+    background: var(--ms-bg-subtle);
 }
 
 .medical-service-image-placeholder i {
-    font-size: 4rem;
-    color: #ffffff;
-    opacity: 0.8;
+    font-size: 3rem;
+    color: #adb5bd;
 }
 
-/* ============================================
-   CATEGORY BADGE - بهبود موقعیت
-   ============================================ */
 .medical-service-category-badge {
     position: absolute !important;
-    top: var(--spacing-md, 1rem) !important;
-    left: var(--spacing-md, 1rem) !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(10px) !important;
-    color: var(--medical-success, #28a745) !important;
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem) !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-    z-index: 3 !important;
-    transition: all var(--transition-normal, 0.3s) !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-}
-
-.medical-service-category-badge i {
-    font-size: 0.75rem;
-}
-
-.medical-service-card:hover .medical-service-category-badge {
-    transform: scale(1.05);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    background: #ffffff;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    background: var(--ms-primary) !important;
+    color: #fff !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    z-index: 2 !important;
 }
 
 /* ============================================
    CARD CONTENT
    ============================================ */
 .medical-service-content {
-    padding: var(--spacing-lg, 1.5rem) !important;
+    padding: 1.25rem 1.5rem !important;
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
-    gap: var(--spacing-md, 1rem) !important;
+    gap: 0.75rem !important;
 }
 
 .medical-service-title {
-    font-family: var(--font-family-heading, 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: var(--font-size-xl, 1.25rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
+    font-family: var(--ms-font) !important;
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    color: var(--ms-text) !important;
     margin: 0 !important;
-    line-height: var(--line-height-tight, 1.3) !important;
-    min-height: 3.2em !important;
+    line-height: 1.35 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
 }
 
 .medical-service-description {
-    font-size: var(--font-size-base, 1rem) !important;
-    color: #6c757d !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
+    font-size: 0.9375rem !important;
+    color: var(--ms-text-muted) !important;
+    line-height: 1.6 !important;
     margin: 0 !important;
     flex: 1 !important;
     display: -webkit-box !important;
-    -webkit-line-clamp: 3 !important;
+    -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    min-height: 5.25em !important;
 }
 
-/* ============================================
-   FEATURES SECTION
-   ============================================ */
 .medical-service-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-xs, 0.5rem);
-    margin: var(--spacing-sm, 0.5rem) 0;
+    gap: 0.35rem;
 }
 
-.medical-service-feature {
+.medical-service-features li {
     display: inline-flex;
     align-items: center;
-    gap: var(--spacing-xs, 0.5rem);
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(0, 123, 255, 0.1) 100%);
-    color: var(--medical-success, #28a745);
-    border-radius: var(--radius-sm, 6px);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: var(--font-weight-medium, 500);
-    border: 1px solid rgba(40, 167, 69, 0.2);
-    transition: all var(--transition-normal, 0.3s);
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    color: var(--ms-text-muted);
 }
 
-.medical-service-feature:hover {
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(0, 123, 255, 0.15) 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+.medical-service-features li i {
+    color: var(--ms-success);
+    font-size: 0.75rem;
 }
 
-.medical-service-feature i {
-    font-size: var(--font-size-xs, 0.75rem);
-    color: var(--medical-success, #28a745);
-}
-
-/* ============================================
-   FOOTER (Price & Duration)
-   ============================================ */
 .medical-service-footer {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     margin-top: auto !important;
-    padding: var(--spacing-md, 1rem) !important;
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(0, 123, 255, 0.05) 100%) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(40, 167, 69, 0.1) !important;
-    gap: var(--spacing-md, 1rem) !important;
+    padding: 0.75rem 0 !important;
+    border-top: 1px solid var(--ms-border) !important;
+    gap: 0.75rem !important;
     flex-wrap: wrap !important;
 }
 
 .medical-service-price {
-    font-size: var(--font-size-xl, 1.25rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: var(--medical-success, #28a745) !important;
-    display: flex !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: var(--ms-success) !important;
+    display: inline-flex !important;
     align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
+    gap: 0.35rem !important;
     direction: ltr !important;
-    text-align: left !important;
-    font-family: 'Segoe UI', Tahoma, sans-serif !important;
-    letter-spacing: -0.5px !important;
 }
 
 .medical-service-price i {
-    font-size: var(--font-size-base, 1rem);
-    color: var(--medical-success, #28a745);
+    font-size: 0.875rem;
+    color: var(--ms-success);
 }
 
 .medical-service-duration {
-    font-size: var(--font-size-sm, 0.875rem);
-    color: #6c757d;
-    display: flex;
+    font-size: 0.8125rem;
+    color: var(--ms-text-muted);
+    display: inline-flex;
     align-items: center;
-    gap: var(--spacing-xs, 0.5rem);
-    font-weight: var(--font-weight-medium, 500);
+    gap: 0.35rem;
 }
 
 .medical-service-duration i {
-    font-size: var(--font-size-xs, 0.75rem);
-    color: #6c757d;
+    font-size: 0.75rem;
+    color: var(--ms-text-muted);
 }
 
-/* ============================================
-   CTA BUTTON
-   ============================================ */
 .medical-service-button {
-    width: 100% !important;
-    background: linear-gradient(135deg, var(--medical-success, #28a745) 0%, #1e7e34 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: var(--radius-md, 12px) !important;
-    padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem) !important;
-    font-size: var(--font-size-base, 1rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    text-decoration: none !important;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: var(--spacing-sm, 0.5rem) !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2) !important;
-    position: relative !important;
-    overflow: hidden !important;
-    margin-top: var(--spacing-md, 1rem) !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    padding: 0.65rem 1rem !important;
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    background: var(--ms-primary) !important;
+    border-radius: 10px !important;
+    margin-top: 0.5rem !important;
+    transition: background 0.2s ease !important;
 }
 
-.medical-service-button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.medical-service-button:hover {
-    background: linear-gradient(135deg, #1e7e34 0%, var(--medical-success, #28a745) 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(40, 167, 69, 0.3);
-    color: #ffffff;
-}
-
-.medical-service-button:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.medical-service-button:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
-}
-
-.medical-service-button i {
-    transition: transform var(--transition-normal, 0.3s);
-}
-
-.medical-service-button:hover i {
-    transform: translateX(-4px);
+.medical-service-card-link:hover .medical-service-button {
+    background: var(--ms-primary-dark) !important;
 }
 
 /* ============================================
@@ -412,143 +386,94 @@
    ============================================ */
 .medical-services-view-all {
     text-align: center;
-    margin-top: var(--spacing-xxl, 3rem);
+    margin-top: 2rem;
 }
 
 .medical-services-view-all-button {
     display: inline-flex;
     align-items: center;
-    gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-md, 1rem) var(--spacing-xxl, 2.5rem);
-    background: #ffffff;
-    color: var(--medical-success, #28a745);
-    border: 2px solid var(--medical-success, #28a745);
-    border-radius: var(--radius-md, 12px);
-    font-size: var(--font-size-lg, 1.125rem);
-    font-weight: var(--font-weight-semibold, 600);
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--ms-font);
+    color: var(--ms-primary);
+    background: var(--ms-bg);
+    border: 2px solid var(--ms-primary);
+    border-radius: 12px;
     text-decoration: none;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.1);
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .medical-services-view-all-button:hover {
-    background: var(--medical-success, #28a745);
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(40, 167, 69, 0.3);
+    background: var(--ms-primary);
+    color: #fff;
 }
 
-.medical-services-view-all-button i {
-    transition: transform var(--transition-normal, 0.3s);
-}
-
-.medical-services-view-all-button:hover i {
-    transform: translateX(-4px);
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.medical-service-card {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-.medical-service-card.animate-in {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-.medical-service-card.animate-slide-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-/* Stagger Animation */
-.medical-service-card:nth-child(1) { animation-delay: 0.1s; }
-.medical-service-card:nth-child(2) { animation-delay: 0.2s; }
-.medical-service-card:nth-child(3) { animation-delay: 0.3s; }
-.medical-service-card:nth-child(4) { animation-delay: 0.4s; }
-.medical-service-card:nth-child(5) { animation-delay: 0.5s; }
-.medical-service-card:nth-child(6) { animation-delay: 0.6s; }
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 767.98px) {
-    .medical-services-section {
-        padding: var(--spacing-xxl, 2.5rem) 0;
-    }
-    
-    .medical-services-header {
-        margin-bottom: var(--spacing-xl, 2rem);
-    }
-    
-    .medical-services-grid {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-lg, 1.5rem);
-    }
-    
-    .medical-service-image-wrapper {
-        height: 200px;
-    }
-    
-    .medical-service-footer {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1199.98px) {
-    .medical-services-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-.medical-service-card:focus-within {
-    outline: 3px solid var(--medical-success, #28a745);
-    outline-offset: 4px;
-    border-radius: var(--radius-lg, 20px);
-}
-
-.medical-service-button:focus {
-    outline: 3px solid rgba(40, 167, 69, 0.5);
+.medical-services-view-all-button:focus {
+    outline: 3px solid var(--ms-primary);
     outline-offset: 2px;
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    .medical-service-card,
-    .medical-service-image,
-    .medical-service-button,
-    .medical-service-category-badge {
-        animation: none;
-        transition: none;
+/* ============================================
+   ANIMATIONS (ظریف، غیرمزاحم)
+   ============================================ */
+@keyframes medicalServicesFadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.medical-service-card.animate-slide-up {
+    opacity: 0;
+}
+
+.medical-service-card.animate-in {
+    animation: medicalServicesFadeIn 0.45s ease-out forwards;
+}
+
+.medical-service-card.animate-in:nth-child(1) { animation-delay: 0.05s; }
+.medical-service-card.animate-in:nth-child(2) { animation-delay: 0.1s; }
+.medical-service-card.animate-in:nth-child(3) { animation-delay: 0.15s; }
+.medical-service-card.animate-in:nth-child(4) { animation-delay: 0.2s; }
+.medical-service-card.animate-in:nth-child(5) { animation-delay: 0.25s; }
+.medical-service-card.animate-in:nth-child(6) { animation-delay: 0.3s; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 767.98px) {
+    .medical-services-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
     }
-    
-    .medical-service-card:hover {
-        transform: none;
+    .medical-services-cta-strip {
+        flex-direction: column;
+        margin-bottom: 1.5rem;
+    }
+    .medical-services-cta-primary,
+    .medical-services-cta-secondary {
+        width: 100%;
+        max-width: 320px;
     }
 }
 
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-    .medical-service-card {
-        border: 2px solid #000000;
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .medical-service-card,
+    .medical-service-image,
+    .medical-services-cta-primary,
+    .medical-services-view-all-button {
+        transition: none;
     }
-    
-    .medical-service-button {
-        border: 2px solid #000000;
+    .medical-service-card:hover {
+        transform: none;
+    }
+    .medical-service-card.animate-slide-up {
+        opacity: 1;
+    }
+    .medical-service-card.animate-in {
+        animation: none;
     }
 }

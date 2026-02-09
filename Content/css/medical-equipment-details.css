@@ -1,0 +1,556 @@
+/**
+ * صفحه جزئیات تجهیز پزشکی — الگوی ایرانی (پذیرش24، دکترتو، درمانکده)
+ * اعتمادسازی، UX غیرتکنیکال، CTA واضح، ساختار شفاف
+ */
+
+:root {
+    --eqd-primary: #2c5aa0;
+    --eqd-primary-dark: #1e3f73;
+    --eqd-success: #28a745;
+    --eqd-bg: #ffffff;
+    --eqd-bg-subtle: #f8f9fa;
+    --eqd-bg-page: #f0f4f8;
+    --eqd-text: #212529;
+    --eqd-text-muted: #6c757d;
+    --eqd-border: #e9ecef;
+    --eqd-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
+
+/* ========== Page Wrap ========== */
+.medical-equipment-details-wrap {
+    min-height: 70vh;
+    background: var(--eqd-bg-page);
+    padding: clamp(1.25rem, 3vw, 2.5rem) 0;
+    font-family: var(--eqd-font);
+}
+
+.medical-equipment-details-wrap .container {
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ========== ناوبری / بازگشت ========== */
+.eqd-nav {
+    margin-bottom: 1.25rem;
+}
+
+.eqd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--eqd-primary);
+    text-decoration: none;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.eqd-back-link:hover,
+.eqd-back-link:focus {
+    color: var(--eqd-primary-dark);
+    text-decoration: none;
+}
+
+.eqd-back-link:focus {
+    outline: 2px solid var(--eqd-primary);
+    outline-offset: 2px;
+}
+
+/* ========== هیرو (Hero) ========== */
+.eqd-hero {
+    background: var(--eqd-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--eqd-border);
+    margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .eqd-hero {
+        grid-template-columns: 320px 1fr;
+        gap: 0;
+    }
+}
+
+.eqd-hero-image-wrap {
+    position: relative;
+    min-height: 220px;
+    background: var(--eqd-bg-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .eqd-hero-image-wrap {
+        min-height: 280px;
+    }
+}
+
+.eqd-hero-image-wrap img {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    object-fit: contain;
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .eqd-hero-image-wrap img {
+        min-height: 280px;
+    }
+}
+
+.eqd-hero-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--eqd-bg-subtle) 0%, #e9ecef 100%);
+}
+
+.eqd-hero-placeholder i {
+    font-size: 4rem;
+    color: #adb5bd;
+}
+
+.eqd-hero-content {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.eqd-hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.eqd-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    background: rgba(44, 90, 160, 0.1);
+    color: var(--eqd-primary);
+}
+
+.eqd-hero-badge-featured {
+    background: rgba(255, 193, 7, 0.2);
+    color: #856404;
+}
+
+.eqd-hero-title {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 700;
+    color: var(--eqd-text);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.35;
+}
+
+.eqd-hero-lead {
+    font-size: 1rem;
+    color: var(--eqd-text-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ========== Layout دو ستون ========== */
+.eqd-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .eqd-layout {
+        grid-template-columns: 1fr 340px;
+        gap: 2rem;
+    }
+}
+
+/* ========== محتوای اصلی ========== */
+.eqd-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.eqd-card {
+    background: var(--eqd-bg);
+    border-radius: 12px;
+    border: 1px solid var(--eqd-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eqd-card-head {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--eqd-text);
+    padding: 1rem 1.25rem;
+    background: var(--eqd-bg-subtle);
+    border-bottom: 1px solid var(--eqd-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eqd-card-head i {
+    color: var(--eqd-primary);
+}
+
+.eqd-card-body {
+    padding: 1.25rem 1.5rem;
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--eqd-text);
+}
+
+.eqd-card-body.eqd-prose {
+    font-size: 1rem;
+    line-height: 1.85;
+}
+
+.eqd-prose p {
+    margin-bottom: 1rem;
+}
+
+.eqd-prose p:last-child {
+    margin-bottom: 0;
+}
+
+/* ویژگی‌ها (لیست بیمارپسند) */
+.eqd-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.eqd-feature-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--eqd-bg-subtle);
+    border: 1px solid var(--eqd-border);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    color: var(--eqd-text);
+}
+
+.eqd-feature-list li i {
+    color: var(--eqd-success);
+    font-size: 0.875rem;
+}
+
+/* مشخصات فنی (قابل جمع شدن یا ساده) */
+.eqd-specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.eqd-specs-table th,
+.eqd-specs-table td {
+    padding: 0.6rem 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid var(--eqd-border);
+}
+
+.eqd-specs-table th {
+    font-weight: 600;
+    color: var(--eqd-text-muted);
+    width: 40%;
+}
+
+.eqd-specs-table td {
+    color: var(--eqd-text);
+}
+
+/* گالری */
+.eqd-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.eqd-gallery-item {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--eqd-border);
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.eqd-gallery-item:hover {
+    border-color: var(--eqd-primary);
+    transform: scale(1.02);
+}
+
+.eqd-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ویدیو دکمه */
+.eqd-video-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: #dc3545;
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.eqd-video-btn:hover {
+    color: #fff;
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+/* ========== سایدبار (اعتماد + CTA) ========== */
+.eqd-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+    .eqd-sidebar {
+        position: sticky;
+        top: 1.5rem;
+        align-self: start;
+    }
+}
+
+/* کارت اعتماد «در کلینیک شفا» */
+.eqd-trust-card {
+    background: linear-gradient(135deg, var(--eqd-primary) 0%, var(--eqd-primary-dark) 100%);
+    color: #fff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    border: none;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+}
+
+.eqd-trust-card .eqd-trust-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.35rem 0;
+}
+
+.eqd-trust-card .eqd-trust-sub {
+    font-size: 0.875rem;
+    opacity: 0.95;
+    margin: 0;
+}
+
+/* کارت اطلاعات خلاصه */
+.eqd-info-card {
+    background: var(--eqd-bg);
+    border-radius: 12px;
+    border: 1px solid var(--eqd-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eqd-info-card-head {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    background: var(--eqd-bg-subtle);
+    border-bottom: 1px solid var(--eqd-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eqd-info-card-head i {
+    color: var(--eqd-primary);
+}
+
+.eqd-info-card-body {
+    padding: 1rem;
+}
+
+.eqd-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--eqd-border);
+}
+
+.eqd-info-row:last-child {
+    border-bottom: none;
+}
+
+.eqd-info-row strong {
+    color: var(--eqd-text-muted);
+    font-weight: 500;
+}
+
+.eqd-info-row span {
+    color: var(--eqd-text);
+}
+
+/* CTA دکمه‌ها */
+.eqd-cta-card {
+    background: var(--eqd-bg);
+    border-radius: 12px;
+    border: 1px solid var(--eqd-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eqd-cta-card-head {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    background: var(--eqd-bg-subtle);
+    border-bottom: 1px solid var(--eqd-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eqd-cta-card-head i {
+    color: var(--eqd-primary);
+}
+
+.eqd-cta-card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.eqd-cta-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--eqd-success) 0%, #218838 100%);
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.eqd-cta-primary:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.eqd-cta-primary:focus {
+    outline: 3px solid var(--eqd-success);
+    outline-offset: 2px;
+}
+
+.eqd-cta-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--eqd-primary);
+    background: var(--eqd-bg);
+    border: 2px solid var(--eqd-primary);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.eqd-cta-secondary:hover {
+    background: var(--eqd-primary);
+    color: #fff;
+}
+
+.eqd-cta-secondary:focus {
+    outline: 3px solid var(--eqd-primary);
+    outline-offset: 2px;
+}
+
+/* یادآوری حقوقی */
+.eqd-legal-notice {
+    font-size: 0.8125rem;
+    color: var(--eqd-text-muted);
+    padding: 0.75rem 1rem;
+    background: var(--eqd-bg-subtle);
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.eqd-legal-notice i {
+    color: var(--eqd-primary);
+    margin-top: 0.15rem;
+}
+
+/* مودال تصویر */
+.eqd-modal-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    display: block;
+    margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .eqd-gallery-item,
+    .eqd-cta-primary,
+    .eqd-video-btn {
+        transition: none;
+    }
+    .eqd-gallery-item:hover {
+        transform: none;
+    }
+    .eqd-cta-primary:hover,
+    .eqd-video-btn:hover {
+        transform: none;
+    }
+}

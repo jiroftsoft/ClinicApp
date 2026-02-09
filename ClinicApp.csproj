@@ -2077,6 +2077,8 @@
     <Content Include="Content\css\design-system.css" />
     <Content Include="Content\css\details-page-medical.css" />
     <Content Include="Content\css\details-standards.css" />
+    <Content Include="Content\css\medical-equipment-details.css" />
+    <Content Include="Content\css\medical-equipment-index.css" />
     <Content Include="Content\css\medical-service-info-pages.css" />
     <Content Include="Content\css\patient-education.css" />
     <Content Include="Content\css\doctor-assignment-index.css" />
@@ -2096,6 +2098,8 @@
     <Content Include="Content\css\homepage-layout.css" />
     <Content Include="Content\css\homepage-sections-spacing.css" />
     <Content Include="Content\css\insurance-carousel.css" />
+    <Content Include="Content\css\insurance-info-details.css" />
+    <Content Include="Content\css\insurance-info-index.css" />
     <Content Include="Content\css\insurance-info-section.css" />
     <Content Include="Content\css\insurance-plan-index.css" />
     <Content Include="Content\css\insurance-plan.css" />

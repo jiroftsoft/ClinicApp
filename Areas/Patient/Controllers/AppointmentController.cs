@@ -74,9 +74,10 @@ namespace ClinicApp.Areas.Patient.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> Available(
             int? doctorId = null,
-            string date = null,  // ✅ تغییر از DateTime? به string برای دریافت تاریخ شمسی
+            string date = null,
+            string searchTerm = null, // ✅ جستجو: نام، تخصص، کد نظام (مشابه دکترتو/پذیرش۲۴)
             int page = 1,
-            int pageSize = 0) // ✅ 0 = استفاده از مقدار پیش‌فرض از config
+            int pageSize = 0)
         {
             try
             {
@@ -93,23 +94,16 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Information("🔐 Appointment.Available - Request.IsAuthenticated: {RequestAuth}, User.Identity.IsAuthenticated: {UserAuth}, UserId: {UserId}, CookieExists: {CookieExists}",
                     requestIsAuth, userIdentityIsAuth, userId, authCookie != null);
                 
-                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, Page: {Page}",
-                    doctorId, date ?? "همه", page);
+                _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, SearchTerm: {SearchTerm}, Page: {Page}",
+                    doctorId, date ?? "همه", searchTerm ?? "", page);
 
-                // ✅ استفاده از config برای pageSize
                 if (pageSize <= 0)
-                {
                     pageSize = _appSettings.AppointmentDoctorsPageSize;
-                }
-                
-                // ✅ Validation برای page
                 if (page < 1)
-                {
                     page = 1;
-                }
 
-                // دریافت لیست پزشکان
-                var doctorsResult = await _bookingService.GetAvailableDoctorsAsync();
+                // ✅ دریافت لیست پزشکان با جستجو (مشابه دکترتو/پذیرش۲۴)
+                var doctorsResult = await _bookingService.GetAvailableDoctorsAsync(departmentId: null, searchTerm: searchTerm);
                 if (!doctorsResult.Success)
                 {
                     NotificationHelper.SetError(TempData, "خطا در دریافت لیست پزشکان");
@@ -182,8 +176,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                 {
                     Doctors = pagedDoctors,
                     SelectedDoctorId = doctorId,
-                    SelectedDate = selectedDate,  // ✅ حالا این تاریخ صحیح است
+                    SelectedDate = selectedDate,
                     AvailableSlots = new List<AvailableTimeSlotDto>(),
+                    SearchTerm = searchTerm,
                     PageNumber = page,
                     PageSize = pageSize,
                     TotalCount = totalCount
@@ -368,7 +363,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                             departmentName = d.DepartmentName,
                             hasActiveSchedule = d.HasActiveSchedule,
                             scheduleInfo = d.ScheduleInfo,
-                            availableDates = availableDatesJson, // ✅ تاریخ‌های نوبت موجود با camelCase
+                            rating = d.Rating,
+                            reviewCount = d.ReviewCount ?? 0,
+                            availableDates = availableDatesJson,
                             isSelected = doctorId.HasValue && d.DoctorId == doctorId.Value
                         };
                     }));

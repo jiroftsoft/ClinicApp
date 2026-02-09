@@ -166,15 +166,7 @@
                 </section>
             }
 
-            <!-- Stories Section - Lazy Load -->
-            @if (Model.Stories != null && Model.Stories.Any())
-            {
-                <section class="stories-section" data-lazy-load="true" data-section-type="stories" data-section-id="stories" aria-label="داستان‌های بیماران">
-                    @{
-                        Html.RenderPartial("Sections/_StoriesSection", Model.Stories);
-                    }
-                </section>
-            }
+            <!-- Stories فقط در Layout (زیر ناوبری) نمایش داده می‌شود؛ در انتهای صفحه تکرار نمی‌شود. -->
 
             <!-- FAQ Section - Lazy Load -->
             @if (Model.FAQs != null && Model.FAQs.Any())

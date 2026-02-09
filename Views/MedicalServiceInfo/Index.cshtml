@@ -2,22 +2,42 @@
 @{
     ViewBag.Title = "خدمات پزشکی";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var hasItems = Model?.Items != null && Model.Items.Any();
 }
 
 <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-service-info-pages.css")" />
 
-<div class="medical-service-info-wrap" role="main" aria-label="خدمات پزشکی">
+<main class="medical-service-info-wrap" role="main" aria-label="لیست خدمات پزشکی">
     @Html.AntiForgeryToken()
-    <div class="container">
+    <div class="medical-service-info-container">
+        <nav class="medical-service-info-nav" aria-label="مسیر بازگشت">
+            <a href="@Url.Action("Index", "Home")" class="medical-service-info-back-link" aria-label="بازگشت به صفحه اصلی">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                <span>بازگشت به صفحه اصلی</span>
+            </a>
+        </nav>
+
         <header class="medical-service-info-header">
-            <h1 class="medical-service-info-title">
+            <h1 class="medical-service-info-title" id="msi-page-title">
                 <i class="fas fa-stethoscope" aria-hidden="true"></i>
                 خدمات پزشکی ما
             </h1>
-            <p class="medical-service-info-subtitle">خدمات تخصصی و حرفه‌ای برای سلامت و تندرستی شما</p>
+            <p class="medical-service-info-subtitle">خدمات تخصصی و حرفه‌ای برای سلامت شما</p>
+            <p class="medical-service-info-trust">در کلینیک شفا با امکانات و کادر مجرب در خدمت شما هستیم.</p>
         </header>
 
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        <div class="medical-service-info-cta-strip">
+            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="medical-service-info-cta-primary" aria-label="رزرو نوبت آنلاین">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>رزرو نوبت آنلاین</span>
+            </a>
+            <a href="@Url.Action("Index", "Contact")" class="medical-service-info-cta-secondary" aria-label="تماس با کلینیک">
+                <i class="fas fa-phone" aria-hidden="true"></i>
+                <span>تماس با کلینیک</span>
+            </a>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model?.ErrorMessage))
         {
             <div class="medical-service-info-alert" role="alert">
                 <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -25,102 +45,105 @@
             </div>
         }
 
-        <div class="medical-service-info-search">
-            <form class="medical-service-info-search-form" role="search" aria-label="جستجو در خدمات" onsubmit="return false;">
-                <label for="serviceSearchInput" class="sr-only">جستجو در خدمات پزشکی</label>
+        <section class="medical-service-info-search-card" aria-label="جستجو در خدمات">
+            <form class="medical-service-info-search-form" role="search" aria-label="جستجو در خدمات پزشکی" onsubmit="return false;">
+                <label for="serviceSearchInput" class="sr-only">عبارت جستجو</label>
                 <input type="search"
                        id="serviceSearchInput"
                        class="medical-service-info-search-input"
-                       placeholder="جستجو در خدمات پزشکی..."
-                       aria-label="جستجو در خدمات پزشکی"
+                       placeholder="جستجو در نام یا توضیحات خدمات..."
+                       aria-label="عبارت جستجو"
                        autocomplete="off" />
                 <button type="button" class="medical-service-info-search-btn" id="serviceSearchBtn" aria-label="اجرای جستجو">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    جستجو
+                    <span>جستجو</span>
                 </button>
             </form>
-        </div>
+        </section>
 
-        <div class="medical-service-info-grid" id="servicesContainer">
-            @if (Model.Items != null && Model.Items.Any())
-            {
-                foreach (var service in Model.Items)
+        <section class="medical-service-info-grid-wrap" aria-labelledby="msi-page-title">
+            <div class="medical-service-info-grid" id="servicesContainer" role="list" aria-live="polite" aria-atomic="false">
+                @if (hasItems)
                 {
-                    <article class="medical-service-info-card" aria-label="@service.ServiceTitle">
-                        <div class="medical-service-info-card-img-wrap">
-                            @if (!string.IsNullOrEmpty(service.ThumbnailUrl))
-                            {
-                                <img src="@service.ThumbnailUrl" alt="@service.ServiceTitle" loading="lazy" width="400" height="240" />
-                            }
-                            else if (!string.IsNullOrEmpty(service.ImageUrl))
-                            {
-                                <img src="@service.ImageUrl" alt="@service.ServiceTitle" loading="lazy" width="400" height="240" />
-                            }
-                            else
-                            {
-                                <div class="medical-service-info-card-placeholder">
-                                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
-                                </div>
-                            }
-                        </div>
-                        <div class="medical-service-info-card-body">
-                            <span class="medical-service-info-card-category">@(string.IsNullOrEmpty(service.ServiceCategoryName) ? "بدون دسته‌بندی" : service.ServiceCategoryName)</span>
-                            <h2 class="medical-service-info-card-title">@service.ServiceTitle</h2>
-                            @if (!string.IsNullOrEmpty(service.Description))
-                            {
-                                var desc = service.Description.Length > 120 ? service.Description.Substring(0, 120) + "…" : service.Description;
-                                <p class="medical-service-info-card-description">@desc</p>
-                            }
-                            @if (service.Features != null && service.Features.Any())
-                            {
-                                <div class="medical-service-info-card-features">
-                                    @foreach (var f in service.Features.Take(3))
-                                    {
-                                        <span><i class="fas fa-check-circle" aria-hidden="true"></i> @f</span>
-                                    }
-                                </div>
-                            }
-                            <div class="medical-service-info-card-meta">
-                                @if (service.Price.HasValue)
+                    foreach (var service in Model.Items)
+                    {
+                        <article class="medical-service-info-card" role="listitem" aria-labelledby="msi-card-title-@service.MedicalServiceInfoId">
+                            <div class="medical-service-info-card-img-wrap">
+                                @if (!string.IsNullOrEmpty(service.ThumbnailUrl))
                                 {
-                                    <span class="medical-service-info-card-price"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> @(service.Price.Value.ToString("N0")) ریال</span>
+                                    <img src="@service.ThumbnailUrl" alt="@(service.ServiceTitle + " در کلینیک شفا")" loading="lazy" decoding="async" width="400" height="240">
+                                }
+                                else if (!string.IsNullOrEmpty(service.ImageUrl))
+                                {
+                                    <img src="@service.ImageUrl" alt="@(service.ServiceTitle + " در کلینیک شفا")" loading="lazy" decoding="async" width="400" height="240">
                                 }
                                 else
                                 {
-                                    <span class="medical-service-info-card-price"><i class="fas fa-info-circle" aria-hidden="true"></i> قیمت تماس بگیرید</span>
-                                }
-                                @if (!string.IsNullOrEmpty(service.EstimatedDuration))
-                                {
-                                    <span class="medical-service-info-card-duration"><i class="fas fa-clock" aria-hidden="true"></i> @service.EstimatedDuration</span>
+                                    <div class="medical-service-info-card-placeholder">
+                                        <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                                    </div>
                                 }
                             </div>
-                            <a href="@Url.Action("Details", new { slug = service.Slug })"
-                               class="medical-service-info-card-btn"
-                               aria-label="اطلاعات بیشتر: @service.ServiceTitle"
-                               data-service-id="@service.MedicalServiceInfoId">
-                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                                اطلاعات بیشتر
-                            </a>
-                        </div>
-                    </article>
+                            <div class="medical-service-info-card-body">
+                                <span class="medical-service-info-card-category">@(string.IsNullOrEmpty(service.ServiceCategoryName) ? "بدون دسته‌بندی" : service.ServiceCategoryName)</span>
+                                <h2 class="medical-service-info-card-title" id="msi-card-title-@service.MedicalServiceInfoId">@service.ServiceTitle</h2>
+                                @if (!string.IsNullOrEmpty(service.Description))
+                                {
+                                    var desc = service.Description.Length > 120 ? service.Description.Substring(0, 120) + "…" : service.Description;
+                                    <p class="medical-service-info-card-description">@desc</p>
+                                }
+                                @if (service.Features != null && service.Features.Any())
+                                {
+                                    <ul class="medical-service-info-card-features-list" aria-label="ویژگی‌ها">
+                                        @foreach (var f in service.Features.Take(3))
+                                        {
+                                            <li><i class="fas fa-check-circle" aria-hidden="true"></i> @f</li>
+                                        }
+                                    </ul>
+                                }
+                                <div class="medical-service-info-card-meta">
+                                    @if (service.Price.HasValue)
+                                    {
+                                        <span class="medical-service-info-card-price"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> @(service.Price.Value.ToString("N0")) ریال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="medical-service-info-card-price"><i class="fas fa-info-circle" aria-hidden="true"></i> قیمت تماس بگیرید</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(service.EstimatedDuration))
+                                    {
+                                        <span class="medical-service-info-card-duration"><i class="fas fa-clock" aria-hidden="true"></i> @service.EstimatedDuration</span>
+                                    }
+                                </div>
+                                <a href="@Url.Action("Details", "MedicalServiceInfo", new { slug = service.Slug })"
+                                   class="medical-service-info-card-btn"
+                                   aria-label="اطلاعات بیشتر: @service.ServiceTitle"
+                                   data-service-id="@service.MedicalServiceInfoId">
+                                    <span>اطلاعات بیشتر</span>
+                                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </article>
+                    }
                 }
-            }
-            else
-            {
-                <div class="medical-service-info-empty">
-                    <i class="fas fa-info-circle" aria-hidden="true"></i>
-                    <h2>هیچ خدمت پزشکی یافت نشد</h2>
-                    <p>لطفاً کلمه جستجوی دیگری وارد کنید.</p>
-                </div>
-            }
-        </div>
+                else
+                {
+                    <div class="medical-service-info-empty" data-initial-empty="true">
+                        <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                        <h2 class="medical-service-info-empty-title">در حال حاضر خدمتی برای نمایش وجود ندارد</h2>
+                        <p class="medical-service-info-empty-text">با جستجو می‌توانید خدمات را پیدا کنید یا به صفحه اصلی بازگردید.</p>
+                        <a href="@Url.Action("Index", "Home")" class="medical-service-info-empty-link">بازگشت به صفحه اصلی</a>
+                    </div>
+                }
+            </div>
+        </section>
     </div>
-</div>
+</main>
 
 @section Scripts {
     <script>
         (function() {
-            var indexUrl = '@Url.Action("Index")';
+            var indexUrl = '@Url.Action("Index", "MedicalServiceInfo")';
             var detailsBaseUrl = '@Url.Action("Details", "MedicalServiceInfo")';
             var searchUrl = '@Url.Action("Search", "MedicalServiceInfo")';
             var incrementUrl = '@Url.Action("IncrementView", "MedicalServiceInfo")';
@@ -130,18 +153,25 @@
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', incrementUrl, true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.send('id=' + encodeURIComponent(id) + '&__RequestVerificationToken=' + encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''));
+                xhr.send('id=' + encodeURIComponent(id) + '&__RequestVerificationToken=' + encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]') ? document.querySelector('input[name="__RequestVerificationToken"]').value : ''));
             }
 
-            document.getElementById('servicesContainer').addEventListener('click', function(e) {
-                var link = e.target.closest('a[data-service-id]');
-                if (link) incrementView(link.getAttribute('data-service-id'));
-            });
+            var container = document.getElementById('servicesContainer');
+            if (container) {
+                container.addEventListener('click', function(e) {
+                    var link = e.target.closest('a[data-service-id]');
+                    if (link) incrementView(link.getAttribute('data-service-id'));
+                });
+            }
 
-            document.getElementById('serviceSearchBtn').addEventListener('click', doSearch);
-            document.getElementById('serviceSearchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
-            });
+            var searchBtn = document.getElementById('serviceSearchBtn');
+            var searchInput = document.getElementById('serviceSearchInput');
+            if (searchBtn) searchBtn.addEventListener('click', doSearch);
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
+                });
+            }
 
             function escapeHtml(s) {
                 if (!s) return '';
@@ -151,21 +181,21 @@
             }
 
             function doSearch() {
-                var term = (document.getElementById('serviceSearchInput').value || '').trim();
+                var term = (searchInput && searchInput.value ? searchInput.value : '').trim();
                 if (!term) {
-                    alert('لطفاً کلمه‌ای برای جستجو وارد کنید');
+                    alert('لطفاً عبارت جستجو را وارد کنید.');
                     return;
                 }
-                var container = document.getElementById('servicesContainer');
-                container.innerHTML = '<div class="medical-service-info-empty" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>در حال جستجو...</p></div>';
+                if (!container) return;
+                container.innerHTML = '<div class="medical-service-info-loading" aria-live="polite"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>در حال جستجو...</p></div>';
                 var formData = new FormData();
                 formData.append('searchTerm', term);
-                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]') ? document.querySelector('input[name="__RequestVerificationToken"]').value : '');
                 fetch(searchUrl, { method: 'POST', body: formData })
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         if (data.success && data.data && data.data.length > 0) {
-                            var html = '';
+                            var html = '<div class="medical-service-info-search-result-label">نتایج جستجو برای «' + escapeHtml(term) + '» — <a href="' + indexUrl + '" class="medical-service-info-empty-link">نمایش همه</a></div>';
                             data.data.forEach(function(s) {
                                 var cat = escapeHtml(s.ServiceCategoryName || 'بدون دسته‌بندی');
                                 var desc = s.Description ? (s.Description.length > 120 ? s.Description.substring(0, 120) + '…' : s.Description) : '';
@@ -173,25 +203,27 @@
                                     '<span class="medical-service-info-card-price"><i class="fas fa-money-bill-wave"></i> ' + new Intl.NumberFormat('fa-IR').format(s.Price) + ' ریال</span>' :
                                     '<span class="medical-service-info-card-price"><i class="fas fa-info-circle"></i> قیمت تماس بگیرید</span>';
                                 var durationHtml = s.EstimatedDuration ? '<span class="medical-service-info-card-duration"><i class="fas fa-clock"></i> ' + escapeHtml(s.EstimatedDuration) + '</span>' : '';
-                                html += '<article class="medical-service-info-card"><div class="medical-service-info-card-img-wrap">';
-                                if (s.ThumbnailUrl) html += '<img src="' + escapeHtml(s.ThumbnailUrl) + '" alt="' + escapeHtml(s.ServiceTitle) + '" loading="lazy">';
-                                else if (s.ImageUrl) html += '<img src="' + escapeHtml(s.ImageUrl) + '" alt="' + escapeHtml(s.ServiceTitle) + '" loading="lazy">';
+                                var titleEsc = escapeHtml(s.ServiceTitle);
+                                var altText = titleEsc + ' در کلینیک شفا';
+                                html += '<article class="medical-service-info-card" role="listitem" aria-labelledby="msi-card-title-' + s.MedicalServiceInfoId + '"><div class="medical-service-info-card-img-wrap">';
+                                if (s.ThumbnailUrl) html += '<img src="' + escapeHtml(s.ThumbnailUrl) + '" alt="' + altText + '" loading="lazy" decoding="async">';
+                                else if (s.ImageUrl) html += '<img src="' + escapeHtml(s.ImageUrl) + '" alt="' + altText + '" loading="lazy" decoding="async">';
                                 else html += '<div class="medical-service-info-card-placeholder"><i class="fas fa-stethoscope"></i></div>';
                                 html += '</div><div class="medical-service-info-card-body">';
                                 html += '<span class="medical-service-info-card-category">' + cat + '</span>';
-                                html += '<h2 class="medical-service-info-card-title">' + escapeHtml(s.ServiceTitle) + '</h2>';
+                                html += '<h2 class="medical-service-info-card-title" id="msi-card-title-' + s.MedicalServiceInfoId + '">' + titleEsc + '</h2>';
                                 if (desc) html += '<p class="medical-service-info-card-description">' + escapeHtml(desc) + '</p>';
                                 html += '<div class="medical-service-info-card-meta">' + priceHtml + durationHtml + '</div>';
-                                html += '<a href="' + detailsBaseUrl + '?slug=' + encodeURIComponent(s.Slug) + '" class="medical-service-info-card-btn" data-service-id="' + s.MedicalServiceInfoId + '"><i class="fas fa-arrow-left"></i> اطلاعات بیشتر</a>';
+                                html += '<a href="' + detailsBaseUrl + '?slug=' + encodeURIComponent(s.Slug) + '" class="medical-service-info-card-btn" data-service-id="' + s.MedicalServiceInfoId + '"><span>اطلاعات بیشتر</span><i class="fas fa-arrow-left"></i></a>';
                                 html += '</div></article>';
                             });
-                            container.innerHTML = '<div class="medical-service-info-empty" style="grid-column:1/-1;margin-bottom:1rem;">نمایش نتایج جستجو برای «' + escapeHtml(term) + '» — <a href="' + indexUrl + '">پاک کردن و بازگشت</a></div>' + html;
+                            container.innerHTML = html;
                         } else {
-                            container.innerHTML = '<div class="medical-service-info-empty"><i class="fas fa-info-circle"></i><h2>نتیجه‌ای یافت نشد</h2><p>لطفاً عبارت دیگری جستجو کنید یا <a href="' + indexUrl + '">به لیست بازگردید</a>.</p></div>';
+                            container.innerHTML = '<div class="medical-service-info-empty"><i class="fas fa-search" aria-hidden="true"></i><h2 class="medical-service-info-empty-title">نتیجه‌ای یافت نشد</h2><p class="medical-service-info-empty-text">عبارت دیگری جستجو کنید یا <a href="' + indexUrl + '" class="medical-service-info-empty-link">به لیست خدمات بازگردید</a>.</p></div>';
                         }
                     })
                     .catch(function() {
-                        container.innerHTML = '<div class="medical-service-info-empty"><i class="fas fa-exclamation-triangle"></i><h2>خطا در جستجو</h2><p><a href="' + indexUrl + '">بارگذاری مجدد صفحه</a></p></div>';
+                        container.innerHTML = '<div class="medical-service-info-empty"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i><h2 class="medical-service-info-empty-title">خطا در جستجو</h2><p class="medical-service-info-empty-text"><a href="' + indexUrl + '" class="medical-service-info-empty-link">بارگذاری مجدد</a></p></div>';
                     });
             }
         })();

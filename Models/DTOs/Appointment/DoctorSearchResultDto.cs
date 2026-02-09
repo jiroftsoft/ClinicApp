@@ -33,6 +33,16 @@ namespace ClinicApp.Models.DTOs.Appointment
         public int? ExperienceYears { get; set; }
         
         /// <summary>
+        /// امتیاز رضایت بیماران (۰ تا ۵) — مشابه دکترتو / پذیرش۲۴
+        /// </summary>
+        public decimal? Rating { get; set; }
+        
+        /// <summary>
+        /// تعداد نظرات / ارزیابی بیماران
+        /// </summary>
+        public int? ReviewCount { get; set; }
+        
+        /// <summary>
         /// تاریخ‌های نوبت موجود با اطلاعات کامل (حداکثر 5 تاریخ آینده)
         /// </summary>
         public List<AvailableDateInfo> AvailableDates { get; set; } = new List<AvailableDateInfo>();

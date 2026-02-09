@@ -10,6 +10,7 @@
    - Performance: بهینه‌سازی برای Production
    ============================================ *@
 
+@* حداکثر ۳ اسلاید (Best Practice پزشکی — کم‌بار شناختی؛ ر.ک. Docs/HERO-CAROUSEL-GUIDE.md) *@
 @{
     var hasModel = Model != null;
     var hasSlides = hasModel && Model.Slides != null && Model.Slides.Any();
@@ -18,6 +19,7 @@
     {
         validSlides = Model.Slides
             .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl) || !string.IsNullOrWhiteSpace(s.ThumbnailUrl))
+            .Take(3)
             .ToList();
     }
 }

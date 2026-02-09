@@ -14,6 +14,9 @@ namespace ClinicApp.ViewModels.Patient
         public DateTime SelectedDate { get; set; }
         public List<AvailableTimeSlotDto> AvailableSlots { get; set; }
         
+        /// <summary>جستجو بر اساس نام، تخصص یا کد نظام پزشکی (مشابه دکترتو/پذیرش۲۴)</summary>
+        public string SearchTerm { get; set; }
+        
         // ✅ Pagination Properties
         public int PageNumber { get; set; }
         public int PageSize { get; set; }

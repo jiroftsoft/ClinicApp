@@ -5,23 +5,76 @@
  */
 
 :root {
-    --ms-primary: #2c6e7d;
-    --ms-primary-dark: #1e4d5a;
+    --ms-primary: #2c5aa0;
+    --ms-primary-dark: #1e3f73;
     --ms-success: #28a745;
     --ms-bg: #ffffff;
     --ms-bg-subtle: #f8f9fa;
     --ms-border: rgba(0, 0, 0, 0.08);
     --ms-text: #212529;
     --ms-text-muted: #6c757d;
+    --ms-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ========== Page Wrap ========== */
 .medical-service-info-wrap {
     min-height: 70vh;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%);
+    background: var(--ms-bg-subtle);
     padding: clamp(1.5rem, 4vw, 3rem) 0;
+    font-family: var(--ms-font);
 }
 
+.medical-service-info-container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ========== Nav / Back Link ========== */
+.medical-service-info-nav {
+    margin-bottom: 1.25rem;
+}
+
+.medical-service-info-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-family: var(--ms-font);
+    color: var(--ms-primary);
+    text-decoration: none;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    transition: color 0.2s ease;
+}
+
+.medical-service-info-back-link:hover,
+.medical-service-info-back-link:focus {
+    color: var(--ms-primary-dark);
+    text-decoration: none;
+}
+
+.medical-service-info-back-link:focus {
+    outline: 2px solid var(--ms-primary);
+    outline-offset: 2px;
+}
+
+/* صفحه جزئیات از .container استفاده می‌کند */
 .medical-service-info-wrap .container {
     max-width: 1200px;
     margin-left: auto;
@@ -50,8 +103,88 @@
     margin: 0;
 }
 
-/* ========== Search Form ========== */
-.medical-service-info-search {
+.medical-service-info-trust {
+    font-size: 0.9375rem;
+    color: var(--ms-text-muted);
+    margin: 0.5rem auto 0;
+    max-width: 520px;
+    line-height: 1.5;
+}
+
+.medical-service-info-cta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.medical-service-info-cta-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.65rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--ms-font);
+    color: #fff;
+    background: var(--ms-success);
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.medical-service-info-cta-primary:hover {
+    background: #218838;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
+}
+
+.medical-service-info-cta-primary:focus {
+    outline: 3px solid var(--ms-success);
+    outline-offset: 2px;
+}
+
+.medical-service-info-cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.65rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--ms-font);
+    color: var(--ms-primary);
+    background: var(--ms-bg);
+    border: 2px solid var(--ms-primary);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.medical-service-info-cta-secondary:hover {
+    background: var(--ms-primary);
+    color: #fff;
+}
+
+.medical-service-info-cta-secondary:focus {
+    outline: 3px solid var(--ms-primary);
+    outline-offset: 2px;
+}
+
+/* ========== Search Card & Form ========== */
+.medical-service-info-search-card {
+    background: var(--ms-bg);
+    border-radius: 16px;
+    border: 1px solid var(--ms-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1.25rem 1.5rem;
     margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
 }
 
@@ -68,6 +201,7 @@
     min-height: 48px;
     padding: 0.75rem 1rem;
     font-size: 1rem;
+    font-family: var(--ms-font);
     border: 2px solid var(--ms-border);
     border-radius: 12px;
     background: var(--ms-bg);
@@ -78,7 +212,11 @@
 .medical-service-info-search-input:focus {
     outline: none;
     border-color: var(--ms-primary);
-    box-shadow: 0 0 0 3px rgba(44, 110, 125, 0.15);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.15);
+}
+
+.medical-service-info-search-input::placeholder {
+    color: var(--ms-text-muted);
 }
 
 .medical-service-info-search-btn {
@@ -91,17 +229,18 @@
     font-size: 1rem;
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-success) 100%);
+    background: var(--ms-primary);
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .medical-service-info-search-btn:hover {
     color: #fff;
+    background: var(--ms-primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.35);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.35);
 }
 
 .medical-service-info-search-btn:focus {
@@ -110,11 +249,14 @@
 }
 
 /* ========== Services Grid ========== */
+.medical-service-info-grid-wrap {
+    margin-bottom: 2rem;
+}
+
 .medical-service-info-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: clamp(1.25rem, 3vw, 2rem);
-    margin-bottom: 2rem;
 }
 
 @media (min-width: 576px) {
@@ -127,6 +269,12 @@
     .medical-service-info-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 2rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .medical-service-info-grid {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -144,9 +292,9 @@
 }
 
 .medical-service-info-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    border-color: rgba(44, 110, 125, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    border-color: rgba(44, 90, 160, 0.25);
 }
 
 .medical-service-info-card:focus-within {
@@ -157,9 +305,9 @@
 .medical-service-info-card-img-wrap {
     position: relative;
     width: 100%;
-    height: clamp(180px, 40vw, 240px);
+    height: clamp(180px, 38vw, 240px);
     overflow: hidden;
-    background: linear-gradient(135deg, #e8f0f5 0%, #f0f4f8 100%);
+    background: var(--ms-bg-subtle);
 }
 
 .medical-service-info-card-img-wrap img {
@@ -179,12 +327,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-success) 100%);
+    background: var(--ms-bg-subtle);
 }
 
 .medical-service-info-card-placeholder i {
     font-size: 2.5rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: #adb5bd;
 }
 
 .medical-service-info-card-body {
@@ -202,7 +350,7 @@
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--ms-primary);
-    background: rgba(44, 110, 125, 0.1);
+    background: rgba(44, 90, 160, 0.1);
     padding: 0.35rem 0.75rem;
     border-radius: 9999px;
     width: fit-content;
@@ -232,22 +380,38 @@
     overflow: hidden;
 }
 
-.medical-service-info-card-features {
+.medical-service-info-card-features,
+.medical-service-info-card-features-list {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
     margin-bottom: 0.75rem;
 }
 
-.medical-service-info-card-features span {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.6rem;
-    background: var(--ms-bg-subtle);
+.medical-service-info-card-features span,
+.medical-service-info-card-features-list li {
+    font-size: 0.8125rem;
     color: var(--ms-text-muted);
-    border-radius: 9999px;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
+}
+
+.medical-service-info-card-features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.75rem 0;
+}
+
+.medical-service-info-card-features-list li i {
+    color: var(--ms-success);
+    font-size: 0.75rem;
+}
+
+.medical-service-info-card-features span {
+    padding: 0.25rem 0.6rem;
+    background: var(--ms-bg-subtle);
+    border-radius: 9999px;
 }
 
 .medical-service-info-card-meta {
@@ -281,19 +445,21 @@
     padding: 0.6rem 1rem;
     font-size: 0.9375rem;
     font-weight: 600;
+    font-family: var(--ms-font);
     color: #fff;
-    background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-success) 100%);
+    background: var(--ms-primary);
     border: none;
     border-radius: 12px;
     text-decoration: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     margin-top: auto;
 }
 
 .medical-service-info-card-btn:hover {
     color: #fff;
+    background: var(--ms-primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(44, 110, 125, 0.35);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
 }
 
 .medical-service-info-card-btn:focus {
@@ -301,31 +467,82 @@
     outline-offset: 2px;
 }
 
-/* ========== Empty & Alert ========== */
-.medical-service-info-empty {
+/* ========== Empty, Loading, Search Result Label & Alert ========== */
+.medical-service-info-empty,
+.medical-service-info-loading {
     text-align: center;
     padding: 3rem 1.5rem;
-    background: var(--ms-bg-subtle);
+    background: var(--ms-bg);
     border-radius: 16px;
+    border: 1px solid var(--ms-border);
     grid-column: 1 / -1;
 }
 
-.medical-service-info-empty i {
+.medical-service-info-empty i,
+.medical-service-info-loading i {
     font-size: 3rem;
     color: var(--ms-text-muted);
     margin-bottom: 1rem;
 }
 
-.medical-service-info-empty h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ms-text);
-    margin-bottom: 0.5rem;
+.medical-service-info-loading i.fa-spin {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.medical-service-info-empty p {
-    margin: 0;
+.medical-service-info-empty-title,
+.medical-service-info-empty h2,
+.medical-service-info-loading h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ms-text);
+    margin: 0 0 0.5rem 0;
+}
+
+.medical-service-info-empty-text,
+.medical-service-info-empty p,
+.medical-service-info-loading p {
+    margin: 0 0 1rem 0;
     color: var(--ms-text-muted);
+    font-size: 0.9375rem;
+}
+
+.medical-service-info-empty-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ms-primary);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    border: 2px solid var(--ms-primary);
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.medical-service-info-empty-link:hover {
+    background: var(--ms-primary);
+    color: #fff;
+}
+
+.medical-service-info-empty-link:focus {
+    outline: 3px solid var(--ms-primary);
+    outline-offset: 2px;
+}
+
+.medical-service-info-search-result-label {
+    grid-column: 1 / -1;
+    font-size: 0.9375rem;
+    color: var(--ms-text-muted);
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.medical-service-info-search-result-label .medical-service-info-empty-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
 }
 
 .medical-service-info-alert {
@@ -340,84 +557,233 @@
     gap: 0.75rem;
 }
 
-/* ========== Details Page ========== */
+/* ========== Details Page (صفحه جزئیات خدمت — الگوی ایرانی) ========== */
+.medical-service-detail-wrap {
+    min-height: 70vh;
+    background: var(--ms-bg-subtle);
+    padding: clamp(1.25rem, 3vw, 2.5rem) 0;
+    font-family: var(--ms-font);
+}
+
+.medical-service-detail-wrap .medical-service-detail-container {
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
+}
+
+.medical-service-detail-nav {
+    margin-bottom: 1.25rem;
+}
+
+.medical-service-detail-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--ms-primary);
+    text-decoration: none;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    transition: color 0.2s ease;
+}
+
+.medical-service-detail-back-link:hover,
+.medical-service-detail-back-link:focus {
+    color: var(--ms-primary-dark);
+    text-decoration: none;
+}
+
+.medical-service-detail-back-link:focus {
+    outline: 2px solid var(--ms-primary);
+    outline-offset: 2px;
+}
+
 .medical-service-detail-article {
     background: var(--ms-bg);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     border: 1px solid var(--ms-border);
 }
 
+/* هیرو: تصویر + عنوان + خلاصه */
 .medical-service-detail-hero {
-    width: 100%;
-    max-height: 400px;
-    overflow: hidden;
-    background: #f0f4f8;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 0;
 }
 
-.medical-service-detail-hero img {
+@media (min-width: 768px) {
+    .medical-service-detail-hero {
+        grid-template-columns: 320px 1fr;
+    }
+}
+
+.medical-service-detail-hero-media {
+    position: relative;
+    min-height: 220px;
+    background: var(--ms-bg-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .medical-service-detail-hero-media {
+        min-height: 280px;
+    }
+}
+
+.medical-service-detail-hero-media img {
     width: 100%;
-    height: auto;
-    max-height: 400px;
+    height: 100%;
+    min-height: 220px;
     object-fit: cover;
     display: block;
 }
 
-.medical-service-detail-body {
-    padding: clamp(1.5rem, 4vw, 2.5rem);
+@media (min-width: 768px) {
+    .medical-service-detail-hero-media img {
+        min-height: 280px;
+    }
+}
+
+.medical-service-detail-hero-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-bg-subtle);
+}
+
+.medical-service-detail-hero-placeholder i {
+    font-size: 4rem;
+    color: #adb5bd;
+}
+
+.medical-service-detail-hero-content {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .medical-service-detail-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    margin-bottom: 1rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.medical-service-detail-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+}
+
+.medical-service-detail-badge-category {
+    background: rgba(44, 90, 160, 0.1);
+    color: var(--ms-primary);
+}
+
+.medical-service-detail-badge-code {
+    background: var(--ms-bg-subtle);
+    color: var(--ms-text-muted);
 }
 
 .medical-service-detail-title {
     font-size: clamp(1.25rem, 3vw, 1.75rem);
     font-weight: 700;
     color: var(--ms-text);
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.5rem 0;
     line-height: 1.35;
 }
 
-.medical-service-detail-summary {
-    padding: 1rem 1.25rem;
-    background: rgba(44, 110, 125, 0.06);
-    border-right: 4px solid var(--ms-primary);
-    border-radius: 0 12px 12px 0;
-    margin-bottom: 1.5rem;
+.medical-service-detail-lead {
+    font-size: 1rem;
+    color: var(--ms-text-muted);
+    line-height: 1.6;
+    margin: 0;
 }
 
-.medical-service-detail-price-box {
+/* چیدمان دو ستون: محتوا + سایدبار */
+.medical-service-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .medical-service-detail-layout {
+        grid-template-columns: 1fr 340px;
+        gap: 2rem;
+    }
+}
+
+.medical-service-detail-main {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* بلوک‌های محتوا */
+.medical-service-detail-block {
+    margin-bottom: 0;
+}
+
+.medical-service-detail-block-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ms-text);
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.medical-service-detail-block-title i {
+    color: var(--ms-primary);
+}
+
+.medical-service-detail-price-block {
     padding: 1rem 1.25rem;
     background: rgba(40, 167, 69, 0.08);
     border-radius: 12px;
-    margin-bottom: 1.5rem;
-    text-align: center;
+}
+
+.medical-service-detail-price-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ms-success);
+    margin: 0;
+    direction: ltr;
 }
 
 .medical-service-detail-content {
     line-height: 1.85;
     color: var(--ms-text);
     font-size: 1rem;
+    margin: 0;
 }
 
 .medical-service-detail-content p {
     margin-bottom: 1rem;
 }
 
-.medical-service-detail-section {
-    margin-bottom: 1.5rem;
-}
-
-.medical-service-detail-section h4 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--ms-text);
-    margin-bottom: 0.75rem;
+.medical-service-detail-content p:last-child {
+    margin-bottom: 0;
 }
 
 .medical-service-detail-list {
@@ -438,13 +804,75 @@
     border-bottom: none;
 }
 
+.medical-service-detail-list li i {
+    color: var(--ms-success);
+    font-size: 0.875rem;
+}
+
+.medical-service-detail-video-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: #dc3545;
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.medical-service-detail-video-btn:hover {
+    color: #fff;
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+.medical-service-detail-external-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ms-primary);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--ms-primary);
+    border-radius: 10px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.medical-service-detail-external-link:hover {
+    background: var(--ms-primary);
+    color: #fff;
+}
+
+.medical-service-detail-footer-links {
+    margin-top: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ms-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.medical-service-detail-views {
+    font-size: 0.875rem;
+    color: var(--ms-text-muted);
+}
+
 .medical-service-detail-back {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     min-height: 44px;
     padding: 0.6rem 1.25rem;
-    margin-top: 1.5rem;
     font-size: 1rem;
     font-weight: 500;
     color: var(--ms-primary);
@@ -465,18 +893,222 @@
     outline-offset: 2px;
 }
 
+/* سایدبار: اعتماد + اطلاعات + CTA */
+.medical-service-detail-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 0 clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 1.75rem);
+}
+
+@media (min-width: 992px) {
+    .medical-service-detail-sidebar {
+        position: sticky;
+        top: 1.5rem;
+        align-self: start;
+        padding: 1.5rem 0 0;
+    }
+}
+
+.medical-service-detail-trust-card {
+    background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-primary-dark) 100%);
+    color: #fff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+}
+
+.medical-service-detail-trust-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.35rem 0;
+}
+
+.medical-service-detail-trust-sub {
+    font-size: 0.875rem;
+    opacity: 0.95;
+    margin: 0;
+}
+
+.medical-service-detail-info-card {
+    background: var(--ms-bg);
+    border-radius: 12px;
+    border: 1px solid var(--ms-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.medical-service-detail-info-head {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    background: var(--ms-bg-subtle);
+    border-bottom: 1px solid var(--ms-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.medical-service-detail-info-head i {
+    color: var(--ms-primary);
+}
+
+.medical-service-detail-info-body {
+    padding: 1rem;
+}
+
+.medical-service-detail-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.medical-service-detail-info-row:last-child {
+    border-bottom: none;
+}
+
+.medical-service-detail-info-row strong {
+    color: var(--ms-text-muted);
+    font-weight: 500;
+}
+
+.medical-service-detail-info-row span {
+    color: var(--ms-text);
+}
+
+.medical-service-detail-cta-card {
+    background: var(--ms-bg);
+    border-radius: 12px;
+    border: 1px solid var(--ms-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.medical-service-detail-cta-card-head {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    background: var(--ms-bg-subtle);
+    border-bottom: 1px solid var(--ms-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.medical-service-detail-cta-card-head i {
+    color: var(--ms-primary);
+}
+
+.medical-service-detail-cta-card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.medical-service-detail-cta-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ms-success) 0%, #218838 100%);
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.medical-service-detail-cta-primary:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.medical-service-detail-cta-primary:focus {
+    outline: 3px solid var(--ms-success);
+    outline-offset: 2px;
+}
+
+.medical-service-detail-cta-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ms-primary);
+    background: var(--ms-bg);
+    border: 2px solid var(--ms-primary);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.medical-service-detail-cta-secondary:hover {
+    background: var(--ms-primary);
+    color: #fff;
+}
+
+.medical-service-detail-cta-secondary:focus {
+    outline: 3px solid var(--ms-primary);
+    outline-offset: 2px;
+}
+
+.medical-service-detail-legal {
+    font-size: 0.8125rem;
+    color: var(--ms-text-muted);
+    padding: 0.75rem 1rem;
+    background: var(--ms-bg-subtle);
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.medical-service-detail-legal i {
+    color: var(--ms-primary);
+    margin-top: 0.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .medical-service-detail-cta-primary,
+    .medical-service-detail-video-btn {
+        transition: none;
+    }
+    .medical-service-detail-cta-primary:hover,
+    .medical-service-detail-video-btn:hover {
+        transform: none;
+    }
+}
+
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
     .medical-service-info-card,
     .medical-service-info-card-img-wrap img,
     .medical-service-info-card-btn,
-    .medical-service-info-search-btn {
+    .medical-service-info-search-btn,
+    .medical-service-info-cta-primary,
+    .medical-service-info-back-link {
         transition: none;
     }
     .medical-service-info-card:hover {
         transform: none;
     }
     .medical-service-info-card:hover .medical-service-info-card-img-wrap img {
+        transform: none;
+    }
+    .medical-service-info-cta-primary:hover {
         transform: none;
     }
 }

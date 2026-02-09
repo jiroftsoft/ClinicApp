@@ -47,6 +47,9 @@ namespace ClinicApp.ViewModels.CMS
         public string Category { get; set; }
         public string CategoryDisplayName { get; set; }
         public string ImageUrl { get; set; }
+        public string ShortDescription { get; set; }
+        public string Slug { get; set; }
+        public int ViewCount { get; set; }
         public string Status { get; set; }
         public bool IsActive { get; set; }
         public bool IsFeatured { get; set; }

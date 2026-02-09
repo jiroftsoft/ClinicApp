@@ -1,292 +1,221 @@
 /**
- * 🛡️ Insurance Info Section - Trusted Partners Linear Slider
- * 
- * طراحی حرفه‌ای و اعتمادساز برای بخش "بیمه‌های طرف قرارداد"
- * مطابق با اصول Trust Building و Professional Medical Design
- * 
- * ویژگی‌ها:
- * - Linear Auto Scroll (حرکت خطی آرام)
- * - لوگوهای دایره‌ای یکدست
- * - بدون نویز اطلاعاتی (بدون دکمه، pagination)
- * - کاملاً رسمی و اعتمادساز
- * - Swiper.js freeMode + autoplay آهسته
+ * سکشن «بیمه‌های طرف قرارداد» — الگوی Mayo/Cleveland
+ * Trust Building، Logo Grid (نه Carousel)، Grayscale + Hover رنگی
+ * ر.ک. مشخصات کاربر: هدف = اطمینان قبل از رزرو، نه جزئیات قرارداد
  */
 
-/* ============================================
-   BASE SECTION STYLES
-   ============================================ */
-.insurance-info-section {
-    padding: var(--spacing-xxxl, 4rem) 0 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+:root {
+    --ins-primary: #2c5aa0;
+    --ins-bg: #ffffff;
+    --ins-bg-subtle: #f8f9fa;
+    --ins-text: #212529;
+    --ins-text-muted: #6c757d;
+    --ins-border: #e9ecef;
+    --ins-font: 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif;
+}
+
+/* ========== Section (wrapper از Index: .insurance-carousel-section) ========== */
+.insurance-carousel-section {
+    background: var(--ins-bg) !important;
     position: relative !important;
     overflow: hidden !important;
 }
 
-.insurance-info-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 10% 20%, rgba(44, 110, 125, 0.02) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(40, 167, 69, 0.02) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.insurance-info-section .container {
+.insurance-info-inner .container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 3vw, 1.5rem);
+    padding-right: clamp(1rem, 3vw, 1.5rem);
     position: relative;
     z-index: 1;
 }
 
-/* ============================================
-   HEADER SECTION
-   ============================================ */
+/* ========== Header ========== */
 .insurance-info-header {
     text-align: center !important;
-    margin-bottom: var(--spacing-xxl, 3rem) !important;
+    margin-bottom: 2rem !important;
 }
 
 .insurance-info-title {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    line-height: var(--line-height-tight, 1.2) !important;
-    position: relative !important;
-    display: inline-block !important;
-}
-
-.insurance-info-title::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    right: 50%;
-    transform: translateX(50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--medical-primary, #2c6e7d), transparent);
-    border-radius: var(--radius-full, 9999px);
+    font-family: var(--ins-font) !important;
+    font-size: clamp(1.5rem, 4vw, 2.25rem) !important;
+    font-weight: 700 !important;
+    color: var(--ins-text) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
 }
 
 .insurance-info-title i {
-    color: var(--medical-primary, #2c6e7d) !important;
-    margin-left: var(--spacing-sm, 0.5rem) !important;
+    color: var(--ins-primary) !important;
 }
 
 .insurance-info-subtitle {
     font-size: clamp(1rem, 2vw, 1.125rem) !important;
-    color: #6c757d !important;
-    max-width: 700px !important;
-    margin: var(--spacing-md, 1rem) auto 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    color: var(--ins-text-muted) !important;
+    max-width: 640px !important;
+    margin: 0 auto !important;
+    line-height: 1.6 !important;
+    font-weight: 400 !important;
 }
 
-/* ============================================
-   LINEAR SLIDER WRAPPER
-   ============================================ */
-.insurance-logo-slider-wrapper {
-    width: 100% !important;
-    padding: var(--spacing-lg, 1.5rem) 0 !important;
-    overflow: hidden !important;
-    position: relative !important;
+/* ========== Logo Grid (نه Carousel) ========== */
+.insurance-logo-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
-.insurance-logo-slider {
-    width: 100% !important;
-    overflow: visible !important;
+@media (min-width: 576px) {
+    .insurance-logo-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 1.5rem !important;
+    }
 }
 
-.insurance-logo-slider .swiper-wrapper {
-    align-items: center !important;
-    transition-timing-function: linear !important; /* حرکت خطی یکنواخت */
+@media (min-width: 992px) {
+    .insurance-logo-grid {
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 1.75rem !important;
+    }
 }
 
-.insurance-logo-slider .swiper-slide {
-    width: auto !important;
-    height: auto !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+@media (min-width: 1200px) {
+    .insurance-logo-grid {
+        grid-template-columns: repeat(8, 1fr) !important;
+        gap: 2rem !important;
+    }
 }
 
-/* ============================================
-   LOGO ITEM - CIRCLE DESIGN
-   ============================================ */
+/* ========== Logo Item ========== */
 .insurance-logo-item {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 96px !important;
-    height: 96px !important;
-    padding: var(--spacing-sm, 0.5rem) !important;
-    cursor: pointer !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0.75rem !important;
     text-decoration: none !important;
     color: inherit !important;
+    transition: transform 0.2s ease !important;
+    border-radius: 12px !important;
+}
+
+a.insurance-logo-item:hover {
+    color: inherit !important;
+}
+
+.insurance-logo-item:focus {
+    outline: 2px solid var(--ins-primary) !important;
+    outline-offset: 2px !important;
 }
 
 .insurance-logo-circle {
     width: 100% !important;
-    height: 100% !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    max-width: 100px !important;
+    aspect-ratio: 1 !important;
+    border-radius: 50% !important;
+    background: var(--ins-bg) !important;
+    border: 1px solid var(--ins-border) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: var(--spacing-sm, 0.5rem) !important;
-    transition: all var(--transition-normal, 0.3s) !important;
+    padding: 0.5rem !important;
     overflow: hidden !important;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
 }
 
 .insurance-logo-item:hover .insurance-logo-circle {
-    transform: scale(1.05) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
-    border-color: rgba(44, 110, 125, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.12) !important;
+    border-color: rgba(44, 90, 160, 0.2) !important;
 }
 
-/* ============================================
-   LOGO IMAGE
-   ============================================ */
+/* ========== Logo Image — Grayscale + Hover Color ========== */
 .insurance-logo-image {
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    transition: filter var(--transition-normal, 0.3s) !important;
-    filter: grayscale(0%) brightness(1) !important;
+    border-radius: 50% !important;
+    transition: filter 0.3s ease !important;
+    filter: grayscale(100%) brightness(0.85) contrast(1.05) !important;
 }
 
 .insurance-logo-item:hover .insurance-logo-image {
-    filter: grayscale(0%) brightness(1.05) saturate(1.1) !important; /* Saturation 100% + Scale ملایم */
+    filter: grayscale(0%) brightness(1) contrast(1) !important;
 }
 
-/* ============================================
-   LOGO FALLBACK (در صورت عدم وجود تصویر)
-   ============================================ */
+/* ========== Fallback (بدون لوگو) ========== */
 .insurance-logo-fallback {
     width: 100% !important;
     height: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, rgba(44, 110, 125, 0.8) 100%) !important;
-    color: #ffffff !important;
-    border-radius: var(--radius-full, 9999px) !important;
+    background: var(--ins-bg-subtle) !important;
+    color: var(--ins-text-muted) !important;
+    border-radius: 50% !important;
 }
 
 .insurance-logo-fallback i {
-    font-size: var(--font-size-xl, 1.5rem) !important;
+    font-size: 1.5rem !important;
 }
 
-/* ============================================
-   LEGAL NOTICE
-   ============================================ */
+/* ========== متن راهنما (Microcopy) ========== */
 .insurance-legal-notice {
     text-align: center !important;
-    margin-top: var(--spacing-xl, 2rem) !important;
-    padding: var(--spacing-md, 1rem) !important;
-    background: rgba(44, 110, 125, 0.05) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(44, 110, 125, 0.1) !important;
-}
-
-.insurance-legal-text {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: #6c757d !important;
     margin: 0 !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 0.875rem !important;
+    color: var(--ins-text-muted) !important;
+    line-height: 1.6 !important;
+    font-family: var(--ins-font) !important;
+    font-weight: 400 !important;
+    background: rgba(44, 90, 160, 0.04) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(44, 90, 160, 0.08) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
 }
 
-.insurance-legal-text i {
-    color: var(--medical-primary, #2c6e7d) !important;
-    font-size: var(--font-size-base, 1rem) !important;
+.insurance-legal-notice i {
+    color: var(--ins-primary) !important;
+    font-size: 1rem !important;
+    flex-shrink: 0 !important;
 }
 
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
+/* ========== Responsive ========== */
 @media (max-width: 575.98px) {
-    .insurance-info-section {
-        padding: var(--spacing-xxl, 2.5rem) 0 !important;
+    .insurance-logo-grid {
+        gap: 1rem !important;
     }
-    
-    .insurance-info-header {
-        margin-bottom: var(--spacing-xl, 2rem) !important;
-    }
-    
-    .insurance-logo-item {
-        width: 64px !important;
-        height: 64px !important;
-    }
-    
-    .insurance-logo-slider-wrapper {
-        padding: var(--spacing-md, 1rem) 0 !important;
+    .insurance-logo-circle {
+        max-width: 80px !important;
     }
 }
 
-@media (min-width: 576px) and (max-width: 767.98px) {
-    .insurance-logo-item {
-        width: 80px !important;
-        height: 80px !important;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .insurance-logo-item {
-        width: 88px !important;
-        height: 88px !important;
-    }
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-.insurance-logo-item:focus {
-    outline: 3px solid var(--medical-primary, #2c6e7d) !important;
-    outline-offset: 4px !important;
-    border-radius: var(--radius-full, 9999px) !important;
-}
-
-/* Reduced Motion Support */
+/* ========== Accessibility ========== */
 @media (prefers-reduced-motion: reduce) {
     .insurance-logo-item,
     .insurance-logo-circle,
     .insurance-logo-image {
         transition: none !important;
     }
-    
-    .insurance-logo-item:hover .insurance-logo-circle {
-        transform: none !important;
-    }
-    
-    .insurance-logo-slider .swiper-wrapper {
-        transition-timing-function: ease !important;
-    }
 }
 
-/* High Contrast Mode Support */
 @media (prefers-contrast: high) {
     .insurance-logo-circle {
-        border: 2px solid #000000 !important;
+        border-width: 2px !important;
+        border-color: #000 !important;
     }
-}
-
-/* ============================================
-   SWIPER OVERRIDES (برای حذف Navigation و Pagination)
-   ============================================ */
-.insurance-logo-slider .swiper-button-next,
-.insurance-logo-slider .swiper-button-prev,
-.insurance-logo-slider .swiper-pagination {
-    display: none !important;
 }

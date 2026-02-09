@@ -7,122 +7,191 @@
 
 <link rel="stylesheet" href="@Url.Content("~/Content/css/medical-service-info-pages.css")" />
 
-<div class="medical-service-info-wrap" role="main" aria-label="جزئیات خدمت پزشکی">
-    <div class="container">
+<main class="medical-service-detail-wrap" role="main" aria-label="جزئیات خدمت پزشکی">
+    <div class="medical-service-detail-container">
+        <nav class="medical-service-detail-nav" aria-label="مسیر بازگشت">
+            <a href="@Url.Action("Index", "MedicalServiceInfo")" class="medical-service-detail-back-link" aria-label="بازگشت به لیست خدمات">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                <span>بازگشت به لیست خدمات</span>
+            </a>
+        </nav>
+
         <article class="medical-service-detail-article" itemscope itemtype="https://schema.org/MedicalProcedure">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            {
-                <div class="medical-service-detail-hero">
-                    <img src="@Model.ImageUrl" alt="@Model.ServiceTitle" itemprop="image" />
+            <header class="medical-service-detail-hero" aria-labelledby="msd-title">
+                <div class="medical-service-detail-hero-media">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" alt="@(Model.ServiceTitle + " در کلینیک شفا")" loading="lazy" decoding="async" itemprop="image">
+                    }
+                    else
+                    {
+                        <div class="medical-service-detail-hero-placeholder">
+                            <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                        </div>
+                    }
                 </div>
-            }
+                <div class="medical-service-detail-hero-content">
+                    <div class="medical-service-detail-meta">
+                        @if (!string.IsNullOrEmpty(Model.ServiceCategoryName))
+                        {
+                            <span class="medical-service-detail-badge medical-service-detail-badge-category">@Model.ServiceCategoryName</span>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ServiceCode))
+                        {
+                            <span class="medical-service-detail-badge medical-service-detail-badge-code"><i class="fas fa-barcode" aria-hidden="true"></i> @Model.ServiceCode</span>
+                        }
+                    </div>
+                    <h1 class="medical-service-detail-title" id="msd-title" itemprop="name">@Model.ServiceTitle</h1>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="medical-service-detail-lead">@Model.Description</p>
+                    }
+                </div>
+            </header>
 
-            <div class="medical-service-detail-body">
-                <div class="medical-service-detail-meta">
-                    <span class="badge badge-primary">@(string.IsNullOrEmpty(Model.ServiceCategoryName) ? "بدون دسته‌بندی" : Model.ServiceCategoryName)</span>
-                    <span class="badge badge-secondary"><i class="fas fa-barcode" aria-hidden="true"></i> کد: @Model.ServiceCode</span>
+            <div class="medical-service-detail-layout">
+                <div class="medical-service-detail-main">
+                    @if (Model.Price.HasValue)
+                    {
+                        <section class="medical-service-detail-block medical-service-detail-price-block" aria-labelledby="msd-price-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-price-head"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> قیمت</h2>
+                            <p class="medical-service-detail-price-value">@(Model.Price.Value.ToString("N0")) ریال</p>
+                        </section>
+                    }
+
+                    @if (Model.Features != null && Model.Features.Any())
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-features-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-features-head"><i class="fas fa-check-circle" aria-hidden="true"></i> ویژگی‌های خدمت</h2>
+                            <ul class="medical-service-detail-list">
+                                @foreach (var feature in Model.Features)
+                                {
+                                    <li><i class="fas fa-check" aria-hidden="true"></i> @feature</li>
+                                }
+                            </ul>
+                        </section>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.FullDescription))
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-full-desc-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-full-desc-head">توضیحات کامل</h2>
+                            <div class="medical-service-detail-content">
+                                @Html.Raw(Model.FullDescription)
+                            </div>
+                        </section>
+                    }
+
+                    @if (Model.InsuranceCoverage != null && Model.InsuranceCoverage.Any())
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-insurance-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-insurance-head"><i class="fas fa-shield-alt" aria-hidden="true"></i> پوشش بیمه</h2>
+                            <ul class="medical-service-detail-list">
+                                @foreach (var coverage in Model.InsuranceCoverage)
+                                {
+                                    <li><i class="fas fa-check-circle" aria-hidden="true"></i> @coverage</li>
+                                }
+                            </ul>
+                        </section>
+                    }
+
+                    @if (Model.RequiredDocuments != null && Model.RequiredDocuments.Any())
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-docs-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-docs-head"><i class="fas fa-file-alt" aria-hidden="true"></i> مدارک مورد نیاز</h2>
+                            <ul class="medical-service-detail-list">
+                                @foreach (var doc in Model.RequiredDocuments)
+                                {
+                                    <li><i class="fas fa-file" aria-hidden="true"></i> @doc</li>
+                                }
+                            </ul>
+                        </section>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.EstimatedDuration))
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-duration-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-duration-head"><i class="fas fa-clock" aria-hidden="true"></i> مدت زمان تقریبی</h2>
+                            <p class="medical-service-detail-content">@Model.EstimatedDuration</p>
+                        </section>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-video-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-video-head"><i class="fas fa-video" aria-hidden="true"></i> ویدیو</h2>
+                            <a href="@Model.VideoUrl" target="_blank" rel="noopener noreferrer" class="medical-service-detail-video-btn" aria-label="مشاهده ویدیو آموزشی">
+                                <i class="fas fa-play" aria-hidden="true"></i> مشاهده ویدیو آموزشی
+                            </a>
+                        </section>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
+                    {
+                        <section class="medical-service-detail-block" aria-labelledby="msd-related-head">
+                            <h2 class="medical-service-detail-block-title" id="msd-related-head"><i class="fas fa-external-link-alt" aria-hidden="true"></i> لینک مرتبط</h2>
+                            <a href="@Model.RelatedLinkUrl" target="_blank" rel="noopener noreferrer" class="medical-service-detail-external-link" aria-label="اطلاعات بیشتر">
+                                <i class="fas fa-external-link-alt" aria-hidden="true"></i> اطلاعات بیشتر
+                            </a>
+                        </section>
+                    }
+
+                    <div class="medical-service-detail-footer-links">
+                        <span class="medical-service-detail-views"><i class="fas fa-eye" aria-hidden="true"></i> @Model.ViewCount بازدید</span>
+                        <a href="@Url.Action("Index", "MedicalServiceInfo")" class="medical-service-detail-back" aria-label="بازگشت به لیست خدمات">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            بازگشت به لیست خدمات
+                        </a>
+                    </div>
                 </div>
 
-                <h1 class="medical-service-detail-title" itemprop="name">@Model.ServiceTitle</h1>
-
-                @if (!string.IsNullOrEmpty(Model.Description))
-                {
-                    <div class="medical-service-detail-summary" aria-label="خلاصه">
-                        <strong>خلاصه:</strong> @Model.Description
+                <aside class="medical-service-detail-sidebar" aria-label="رزرو و تماس">
+                    <div class="medical-service-detail-trust-card">
+                        <p class="medical-service-detail-trust-title">این خدمت در کلینیک شفا</p>
+                        <p class="medical-service-detail-trust-sub">با امکانات و کادر مجرب در خدمت شما هستیم.</p>
                     </div>
-                }
 
-                @if (Model.Price.HasValue)
-                {
-                    <div class="medical-service-detail-price-box">
-                        <strong><i class="fas fa-money-bill-wave" aria-hidden="true"></i> قیمت:</strong>
-                        <span>@(Model.Price.Value.ToString("N0")) ریال</span>
-                    </div>
-                }
-
-                @if (Model.Features != null && Model.Features.Any())
-                {
-                    <div class="medical-service-detail-section">
-                        <h4><i class="fas fa-check-circle text-success" aria-hidden="true"></i> ویژگی‌های خدمت</h4>
-                        <ul class="medical-service-detail-list">
-                            @foreach (var feature in Model.Features)
+                    <div class="medical-service-detail-info-card">
+                        <div class="medical-service-detail-info-head"><i class="fas fa-info-circle" aria-hidden="true"></i> اطلاعات</div>
+                        <div class="medical-service-detail-info-body">
+                            @if (!string.IsNullOrEmpty(Model.ServiceCategoryName))
                             {
-                                <li><i class="fas fa-check text-success" aria-hidden="true"></i> @feature</li>
+                                <div class="medical-service-detail-info-row"><strong>دسته‌بندی</strong><span>@Model.ServiceCategoryName</span></div>
                             }
-                        </ul>
-                    </div>
-                }
-
-                @if (!string.IsNullOrEmpty(Model.FullDescription))
-                {
-                    <div class="medical-service-detail-section">
-                        <h4>توضیحات کامل</h4>
-                        <div class="medical-service-detail-content">
-                            @Html.Raw(Model.FullDescription)
+                            @if (!string.IsNullOrEmpty(Model.ServiceCode))
+                            {
+                                <div class="medical-service-detail-info-row"><strong>کد خدمت</strong><span>@Model.ServiceCode</span></div>
+                            }
+                            @if (Model.Price.HasValue)
+                            {
+                                <div class="medical-service-detail-info-row"><strong>قیمت</strong><span>@(Model.Price.Value.ToString("N0")) ریال</span></div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.EstimatedDuration))
+                            {
+                                <div class="medical-service-detail-info-row"><strong>مدت زمان</strong><span>@Model.EstimatedDuration</span></div>
+                            }
+                            <div class="medical-service-detail-info-row"><strong>بازدید</strong><span>@Model.ViewCount</span></div>
                         </div>
                     </div>
-                }
 
-                @if (Model.InsuranceCoverage != null && Model.InsuranceCoverage.Any())
-                {
-                    <div class="medical-service-detail-section">
-                        <h4><i class="fas fa-shield-alt text-primary" aria-hidden="true"></i> پوشش بیمه</h4>
-                        <ul class="medical-service-detail-list">
-                            @foreach (var coverage in Model.InsuranceCoverage)
-                            {
-                                <li><i class="fas fa-check-circle text-primary" aria-hidden="true"></i> @coverage</li>
-                            }
-                        </ul>
+                    <div class="medical-service-detail-cta-card">
+                        <div class="medical-service-detail-cta-card-head"><i class="fas fa-calendar-check" aria-hidden="true"></i> نوبت و تماس</div>
+                        <div class="medical-service-detail-cta-card-body">
+                            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="medical-service-detail-cta-primary" aria-label="رزرو نوبت آنلاین">
+                                <i class="fas fa-calendar-alt" aria-hidden="true"></i> رزرو نوبت
+                            </a>
+                            <a href="@Url.Action("Index", "Contact")" class="medical-service-detail-cta-secondary" aria-label="تماس با کلینیک">
+                                <i class="fas fa-phone" aria-hidden="true"></i> تماس با کلینیک
+                            </a>
+                        </div>
                     </div>
-                }
 
-                @if (Model.RequiredDocuments != null && Model.RequiredDocuments.Any())
-                {
-                    <div class="medical-service-detail-section">
-                        <h4><i class="fas fa-file-alt text-info" aria-hidden="true"></i> مدارک مورد نیاز</h4>
-                        <ul class="medical-service-detail-list">
-                            @foreach (var doc in Model.RequiredDocuments)
-                            {
-                                <li><i class="fas fa-file text-info" aria-hidden="true"></i> @doc</li>
-                            }
-                        </ul>
+                    <div class="medical-service-detail-legal">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        <span>اطلاعات این صفحه صرفاً جهت آشنایی مراجعین است. برای تشخیص و درمان به پزشک مراجعه کنید.</span>
                     </div>
-                }
-
-                @if (!string.IsNullOrEmpty(Model.EstimatedDuration))
-                {
-                    <div class="medical-service-detail-section">
-                        <h4><i class="fas fa-clock text-warning" aria-hidden="true"></i> مدت زمان تقریبی</h4>
-                        <p class="medical-service-detail-content">@Model.EstimatedDuration</p>
-                    </div>
-                }
-
-                @if (!string.IsNullOrEmpty(Model.VideoUrl))
-                {
-                    <div class="medical-service-detail-section">
-                        <a href="@Model.VideoUrl" target="_blank" rel="noopener noreferrer" class="medical-service-info-card-btn" style="display:inline-flex;text-decoration:none;" aria-label="مشاهده ویدیو آموزشی">
-                            <i class="fas fa-play" aria-hidden="true"></i> مشاهده ویدیو آموزشی
-                        </a>
-                    </div>
-                }
-
-                @if (!string.IsNullOrEmpty(Model.RelatedLinkUrl))
-                {
-                    <div class="medical-service-detail-section">
-                        <a href="@Model.RelatedLinkUrl" target="_blank" rel="noopener noreferrer" class="medical-service-info-card-btn" style="display:inline-flex;text-decoration:none;" aria-label="اطلاعات بیشتر">
-                            <i class="fas fa-external-link-alt" aria-hidden="true"></i> اطلاعات بیشتر
-                        </a>
-                    </div>
-                }
-
-                <div class="medical-service-detail-section" style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--ms-border);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;">
-                    <span class="medical-service-info-card-duration"><i class="fas fa-eye" aria-hidden="true"></i> @Model.ViewCount بازدید</span>
-                    <a href="@Url.Action("Index")" class="medical-service-detail-back" aria-label="بازگشت به لیست خدمات">
-                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                        بازگشت به لیست خدمات
-                    </a>
-                </div>
+                </aside>
             </div>
         </article>
     </div>
-</div>
+</main>

@@ -119,7 +119,7 @@ namespace ClinicApp.Services
                 var doctorsTask = GetDoctorsSectionAsync(4, effectiveClinicId);
                 var quickAppointmentTask = GetQuickAppointmentSectionAsync(effectiveClinicId);
                 var popularSpecialtiesTask = GetPopularSpecialtiesSectionAsync(effectiveClinicId);
-                var testimonialsTask = GetTestimonialsSectionAsync(3, effectiveClinicId);
+                var testimonialsTask = GetTestimonialsSectionAsync(6, effectiveClinicId);
                 var galleryTask = GetGallerySectionAsync(6, effectiveClinicId);
                 var blogTask = GetBlogSectionAsync(6, effectiveClinicId);
                 var videosTask = GetVideoSectionAsync(6, "endoscopy", effectiveClinicId);
@@ -495,7 +495,7 @@ namespace ClinicApp.Services
         /// <summary>
         /// دریافت داده‌های بخش Testimonials
         /// </summary>
-        public async Task<TestimonialsSectionViewModel> GetTestimonialsSectionAsync(int count = 3, int? clinicId = null)
+        public async Task<TestimonialsSectionViewModel> GetTestimonialsSectionAsync(int count = 6, int? clinicId = null)
         {
             try
             {
@@ -511,13 +511,14 @@ namespace ClinicApp.Services
                     CreatedAt = t.ApprovedAt ?? t.CreatedAt,
                     DoctorName = t.DoctorName,
                     VideoUrl = t.VideoUrl,
-                    PhotoUrl = t.PhotoUrl
+                    PhotoUrl = t.PhotoUrl,
+                    IsVerified = t.PatientId.HasValue
                 }).ToList();
 
                 return new TestimonialsSectionViewModel
                 {
                     SectionTitle = "نظرات بیماران ما",
-                    SectionSubtitle = "این چیزی است که بیماران ما درباره کلینیک می‌گویند",
+                    SectionSubtitle = "تجربه مراجعه بیماران به کلینیک شفا",
                     Testimonials = testimonialViewModels
                 };
             }
@@ -527,7 +528,7 @@ namespace ClinicApp.Services
                 return new TestimonialsSectionViewModel
                 {
                     SectionTitle = "نظرات بیماران ما",
-                    SectionSubtitle = "این چیزی است که بیماران ما درباره کلینیک می‌گویند",
+                    SectionSubtitle = "تجربه مراجعه بیماران به کلینیک شفا",
                     Testimonials = new List<TestimonialViewModel>()
                 };
             }
