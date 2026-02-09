@@ -1,0 +1,436 @@
+/* ============================================
+   صفحه نوبت‌های موجود - طراحی مدرن، رسمی، جذاب
+   Typography · انیمیشن نرم · رنگ‌های آرام · ضد شلوغ
+   ============================================ */
+
+/* ---------- ۱. محدوده صفحه (Scope) ---------- */
+.available-page {
+    --ava-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ava-duration: 0.35s;
+    --ava-duration-slow: 0.5s;
+    --ava-bg: #f8f9fb;
+    --ava-surface: #ffffff;
+    --ava-border: #e8eaef;
+    --ava-text: #1a1d21;
+    --ava-text-muted: #5f6368;
+    --ava-accent: var(--medical-primary);
+    background-color: var(--ava-bg);
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- ۲. تایپوگرافی ---------- */
+.available-page .appointment-page-header h1,
+.available-page .appointment-page-header .h3.h2-md {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    color: var(--ava-accent);
+}
+
+.available-page .appointment-page-header p.text-muted {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--ava-text-muted);
+    font-weight: 400;
+}
+
+@media (min-width: 768px) {
+    .available-page .appointment-page-header h1,
+    .available-page .appointment-page-header .h3.h2-md {
+        font-size: 1.75rem;
+    }
+}
+
+.available-page .form-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ava-text);
+    letter-spacing: 0;
+}
+
+.available-page .doctor-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--ava-text);
+}
+
+.available-page .doctor-specialization {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ava-text-muted);
+}
+
+.available-page .doctor-bio {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--ava-text-muted);
+}
+
+.available-page .meta-item,
+.available-page .doctor-rating-caption {
+    font-size: 0.8125rem;
+    color: var(--ava-text-muted);
+}
+
+/* ---------- ۳. هدر و فیلتر - انیمیشن نرم ---------- */
+.available-page .appointment-page-header {
+    background: var(--ava-surface);
+    border-bottom: 1px solid var(--ava-border);
+    padding: 1.25rem 1rem;
+    margin-bottom: 1rem;
+    animation: ava-fade-in var(--ava-duration-slow) var(--ava-ease) both;
+}
+
+.available-page .appointment-filter-section {
+    background: var(--ava-surface);
+    border: 1px solid var(--ava-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    animation: ava-fade-in-up var(--ava-duration-slow) var(--ava-ease) 0.08s both;
+}
+
+.available-page .appointment-filter-section .filter-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+.available-page .form-control-medical {
+    border-radius: 8px;
+    border-color: var(--ava-border);
+    transition: border-color var(--ava-duration) var(--ava-ease), box-shadow var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .form-control-medical:focus {
+    border-color: var(--ava-accent);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.12);
+}
+
+/* ---------- ۴. کارت پزشک - ظاهر رسمی و انیمیشن سبک ---------- */
+.available-page .appointment-doctors-grid {
+    gap: 1.25rem;
+}
+
+.available-page .doctor-card-medical {
+    background: var(--ava-surface);
+    border: 1px solid var(--ava-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform var(--ava-duration) var(--ava-ease),
+                box-shadow var(--ava-duration) var(--ava-ease),
+                border-color var(--ava-duration) var(--ava-ease);
+    animation: ava-card-in var(--ava-duration-slow) var(--ava-ease) both;
+}
+
+.available-page .doctor-card-medical:nth-child(1) { animation-delay: 0.05s; }
+.available-page .doctor-card-medical:nth-child(2) { animation-delay: 0.1s; }
+.available-page .doctor-card-medical:nth-child(3) { animation-delay: 0.15s; }
+.available-page .doctor-card-medical:nth-child(4) { animation-delay: 0.2s; }
+.available-page .doctor-card-medical:nth-child(5) { animation-delay: 0.25s; }
+.available-page .doctor-card-medical:nth-child(6) { animation-delay: 0.3s; }
+
+.available-page .doctor-card-medical:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: rgba(44, 90, 160, 0.25);
+}
+
+.available-page .doctor-card-medical.selected {
+    border-color: var(--ava-accent);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
+}
+
+.available-page .doctor-card-medical::before {
+    background: var(--ava-accent);
+    opacity: 0;
+    transition: opacity var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .doctor-card-medical:hover::before,
+.available-page .doctor-card-medical.selected::before {
+    opacity: 1;
+}
+
+.available-page .doctor-avatar-medical,
+.available-page .doctor-avatar-placeholder {
+    transition: transform var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .doctor-card-medical:hover .doctor-avatar-medical,
+.available-page .doctor-card-medical:hover .doctor-avatar-placeholder {
+    transform: scale(1.02);
+}
+
+.available-page .doctor-card-header {
+    background: linear-gradient(180deg, rgba(248, 249, 251, 0.6) 0%, transparent 100%);
+    border-bottom: 1px solid var(--ava-border);
+}
+
+.available-page .doctor-meta {
+    background: rgba(248, 249, 251, 0.8);
+    border: 1px solid var(--ava-border);
+    border-radius: 8px;
+}
+
+.available-page .schedule-info {
+    background: rgba(44, 90, 160, 0.06);
+    border: 1px solid rgba(44, 90, 160, 0.12);
+    border-radius: 8px;
+}
+
+.available-page .schedule-info-text {
+    color: var(--ava-text);
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.available-page .available-badge-medical {
+    background: var(--medical-success);
+    color: #fff;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.25);
+}
+
+.available-page .doctor-first-slot-badge {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.25);
+    border-radius: 8px;
+    color: var(--medical-success);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.available-page .doctor-card-actions .btn-medical-primary {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform var(--ava-duration) var(--ava-ease),
+                box-shadow var(--ava-duration) var(--ava-ease),
+                background-color var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .doctor-card-actions .btn-medical-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2);
+}
+
+/* ---------- ۵. باکس لاگین - آرام و رسمی ---------- */
+.available-page .login-prompt {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 100%);
+    border: 1px solid #c5d4e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--ava-text);
+    animation: ava-fade-in-up var(--ava-duration-slow) var(--ava-ease) 0.1s both;
+}
+
+.available-page .login-prompt h5 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ava-text);
+    margin-bottom: 0.5rem;
+}
+
+.available-page .login-prompt p {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ava-text-muted);
+    margin: 0;
+}
+
+/* ---------- ۶. حالت خالی و لودینگ ---------- */
+.available-page .appointment-empty-state,
+.available-page .empty-state {
+    background: var(--ava-surface);
+    border: 1px solid var(--ava-border);
+    border-radius: 12px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    animation: ava-fade-in var(--ava-duration-slow) var(--ava-ease) both;
+}
+
+.available-page .appointment-empty-state i,
+.available-page .empty-state i {
+    font-size: 3rem;
+    color: var(--ava-border);
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.available-page .appointment-empty-state h4,
+.available-page .empty-state h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--ava-text);
+    margin-bottom: 0.5rem;
+}
+
+.available-page .appointment-empty-state p,
+.available-page .empty-state p {
+    font-size: 0.875rem;
+    color: var(--ava-text-muted);
+    margin: 0;
+}
+
+.available-page .appointment-loading-state {
+    padding: 2rem;
+    text-align: center;
+}
+
+.available-page .appointment-loading-state .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2em;
+}
+
+.available-page .appointment-loading-state p {
+    font-size: 0.875rem;
+    color: var(--ava-text-muted);
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+}
+
+/* ---------- ۷. اسلات‌های زمانی ---------- */
+.available-page .appointment-time-slots-grid,
+.available-page .time-slots-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.available-page .btn-time-slot-medical {
+    border-radius: 10px;
+    border: 1px solid var(--ava-border);
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: transform var(--ava-duration) var(--ava-ease),
+                border-color var(--ava-duration) var(--ava-ease),
+                background-color var(--ava-duration) var(--ava-ease),
+                box-shadow var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .btn-time-slot-medical:not(:disabled):hover {
+    transform: translateY(-1px);
+    border-color: var(--ava-accent);
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.12);
+}
+
+.available-page .time-slot.available {
+    border-color: rgba(40, 167, 69, 0.4);
+    color: var(--medical-success);
+}
+
+.available-page .time-slot.available:hover {
+    border-color: var(--medical-success);
+    background: rgba(40, 167, 69, 0.06);
+}
+
+/* ---------- ۸. دکمه جستجو و پاک کردن ---------- */
+.available-page .btn-medical-primary#btnSearch {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform var(--ava-duration) var(--ava-ease),
+                box-shadow var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .btn-medical-primary#btnSearch:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.2);
+}
+
+/* ---------- کارت بخش زمان‌ها و صفحه‌بندی ---------- */
+.available-page .appointment-card-medical {
+    background: var(--ava-surface);
+    border: 1px solid var(--ava-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.available-page .appointment-card-medical .card-header {
+    background: var(--ava-accent) !important;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.available-page .appointment-pagination-wrap {
+    margin-top: 1.5rem;
+}
+
+.available-page .appointment-pagination .page-link {
+    border-radius: 8px;
+    transition: background-color var(--ava-duration) var(--ava-ease), color var(--ava-duration) var(--ava-ease);
+}
+
+.available-page .appointment-pagination .page-item.active .page-link {
+    background: var(--ava-accent);
+    border-color: var(--ava-accent);
+}
+
+/* ---------- ۹. انیمیشن‌ها (سبک و با عملکرد خوب) ---------- */
+@keyframes ava-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes ava-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ava-card-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* کاهش حرکت برای کاربران با ترجیح reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .available-page .doctor-card-medical,
+    .available-page .appointment-page-header,
+    .available-page .appointment-filter-section,
+    .available-page .login-prompt,
+    .available-page .appointment-empty-state,
+    .available-page .empty-state {
+        animation: none;
+    }
+    .available-page .doctor-card-medical:hover {
+        transform: none;
+    }
+    .available-page .doctor-card-medical:hover .doctor-avatar-medical,
+    .available-page .doctor-card-medical:hover .doctor-avatar-placeholder {
+        transform: none;
+    }
+    .available-page .btn-time-slot-medical:not(:disabled):hover,
+    .available-page .btn-medical-primary:hover {
+        transform: none;
+    }
+}

@@ -2063,6 +2063,7 @@
     <Content Include="Content\css\admin-layout.css" />
     <Content Include="Content\css\ajax-navigation.css" />
     <Content Include="Content\css\announcements-section.css" />
+    <Content Include="Content\css\appointment-available-page.css" />
     <Content Include="Content\css\appointment-booking-progress.css" />
     <Content Include="Content\css\appointment-booking-skeleton.css" />
     <Content Include="Content\css\appointment-booking-views.css" />

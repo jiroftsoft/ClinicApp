@@ -6,31 +6,21 @@
  */
 
 /* ============================================
-   LAZY LOADING - Lazy Load States
+   LAZY LOADING - بدون مخفی کردن اولیه (ضد گلوله)
+   سکشن‌ها از همان ابتدا visible هستند؛ انیمیشن فقط هنگام اضافه شدن .lazy-loaded
    ============================================ */
 
-/* Sections marked for lazy loading - initially hidden */
 .homepage-main-content > section[data-lazy-load="true"] {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
-                transform 0.6s var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                transform 0.5s var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
 }
 
-/* Sections that have been lazy-loaded */
+/* انیمیشن ورود هنگام لود (اختیاری - برای اسکرول) */
 .homepage-main-content > section[data-lazy-load="true"].lazy-loaded {
     opacity: 1;
     transform: translateY(0);
-}
-
-/* Loading placeholder for lazy-load sections */
-.homepage-main-content > section[data-lazy-load="true"]:not(.lazy-loaded)::before {
-    content: '';
-    display: block;
-    min-height: 200px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: var(--radius-lg, 12px);
-    animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {

@@ -10,13 +10,10 @@
     'use strict';
     
     document.addEventListener('DOMContentLoaded', function() {
-        // فعال کردن انیمیشن‌ها برای بخش اصلی
         const mainContent = document.getElementById('mainContent');
         if (mainContent) {
-            setTimeout(function() {
-                mainContent.style.opacity = '1';
-                mainContent.style.transform = 'translateY(0)';
-            }, 200);
+            mainContent.style.opacity = '1';
+            mainContent.style.transform = 'translateY(0)';
         }
 
         // اضافه کردن انیمیشن به بخش‌های مختلف هنگام اسکرول

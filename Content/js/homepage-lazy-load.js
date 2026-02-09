@@ -1,55 +1,32 @@
 /**
  * Homepage Lazy Loading
  * Implements lazy loading for below-the-fold sections using IntersectionObserver
- * 
- * Single Responsibility: مدیریت Lazy Loading برای بخش‌های صفحه اصلی
- * طبق: DEVELOPMENT_CONTRACT.md, Performance Optimization
+ * CRITICAL FIX: سکشن‌های داخل viewport بلافاصله نمایش داده می‌شوند (رفع باگ عدم نمایش تا هارد رفرش)
  */
 
 (function() {
     'use strict';
 
-    // ✅ Configuration
     var config = {
-        // Sections that should load immediately (above-the-fold)
-        criticalSections: [
-            'main-menu-quick-actions',
-            'hero-section',
-            'value-proposition-section',
-            'quick-appointment-section'
-        ],
-        // Threshold for IntersectionObserver (10% visible)
         threshold: 0.1,
-        // Root margin for earlier loading (200px before section is visible)
-        rootMargin: '200px'
+        rootMargin: '200px',
+        /** فاصله از بالای viewport (px) - سکشن‌هایی که بالاتر از این هستند بلافاصله لود می‌شوند */
+        viewportRevealOffset: 400
     };
 
-    /**
-     * Initialize lazy loading
-     */
     function init() {
         if (!('IntersectionObserver' in window)) {
-            // Fallback: Load all sections if IntersectionObserver is not supported
-            console.warn('IntersectionObserver not supported - loading all sections');
             loadAllSections();
             return;
         }
 
-        // Find all sections that should be lazy-loaded
         var sections = document.querySelectorAll('.homepage-main-content > section[data-lazy-load="true"]');
-        
-        if (sections.length === 0) {
-            console.log('No lazy-load sections found');
-            return;
-        }
+        if (sections.length === 0) return;
 
-        // Create IntersectionObserver
         var observer = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
-                    // Section is visible, load it
                     loadSection(entry.target);
-                    // Stop observing this section
                     observer.unobserve(entry.target);
                 }
             });
@@ -58,12 +35,26 @@
             rootMargin: config.rootMargin
         });
 
-        // Observe all lazy-load sections
         sections.forEach(function(section) {
             observer.observe(section);
         });
 
-        console.log('Lazy loading initialized for ' + sections.length + ' sections');
+        // CRITICAL: سکشن‌های داخل یا نزدیک viewport را بلافاصله بعد از اولین فریم نمایش بده
+        // (IntersectionObserver در برخی موارد برای حالت اولیه در بار اول فراخوانی نمی‌شود)
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                var vh = window.innerHeight;
+                var offset = config.viewportRevealOffset;
+                sections.forEach(function(section) {
+                    if (section.classList.contains('lazy-loaded')) return;
+                    var rect = section.getBoundingClientRect();
+                    if (rect.top <= vh + offset) {
+                        loadSection(section);
+                        observer.unobserve(section);
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -75,14 +66,8 @@
 
         // Add loaded class for animations
         section.classList.add('lazy-loaded');
-        
-        // Trigger any section-specific initialization
         var sectionType = section.getAttribute('data-section-type');
-        if (sectionType) {
-            initializeSection(section, sectionType);
-        }
-
-        console.log('Section loaded:', section.className);
+        if (sectionType) initializeSection(section, sectionType);
     }
 
     /**
