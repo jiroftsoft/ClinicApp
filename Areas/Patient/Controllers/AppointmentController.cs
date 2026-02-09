@@ -85,19 +85,14 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
-                // ✅ CRITICAL DIAGNOSTIC: Log authentication state to diagnose cookie issue
-                var requestIsAuth = Request.IsAuthenticated;
-                var userIdentityIsAuth = User?.Identity?.IsAuthenticated ?? false;
-                var userId = User?.Identity?.GetUserId();
-                var userName = User?.Identity?.GetUserName();
-                var authCookie = Request.Cookies["ClinicAppAuth"];
-                
-                System.Diagnostics.Debug.WriteLine($"🔐 Appointment.Available - Request.IsAuthenticated: {requestIsAuth}, User.Identity.IsAuthenticated: {userIdentityIsAuth}, UserId: {userId}, UserName: {userName}");
-                System.Diagnostics.Debug.WriteLine($"🔐 Appointment.Available - Cookie 'ClinicAppAuth' in Request: {(authCookie != null ? "EXISTS" : "NOT FOUND")}, Value: {(authCookie?.Value?.Substring(0, Math.Min(50, authCookie.Value?.Length ?? 0)) ?? "null")}");
-                
-                _logger.Information("🔐 Appointment.Available - Request.IsAuthenticated: {RequestAuth}, User.Identity.IsAuthenticated: {UserAuth}, UserId: {UserId}, CookieExists: {CookieExists}",
-                    requestIsAuth, userIdentityIsAuth, userId, authCookie != null);
-                
+                _logger.Debug("Appointment.Available - IsAuthenticated: {Auth}, UserId: {UserId}",
+                    User?.Identity?.IsAuthenticated ?? false, User?.Identity?.GetUserId());
+
+                // ✅ Production: اعتبارسنجی و سانیتایز ورودی‌ها
+                searchTerm = SanitizeSearchTerm(searchTerm);
+                if (doctorId.HasValue && doctorId.Value <= 0)
+                    doctorId = null;
+
                 _logger.Information("درخواست نمایش نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, SearchTerm: {SearchTerm}, Page: {Page}",
                     doctorId, date ?? "همه", searchTerm ?? "", page);
 
@@ -233,6 +228,11 @@ namespace ClinicApp.Areas.Patient.Controllers
         {
             try
             {
+                // ✅ Production: اعتبارسنجی و سانیتایز ورودی‌ها
+                searchTerm = SanitizeSearchTerm(searchTerm);
+                if (doctorId.HasValue && doctorId.Value <= 0)
+                    doctorId = null;
+
                 _logger.Information("درخواست AJAX دریافت نوبت‌های موجود - DoctorId: {DoctorId}, DateString: {DateString}, SearchTerm: {SearchTerm}",
                     doctorId, date ?? "همه", searchTerm ?? "");
 
@@ -1091,6 +1091,26 @@ namespace ClinicApp.Areas.Patient.Controllers
                 return true;
             
             return false;
+        }
+
+        /// <summary>
+        /// سانیتایز و اعتبارسنجی عبارت جستجو برای محیط پروداکشن (جلوگیری از XSS و طول بیش از حد).
+        /// </summary>
+        private static string SanitizeSearchTerm(string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return null;
+            var trimmed = searchTerm.Trim();
+            if (trimmed.Length == 0)
+                return null;
+            const int maxLength = 100;
+            if (trimmed.Length > maxLength)
+                trimmed = trimmed.Substring(0, maxLength);
+            // حذف کاراکترهای خطرناک برای HTML/اسکریپت
+            var dangerous = new[] { '<', '>', '"', '\'', '&', '\r', '\n', '\t' };
+            foreach (var c in dangerous)
+                trimmed = trimmed.Replace(c.ToString(), string.Empty);
+            return trimmed;
         }
 
         #endregion
