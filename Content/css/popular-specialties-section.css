@@ -1,85 +1,237 @@
 /**
- * پربازدیدترین تخصص‌ها - استایل بخش (مشابه دکترتو)
+ * پربازدیدترین تخصص‌ها — طراحی مدرن و کاربرپسند
+ * الگو: دکترتو، پذیرش۲۴؛ کارت‌های تخصص با آیکون و لینک نوبت
+ * متغیرهای طراحی از design-system؛ دسترسی‌پذیری و reduced-motion
  */
 
+:root {
+    --ps-primary: var(--medical-primary, #2c5aa0);
+    --ps-primary-light: var(--medical-primary-lighter, #e8f0f8);
+    --ps-text: var(--medical-text, #212529);
+    --ps-text-muted: var(--medical-text-muted, #6c757d);
+    --ps-bg: var(--medical-bg, #ffffff);
+    --ps-bg-section: var(--medical-light, #f8f9fa);
+    --ps-border: var(--medical-border-light, #e9ecef);
+    --ps-font: var(--font-family-base, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
+    --ps-radius: var(--radius-lg, 12px);
+    --ps-radius-sm: var(--radius-md, 8px);
+    --ps-shadow: 0 2px 8px rgba(44, 90, 160, 0.06);
+    --ps-shadow-hover: 0 8px 24px rgba(44, 90, 160, 0.12);
+}
+
+/* ========== Section ========== */
 .popular-specialties-section {
-    padding: 2rem 0;
-    background: linear-gradient(to bottom, #f8fafc 0%, #fff 100%);
+    padding: clamp(2.5rem, 5vw, 4rem) 0;
+    background: var(--ps-bg-section);
+    position: relative;
+    overflow: hidden;
+}
+
+.popular-specialties-inner {
+    position: relative;
+    z-index: 1;
 }
 
 .popular-specialties-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.5rem);
 }
 
+/* ========== Header ========== */
 .popular-specialties-header {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
 }
 
 .popular-specialties-title {
-    font-size: var(--font-size-3xl, 1.75rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: var(--medical-primary, #2c5aa0);
+    font-family: var(--ps-font);
+    font-size: clamp(1.375rem, 3.5vw, 1.75rem);
+    font-weight: 700;
+    color: var(--ps-text);
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.3;
+}
+
+.popular-specialties-title i {
+    color: var(--ps-primary);
+    font-size: 1.25rem;
 }
 
 .popular-specialties-view-all {
-    color: var(--medical-primary, #2c5aa0);
-    text-decoration: none;
-    font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--ps-font);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ps-primary);
+    text-decoration: none;
+    border-radius: var(--ps-radius-sm);
+    background: var(--ps-primary-light);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .popular-specialties-view-all:hover {
-    text-decoration: underline;
+    background: var(--ps-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+    transform: translateY(-1px);
 }
 
+.popular-specialties-view-all:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+/* ========== Grid ========== */
 .popular-specialties-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
 }
 
+@media (min-width: 576px) {
+    .popular-specialties-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .popular-specialties-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .popular-specialties-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+/* ========== Card ========== */
 .popular-specialty-card {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--radius-md, 0.5rem);
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--ps-bg);
+    border: 1px solid var(--ps-border);
+    border-radius: var(--ps-radius);
     text-decoration: none;
-    color: #334155;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--ps-text);
+    box-shadow: var(--ps-shadow);
+    min-height: 72px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, background 0.2s ease;
 }
 
 .popular-specialty-card:hover {
-    border-color: var(--medical-primary, #2c5aa0);
-    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.12);
+    border-color: var(--ps-primary);
+    box-shadow: var(--ps-shadow-hover);
+    transform: translateY(-3px);
+    background: var(--ps-bg);
+}
+
+.popular-specialty-card:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.popular-specialty-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ps-primary-light);
+    color: var(--ps-primary);
+    border-radius: var(--ps-radius-sm);
+    font-size: 0.9375rem;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.popular-specialty-card:hover .popular-specialty-icon {
+    background: var(--ps-primary);
+    color: #fff;
+    transform: scale(1.05);
 }
 
 .popular-specialty-name {
-    font-weight: 500;
+    flex: 1;
+    font-family: var(--ps-font);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ps-text);
+    line-height: 1.4;
+    text-align: right;
 }
 
 .popular-specialty-arrow {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ps-text-muted);
     font-size: 0.75rem;
-    opacity: 0.7;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
-[dir="rtl"] .popular-specialty-arrow {
+[dir="rtl"] .popular-specialty-arrow i {
     transform: scaleX(-1);
 }
 
-@media (max-width: 576px) {
-    .popular-specialties-grid {
-        grid-template-columns: repeat(2, 1fr);
+.popular-specialty-card:hover .popular-specialty-arrow {
+    color: var(--ps-primary);
+    transform: translateX(-4px);
+}
+
+[dir="rtl"] .popular-specialty-card:hover .popular-specialty-arrow {
+    transform: translateX(4px) scaleX(-1);
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+    .popular-specialty-card,
+    .popular-specialties-view-all {
+        transition: none;
+    }
+    .popular-specialty-card:hover {
+        transform: none;
+    }
+    .popular-specialties-view-all:hover {
+        transform: none;
+    }
+    .popular-specialty-card:hover .popular-specialty-icon {
+        transform: none;
+    }
+    .popular-specialty-card:hover .popular-specialty-arrow {
+        transform: none;
+    }
+    [dir="rtl"] .popular-specialty-card:hover .popular-specialty-arrow {
+        transform: scaleX(-1);
+    }
+}
+
+/* ========== High contrast ========== */
+@media (prefers-contrast: high) {
+    .popular-specialty-card {
+        border-width: 2px;
+        border-color: var(--ps-text);
+    }
+    .popular-specialty-card:hover {
+        border-color: var(--ps-primary);
     }
 }

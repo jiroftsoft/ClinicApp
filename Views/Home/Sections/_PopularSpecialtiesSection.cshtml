@@ -5,27 +5,36 @@
         return;
     }
 }
-<section class="popular-specialties-section" aria-label="@Model.SectionTitle">
-    <div class="popular-specialties-container container">
-        <div class="popular-specialties-header">
-            <h2 class="popular-specialties-title">@Model.SectionTitle</h2>
-            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
-            {
-                <a href="@Model.ViewAllUrl" class="popular-specialties-view-all" aria-label="مشاهده همه تخصص‌ها">
-                    @Model.SectionSubtitle
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                </a>
-            }
-        </div>
-        <div class="popular-specialties-grid">
-            @foreach (var item in Model.Items)
-            {
-                <a href="@item.Url" class="popular-specialty-card" aria-label="نوبت @item.Name">
-                    <span class="popular-specialty-name">@item.Name</span>
-                    <i class="fas fa-chevron-left popular-specialty-arrow" aria-hidden="true"></i>
-                </a>
-            }
+@* پربازدیدترین تخصص‌ها — الگو: دکترتو، پذیرش۲۴؛ کارت‌های تخصص با آیکون و لینک نوبت (سکشن از Index می‌آید) *@
+<div class="popular-specialties-inner">
+        <div class="popular-specialties-container">
+            <header class="popular-specialties-header">
+                <h2 class="popular-specialties-title" id="popular-specialties-heading">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    @(Model.SectionTitle ?? "پربازدیدترین تخصص‌ها")
+                </h2>
+                @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+                {
+                    <a href="@Model.ViewAllUrl" class="popular-specialties-view-all" aria-label="مشاهده همه تخصص‌ها">
+                        <span>@(Model.SectionSubtitle ?? "مشاهده همه")</span>
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                    </a>
+                }
+            </header>
+            <div class="popular-specialties-grid" role="list">
+                @foreach (var item in Model.Items)
+                {
+                    <a href="@item.Url" class="popular-specialty-card" role="listitem" aria-label="نوبت @item.Name">
+                        <span class="popular-specialty-icon" aria-hidden="true">
+                            <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                        </span>
+                        <span class="popular-specialty-name">@item.Name</span>
+                        <span class="popular-specialty-arrow" aria-hidden="true">
+                            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                }
+            </div>
         </div>
     </div>
-</section>
-@* CSS از باندل homepage-sections لود می‌شود *@
+</div>

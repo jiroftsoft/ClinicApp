@@ -3,69 +3,103 @@
     ViewBag.Title = Model.MetaTitle ?? Model.Title;
     ViewBag.MetaDescription = Model.MetaDescription ?? Model.Summary;
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var publishedDate = Model.PublishedAt.HasValue ? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.PublishedAt.Value) : "";
 }
-
 <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-section.css")" />
 <link rel="stylesheet" href="@Url.Content("~/Content/css/blog-pages.css")" />
+<link rel="stylesheet" href="@Url.Content("~/Content/css/blog-post.css")" />
 
-<main class="blog-page-wrap" role="main" aria-label="مقاله">
-    <div class="container">
+<main class="blog-post-page" role="main" id="mainContent" aria-label="صفحه مقاله">
+    <div class="blog-post-page-inner">
+        @* مسیر ناوبری *@
+        <nav class="blog-post-breadcrumb" aria-label="مسیر صفحه">
+            <ol class="blog-post-breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="@Url.Action("Index", "Home")" itemprop="item"><span itemprop="name">خانه</span></a>
+                    <meta itemprop="position" content="1" />
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="@Url.Action("Index", "Blog")" itemprop="item"><span itemprop="name">مجله سلامت</span></a>
+                    <meta itemprop="position" content="2" />
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem" class="blog-post-breadcrumb-current" aria-current="page">
+                    <span itemprop="name">@Model.Title</span>
+                    <meta itemprop="position" content="3" />
+                </li>
+            </ol>
+        </nav>
+
         <article class="blog-post-article" itemscope itemtype="https://schema.org/Article">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            {
-                <div class="blog-post-hero">
-                    <img src="@Model.ImageUrl" alt="@Model.Title" loading="eager" itemprop="image" />
-                </div>
-            }
-
-            <div class="blog-post-body">
-                <div class="blog-post-meta">
+            @* تصویر شاخص *@
+            <header class="blog-post-header">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <div class="blog-post-hero">
+                        <img src="@Model.ImageUrl" alt="" loading="eager" decoding="async" itemprop="image" />
+                    </div>
+                }
+                <div class="blog-post-meta-row">
                     @if (!string.IsNullOrEmpty(Model.CategoryName))
                     {
-                        <span class="badge badge-primary">
+                        <span class="blog-post-meta-item blog-post-category" itemprop="articleSection">
                             <i class="fas fa-tag" aria-hidden="true"></i>
                             @Model.CategoryName
                         </span>
                     }
                     @if (Model.PublishedAt.HasValue)
                     {
-                        <span class="badge badge-secondary">
+                        <time class="blog-post-meta-item blog-post-date" datetime="@Model.PublishedAt.Value.ToString("yyyy-MM-dd")" itemprop="datePublished">
                             <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                            @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.PublishedAt.Value)
+                            @publishedDate
+                        </time>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.AuthorName))
+                    {
+                        <span class="blog-post-meta-item blog-post-author-meta" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                            <i class="fas fa-user-md" aria-hidden="true"></i>
+                            <span itemprop="name">@Model.AuthorName</span>
                         </span>
                     }
                 </div>
+                <h1 class="blog-post-title" itemprop="headline">@Model.Title</h1>
+            </header>
 
-                <h1 class="blog-post-body h1" itemprop="headline">@Model.Title</h1>
-
+            <div class="blog-post-body">
                 @if (!string.IsNullOrEmpty(Model.Summary))
                 {
                     <div class="blog-post-summary-box" aria-label="خلاصه مقاله">
-                        <strong>خلاصه:</strong> @Model.Summary
+                        <p class="blog-post-summary-lead">@Model.Summary</p>
                     </div>
                 }
 
-                <div class="blog-post-content" itemprop="articleBody">
+                <div class="blog-post-content prose" itemprop="articleBody">
                     @Html.Raw(Model.Content)
                 </div>
 
                 @if (!string.IsNullOrEmpty(Model.AuthorName))
                 {
-                    <div class="blog-post-author">
-                        <i class="fas fa-user-md" aria-hidden="true"></i>
-                        <strong>نویسنده:</strong> @Model.AuthorName
-                    </div>
+                    <footer class="blog-post-author-box" aria-label="نویسنده">
+                        <div class="blog-post-author-avatar" aria-hidden="true">
+                            <i class="fas fa-user-md" aria-hidden="true"></i>
+                        </div>
+                        <div class="blog-post-author-info">
+                            <span class="blog-post-author-label">نویسنده</span>
+                            <span class="blog-post-author-name" itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name">@Model.AuthorName</span></span>
+                        </div>
+                    </footer>
                 }
 
                 <div class="blog-post-legal" role="note" aria-label="توجه">
-                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                    <strong>توجه:</strong> محتوای آموزشی است و جایگزین نظر پزشک نیست. این مقالات صرفاً جهت آگاهی عمومی ارائه شده و برای تشخیص یا درمان بیماری استفاده نشود.
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <p><strong>توجه:</strong> این مطلب جنبهٔ آموزشی دارد و جایگزین مشاوره یا تشخیص پزشکی نیست.</p>
                 </div>
 
-                <a href="@Url.Action("Index", "Blog")" class="blog-post-back" aria-label="بازگشت به لیست مقالات">
-                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                    بازگشت به لیست مقالات
-                </a>
+                <div class="blog-post-actions">
+                    <a href="@Url.Action("Index", "Blog")" class="blog-post-back" aria-label="بازگشت به لیست مقالات">
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        <span>بازگشت به مجله سلامت</span>
+                    </a>
+                </div>
             </div>
         </article>
     </div>

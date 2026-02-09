@@ -1,634 +1,133 @@
-@using Org.BouncyCastle.Asn1.Ocsp
 @model ClinicApp.ViewModels.Patient.DoctorDetailsViewModel
 @{
-    ViewBag.Title = "جزئیات پزشک";
+    ViewBag.Title = Model?.Doctor != null ? Model.Doctor.FullName + " — جزئیات پزشک" : "جزئیات پزشک";
+    ViewBag.MetaDescription = Model?.Doctor != null
+        ? "رزرو نوبت آنلاین دکتر " + Model.Doctor.FullName + (Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() ? "، " + string.Join(" و ", Model.Doctor.SpecializationNames) : "") + " — مشاهده برنامه و زمان‌های در دسترس."
+        : "جزئیات پزشک و رزرو نوبت آنلاین";
     Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
 }
 
 @section Styles {
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    <link href="~/Content/css/design-system.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/css/appointment-views.css" rel="stylesheet" />
-    <link href="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/css/doctor-details.css" rel="stylesheet" />
+    <link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
     <link href="~/Content/js/plugins/toastr/toastr.min.css" rel="stylesheet" />
-    <style>
-        /* ✅ استفاده از CSS مشترک appointment-views.css */
-        /* CSS اضافی فقط برای این صفحه */
-
-        * {
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
-        }
-
-        body {
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
-            font-weight: 400;
-            line-height: 1.7;
-            color: var(--medical-text);
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif !important;
-            font-weight: 700;
-            line-height: 1.4;
-        }
-
-        .page-header {
-            background-color: var(--medical-primary);
-            border-radius: 12px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 2rem;
-            color: white;
-            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.15);
-        }
-
-        .page-header > div {
-            position: relative;
-            z-index: 1;
-        }
-
-        .page-header h2 {
-            font-size: 2.25rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .page-header p {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            margin: 0;
-        }
-
-        .doctor-profile-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-
-        .doctor-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background-color: var(--medical-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 3rem;
-            font-weight: bold;
-            margin: 0 auto 1.5rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            position: relative;
-            overflow: hidden;
-            animation: fadeInScale 0.5s ease-out;
-            animation-fill-mode: both;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background-color: var(--medical-primary);
-            transform: scaleX(0);
-            transition: transform 0.4s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 35px rgba(44, 90, 160, 0.2);
-            border-color: var(--medical-primary);
-        }
-
-        .stat-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.2s; }
-        .stat-card:nth-child(3) { animation-delay: 0.3s; }
-        .stat-card:nth-child(4) { animation-delay: 0.4s; }
-
-        .stat-value {
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--medical-primary);
-            margin-bottom: 0.75rem;
-            line-height: 1;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-        }
-
-        .stat-label {
-            font-size: 1rem;
-            color: var(--medical-secondary);
-            font-weight: 500;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-        }
-
-        .schedule-card {
-            background: white;
-            border-radius: 24px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-            animation: fadeInUp 0.6s ease-out 0.4s both;
-        }
-
-        .schedule-card h5 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--medical-primary);
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .schedule-card h5 i {
-            font-size: 1.75rem;
-        }
-
-        .schedule-card h6 {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--medical-text);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .schedule-day {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 12px;
-            background: var(--medical-bg);
-            transition: all 0.2s ease;
-        }
-
-        .schedule-day:hover {
-            background: #e9ecef;
-        }
-
-        .time-slot-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .time-slot {
-            padding: 1rem;
-            border: 2px solid var(--medical-border);
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
-            font-weight: 500;
-        }
-
-        .time-slot:hover {
-            border-color: var(--medical-primary);
-            background: #f0f7ff;
-            transform: scale(1.05);
-        }
-
-        .time-slot.selected {
-            border-color: var(--medical-success);
-            background: #d4edda;
-            color: var(--medical-success);
-            font-weight: bold;
-        }
-
-        .time-slot.unavailable {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: #fff3cd;
-            border-color: var(--medical-warning);
-            position: relative;
-        }
-
-        .time-slot.unavailable::after {
-            content: 'پر شده';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 193, 7, 0.9);
-            color: #856404;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            z-index: 1;
-        }
-
-        .time-slot.unavailable:hover {
-            transform: none;
-            border-color: #ffc107;
-        }
-
-        .selected-date-display {
-            background-color: #e3f2fd;
-            border-radius: 8px;
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 1.5rem;
-            border-right: 4px solid var(--medical-primary);
-            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.1);
-        }
-
-        .selected-date-content {
-            display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--medical-primary);
-        }
-
-        .selected-date-content i {
-            font-size: 1.3rem;
-            color: var(--medical-primary);
-        }
-
-        .slots-count-badge {
-            background: var(--medical-primary);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-right: 0.5rem;
-        }
-
-        @@keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .bio-section {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .btn-primary {
-            background-color: var(--medical-primary);
-            border: none;
-            border-radius: 8px;
-            padding: 1rem 2rem;
-            font-weight: var(--font-weight-medium);
-            font-size: 1rem;
-            font-family: 'Vazir', 'Tahoma', sans-serif;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
-            min-width: 200px;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
-            background-color: var(--medical-primary-hover);
-        }
-
-        .btn-primary:active {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-light {
-            border-radius: 16px;
-            padding: 0.875rem 1.75rem;
-            font-weight: 600;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .btn-light:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        /* ========== Animations ========== */
-        @@keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @@keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @@keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ========== Form Controls ========== */
-        .form-control, .form-select {
-            border-radius: 12px;
-            padding: 0.875rem 1.25rem;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-            font-size: 1rem;
-            border: 2px solid var(--medical-border);
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--medical-primary);
-            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--medical-text);
-            margin-bottom: 0.75rem;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-        }
-
-        /* ========== Alert Styles ========== */
-        .alert {
-            border-radius: 16px;
-            padding: 1.25rem 1.5rem;
-            font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-
-        .alert-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-right: 4px solid var(--medical-warning);
-        }
-
-        /* ========== Responsive Design ========== */
-        @@media (max-width: 992px) {
-            .time-slot-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 0.75rem;
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .page-header {
-                padding: 2rem 1.5rem;
-            }
-
-            .page-header h2 {
-                font-size: 1.75rem;
-            }
-
-            .doctor-profile-card {
-                padding: 2rem 1.5rem;
-            }
-
-            .doctor-avatar {
-                width: 120px;
-                height: 120px;
-                font-size: 3rem;
-            }
-
-            .doctor-name {
-                font-size: 1.75rem;
-            }
-
-            .stat-card {
-                padding: 1.5rem 1rem;
-            }
-
-            .stat-value {
-                font-size: 2.5rem;
-            }
-
-            .schedule-card {
-                padding: 1.5rem;
-            }
-
-            .time-slot-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 0.75rem;
-            }
-
-            .time-slot {
-                padding: 1rem 1.25rem;
-                font-size: 0.95rem;
-            }
-
-            .bio-section {
-                padding: 1.5rem;
-            }
-        }
-
-        @@media (max-width: 480px) {
-            .page-header {
-                padding: 1.5rem;
-            }
-
-            .doctor-profile-card {
-                padding: 1.5rem;
-            }
-
-            .doctor-avatar {
-                width: 100px;
-                height: 100px;
-                font-size: 2.5rem;
-            }
-
-            .time-slot-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 0.5rem;
-            }
-
-            .time-slot {
-                padding: 0.875rem 1rem;
-                font-size: 0.9rem;
-            }
-
-            .btn-primary {
-                padding: 1rem 2rem;
-                font-size: 1rem;
-                min-width: auto;
-                width: 100%;
-            }
-        }
-    </style>
 }
 
-<div class="page-header">
-    <div class="d-flex justify-content-between align-items-center flex-wrap">
-        <div>
-            <h2 class="mb-2" style="font-weight: 700;">
-                <i class="fas fa-user-md me-2"></i>
-                جزئیات پزشک
-            </h2>
-            <p class="mb-0 opacity-90">مشاهده اطلاعات، رزومه و رزرو نوبت</p>
-        </div>
-        <a href="@Url.Action("Available")" class="btn btn-light mt-2 mt-md-0">
-            <i class="fas fa-arrow-right me-1"></i>
-            بازگشت
-        </a>
-    </div>
-</div>
+<div class="doctor-details-page">
+    <nav class="doctor-details-breadcrumb" aria-label="مسیر">
+        <a href="@Url.Action("Index", "Home", new { area = "" })">خانه</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="@Url.Action("Available")">نوبت‌دهی</a>
+        <span class="breadcrumb-sep">/</span>
+        <span aria-current="page">@(Model?.Doctor?.FullName ?? "جزئیات پزشک")</span>
+    </nav>
 
-@if (Model.Doctor != null)
+    <header class="doctor-details-page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-user-md me-2" aria-hidden="true"></i>
+                    جزئیات پزشک
+                </h2>
+                <p class="mb-0 page-header-desc">مشاهده اطلاعات، رزومه و رزرو نوبت</p>
+            </div>
+            <a href="@Url.Action("Available")" class="btn btn-light" aria-label="بازگشت به لیست نوبت‌دهی">
+                <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
+                بازگشت
+            </a>
+        </div>
+    </header>
+
+@if (Model?.Doctor != null)
 {
-    <div class="doctor-profile-card">
+    <article class="doctor-details-profile-card">
         <div class="text-center">
-            <div class="doctor-avatar-container">
+            <div class="doctor-details-avatar-wrap" role="img" aria-label="@(Model.Doctor.FullName ?? "پزشک")">
                 @if (!string.IsNullOrEmpty(Model.Doctor.ProfileImageUrl))
                 {
-                    <img src="@Model.Doctor.ProfileImageUrl" alt="@Model.Doctor.FullName" class="doctor-avatar" />
+                    <img src="@Model.Doctor.ProfileImageUrl" alt="@(Model.Doctor.FullName ?? "پزشک")" />
                 }
                 else
                 {
-                    <div class="doctor-avatar" role="img" aria-label="@Model.Doctor.FullName">
-                        @Model.Doctor.FullName.Substring(0, 1)
-                    </div>
+                    @(string.IsNullOrEmpty(Model.Doctor.FullName) ? "پ" : Model.Doctor.FullName.Trim().Substring(0, 1))
                 }
             </div>
-            <h3 class="doctor-name">
-                @Model.Doctor.FullName
-            </h3>
-            <div class="doctor-specialization">
+            <h1 class="doctor-details-name">@Model.Doctor.FullName</h1>
+            <div class="doctor-details-specialization">
                 <i class="fas fa-stethoscope" aria-hidden="true"></i>
-                <span>@(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() 
-                    ? string.Join("، ", Model.Doctor.SpecializationNames) 
-                    : "نامشخص")</span>
+                <span>@(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() ? string.Join("، ", Model.Doctor.SpecializationNames) : "نامشخص")</span>
             </div>
             @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode) || Model.ExperienceYears > 0)
             {
-                <div class="doctor-meta">
+                <div class="doctor-details-meta">
                     @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
                     {
-                        <div class="meta-item">
+                        <span class="meta-item">
                             <i class="fas fa-id-card" aria-hidden="true"></i>
-                            <span>کد نظام: @Model.Doctor.MedicalCouncilCode</span>
-                        </div>
+                            کد نظام: @Model.Doctor.MedicalCouncilCode
+                        </span>
                     }
                     @if (Model.ExperienceYears > 0)
                     {
-                        <div class="meta-item">
+                        <span class="meta-item">
                             <i class="fas fa-briefcase" aria-hidden="true"></i>
-                            <span>@Model.ExperienceYears سال تجربه</span>
-                        </div>
+                            @Model.ExperienceYears سال تجربه
+                        </span>
                     }
                 </div>
             }
         </div>
-    </div>
+    </article>
 
-    <!-- آمار پزشک -->
-    <div class="row g-3 mb-4" role="region" aria-label="آمار پزشک">
-        <div class="col-md-3 col-6">
-            <div class="stat-card" role="article" aria-label="کل نوبت‌ها">
-                <div class="stat-value" aria-label="@Model.TotalAppointments نوبت">@Model.TotalAppointments</div>
-                <div class="stat-label">
-                    <i class="fas fa-calendar-check me-1" aria-hidden="true"></i>
-                    کل نوبت‌ها
-                </div>
+    <section class="doctor-details-stats" role="region" aria-label="آمار پزشک">
+        <div class="doctor-details-stat-card" role="article" aria-label="کل نوبت‌ها">
+            <div class="doctor-details-stat-value" aria-hidden="true">@Model.TotalAppointments</div>
+            <div class="doctor-details-stat-label">
+                <i class="fas fa-calendar-check me-1" aria-hidden="true"></i>
+                کل نوبت‌ها
             </div>
         </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card" role="article" aria-label="نوبت‌های امروز">
-                <div class="stat-value" aria-label="@Model.TodayAppointments نوبت امروز">@Model.TodayAppointments</div>
-                <div class="stat-label">
-                    <i class="fas fa-calendar-day me-1" aria-hidden="true"></i>
-                    نوبت‌های امروز
-                </div>
+        <div class="doctor-details-stat-card" role="article" aria-label="نوبت‌های امروز">
+            <div class="doctor-details-stat-value" aria-hidden="true">@Model.TodayAppointments</div>
+            <div class="doctor-details-stat-label">
+                <i class="fas fa-calendar-day me-1" aria-hidden="true"></i>
+                نوبت‌های امروز
             </div>
         </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card" role="article" aria-label="امتیاز">
-                <div class="stat-value" aria-label="@Model.AverageRating.ToString("0.0") امتیاز">@Model.AverageRating.ToString("0.0")</div>
-                <div class="stat-label">
-                    <i class="fas fa-star me-1" aria-hidden="true"></i>
-                    امتیاز
-                </div>
+        <div class="doctor-details-stat-card" role="article" aria-label="امتیاز">
+            <div class="doctor-details-stat-value" aria-hidden="true">@Model.AverageRating.ToString("0.0")</div>
+            <div class="doctor-details-stat-label">
+                <i class="fas fa-star me-1" aria-hidden="true"></i>
+                امتیاز
             </div>
         </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card" role="article" aria-label="سال تجربه">
-                <div class="stat-value" aria-label="@Model.ExperienceYears سال">@Model.ExperienceYears</div>
-                <div class="stat-label">
-                    <i class="fas fa-briefcase me-1" aria-hidden="true"></i>
-                    سال تجربه
-                </div>
+        <div class="doctor-details-stat-card" role="article" aria-label="سال تجربه">
+            <div class="doctor-details-stat-value" aria-hidden="true">@Model.ExperienceYears</div>
+            <div class="doctor-details-stat-label">
+                <i class="fas fa-briefcase me-1" aria-hidden="true"></i>
+                سال تجربه
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- بیوگرافی -->
     if (!string.IsNullOrEmpty(Model.Doctor.Bio))
     {
-        <section class="bio-section" aria-labelledby="bio-heading">
+        <section class="doctor-details-bio" aria-labelledby="bio-heading">
             <h5 id="bio-heading">
                 <i class="fas fa-user-circle" aria-hidden="true"></i>
                 درباره پزشک
             </h5>
-            <p>
+            <div>
                 @Html.Raw(Model.Doctor.Bio.Replace("\n", "<br />"))
-            </p>
+            </div>
         </section>
     }
 
-    <!-- برنامه کاری -->
     if (Model.ScheduleDetails != null)
     {
         <section aria-labelledby="schedule-heading">
@@ -637,28 +136,29 @@
     }
     else
     {
-        <div class="no-schedule-message appointment-empty-state" role="alert" aria-live="polite" style="text-align: center; padding: 3rem 2rem; color: var(--medical-text-muted); background-color: var(--medical-bg-light); border-radius: 12px; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
-            <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; color: #adb5bd;" aria-hidden="true"></i>
-            <p style="font-size: 1.1rem; margin: 0; font-weight: 600; font-family: 'Vazir', 'Vazirmatn', 'Tahoma', Arial, sans-serif;">برنامه کاری برای این پزشک تعریف نشده است.</p>
+        <div class="doctor-details-no-schedule" role="alert" aria-live="polite">
+            <i class="fas fa-calendar-times" aria-hidden="true"></i>
+            <p>برنامه کاری برای این پزشک تعریف نشده است.</p>
         </div>
     }
 
-    <!-- انتخاب تاریخ و زمان -->
-    <section class="schedule-card" aria-labelledby="appointment-heading">
+    <section class="doctor-details-schedule-card" aria-labelledby="appointment-heading">
         <h5 id="appointment-heading">
             <i class="fas fa-calendar-check" aria-hidden="true"></i>
             انتخاب تاریخ و زمان نوبت
         </h5>
-        
+
         <div class="row g-3 mb-4">
             <div class="col-md-6">
                 <label for="appointmentDate" class="form-label">
                     <i class="fas fa-calendar-alt me-1" aria-hidden="true"></i>
                     تاریخ نوبت
                 </label>
-                <input type="text" 
-                       id="appointmentDate" 
-                       class="form-control" 
+                <input type="text"
+                       id="appointmentDate"
+                       class="form-control"
+                       data-jdp
+                       data-jdp-theme="medical"
                        placeholder="تاریخ را انتخاب کنید"
                        aria-label="انتخاب تاریخ نوبت"
                        autocomplete="off" />
@@ -669,9 +169,8 @@
             </div>
         </div>
 
-        <!-- نمایش تاریخ انتخاب شده -->
-        <div id="selectedDateDisplay" 
-             class="selected-date-display" 
+        <div id="selectedDateDisplay"
+             class="doctor-details-selected-date"
              style="display: none;"
              role="status"
              aria-live="polite"
@@ -682,23 +181,21 @@
             </div>
         </div>
 
-        <!-- هزینه ویزیت (با احتساب تخفیف ایونت تبلیغاتی در صورت انتخاب تاریخ) -->
-        <div id="consultationFeeDisplay" 
-             class="consultation-fee-breakdown mt-3 mb-3" 
-             data-doctor-id="@Model.DoctorId" 
+        <div id="consultationFeeDisplay"
+             class="doctor-details-fee-box"
+             data-doctor-id="@Model.DoctorId"
              data-base-price="@(Model.ScheduleDetails?.ConsultationFee ?? 0)"
              role="region"
-             aria-labelledby="fee-heading"
-             style="background: #f8f9fa; border: 1px solid var(--medical-border, #dee2e6); border-radius: 12px; padding: 1rem 1.25rem; border-right: 4px solid var(--medical-primary, #2c5aa0);">
-            <h6 id="fee-heading" class="mb-2" style="font-weight: 600; color: var(--medical-text);">
+             aria-labelledby="fee-heading">
+            <h6 id="fee-heading" class="mb-2">
                 <i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i>
                 هزینه ویزیت
             </h6>
-            <div id="feeContent" class="fee-content">
+            <div id="feeContent">
                 <span id="feeBaseOnly">@((Model.ScheduleDetails?.ConsultationFee ?? 0).ToString("N0")) ریال</span>
                 <span id="feeBreakdown" class="fee-breakdown-detail" style="display: none;"></span>
             </div>
-            <p id="feeHint" class="text-muted small mb-0 mt-1" style="font-size: 0.85rem;">
+            <p id="feeHint" class="text-muted small mb-0 mt-1">
                 با انتخاب تاریخ، در صورت وجود تخفیف (مثل جشنواره‌های ویژه)، مبلغ نهایی نمایش داده می‌شود.
             </p>
         </div>
@@ -707,22 +204,21 @@
             <h6 id="time-slots-heading" class="mb-3">
                 <i class="fas fa-clock me-2" aria-hidden="true"></i>
                 زمان‌های در دسترس:
-                <span id="slotsCount" class="slots-count-badge" aria-label="تعداد نوبت‌های در دسترس"></span>
+                <span id="slotsCount" class="doctor-details-slots-badge" aria-label="تعداد نوبت‌های در دسترس"></span>
             </h6>
-            <div class="time-slot-grid" 
-                 id="timeSlotsGrid" 
-                 role="group" 
+            <div class="doctor-details-time-grid"
+                 id="timeSlotsGrid"
+                 role="group"
                  aria-label="زمان‌های در دسترس برای رزرو">
                 @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
                 {
                     foreach (var slot in Model.AvailableSlots)
                     {
                         <button type="button"
-                                class="time-slot @(slot.IsAvailable ? "available" : "unavailable")" 
+                                class="doctor-details-time-slot time-slot @(slot.IsAvailable ? "" : "unavailable")"
                                 data-start="@slot.StartTime.ToString(@"hh\:mm")"
                                 data-end="@slot.EndTime.ToString(@"hh\:mm")"
-                                @(!slot.IsAvailable ? "data-disabled=true aria-disabled=true" : "aria-label=\"انتخاب زمان " + slot.DisplayTime + "\"")
-                                @(!slot.IsAvailable ? "tabindex=\"-1\"" : "")>
+                                @(!slot.IsAvailable ? "data-disabled=true aria-disabled=true tabindex=\"-1\"" : "aria-label=\"انتخاب زمان " + slot.DisplayTime + "\"")>
                             <span aria-hidden="true">@slot.DisplayTime</span>
                             @if (!slot.IsAvailable)
                             {
@@ -743,23 +239,21 @@
 
         @if (!User.Identity.IsAuthenticated)
         {
-            <div class="alert alert-warning mt-4" role="alert" aria-live="polite">
+            <div class="doctor-details-alert mt-4" role="alert" aria-live="polite">
                 <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
-                برای رزرو نوبت، لطفاً ابتدا 
-                <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" 
-                   class="alert-link fw-bold">ثبت‌نام</a> 
-                کنید یا 
-                <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.ToString() })" 
-                   class="alert-link fw-bold">وارد</a> 
+                برای رزرو نوبت، لطفاً ابتدا
+                <a href="@Url.Action("Register", "Account", new { area = "", returnUrl = Request.Url?.AbsoluteUri ?? Request.RawUrl ?? "" })" class="alert-link">ثبت‌نام</a>
+                کنید یا
+                <a href="@Url.Action("Login", "Account", new { area = "", returnUrl = Request.Url?.AbsoluteUri ?? Request.RawUrl ?? "" })" class="alert-link">وارد</a>
                 شوید.
             </div>
         }
         else
         {
             <div class="text-center mt-4">
-                <button type="button" 
-                        id="bookAppointmentBtn" 
-                        class="btn btn-primary btn-lg" 
+                <button type="button"
+                        id="bookAppointmentBtn"
+                        class="doctor-details-btn-book btn-lg"
                         disabled
                         aria-label="رزرو نوبت"
                         aria-describedby="book-appointment-help">
@@ -773,11 +267,12 @@
         }
     </section>
 }
+</div>
 
 @section Scripts {
-    <script src="~/Content/js/plugins/persian-datepicker/jalaali.min.js"></script>
-    <script src="~/Content/js/plugins/persian-datepicker/persian-date.min.js"></script>
-    <script src="~/Content/js/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.min.js"></script>
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+    <script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
     <script src="~/Content/js/plugins/toastr/toastr.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -801,252 +296,116 @@
                 "rtl": true
             };
 
-            var selectedDate = '@Model.SelectedDate.ToString("yyyy/MM/dd")';
+            var selectedDate = '';
             var selectedTime = null;
-            var doctorId = @Model.DoctorId;
-
-            // ✅ تابع helper مرکزی برای دریافت تاریخ شمسی از datepicker (ضد گلوله)
-            // این تابع تمام روش‌های ممکن را امتحان می‌کند و همیشه تاریخ صحیح را برمی‌گرداند
-            function getPersianDateFromPicker(datePickerInstance, useDelay) {
-                if (!datePickerInstance) {
-                    console.error('getPersianDateFromPicker: datePickerInstance is null');
-                    return null;
-                }
-                
-                var persianDateStr = null;
-                var maxAttempts = useDelay ? 3 : 1;
-                var attempt = 0;
-                
-                // ✅ روش 1: استفاده مستقیم از selected object (jy, jm, jd) - بهترین و قابل اعتمادترین روش
-                // این روش مستقیماً تاریخ شمسی را از datepicker می‌گیرد و از timezone offset جلوگیری می‌کند
-                try {
-                    var selected = datePickerInstance.selected;
-                    console.log('✅ [getPersianDateFromPicker] selected object:', selected);
-                    
-                    if (selected && 
-                        typeof selected.jy === 'number' && 
-                        typeof selected.jm === 'number' && 
-                        typeof selected.jd === 'number' &&
-                        selected.jy > 0 && 
-                        selected.jm >= 1 && selected.jm <= 12 && 
-                        selected.jd >= 1 && selected.jd <= 31) {
-                        
-                        var year = String(selected.jy).padStart(4, '0');
-                        var month = String(selected.jm).padStart(2, '0');
-                        var day = String(selected.jd).padStart(2, '0');
-                        persianDateStr = year + '/' + month + '/' + day;
-                        
-                        console.log('✅ [getPersianDateFromPicker] Raw values - jy:', selected.jy, 'jm:', selected.jm, 'jd:', selected.jd);
-                        console.log('✅ [getPersianDateFromPicker] Formatted date:', persianDateStr);
-                        
-                        // ✅ Validation: بررسی فرمت تاریخ
-                        if (persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            console.log('✅ [Method 1] Got date from selected object (jy/jm/jd):', persianDateStr);
-                            return persianDateStr;
-                        } else {
-                            console.warn('❌ [Method 1] Invalid date format:', persianDateStr);
-                        }
-                    } else {
-                        console.warn('❌ [Method 1] Invalid selected object:', selected);
-                    }
-                } catch (e) {
-                    console.warn('getPersianDateFromPicker [Method 1] failed:', e);
-                }
-                
-                // ✅ روش 2: استفاده از getFormattedDate
-                try {
-                    var formattedDate = datePickerInstance.getFormattedDate('YYYY/MM/DD');
-                    if (formattedDate && 
-                        typeof formattedDate === 'string' && 
-                        formattedDate.includes('/') && 
-                        formattedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                        persianDateStr = formattedDate;
-                        console.log('✅ [Method 2] Got date from getFormattedDate:', persianDateStr);
-                        return persianDateStr;
-                    }
-                } catch (e) {
-                    console.warn('getPersianDateFromPicker [Method 2] failed:', e);
-                }
-                
-                // ✅ روش 3: استفاده از input value
-                try {
-                    var inputValue = $("#appointmentDate").val();
-                    if (inputValue && 
-                        typeof inputValue === 'string' && 
-                        inputValue.includes('/') && 
-                        inputValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                        persianDateStr = inputValue;
-                        console.log('✅ [Method 3] Got date from input value:', persianDateStr);
-                        return persianDateStr;
-                    }
-                } catch (e) {
-                    console.warn('getPersianDateFromPicker [Method 3] failed:', e);
-                }
-                
-                // اگر useDelay فعال باشد و هنوز تاریخ پیدا نشده، با تاخیر دوباره تلاش می‌کنیم
-                if (useDelay && !persianDateStr) {
-                    console.log('getPersianDateFromPicker: Retrying with delay...');
-                    // این مورد در setTimeout در onSelect callback مدیریت می‌شود
-                    return null;
-                }
-                
-                return persianDateStr;
-            }
+            var doctorId = @(Model?.DoctorId ?? 0);
+            var lastProcessedDate = '';
+            var lastProcessedTime = 0;
 
             // ✅ تابع helper برای پردازش تاریخ دریافت شده (با validation قوی)
             function processSelectedDate(persianDateStr) {
                 if (!persianDateStr) {
-                    console.error('processSelectedDate called with null/undefined');
                     toastr.error('تاریخ انتخاب نشده است', 'خطا');
                     return;
                 }
-                
-                // ✅ تبدیل به string و trim کردن
                 persianDateStr = String(persianDateStr).trim();
-                
+                // جلوگیری از فراخوانی تکراری برای همان تاریخ (کمتر از ۱.۵ ثانیه)
+                if (persianDateStr === lastProcessedDate && (Date.now() - lastProcessedTime) < 1500) {
+                    return;
+                }
+                lastProcessedDate = persianDateStr;
+                lastProcessedTime = Date.now();
+
                 // ✅ بررسی فرمت تاریخ (YYYY/MM/DD)
                 if (!persianDateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    console.error('Invalid date format:', persianDateStr);
                     toastr.error('فرمت تاریخ نامعتبر است. فرمت صحیح: YYYY/MM/DD', 'خطا');
                     return;
                 }
-                
-                // ✅ بررسی صحت تاریخ قبل از استفاده
                 var dateParts = persianDateStr.split('/');
                 if (dateParts.length !== 3) {
-                    console.error('Invalid date parts count:', dateParts.length);
                     toastr.error('فرمت تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-                
                 var year = parseInt(dateParts[0], 10);
                 var month = parseInt(dateParts[1], 10);
                 var day = parseInt(dateParts[2], 10);
-                
-                // ✅ بررسی معتبر بودن تاریخ (validation قوی)
                 if (isNaN(year) || isNaN(month) || isNaN(day)) {
-                    console.error('Invalid date parts (NaN):', year, month, day);
                     toastr.error('تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-                
                 if (year < 1300 || year > 1500) {
-                    console.error('Invalid year range:', year);
                     toastr.error('سال تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-                
                 if (month < 1 || month > 12) {
-                    console.error('Invalid month:', month);
                     toastr.error('ماه تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-                
                 if (day < 1 || day > 31) {
-                    console.error('Invalid day:', day);
                     toastr.error('روز تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-                
-                // ✅ همه validation ها موفق بودند
                 selectedDate = persianDateStr;
-                // نمایش تاریخ انتخاب شده
                 displaySelectedDate(persianDateStr);
-                loadTimeSlots(doctorId, persianDateStr);
-                loadPriceBreakdown(doctorId, persianDateStr);
-                console.log('✅ Date selected and sent to loadTimeSlots:', persianDateStr);
-            }
-            
-            // ✅ تابع helper برای fallback در صورت عدم موفقیت روش‌های اصلی (ضد گلوله)
-            function processSelectedDateFallback(selectedDateValue) {
-                console.log('processSelectedDateFallback called with:', selectedDateValue, typeof selectedDateValue);
-                var fallbackDate = null;
-                
-                // ✅ روش 1: اگر string است و به فرمت YYYY/MM/DD است
-                if (typeof selectedDateValue === 'string' && selectedDateValue.includes('/') && selectedDateValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    console.log('✅ [Fallback Method 1] selectedDateValue is a Persian date string');
-                    fallbackDate = selectedDateValue;
-                }
-                // ✅ روش 2: اگر timestamp یا Date object است، از datePicker برای تبدیل استفاده می‌کنیم
-                else {
-                    var dateObj = null;
-                    
-                    // تبدیل timestamp به Date object
-                    if (typeof selectedDateValue === 'number' || (typeof selectedDateValue === 'string' && /^\d+$/.test(selectedDateValue))) {
-                        console.log('selectedDateValue is a timestamp, converting...');
-                        var timestamp = typeof selectedDateValue === 'string' ? parseInt(selectedDateValue) : selectedDateValue;
-                        
-                        // بررسی اینکه timestamp به milliseconds است یا seconds
-                        if (timestamp > 9999999999) {
-                            dateObj = new Date(timestamp);
-                        } else {
-                            dateObj = new Date(timestamp * 1000);
-                        }
-                        
-                        console.log('Converted timestamp to Date (UTC):', dateObj.toISOString(), 'Local:', dateObj.toString());
-                    }
-                    // اگر Date object است
-                    else if (selectedDateValue instanceof Date) {
-                        console.log('selectedDateValue is a Date object');
-                        dateObj = selectedDateValue;
-                    }
-                    
-                    // اگر dateObj داریم، از datePicker برای تبدیل استفاده می‌کنیم
-                    if (dateObj && !isNaN(dateObj.getTime())) {
-                        var datePickerInstance = $("#appointmentDate").data('pDatepicker');
-                        if (datePickerInstance) {
-                            try {
-                                // تنظیم تاریخ میلادی در datePicker
-                                datePickerInstance.setDate(dateObj);
-                                
-                                // ✅ استفاده از تابع helper مرکزی برای دریافت تاریخ شمسی
-                                // این روش از timezone offset جلوگیری می‌کند
-                                fallbackDate = getPersianDateFromPicker(datePickerInstance, false);
-                                
-                                if (fallbackDate) {
-                                    console.log('✅ [Fallback Method 2] Got date from datePicker:', fallbackDate);
-                                }
-                            } catch (e) {
-                                console.warn('Failed to use datePicker for conversion:', e);
-                            }
-                        }
-                        
-                        // اگر datePicker کار نکرد، از convertToPersianDate استفاده می‌کنیم
-                        if (!fallbackDate) {
-                            // ✅ استفاده از Local Date (نه UTC) برای تبدیل
-                            // چون datePicker از local timezone استفاده می‌کند
-                            fallbackDate = convertToPersianDate(dateObj);
-                            console.log('✅ [Fallback Method 3] Converted to Persian date:', fallbackDate);
-                        }
-                    }
-                    // در غیر این صورت، سعی می‌کنیم آن را به string تبدیل کنیم
-                    else {
-                        console.log('selectedDateValue is unknown type, converting to string...');
-                        fallbackDate = String(selectedDateValue);
-                    }
-                }
-                
-                if (fallbackDate && fallbackDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    processSelectedDate(fallbackDate);
-                } else {
-                    console.error('All date conversion methods failed');
-                    toastr.error('خطا در تبدیل تاریخ. لطفاً دوباره تلاش کنید.', 'خطا');
+                if (doctorId > 0) {
+                    loadTimeSlots(doctorId, persianDateStr);
+                    loadPriceBreakdown(doctorId, persianDateStr);
                 }
             }
 
-            // محاسبه و نمایش خودکار تاریخ برای هر روز
+            // ✅ تبدیل اعداد فارسی به انگلیسی
+            function convertPersianToEnglishNumbers(str) {
+                if (!str) return str;
+                var persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                var englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                var result = String(str);
+                for (var i = 0; i < persianNumbers.length; i++) {
+                    result = result.replace(new RegExp(persianNumbers[i], 'g'), englishNumbers[i]);
+                }
+                return result;
+            }
+
+            // ✅ راه‌اندازی JalaliDatePicker Enterprise (طبق JALALIDATEPICKER_ENTERPRISE_GUIDE.md)
+            function initDoctorDetailsDatePicker() {
+                if (doctorId <= 0) return;
+                if (typeof JalaliDatePickerEnterprise === 'undefined' || typeof jalaliDatepicker === 'undefined') {
+                    setTimeout(initDoctorDetailsDatePicker, 100);
+                    return;
+                }
+                var JDP = JalaliDatePickerEnterprise;
+                JDP.getTodayFromServer().then(function(todayPersian) {
+                    selectedDate = todayPersian || selectedDate;
+                }).catch(function() {});
+                JDP.init('#appointmentDate', {
+                    theme: 'medical',
+                    size: 'medium',
+                    noDefaultDate: false,
+                    onSelect: function(persianDateStr) {
+                        if (persianDateStr && String(persianDateStr).match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                            processSelectedDate(String(persianDateStr).trim());
+                        }
+                    }
+                });
+                // پس از init، اگر input مقدار دارد (مثلاً امروز) اسلات و هزینه را بارگذاری کن
+                setTimeout(function() {
+                    var val = $('#appointmentDate').val();
+                    if (val && convertPersianToEnglishNumbers(val).match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        processSelectedDate(val.trim());
+                    }
+                }, 600);
+            }
+            if (doctorId > 0) initDoctorDetailsDatePicker();
+
+            // محاسبه و نمایش تاریخ برای هر کارت روز (برنامه کاری)
             function initializeDayDates() {
                 $('.schedule-day-card.clickable').each(function () {
                     var $card = $(this);
-                    var dayOfWeek = parseInt($card.data('day')); // 0 = یکشنبه, 6 = شنبه
+                    var dayOfWeek = parseInt($card.data('day'), 10);
                     var targetDate = getNextDateForDayOfWeek(dayOfWeek);
-                    
                     if (targetDate) {
                         var persianDate = convertToPersianDate(targetDate);
                         if (persianDate) {
-                            // تبدیل به string در صورت نیاز
-                            var persianDateStr = String(persianDate);
-                            $card.find('.day-date-text').html('<strong style="color: var(--medical-primary); font-weight: 600;">' + persianDateStr + '</strong>');
+                            $card.find('.day-date-text').html('<strong style="color: var(--medical-primary); font-weight: 600;">' + persianDate + '</strong>');
                         } else {
                             $card.find('.day-date-text').html('<span style="color: #6c757d;">برای انتخاب کلیک کنید</span>');
                         }
@@ -1055,310 +414,39 @@
                     }
                 });
             }
-
-            // ✅ متغیرهای enterprise-level برای مدیریت state
-            var datePickerInitialized = false;
-            var lastProcessedDate = null;
-            var dateChangeTimeout = null;
-            var isProcessingDate = false;
-
-            // ✅ تابع helper برای تبدیل اعداد فارسی به انگلیسی
-            function convertPersianToEnglishNumbers(str) {
-                if (!str) return str;
-                var persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-                var englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-                var result = str;
-                for (var i = 0; i < persianNumbers.length; i++) {
-                    result = result.replace(new RegExp(persianNumbers[i], 'g'), englishNumbers[i]);
-                }
-                return result;
+            if (typeof jalaali !== 'undefined' && typeof jalaali.toJalaali === 'function') {
+                setTimeout(initializeDayDates, 400);
             }
 
-            // ✅ تابع enterprise-level برای پردازش تاریخ از input (مطمئن‌ترین روش)
-            function processDateFromInput(forceProcess) {
-                // جلوگیری از duplicate calls (مگر اینکه forceProcess باشد)
-                if (isProcessingDate && !forceProcess) {
-                    return;
-                }
-                
-                var inputValue = $("#appointmentDate").val();
-                
-                // ✅ تبدیل اعداد فارسی به انگلیسی
-                inputValue = convertPersianToEnglishNumbers(inputValue);
-                
-                // بررسی اینکه آیا مقدار input تغییر کرده است
-                if (!inputValue || (!forceProcess && inputValue === lastProcessedDate)) {
-                    return;
-                }
-                
-                // ✅ بررسی فرمت تاریخ (با پشتیبانی از اعداد فارسی)
-                var datePattern = /^(\d{4})\/(\d{2})\/(\d{2})$/;
-                var match = inputValue.match(datePattern);
-                
-                if (!match) {
-                    console.log('❌ Invalid date format:', inputValue);
-                    return;
-                }
-                
-                isProcessingDate = true;
-                
-                // ✅ اولویت با datePicker instance (قابل اعتمادترین روش)
-                var persianDateStr = null;
-                
-                try {
-                    var datePickerInstance = $("#appointmentDate").data('pDatepicker');
-                    if (datePickerInstance) {
-                        // ✅ تلاش برای دریافت تاریخ از datePicker instance (اولویت اول)
-                        var dateFromPicker = getPersianDateFromPicker(datePickerInstance, false);
-                        if (dateFromPicker && dateFromPicker.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            persianDateStr = dateFromPicker;
-                            console.log('✅ [Enterprise Method] Using date from datePicker (priority):', persianDateStr);
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Error accessing datePicker instance:', e);
-                }
-                
-                // ✅ اگر datePicker تاریخ نداشت، از input value استفاده می‌کنیم (fallback)
-                if (!persianDateStr) {
-                    var year = match[1];
-                    var month = match[2];
-                    var day = match[3];
-                    persianDateStr = year + '/' + month + '/' + day;
-                    console.log('✅ [Enterprise Method] Using date from input (fallback):', persianDateStr);
-                }
-                
-                // ✅ Log نهایی برای debugging
-                console.log('✅ [Enterprise Method] Final date to process:', persianDateStr);
-                console.log('✅ [Enterprise Method] Original input value:', inputValue);
-                
-                lastProcessedDate = persianDateStr;
-                
-                // پردازش تاریخ
-                processSelectedDate(persianDateStr);
-                
-                // Reset flag بعد از یک تاخیر کوتاه
-                setTimeout(function() {
-                    isProcessingDate = false;
-                }, 100);
-            }
-
-            // راه‌اندازی Persian DatePicker
-            var datePicker = $("#appointmentDate").pDatepicker({
-                observer: true,
-                format: 'YYYY/MM/DD',
-                altField: '#appointmentDateAlt',
-                altFormat: 'YYYY/MM/DD',
-                initialValue: false,
-                initialValueType: 'persian',
-                calendarType: 'persian',
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
-                    }
-                },
-                onSelect: function (selectedDateValue) {
-                    console.log('✅ onSelect called with:', selectedDateValue, typeof selectedDateValue);
-                    
-                    // ✅ روش Enterprise: پردازش مستقیم تاریخ بدون debounce زیاد
-                    // این روش مطمئن‌ترین روش است چون datepicker همیشه input را به‌روز می‌کند
-                    if (dateChangeTimeout) {
-                        clearTimeout(dateChangeTimeout);
-                    }
-                    
-                    // ✅ پردازش فوری با تاخیر کوتاه برای اطمینان از به‌روزرسانی input
-                    dateChangeTimeout = setTimeout(function() {
-                        processDateFromInput(true); // force process
-                    }, 50); // تاخیر کوتاه برای اطمینان از به‌روزرسانی input
-                }
-            });
-
-            // ✅ Event Listeners Enterprise-Level (مطمئن‌ترین روش در پروژه‌های enterprise)
-            // این event listeners مستقیماً روی input کار می‌کنند و از datepicker instance مستقل هستند
-            
-            // 1. change event - وقتی کاربر تاریخ را انتخاب می‌کند
-            $("#appointmentDate").on('change', function() {
-                console.log('✅ [Enterprise] change event triggered');
-                processDateFromInput(true); // force process
-            });
-            
-            // 2. input event - برای تغییرات real-time
-            $("#appointmentDate").on('input', function() {
-                var inputValue = $(this).val();
-                var englishValue = convertPersianToEnglishNumbers(inputValue);
-                if (englishValue && englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    if (dateChangeTimeout) {
-                        clearTimeout(dateChangeTimeout);
-                    }
-                    dateChangeTimeout = setTimeout(function() {
-                        processDateFromInput(true); // force process
-                    }, 300); // debounce برای input event
-                }
-            });
-            
-            // 3. blur event - وقتی کاربر از input خارج می‌شود
-            $("#appointmentDate").on('blur', function() {
-                console.log('✅ [Enterprise] blur event triggered');
-                processDateFromInput(true); // force process
-            });
-            
-            // 4. keyup event - برای تغییرات دستی
-            $("#appointmentDate").on('keyup', function(e) {
-                // فقط برای Enter key
-                if (e.keyCode === 13) {
-                    processDateFromInput(true); // force process
-                }
-            });
-            
-            // 5. focus event - وقتی کاربر روی input کلیک می‌کند
-            $("#appointmentDate").on('focus', function() {
-                console.log('✅ [Enterprise] focus event triggered');
-                // بررسی تاریخ فعلی
-                setTimeout(function() {
-                    processDateFromInput(true);
-                }, 100);
-            });
-            
-            // ✅ Mark datepicker as initialized
-            setTimeout(function() {
-                datePickerInitialized = true;
-                console.log('✅ DatePicker initialized and ready');
-            }, 500);
-
-            // ✅ Polling Mechanism Enterprise-Level (برای اطمینان از پردازش تاریخ)
-            // این روش در پروژه‌های enterprise برای اطمینان از پردازش تغییرات استفاده می‌شود
-            var pollingInterval = null;
-            var lastPolledValue = null;
-            
-            function startDatePolling() {
-                // اگر polling قبلاً شروع شده، آن را متوقف می‌کنیم
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                }
-                
-                // شروع polling هر 500ms
-                pollingInterval = setInterval(function() {
-                    var currentValue = $("#appointmentDate").val();
-                    if (currentValue && currentValue !== lastPolledValue) {
-                        // تبدیل اعداد فارسی به انگلیسی
-                        var englishValue = convertPersianToEnglishNumbers(currentValue);
-                        
-                        // بررسی فرمت تاریخ
-                        if (englishValue.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                            console.log('✅ [Polling] Date changed detected:', englishValue);
-                            lastPolledValue = currentValue;
-                            processDateFromInput(true); // force process
-                        }
-                    }
-                }, 500); // هر 500ms چک می‌کند
-            }
-            
-            // شروع polling بعد از initialize شدن datepicker
-            setTimeout(function() {
-                startDatePolling();
-                console.log('✅ Date polling started');
-            }, 1000);
-
-            // محاسبه و نمایش خودکار تاریخ برای هر روز بعد از initialize شدن datepicker
-            // چند بار تلاش می‌کنیم تا مطمئن شویم datepicker و jalaali آماده هستند
-            var initAttempts = 0;
-            var maxAttempts = 10;
-            
-            function tryInitializeDayDates() {
-                initAttempts++;
-                
-                // بررسی آماده بودن datepicker و jalaali
-                var datePickerReady = $("#appointmentDate").data('pDatepicker') !== undefined;
-                var jalaaliReady = typeof jalaali !== 'undefined' && typeof jalaali.toJalaali === 'function';
-                
-                if (datePickerReady || jalaaliReady || initAttempts >= maxAttempts) {
-                    initializeDayDates();
-                } else {
-                    setTimeout(tryInitializeDayDates, 200);
-                }
-            }
-            
-            // شروع تلاش برای initialize
-            setTimeout(tryInitializeDayDates, 300);
-
-            // کلیک روی روزهای برنامه کاری برای انتخاب تاریخ
+            // کلیک روی روزهای برنامه کاری برای انتخاب تاریخ (با JalaliDatePicker Enterprise)
             $(document).on('click', '.schedule-day-card.clickable', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                var dayOfWeek = parseInt($(this).data('day')); // 0 = یکشنبه, 6 = شنبه
+                var dayOfWeek = parseInt($(this).data('day'), 10);
                 var dayName = $(this).data('day-name');
-                
-                // پیدا کردن تاریخ آینده برای این روز هفته
                 var targetDate = getNextDateForDayOfWeek(dayOfWeek);
-                
-                if (targetDate) {
-                    // تبدیل به تاریخ شمسی
-                    var persianDate = convertToPersianDate(targetDate);
-                    
-                    if (persianDate) {
-                        // تبدیل به string در صورت نیاز
-                        var persianDateStr = String(persianDate);
-                        
-                        // تنظیم تاریخ در datepicker
-                        var datePickerInstance = $("#appointmentDate").data('pDatepicker');
-                        if (datePickerInstance) {
-                            try {
-                                // تبدیل تاریخ میلادی به شمسی برای datepicker
-                                if (typeof persianDateStr.split !== 'function') {
-                                    console.error('persianDate is not a string:', persianDate, typeof persianDate);
-                                    toastr.error('خطا در تبدیل تاریخ', 'خطا');
-                                    return;
-                                }
-                                
-                                var persianParts = persianDateStr.split('/');
-                                if (persianParts.length === 3) {
-                                    var year = parseInt(persianParts[0]);
-                                    var month = parseInt(persianParts[1]);
-                                    var day = parseInt(persianParts[2]);
-                                    
-                                    // تنظیم تاریخ در datepicker
-                                    datePickerInstance.setDate([year, month, day]);
-                                    
-                                    // نمایش تاریخ انتخاب شده
-                                    displaySelectedDate(persianDateStr);
-                                    
-                                    // بارگذاری اسلات‌های زمانی و به‌روزرسانی هزینه ویزیت (تخفیف ایونت)
-                                    loadTimeSlots(doctorId, persianDateStr);
-                                    loadPriceBreakdown(doctorId, persianDateStr);
-                                    
-                                    // نمایش پیام موفقیت
-                                    toastr.success(dayName + ' - تاریخ: ' + persianDateStr, 'تاریخ انتخاب شد', {
-                                        timeOut: 3000
-                                    });
-                                    
-                                    // به‌روزرسانی نمایش تاریخ در کارت روز
-                                    $(this).find('.day-date-text').html('<strong style="color: var(--medical-primary);">' + persianDateStr + '</strong>');
-                                    
-                                    // اضافه کردن کلاس برای نمایش تاریخ انتخاب شده
-                                    $('.schedule-day-card').removeClass('selected-day');
-                                    $(this).addClass('selected-day');
-                                }
-                            } catch (err) {
-                                console.error('خطا در تنظیم تاریخ:', err);
-                                toastr.error('خطا در انتخاب تاریخ', 'خطا');
-                            }
-                        } else {
-                            // اگر datepicker هنوز initialize نشده، فقط تاریخ را نمایش می‌دهیم
-                            var persianDateStr = String(persianDate);
-                            displaySelectedDate(persianDateStr);
-                            loadTimeSlots(doctorId, persianDateStr);
-                            loadPriceBreakdown(doctorId, persianDateStr);
-                            toastr.success(dayName + ' - تاریخ: ' + persianDateStr, 'تاریخ انتخاب شد');
-                        }
-                    } else {
-                        toastr.warning('خطا در تبدیل تاریخ', 'هشدار');
-                    }
-                } else {
+                if (!targetDate) {
                     toastr.warning('خطا در محاسبه تاریخ', 'هشدار');
+                    return;
                 }
+                var persianDateStr = convertToPersianDate(targetDate);
+                if (!persianDateStr) {
+                    toastr.warning('خطا در تبدیل تاریخ', 'هشدار');
+                    return;
+                }
+                persianDateStr = String(persianDateStr);
+                var picker = typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.getInstance('#appointmentDate');
+                if (picker && picker.setDate) {
+                    picker.setDate(persianDateStr);
+                }
+                selectedDate = persianDateStr;
+                displaySelectedDate(persianDateStr);
+                loadTimeSlots(doctorId, persianDateStr);
+                loadPriceBreakdown(doctorId, persianDateStr);
+                toastr.success(dayName + ' - تاریخ: ' + persianDateStr, 'تاریخ انتخاب شد', { timeOut: 3000 });
+                $(this).find('.day-date-text').html('<strong style="color: var(--medical-primary);">' + persianDateStr + '</strong>');
+                $('.schedule-day-card').removeClass('selected-day');
+                $(this).addClass('selected-day');
             });
 
             // پیدا کردن تاریخ آینده برای یک روز هفته مشخص
@@ -1380,112 +468,26 @@
                 return targetDate;
             }
 
-            // تبدیل تاریخ میلادی به شمسی
+            // تبدیل تاریخ میلادی به شمسی (با jalaali از PersianDateTimePicker / Enterprise)
             function convertToPersianDate(gregorianDate) {
-                // بررسی ورودی
-                if (!gregorianDate) {
-                    console.error('convertToPersianDate: gregorianDate is null or undefined');
-                    return null;
-                }
-                
-                // تبدیل به Date object در صورت نیاز
-                if (!(gregorianDate instanceof Date)) {
-                    console.error('convertToPersianDate: gregorianDate is not a Date object:', gregorianDate, typeof gregorianDate);
-                    return null;
-                }
-                
+                if (!gregorianDate || !(gregorianDate instanceof Date)) return null;
                 try {
-                    // استفاده از jalaali.js که در persian-datepicker موجود است
                     if (typeof jalaali !== 'undefined' && typeof jalaali.toJalaali === 'function') {
-                        try {
-                            var jDate = jalaali.toJalaali(
-                                gregorianDate.getFullYear(),
-                                gregorianDate.getMonth() + 1,
-                                gregorianDate.getDate()
-                            );
-                            
-                            if (jDate && typeof jDate === 'object' && jDate.jy && jDate.jm && jDate.jd) {
-                                var year = String(jDate.jy).padStart(4, '0');
-                                var month = String(jDate.jm).padStart(2, '0');
-                                var day = String(jDate.jd).padStart(2, '0');
-                                return year + '/' + month + '/' + day;
-                            }
-                        } catch (e) {
-                            console.error('خطا در تبدیل با jalaali:', e);
+                        var jDate = jalaali.toJalaali(
+                            gregorianDate.getFullYear(),
+                            gregorianDate.getMonth() + 1,
+                            gregorianDate.getDate()
+                        );
+                        if (jDate && jDate.jy != null && jDate.jm != null && jDate.jd != null) {
+                            return String(jDate.jy).padStart(4, '0') + '/' +
+                                String(jDate.jm).padStart(2, '0') + '/' +
+                                String(jDate.jd).padStart(2, '0');
                         }
                     }
-                    
-                    // استفاده از persian-datepicker API
-                    var datePickerInstance = $("#appointmentDate").data('pDatepicker');
-                    if (datePickerInstance && datePickerInstance.calendar) {
-                        var calendar = datePickerInstance.calendar;
-                        
-                        if (calendar.persian && typeof calendar.persian.toPersian === 'function') {
-                            try {
-                                var persianDateObj = calendar.persian.toPersian(
-                                    gregorianDate.getFullYear(),
-                                    gregorianDate.getMonth() + 1,
-                                    gregorianDate.getDate()
-                                );
-                                
-                                if (persianDateObj && Array.isArray(persianDateObj) && persianDateObj.length >= 3) {
-                                    var year = persianDateObj[0].toString().padStart(4, '0');
-                                    var month = persianDateObj[1].toString().padStart(2, '0');
-                                    var day = persianDateObj[2].toString().padStart(2, '0');
-                                    return year + '/' + month + '/' + day;
-                                }
-                            } catch (e) {
-                                console.log('خطا در تبدیل با persian-datepicker:', e);
-                            }
-                        }
-                    }
-                    
-                    // Fallback: استفاده از API datepicker برای تبدیل
-                    try {
-                        var tempInput = $('<input>').css('display', 'none');
-                        $('body').append(tempInput);
-                        
-                        var tempPicker = tempInput.pDatepicker({
-                            calendarType: 'persian',
-                            format: 'YYYY/MM/DD'
-                        });
-                        
-                        // تنظیم تاریخ میلادی
-                        tempPicker.setDate(gregorianDate);
-                        
-                        // دریافت تاریخ شمسی
-                        var persianDateStr = tempInput.val();
-                        tempInput.remove();
-                        
-                        if (persianDateStr) {
-                            return persianDateStr;
-                        }
-                    } catch (e) {
-                        console.error('خطا در تبدیل با datepicker:', e);
-                    }
+                    var y = gregorianDate.getFullYear(), m = gregorianDate.getMonth() + 1, d = gregorianDate.getDate();
+                    var py = m <= 3 ? y - 622 : y - 621;
+                    return String(py).padStart(4, '0') + '/' + String(m).padStart(2, '0') + '/' + String(d).padStart(2, '0');
                 } catch (e) {
-                    console.error('خطا در تبدیل تاریخ:', e);
-                }
-                
-                // آخرین Fallback: استفاده از محاسبه تقریبی
-                try {
-                    var year = gregorianDate.getFullYear();
-                    var month = gregorianDate.getMonth() + 1;
-                    var day = gregorianDate.getDate();
-                    
-                    // تبدیل تقریبی
-                    var persianYear = year - 621;
-                    if (month <= 3) {
-                        persianYear = year - 622;
-                    }
-                    
-                    var yearStr = String(persianYear).padStart(4, '0');
-                    var monthStr = String(month).padStart(2, '0');
-                    var dayStr = String(day).padStart(2, '0');
-                    
-                    return yearStr + '/' + monthStr + '/' + dayStr;
-                } catch (e) {
-                    console.error('خطا در Fallback تبدیل تاریخ:', e);
                     return null;
                 }
             }
@@ -1503,62 +505,28 @@
                 toastr.success('زمان انتخاب شد: ' + $(this).find('span').first().text(), 'موفق');
             });
 
-            // نمایش تاریخ انتخاب شده
+            // نمایش تاریخ انتخاب شده (با Enterprise: نام روز از تبدیل شمسی به میلادی)
             function displaySelectedDate(persianDate) {
                 if (!persianDate) return;
-                
-                // تبدیل به string در صورت نیاز
-                var persianDateStr = String(persianDate);
-                
-                console.log('displaySelectedDate called with:', persianDateStr);
-                
-                // بررسی فرمت تاریخ
-                if (typeof persianDateStr.split !== 'function') {
-                    console.error('persianDate is not a string:', persianDate, typeof persianDate);
-                    // Fallback: نمایش فقط تاریخ
+                var persianDateStr = String(persianDate).trim();
+                if (!persianDateStr || persianDateStr.split('/').length !== 3) {
                     $('#selectedDateText').text('تاریخ: ' + persianDateStr);
                     $('#selectedDateDisplay').fadeIn(300);
                     return;
                 }
-                
-                var parts = persianDateStr.split('/');
-                if (parts.length !== 3) {
-                    // Fallback: نمایش فقط تاریخ
-                    $('#selectedDateText').text('تاریخ: ' + persianDateStr);
-                    $('#selectedDateDisplay').fadeIn(300);
-                    return;
-                }
-                
-                // ✅ استفاده مستقیم از persianDateStr برای نمایش (بدون تبدیل مجدد)
-                // این کار از timezone offset جلوگیری می‌کند
-                var datePicker = $("#appointmentDate").data('pDatepicker');
                 var dayName = '';
-                
-                // ✅ تلاش برای دریافت DayOfWeek از datePicker (اختیاری)
-                if (datePicker && datePicker.selected) {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.convertPersianToGregorian) {
                     try {
-                        // ✅ استفاده از selected object برای محاسبه DayOfWeek
-                        var gregorianDate = datePicker.selected.gD;
-                        if (gregorianDate && gregorianDate instanceof Date) {
-                            var dayOfWeek = gregorianDate.getDay();
-                            
-                            // دریافت نام روز هفته
+                        var g = JalaliDatePickerEnterprise.convertPersianToGregorian(persianDateStr);
+                        if (g && g.getDay) {
                             var dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
-                            dayName = dayNames[dayOfWeek] || '';
-                            console.log('DayOfWeek from datePicker:', dayOfWeek, 'DayName:', dayName);
+                            dayName = dayNames[g.getDay()] || '';
                         }
-                    } catch (e) {
-                        console.warn('Error getting day of week from datePicker:', e);
-                    }
+                    } catch (e) {}
                 }
-                
-                // ✅ نمایش تاریخ - استفاده مستقیم از persianDateStr (بدون تبدیل مجدد)
-                // این مهم است چون persianDateStr مستقیماً از selected.jy/jm/jd می‌آید
                 var dateText = dayName ? (dayName + ' - تاریخ: ' + persianDateStr) : ('تاریخ: ' + persianDateStr);
                 $('#selectedDateText').text(dateText);
                 $('#selectedDateDisplay').fadeIn(300);
-                
-                console.log('displaySelectedDate - Final display:', dateText);
             }
 
             // بارگذاری و نمایش هزینه ویزیت با احتساب تخفیف ایونت تبلیغاتی (قیمت اصلی، تخفیف قرمز، قیمت نهایی)
@@ -1626,18 +594,10 @@
                 // ✅ تبدیل اعداد فارسی به انگلیسی قبل از ارسال به سرور
                 date = convertPersianToEnglishNumbers(date);
                 
-                // ✅ Validation تاریخ قبل از ارسال
                 if (!date.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                    console.error('❌ Invalid date format sent to server:', date);
                     toastr.error('فرمت تاریخ نامعتبر است', 'خطا');
                     return;
                 }
-
-                // ✅ Log تاریخ ارسالی به سرور برای debugging
-                console.log('✅ [loadTimeSlots] Sending request to server:');
-                console.log('   - doctorId:', doctorId);
-                console.log('   - date:', date);
-                console.log('   - date type:', typeof date);
 
                 // نمایش loading
                 $('#timeSlotsGrid').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</div>');
@@ -1649,71 +609,38 @@
                     dataType: 'json', // ✅ مشخص کردن dataType به صورت صریح
                     data: { doctorId: doctorId, date: date },
                     success: function (response) {
-                        console.log('Response from GetTimeSlots:', response);
-                        console.log('Response type:', typeof response);
-                        console.log('Response.success:', response.success);
-                        console.log('Response.slots:', response.slots);
-                        console.log('Response.slots type:', typeof response.slots);
-                        console.log('Response.slots isArray:', Array.isArray(response.slots));
-                        console.log('Response.slots length:', response.slots ? response.slots.length : 'null/undefined');
-                        
-                        // ✅ بررسی اینکه آیا response.slots یک آرایه است و دارای عنصر است
-                        var slotsArray = response.slots;
-                        
-                        // ✅ اگر response.slots یک string است (JSON stringified)، آن را parse کن
+                        var slotsArray = response && response.slots;
                         if (typeof slotsArray === 'string') {
-                            try {
-                                slotsArray = JSON.parse(slotsArray);
-                                console.log('Parsed slotsArray from string:', slotsArray);
-                            } catch (e) {
-                                console.error('Error parsing slotsArray:', e);
-                            }
+                            try { slotsArray = JSON.parse(slotsArray); } catch (e) { slotsArray = null; }
                         }
-                        
-                        // ✅ اگر response.slots یک object است اما آرایه نیست، آن را به آرایه تبدیل کن
                         if (slotsArray && !Array.isArray(slotsArray) && typeof slotsArray === 'object') {
-                            console.warn('response.slots is not an array, trying to convert...');
                             slotsArray = Object.values(slotsArray);
-                            console.log('Converted slotsArray:', slotsArray);
                         }
-                        
-                        // ✅ بررسی نهایی
-                        var hasValidSlots = response && 
-                                           response.success === true && 
-                                           slotsArray && 
-                                           Array.isArray(slotsArray) && 
-                                           slotsArray.length > 0;
-                        
-                        console.log('hasValidSlots:', hasValidSlots);
-                        console.log('Final slotsArray:', slotsArray);
-                        
+                        var hasValidSlots = response && response.success === true &&
+                            slotsArray && Array.isArray(slotsArray) && slotsArray.length > 0;
+
                         if (hasValidSlots) {
-                            // استفاده از slotsArray به جای response.slots
                             response.slots = slotsArray;
                             var html = '';
                             var availableCount = 0;
                             var unavailableCount = 0;
-                            
+                            function escAttr(s) {
+                                if (s == null) return '';
+                                return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            }
                             response.slots.forEach(function (slot) {
                                 var cssClass = slot.isAvailable ? 'available' : 'unavailable';
-                                var disabled = slot.isAvailable ? '' : 'data-disabled=true';
-                                
-                                if (slot.isAvailable) {
-                                    availableCount++;
-                                } else {
-                                    unavailableCount++;
-                                }
-                                
-                                var ariaLabel = slot.isAvailable 
-                                    ? 'aria-label="انتخاب زمان ' + slot.displayTime + '"' 
-                                    : 'aria-label="زمان ' + slot.displayTime + ' پر شده است" aria-disabled="true" tabindex="-1"';
-                                
-                                html += '<button type="button" class="time-slot ' + cssClass + '" ' +
-                                    'data-start="' + slot.startTime + '" ' +
-                                    'data-end="' + slot.endTime + '" ' +
-                                    disabled + ' ' +
-                                    ariaLabel + '>' +
-                                    '<span aria-hidden="true">' + slot.displayTime + '</span>' +
+                                var disabled = slot.isAvailable ? '' : 'data-disabled="true"';
+                                if (slot.isAvailable) availableCount++; else unavailableCount++;
+                                var dt = escAttr(slot.displayTime || '');
+                                var st = escAttr(slot.startTime || '');
+                                var et = escAttr(slot.endTime || '');
+                                var ariaLabel = slot.isAvailable
+                                    ? 'aria-label="انتخاب زمان ' + dt + '"'
+                                    : 'aria-label="زمان ' + dt + ' پر شده است" aria-disabled="true" tabindex="-1"';
+                                html += '<button type="button" class="doctor-details-time-slot time-slot ' + cssClass + '" ' +
+                                    'data-start="' + st + '" data-end="' + et + '" ' + disabled + ' ' + ariaLabel + '>' +
+                                    '<span aria-hidden="true">' + dt + '</span>' +
                                     (!slot.isAvailable ? '<span class="sr-only">این زمان پر شده است</span>' : '') +
                                     '</button>';
                             });
@@ -1734,11 +661,7 @@
                             selectedTime = null;
                             $('#bookAppointmentBtn').prop('disabled', true);
                         } else {
-                            var message = response.message || 'زمانی در دسترس نیست';
-                            console.warn('No slots available:', message);
-                            console.warn('Response details:', JSON.stringify(response, null, 2));
-                            
-                            // بررسی اینکه آیا این روز در برنامه کاری پزشک است
+                            var message = (response && response.message) ? response.message : 'زمانی در دسترس نیست';
                             var helpfulMessage = message;
                             if (message === 'زمانی در دسترس نیست' || !message || message === 'خطا در دریافت اسلات‌های در دسترس') {
                                 helpfulMessage = 'برای این تاریخ زمانی در دسترس نیست. لطفاً یکی از روزهای کاری پزشک را انتخاب کنید.';
@@ -1774,33 +697,26 @@
                         return;
                     }
 
-                    window.location.href = '@Url.Action("SelectDate", "AppointmentBooking")?doctorId=' + doctorId + '&date=' + selectedDate + '&time=' + selectedTime;
+                    window.location.href = '@Url.Action("SelectDate", "AppointmentBooking")?doctorId=' + encodeURIComponent(doctorId) + '&date=' + encodeURIComponent(selectedDate) + '&time=' + encodeURIComponent(selectedTime);
                     </text>
                 }
             });
 
-            // نمایش پیغام‌های TempData
+            // نمایش پیغام‌های TempData (خروجی امن برای JS)
             @if (TempData["Success"] != null)
             {
-                <text>
-                toastr.success('@TempData["Success"]', 'موفق');
-                </text>
+                <text>toastr.success(@Html.Raw(Json.Encode(TempData["Success"])), 'موفق');</text>
             }
             @if (TempData["Error"] != null)
             {
-                <text>
-                toastr.error('@TempData["Error"]', 'خطا');
-                </text>
+                <text>toastr.error(@Html.Raw(Json.Encode(TempData["Error"])), 'خطا');</text>
             }
             @if (TempData["Info"] != null)
             {
-                <text>
-                toastr.info('@TempData["Info"]', 'اطلاعات');
-                </text>
+                <text>toastr.info(@Html.Raw(Json.Encode(TempData["Info"])), 'اطلاعات');</text>
             }
 
-            // بارگذاری هزینه ویزیت برای تاریخ از پیش انتخاب‌شده (در صورت وجود)
-            if (selectedDate && selectedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+            if (doctorId > 0 && selectedDate && selectedDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
                 loadPriceBreakdown(doctorId, selectedDate);
             }
         });

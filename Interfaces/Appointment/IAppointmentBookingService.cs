@@ -73,6 +73,13 @@ namespace ClinicApp.Interfaces.Appointment
         /// <returns>اطلاعات پزشک</returns>
         Task<ServiceResult<DoctorSearchResultDto>> GetDoctorDetailsAsync(int doctorId);
 
+        /// <summary>
+        /// دریافت آمار عمومی پزشک برای صفحه جزئیات (کل نوبت‌ها، نوبت امروز)
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>آمار نمایشی</returns>
+        Task<ServiceResult<DoctorPublicStatsDto>> GetDoctorPublicStatsAsync(int doctorId);
+
         #endregion
 
         #region Time Slots

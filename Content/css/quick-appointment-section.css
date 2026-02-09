@@ -1,13 +1,12 @@
 /**
- * 📅 Quick Appointment Section Styles
- * 
- * استایل‌های حرفه‌ای برای بخش Quick Appointment
- * استفاده از Design System Variables
+ * 📅 Quick Appointment Section — طراحی مدرن و جذاب
+ * نوبت خود را آنلاین رزرو کنید / در کمتر از ۲ دقیقه
+ * استفاده از Design System؛ دسترسی‌پذیری و reduced-motion
  */
 
 .quick-appointment-section {
-    padding: var(--spacing-xxxl) 0;
-    background-color: var(--medical-primary);
+    padding: clamp(2.5rem, 5vw, 4rem) 0;
+    background: var(--medical-primary);
     position: relative;
     overflow: hidden;
 }
@@ -15,13 +14,25 @@
 .quick-appointment-section::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: var(--medical-gradient-primary);
-    opacity: 0.95;
+    opacity: 0.97;
     z-index: 1;
+}
+
+/* شکل‌های نرم پس‌زمینه برای عمق */
+.quick-appointment-section::after {
+    content: '';
+    position: absolute;
+    width: min(80vw, 520px);
+    height: min(80vw, 520px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
 }
 
 .quick-appointment-container {
@@ -29,24 +40,57 @@
     z-index: 2;
 }
 
+/* کارت مرکزی برای تمرکز بهتر و ظاهر مدرن */
+.quick-appointment-card {
+    max-width: 720px;
+    margin-inline: auto;
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-xl);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* بج «سریع و آسان» */
+.quick-appointment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    margin-bottom: 1rem;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-full);
+}
+
+.quick-appointment-badge i {
+    font-size: 0.875em;
+    opacity: 0.95;
+}
+
 .quick-appointment-header {
     text-align: center;
-    margin-bottom: var(--spacing-xxl);
+    margin-bottom: var(--spacing-xl);
 }
 
 .quick-appointment-title {
     font-family: var(--font-family-heading);
-    font-size: var(--font-size-4xl);
+    font-size: clamp(1.5rem, 3.5vw, 2.25rem);
     font-weight: var(--font-weight-bold);
-    color: white;
-    margin-bottom: var(--spacing-md);
+    color: #fff;
+    margin: 0 0 var(--spacing-sm);
     line-height: var(--line-height-tight);
+    letter-spacing: -0.02em;
 }
 
 .quick-appointment-subtitle {
-    font-size: var(--font-size-lg);
-    color: rgba(255, 255, 255, 0.95);
-    max-width: 700px;
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 540px;
     margin: 0 auto;
     line-height: var(--line-height-relaxed);
 }
@@ -56,31 +100,33 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--spacing-md);
-    margin-top: var(--spacing-xl);
+    margin-top: var(--spacing-lg);
 }
 
 .quick-appointment-button {
-    background-color: white;
+    background: #fff;
     color: var(--medical-primary);
-    border: 2px solid white;
-    border-radius: var(--radius-md);
-    padding: var(--spacing-md) var(--spacing-xxl);
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 0.875rem 1.75rem;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
-    transition: all var(--transition-normal) var(--ease-out);
-    box-shadow: var(--shadow-lg);
+    transition: transform var(--transition-normal) var(--ease-out),
+                box-shadow var(--transition-normal) var(--ease-out),
+                background var(--transition-normal) var(--ease-out);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(44, 90, 160, 0.2);
     cursor: pointer;
 }
 
 .quick-appointment-button:hover {
-    background-color: var(--medical-primary-lighter);
+    background: var(--medical-primary-lighter);
     color: var(--medical-primary-dark);
     transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(44, 90, 160, 0.25);
 }
 
 .quick-appointment-button:active {
@@ -88,74 +134,99 @@
 }
 
 .quick-appointment-button:focus {
-    outline: 2px solid white;
-    outline-offset: 4px;
+    outline: none;
+}
+
+.quick-appointment-button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
 }
 
 .quick-appointment-button i {
     font-size: var(--font-size-xl);
 }
 
-/* Specialization Quick Links (if needed) */
+/* لینک‌های تخصص */
 .quick-appointment-specializations {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .quick-appointment-specialization-link {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-full);
     padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     text-decoration: none;
-    transition: all var(--transition-normal) var(--ease-out);
-    backdrop-filter: blur(10px);
+    transition: background var(--transition-normal) var(--ease-out),
+                transform var(--transition-normal) var(--ease-out),
+                box-shadow var(--transition-normal) var(--ease-out);
+    backdrop-filter: blur(8px);
 }
 
 .quick-appointment-specialization-link:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Animation Classes */
-.quick-appointment-section.animate-in {
-    animation: fadeIn var(--transition-slow) var(--ease-out) both;
+.quick-appointment-specialization-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
 }
 
+/* انیمیشن‌ها */
 .quick-appointment-title.animate-slide-down {
     animation: slideDown var(--transition-slow) var(--ease-out) both;
 }
 
 .quick-appointment-subtitle.animate-slide-up {
-    animation: slideUp var(--transition-slow) var(--ease-out) 0.2s both;
+    animation: slideUp var(--transition-slow) var(--ease-out) 0.15s both;
 }
 
 .quick-appointment-button.animate-scale-in {
-    animation: scaleIn var(--transition-slow) var(--ease-out) 0.4s both;
+    animation: scaleIn var(--transition-slow) var(--ease-out) 0.3s both;
 }
 
-/* Responsive Design */
+@media (prefers-reduced-motion: reduce) {
+    .quick-appointment-title.animate-slide-down,
+    .quick-appointment-subtitle.animate-slide-up,
+    .quick-appointment-button.animate-scale-in {
+        animation: none;
+    }
+    .quick-appointment-button:hover,
+    .quick-appointment-specialization-link:hover {
+        transform: none;
+    }
+}
+
+/* ریسپانسیو */
 @media (max-width: 767.98px) {
     .quick-appointment-section {
         padding: var(--spacing-xxl) 0;
     }
-    
-    .quick-appointment-title {
-        font-size: var(--font-size-3xl);
+
+    .quick-appointment-card {
+        padding: var(--spacing-xl);
     }
-    
+
+    .quick-appointment-title {
+        font-size: 1.375rem;
+    }
+
     .quick-appointment-subtitle {
         font-size: var(--font-size-base);
     }
-    
+
     .quick-appointment-button {
         width: 100%;
         max-width: 300px;
@@ -163,7 +234,7 @@
         padding: var(--spacing-md) var(--spacing-xl);
         font-size: var(--font-size-base);
     }
-    
+
     .quick-appointment-actions {
         flex-direction: column;
         align-items: center;
@@ -172,13 +243,6 @@
 
 @media (min-width: 768px) and (max-width: 991.98px) {
     .quick-appointment-title {
-        font-size: var(--font-size-4xl);
+        font-size: 1.75rem;
     }
 }
-
-/* Accessibility */
-.quick-appointment-button:focus-visible {
-    outline: 2px solid white;
-    outline-offset: 4px;
-}
-

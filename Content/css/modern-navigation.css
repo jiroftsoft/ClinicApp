@@ -21,6 +21,39 @@ body.nav-mobile-open {
     width: 100% !important;
 }
 
+/* نوار منو و هدر نباید هیچ اسکرول عمودی داشته باشند؛ هدر بالای استوری/محتوا برای نمایش مگامنو */
+body > header {
+    overflow: visible !important;
+    max-height: none !important;
+    min-height: 0;
+    position: relative;
+    z-index: 1040;
+}
+
+/* رفع اسکرول عمودی و نمایش مگامنو در دسکتاپ */
+@media (min-width: 992px) {
+    body > header {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+    /* نوار منو و کانتینر: overflow visible تا مگامنو بریده نشود و زیر استوری نرود */
+    .modern-navbar,
+    .modern-navbar .container,
+    .navbar-nav-modern {
+        overflow: visible !important;
+        max-height: none !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    .modern-navbar::-webkit-scrollbar,
+    .modern-navbar .container::-webkit-scrollbar,
+    .navbar-nav-modern::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+}
+
 .modern-navbar {
     /* پس‌زمینه Subtle Surface - حل مشکل "Too White" با رنگ‌های ملایم‌تر */
     background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 50%, #ffffff 100%) !important;
@@ -55,11 +88,15 @@ body.nav-mobile-open {
     justify-content: space-between;
     min-width: 0;
     width: 100%;
+    overflow: visible;
+    flex-wrap: nowrap;
 }
 
-/* جلوگیری از overflow افقی در دسکتاپ */
+/* جلوگیری از overflow افقی؛ ممنوعیت اسکرول عمودی در نوار منو (در دسکتاپ با مگامنو در @media overflow: visible می‌شود) */
 .modern-navbar {
     overflow-x: hidden;
+    overflow-y: visible;
+    max-height: none;
 }
 
 /* Navbar Brand */
@@ -161,7 +198,7 @@ body.nav-mobile-open {
     transform: rotate(-45deg) translate(7px, -6px);
 }
 
-/* Navbar Nav */
+/* Navbar Nav — یک ردیف بدون اسکرول عمودی */
 .navbar-nav-modern {
     display: flex;
     align-items: center;
@@ -172,10 +209,18 @@ body.nav-mobile-open {
     flex: 1 1 auto;
     min-width: 0;
     justify-content: flex-end;
+    flex-wrap: nowrap;
+    overflow: visible;
 }
 
 .nav-item-modern {
     position: relative;
+}
+
+/* هنگام باز بودن منوی خدمات، آیتم در بالای لایه‌ها تا مگامنو زیر استوری نرود */
+.dropdown-modern:hover,
+.dropdown-modern.show {
+    z-index: 1050;
 }
 
 .nav-link-modern {
@@ -343,7 +388,7 @@ body.nav-mobile-open {
     visibility: hidden;
     transform: translateY(-10px);
     transition: all var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
-    z-index: 1000;
+    z-index: 1050;
     backdrop-filter: blur(10px);
     /* Subtle Pattern */
     background-image: 
@@ -613,6 +658,9 @@ body.nav-mobile-open .navbar-backdrop {
         gap: var(--spacing-sm, 0.5rem);
         transition: right var(--transition-normal, 0.3s) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
         overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
         box-shadow: -4px 0 24px rgba(44, 90, 160, 0.18);
         border-left: 2px solid rgba(44, 90, 160, 0.15);
     }

@@ -109,7 +109,7 @@
             <!-- پربازدیدترین تخصص‌ها (مشابه دکترتو) -->
             @if (Model.PopularSpecialties != null && Model.PopularSpecialties.Items != null && Model.PopularSpecialties.Items.Any())
             {
-                <section class="popular-specialties-section" data-lazy-load="true" data-section-type="popular-specialties" data-section-id="popular-specialties" aria-label="@Model.PopularSpecialties.SectionTitle">
+                <section class="popular-specialties-section" data-lazy-load="true" data-section-type="popular-specialties" data-section-id="popular-specialties" aria-labelledby="popular-specialties-heading">
                     @{
                         Html.RenderPartial("Sections/_PopularSpecialtiesSection", Model.PopularSpecialties);
                     }
@@ -139,7 +139,7 @@
             <!-- Blog Section - Lazy Load -->
             @if (Model.Blog != null && Model.Blog.Posts != null && Model.Blog.Posts.Any())
             {
-                <section class="blog-section magazine-blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog" aria-label="@(Model.Blog?.SectionTitle ?? "آخرین مطالب مجلهٔ سلامت")">
+                <section class="blog-section magazine-blog-section" data-lazy-load="true" data-section-type="blog" data-section-id="blog" aria-labelledby="blog-section-heading">
                     @{
                         Html.RenderPartial("Sections/_BlogSection", Model.Blog);
                     }
@@ -178,15 +178,16 @@
                 </section>
             }
 
-            <!-- Contact Section - Lazy Load -->
-            @if (Model.Contact != null)
-            {
-                <section class="contact-section" data-lazy-load="true" data-section-type="contact" data-section-id="contact" aria-label="تماس با ما">
-                    @{
-                        Html.RenderPartial("Sections/_ContactSection", Model.Contact);
-                    }
-                </section>
-            }
+            @* تماس با ما: اطلاعات کامل در فوتر و صفحهٔ اختصاصی «تماس با ما» است (الگوی دیجی‌کالا / پروداکشن). سکشن تکراری حذف شد؛ فقط CTA برای هدایت به صفحه تماس. *@
+            <section class="contact-cta-section" aria-label="دعوت به تماس">
+                <div class="contact-cta-inner">
+                    <p class="contact-cta-text">سوال یا پیشنهادی دارید؟ اطلاعات تماس و فرم پیام در صفحهٔ تماس با ما در دسترس است.</p>
+                    <a href="@Url.Action("Index", "Contact")" class="contact-cta-button" aria-label="رفتن به صفحه تماس با ما">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>تماس با ما</span>
+                    </a>
+                </div>
+            </section>
 
         </main>
 
@@ -194,11 +195,7 @@
         @* در صورت نیاز می‌توان سایدبار را در صفحات دیگر (مثلاً تماس با ما) با RenderPartial("Sections/_SidebarSection", ...) نمایش داد. *@
     </div>
 
-    <!-- Footer Slider Section (Outside Homepage Layout) -->
-    @if (Model.FooterSliders != null && Model.FooterSliders.Any())
-    {
-        Html.RenderPartial("Sections/_FooterSliderSection", Model.FooterSliders);
-    }
+    @* سکشن اسلایدر فوتر (بالای فوتر) حذف شد — تکراری؛ فوتر سایت بلافاصله پس از محتوای اصلی نمایش داده می‌شود. *@
 
     @section Styles {
         @* CSS برای main-menu-quick-actions حذف شد - بخش "دسترسی سریع" حذف شده است (چون sidebar navigation دارد) *@

@@ -1037,6 +1037,7 @@
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AvailableTimeSlotDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\DoctorPublicStatsDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
@@ -2066,12 +2067,15 @@
     <Content Include="Content\css\appointment-booking-skeleton.css" />
     <Content Include="Content\css\appointment-booking-views.css" />
     <Content Include="Content\css\appointment-views.css" />
+    <Content Include="Content\css\doctor-details.css" />
     <Content Include="Content\css\blog-section.css" />
     <Content Include="Content\css\blog-pages.css" />
+    <Content Include="Content\css\blog-post.css" />
     <Content Include="Content\css\breadcrumb-medical.css" />
     <Content Include="Content\css\cashier-reports.css" />
     <Content Include="Content\css\contact-form-page.css" />
     <Content Include="Content\css\contact-section.css" />
+    <Content Include="Content\css\contact-cta-section.css" />
     <Content Include="Content\css\contact-thankyou-page.css" />
     <Content Include="Content\css\contact-track-page.css" />
     <Content Include="Content\css\design-system.css" />

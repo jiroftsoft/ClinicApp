@@ -14,7 +14,9 @@
     padding: var(--spacing-md, 1rem) 0;
     margin: 0;
     position: relative;
+    z-index: 1;
     overflow: hidden;
+    overflow-y: hidden; /* فقط اسکرول افقی؛ بدون اسکرول عمودی */
 }
 
 .stories-inner {

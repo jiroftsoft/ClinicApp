@@ -1,0 +1,65 @@
+/**
+ * CTA تماس با ما — فقط دعوت به صفحه تماس (الگوی پروداکشن / دیجی‌کالا)
+ * اطلاعات کامل در فوتر + صفحهٔ اختصاصی «تماس با ما»
+ */
+
+.contact-cta-section {
+    padding: clamp(1.5rem, 3vw, 2rem) 0;
+}
+
+.contact-cta-inner {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.5rem);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: rgba(44, 90, 160, 0.06);
+    border: 1px solid rgba(44, 90, 160, 0.12);
+    border-radius: var(--radius-lg, 12px);
+}
+
+.contact-cta-text {
+    margin: 0;
+    font-size: clamp(0.9375rem, 2vw, 1rem);
+    color: var(--medical-text-muted, #6c757d);
+    line-height: 1.5;
+}
+
+.contact-cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--medical-primary, #2c5aa0);
+    border-radius: var(--radius-md, 8px);
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-cta-button:hover {
+    background: var(--medical-primary-dark, #1e3d6f);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.contact-cta-button:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .contact-cta-button {
+        transition: none;
+    }
+    .contact-cta-button:hover {
+        transform: none;
+    }
+}

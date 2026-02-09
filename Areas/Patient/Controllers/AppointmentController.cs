@@ -19,6 +19,7 @@ using Serilog;
 using static ClinicApp.Helpers.NotificationHelper;
 using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Extensions;
+using ClinicApp.Infrastructure;
 using Microsoft.AspNet.Identity;
 
 namespace ClinicApp.Areas.Patient.Controllers
@@ -37,6 +38,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IDoctorScheduleRepository _scheduleRepository;
         private readonly IDoctorMappingService _mappingService;
         private readonly IAppSettings _appSettings;
+        private readonly ITimeProvider _timeProvider;
 
         public AppointmentController(
             IAppointmentBookingService bookingService,
@@ -45,14 +47,16 @@ namespace ClinicApp.Areas.Patient.Controllers
             IDoctorScheduleRepository scheduleRepository,
             IDoctorMappingService mappingService,
             ILogger logger,
-            IAppSettings appSettings = null)
-            : base(logger, currentUserService) // ✅ Base Constructor
+            IAppSettings appSettings = null,
+            ITimeProvider timeProvider = null)
+            : base(logger, currentUserService)
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _scheduleRepository = scheduleRepository ?? throw new ArgumentNullException(nameof(scheduleRepository));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
-            _appSettings = appSettings ?? AppSettings.Instance; // ✅ استفاده از Singleton pattern
+            _appSettings = appSettings ?? AppSettings.Instance;
+            _timeProvider = timeProvider ?? new DefaultTimeProvider();
         }
 
         /// <summary>
@@ -449,14 +453,20 @@ namespace ClinicApp.Areas.Patient.Controllers
                     _logger.Warning(ex, "خطا در دریافت جزئیات برنامه کاری پزشک {DoctorId}", doctorId);
                 }
 
-                // دریافت اسلات‌های موجود
-                var selectedDateValue = selectedDate ?? DateTime.Today; // ✅ استفاده از Today به جای Now
+                // دریافت اسلات‌های موجود (تاریخ اولیه: امروز ایران برای سازگاری با تقویم شمسی)
+                var selectedDateValue = selectedDate ?? _timeProvider.GetIranToday();
                 var slotsResult = await _bookingService.GetAvailableTimeSlotsAsync(doctorId, selectedDateValue);
                 var availableSlots = slotsResult.Success && slotsResult.Data != null 
                     ? slotsResult.Data.Where(s => s.IsAvailable).ToList() 
                     : new List<AvailableTimeSlotDto>();
 
-                    var viewModel = new ViewModels.Patient.DoctorDetailsViewModel
+                // دریافت آمار عمومی پزشک (کل نوبت‌ها، نوبت امروز)
+                var statsResult = await _bookingService.GetDoctorPublicStatsAsync(doctorId);
+                var totalAppointments = statsResult.Success && statsResult.Data != null ? statsResult.Data.TotalAppointments : 0;
+                var todayAppointments = statsResult.Success && statsResult.Data != null ? statsResult.Data.TodayAppointments : 0;
+                var averageRating = schedule?.Rating ?? 0;
+
+                var viewModel = new ViewModels.Patient.DoctorDetailsViewModel
                 {
                     DoctorId = doctorId,
                     Doctor = doctor,
@@ -464,9 +474,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                     ScheduleDetails = scheduleDetails,
                     AvailableSlots = availableSlots,
                     SelectedDate = selectedDateValue,
-                    TotalAppointments = 0, // TODO: دریافت از سرویس آمار
-                    TodayAppointments = 0, // TODO: دریافت از سرویس آمار
-                    AverageRating = 0, // TODO: دریافت از سرویس آمار
+                    TotalAppointments = totalAppointments,
+                    TodayAppointments = todayAppointments,
+                    AverageRating = averageRating,
                     ExperienceYears = doctor.ExperienceYears ?? 0
                 };
 

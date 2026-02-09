@@ -1,8 +1,10 @@
 @using ClinicApp.Extensions
+@using ClinicApp.Helpers
 @model ClinicApp.ViewModels.CMS.PublicContactFormViewModel
 @{
     ViewBag.Title = "تماس با ما";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var contactInfo = LayoutDataHelper.GetFooter()?.ContactInfo;
 }
 
 @* ============================================
@@ -229,50 +231,105 @@
                         <span>اطلاعات تماس</span>
                     </h3>
 
-                    <div class="contact-info-item">
-                        <div class="contact-info-icon">
-                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    @if (contactInfo != null)
+                    {
+                        if (!string.IsNullOrEmpty(contactInfo.Address))
+                        {
+                            <div class="contact-info-item">
+                                <div class="contact-info-icon">
+                                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                </div>
+                                <div class="contact-info-content">
+                                    <strong>آدرس</strong>
+                                    <p>@contactInfo.Address</p>
+                                    @if (!string.IsNullOrEmpty(contactInfo.GoogleMapsLink))
+                                    {
+                                        <a href="@contactInfo.GoogleMapsLink" target="_blank" rel="noopener noreferrer" class="contact-info-link" aria-label="مشاهده موقعیت کلینیک روی نقشه">
+                                            <i class="fas fa-map" aria-hidden="true"></i>
+                                            مشاهده موقعیت روی نقشه
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        if (!string.IsNullOrEmpty(contactInfo.PhoneNumber))
+                        {
+                            <div class="contact-info-item">
+                                <div class="contact-info-icon">
+                                    <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                                </div>
+                                <div class="contact-info-content">
+                                    <strong>تلفن</strong>
+                                    <p><a href="@(contactInfo.PhoneLink ?? "tel:" + contactInfo.PhoneNumber.Replace(" ", "").Replace("-", ""))" class="contact-info-link">@contactInfo.PhoneNumber</a></p>
+                                </div>
+                            </div>
+                        }
+                        if (!string.IsNullOrEmpty(contactInfo.Email))
+                        {
+                            <div class="contact-info-item">
+                                <div class="contact-info-icon">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                </div>
+                                <div class="contact-info-content">
+                                    <strong>ایمیل</strong>
+                                    <p><a href="@(contactInfo.EmailLink ?? "mailto:" + contactInfo.Email)" class="contact-info-link">@contactInfo.Email</a></p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="contact-info-item">
+                            <div class="contact-info-icon">
+                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            </div>
+                            <div class="contact-info-content">
+                                <strong>آدرس</strong>
+                                <p>جیرفت، خیابان آزادی، کوچه ۱۲</p>
+                                <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" class="contact-info-link" aria-label="مشاهده نقشه">
+                                    <i class="fas fa-map" aria-hidden="true"></i>
+                                    مشاهده موقعیت روی نقشه
+                                </a>
+                            </div>
                         </div>
-                        <div class="contact-info-content">
-                            <strong>آدرس</strong>
-                            <p>جیرفت، خیابان آزادی، کوچه 12</p>
-                            <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="contact-info-link">
-                                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-                                مشاهده نقشه
-                            </a>
-                        </div>
-                    </div>
+                    }
 
-                    <div class="contact-info-item">
-                        <div class="contact-info-icon">
-                            <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                    @* ساعات کاری از فوتر (در صورت وجود) *@
+                    @{
+                        var workingHours = LayoutDataHelper.GetFooter()?.WorkingHours;
+                    }
+                    @if (workingHours != null && workingHours.WorkingDays != null && workingHours.WorkingDays.Any())
+                    {
+                        <div class="contact-info-item">
+                            <div class="contact-info-icon">
+                                <i class="fas fa-clock" aria-hidden="true"></i>
+                            </div>
+                            <div class="contact-info-content">
+                                <strong>ساعات کاری</strong>
+                                <ul class="contact-hours-list">
+                                    @foreach (var day in workingHours.WorkingDays)
+                                    {
+                                        <li class="@(day.IsOpen ? "" : "text-muted")">
+                                            @day.DayName: @(day.IsOpen ? day.Hours : "تعطیل")
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
                         </div>
-                        <div class="contact-info-content">
-                            <strong>تلفن</strong>
-                            <p><a href="tel:03412345678" class="contact-info-link">034-12345678</a></p>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-item">
-                        <div class="contact-info-icon">
-                            <i class="fas fa-envelope" aria-hidden="true"></i>
-                        </div>
-                        <div class="contact-info-content">
-                            <strong>ایمیل</strong>
-                            <p><a href="mailto:info@clinic.com" class="contact-info-link">info@clinic.com</a></p>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-item">
-                        <div class="contact-info-icon">
-                            <i class="fas fa-clock" aria-hidden="true"></i>
-                        </div>
-                        <div class="contact-info-content">
-                            <strong>ساعات کاری</strong>
-                            <p>شنبه تا پنجشنبه: 8:00 - 20:00</p>
-                        </div>
-                    </div>
+                    }
                 </div>
+
+                @* بلوک نقشه: لینک به Google Maps برای مشاهده موقعیت کلینیک *@
+                @if (contactInfo != null && !string.IsNullOrEmpty(contactInfo.GoogleMapsLink))
+                {
+                    <div class="contact-map-cta" aria-label="موقعیت کلینیک روی نقشه">
+                        <a href="@contactInfo.GoogleMapsLink" target="_blank" rel="noopener noreferrer" class="contact-map-cta-link" aria-label="باز کردن نقشه در Google Maps">
+                            <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
+                            <span>مشاهده مکان کلینیک روی نقشه</span>
+                            <i class="fas fa-external-link-alt contact-map-cta-external" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                }
             </div>
         </div>
     </div>

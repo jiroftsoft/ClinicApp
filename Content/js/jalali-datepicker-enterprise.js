@@ -588,10 +588,14 @@
                 
                 input.addEventListener('jdp:change', instance._onChangeHandler);
                 
-                // ✅ Custom onSelect callback
+                // ✅ Custom onSelect callback (detail shape: { persianDate, gregorianDate } from _handleDateChange)
                 if (config.onSelect && typeof config.onSelect === 'function') {
                     input.addEventListener('pDatepicker:select', function(e) {
-                        config.onSelect.call(instance, e.detail.selected.persianDate, instance.getDate());
+                        var detail = e.detail || {};
+                        var persianDate = detail.persianDate != null ? detail.persianDate : (detail.selected && detail.selected.persianDate);
+                        if (persianDate != null) {
+                            config.onSelect.call(instance, persianDate, instance.getDate());
+                        }
                     });
                 }
                 

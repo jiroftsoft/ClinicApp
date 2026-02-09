@@ -156,6 +156,7 @@ namespace ClinicApp
                 "~/Content/css/promotional-events-section.css",
                 "~/Content/css/insurance-info-section.css",
                 "~/Content/css/contact-section.css",
+                "~/Content/css/contact-cta-section.css",
                 "~/Content/css/medical-sidebar.css",
                 "~/Content/css/sidebar-slider-section.css",
                 "~/Content/css/footer-slider-section.css"

@@ -400,6 +400,41 @@ namespace ClinicApp.Services.Appointment
             }
         }
 
+        public async Task<ServiceResult<DoctorPublicStatsDto>> GetDoctorPublicStatsAsync(int doctorId)
+        {
+            try
+            {
+                if (doctorId <= 0)
+                {
+                    return ServiceResult<DoctorPublicStatsDto>.Failed("شناسه پزشک نامعتبر است");
+                }
+
+                var iranToday = _timeProvider.GetIranToday();
+                var iranTomorrow = iranToday.AddDays(1);
+
+                var totalAppointments = await _context.Appointments
+                    .CountAsync(a => a.DoctorId == doctorId && !a.IsDeleted);
+
+                var todayAppointments = await _context.Appointments
+                    .CountAsync(a => a.DoctorId == doctorId && !a.IsDeleted
+                        && a.AppointmentDate >= iranToday
+                        && a.AppointmentDate < iranTomorrow);
+
+                var stats = new DoctorPublicStatsDto
+                {
+                    TotalAppointments = totalAppointments,
+                    TodayAppointments = todayAppointments
+                };
+
+                return ServiceResult<DoctorPublicStatsDto>.Successful(stats);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار پزشک {DoctorId}", doctorId);
+                return ServiceResult<DoctorPublicStatsDto>.Failed("خطا در دریافت آمار");
+            }
+        }
+
         #endregion
 
         #region Time Slots

@@ -1,35 +1,38 @@
 @model ClinicApp.ViewModels.QuickAppointmentViewModel
 
-<section class="quick-appointment-section" aria-label="رزرو نوبت سریع">
+<section class="quick-appointment-section" aria-labelledby="quick-appointment-heading" aria-label="رزرو نوبت سریع">
     <div class="quick-appointment-container">
         <div class="container">
-            <div class="quick-appointment-header">
-                <h2 class="quick-appointment-title animate-slide-down">@Model.SectionTitle</h2>
-                <p class="quick-appointment-subtitle animate-slide-up">@Model.SectionSubtitle</p>
-            </div>
-            
-            <div class="quick-appointment-actions">
-                <a href="@Model.AppointmentUrl" class="quick-appointment-button animate-scale-in" aria-label="رزرو نوبت آنلاین">
-                    <i class="fas fa-calendar-check" aria-hidden="true"></i>
-                    <span>رزرو نوبت آنلاین</span>
-                </a>
-            </div>
-            
-            @if (Model.Specializations != null && Model.Specializations.Any())
-            {
-                <div class="quick-appointment-specializations">
-                    @foreach (var specialization in Model.Specializations.Take(6))
-                    {
-                        <a href="@Model.AppointmentUrl?specializationId=@specialization.Id" 
-                           class="quick-appointment-specialization-link" 
-                           aria-label="رزرو نوبت @specialization.Name">
-                            @specialization.Name
-                        </a>
-                    }
+            <div class="quick-appointment-card">
+                <div class="quick-appointment-badge" aria-hidden="true">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span>سریع و آسان</span>
                 </div>
-            }
+                <header class="quick-appointment-header">
+                    <h2 id="quick-appointment-heading" class="quick-appointment-title animate-slide-down">@Model.SectionTitle</h2>
+                    <p class="quick-appointment-subtitle animate-slide-up">@Model.SectionSubtitle</p>
+                </header>
+                <div class="quick-appointment-actions">
+                    <a href="@Model.AppointmentUrl" class="quick-appointment-button animate-scale-in" aria-label="رزرو نوبت آنلاین">
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                        <span>رزرو نوبت آنلاین</span>
+                    </a>
+                </div>
+                @if (Model.Specializations != null && Model.Specializations.Any())
+                {
+                    <div class="quick-appointment-specializations">
+                        @foreach (var specialization in Model.Specializations.Take(6))
+                        {
+                            <a href="@Model.AppointmentUrl?specializationId=@specialization.Id"
+                               class="quick-appointment-specialization-link"
+                               aria-label="رزرو نوبت @specialization.Name">
+                                @specialization.Name
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </section>
 @* CSS از باندل homepage-sections در Index لود می‌شود *@
-

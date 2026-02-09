@@ -1,24 +1,29 @@
 /**
- * 📚 Blog Section - "پنجره دانش پزشکی معتبر کلینیک"
- * 
- * طراحی حرفه‌ای و علمی برای بخش مقالات و آموزش سلامت
- * مطابق با اصول Curated Medical Articles
- * 
- * ویژگی‌ها:
- * - Card Design علمی (تصویر، عنوان 2 خط، خلاصه 2-3 خط، دسته|تاریخ، CTA)
- * - Grid سه‌ستونه (حداکثر 3-4 مقاله) - بدون اسلایدر
- * - رنگ‌بندی رسمی (سفید/خاکستری، آبی درمانی/سبز ملایم)
- * - Typography رسمی (Vazirmatn/IRANSansX)
- * - Legal Notice: محتوای آموزشی است و جایگزین نظر پزشک نیست
- * - CTA حرفه‌ای: "مطالعه مقاله"
+ * آخرین مطالب مجلهٔ سلامت — طراحی حرفه‌ای و رسمی
+ * الگو: دکترتو، مجله‌ای؛ کارت مقاله با تصویر، عنوان، خلاصه، متا، CTA
+ * متغیرهای design-system؛ دسترسی‌پذیری، RTL، reduced-motion
  */
 
-/* ============================================
-   BASE SECTION STYLES
-   ============================================ */
+:root {
+    --blog-primary: var(--medical-primary, #2c5aa0);
+    --blog-primary-dark: var(--medical-primary-dark, #1e3d6f);
+    --blog-success: var(--medical-success, #28a745);
+    --blog-bg: var(--medical-bg, #ffffff);
+    --blog-bg-section: var(--medical-light, #f8f9fa);
+    --blog-text: var(--medical-text, #212529);
+    --blog-text-muted: var(--medical-text-muted, #6c757d);
+    --blog-border: var(--medical-border-light, #e9ecef);
+    --blog-font: var(--font-family-base, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
+    --blog-radius: var(--radius-lg, 12px);
+    --blog-radius-sm: var(--radius-md, 8px);
+    --blog-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --blog-shadow-hover: 0 12px 28px rgba(44, 90, 160, 0.12);
+}
+
+/* ========== Section (خارج در Index؛ استایل روی section.blog-section) ========== */
 .blog-section {
-    padding: var(--spacing-xxxl, 4rem) 0 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #f0f4f8 100%) !important;
+    padding: clamp(2.5rem, 5vw, 4rem) 0 !important;
+    background: var(--blog-bg-section) !important;
     position: relative !important;
     overflow: hidden !important;
 }
@@ -26,463 +31,390 @@
 .blog-section::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 10% 20%, rgba(44, 110, 125, 0.02) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(40, 167, 69, 0.02) 0%, transparent 50%);
+    inset: 0;
+    background:
+        radial-gradient(circle at 10% 20%, rgba(44, 90, 160, 0.03) 0%, transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(40, 167, 69, 0.02) 0%, transparent 45%);
     pointer-events: none;
     z-index: 0;
 }
 
-.blog-section .container {
+.blog-inner {
     position: relative;
     z-index: 1;
 }
 
-/* ============================================
-   HEADER SECTION
-   ============================================ */
+.blog-container {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ========== Header ========== */
 .blog-header {
-    text-align: center !important;
-    margin-bottom: var(--spacing-xxl, 3rem) !important;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
 }
 
-/* هدر مجله‌ای: عنوان + لینک «همه مقالات» در یک ردیف (مشابه دکترتو) */
-.blog-header-magazine {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 1rem !important;
-    text-align: right !important;
-    margin-bottom: 1.75rem !important;
+.blog-title {
+    font-family: var(--blog-font) !important;
+    font-size: clamp(1.375rem, 3.5vw, 1.75rem) !important;
+    font-weight: 700 !important;
+    color: var(--blog-text) !important;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.3 !important;
 }
 
-.blog-header-magazine .blog-title {
-    margin-bottom: 0 !important;
-}
-
-.blog-header-magazine .blog-title::after {
-    display: none !important;
+.blog-title i {
+    color: var(--blog-primary);
+    font-size: 1.25rem;
 }
 
 .blog-view-all-link {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.35rem !important;
-    color: var(--medical-primary, #2c5aa0) !important;
-    font-weight: 600 !important;
-    font-size: 1rem !important;
-    text-decoration: none !important;
-    transition: opacity 0.2s !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--blog-font);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--blog-primary);
+    text-decoration: none;
+    border-radius: var(--blog-radius-sm);
+    background: var(--medical-primary-lighter, #e8f0f8);
+    border: 1px solid rgba(44, 90, 160, 0.15);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .blog-view-all-link:hover {
-    opacity: 0.85;
-    text-decoration: underline !important;
+    background: var(--blog-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+    transform: translateY(-1px);
+}
+
+.blog-view-all-link:focus-visible {
+    outline: 2px solid var(--blog-primary);
+    outline-offset: 2px;
 }
 
 [dir="rtl"] .blog-view-all-link i {
     transform: scaleX(-1);
 }
 
-.blog-title {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
-    font-weight: var(--font-weight-bold, 700) !important;
-    color: #212529 !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    line-height: var(--line-height-tight, 1.2) !important;
-    position: relative !important;
-    display: inline-block !important;
-}
-
-.blog-header:not(.blog-header-magazine) .blog-title::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    right: 50%;
-    transform: translateX(50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--medical-primary, #2c6e7d), transparent);
-    border-radius: var(--radius-full, 9999px);
-}
-
-.blog-subtitle {
-    font-size: clamp(1rem, 2vw, 1.125rem) !important;
-    color: #6c757d !important;
-    max-width: 700px !important;
-    margin: var(--spacing-md, 1rem) auto 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    font-weight: var(--font-weight-normal, 400) !important;
-}
-
-/* ============================================
-   GRID LAYOUT - سه‌ستونه (حداکثر 3-4 مقاله)
-   ============================================ */
+/* ========== Grid ========== */
 .blog-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: var(--spacing-xl, 2rem) !important;
-    margin-bottom: var(--spacing-xl, 2rem) !important;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 576px) {
     .blog-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
     }
 }
 
 @media (min-width: 992px) {
     .blog-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: var(--spacing-xl, 2rem) !important;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
     }
 }
 
-/* ============================================
-   BLOG CARD - Scientific Design
-   ============================================ */
+/* ========== Card wrapper (برای انیمیشن و لیست) ========== */
+.blog-card-wrapper {
+    margin: 0;
+}
+
+/* ========== Card (لینک کلی کارت) ========== */
 .blog-card {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: var(--radius-lg, 20px) !important;
-    overflow: hidden !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--blog-bg);
+    border: 1px solid var(--blog-border);
+    border-radius: var(--blog-radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--blog-shadow);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .blog-card:hover {
-    transform: translateY(-6px) !important;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06) !important;
-    border-color: rgba(44, 110, 125, 0.2) !important;
+    border-color: var(--blog-primary);
+    box-shadow: var(--blog-shadow-hover);
+    transform: translateY(-4px);
 }
 
-/* ============================================
-   IMAGE WRAPPER (تصویر شاخص - ملایم، درمانی)
-   ============================================ */
+.blog-card:focus-visible {
+    outline: 2px solid var(--blog-primary);
+    outline-offset: 2px;
+}
+
+/* ========== Image ========== */
 .blog-image-wrapper {
-    position: relative !important;
-    width: 100% !important;
-    height: 240px !important;
-    overflow: hidden !important;
-    background: linear-gradient(135deg, #f0f4f8 0%, #e8f0f5 100%) !important;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    max-height: 220px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8eef4 100%);
 }
 
 .blog-image {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    transition: transform var(--transition-slow, 0.5s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
 }
 
 .blog-card:hover .blog-image {
-    transform: scale(1.05) !important;
+    transform: scale(1.04);
 }
 
 .blog-image-placeholder {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-success, #28a745) 100%) !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--blog-primary) 0%, var(--blog-primary-dark) 100%);
 }
 
 .blog-image-placeholder i {
-    font-size: var(--font-size-4xl, 2.5rem) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.9);
 }
 
-/* ============================================
-   CONTENT SECTION
-   ============================================ */
+/* ========== Content ========== */
 .blog-content {
-    padding: var(--spacing-xl, 2rem) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 !important;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
-/* ============================================
-   TITLE (عنوان - حداکثر 2 خط)
-   ============================================ */
 .blog-post-title {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif) !important;
-    font-size: clamp(1.125rem, 2vw, 1.25rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    color: #212529 !important;
-    margin: 0 0 var(--spacing-md, 1rem) 0 !important;
-    line-height: var(--line-height-tight, 1.4) !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    min-height: 3em !important;
+    font-family: var(--blog-font) !important;
+    font-size: clamp(1.0625rem, 2vw, 1.1875rem) !important;
+    font-weight: 600 !important;
+    color: var(--blog-text) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.4 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* ============================================
-   SUMMARY (خلاصه علمی - 2-3 خط، 300-400 کاراکتر)
-   ============================================ */
 .blog-post-summary {
-    font-size: var(--font-size-base, 1rem) !important;
-    color: #495057 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    margin: 0 0 var(--spacing-lg, 1.5rem) 0 !important;
-    flex: 1 !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    min-height: 3.5em !important;
-    font-weight: var(--font-weight-normal, 400) !important;
-    text-align: justify !important;
+    font-size: 0.9375rem;
+    color: var(--blog-text-muted);
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* ============================================
-   META (دسته‌بندی | تاریخ شمسی)
-   ============================================ */
+/* ========== Meta ========== */
 .blog-meta {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: var(--spacing-md, 1rem) !important;
-    margin-bottom: var(--spacing-md, 1rem) !important;
-    padding-top: var(--spacing-md, 1rem) !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    flex-wrap: wrap !important;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--blog-border);
+    font-size: 0.8125rem;
 }
 
 .blog-category {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    color: var(--medical-primary, #2c6e7d) !important;
-    font-weight: var(--font-weight-medium, 500) !important;
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
-    background: linear-gradient(135deg, rgba(44, 110, 125, 0.08) 0%, rgba(40, 167, 69, 0.08) 100%) !important;
-    border-radius: var(--radius-full, 9999px) !important;
-    border: 1px solid rgba(44, 110, 125, 0.15) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--blog-primary);
+    font-weight: 500;
+    padding: 0.25rem 0.6rem;
+    background: rgba(44, 90, 160, 0.08);
+    border-radius: 9999px;
 }
 
 .blog-category i {
-    font-size: var(--font-size-xs, 0.75rem) !important;
-    color: var(--medical-primary, #2c6e7d) !important;
+    font-size: 0.75rem;
 }
 
 .blog-date {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    color: #6c757d !important;
-    font-weight: var(--font-weight-normal, 400) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--blog-text-muted);
+    font-weight: 400;
 }
 
 .blog-date i {
-    font-size: var(--font-size-xs, 0.75rem) !important;
-    color: #6c757d !important;
+    font-size: 0.75rem;
 }
 
-/* ============================================
-   CTA BUTTON (مطالعه مقاله - حرفه‌ای)
-   ============================================ */
+/* ========== CTA Button (ظاهری؛ کلیک روی کارت) ========== */
 .blog-button {
-    width: 100% !important;
-    background: linear-gradient(135deg, var(--medical-primary, #2c6e7d) 0%, var(--medical-success, #28a745) 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: var(--radius-md, 12px) !important;
-    padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem) !important;
-    font-size: var(--font-size-base, 1rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    text-decoration: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: var(--spacing-sm, 0.75rem) !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    cursor: pointer !important;
-    margin-top: auto !important;
-    box-shadow: 0 2px 4px rgba(44, 110, 125, 0.2) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-family: var(--blog-font);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blog-primary) 0%, var(--blog-primary-dark) 100%);
+    border-radius: var(--blog-radius-sm);
+    margin-top: auto;
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.blog-button:hover {
-    background: linear-gradient(135deg, var(--medical-primary-dark, #1e4d5a) 0%, var(--medical-success-dark, #1e7e34) 100%) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 8px rgba(44, 110, 125, 0.3) !important;
-    color: #ffffff !important;
-}
-
-.blog-button:active {
-    transform: translateY(0) !important;
+.blog-card:hover .blog-button {
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.35);
+    transform: translateY(-1px);
 }
 
 .blog-button i {
-    font-size: var(--font-size-sm, 0.875rem) !important;
+    font-size: 0.875rem;
 }
 
-/* ============================================
-   VIEW ALL BUTTON
-   ============================================ */
-.blog-view-all {
-    text-align: center !important;
-    margin-top: var(--spacing-xl, 2rem) !important;
+[dir="rtl"] .blog-button i {
+    transform: scaleX(-1);
 }
 
-.blog-view-all-button {
-    background: #ffffff !important;
-    color: var(--medical-primary, #2c6e7d) !important;
-    border: 2px solid var(--medical-primary, #2c6e7d) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    padding: var(--spacing-md, 1rem) var(--spacing-xxl, 3rem) !important;
-    font-size: var(--font-size-lg, 1.125rem) !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
-    text-decoration: none !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: var(--spacing-sm, 0.75rem) !important;
-    transition: all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 2px 4px rgba(44, 110, 125, 0.1) !important;
-}
-
-.blog-view-all-button:hover {
-    background: var(--medical-primary, #2c6e7d) !important;
-    color: #ffffff !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 8px rgba(44, 110, 125, 0.3) !important;
-}
-
-/* ============================================
-   LEGAL NOTICE (ملاحظات حقوقی و پزشکی)
-   ============================================ */
+/* ========== Legal Notice ========== */
 .blog-legal-notice {
-    text-align: center !important;
-    margin-top: var(--spacing-xl, 2rem) !important;
-    padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem) !important;
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 152, 0, 0.08) 100%) !important;
-    border-radius: var(--radius-md, 12px) !important;
-    border: 1px solid rgba(255, 193, 7, 0.2) !important;
+    text-align: center;
+    padding: 1rem 1.25rem;
+    background: rgba(44, 90, 160, 0.06);
+    border: 1px solid rgba(44, 90, 160, 0.12);
+    border-radius: var(--blog-radius-sm);
 }
 
 .blog-legal-text {
-    font-size: var(--font-size-sm, 0.875rem) !important;
-    color: #495057 !important;
-    margin: 0 !important;
-    line-height: var(--line-height-relaxed, 1.75) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: var(--spacing-xs, 0.5rem) !important;
-    flex-wrap: wrap !important;
+    font-size: 0.8125rem;
+    color: var(--blog-text-muted);
+    margin: 0;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .blog-legal-text i {
-    color: #ffc107 !important;
-    font-size: var(--font-size-base, 1rem) !important;
-    flex-shrink: 0 !important;
+    color: var(--blog-primary);
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .blog-legal-text strong {
-    color: #212529 !important;
-    font-weight: var(--font-weight-semibold, 600) !important;
+    color: var(--blog-text);
+    font-weight: 600;
 }
 
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-@media (max-width: 767.98px) {
-    .blog-section {
-        padding: var(--spacing-xxl, 2.5rem) 0 !important;
+/* ========== Animation ========== */
+.blog-card-wrapper.animate-in .blog-card {
+    animation: blogFadeIn 0.45s ease both;
+}
+
+@keyframes blogFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
     }
-    
-    .blog-header {
-        margin-bottom: var(--spacing-xl, 2rem) !important;
-    }
-    
-    .blog-image-wrapper {
-        height: 200px !important;
-    }
-    
-    .blog-content {
-        padding: var(--spacing-lg, 1.5rem) !important;
-    }
-    
-    .blog-meta {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: var(--spacing-sm, 0.75rem) !important;
-    }
-    
-    .blog-legal-text {
-        flex-direction: column !important;
-        text-align: center !important;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .blog-grid {
-        gap: var(--spacing-lg, 1.5rem) !important;
-    }
-}
+.blog-card-wrapper.animate-in:nth-child(1) .blog-card { animation-delay: 0s; }
+.blog-card-wrapper.animate-in:nth-child(2) .blog-card { animation-delay: 0.05s; }
+.blog-card-wrapper.animate-in:nth-child(3) .blog-card { animation-delay: 0.1s; }
+.blog-card-wrapper.animate-in:nth-child(4) .blog-card { animation-delay: 0.15s; }
+.blog-card-wrapper.animate-in:nth-child(5) .blog-card { animation-delay: 0.2s; }
+.blog-card-wrapper.animate-in:nth-child(6) .blog-card { animation-delay: 0.25s; }
 
-/* ============================================
-   ANIMATION CLASSES
-   ============================================ */
-.blog-card.animate-in {
-    animation: fadeIn var(--transition-slow, 0.5s) cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-.blog-card.animate-slide-up {
-    animation: slideUp var(--transition-slow, 0.5s) cubic-bezier(0.4, 0, 0.2, 1) both !important;
-}
-
-/* Stagger Animation */
-.blog-card:nth-child(1) { animation-delay: 0.05s !important; }
-.blog-card:nth-child(2) { animation-delay: 0.1s !important; }
-.blog-card:nth-child(3) { animation-delay: 0.15s !important; }
-.blog-card:nth-child(4) { animation-delay: 0.2s !important; }
-.blog-card:nth-child(5) { animation-delay: 0.25s !important; }
-.blog-card:nth-child(6) { animation-delay: 0.3s !important; }
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-.blog-card:focus-within {
-    outline: 3px solid var(--medical-primary, #2c6e7d) !important;
-    outline-offset: 4px !important;
-    border-radius: var(--radius-lg, 20px) !important;
-}
-
-/* Reduced Motion Support */
+/* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
     .blog-card,
+    .blog-image,
     .blog-button,
-    .blog-view-all-button {
+    .blog-view-all-link {
         transition: none !important;
     }
-    
     .blog-card:hover {
         transform: none !important;
     }
-    
     .blog-card:hover .blog-image {
         transform: none !important;
     }
+    .blog-view-all-link:hover {
+        transform: none !important;
+    }
+    .blog-card-wrapper.animate-in .blog-card {
+        animation: none;
+    }
 }
 
-/* High Contrast Mode Support */
+/* ========== High Contrast ========== */
 @media (prefers-contrast: high) {
     .blog-card {
-        border: 2px solid #000000 !important;
+        border-width: 2px;
+        border-color: var(--blog-text);
+    }
+    .blog-card:hover {
+        border-color: var(--blog-primary);
+    }
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 575.98px) {
+    .blog-image-wrapper {
+        max-height: 180px;
+    }
+    .blog-content {
+        padding: 1rem 1.25rem;
+    }
+    .blog-legal-text {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* ========== Print ========== */
+@media print {
+    .blog-section::before {
+        display: none;
+    }
+    .blog-card:hover {
+        transform: none;
+        box-shadow: var(--blog-shadow);
+    }
+    .blog-view-all-link {
+        border: 1px solid var(--blog-primary);
     }
 }
