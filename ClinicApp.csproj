@@ -2294,6 +2294,7 @@
     <Content Include="Content\js\modern-navigation.js" />
     <Content Include="Content\js\notification-helper.js" />
     <Content Include="Content\js\patient-dashboard.js" />
+    <Content Include="Content\js\patient-education-index.js" />
     <Content Include="Content\js\patient-profile.js" />
     <Content Include="Content\js\performance-optimizer.js" />
     <Content Include="Content\js\persian-datepicker-component.js" />

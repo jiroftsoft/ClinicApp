@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -73,6 +74,76 @@ namespace ClinicApp.Controllers
                     Categories = (IEnumerable<PatientEducationCategory>)System.Enum.GetValues(typeof(PatientEducationCategory)),
                     ErrorMessage = "خطا در بارگذاری مطالب آموزشی"
                 });
+            }
+        }
+
+        #endregion
+
+        #region GetMaterialsJson - API برای فیلتر و صفحه‌بندی بدون رفرش
+
+        /// <summary>
+        /// برگرداندن لیست مطالب به صورت JSON برای بارگذاری بدون رفرش (فیلتر دسته‌بندی و صفحه‌بندی).
+        /// </summary>
+        [HttpGet]
+        [OutputCache(Duration = 300, VaryByParam = "category,page")]
+        public async Task<ActionResult> GetMaterialsJson(PatientEducationCategory? category = null, int page = 1)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                const int pageSize = 12;
+
+                var searchModel = new PatientEducationMaterialSearchViewModel
+                {
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    Category = category,
+                    IsPublished = true
+                };
+
+                var result = await _materialService.GetMaterialsAsync(searchModel);
+
+                if (!result.Success)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.Message ?? "خطا در دریافت لیست"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                var data = result.Data;
+                var sourceItems = data?.Items ?? Enumerable.Empty<PatientEducationMaterialIndexViewModel>();
+                var items = sourceItems.Select(m => new
+                {
+                    patientEducationMaterialId = m.PatientEducationMaterialId,
+                    title = m.Title,
+                    description = string.IsNullOrEmpty(m.Description) ? "بدون توضیحات" : m.Description,
+                    categoryDisplay = m.CategoryDisplay,
+                    thumbnailUrl = m.ThumbnailUrl,
+                    imageUrl = m.ImageUrl,
+                    fileUrl = m.FileUrl,
+                    viewCount = m.ViewCount,
+                    downloadCount = m.DownloadCount,
+                    detailsUrl = Url.Action("Details", "PatientEducation", new { id = m.PatientEducationMaterialId })
+                }).ToList();
+
+                return Json(new
+                {
+                    success = true,
+                    items,
+                    totalCount = data?.TotalCount ?? 0,
+                    pageNumber = data?.PageNumber ?? 1,
+                    pageSize = data?.PageSize ?? pageSize,
+                    totalPages = data?.TotalPages ?? 0,
+                    hasPreviousPage = data?.HasPreviousPage ?? false,
+                    hasNextPage = data?.HasNextPage ?? false
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در GetMaterialsJson");
+                return Json(new { success = false, message = "خطا در بارگذاری مطالب" }, JsonRequestBehavior.AllowGet);
             }
         }
 

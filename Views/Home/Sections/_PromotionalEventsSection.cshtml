@@ -7,55 +7,63 @@
     var eventsToShow = Model.Take(6).ToList();
 }
 
-@* سکشن تخفیف‌ها و جشنواره‌ها — مطابق الگوهای Mayo Clinic, Cleveland Clinic, One Medical, Zocdoc, دکترتو *@
-<div class="promotional-events-inner animate-fade-in">
+@* سکشن تخفیف‌ها و جشنواره‌های ویژه — بهینه‌سازی حرفه‌ای، رسمی، کاربرپسند *@
+<div class="promotional-events-inner">
     <div class="container">
         <header class="promotional-events-header section-header" aria-labelledby="promotional-events-heading">
+            <div class="section-header-icon promotional-events-header-icon" aria-hidden="true">
+                <i class="fas fa-gift" aria-hidden="true"></i>
+            </div>
             <h2 class="promotional-events-title section-title" id="promotional-events-heading">تخفیف‌ها و جشنواره‌های ویژه</h2>
             <p class="promotional-events-subtitle section-subtitle">از تخفیف‌های دوره‌ای و پیشنهادهای ویژه کلینیک بهره‌مند شوید</p>
         </header>
 
         <div class="promotional-events-grid" role="list">
+            @{ var cardIndex = 0; }
             @foreach (var ev in eventsToShow)
             {
-                <article class="promotional-event-card" role="listitem" aria-labelledby="promo-title-@ev.EventId">
-                    <div class="promotional-event-card-header">
-                        <div class="promotional-event-icon" aria-hidden="true">
-                            <i class="fas fa-percent" aria-hidden="true"></i>
+                cardIndex++;
+                <article class="promotional-event-card" role="listitem" aria-labelledby="promo-title-@ev.EventId" data-card-index="@cardIndex">
+                    <div class="promotional-event-card-accent" aria-hidden="true"></div>
+                    <div class="promotional-event-card-inner">
+                        <div class="promotional-event-card-header">
+                            <div class="promotional-event-icon" aria-hidden="true">
+                                <i class="fas fa-percent" aria-hidden="true"></i>
+                            </div>
+                            <div class="promotional-event-heading-block">
+                                <h3 class="promotional-event-title" id="promo-title-@ev.EventId">@ev.Title</h3>
+                                @if (!string.IsNullOrEmpty(ev.DiscountDisplayText))
+                                {
+                                    <span class="promotional-event-discount-badge" aria-label="مقدار تخفیف: @ev.DiscountDisplayText">@ev.DiscountDisplayText</span>
+                                }
+                            </div>
                         </div>
-                        <div class="promotional-event-heading-block">
-                            <h3 class="promotional-event-title" id="promo-title-@ev.EventId">@ev.Title</h3>
-                            @if (!string.IsNullOrEmpty(ev.DiscountDisplayText))
-                            {
-                                <span class="promotional-event-discount-badge" aria-label="مقدار تخفیف: @ev.DiscountDisplayText">@ev.DiscountDisplayText</span>
-                            }
-                        </div>
-                    </div>
-                    <p class="promotional-event-date">
-                        <time datetime="@ev.StartDate.ToString("yyyy-MM-dd")">@ev.StartDateDisplay</time>
-                        <span aria-hidden="true"> تا </span>
-                        <time datetime="@ev.EndDate.ToString("yyyy-MM-dd")">@ev.EndDateDisplay</time>
-                    </p>
-                    @if (ev.RemainingSlots.HasValue && ev.RemainingSlots.Value > 0)
-                    {
-                        <p class="promotional-event-slots" aria-label="ظرفیت باقی‌مانده">
-                            <span class="promotional-event-slots-value">@ev.RemainingSlots.Value</span> ظرفیت باقی‌مانده
+                        <p class="promotional-event-date">
+                            <time datetime="@ev.StartDate.ToString("yyyy-MM-dd")">@ev.StartDateDisplay</time>
+                            <span aria-hidden="true"> تا </span>
+                            <time datetime="@ev.EndDate.ToString("yyyy-MM-dd")">@ev.EndDateDisplay</time>
                         </p>
-                    }
-                    @if (!string.IsNullOrEmpty(ev.Description))
-                    {
-                        <div class="promotional-event-body">
-                            <p class="promotional-event-description">@ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(ev.Description, 120)</p>
-                        </div>
-                    }
-                    @{
-                        var ctaUrl = !string.IsNullOrEmpty(ev.CtaUrl) ? ev.CtaUrl : Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" });
-                        var ctaAriaLabel = "رزرو نوبت برای «" + ev.Title + "»";
-                    }
-                    <a href="@ctaUrl" class="promotional-event-cta" title="رزرو نوبت" aria-label="@ctaAriaLabel">
-                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
-                        <span>رزرو نوبت</span>
-                    </a>
+                        @if (ev.RemainingSlots.HasValue && ev.RemainingSlots.Value > 0)
+                        {
+                            <p class="promotional-event-slots" aria-label="ظرفیت باقی‌مانده">
+                                <span class="promotional-event-slots-value">@ev.RemainingSlots.Value</span> ظرفیت باقی‌مانده
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(ev.Description))
+                        {
+                            <div class="promotional-event-body">
+                                <p class="promotional-event-description">@ClinicApp.Helpers.StringHelper.StripHtmlAndTruncate(ev.Description, 120)</p>
+                            </div>
+                        }
+                        @{
+                            var ctaUrl = !string.IsNullOrEmpty(ev.CtaUrl) ? ev.CtaUrl : Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" });
+                            var ctaAriaLabel = "رزرو نوبت برای «" + ev.Title + "»";
+                        }
+                        <a href="@ctaUrl" class="promotional-event-cta" title="رزرو نوبت" aria-label="@ctaAriaLabel">
+                            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                            <span>رزرو نوبت</span>
+                        </a>
+                    </div>
                 </article>
             }
         </div>

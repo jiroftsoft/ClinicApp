@@ -1,35 +1,57 @@
 /**
  * سکشن تخفیف‌ها و جشنواره‌های ویژه
  *
- * الگو: Mayo Clinic, Cleveland Clinic, One Medical, Zocdoc, دکترتو، درمانکده
- * - تایپوگرافی تمیز و پزشکی
- * - CTA واضح (رزرو نوبت)
- * - رنگ‌های اعتمادساز (آبی، سفید، سبز ملایم برای تخفیف)
- * - موبایل‌فرست، بدون شلوغی
+ * بهینه‌سازی حرفه‌ای، مدرن، زیبا، کاربرپسند، محیط رسمی
+ * - تایپوگرافی تمیز و هماهنگ با Design System
+ * - کارت‌های با سایه ملایم و نوار تأکید (accent)
+ * - CTA واضح، دسترسی‌پذیر، حداقل 44px لمس
+ * - ریسپانسیو و RTL-friendly
  */
 
+/* ========== Section Container ========== */
 .promotional-events-section {
     padding: var(--spacing-xxxl, 4rem) 0;
     margin: 0;
     background: var(--medical-light, #f8f9fa);
+    position: relative;
+}
+
+.promotional-events-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--medical-border-light, #e9ecef) 15%, var(--medical-border-light, #e9ecef) 85%, transparent);
+    opacity: 0.8;
 }
 
 .promotional-events-section .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--spacing-md, 1rem);
+    padding: 0 var(--spacing-lg, 1.5rem);
+    position: relative;
 }
 
-/* ========== Header — هماهنگ با section-header ========== */
+/* ========== Header — آیکون + عنوان + زیرعنوان ========== */
 .promotional-events-header {
     text-align: center;
     margin-bottom: var(--spacing-xxl, 3rem);
     padding: 0 var(--spacing-md, 1rem);
 }
 
+.promotional-events-header-icon {
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.12) 0%, rgba(40, 167, 69, 0.08) 100%) !important;
+}
+
+.promotional-events-header-icon i {
+    color: var(--medical-primary, #2c5aa0) !important;
+}
+
 .promotional-events-title {
-    font-family: var(--font-family-heading, 'Vazirmatn', 'IRANSansX', 'Vazir', 'Tahoma', sans-serif);
-    font-size: clamp(1.5rem, 4vw, 1.75rem);
+    font-family: var(--font-family-heading, 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif);
+    font-size: clamp(1.375rem, 3.5vw, 1.75rem);
     font-weight: var(--font-weight-bold, 700);
     color: var(--medical-text, #1a365d);
     margin: 0 0 var(--spacing-sm, 0.5rem) 0;
@@ -41,7 +63,7 @@
     font-size: var(--font-size-base, 1rem);
     color: var(--medical-text-muted, #6c757d);
     margin: 0;
-    max-width: 700px;
+    max-width: 640px;
     margin-right: auto;
     margin-left: auto;
     line-height: var(--line-height-relaxed, 1.6);
@@ -51,43 +73,72 @@
 .promotional-events-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg, 1.5rem);
+    gap: var(--spacing-xl, 2rem);
 }
 
 @media (min-width: 576px) {
     .promotional-events-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-xl, 2rem);
     }
 }
 
 @media (min-width: 992px) {
     .promotional-events-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: var(--spacing-xl, 2rem);
+        gap: var(--spacing-xxl, 3rem);
     }
 }
 
-/* ========== Card — تمیز، سایه ملایم، حاشیه اصلی ========== */
+/* ========== Card — سایه ملایم، نوار تأکید، hover رسمی ========== */
 .promotional-event-card {
+    position: relative;
     background: var(--medical-bg, #fff);
-    border: 1px solid var(--medical-border, #dee2e6);
-    border-right: 4px solid var(--medical-primary, #2c5aa0);
+    border: 1px solid var(--medical-border-light, #e9ecef);
     border-radius: var(--radius-lg, 12px);
-    padding: var(--spacing-lg, 1.5rem);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    transition: box-shadow var(--transition-normal, 0.3s) ease, transform var(--transition-normal, 0.3s) ease;
+    padding: 0;
+    box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.06));
+    transition: box-shadow 0.3s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                transform 0.25s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                border-color 0.2s ease;
     display: flex;
     flex-direction: column;
-    min-height: 200px;
+    min-height: 220px;
+    overflow: hidden;
+}
+
+.promotional-event-card-accent {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--medical-primary, #2c5aa0), var(--medical-success, #28a745));
+    border-radius: 0 var(--radius-lg, 12px) var(--radius-lg, 12px) 0;
+}
+
+[dir="ltr"] .promotional-event-card-accent {
+    right: auto;
+    left: 0;
+    border-radius: var(--radius-lg, 12px) 0 0 var(--radius-lg, 12px);
 }
 
 .promotional-event-card:hover {
-    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.12);
+    box-shadow: var(--shadow-lg, 0 8px 16px rgba(0, 0, 0, 0.08));
+    border-color: var(--medical-border, #dee2e6);
 }
 
 .promotional-event-card:focus-within {
     outline: 2px solid var(--medical-primary, #2c5aa0);
     outline-offset: 2px;
+}
+
+.promotional-event-card-inner {
+    padding: var(--spacing-lg, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 /* ========== Card Header — آیکون + عنوان + بج تخفیف ========== */
@@ -108,7 +159,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.125rem;
 }
 
 .promotional-event-heading-block {
@@ -129,14 +180,15 @@
     display: inline-block;
     font-size: var(--font-size-sm, 0.875rem);
     font-weight: var(--font-weight-semibold, 600);
-    color: var(--medical-success, #28a745);
-    background: rgba(40, 167, 69, 0.1);
-    padding: 0.2rem 0.5rem;
+    color: var(--medical-success-dark, #1e7e34);
+    background: var(--medical-success-lighter, #d4edda);
+    padding: 0.25rem 0.6rem;
     border-radius: var(--radius-sm, 4px);
-    margin-top: 0.25rem;
+    margin-top: 0.35rem;
+    border: 1px solid rgba(40, 167, 69, 0.2);
 }
 
-/* ========== تاریخ — تگ time برای دسترسی‌پذیری ========== */
+/* ========== تاریخ ========== */
 .promotional-event-date {
     font-size: var(--font-size-sm, 0.875rem);
     color: var(--medical-text-muted, #6c757d);
@@ -145,6 +197,7 @@
 
 .promotional-event-date time {
     font-weight: 500;
+    color: var(--medical-text, #495057);
 }
 
 /* ========== ظرفیت باقی‌مانده ========== */
@@ -163,22 +216,23 @@
 .promotional-event-body {
     flex: 1;
     min-height: 0;
+    margin-bottom: var(--spacing-sm, 0.5rem);
 }
 
 .promotional-event-description {
     font-size: var(--font-size-base, 1rem);
     color: var(--medical-text, #495057);
     line-height: var(--line-height-relaxed, 1.6);
-    margin: 0 0 var(--spacing-lg, 1.5rem) 0;
+    margin: 0;
 }
 
-/* ========== CTA — حداقل 44px ارتفاع برای لمس، واضح ========== */
+/* ========== CTA — دکمه رزرو نوبت ========== */
 .promotional-event-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm, 0.5rem);
-    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    padding: 0.75rem var(--spacing-lg, 1.5rem);
     min-height: 44px;
     background: var(--medical-primary, #2c5aa0);
     color: #fff;
@@ -187,7 +241,7 @@
     font-size: var(--font-size-base, 1rem);
     font-weight: var(--font-weight-semibold, 600);
     text-decoration: none;
-    transition: background var(--transition-normal, 0.3s) ease, transform 0.2s ease;
+    transition: background 0.25s ease, color 0.2s ease, transform 0.2s ease;
     margin-top: auto;
 }
 
@@ -195,7 +249,6 @@
     background: var(--medical-primary-dark, #1e3d6f);
     color: #fff;
     text-decoration: none;
-    transform: translateY(-1px);
 }
 
 .promotional-event-cta:focus-visible {
@@ -207,15 +260,60 @@
     font-size: 1rem;
 }
 
-/* ========== موبایل — فاصله و خوانایی ========== */
+/* ========== انیمیشن ورود کارت‌ها (هنگام lazy-loaded) ========== */
+.promotional-events-section.lazy-loaded .promotional-event-card {
+    animation: pe-card-fade-in 0.5s var(--ease-out, cubic-bezier(0, 0, 0.2, 1)) both;
+}
+
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="1"] { animation-delay: 0.05s; }
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="2"] { animation-delay: 0.1s; }
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="3"] { animation-delay: 0.15s; }
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="4"] { animation-delay: 0.2s; }
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="5"] { animation-delay: 0.25s; }
+.promotional-events-section.lazy-loaded .promotional-event-card[data-card-index="6"] { animation-delay: 0.3s; }
+
+@keyframes pe-card-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== موبایل ========== */
 @media (max-width: 575.98px) {
     .promotional-events-section {
         padding: var(--spacing-xxl, 3rem) 0;
     }
-    .promotional-event-card {
+
+    .promotional-events-header {
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .promotional-events-grid {
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .promotional-event-card-inner {
         padding: var(--spacing-md, 1rem);
     }
+
     .promotional-event-cta {
         width: 100%;
+    }
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+    .promotional-event-card,
+    .promotional-event-cta {
+        transition: none;
+    }
+
+    .promotional-events-section.lazy-loaded .promotional-event-card {
+        animation: none;
     }
 }

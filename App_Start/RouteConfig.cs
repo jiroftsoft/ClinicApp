@@ -589,6 +589,14 @@ namespace ClinicApp
                 namespaces: new[] { "ClinicApp.Controllers" }
             );
 
+            // 📚 PatientEducation API - برای فیلتر بدون رفرش (جلوگیری از 404)
+            routes.MapRoute(
+                name: "PatientEducation_GetMaterialsJson",
+                url: "PatientEducation/GetMaterialsJson",
+                defaults: new { controller = "PatientEducation", action = "GetMaterialsJson" },
+                namespaces: new[] { "ClinicApp.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // 🏥 Default Route - با اولویت namespace ها
             // CRITICAL: Api namespace باید آخر باشد تا conflict با MVC controllers نداشته باشد
             routes.MapRoute(

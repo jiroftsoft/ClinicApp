@@ -33,7 +33,7 @@
             </span>
             <ul class="patient-education-filter-list">
                 <li>
-                    <a href="@Url.Action("Index")" class="@(Model.SearchModel?.Category == null ? "is-active" : "")" aria-current="@(Model.SearchModel?.Category == null ? "true" : null)">
+                    <a href="@Url.Action("Index")" data-category="" class="@(Model.SearchModel?.Category == null ? "is-active" : "")" aria-current="@(Model.SearchModel?.Category == null ? "true" : null)">
                         همه دسته‌بندی‌ها
                     </a>
                 </li>
@@ -44,6 +44,7 @@
                         var isActive = Model.SearchModel?.Category == cat;
                         <li>
                             <a href="@Url.Action("Index", new { category = (int)cat })"
+                               data-category="@((int)cat)"
                                class="@(isActive ? "is-active" : "")"
                                aria-current="@(isActive ? "true" : null)">
                                 @cat.GetDisplayName()
@@ -54,7 +55,7 @@
             </ul>
         </nav>
 
-        <div class="patient-education-grid" id="materialsContainer">
+        <div class="patient-education-grid" id="materialsContainer" aria-live="polite" aria-busy="false">
             @if (Model.Materials != null && Model.Materials.Items != null && Model.Materials.Items.Any())
             {
                 foreach (var material in Model.Materials.Items)
@@ -119,7 +120,7 @@
         @if (Model.Materials != null && Model.Materials.TotalPages > 1)
         {
             var currentCategory = Model.SearchModel?.Category;
-            <nav class="patient-education-pagination-wrap" aria-label="صفحه‌بندی مطالب">
+            <nav class="patient-education-pagination-wrap" aria-label="صفحه‌بندی مطالب" id="paginationWrap">
                 <ul class="pagination justify-content-center">
                     @if (Model.Materials.HasPreviousPage)
                     {
@@ -195,3 +196,5 @@
         }
     </div>
 </div>
+
+<script src="@Url.Content("~/Content/js/patient-education-index.js")" data-api-url="@Url.Action("GetMaterialsJson", "PatientEducation")"></script>
