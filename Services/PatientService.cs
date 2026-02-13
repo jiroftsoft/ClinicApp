@@ -1,4 +1,4 @@
-﻿using ClinicApp.Core;
+using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -1367,6 +1367,38 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// به‌روزرسانی پروفایل بیمار از مقادیر فرم (داشبورد و API پروفایل) — یک نقطه حقیقت برای اعتبارسنجی و به‌روزرسانی
+        /// </summary>
+        public async Task<ServiceResult> UpdatePatientProfileFromFormAsync(int patientId, string firstName, string lastName, string phoneNumber, string email, string birthDate, string gender, string address)
+        {
+            _log.Information("به‌روزرسانی پروفایل از فرم - PatientId: {PatientId}", patientId);
+
+            if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+                return ServiceResult.Failed("نام و نام خانوادگی الزامی است", "VALIDATION", ErrorCategory.Validation, SecurityLevel.Low);
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                return ServiceResult.Failed("شماره تماس الزامی است", "VALIDATION", ErrorCategory.Validation, SecurityLevel.Low);
+
+            var getResult = await GetPatientForEditAsync(patientId);
+            if (!getResult.Success || getResult.Data == null)
+                return ServiceResult.Failed(getResult.Message ?? "اطلاعات بیمار یافت نشد", getResult.Code, ErrorCategory.NotFound, SecurityLevel.Medium);
+
+            var model = getResult.Data;
+            model.FirstName = firstName.Trim();
+            model.LastName = lastName.Trim();
+            model.PhoneNumber = phoneNumber.Trim();
+            model.Email = !string.IsNullOrWhiteSpace(email) ? email.Trim() : null;
+            model.Address = !string.IsNullOrWhiteSpace(address) ? address.Trim() : null;
+
+            if (!string.IsNullOrWhiteSpace(gender) && Enum.TryParse<Gender>(gender, true, out var genderEnum))
+                model.Gender = genderEnum;
+
+            if (!string.IsNullOrWhiteSpace(birthDate) && DateTime.TryParse(birthDate, out var parsedDate))
+                model.BirthDate = parsedDate;
+
+            return await UpdatePatientAsync(model);
+        }
+
+        /// <summary>
         /// بررسی وابستگی‌های بیمار قبل از حذف - طبق استانداردهای سیستم‌های درمانی
         /// </summary>
         public async Task<ServiceResult> CheckPatientDependenciesAsync(int patientId)
@@ -2106,6 +2138,153 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت تاریخچه نوبت‌های بیمار با اطلاعات صفحه‌بندی (برای داشبورد و جایی که TotalCount لازم است)
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            _log.Information(
+                "درخواست نوبت‌های بیمار با صفحه‌بندی - PatientId: {PatientId}, Page: {PageNumber}, PageSize: {PageSize}",
+                patientId, pageNumber, pageSize);
+
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                var query = _context.Appointments
+                    .AsNoTracking()
+                    .Include(a => a.Doctor)
+                    .Include(a => a.ServiceCategory)
+                    .Where(a => a.PatientId == patientId && !a.IsDeleted);
+
+                int totalItems = await query.CountAsync();
+
+                var appointments = await query
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = appointments.Select(a => new PatientAppointmentViewModel
+                {
+                    AppointmentId = a.AppointmentId,
+                    PatientId = a.PatientId ?? 0,
+                    DoctorId = a.DoctorId,
+                    DoctorName = a.Doctor?.FullName,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    Status = a.Status,
+                    StatusText = GetAppointmentStatusText(a.Status),
+                    Price = a.Price,
+                    ServiceCategoryName = a.ServiceCategory?.Title,
+                    Notes = a.Description,
+                    CreatedAt = a.CreatedAt,
+                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                }).ToList();
+
+                var paged = new PagedResult<PatientAppointmentViewModel>(viewModels, totalItems, pageNumber, pageSize);
+                return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Successful(
+                    paged,
+                    "تاریخچه نوبت‌های بیمار با موفقیت دریافت شد.",
+                    operationName: "GetPatientAppointmentsPaged",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت نوبت‌های بیمار با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Failed(
+                    "خطا در دریافت تاریخچه نوبت‌ها.",
+                    "GET_APPOINTMENTS_PAGED_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// نوبت‌های آینده بیمار با صفحه‌بندی در DB — فیلتر تاریخ و وضعیت در دیتابیس، بدون بارگذاری همه در حافظه.
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientUpcomingAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            _log.Information(
+                "درخواست نوبت‌های آینده با صفحه‌بندی - PatientId: {PatientId}, Page: {PageNumber}, PageSize: {PageSize}",
+                patientId, pageNumber, pageSize);
+
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                var now = DateTime.Now;
+
+                var query = _context.Appointments
+                    .AsNoTracking()
+                    .Include(a => a.Doctor)
+                    .Include(a => a.ServiceCategory)
+                    .Where(a => a.PatientId == patientId
+                        && !a.IsDeleted
+                        && a.AppointmentDate > now
+                        && a.Status != AppointmentStatus.Cancelled);
+
+                int totalItems = await query.CountAsync();
+
+                var appointments = await query
+                    .OrderBy(a => a.AppointmentDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = appointments.Select(a => new PatientAppointmentViewModel
+                {
+                    AppointmentId = a.AppointmentId,
+                    PatientId = a.PatientId ?? 0,
+                    DoctorId = a.DoctorId,
+                    DoctorName = a.Doctor?.FullName,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    Status = a.Status,
+                    StatusText = GetAppointmentStatusText(a.Status),
+                    Price = a.Price,
+                    ServiceCategoryName = a.ServiceCategory?.Title,
+                    Notes = a.Description,
+                    CreatedAt = a.CreatedAt,
+                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                }).ToList();
+
+                var paged = new PagedResult<PatientAppointmentViewModel>(viewModels, totalItems, pageNumber, pageSize);
+                return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Successful(
+                    paged,
+                    "نوبت‌های آینده با موفقیت دریافت شد.",
+                    operationName: "GetPatientUpcomingAppointmentsPaged",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت نوبت‌های آینده با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Failed(
+                    "خطا در دریافت نوبت‌های آینده.",
+                    "GET_UPCOMING_APPOINTMENTS_PAGED_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// تعداد پذیرش‌های بیمار — یک کوئری سبک COUNT، Real-Time (بدون کش).
+        /// </summary>
+        public async Task<int> GetPatientReceptionCountAsync(int patientId)
+        {
+            return await _context.Receptions
+                .AsNoTracking()
+                .CountAsync(r => r.PatientId == patientId && !r.IsDeleted);
+        }
+
+        /// <summary>
         /// دریافت تاریخچه پذیرش‌های بیمار
         /// </summary>
         public async Task<ServiceResult<List<PatientReceptionViewModel>>> GetPatientReceptionsAsync(int patientId, int pageNumber = 1, int pageSize = 10)
@@ -2181,6 +2360,74 @@ namespace ClinicApp.Services
                 return ServiceResult<List<PatientReceptionViewModel>>.Failed(
                     "خطا در دریافت تاریخچه پذیرش‌ها. لطفاً دوباره تلاش کنید.",
                     "GET_RECEPTIONS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت پذیرش‌های بیمار با صفحه‌بندی و TotalCount — برای پرونده پزشکی (فاز ۱.۲).
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<PatientReceptionViewModel>>> GetPatientReceptionsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                var query = _context.Receptions
+                    .AsNoTracking()
+                    .Include(r => r.Doctor)
+                    .Include(r => r.ReceptionItems)
+                    .Include(r => r.Transactions)
+                    .Include(r => r.ActivePatientInsurance.InsurancePlan.InsuranceProvider)
+                    .Where(r => r.PatientId == patientId && !r.IsDeleted);
+
+                int totalItems = await query.CountAsync();
+
+                var receptions = await query
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = receptions.Select(r => new PatientReceptionViewModel
+                {
+                    ReceptionId = r.ReceptionId,
+                    PatientId = r.PatientId,
+                    DoctorId = r.DoctorId,
+                    DoctorName = r.Doctor?.FullName,
+                    ReceptionDate = r.ReceptionDate,
+                    ReceptionDateShamsi = r.ReceptionDate.ToPersianDateTime(),
+                    Status = r.Status,
+                    StatusText = GetReceptionStatusText(r.Status),
+                    TotalAmount = r.TotalAmount,
+                    PatientCoPay = r.PatientCoPay,
+                    InsurerShareAmount = r.InsurerShareAmount,
+                    InsuranceProviderName = r.ActivePatientInsurance?.InsurancePlan?.InsuranceProvider?.Name,
+                    IsPaid = r.IsPaid,
+                    ServicesCount = r.ReceptionItems?.Count ?? 0,
+                    PaymentsCount = r.Transactions?.Count(t => t.Status == PaymentStatus.Success) ?? 0,
+                    CreatedAt = r.CreatedAt,
+                    CreatedAtShamsi = r.CreatedAt.ToPersianDateTime()
+                }).ToList();
+
+                var paged = new PagedResult<PatientReceptionViewModel>(viewModels, totalItems, pageNumber, pageSize);
+                return ServiceResult<PagedResult<PatientReceptionViewModel>>.Successful(
+                    paged,
+                    "تاریخچه پذیرش‌های بیمار با موفقیت دریافت شد.",
+                    operationName: "GetPatientReceptionsPaged",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت پذیرش‌های بیمار با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                return ServiceResult<PagedResult<PatientReceptionViewModel>>.Failed(
+                    "خطا در دریافت تاریخچه پذیرش‌ها.",
+                    "GET_RECEPTIONS_PAGED_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.Medium);
             }

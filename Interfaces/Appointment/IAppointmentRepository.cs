@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
+using ClinicApp.Models.DTOs.Appointment;
 
 namespace ClinicApp.Interfaces.Appointment
 {
@@ -10,6 +11,11 @@ namespace ClinicApp.Interfaces.Appointment
     /// </summary>
     public interface IAppointmentRepository
     {
+        /// <summary>
+        /// آمار شمارش نوبت‌های یک بیمار (فقط COUNT، بدون بارگذاری موجودیت) — Real-Time، بدون کش.
+        /// </summary>
+        Task<PatientAppointmentCountsDto> GetPatientAppointmentCountsAsync(int patientId, DateTime asOf);
+
         /// <summary>
         /// دریافت نوبت‌های بیمار
         /// </summary>

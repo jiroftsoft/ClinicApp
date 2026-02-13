@@ -23,6 +23,40 @@ namespace ClinicApp.Factories.Patient
         {
             if (entity == null) return null;
             
+            var medications = entity.Medications?
+                .OrderBy(m => m.DisplayOrder)
+                .ThenBy(m => m.Id)
+                .Select(m => new MedicalHistoryMedicationItemDto
+                {
+                    Id = m.Id,
+                    DrugName = m.DrugName,
+                    Dosage = m.Dosage,
+                    DosageUnit = m.DosageUnit,
+                    Frequency = m.Frequency,
+                    Route = m.Route,
+                    StartDate = m.StartDate,
+                    StartDateShamsi = m.StartDate?.ToPersianDate(),
+                    EndDate = m.EndDate,
+                    EndDateShamsi = m.EndDate?.ToPersianDate(),
+                    Indication = m.Indication,
+                    PrescribingDoctor = m.PrescribingDoctor,
+                    IsActive = m.IsActive
+                }).ToList() ?? new List<MedicalHistoryMedicationItemDto>();
+            
+            var labResults = entity.LabResults?
+                .OrderBy(l => l.LabDate)
+                .ThenBy(l => l.Id)
+                .Select(l => new MedicalHistoryLabResultItemDto
+                {
+                    Id = l.Id,
+                    LabName = l.LabName,
+                    Value = l.Value,
+                    Unit = l.Unit,
+                    LabDate = l.LabDate,
+                    LabDateShamsi = l.LabDate.ToPersianDate(),
+                    ReferenceRange = l.ReferenceRange
+                }).ToList() ?? new List<MedicalHistoryLabResultItemDto>();
+            
             return new MedicalHistoryViewModel
             {
                 MedicalHistoryId = entity.MedicalHistoryId,
@@ -40,6 +74,9 @@ namespace ClinicApp.Factories.Patient
                 DoctorName = entity.DoctorName,
                 MedicalCenter = entity.MedicalCenter,
                 Attachments = entity.Attachments,
+                IsCritical = entity.IsCritical,
+                Medications = medications,
+                LabResults = labResults,
                 CreatedAt = entity.CreatedAt,
                 CreatedAtShamsi = entity.CreatedAt.ToPersianDateTime(),
                 UpdatedAt = entity.UpdatedAt,
@@ -67,11 +104,15 @@ namespace ClinicApp.Factories.Patient
         {
             if (viewModel == null) return null;
             
-            return new MedicalHistory
+            var title = viewModel.Title?.Trim();
+            if (viewModel.Type == Models.Enums.MedicalHistoryType.Medication && string.IsNullOrEmpty(title) && !string.IsNullOrWhiteSpace(viewModel.DrugName))
+                title = viewModel.DrugName.Trim();
+            
+            var entity = new MedicalHistory
             {
                 PatientId = patientId,
                 Type = viewModel.Type,
-                Title = viewModel.Title,
+                Title = title ?? string.Empty,
                 Description = viewModel.Description,
                 StartDate = viewModel.StartDate,
                 EndDate = viewModel.EndDate,
@@ -80,9 +121,77 @@ namespace ClinicApp.Factories.Patient
                 DoctorName = viewModel.DoctorName,
                 MedicalCenter = viewModel.MedicalCenter,
                 Attachments = viewModel.Attachments,
+                IsCritical = viewModel.IsCritical,
                 CreatedByUserId = createdByUserId,
                 CreatedAt = DateTime.Now
             };
+            
+            if (viewModel.Type == Models.Enums.MedicalHistoryType.Medication)
+            {
+                var drugName = viewModel.DrugName?.Trim();
+                if (string.IsNullOrWhiteSpace(drugName) && !string.IsNullOrWhiteSpace(title))
+                    drugName = title;
+                if (!string.IsNullOrWhiteSpace(drugName))
+                {
+                    entity.Medications.Add(new MedicalHistoryMedication
+                    {
+                        DrugName = drugName,
+                        Dosage = viewModel.Dosage?.Trim(),
+                    DosageUnit = viewModel.DosageUnit?.Trim(),
+                    Frequency = viewModel.Frequency?.Trim(),
+                    Route = viewModel.Route?.Trim(),
+                    StartDate = viewModel.StartDate,
+                    EndDate = viewModel.EndDate,
+                    Indication = viewModel.Indication?.Trim(),
+                    PrescribingDoctor = viewModel.PrescribingDoctor?.Trim(),
+                    IsActive = viewModel.IsActive,
+                    DisplayOrder = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = createdByUserId
+                });
+                }
+            }
+            
+            if (viewModel.Type == Models.Enums.MedicalHistoryType.Disease && 
+                viewModel.MedicationsList != null && viewModel.MedicationsList.Any())
+            {
+                var order = 0;
+                foreach (var m in viewModel.MedicationsList.Where(x => !string.IsNullOrWhiteSpace(x.DrugName)))
+                {
+                    entity.Medications.Add(new MedicalHistoryMedication
+                    {
+                        DrugName = (m.DrugName ?? "").Trim(),
+                        Dosage = m.Dosage?.Trim(),
+                        DosageUnit = m.DosageUnit?.Trim(),
+                        Frequency = m.Frequency?.Trim(),
+                        Route = m.Route?.Trim(),
+                        StartDate = viewModel.StartDate,
+                        EndDate = viewModel.EndDate,
+                        Indication = m.Indication?.Trim(),
+                        PrescribingDoctor = m.PrescribingDoctor?.Trim(),
+                        IsActive = true,
+                        DisplayOrder = order++,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedByUserId = createdByUserId
+                    });
+                }
+            }
+            
+            if (!string.IsNullOrWhiteSpace(viewModel.LabName?.Trim()))
+            {
+                entity.LabResults.Add(new MedicalHistoryLabResult
+                {
+                    LabName = viewModel.LabName.Trim(),
+                    Value = viewModel.LabValue?.Trim(),
+                    Unit = viewModel.LabUnit?.Trim(),
+                    LabDate = viewModel.LabDate ?? entity.StartDate ?? DateTime.UtcNow.Date,
+                    ReferenceRange = viewModel.LabReferenceRange?.Trim(),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = createdByUserId
+                });
+            }
+            
+            return entity;
         }
         
         /// <summary>
@@ -94,8 +203,12 @@ namespace ClinicApp.Factories.Patient
         {
             if (entity == null || viewModel == null) return;
             
+            var title = viewModel.Title?.Trim();
+            if (viewModel.Type == Models.Enums.MedicalHistoryType.Medication && string.IsNullOrEmpty(title) && !string.IsNullOrWhiteSpace(viewModel.DrugName))
+                title = viewModel.DrugName.Trim();
+            
             entity.Type = viewModel.Type;
-            entity.Title = viewModel.Title;
+            entity.Title = title ?? entity.Title;
             entity.Description = viewModel.Description;
             entity.StartDate = viewModel.StartDate;
             entity.EndDate = viewModel.EndDate;
@@ -104,8 +217,136 @@ namespace ClinicApp.Factories.Patient
             entity.DoctorName = viewModel.DoctorName;
             entity.MedicalCenter = viewModel.MedicalCenter;
             entity.Attachments = viewModel.Attachments;
+            entity.IsCritical = viewModel.IsCritical;
             entity.UpdatedByUserId = updatedByUserId;
             entity.UpdatedAt = DateTime.Now;
+        }
+        
+        /// <summary>
+        /// همگام‌سازی داروهای مرتبط با تاریخچه (یک دارو برای نوع دارو، چند دارو برای نوع بیماری)
+        /// </summary>
+        public static void SyncMedicationFromViewModel(MedicalHistory entity,
+            MedicalHistoryCreateEditViewModel viewModel, string userId)
+        {
+            if (entity == null || viewModel == null || entity.Medications == null) return;
+            
+            if (viewModel.Type == Models.Enums.MedicalHistoryType.Disease && 
+                viewModel.MedicationsList != null && viewModel.MedicationsList.Any())
+            {
+                entity.Medications.Clear();
+                var order = 0;
+                foreach (var m in viewModel.MedicationsList.Where(x => !string.IsNullOrWhiteSpace(x.DrugName)))
+                {
+                    entity.Medications.Add(new MedicalHistoryMedication
+                    {
+                        MedicalHistoryId = entity.MedicalHistoryId,
+                        DrugName = (m.DrugName ?? "").Trim(),
+                        Dosage = m.Dosage?.Trim(),
+                        DosageUnit = m.DosageUnit?.Trim(),
+                        Frequency = m.Frequency?.Trim(),
+                        Route = m.Route?.Trim(),
+                        StartDate = viewModel.StartDate,
+                        EndDate = viewModel.EndDate,
+                        Indication = m.Indication?.Trim(),
+                        PrescribingDoctor = m.PrescribingDoctor?.Trim(),
+                        IsActive = true,
+                        DisplayOrder = order++,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedByUserId = userId
+                    });
+                }
+                return;
+            }
+            
+            if (viewModel.Type != Models.Enums.MedicalHistoryType.Medication)
+            {
+                entity.Medications?.Clear();
+                return;
+            }
+            
+            var drugName = viewModel.DrugName?.Trim();
+            if (string.IsNullOrWhiteSpace(drugName) && !string.IsNullOrWhiteSpace(viewModel.Title))
+                drugName = viewModel.Title.Trim();
+            if (string.IsNullOrWhiteSpace(drugName))
+            {
+                entity.Medications?.Clear();
+                return;
+            }
+            
+            var med = entity.Medications?.FirstOrDefault();
+            if (med == null)
+            {
+                entity.Medications.Add(new MedicalHistoryMedication
+                {
+                    MedicalHistoryId = entity.MedicalHistoryId,
+                    DrugName = drugName,
+                    Dosage = viewModel.Dosage?.Trim(),
+                    DosageUnit = viewModel.DosageUnit?.Trim(),
+                    Frequency = viewModel.Frequency?.Trim(),
+                    Route = viewModel.Route?.Trim(),
+                    StartDate = viewModel.StartDate,
+                    EndDate = viewModel.EndDate,
+                    Indication = viewModel.Indication?.Trim(),
+                    PrescribingDoctor = viewModel.PrescribingDoctor?.Trim(),
+                    IsActive = viewModel.IsActive,
+                    DisplayOrder = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = userId
+                });
+            }
+            else
+            {
+                med.DrugName = drugName;
+                med.Dosage = viewModel.Dosage?.Trim();
+                med.DosageUnit = viewModel.DosageUnit?.Trim();
+                med.Frequency = viewModel.Frequency?.Trim();
+                med.Route = viewModel.Route?.Trim();
+                med.StartDate = viewModel.StartDate;
+                med.EndDate = viewModel.EndDate;
+                med.Indication = viewModel.Indication?.Trim();
+                med.PrescribingDoctor = viewModel.PrescribingDoctor?.Trim();
+                med.IsActive = viewModel.IsActive;
+            }
+        }
+        
+        /// <summary>
+        /// همگام‌سازی نتایج آزمایش (یک آزمایش در فرم ساده)
+        /// </summary>
+        public static void SyncLabFromViewModel(MedicalHistory entity,
+            MedicalHistoryCreateEditViewModel viewModel, string userId)
+        {
+            if (entity == null || viewModel == null || entity.LabResults == null) return;
+            
+            if (string.IsNullOrWhiteSpace(viewModel.LabName?.Trim()))
+            {
+                entity.LabResults.Clear();
+                return;
+            }
+            
+            var lab = entity.LabResults.FirstOrDefault();
+            var labDate = viewModel.LabDate ?? entity.StartDate ?? DateTime.UtcNow.Date;
+            if (lab == null)
+            {
+                entity.LabResults.Add(new MedicalHistoryLabResult
+                {
+                    MedicalHistoryId = entity.MedicalHistoryId,
+                    LabName = viewModel.LabName.Trim(),
+                    Value = viewModel.LabValue?.Trim(),
+                    Unit = viewModel.LabUnit?.Trim(),
+                    LabDate = labDate,
+                    ReferenceRange = viewModel.LabReferenceRange?.Trim(),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = userId
+                });
+            }
+            else
+            {
+                lab.LabName = viewModel.LabName.Trim();
+                lab.Value = viewModel.LabValue?.Trim();
+                lab.Unit = viewModel.LabUnit?.Trim();
+                lab.LabDate = labDate;
+                lab.ReferenceRange = viewModel.LabReferenceRange?.Trim();
+            }
         }
         
         /// <summary>

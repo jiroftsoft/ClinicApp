@@ -5,6 +5,7 @@ using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Models;
 using ClinicApp.ViewModels.Patient;
 using Microsoft.AspNet.Identity;
 using Serilog;
@@ -28,8 +29,9 @@ namespace ClinicApp.Areas.Patient.Controllers
         public SettingsController(
             ILogger logger,
             ICurrentUserService currentUserService,
-            IPatientSettingsService settingsService)
-            : base(logger, currentUserService)
+            IPatientSettingsService settingsService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
@@ -193,11 +195,11 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// به‌روزرسانی تنظیمات اعلان‌ها
         /// POST: /Patient/Settings/UpdateNotifications
-        /// ✅ طبق DEVELOPMENT_CONTRACT.md - ServiceResult Enhanced
+        /// ✅ چک‌باکس unchecked در فرم ارسال نمی‌شود؛ پارامترها nullable تا مقدار null به false تبدیل شود.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> UpdateNotifications(bool emailNotifications, bool smsNotifications, bool appointmentReminders)
+        public async Task<ActionResult> UpdateNotifications(bool? emailNotifications, bool? smsNotifications, bool? appointmentReminders)
         {
             try
             {
@@ -211,12 +213,12 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("Login", "Account", new { area = "" });
                 }
 
-                // ✅ استفاده از Service Layer
+                // ✅ چک‌باکس unchecked در POST ارسال نمی‌شود → null را به false تبدیل می‌کنیم
                 var dto = new NotificationSettingsDto
                 {
-                    EmailNotifications = emailNotifications,
-                    SmsNotifications = smsNotifications,
-                    AppointmentReminders = appointmentReminders
+                    EmailNotifications = emailNotifications ?? false,
+                    SmsNotifications = smsNotifications ?? false,
+                    AppointmentReminders = appointmentReminders ?? false
                 };
 
                 var result = await _settingsService.UpdateNotificationSettingsAsync(patientId.Value, dto);

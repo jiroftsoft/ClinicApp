@@ -155,6 +155,59 @@ namespace ClinicApp.Services.Patient
                     SecurityLevel.Medium);
             }
         }
+
+        /// <summary>
+        /// دریافت تاریخچه پزشکی با صفحه‌بندی و فیلتر — برای پرونده غنی (۵+ سال).
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<MedicalHistoryViewModel>>> GetMedicalHistoriesPagedAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 20,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            string searchText = null)
+        {
+            try
+            {
+                if (!await ValidatePatientAccessAsync(patientId))
+                {
+                    return ServiceResult<PagedResult<MedicalHistoryViewModel>>.Failed(
+                        "دسترسی غیرمجاز",
+                        "UNAUTHORIZED_ACCESS",
+                        ErrorCategory.Security,
+                        SecurityLevel.High);
+                }
+
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 20;
+                if (pageSize > 50) pageSize = 50;
+
+                _logger.Information("دریافت تاریخچه پزشکی صفحه‌بندی - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}",
+                    patientId, pageNumber, pageSize);
+
+                var (items, totalCount) = await _repository.GetMedicalHistoriesPagedAsync(
+                    patientId, pageNumber, pageSize, fromDate, toDate, searchText);
+
+                var viewModels = MedicalRecordFactory.ToViewModelList(items);
+                var paged = new PagedResult<MedicalHistoryViewModel>(viewModels, totalCount, pageNumber, pageSize);
+
+                return ServiceResult<PagedResult<MedicalHistoryViewModel>>.Successful(
+                    paged,
+                    "تاریخچه پزشکی با موفقیت دریافت شد.",
+                    operationName: "GetMedicalHistoriesPaged",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تاریخچه پزشکی صفحه‌بندی - PatientId: {PatientId}", patientId);
+                return ServiceResult<PagedResult<MedicalHistoryViewModel>>.Failed(
+                    "خطا در دریافت تاریخچه پزشکی",
+                    "GET_MEDICAL_HISTORIES_PAGED_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
         
         /// <summary>
         /// دریافت تاریخچه پزشکی با شناسه
@@ -254,6 +307,14 @@ namespace ClinicApp.Services.Patient
                         ErrorCategory.Validation);
                 }
                 
+                if (model.Type == Models.Enums.MedicalHistoryType.Medication && string.IsNullOrWhiteSpace(model.Title) && string.IsNullOrWhiteSpace(model.DrugName))
+                {
+                    return ServiceResult.Failed(
+                        "برای نوع دارو، عنوان یا نام دارو الزامی است.",
+                        "MEDICATION_NAME_REQUIRED",
+                        ErrorCategory.Validation);
+                }
+                
                 // ✅ Factory Method: تبدیل ViewModel → Entity
                 var entity = MedicalRecordFactory.ToEntity(model, patientId, _currentUserService.UserId);
                 
@@ -346,9 +407,18 @@ namespace ClinicApp.Services.Patient
                         "INVALID_DATE_RANGE",
                         ErrorCategory.Validation);
                 }
+                if (model.Type == Models.Enums.MedicalHistoryType.Medication && string.IsNullOrWhiteSpace(model.Title) && string.IsNullOrWhiteSpace(model.DrugName))
+                {
+                    return ServiceResult.Failed(
+                        "برای نوع دارو، عنوان یا نام دارو الزامی است.",
+                        "MEDICATION_NAME_REQUIRED",
+                        ErrorCategory.Validation);
+                }
                 
                 // ✅ Factory Method: به‌روزرسانی Entity از ViewModel
                 MedicalRecordFactory.UpdateEntity(entity, model, _currentUserService.UserId);
+                MedicalRecordFactory.SyncMedicationFromViewModel(entity, model, _currentUserService.UserId);
+                MedicalRecordFactory.SyncLabFromViewModel(entity, model, _currentUserService.UserId);
                 
                 // ✅ Save
                 await _repository.UpdateMedicalHistoryAsync(entity);
@@ -481,65 +551,64 @@ namespace ClinicApp.Services.Patient
         /// ✅ Factory Method
         /// ✅ Authorization
         /// </summary>
-        public async Task<ServiceResult<List<MedicalRecordAppointmentViewModel>>> GetAppointmentsAsync(
+        public async Task<ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>> GetAppointmentsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                // ✅ Authorization
                 if (!await ValidatePatientAccessAsync(patientId))
                 {
-                    return ServiceResult<List<MedicalRecordAppointmentViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>.Failed(
                         "دسترسی غیرمجاز",
                         "UNAUTHORIZED_ACCESS",
                         ErrorCategory.Security,
                         SecurityLevel.High);
                 }
-                
-                _logger.Information("دریافت نوبت‌های پزشکی - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}", 
-                    patientId, pageNumber, pageSize);
-                
-                // ✅ Validation
+
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 50) pageSize = 50;
-                
-                // ✅ دریافت نوبت‌ها
-                var result = await _appointmentService.GetPatientAppointmentsAsync(patientId);
+
+                _logger.Information("دریافت نوبت‌های پزشکی - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}",
+                    patientId, pageNumber, pageSize);
+
+                var result = await _patientService.GetPatientAppointmentsPagedAsync(patientId, pageNumber, pageSize);
                 if (!result.Success)
                 {
-                    return ServiceResult<List<MedicalRecordAppointmentViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>.Failed(
                         result.Message,
                         result.Code);
                 }
-                
-                var appointments = result.Data ?? new List<Models.DTOs.Appointment.PatientAppointmentDto>();
-                
-                // ✅ Factory Method: تبدیل Entity → ViewModel
-                var viewModels = appointments
-                    .OrderByDescending(a => a.AppointmentDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .Select(a => MedicalRecordFactory.ToViewModel(
-                        new Models.Entities.Appointment.Appointment
-                        {
-                            AppointmentId = a.AppointmentId,
-                            DoctorId = a.DoctorId,
-                            AppointmentDate = a.AppointmentDate,
-                            Status = a.Status,
-                            Price = a.Price,
-                            Description = a.Description,
-                            IsNewPatient = false,
-                            Duration = a.Duration
-                        },
-                        a.DoctorName,
-                        null,
-                        null))
-                    .Where(vm => vm != null)
+
+                var paged = result.Data;
+                var viewModels = (paged?.Items ?? new List<ViewModels.PatientAppointmentViewModel>())
+                    .Select(a => new MedicalRecordAppointmentViewModel
+                    {
+                        AppointmentId = a.AppointmentId,
+                        DoctorId = a.DoctorId,
+                        DoctorName = a.DoctorName,
+                        DoctorSpecialization = a.ServiceCategoryName,
+                        AppointmentDate = a.AppointmentDate,
+                        AppointmentDateShamsi = a.AppointmentDateShamsi,
+                        AppointmentTime = a.AppointmentDate.ToString("HH:mm"),
+                        Status = a.Status,
+                        StatusText = a.StatusText,
+                        Price = a.Price,
+                        Description = a.Notes,
+                        ServiceCategory = a.ServiceCategoryName,
+                        IsNewPatient = false,
+                        Duration = null
+                    })
                     .ToList();
-                
-                return ServiceResult<List<MedicalRecordAppointmentViewModel>>.Successful(
+
+                var outPaged = new PagedResult<MedicalRecordAppointmentViewModel>(
                     viewModels,
+                    paged?.TotalItems ?? 0,
+                    pageNumber,
+                    pageSize);
+
+                return ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>.Successful(
+                    outPaged,
                     "نوبت‌های پزشکی با موفقیت دریافت شد.",
                     operationName: "GetAppointments",
                     userId: _currentUserService.UserId,
@@ -548,7 +617,7 @@ namespace ClinicApp.Services.Patient
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت نوبت‌های پزشکی - PatientId: {PatientId}", patientId);
-                return ServiceResult<List<MedicalRecordAppointmentViewModel>>.Failed(
+                return ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>.Failed(
                     "خطا در دریافت نوبت‌های پزشکی",
                     "GET_APPOINTMENTS_ERROR",
                     ErrorCategory.General,
@@ -562,41 +631,38 @@ namespace ClinicApp.Services.Patient
         /// ✅ Factory Method
         /// ✅ Authorization
         /// </summary>
-        public async Task<ServiceResult<List<MedicalRecordReceptionViewModel>>> GetReceptionsAsync(
+        public async Task<ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>> GetReceptionsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                // ✅ Authorization
                 if (!await ValidatePatientAccessAsync(patientId))
                 {
-                    return ServiceResult<List<MedicalRecordReceptionViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>.Failed(
                         "دسترسی غیرمجاز",
                         "UNAUTHORIZED_ACCESS",
                         ErrorCategory.Security,
                         SecurityLevel.High);
                 }
-                
-                _logger.Information("دریافت پذیرش‌ها - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}", 
-                    patientId, pageNumber, pageSize);
-                
-                // ✅ Validation
+
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 50) pageSize = 50;
-                
-                // ✅ دریافت پذیرش‌ها
-                var result = await _patientService.GetPatientReceptionsAsync(patientId, pageNumber, pageSize);
+
+                _logger.Information("دریافت پذیرش‌ها - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}",
+                    patientId, pageNumber, pageSize);
+
+                var result = await _patientService.GetPatientReceptionsPagedAsync(patientId, pageNumber, pageSize);
                 if (!result.Success)
                 {
-                    return ServiceResult<List<MedicalRecordReceptionViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>.Failed(
                         result.Message,
                         result.Code);
                 }
-                
-                var receptions = result.Data ?? new List<ViewModels.PatientReceptionViewModel>();
-                
-                // ✅ Factory Method: تبدیل ViewModel → ViewModel (از PatientReceptionViewModel به MedicalRecordReceptionViewModel)
+
+                var paged = result.Data;
+                var receptions = paged?.Items ?? new List<ViewModels.PatientReceptionViewModel>();
+
                 var viewModels = receptions.Select(r => new MedicalRecordReceptionViewModel
                 {
                     ReceptionId = r.ReceptionId,
@@ -616,9 +682,14 @@ namespace ClinicApp.Services.Patient
                     Notes = null,
                     IsEmergency = false // FIXME(Phase 2): از service دریافت شود
                 }).ToList();
-                
-                return ServiceResult<List<MedicalRecordReceptionViewModel>>.Successful(
+
+                var outPaged = new PagedResult<MedicalRecordReceptionViewModel>(
                     viewModels,
+                    paged?.TotalItems ?? 0,
+                    pageNumber,
+                    pageSize);
+                return ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>.Successful(
+                    outPaged,
                     "پذیرش‌ها با موفقیت دریافت شد.",
                     operationName: "GetReceptions",
                     userId: _currentUserService.UserId,
@@ -627,7 +698,7 @@ namespace ClinicApp.Services.Patient
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت پذیرش‌ها - PatientId: {PatientId}", patientId);
-                return ServiceResult<List<MedicalRecordReceptionViewModel>>.Failed(
+                return ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>.Failed(
                     "خطا در دریافت پذیرش‌ها",
                     "GET_RECEPTIONS_ERROR",
                     ErrorCategory.General,
@@ -641,51 +712,54 @@ namespace ClinicApp.Services.Patient
         /// ✅ Factory Method
         /// ✅ Authorization
         /// </summary>
-        public async Task<ServiceResult<List<MedicalRecordTriageViewModel>>> GetTriageAssessmentsAsync(
+        public async Task<ServiceResult<PagedResult<MedicalRecordTriageViewModel>>> GetTriageAssessmentsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                // ✅ Authorization
                 if (!await ValidatePatientAccessAsync(patientId))
                 {
-                    return ServiceResult<List<MedicalRecordTriageViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordTriageViewModel>>.Failed(
                         "دسترسی غیرمجاز",
                         "UNAUTHORIZED_ACCESS",
                         ErrorCategory.Security,
                         SecurityLevel.High);
                 }
-                
-                _logger.Information("دریافت ارزیابی‌های تریاژ - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}", 
-                    patientId, pageNumber, pageSize);
-                
-                // ✅ Validation
+
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 50) pageSize = 50;
-                
-                // ✅ دریافت از TriageService + Factory Method
+
+                _logger.Information("دریافت ارزیابی‌های تریاژ - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}",
+                    patientId, pageNumber, pageSize);
+
                 var triageResult = await _triageService.GetPatientTriageAssessmentsAsync(patientId, includeCompleted: true);
                 if (!triageResult.Success)
                 {
-                    return ServiceResult<List<MedicalRecordTriageViewModel>>.Failed(
+                    return ServiceResult<PagedResult<MedicalRecordTriageViewModel>>.Failed(
                         triageResult.Message,
                         triageResult.Code ?? "TRIAGE_LOAD_FAILED");
                 }
-                
+
                 var allAssessments = triageResult.Data ?? new List<TriageAssessment>();
+                int totalCount = allAssessments.Count;
                 var paged = allAssessments
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
-                
+
                 var viewModels = paged.Select(ta => MedicalRecordFactory.ToViewModel(
                     ta,
                     ta.VitalSigns?.OrderByDescending(v => v.MeasurementTime).FirstOrDefault(),
                     ta.Assessor?.FullName ?? ta.Assessor?.UserName)).ToList();
-                
-                return ServiceResult<List<MedicalRecordTriageViewModel>>.Successful(
+
+                var outPaged = new PagedResult<MedicalRecordTriageViewModel>(
                     viewModels,
+                    totalCount,
+                    pageNumber,
+                    pageSize);
+                return ServiceResult<PagedResult<MedicalRecordTriageViewModel>>.Successful(
+                    outPaged,
                     "ارزیابی‌های تریاژ با موفقیت دریافت شد.",
                     operationName: "GetTriageAssessments",
                     userId: _currentUserService.UserId,
@@ -694,7 +768,7 @@ namespace ClinicApp.Services.Patient
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت ارزیابی‌های تریاژ - PatientId: {PatientId}", patientId);
-                return ServiceResult<List<MedicalRecordTriageViewModel>>.Failed(
+                return ServiceResult<PagedResult<MedicalRecordTriageViewModel>>.Failed(
                     "خطا در دریافت ارزیابی‌های تریاژ",
                     "GET_TRIAGE_ASSESSMENTS_ERROR",
                     ErrorCategory.General,

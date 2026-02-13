@@ -22,6 +22,17 @@ namespace ClinicApp.Interfaces
         /// ✅ ServiceResult Enhanced
         /// </summary>
         Task<ServiceResult<List<MedicalHistoryViewModel>>> GetMedicalHistoriesAsync(int patientId);
+
+        /// <summary>
+        /// دریافت تاریخچه پزشکی با صفحه‌بندی و فیلتر (بازهٔ زمانی، جستجو) — برای پرونده غنی.
+        /// </summary>
+        Task<ServiceResult<PagedResult<MedicalHistoryViewModel>>> GetMedicalHistoriesPagedAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 20,
+            System.DateTime? fromDate = null,
+            System.DateTime? toDate = null,
+            string searchText = null);
         
         /// <summary>
         /// دریافت تاریخچه پزشکی با شناسه
@@ -51,24 +62,21 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult> DeleteMedicalHistoryAsync(int medicalHistoryId, int patientId);
         
         /// <summary>
-        /// دریافت نوبت‌های پزشکی بیمار
-        /// ✅ ServiceResult Enhanced
+        /// دریافت نوبت‌های پزشکی بیمار با صفحه‌بندی و TotalCount (فاز ۱.۲).
         /// </summary>
-        Task<ServiceResult<List<MedicalRecordAppointmentViewModel>>> GetAppointmentsAsync(
+        Task<ServiceResult<PagedResult<MedicalRecordAppointmentViewModel>>> GetAppointmentsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10);
         
         /// <summary>
-        /// دریافت پذیرش‌های بیمار
-        /// ✅ ServiceResult Enhanced
+        /// دریافت پذیرش‌های بیمار با صفحه‌بندی و TotalCount (فاز ۱.۲).
         /// </summary>
-        Task<ServiceResult<List<MedicalRecordReceptionViewModel>>> GetReceptionsAsync(
+        Task<ServiceResult<PagedResult<MedicalRecordReceptionViewModel>>> GetReceptionsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10);
         
         /// <summary>
-        /// دریافت ارزیابی‌های تریاژ بیمار
-        /// ✅ ServiceResult Enhanced
+        /// دریافت ارزیابی‌های تریاژ بیمار با صفحه‌بندی و TotalCount (فاز ۱.۲).
         /// </summary>
-        Task<ServiceResult<List<MedicalRecordTriageViewModel>>> GetTriageAssessmentsAsync(
+        Task<ServiceResult<PagedResult<MedicalRecordTriageViewModel>>> GetTriageAssessmentsAsync(
             int patientId, int pageNumber = 1, int pageSize = 10);
     }
 }

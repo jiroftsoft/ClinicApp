@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Models;
 using ClinicApp.ViewModels.Patient;
 using Microsoft.AspNet.Identity;
 using Serilog;
@@ -25,8 +26,9 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         public PatientDashboardApiController(
             IPatientDashboardService dashboardService,
             ILogger logger,
-            ICurrentUserService currentUserService)
-            : base(logger, currentUserService)
+            ICurrentUserService currentUserService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
         }
@@ -72,11 +74,10 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
 
         /// <summary>
-        /// دریافت آمار سریع داشبورد
+        /// دریافت آمار سریع داشبورد — Real-Time، بدون کش (کوئری سبک COUNT).
         /// GET: /Patient/Api/PatientDashboard/GetQuickStats
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 30, VaryByCustom = "User")] // ✅ Cache for 30 seconds per user
         public async Task<JsonResult> GetQuickStats()
         {
             try
@@ -103,6 +104,36 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             {
                 _logger.Error(ex, "❌ Exception in GetQuickStats");
                 return ErrorJsonResult("خطا در دریافت آمار");
+            }
+        }
+
+        /// <summary>
+        /// دریافت یک‌جا Overview داشبورد (آمار + نوبت‌های اخیر/آینده + پذیرش‌ها) — یک درخواست به‌جای چهار (فاز ۳.۳).
+        /// GET: /Patient/Api/PatientDashboard/GetOverview
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetOverview()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return ErrorJsonResult("اطلاعات بیمار یافت نشد");
+                }
+
+                var result = await _dashboardService.GetOverviewAsync(patientId.Value);
+                if (!result.Success)
+                {
+                    return ErrorJsonResult(result.Message);
+                }
+
+                return SuccessJsonResult(result.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در GetOverview");
+                return ErrorJsonResult("خطا در بارگذاری داشبورد");
             }
         }
 

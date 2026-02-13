@@ -33,6 +33,11 @@
                             <span class="sr-only">Toggle Dropdown</span>
                         </button>
                         <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item no-print" href="#" id="medicalRecordPrintBtn" role="button">
+                                <i class="fas fa-print ml-1"></i>
+                                نسخه قابل چاپ
+                            </a>
+                            <div class="dropdown-divider no-print"></div>
                             <a class="dropdown-item" href="@Url.Action("ExportPdf", "MedicalRecord", new { area = "Patient" })" target="_blank">
                                 <i class="fas fa-file-pdf ml-1"></i>
                                 خروجی PDF
@@ -48,8 +53,98 @@
         </div>
     </section>
 
+    <!-- ✅ کارت خلاصه پرونده (فاز ۲.۱) -->
+    <section class="medical-record-summary-card border rounded bg-white p-3 mb-3 shadow-sm">
+        <h6 class="text-muted mb-2"><i class="fas fa-chart-pie ml-1"></i> خلاصه پرونده</h6>
+        <div class="row g-2 small">
+            <div class="col-6 col-md-3">
+                <span class="text-muted">تاریخچه پزشکی:</span>
+                <strong id="medicalRecordSummaryMedicalHistory" data-summary="medicalHistory">–</strong>
+            </div>
+            <div class="col-6 col-md-3">
+                <span class="text-muted">نوبت‌ها:</span>
+                <strong id="medicalRecordSummaryAppointments" data-summary="appointments">–</strong>
+            </div>
+            <div class="col-6 col-md-3">
+                <span class="text-muted">پذیرش‌ها:</span>
+                <strong id="medicalRecordSummaryReceptions" data-summary="receptions">–</strong>
+            </div>
+            <div class="col-6 col-md-3">
+                <span class="text-muted">تریاژ:</span>
+                <strong id="medicalRecordSummaryTriage" data-summary="triage">–</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- ✅ سوییچ نمای سکشن / تایم‌لاین (فاز ۲.۳) -->
+    <section class="medical-record-view-mode mb-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="نما">
+            <button type="button" class="btn btn-outline-secondary active" id="medicalRecordViewSections" data-view="sections" aria-pressed="true">
+                <i class="fas fa-th-large ml-1"></i>
+                نمای سکشن‌ها
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="medicalRecordViewTimeline" data-view="timeline" aria-pressed="false">
+                <i class="fas fa-stream ml-1"></i>
+                نمای تایم‌لاین
+            </button>
+        </div>
+    </section>
+
+    <!-- ✅ نوار فیلتر یکپارچه (فاز ۲.۲) -->
+    <section class="medical-record-filter-bar border-bottom bg-light py-3 mb-3">
+        <div class="container-fluid">
+            <div class="row align-items-center g-2">
+                <div class="col-12 col-md-auto">
+                    <label class="form-label small text-muted mb-0">بازه زمانی</label>
+                    <select id="medicalRecordFilterDateRange" class="form-control form-control-sm" style="min-width: 140px;">
+                        <option value="all" selected>همه</option>
+                        <option value="3m">۳ ماه اخیر</option>
+                        <option value="6m">۶ ماه اخیر</option>
+                        <option value="1y">امسال</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md">
+                    <label class="form-label small text-muted mb-0">جستجو در متن</label>
+                    <input type="text" id="medicalRecordFilterSearch" class="form-control form-control-sm" placeholder="عنوان، توضیحات، یادداشت..." aria-label="جستجو در پرونده پزشکی" title="برای فوکوس سریع: Alt+ج" />
+                </div>
+                <div class="col-12 col-md-auto">
+                    <label class="form-label small text-muted mb-0">نوع</label>
+                    <select id="medicalRecordFilterType" class="form-control form-control-sm" style="min-width: 140px;">
+                        <option value="all" selected>همه</option>
+                        <option value="medicalHistory">تاریخچه پزشکی</option>
+                        <option value="appointments">نوبت‌ها</option>
+                        <option value="receptions">پذیرش‌ها</option>
+                        <option value="triage">تریاژ</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-auto pt-2 pt-md-0">
+                    <button type="button" id="medicalRecordFilterApply" class="btn btn-primary btn-sm">
+                        <i class="fas fa-filter ml-1"></i>
+                        اعمال فیلتر
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ✅ نمای تایم‌لاین (بهینه‌شده) -->
+    <section class="medical-record-timeline-view" id="medicalRecordTimelineView" style="display: none;">
+        <div class="container-fluid">
+            <div class="medical-record-timeline-loading" style="display: none;" role="status" aria-live="polite">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mb-0 mt-2 text-muted">در حال بارگذاری تایم‌لاین...</p>
+            </div>
+            <div class="medical-record-timeline-empty" style="display: none;">
+                <i class="fas fa-stream d-block mb-2" aria-hidden="true"></i>
+                <p class="text-muted mb-1">در بازه انتخاب‌شده رکوردی یافت نشد.</p>
+                <p class="small text-muted mb-0">فیلترها را تغییر دهید یا نمای سکشن‌ها را امتحان کنید.</p>
+            </div>
+            <div class="medical-record-timeline-content"></div>
+        </div>
+    </section>
+
     <!-- ✅ Medical History Section (AJAX Loaded) -->
-    <section class="medical-record-sections">
+    <section class="medical-record-sections" id="medicalRecordSections">
         <div class="container-fluid">
             <div class="row">
                 

@@ -186,6 +186,167 @@
 }
 
 /* ========================================
+   Brand Loading — کلینیک شفا (UX بهینه: ورود نرم، لوگو زنده، نوار روان)
+======================================== */
+.shafa-brand-loading {
+    --shafa-loading-duration: 0.45s;
+    --shafa-indicator-duration: 1.6s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    min-height: 140px;
+    animation: shafa-brand-loading-enter var(--shafa-loading-duration) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+}
+
+.shafa-brand-loading__mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.shafa-brand-loading__logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: shafa-brand-loading-breathe 2.4s ease-in-out infinite;
+    will-change: transform;
+}
+
+.shafa-brand-loading__logo,
+.shafa-brand-loading__mark img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    opacity: 0.98;
+    display: block;
+}
+
+.shafa-brand-loading__name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--medical-primary, #2c5aa0);
+    letter-spacing: -0.02em;
+    animation: shafa-brand-loading-fade-in 0.5s ease-out 0.15s both;
+}
+
+/* نوار پیشرفت با شیمر روان و حرفه‌ای */
+.shafa-brand-loading__indicator {
+    width: 88px;
+    height: 4px;
+    margin-top: 1.5rem;
+    border-radius: 4px;
+    background: rgba(44, 90, 160, 0.12);
+    overflow: hidden;
+    animation: shafa-brand-loading-fade-in 0.5s ease-out 0.25s both;
+}
+
+.shafa-brand-loading__indicator-bar {
+    display: block;
+    height: 100%;
+    width: 40%;
+    min-width: 32px;
+    border-radius: 4px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--medical-primary, #2c5aa0) 30%,
+        var(--medical-primary, #2c5aa0) 70%,
+        transparent 100%
+    );
+    opacity: 0.9;
+    animation: shafa-brand-loading-shimmer var(--shafa-indicator-duration) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
+}
+
+/* پشتیبانی از indicator بدون bar داخلی (سازگاری با markup قدیمی) */
+.shafa-brand-loading__indicator:not(:has(.shafa-brand-loading__indicator-bar)) {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--medical-primary, #2c5aa0) 25%,
+        var(--medical-primary, #2c5aa0) 75%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shafa-brand-loading-pulse-legacy 1.4s ease-in-out infinite;
+}
+
+@keyframes shafa-brand-loading-enter {
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes shafa-brand-loading-breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+}
+
+@keyframes shafa-brand-loading-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shafa-brand-loading-shimmer {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(320%); }
+}
+
+@keyframes shafa-brand-loading-pulse-legacy {
+    0%, 100% { background-position: 120% 0; opacity: 0.7; }
+    50%      { background-position: -20% 0; opacity: 1; }
+}
+
+/* احترام به ترجیح کاهش حرکت */
+@media (prefers-reduced-motion: reduce) {
+    .shafa-brand-loading,
+    .shafa-brand-loading__name,
+    .shafa-brand-loading__indicator {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+    .shafa-brand-loading__logo-wrap {
+        animation: none;
+    }
+    .shafa-brand-loading__indicator-bar {
+        animation: none;
+        transform: translateX(0);
+        width: 60%;
+        margin: 0 auto;
+    }
+}
+
+/* حالت فشرده برای sectionهای داخل کارت */
+.dashboard-section-loading .shafa-brand-loading {
+    padding: 2rem 0.5rem;
+    min-height: 120px;
+}
+
+.dashboard-section-loading .shafa-brand-loading__logo-wrap .shafa-brand-loading__logo,
+.dashboard-section-loading .shafa-brand-loading__mark img {
+    width: 40px;
+    height: 40px;
+}
+
+.dashboard-section-loading .shafa-brand-loading__name {
+    font-size: 0.95rem;
+}
+
+.dashboard-section-loading .shafa-brand-loading__indicator {
+    width: 56px;
+    height: 3px;
+    margin-top: 1rem;
+}
+
+/* ========================================
    Section States (Loading, Empty, Error)
 ======================================== */
 .dashboard-section-loading {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Enums;
 
@@ -49,6 +50,69 @@ namespace ClinicApp.ViewModels.Patient.MedicalRecord
         [MaxLength(1000, ErrorMessage = "مسیر فایل‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
         [Display(Name = "فایل‌های ضمیمه")]
         public string Attachments { get; set; }
+        
+        /// <summary>آلرژی بحرانی (فقط برای نوع آلرژی)</summary>
+        public bool? IsCritical { get; set; }
+        
+        #region فیلدهای دارو (وقتی Type = Medication؛ یک دارو در فرم ساده)
+        
+        [MaxLength(200, ErrorMessage = "نام دارو نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        [Display(Name = "نام دارو")]
+        public string DrugName { get; set; }
+        
+        [MaxLength(100)]
+        [Display(Name = "دوز")]
+        public string Dosage { get; set; }
+        
+        [MaxLength(50)]
+        [Display(Name = "واحد دوز")]
+        public string DosageUnit { get; set; }
+        
+        [MaxLength(100)]
+        [Display(Name = "نحوه مصرف")]
+        public string Frequency { get; set; }
+        
+        [MaxLength(50)]
+        [Display(Name = "راه مصرف")]
+        public string Route { get; set; }
+        
+        [MaxLength(300)]
+        [Display(Name = "دلیل مصرف")]
+        public string Indication { get; set; }
+        
+        [MaxLength(100)]
+        [Display(Name = "پزشک تجویزکننده")]
+        public string PrescribingDoctor { get; set; }
+        
+        #endregion
+        
+        /// <summary>
+        /// داروهای مرتبط با بیماری — وقتی نوع = بیماری، چند دارو (مثلاً ASA، والزومکیس، داروی فشار)
+        /// </summary>
+        public List<MedicalHistoryMedicationItemDto> MedicationsList { get; set; } = new List<MedicalHistoryMedicationItemDto>();
+        
+        #region فیلدهای آزمایش (وقتی Type = Disease؛ یک نتیجه آزمایش در فرم ساده)
+        
+        [MaxLength(100)]
+        [Display(Name = "نام آزمایش")]
+        public string LabName { get; set; }
+        
+        [MaxLength(50)]
+        [Display(Name = "مقدار")]
+        public string LabValue { get; set; }
+        
+        [MaxLength(50)]
+        [Display(Name = "واحد")]
+        public string LabUnit { get; set; }
+        
+        [Display(Name = "تاریخ آزمایش")]
+        public DateTime? LabDate { get; set; }
+        
+        [MaxLength(100)]
+        [Display(Name = "محدوده مرجع")]
+        public string LabReferenceRange { get; set; }
+        
+        #endregion
     }
 }
 

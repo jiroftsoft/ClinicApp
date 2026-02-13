@@ -65,7 +65,6 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IPaymentSecurityService _paymentSecurityService; // ✅ ENTERPRISE-GRADE: Security Validation
         private readonly IIdempotencyService _idempotencyService;
         private readonly IAppSettings _appSettings;
-        private readonly ApplicationDbContext _context;
         private readonly IDepartmentManagementService _departmentService; // ✅ طبق قرارداد: Controller → Service
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
 
@@ -81,7 +80,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             IDepartmentManagementService departmentService, // ✅ طبق قرارداد: Controller → Service
             ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             ILogger logger)
-            : base(logger, currentUserService) // ✅ Call base constructor
+            : base(logger, currentUserService, context) // ✅ Context به base برای GetCurrentPatientIdAsync
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
             _webPaymentService = webPaymentService ?? throw new ArgumentNullException(nameof(webPaymentService));
@@ -89,7 +88,6 @@ namespace ClinicApp.Areas.Patient.Controllers
             _paymentSecurityService = paymentSecurityService ?? throw new ArgumentNullException(nameof(paymentSecurityService));
             _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
             _departmentService = departmentService ?? throw new ArgumentNullException(nameof(departmentService));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }

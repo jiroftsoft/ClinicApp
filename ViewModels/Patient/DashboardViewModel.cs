@@ -15,6 +15,11 @@ namespace ClinicApp.ViewModels.Patient
         public DashboardAppointmentsSectionViewModel RecentAppointments { get; set; }
         public DashboardAppointmentsSectionViewModel UpcomingAppointments { get; set; }
         public DashboardReceptionsSectionViewModel RecentReceptions { get; set; }
+
+        /// <summary>
+        /// خطاهای هر سکشن (در صورت شکست جزئی) — کلید: QuickStats, RecentAppointments, UpcomingAppointments, RecentReceptions
+        /// </summary>
+        public Dictionary<string, string> SectionErrors { get; set; }
     }
 
     /// <summary>

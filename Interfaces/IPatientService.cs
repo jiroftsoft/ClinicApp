@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
@@ -192,6 +192,12 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult> UpdatePatientAsync(PatientCreateEditViewModel model);
 
         /// <summary>
+        /// به‌روزرسانی پروفایل بیمار از مقادیر فرم (برای داشبورد و API پروفایل)
+        /// اعتبارسنجی: نام، نام خانوادگی، شماره تماس الزامی؛ بقیه اختیاری.
+        /// </summary>
+        Task<ServiceResult> UpdatePatientProfileFromFormAsync(int patientId, string firstName, string lastName, string phoneNumber, string email, string birthDate, string gender, string address);
+
+        /// <summary>
         /// حذف نرم (Soft-delete) یک بیمار با رعایت تمام استانداردهای پزشکی و حفظ اطلاعات مالی
         /// 
         /// ویژگی‌های کلیدی:
@@ -293,6 +299,23 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult<List<PatientAppointmentViewModel>>> GetPatientAppointmentsAsync(int patientId, int pageNumber = 1, int pageSize = 10);
 
         /// <summary>
+        /// دریافت تاریخچه نوبت‌های بیمار با اطلاعات صفحه‌بندی (TotalCount، HasMore)
+        /// برای استفاده در داشبورد و هر جایی که به تعداد کل نیاز است.
+        /// </summary>
+        Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10);
+
+        /// <summary>
+        /// نوبت‌های آینده بیمار با صفحه‌بندی در DB (تاریخ &gt; اکنون، غیرلغوشده).
+        /// برای داشبورد و مقیاس‌پذیری.
+        /// </summary>
+        Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientUpcomingAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10);
+
+        /// <summary>
+        /// تعداد پذیرش‌های بیمار (فقط COUNT، Real-Time برای آمار داشبورد).
+        /// </summary>
+        Task<int> GetPatientReceptionCountAsync(int patientId);
+
+        /// <summary>
         /// دریافت تاریخچه پذیرش‌های بیمار
         /// 
         /// ویژگی‌های کلیدی:
@@ -319,6 +342,11 @@ namespace ClinicApp.Interfaces
         /// <param name="pageSize">اندازه صفحه (پیش‌فرض: 10)</param>
         /// <returns>لیست پذیرش‌های بیمار</returns>
         Task<ServiceResult<List<PatientReceptionViewModel>>> GetPatientReceptionsAsync(int patientId, int pageNumber = 1, int pageSize = 10);
+
+        /// <summary>
+        /// دریافت پذیرش‌های بیمار با صفحه‌بندی و TotalCount (برای پرونده پزشکی).
+        /// </summary>
+        Task<ServiceResult<PagedResult<PatientReceptionViewModel>>> GetPatientReceptionsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10);
 
         /// <summary>
         /// بررسی وابستگی‌های بیمار قبل از حذف - طبق استانداردهای سیستم‌های درمانی

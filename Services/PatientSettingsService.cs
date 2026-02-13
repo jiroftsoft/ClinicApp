@@ -1,9 +1,11 @@
 using System;
 using System.Data.Entity;
+using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels.Patient;
 using Serilog;
 
@@ -35,6 +37,7 @@ namespace ClinicApp.Services
                 _logger.Information("دریافت تنظیمات بیمار - PatientId: {PatientId}", patientId);
 
                 var patient = await _context.Patients
+                    .AsNoTracking()
                     .Include(p => p.ApplicationUser)
                     .FirstOrDefaultAsync(p => p.PatientId == patientId);
 
@@ -44,14 +47,28 @@ namespace ClinicApp.Services
                     return ServiceResult<PatientSettingsViewModel>.Failed("بیمار یافت نشد");
                 }
 
-                // ✅ Default settings (در آینده از دیتابیس بخوانیم)
+                // ✅ مقادیر پیش‌فرض؛ در صورت وجود رکورد در PatientSettings، از DB خوانده می‌شود
+                var emailNotif = true;
+                var smsNotif = true;
+                var reminderNotif = true;
+
+                var dbSettings = await _context.PatientSettings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.PatientId == patientId);
+                if (dbSettings != null)
+                {
+                    emailNotif = dbSettings.EmailNotifications;
+                    smsNotif = dbSettings.SmsNotifications;
+                    reminderNotif = dbSettings.AppointmentReminders;
+                }
+
                 var settings = new PatientSettingsViewModel
                 {
                     PatientId = patient.PatientId,
                     FullName = patient.ApplicationUser?.FullName ?? "بیمار",
-                    EmailNotifications = true,
-                    SmsNotifications = true,
-                    AppointmentReminders = true,
+                    EmailNotifications = emailNotif,
+                    SmsNotifications = smsNotif,
+                    AppointmentReminders = reminderNotif,
                     ShareMedicalInfo = true,
                     ShowNameInReviews = true
                 };
@@ -81,13 +98,31 @@ namespace ClinicApp.Services
                     return ServiceResult.Failed("بیمار یافت نشد");
                 }
 
-                // Phase 1 (Pilot): ذخیره موقت تنظیمات در حافظه
-                // Phase 2: انتقال به جدول PatientSettings برای پایداری
-                _logger.Information("✅ تنظیمات اعلان‌ها ذخیره شد (موقت) - PatientId: {PatientId}, Email: {Email}, SMS: {SMS}, Reminder: {Reminder}",
-                    patientId, dto.EmailNotifications, dto.SmsNotifications, dto.AppointmentReminders);
+                var row = await _context.PatientSettings.FindAsync(patientId);
+                if (row == null)
+                {
+                    row = new PatientSetting
+                    {
+                        PatientId = patientId,
+                        EmailNotifications = dto.EmailNotifications,
+                        SmsNotifications = dto.SmsNotifications,
+                        AppointmentReminders = dto.AppointmentReminders,
+                        UpdatedAt = DateTime.Now
+                    };
+                    _context.PatientSettings.Add(row);
+                }
+                else
+                {
+                    row.EmailNotifications = dto.EmailNotifications;
+                    row.SmsNotifications = dto.SmsNotifications;
+                    row.AppointmentReminders = dto.AppointmentReminders;
+                    row.UpdatedAt = DateTime.Now;
+                }
 
-                // شبیه‌سازی ذخیره موفق
-                await Task.Delay(50);
+                await _context.SaveChangesAsync();
+
+                _logger.Information("✅ تنظیمات اعلان‌ها ذخیره شد - PatientId: {PatientId}, Email: {Email}, SMS: {SMS}, Reminder: {Reminder}",
+                    patientId, dto.EmailNotifications, dto.SmsNotifications, dto.AppointmentReminders);
 
                 return ServiceResult.Successful("تنظیمات اعلان‌ها با موفقیت ذخیره شد");
             }

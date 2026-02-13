@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Models;
 using Microsoft.AspNet.Identity;
 using Serilog;
 
@@ -23,8 +24,9 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         public ProfileApiController(
             IPatientService patientService,
             ILogger logger,
-            ICurrentUserService currentUserService)
-            : base(logger, currentUserService)
+            ICurrentUserService currentUserService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
         }
@@ -91,91 +93,33 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         /// <summary>
         /// به‌روزرسانی اطلاعات پروفایل بیمار
         /// POST: /Patient/Api/Profile/UpdateProfile
+        /// منطق در IPatientService.UpdatePatientProfileFromFormAsync متمرکز شده است.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> UpdateProfile(string firstName, string lastName, string phoneNumber, 
+        public async Task<JsonResult> UpdateProfile(string firstName, string lastName, string phoneNumber,
             string email, string birthDate, string gender, string address)
         {
             try
             {
-                var userId = User.Identity.GetUserId();
                 var patientId = await GetCurrentPatientIdAsync();
-                
                 if (patientId == null)
                 {
-                    _logger.Warning("❌ UpdateProfile: Patient not found - UserId: {UserId}", userId);
+                    _logger.Warning("❌ UpdateProfile: Patient not found - UserId: {UserId}", User.Identity.GetUserId());
                     return ErrorJsonResult("اطلاعات بیمار یافت نشد");
                 }
 
                 _logger.Information("📝 UpdateProfile: Updating profile - PatientId: {PatientId}", patientId.Value);
+                var result = await _patientService.UpdatePatientProfileFromFormAsync(patientId.Value, firstName, lastName, phoneNumber, email, birthDate, gender, address);
 
-                // Validate
-                if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+                if (!result.Success)
                 {
-                    return ErrorJsonResult("نام و نام خانوادگی الزامی است");
-                }
-
-                if (string.IsNullOrWhiteSpace(phoneNumber))
-                {
-                    return ErrorJsonResult("شماره تماس الزامی است");
-                }
-
-                // Get patient for edit
-                var getResult = await _patientService.GetPatientForEditAsync(patientId.Value);
-                
-                if (!getResult.Success || getResult.Data == null)
-                {
-                    _logger.Warning("❌ UpdateProfile: Patient not found - PatientId: {PatientId}", patientId.Value);
-                    return ErrorJsonResult("اطلاعات بیمار یافت نشد");
-                }
-
-                var model = getResult.Data;
-
-                // Update properties
-                model.FirstName = firstName.Trim();
-                model.LastName = lastName.Trim();
-                model.PhoneNumber = phoneNumber.Trim();
-                model.Email = !string.IsNullOrWhiteSpace(email) ? email.Trim() : null;
-                
-                // Parse Gender enum
-                if (!string.IsNullOrWhiteSpace(gender))
-                {
-                    if (Enum.TryParse<ClinicApp.Models.Enums.Gender>(gender, true, out var genderEnum))
-                    {
-                        model.Gender = genderEnum;
-                    }
-                }
-                
-                model.Address = !string.IsNullOrWhiteSpace(address) ? address.Trim() : null;
-
-                // Parse birth date
-                if (!string.IsNullOrWhiteSpace(birthDate))
-                {
-                    if (DateTime.TryParse(birthDate, out DateTime parsedDate))
-                    {
-                        model.BirthDate = parsedDate;
-                    }
-                }
-
-                // Update via service
-                var updateResult = await _patientService.UpdatePatientAsync(model);
-                
-                if (!updateResult.Success)
-                {
-                    _logger.Warning("⚠️ UpdateProfile: Update failed - PatientId: {PatientId}, Message: {Message}", 
-                        patientId.Value, updateResult.Message);
-                    return ErrorJsonResult(updateResult.Message ?? "خطا در به‌روزرسانی پروفایل");
+                    _logger.Warning("⚠️ UpdateProfile: Update failed - PatientId: {PatientId}, Message: {Message}", patientId.Value, result.Message);
+                    return ErrorJsonResult(result.Message ?? "خطا در به‌روزرسانی پروفایل");
                 }
 
                 _logger.Information("✅ UpdateProfile: Profile updated successfully - PatientId: {PatientId}", patientId.Value);
-
-                return Json(new
-                {
-                    success = true,
-                    message = "پروفایل با موفقیت به‌روزرسانی شد",
-                    reload = false
-                }, JsonRequestBehavior.DenyGet);
+                return Json(new { success = true, message = "پروفایل با موفقیت به‌روزرسانی شد", reload = false }, JsonRequestBehavior.DenyGet);
             }
             catch (Exception ex)
             {

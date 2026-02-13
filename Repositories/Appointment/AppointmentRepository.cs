@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Models;
+using ClinicApp.Models.DTOs.Appointment;
 using AppointmentEntity = ClinicApp.Models.Entities.Appointment.Appointment;
 using ClinicApp.Models.Enums;
 using ClinicApp.Models.Entities.Doctor; // ✅ برای DoctorTimeSlot
@@ -64,6 +65,37 @@ namespace ClinicApp.Repositories.Appointment
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت نوبت‌های بیمار {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// آمار شمارش نوبت‌های بیمار — یک کوئری سبک (یک round-trip)، بدون Include، Real-Time.
+        /// </summary>
+        public async Task<PatientAppointmentCountsDto> GetPatientAppointmentCountsAsync(int patientId, DateTime asOf)
+        {
+            try
+            {
+                var query = _context.Appointments
+                    .AsNoTracking()
+                    .Where(a => a.PatientId == patientId && !a.IsDeleted);
+
+                var counts = await query
+                    .GroupBy(a => 1)
+                    .Select(g => new PatientAppointmentCountsDto
+                    {
+                        Total = g.Count(),
+                        Upcoming = g.Count(a => a.AppointmentDate > asOf && a.Status != AppointmentStatus.Cancelled),
+                        Completed = g.Count(a => a.Status == AppointmentStatus.Completed),
+                        Cancelled = g.Count(a => a.Status == AppointmentStatus.Cancelled)
+                    })
+                    .FirstOrDefaultAsync();
+
+                return counts ?? new PatientAppointmentCountsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار نوبت‌های بیمار {PatientId}", patientId);
                 throw;
             }
         }

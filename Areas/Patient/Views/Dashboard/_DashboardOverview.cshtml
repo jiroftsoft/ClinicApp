@@ -6,10 +6,7 @@
         <!-- Loading State -->
         <div class="col-12">
             <div class="dashboard-loading">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">در حال بارگذاری...</span>
-                </div>
-                <p class="mt-2 text-muted">در حال بارگذاری آمار...</p>
+                @Html.Partial("~/Areas/Patient/Views/Shared/_ShafaBrandLoading.cshtml")
             </div>
         </div>
     </div>
@@ -34,7 +31,7 @@
                 </div>
                 <div class="dashboard-card-body">
                     <div class="dashboard-section-loading">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        @Html.Partial("~/Areas/Patient/Views/Shared/_ShafaBrandLoading.cshtml")
                     </div>
                     <div class="dashboard-section-content" style="display: none;"></div>
                     <div class="dashboard-section-empty" style="display: none;">
@@ -71,7 +68,7 @@
                 </div>
                 <div class="dashboard-card-body">
                     <div class="dashboard-section-loading">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        @Html.Partial("~/Areas/Patient/Views/Shared/_ShafaBrandLoading.cshtml")
                     </div>
                     <div class="dashboard-section-content" style="display: none;"></div>
                     <div class="dashboard-section-empty" style="display: none;">
@@ -104,7 +101,7 @@
                 </div>
                 <div class="dashboard-card-body">
                     <div class="dashboard-section-loading">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        @Html.Partial("~/Areas/Patient/Views/Shared/_ShafaBrandLoading.cshtml")
                     </div>
                     <div class="dashboard-section-content" style="display: none;"></div>
                     <div class="dashboard-section-empty" style="display: none;">

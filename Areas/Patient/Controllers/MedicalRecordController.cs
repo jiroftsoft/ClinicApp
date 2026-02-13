@@ -7,6 +7,7 @@ using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Models;
 using ClinicApp.ViewModels.Patient.MedicalRecord;
 using Microsoft.AspNet.Identity;
 using Serilog;
@@ -34,8 +35,9 @@ namespace ClinicApp.Areas.Patient.Controllers
         public MedicalRecordController(
             IPatientMedicalRecordService medicalRecordService,
             ILogger logger,
-            ICurrentUserService currentUserService)
-            : base(logger, currentUserService)
+            ICurrentUserService currentUserService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _medicalRecordService = medicalRecordService ?? 
                 throw new ArgumentNullException(nameof(medicalRecordService));

@@ -1,4 +1,4 @@
-﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -144,6 +144,24 @@ public class Patient : ISoftDelete, ITrackable
     /// </summary>
     [MaxLength(50, ErrorMessage = "رابطه با تماس اضطراری نمی‌تواند بیش از 50 کاراکتر باشد.")]
     public string EmergencyContactRelationship { get; set; }
+
+    /// <summary>
+    /// وضعیت تأهل — برای پرونده استاندارد (مجرد، متأهل، ...)
+    /// </summary>
+    [MaxLength(20)]
+    public string MaritalStatus { get; set; }
+
+    /// <summary>
+    /// نام همراه یا ولی قانونی — برای پرونده استاندارد
+    /// </summary>
+    [MaxLength(100)]
+    public string GuardianName { get; set; }
+
+    /// <summary>
+    /// شماره تماس همراه/ولی قانونی
+    /// </summary>
+    [MaxLength(50)]
+    public string GuardianPhone { get; set; }
 
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>

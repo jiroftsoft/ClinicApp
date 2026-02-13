@@ -86,70 +86,227 @@
     padding: 1rem;
 }
 
-/* ✅ Medical History Item - رسمی و اداری */
+/* ========================================
+   Medical History — کارت‌های سوابق بیمار (خوانا، حرفه‌ای، پروداکشن)
+======================================== */
 .medical-history-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.25rem;
 }
 
-.medical-history-item {
+.medical-history-item.mh-card {
     background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-right: 3px solid #495057;
-    padding: 1rem;
+    border: 1px solid #e3e6eb;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.medical-history-item-header {
+.medical-history-item.mh-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #d0d5dc;
+}
+
+/* هدر کارت: عنوان + نوع + وضعیت + دکمه‌ها */
+.mh-card__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    border-bottom: 1px solid #e9ecef;
 }
 
-.medical-history-item-title h4 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #2c3e50;
+.mh-card__title-block {
+    flex: 1;
+    min-width: 0;
 }
 
-.medical-history-item-actions {
+.mh-card__title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a202c;
+    line-height: 1.35;
+}
+
+.mh-card__badges {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
 }
 
-.medical-history-item-body {
-    margin-top: 1rem;
+.mh-card__type-badge {
+    display: inline-block;
+    padding: 0.25em 0.65em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--medical-primary, #2c5aa0);
+    border-radius: 6px;
 }
 
-.medical-history-description {
+.mh-card__status-badge {
+    display: inline-block;
+    padding: 0.2em 0.5em;
+    font-size: 0.75rem;
+    font-weight: 500;
     color: #6c757d;
-    margin-bottom: 1rem;
+    background: #e9ecef;
+    border-radius: 4px;
+}
+
+.medical-history-item-actions.mh-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* بدنه کارت: توضیحات + جزئیات + متا */
+.mh-card__body {
+    padding: 1.25rem 1.5rem;
+}
+
+.mh-card__description {
+    color: #4a5568;
+    font-size: 0.95rem;
     line-height: 1.6;
+    margin: 0 0 1.25rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.medical-history-details {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e9ecef;
+/* گرید جزئیات: برچسب + مقدار با آیکون */
+.mh-card__details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem 1.5rem;
+    margin: 0;
 }
 
-.medical-history-details .row > div {
-    margin-bottom: 0.5rem;
+.mh-card__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
 }
 
-.medical-history-details strong {
+.mh-card__detail dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: none;
+    margin: 0;
+}
+
+.mh-card__detail dt i {
+    opacity: 0.85;
+    width: 1em;
+}
+
+.mh-card__detail dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1a202c;
+}
+
+.mh-card__severity-pill {
+    display: inline-block;
+    padding: 0.2em 0.6em;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px;
+    background: #e9ecef;
     color: #495057;
-    margin-left: 0.5rem;
 }
 
-.medical-history-meta {
-    margin-top: 1rem;
+.mh-card__severity-pill[data-severity="خفیف"],
+.mh-card__severity-pill[data-severity="مild"] {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.mh-card__severity-pill[data-severity="متوسط"],
+.mh-card__severity-pill[data-severity="moderate"],
+.mh-card__severity-pill[data-severity="عادی"] {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.mh-card__severity-pill[data-severity="شدید"],
+.mh-card__severity-pill[data-severity="severe"] {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* بلوک دارو در کارت سوابق */
+.mh-card__medications .mh-medication-line {
+    padding: 0.25em 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+.mh-card__medications .mh-medication-line:last-child {
+    border-bottom: none;
+}
+.mh-medication-name {
+    font-weight: 600;
+    color: #1e3a5f;
+}
+.mh-medication-dosage {
+    color: #475569;
+}
+.mh-medication-freq,
+.mh-medication-route {
+    color: #64748b;
+}
+
+/* بلوک آزمایش در کارت سوابق */
+.mh-card__labs .mh-lab-line {
+    padding: 0.25em 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+.mh-card__labs .mh-lab-line:last-child {
+    border-bottom: none;
+}
+.mh-lab-name { font-weight: 600; color: #0e4c6d; }
+.mh-lab-value { color: #475569; }
+.mh-lab-date, .mh-lab-ref { color: #64748b; }
+
+/* فوتر: تاریخ ثبت */
+.mh-card__meta {
+    margin-top: 1.25rem;
     padding-top: 1rem;
     border-top: 1px solid #e9ecef;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.mh-card__meta i {
+    margin-left: 0.35rem;
+    opacity: 0.8;
+}
+
+/* RTL برای کارت سوابق */
+[dir="rtl"] .mh-card__header,
+[dir="rtl"] .medical-history-item-actions.mh-card__actions {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .mh-card__detail dt i {
+    margin-left: 0;
+    margin-right: 0.35rem;
+}
+
+[dir="rtl"] .mh-card__meta i {
+    margin-left: 0;
+    margin-right: 0.35rem;
 }
 
 /* ✅ Badge - رسمی و اداری */
@@ -229,11 +386,16 @@
         align-items: flex-start;
     }
     
-    .medical-history-item-header {
+    .mh-card__header {
         flex-direction: column;
+        align-items: stretch;
     }
     
-    .medical-history-item-actions {
+    .mh-card__details {
+        grid-template-columns: 1fr;
+    }
+    
+    .medical-history-item-actions.mh-card__actions {
         width: 100%;
         justify-content: flex-start;
     }
@@ -339,4 +501,431 @@
     align-items: center;
     gap: 0.5rem;
 }
+
+/* ✅ فاز ۲.۵: رنگ متمایز برای نوع هر سکشن (نوبت / پذیرش / تاریخچه / تریاژ) */
+.medical-record-card[data-medical-record-section="medicalHistory"] {
+    border-top-color: #0d6efd;
+}
+.medical-record-card[data-medical-record-section="appointments"] {
+    border-top-color: #198754;
+}
+.medical-record-card[data-medical-record-section="receptions"] {
+    border-top-color: #6f42c1;
+}
+.medical-record-card[data-medical-record-section="triage"] {
+    border-top-color: #fd7e14;
+}
+
+/* آیتم‌های لیست نوبت / پذیرش / تریاژ — نوار رنگی برای خوانایی */
+.appointment-item {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-right: 3px solid #198754;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+.reception-item {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-right: 3px solid #6f42c1;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+.triage-item {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-right: 3px solid #fd7e14;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+.appointment-item-header,
+.reception-item-header,
+.triage-item-header {
+    margin-bottom: 0.5rem;
+}
+.appointment-item-title h4,
+.reception-item-title h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #212529;
+}
+/* تاریخ شمسی برجسته در کارت‌ها */
+.appointment-details strong,
+.reception-details strong,
+.triage-item-body strong {
+    color: #495057;
+}
+
+/* ✅ فاز ۲.۵: پشتیبانی چاپ */
+@media print {
+    .no-print,
+    .medical-record-view-mode,
+    .medical-record-filter-bar,
+    .medical-record-header .btn-group,
+    .medical-record-card-header .btn,
+    .medical-record-card-header .btn-link,
+    .medical-record-section-paging .btn,
+    .add-medical-history,
+    .edit-medical-history,
+    .delete-medical-history,
+    .reload-section,
+    .medical-record-load-more,
+    .medical-history-load-more {
+        display: none !important;
+    }
+    .medical-record-shell {
+        padding: 0;
+    }
+    .medical-record-header {
+        border: none;
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .medical-record-summary-card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .medical-record-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .medical-record-card-header {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    body {
+        background: #fff;
+    }
+    .medical-record-timeline-card.tl-card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .medical-record-timeline-item.tl-item::before {
+        box-shadow: none;
+        border-color: #fff;
+    }
+}
+
+/* ========================================
+   نمای تایم‌لاین — بهینه‌شده (خوانا، حرفه‌ای، پروداکشن)
+======================================== */
+.medical-record-view-mode {
+    padding: 0.25rem 0;
+}
+
+.medical-record-timeline-view {
+    padding: 0 0 2rem 0;
+}
+
+.medical-record-timeline-view .medical-record-timeline-loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+}
+
+.medical-record-timeline-view .medical-record-timeline-loading .spinner-border {
+    display: block;
+    margin: 0 auto 1rem;
+}
+
+.medical-record-timeline-view .medical-record-timeline-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: #64748b;
+}
+
+.medical-record-timeline-view .medical-record-timeline-empty .fas,
+.medical-record-timeline-view .medical-record-timeline-empty .far {
+    font-size: 2.5rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.medical-record-timeline-content {
+    position: relative;
+    padding-right: 2rem;
+    max-width: 720px;
+}
+
+[dir="rtl"] .medical-record-timeline-content {
+    padding-right: 0;
+    padding-left: 2rem;
+}
+
+/* گروه‌های ماه */
+.medical-record-timeline-group.tl-group {
+    margin-bottom: 2.5rem;
+}
+
+.medical-record-timeline-group-title.tl-group__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 1.25rem 0;
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tl-group__title i {
+    color: var(--medical-primary, #2c5aa0);
+    opacity: 0.9;
+}
+
+[dir="rtl"] .tl-group__title i {
+    margin-left: 0;
+    margin-right: 0.35rem;
+}
+
+/* آیتم تایم‌لاین + خط عمودی */
+.medical-record-timeline-item.tl-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+    padding-right: 2.25rem;
+}
+
+[dir="rtl"] .medical-record-timeline-item.tl-item {
+    padding-right: 0;
+    padding-left: 2.25rem;
+}
+
+.medical-record-timeline-item.tl-item::before {
+    content: '';
+    position: absolute;
+    top: 1.1rem;
+    right: -2.15rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e2e8f0;
+    z-index: 2;
+    background: #94a3b8;
+}
+
+[dir="rtl"] .medical-record-timeline-item.tl-item::before {
+    right: auto;
+    left: -2.15rem;
+}
+
+.medical-record-timeline-item.tl-item::after {
+    content: '';
+    position: absolute;
+    top: 1.45rem;
+    bottom: -0.25rem;
+    right: -1.96rem;
+    width: 2px;
+    background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 1px;
+}
+
+[dir="rtl"] .medical-record-timeline-item.tl-item::after {
+    right: auto;
+    left: -1.96rem;
+}
+
+.medical-record-timeline-item.tl-item:last-child::after {
+    display: none;
+}
+
+.medical-record-timeline-item.tl-item.medicalHistory::before { background: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3); }
+.medical-record-timeline-item.tl-item.appointments::before { background: #059669; box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.3); }
+.medical-record-timeline-item.tl-item.receptions::before { background: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3); }
+.medical-record-timeline-item.tl-item.triage::before { background: #ea580c; box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.3); }
+
+/* کارت آیتم */
+.medical-record-timeline-card.tl-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.medical-record-timeline-card.tl-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.tl-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.tl-card__badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25em 0.6em;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.tl-item.medicalHistory .tl-card__badge { background: #dbeafe; color: #1d4ed8; }
+.tl-item.appointments .tl-card__badge { background: #d1fae5; color: #047857; }
+.tl-item.receptions .tl-card__badge { background: #ede9fe; color: #6d28d9; }
+.tl-item.triage .tl-card__badge { background: #ffedd5; color: #c2410c; }
+
+.tl-card__badge i {
+    font-size: 0.7em;
+    opacity: 0.9;
+}
+
+[dir="rtl"] .tl-card__badge i {
+    margin-left: 0;
+    margin-right: 0.35rem;
+}
+
+.tl-card__date {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.timeline-title.tl-card__title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1a202c;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.35;
+}
+
+.timeline-subtitle.tl-card__subtitle {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin: 0 0 0.35rem 0;
+}
+
+.tl-card__meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* سازگاری با نام‌های قدیمی */
+.medical-record-timeline-card .timeline-type-badge {
+    display: none;
+}
+
+/* ═══ مودال تاریخچه پزشکی — استاندارد فرم پزشکی، افقی چندستونه، اسکرول ═══ */
+#medicalHistoryModal.modal .mh-modal-dialog {
+    max-width: 1200px;
+    width: 95%;
+    max-height: 90vh;
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: column;
+}
+#medicalHistoryModal .mh-modal-content {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+#medicalHistoryModal .mh-modal-header {
+    flex-shrink: 0;
+    background: var(--medical-primary, #2c5aa0);
+    color: #fff;
+}
+#medicalHistoryModal .mh-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(90vh - 120px);
+    padding: 1rem 1.25rem;
+    -webkit-overflow-scrolling: touch;
+}
+#medicalHistoryModal .mh-modal-footer {
+    flex-shrink: 0;
+    background: #f8fafc;
+}
+
+/* گرید افقی دوستونه در دسکتاپ */
+#medicalHistoryModal .mh-form-grid {
+    display: flex;
+    flex-wrap: wrap;
+}
+#medicalHistoryModal .mh-form-col {
+    padding: 0 0.5rem;
+}
+@media (min-width: 992px) {
+    #medicalHistoryModal .mh-form-col {
+        padding: 0 0.75rem;
+        border-left: 1px solid #e2e8f0;
+    }
+    #medicalHistoryModal .mh-form-col:first-child {
+        border-left: none;
+        border-right: 1px solid #e2e8f0;
+    }
+}
+[dir="rtl"] #medicalHistoryModal .mh-form-col:first-child { border-right: none; border-left: 1px solid #e2e8f0; }
+[dir="rtl"] #medicalHistoryModal .mh-form-col:last-child { border-left: none; border-right: none; }
+
+/* سکشن‌ها — فشرده و استاندارد */
+#medicalHistoryModal .mh-section {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+#medicalHistoryModal .mh-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+#medicalHistoryModal .mh-section-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    letter-spacing: 0.01em;
+}
+#medicalHistoryModal .mh-section-title-primary { color: #1d4ed8; }
+#medicalHistoryModal .mh-section-title-success { color: #15803d; }
+#medicalHistoryModal .mh-section-title-info { color: #0e7490; }
+#medicalHistoryModal .mh-section-title-warning { color: #a16207; }
+#medicalHistoryModal .mh-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+}
+#medicalHistoryModal .mh-card-inner {
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+/* فیلدها فشرده برای دیدن بیشتر بدون اسکرول زیاد */
+#medicalHistoryModal .form-control-sm,
+#medicalHistoryModal .form-select-sm {
+    font-size: 0.875rem;
+}
+#medicalHistoryModal textarea.form-control-sm {
+    min-height: 2.5rem;
+    resize: vertical;
+}
+
+/* ردیف داروهای بیماری */
+#medicalHistoryModal .disease-medication-row {
+    font-size: 0.875rem;
+}
+
+/* RTL */
+[dir="rtl"] #medicalHistoryModal .mh-section-title i { margin-right: 0.5rem; margin-left: 0; }
+[dir="rtl"] #medicalHistoryModal .modal-header .me-2 { margin-left: 0.5rem; margin-right: 0; }
 

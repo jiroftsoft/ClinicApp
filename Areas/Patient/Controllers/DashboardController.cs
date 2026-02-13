@@ -8,6 +8,7 @@ using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Patient;
+using ClinicApp.Models;
 using ClinicApp.ViewModels.Patient.MedicalRecord;
 using Microsoft.AspNet.Identity;
 using Serilog;
@@ -28,16 +29,20 @@ namespace ClinicApp.Areas.Patient.Controllers
     {
         private readonly IPatientDashboardService _dashboardService;
         private readonly IPatientSettingsService _settingsService;
+        private readonly IPatientService _patientService;
 
         public DashboardController(
             IPatientDashboardService dashboardService,
             IPatientSettingsService settingsService,
+            IPatientService patientService,
             ILogger logger,
-            ICurrentUserService currentUserService)
-            : base(logger, currentUserService)
+            ICurrentUserService currentUserService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+            _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
         }
 
         /// <summary>
@@ -243,28 +248,27 @@ namespace ClinicApp.Areas.Patient.Controllers
         /// <summary>
         /// ✅ Update Profile (AJAX Form Submit)
         /// POST: /Patient/Dashboard/UpdateProfile
+        /// منطق در IPatientService.UpdatePatientProfileFromFormAsync؛ بدون ساخت دستی ProfileApiController.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> UpdateProfile(string firstName, string lastName, string phoneNumber, 
+        public async Task<JsonResult> UpdateProfile(string firstName, string lastName, string phoneNumber,
             string email, string birthDate, string gender, string address)
         {
             try
             {
-                // Delegate to API controller
-                var apiController = new Api.ProfileApiController(
-                    DependencyResolver.Current.GetService<IPatientService>(),
-                    _logger,
-                    _currentUserService
-                );
-                
-                // Set HttpContext (required for auth)
-                apiController.ControllerContext = new ControllerContext(
-                    this.ControllerContext.RequestContext,
-                    apiController
-                );
-                
-                return await apiController.UpdateProfile(firstName, lastName, phoneNumber, email, birthDate, gender, address);
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد. لطفاً مجدداً وارد شوید." }, JsonRequestBehavior.DenyGet);
+                }
+
+                var result = await _patientService.UpdatePatientProfileFromFormAsync(patientId.Value, firstName, lastName, phoneNumber, email, birthDate, gender, address);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message ?? "خطا در به‌روزرسانی پروفایل" }, JsonRequestBehavior.DenyGet);
+                }
+                return Json(new { success = true, message = "پروفایل با موفقیت به‌روزرسانی شد", reload = false }, JsonRequestBehavior.DenyGet);
             }
             catch (Exception ex)
             {

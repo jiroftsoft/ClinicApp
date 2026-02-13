@@ -458,16 +458,13 @@
             }
 
             const dateStr = this.formatDateForInput(this.selectedDateGregorian);
-            // ✅ CRITICAL: استفاده از config برای URL (باید بعداً به app-config.js منتقل شود)
-            const baseUrl = window.appConfig?.appointmentBooking?.selectTimeUrl || '/Patient/Appointment/Book/SelectTime';
-            const url = baseUrl + '?doctorId=' + 
-                        encodeURIComponent(this.doctorId) + 
-                        '&date=' + encodeURIComponent(dateStr);
-            
-            // ✅ Show loading state
+            // ✅ Route: Patient/Appointment/Book/SelectTime/{doctorId}/{date} — استفاده از path به‌جای query
+            const baseUrl = (window.appConfig?.appointmentBooking?.selectTimeUrl || '/Patient/Appointment/Book/SelectTime').replace(/\/?$/, '');
+            const url = baseUrl + '/' + encodeURIComponent(this.doctorId) + '/' + encodeURIComponent(dateStr);
+
             const $btn = $('#continueToTimeBtn');
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال انتقال...');
-            
+
             window.location.href = url;
         },
 

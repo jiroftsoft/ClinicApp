@@ -41,6 +41,15 @@ namespace ClinicApp.Interfaces
             int patientId, 
             int pageNumber = 1, 
             int pageSize = 5);
+
+        /// <summary>
+        /// دریافت یک‌جا آمار + نوبت‌های اخیر/آینده + پذیرش‌ها (یک درخواست به‌جای چهار).
+        /// </summary>
+        Task<ServiceResult<DashboardViewModel>> GetOverviewAsync(
+            int patientId,
+            int recentPageSize = 5,
+            int upcomingPageSize = 5,
+            int receptionsPageSize = 5);
     }
 }
 

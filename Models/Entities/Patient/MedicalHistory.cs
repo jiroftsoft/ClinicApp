@@ -1,6 +1,7 @@
-﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Enums;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
@@ -90,6 +91,11 @@ public class MedicalHistory : ISoftDelete, ITrackable
     [MaxLength(1000, ErrorMessage = "مسیر فایل‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
     public string Attachments { get; set; }
 
+    /// <summary>
+    /// آلرژی بحرانی (فقط برای Type=Allergy) — از نظر حقوقی و ایمنی بیمار حیاتی است.
+    /// </summary>
+    public bool? IsCritical { get; set; }
+
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
     /// نشان‌دهنده وضعیت حذف شدن تاریخچه پزشکی
@@ -150,6 +156,16 @@ public class MedicalHistory : ISoftDelete, ITrackable
     /// ارجاع به بیمار
     /// </summary>
     public virtual Patient Patient { get; set; }
+
+    /// <summary>
+    /// داروهای مرتبط (نوع دارو یا داروهای بیماری مثلاً قلبی)
+    /// </summary>
+    public virtual ICollection<MedicalHistoryMedication> Medications { get; set; } = new HashSet<MedicalHistoryMedication>();
+
+    /// <summary>
+    /// نتایج آزمایش‌های کلیدی (مثلاً CK-MB، Troponin)
+    /// </summary>
+    public virtual ICollection<MedicalHistoryLabResult> LabResults { get; set; } = new HashSet<MedicalHistoryLabResult>();
     #endregion
 }
 

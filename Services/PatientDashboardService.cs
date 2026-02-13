@@ -25,24 +25,27 @@ namespace ClinicApp.Services
     public class PatientDashboardService : IPatientDashboardService
     {
         private readonly IAppointmentBookingService _appointmentService;
+        private readonly IAppointmentRepository _appointmentRepository;
         private readonly IPatientService _patientService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
         public PatientDashboardService(
             IAppointmentBookingService appointmentService,
+            IAppointmentRepository appointmentRepository,
             IPatientService patientService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _appointmentService = appointmentService ?? throw new ArgumentNullException(nameof(appointmentService));
+            _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger?.ForContext<PatientDashboardService>();
         }
 
         /// <summary>
-        /// دریافت آمار سریع داشبورد بیمار
+        /// دریافت آمار سریع داشبورد بیمار — فقط کوئری‌های COUNT، Real-Time، بدون کش، مقیاس‌پذیر.
         /// </summary>
         public async Task<ServiceResult<DashboardQuickStatsViewModel>> GetQuickStatsAsync(int patientId)
         {
@@ -50,36 +53,28 @@ namespace ClinicApp.Services
             {
                 _logger.Information("دریافت آمار سریع داشبورد - PatientId: {PatientId}", patientId);
 
-                // ✅ دریافت تمام نوبت‌ها برای محاسبه آمار
-                // ⚠️ PERFORMANCE NOTE: این روش برای تعداد زیاد نوبت‌ها بهینه نیست
-                // FIXME(Phase 2): Use dedicated stats query with COUNT(*) GROUP BY Status
-                var allAppointmentsResult = await _appointmentService.GetPatientAppointmentsAsync(patientId);
-                if (!allAppointmentsResult.Success)
-                {
-                    return ServiceResult<DashboardQuickStatsViewModel>.Failed(
-                        allAppointmentsResult.Message,
-                        allAppointmentsResult.Code);
-                }
+                var asOf = DateTime.Now;
 
-                var appointments = allAppointmentsResult.Data ?? new List<PatientAppointmentDto>();
-                var now = DateTime.Now;
+                // دو کوئری سبک COUNT به‌صورت موازی؛ بدون بارگذاری لیست نوبت‌ها
+                var appointmentCountsTask = _appointmentRepository.GetPatientAppointmentCountsAsync(patientId, asOf);
+                var receptionCountTask = _patientService.GetPatientReceptionCountAsync(patientId);
 
-                // ✅ Use LINQ to reduce memory allocation
+                await Task.WhenAll(appointmentCountsTask, receptionCountTask).ConfigureAwait(false);
+
+                var counts = await appointmentCountsTask.ConfigureAwait(false);
+                var totalReceptions = await receptionCountTask.ConfigureAwait(false);
+
                 var stats = new DashboardQuickStatsViewModel
                 {
-                    TotalAppointments = appointments.Count,
-                    UpcomingAppointments = appointments.Count(a => 
-                        a.AppointmentDate > now && 
-                        a.Status != AppointmentStatus.Cancelled),
-                    CompletedAppointments = appointments.Count(a => 
-                        a.Status == AppointmentStatus.Completed),
-                    CancelledAppointments = appointments.Count(a => 
-                        a.Status == AppointmentStatus.Cancelled),
-                    TotalReceptions = 0 // FIXME(Phase 2): دریافت از ReceptionService via SQL COUNT(*)
+                    TotalAppointments = counts.Total,
+                    UpcomingAppointments = counts.Upcoming,
+                    CompletedAppointments = counts.Completed,
+                    CancelledAppointments = counts.Cancelled,
+                    TotalReceptions = totalReceptions
                 };
-                
-                _logger.Information("✅ آمار محاسبه شد - Total: {Total}, Upcoming: {Upcoming}", 
-                    stats.TotalAppointments, stats.UpcomingAppointments);
+
+                _logger.Information("✅ آمار محاسبه شد (Real-Time) - Total: {Total}, Upcoming: {Upcoming}, Receptions: {Receptions}",
+                    stats.TotalAppointments, stats.UpcomingAppointments, stats.TotalReceptions);
 
                 return ServiceResult<DashboardQuickStatsViewModel>.Successful(
                     stats,
@@ -117,8 +112,8 @@ namespace ClinicApp.Services
                 if (pageSize < 1) pageSize = 5;
                 if (pageSize > 20) pageSize = 20; // Max limit
 
-                // ✅ دریافت نوبت‌ها از PatientService (با pagination)
-                var result = await _patientService.GetPatientAppointmentsAsync(patientId, pageNumber, pageSize);
+                // ✅ دریافت نوبت‌ها با TotalCount از PatientService (برای HasMore و «مشاهده همه»)
+                var result = await _patientService.GetPatientAppointmentsPagedAsync(patientId, pageNumber, pageSize);
                 if (!result.Success)
                 {
                     return ServiceResult<DashboardAppointmentsSectionViewModel>.Failed(
@@ -126,8 +121,9 @@ namespace ClinicApp.Services
                         result.Code);
                 }
 
-                var appointments = result.Data ?? new List<ViewModels.PatientAppointmentViewModel>();
-                var totalCount = appointments.Count; // FIXME(Phase 2): دریافت totalCount از service
+                var paged = result.Data;
+                var appointments = paged?.Items ?? new List<PatientAppointmentViewModel>();
+                var totalCount = paged?.TotalCount ?? 0;
 
                 var viewModel = new DashboardAppointmentsSectionViewModel
                 {
@@ -147,7 +143,7 @@ namespace ClinicApp.Services
                     TotalCount = totalCount,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    HasMore = (pageNumber * pageSize) < totalCount
+                    HasMore = paged != null && paged.HasNextPage
                 };
 
                 return ServiceResult<DashboardAppointmentsSectionViewModel>.Successful(
@@ -169,7 +165,7 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
-        /// دریافت نوبت‌های آینده بیمار
+        /// دریافت نوبت‌های آینده بیمار — صفحه‌بندی در DB، بدون بارگذاری همه در حافظه.
         /// </summary>
         public async Task<ServiceResult<DashboardAppointmentsSectionViewModel>> GetUpcomingAppointmentsAsync(
             int patientId, 
@@ -181,17 +177,11 @@ namespace ClinicApp.Services
                 _logger.Information("دریافت نوبت‌های آینده - PatientId: {PatientId}, Page: {Page}, PageSize: {PageSize}",
                     patientId, pageNumber, pageSize);
 
-                // ✅ Validation
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1) pageSize = 5;
                 if (pageSize > 20) pageSize = 20;
 
-                // ✅ دریافت نوبت‌های آینده (از امروز به بعد)
-                var result = await _appointmentService.GetPatientAppointmentsAsync(
-                    patientId, 
-                    startDate: DateTime.Today,
-                    endDate: null);
-                
+                var result = await _patientService.GetPatientUpcomingAppointmentsPagedAsync(patientId, pageNumber, pageSize);
                 if (!result.Success)
                 {
                     return ServiceResult<DashboardAppointmentsSectionViewModel>.Failed(
@@ -199,39 +189,28 @@ namespace ClinicApp.Services
                         result.Code);
                 }
 
-                var allAppointments = result.Data ?? new List<PatientAppointmentDto>();
-                var now = DateTime.Now;
-
-                // ✅ فیلتر: فقط نوبت‌های آینده و غیر لغو شده
-                var upcomingAppointments = allAppointments
-                    .Where(a => a.AppointmentDate > now && a.Status != AppointmentStatus.Cancelled)
-                    .OrderBy(a => a.AppointmentDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-                var totalCount = allAppointments.Count(a => 
-                    a.AppointmentDate > now && a.Status != AppointmentStatus.Cancelled);
+                var paged = result.Data;
+                var appointments = paged?.Items ?? new List<PatientAppointmentViewModel>();
 
                 var viewModel = new DashboardAppointmentsSectionViewModel
                 {
-                    Appointments = upcomingAppointments.Select(a => new DashboardAppointmentItemViewModel
+                    Appointments = appointments.Select(a => new DashboardAppointmentItemViewModel
                     {
                         AppointmentId = a.AppointmentId,
                         DoctorId = a.DoctorId,
                         DoctorName = a.DoctorName,
-                        DoctorSpecialization = null, // FIXME(Phase 2): از service دریافت شود
+                        DoctorSpecialization = a.ServiceCategoryName,
                         AppointmentDate = a.AppointmentDate,
-                        AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                        AppointmentDateShamsi = a.AppointmentDateShamsi,
                         AppointmentTime = a.AppointmentDate.ToString("HH:mm"),
                         Status = a.Status.ToString(),
-                        StatusText = GetAppointmentStatusText(a.Status),
+                        StatusText = a.StatusText,
                         Price = a.Price
                     }).ToList(),
-                    TotalCount = totalCount,
+                    TotalCount = paged?.TotalCount ?? 0,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    HasMore = (pageNumber * pageSize) < totalCount
+                    HasMore = paged != null && paged.HasNextPage
                 };
 
                 return ServiceResult<DashboardAppointmentsSectionViewModel>.Successful(
@@ -314,6 +293,69 @@ namespace ClinicApp.Services
                 return ServiceResult<DashboardReceptionsSectionViewModel>.Failed(
                     "خطا در دریافت پذیرش‌های اخیر",
                     "GET_RECENT_RECEPTIONS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت یک‌جا آمار + نوبت‌های اخیر/آینده + پذیرش‌ها — یک درخواست به‌جای چهار (فاز ۳.۳).
+        /// </summary>
+        public async Task<ServiceResult<DashboardViewModel>> GetOverviewAsync(
+            int patientId,
+            int recentPageSize = 5,
+            int upcomingPageSize = 5,
+            int receptionsPageSize = 5)
+        {
+            try
+            {
+                _logger.Information("دریافت Overview داشبورد - PatientId: {PatientId}", patientId);
+
+                var statsTask = GetQuickStatsAsync(patientId);
+                var recentTask = GetRecentAppointmentsAsync(patientId, 1, recentPageSize);
+                var upcomingTask = GetUpcomingAppointmentsAsync(patientId, 1, upcomingPageSize);
+                var receptionsTask = GetRecentReceptionsAsync(patientId, 1, receptionsPageSize);
+
+                await Task.WhenAll(statsTask, recentTask, upcomingTask, receptionsTask).ConfigureAwait(false);
+
+                var statsResult = await statsTask.ConfigureAwait(false);
+                var recentResult = await recentTask.ConfigureAwait(false);
+                var upcomingResult = await upcomingTask.ConfigureAwait(false);
+                var receptionsResult = await receptionsTask.ConfigureAwait(false);
+
+                var sectionErrors = new Dictionary<string, string>();
+
+                var overview = new DashboardViewModel
+                {
+                    QuickStats = statsResult.Success ? statsResult.Data : null,
+                    RecentAppointments = recentResult.Success ? recentResult.Data : null,
+                    UpcomingAppointments = upcomingResult.Success ? upcomingResult.Data : null,
+                    RecentReceptions = receptionsResult.Success ? receptionsResult.Data : null,
+                    SectionErrors = sectionErrors
+                };
+
+                if (!statsResult.Success)
+                    sectionErrors["QuickStats"] = statsResult.Message ?? "خطا در دریافت آمار.";
+                if (!recentResult.Success)
+                    sectionErrors["RecentAppointments"] = recentResult.Message ?? "خطا در دریافت نوبت‌های اخیر.";
+                if (!upcomingResult.Success)
+                    sectionErrors["UpcomingAppointments"] = upcomingResult.Message ?? "خطا در دریافت نوبت‌های آینده.";
+                if (!receptionsResult.Success)
+                    sectionErrors["RecentReceptions"] = receptionsResult.Message ?? "خطا در دریافت پذیرش‌های اخیر.";
+
+                return ServiceResult<DashboardViewModel>.Successful(
+                    overview,
+                    "Overview با موفقیت دریافت شد.",
+                    operationName: "GetOverview",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت Overview داشبورد - PatientId: {PatientId}", patientId);
+                return ServiceResult<DashboardViewModel>.Failed(
+                    "خطا در بارگذاری داشبورد",
+                    "GET_OVERVIEW_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.Medium);
             }

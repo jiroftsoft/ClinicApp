@@ -2,114 +2,145 @@
 @{
     Layout = null;
 }
-@* ✅ Production-Ready Modal - طبق قراردادها و پایگاه دانش - Bootstrap 5 + RTL *@
+@* ✅ مودال استاندارد فرم پزشکی — اسکرول داخلی، چیدمان افقی دوستونه (lg)، واکنش‌گرا *@
 <div class="modal fade" id="medicalHistoryModal" tabindex="-1" aria-labelledby="medicalHistoryModalLabel" aria-hidden="true" dir="rtl" data-bs-backdrop="static" data-bs-keyboard="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0" style="background: var(--medical-primary, #2c5aa0); color: #fff;">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl mh-modal-dialog">
+        <div class="modal-content border-0 shadow mh-modal-content">
+            <div class="modal-header border-0 py-3 mh-modal-header">
                 <h5 class="modal-title d-flex align-items-center" id="medicalHistoryModalLabel">
                     <i class="fas fa-file-medical me-2"></i>
                     <span id="modalTitle">افزودن تاریخچه پزشکی</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
-            <form id="medicalHistoryForm" enctype="multipart/form-data">
-                <div class="modal-body pt-4">
+            <form id="medicalHistoryForm" enctype="multipart/form-data" class="mh-modal-form">
+                <div class="modal-body mh-modal-body">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="MedicalHistoryId" name="MedicalHistoryId" value="@(Model?.MedicalHistoryId)" />
 
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label for="Type" class="form-label fw-semibold">نوع تاریخچه پزشکی <span class="text-danger">*</span></label>
-                            <select class="form-select" id="Type" name="Type" required aria-required="true">
-                                <option value="">-- انتخاب کنید --</option>
-                                <option value="0">بیماری</option>
-                                <option value="1">جراحی</option>
-                                <option value="2">آسیب</option>
-                                <option value="3">دارو</option>
-                                <option value="4">آلرژی</option>
-                                <option value="5">سابقه خانوادگی</option>
-                                <option value="6">سایر</option>
-                            </select>
-                            <span class="text-danger small field-validation-error" data-valmsg-for="Type"></span>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label for="Title" class="form-label fw-semibold">عنوان <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="Title" name="Title" maxlength="200" placeholder="مثال: دیابت نوع ۲" required aria-required="true" />
-                            <span class="text-danger small field-validation-error" data-valmsg-for="Title"></span>
-                        </div>
-                        <div class="col-12">
-                            <label for="Description" class="form-label fw-semibold">توضیحات</label>
-                            <textarea class="form-control" id="Description" name="Description" rows="4" maxlength="2000" placeholder="شرح مختصر در صورت نیاز"></textarea>
-                            <span class="text-danger small field-validation-error" data-valmsg-for="Description"></span>
-                        </div>
-                        @* ✅ طبق قرارداد 01-Helpers-DateTime و پایگاه دانش: DatePicker شمسی (JalaliDatePicker Enterprise) *@
-                        <div class="col-12 col-md-6">
-                            @{
-                                ViewBag.PersianDatePickerId = "startDatePicker";
-                                ViewBag.PersianDatePickerName = "StartDate";
-                                ViewBag.PersianDatePickerValue = Model?.StartDate;
-                                ViewBag.PersianDatePickerLabel = "تاریخ شروع";
-                                ViewBag.PersianDatePickerPlaceholder = "مثال: 1400/01/01";
-                                ViewBag.PersianDatePickerHelpText = "";
-                                ViewBag.PersianDatePickerRequired = false;
-                                ViewBag.PersianDatePickerCssClass = "form-control";
-                            }
-                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
-                        </div>
-                        <div class="col-12 col-md-6">
-                            @{
-                                ViewBag.PersianDatePickerId = "endDatePicker";
-                                ViewBag.PersianDatePickerName = "EndDate";
-                                ViewBag.PersianDatePickerValue = Model?.EndDate;
-                                ViewBag.PersianDatePickerLabel = "تاریخ پایان";
-                                ViewBag.PersianDatePickerPlaceholder = "مثال: 1402/06/15";
-                                ViewBag.PersianDatePickerHelpText = "";
-                                ViewBag.PersianDatePickerRequired = false;
-                                ViewBag.PersianDatePickerCssClass = "form-control";
-                            }
-                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label for="Severity" class="form-label fw-semibold">شدت</label>
-                            <input type="text" class="form-control" id="Severity" name="Severity" maxlength="50" placeholder="اختیاری" />
-                            <span class="text-danger small field-validation-error" data-valmsg-for="Severity"></span>
-                        </div>
-                        <div class="col-12 col-md-6 d-flex align-items-end pb-2">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" checked />
-                                <label class="form-check-label" for="IsActive">فعال</label>
+                    <div class="row g-0 g-lg-4 mh-form-grid">
+                        @* ستون راست (در RTL): نوع، عنوان، بلوک‌های وابسته به نوع *@
+                        <div class="col-12 col-lg-6 mh-form-col">
+                            <div class="mh-form-col-inner">
+                                <section class="mh-section">
+                                    <h6 class="mh-section-title"><i class="fas fa-tag me-2"></i>نوع و عنوان</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-5">
+                                            <label for="Type" class="form-label mh-label">نوع <span class="text-danger">*</span></label>
+                                            <select class="form-select form-select-sm" id="Type" name="Type" required aria-required="true">
+                                                <option value="">انتخاب</option>
+                                                <option value="0">بیماری</option>
+                                                <option value="1">جراحی</option>
+                                                <option value="2">آسیب</option>
+                                                <option value="3">دارو</option>
+                                                <option value="4">آلرژی</option>
+                                                <option value="5">سابقه خانوادگی</option>
+                                                <option value="6">سایر</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-md-7">
+                                            <label for="Title" class="form-label mh-label">عنوان <span class="text-danger" id="titleRequiredStar">*</span></label>
+                                            <input type="text" class="form-control form-control-sm" id="Title" name="Title" maxlength="200" placeholder="مثال: بیماری قلبی، دیابت" aria-required="true" />
+                                        </div>
+                                        <div class="col-12"><small class="text-muted" id="titleHelp">بیماری: نام بیماری + داروهای مرتبط در بلوک زیر. دارو: یک دارو در بلوک «اطلاعات دارو».</small></div>
+                                    </div>
+                                </section>
+
+                                <section class="mh-section mh-section-drug" id="medicalHistoryMedicationBlock" data-section="medication" style="display: none;">
+                                    <h6 class="mh-section-title mh-section-title-primary"><i class="fas fa-pills me-2"></i>اطلاعات دارو</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-6"><label for="DrugName" class="form-label mh-label">نام دارو <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="DrugName" name="DrugName" maxlength="200" placeholder="مترورمین" /></div>
+                                        <div class="col-4 col-md-2"><label for="Dosage" class="form-label mh-label">دوز</label><input type="text" class="form-control form-control-sm" id="Dosage" name="Dosage" maxlength="100" placeholder="۵۰۰" /></div>
+                                        <div class="col-4 col-md-2"><label for="DosageUnit" class="form-label mh-label">واحد</label><input type="text" class="form-control form-control-sm" id="DosageUnit" name="DosageUnit" maxlength="50" placeholder="mg" /></div>
+                                        <div class="col-4 col-md-2"><label for="Frequency" class="form-label mh-label">نحوه</label><input type="text" class="form-control form-control-sm" id="Frequency" name="Frequency" maxlength="100" placeholder="۲× روز" /></div>
+                                        <div class="col-6 col-md-3"><label for="Route" class="form-label mh-label">راه</label><input type="text" class="form-control form-control-sm" id="Route" name="Route" maxlength="50" placeholder="خوراکی" /></div>
+                                        <div class="col-6 col-md-3"><label for="Indication" class="form-label mh-label">دلیل</label><input type="text" class="form-control form-control-sm" id="Indication" name="Indication" maxlength="300" /></div>
+                                        <div class="col-12 col-md-6"><label for="PrescribingDoctor" class="form-label mh-label">پزشک تجویزکننده</label><input type="text" class="form-control form-control-sm" id="PrescribingDoctor" name="PrescribingDoctor" maxlength="100" /></div>
+                                    </div>
+                                </section>
+
+                                <section class="mh-section mh-section-disease-meds" id="medicalHistoryDiseaseMedicationsBlock" data-section="disease-medications" style="display: none;">
+                                    <h6 class="mh-section-title mh-section-title-success"><i class="fas fa-capsules me-2"></i>داروهای مرتبط با این بیماری</h6>
+                                    <p class="small text-muted mb-2">برای هر دارو (مثل آ.اس.آ، والزومکیس، فشار خون) یک ردیف اضافه کنید.</p>
+                                    <div class="mh-card-inner"><div id="diseaseMedicationsContainer"></div><button type="button" class="btn btn-outline-success btn-sm mt-2" id="btnAddDiseaseMedication"><i class="fas fa-plus me-1"></i>افزودن دارو</button></div>
+                                    <input type="hidden" id="MedicationsListJson" name="MedicationsListJson" value="" />
+                                </section>
+
+                                <template id="diseaseMedicationRowTemplate">
+                                    <div class="disease-medication-row row g-2 align-items-end mb-2 py-2 border-bottom border-opacity-25">
+                                        <div class="col-5 col-md-4"><label class="form-label mh-label small">نام دارو</label><input type="text" class="form-control form-control-sm medication-name" placeholder="آ.اس.آ، والزومکیس" maxlength="200" /></div>
+                                        <div class="col-2 col-md-2"><label class="form-label mh-label small">دوز</label><input type="text" class="form-control form-control-sm medication-dosage" placeholder="۸۰" maxlength="100" /></div>
+                                        <div class="col-2 col-md-1"><label class="form-label mh-label small">واحد</label><input type="text" class="form-control form-control-sm medication-unit" placeholder="mg" maxlength="50" /></div>
+                                        <div class="col-2 col-md-3"><label class="form-label mh-label small">نحوه</label><input type="text" class="form-control form-control-sm medication-frequency" placeholder="۱× روز" maxlength="100" /></div>
+                                        <div class="col-1 text-end"><button type="button" class="btn btn-outline-danger btn-sm remove-disease-medication" aria-label="حذف"><i class="fas fa-trash-alt"></i></button></div>
+                                    </div>
+                                </template>
+
+                                <section class="mh-section mh-section-lab" id="medicalHistoryLabBlock" data-section="lab" style="display: none;">
+                                    <h6 class="mh-section-title mh-section-title-info"><i class="fas fa-vial me-2"></i>نتیجه آزمایش</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-4"><label for="LabName" class="form-label mh-label">نام آزمایش</label><input type="text" class="form-control form-control-sm" id="LabName" name="LabName" maxlength="100" placeholder="CK-MB، Troponin" /></div>
+                                        <div class="col-3 col-md-2"><label for="LabValue" class="form-label mh-label">مقدار</label><input type="text" class="form-control form-control-sm" id="LabValue" name="LabValue" maxlength="50" /></div>
+                                        <div class="col-3 col-md-2"><label for="LabUnit" class="form-label mh-label">واحد</label><input type="text" class="form-control form-control-sm" id="LabUnit" name="LabUnit" maxlength="50" placeholder="ng/mL" /></div>
+                                        <div class="col-6 col-md-4">
+                                            @{
+                                                ViewBag.PersianDatePickerId = "labDatePicker";
+                                                ViewBag.PersianDatePickerName = "LabDate";
+                                                ViewBag.PersianDatePickerValue = Model?.LabDate;
+                                                ViewBag.PersianDatePickerLabel = "تاریخ آزمایش";
+                                                ViewBag.PersianDatePickerPlaceholder = "۱۴۰۲/۰۱/۱۵";
+                                                ViewBag.PersianDatePickerHelpText = "";
+                                                ViewBag.PersianDatePickerRequired = false;
+                                                ViewBag.PersianDatePickerCssClass = "form-control form-control-sm";
+                                            }
+                                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                                        </div>
+                                        <div class="col-12 col-md-12"><label for="LabReferenceRange" class="form-label mh-label">محدوده مرجع</label><input type="text" class="form-control form-control-sm" id="LabReferenceRange" name="LabReferenceRange" maxlength="100" placeholder="اختیاری" /></div>
+                                    </div>
+                                </section>
+
+                                <section class="mh-section mh-section-allergy" id="medicalHistoryAllergyBlock" data-section="allergy" style="display: none;">
+                                    <h6 class="mh-section-title mh-section-title-warning"><i class="fas fa-exclamation-triangle me-2"></i>وضعیت آلرژی</h6>
+                                    <div class="form-check form-switch"><input type="checkbox" class="form-check-input" id="IsCritical" name="IsCritical" value="true" /><label class="form-check-label" for="IsCritical">آلرژی بحرانی (آنافیلاکسی)</label></div>
+                                </section>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label for="DoctorName" class="form-label fw-semibold">نام پزشک معالج</label>
-                            <input type="text" class="form-control" id="DoctorName" name="DoctorName" maxlength="100" placeholder="اختیاری" />
-                            <span class="text-danger small field-validation-error" data-valmsg-for="DoctorName"></span>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label for="MedicalCenter" class="form-label fw-semibold">مرکز درمانی</label>
-                            <input type="text" class="form-control" id="MedicalCenter" name="MedicalCenter" maxlength="200" placeholder="اختیاری" />
-                            <span class="text-danger small field-validation-error" data-valmsg-for="MedicalCenter"></span>
-                        </div>
-                        <div class="col-12">
-                            <label for="Attachments" class="form-label fw-semibold">فایل‌های ضمیمه</label>
-                            <input type="file" class="form-control" id="Attachments" name="Attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                            <small class="form-text text-muted">حداکثر ۵ فایل، هر فایل حداکثر ۵ مگابایت. فرمت‌های مجاز: PDF, JPG, PNG, DOC, DOCX</small>
-                            <div id="attachmentsPreview" class="mt-2"></div>
-                            <span class="text-danger small field-validation-error" data-valmsg-for="Attachments"></span>
+
+                        @* ستون چپ (در RTL): توضیحات، تاریخ‌ها، شدت، پزشک، ضمیمه *@
+                        <div class="col-12 col-lg-6 mh-form-col">
+                            <div class="mh-form-col-inner">
+                                <section class="mh-section">
+                                    <h6 class="mh-section-title"><i class="fas fa-align-right me-2"></i>توضیحات و بازه زمانی</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12"><label for="Description" class="form-label mh-label">توضیحات</label><textarea class="form-control form-control-sm" id="Description" name="Description" rows="2" maxlength="2000" placeholder="شرح مختصر"></textarea></div>
+                                        <div class="col-6 col-md-6">
+                                            @{ ViewBag.PersianDatePickerId = "startDatePicker"; ViewBag.PersianDatePickerName = "StartDate"; ViewBag.PersianDatePickerValue = Model?.StartDate; ViewBag.PersianDatePickerLabel = "تاریخ شروع"; ViewBag.PersianDatePickerPlaceholder = "۱۴۰۰/۰۱/۰۱"; ViewBag.PersianDatePickerHelpText = ""; ViewBag.PersianDatePickerRequired = false; ViewBag.PersianDatePickerCssClass = "form-control form-control-sm"; }
+                                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                                        </div>
+                                        <div class="col-6 col-md-6">
+                                            @{ ViewBag.PersianDatePickerId = "endDatePicker"; ViewBag.PersianDatePickerName = "EndDate"; ViewBag.PersianDatePickerValue = Model?.EndDate; ViewBag.PersianDatePickerLabel = "تاریخ پایان"; ViewBag.PersianDatePickerPlaceholder = "۱۴۰۲/۰۶/۱۵"; ViewBag.PersianDatePickerHelpText = ""; ViewBag.PersianDatePickerRequired = false; ViewBag.PersianDatePickerCssClass = "form-control form-control-sm"; }
+                                            @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
+                                        </div>
+                                        <div class="col-6 col-md-4"><label for="Severity" class="form-label mh-label">شدت</label><select class="form-select form-select-sm" id="Severity" name="Severity"><option value="">اختیاری</option><option value="خفیف">خفیف</option><option value="عادی">عادی</option><option value="متوسط">متوسط</option><option value="شدید">شدید</option><option value="بحرانی">بحرانی</option></select></div>
+                                        <div class="col-6 col-md-4 d-flex align-items-end pb-1"><div class="form-check form-switch"><input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" checked /><label class="form-check-label" for="IsActive">فعال</label></div></div>
+                                    </div>
+                                </section>
+
+                                <section class="mh-section">
+                                    <h6 class="mh-section-title"><i class="fas fa-user-md me-2"></i>پزشک، مرکز و ضمیمه</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-6"><label for="DoctorName" class="form-label mh-label">نام پزشک معالج</label><input type="text" class="form-control form-control-sm" id="DoctorName" name="DoctorName" maxlength="100" placeholder="اختیاری" /></div>
+                                        <div class="col-12 col-md-6"><label for="MedicalCenter" class="form-label mh-label">مرکز درمانی</label><input type="text" class="form-control form-control-sm" id="MedicalCenter" name="MedicalCenter" maxlength="200" placeholder="اختیاری" /></div>
+                                        <div class="col-12"><label for="Attachments" class="form-label mh-label">فایل‌های ضمیمه</label><input type="file" class="form-control form-control-sm" id="Attachments" name="Attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" /><small class="text-muted">PDF, JPG, PNG, DOC — حداکثر ۵ مگابایت</small><div id="attachmentsPreview" class="mt-1"></div></div>
+                                    </div>
+                                </section>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>
-                        انصراف
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="saveMedicalHistoryBtn" style="background: var(--medical-primary, #2c5aa0); border-color: var(--medical-primary, #2c5aa0);">
-                        <i class="fas fa-save me-1"></i>
-                        <span class="btn-text">ذخیره</span>
-                        <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span>در حال ذخیره...</span>
-                    </button>
+                <div class="modal-footer border-0 py-3 mh-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>انصراف</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="saveMedicalHistoryBtn" style="background: var(--medical-primary, #2c5aa0); border-color: var(--medical-primary, #2c5aa0);"><i class="fas fa-save me-1"></i><span class="btn-text">ذخیره</span><span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span>در حال ذخیره...</span></button>
                 </div>
             </form>
         </div>

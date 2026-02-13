@@ -1,4 +1,4 @@
-﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Enums;
 using System;
 using System.Collections.Generic;
@@ -134,6 +134,24 @@ public class Reception : ISoftDelete, ITrackable
     /// </summary>
     [MaxLength(1000, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
     public string Notes { get; set; }
+
+    /// <summary>
+    /// تشخیص ویزیت — برای پرونده استاندارد و قابل دفاع
+    /// </summary>
+    [MaxLength(500)]
+    public string Diagnosis { get; set; }
+
+    /// <summary>
+    /// کد تشخیص (ICD-10 یا کد داخلی)
+    /// </summary>
+    [MaxLength(20)]
+    public string DiagnosisCode { get; set; }
+
+    /// <summary>
+    /// طرح درمان ویزیت
+    /// </summary>
+    [MaxLength(2000)]
+    public string TreatmentPlan { get; set; }
 
     /// <summary>
     /// آیا پذیرش اورژانس است؟

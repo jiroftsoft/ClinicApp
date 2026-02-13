@@ -98,6 +98,7 @@ namespace ClinicApp.Models
         public DbSet<InsuranceCalculation> InsuranceCalculations { get; set; }
         public DbSet<BusinessRule> BusinessRules { get; set; }
         public DbSet<Patient> Patients { get; set; }
+        public DbSet<PatientSetting> PatientSettings { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Reception> Receptions { get; set; }
         public DbSet<ReceptionItem> ReceptionItems { get; set; }
@@ -150,6 +151,8 @@ namespace ClinicApp.Models
 
         // ========== موجودیت‌های جدید برای تاریخچه پزشکی و گزارش‌گیری ==========
         public DbSet<MedicalHistory> MedicalHistories { get; set; }
+        public DbSet<MedicalHistoryMedication> MedicalHistoryMedications { get; set; }
+        public DbSet<MedicalHistoryLabResult> MedicalHistoryLabResults { get; set; }
         public DbSet<Report> Reports { get; set; }
 
         // ========== موجودیت‌های جدید برای ماژول تریاژ ==========

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Patient;
@@ -15,6 +16,17 @@ namespace ClinicApp.Interfaces.Repositories
         /// </summary>
         Task<List<MedicalHistory>> GetMedicalHistoriesByPatientIdAsync(
             int patientId, bool includeDeleted = false);
+
+        /// <summary>
+        /// دریافت تاریخچه پزشکی با صفحه‌بندی و فیلتر (برای پرونده غنی و مقیاس‌پذیر).
+        /// </summary>
+        Task<(List<MedicalHistory> Items, int TotalCount)> GetMedicalHistoriesPagedAsync(
+            int patientId,
+            int pageNumber,
+            int pageSize,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string searchText);
         
         /// <summary>
         /// دریافت تاریخچه پزشکی با شناسه

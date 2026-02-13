@@ -157,7 +157,7 @@
         performSearch: function (searchTerm) {
             const departmentId = $('#departmentFilter').val();
             
-            showLoading();
+            this._showLoading();
             
             // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
             this.ajaxWithRetry({
@@ -171,7 +171,7 @@
                 maxRetries: 3, // ✅ حداکثر 3 بار تلاش
                 retryDelay: 1000, // ✅ 1 ثانیه تاخیر
                 onSuccess: (response) => {
-                    hideLoading();
+                    this._hideLoading();
                     if (response.success && response.data) {
                         this.renderDoctors(response.data);
                     } else {
@@ -179,7 +179,7 @@
                     }
                 },
                 onError: (xhr, status, error) => {
-                    hideLoading();
+                    this._hideLoading();
                     let errorMessage = 'خطا در ارتباط با سرور';
                     
                     // ✅ تشخیص نوع خطا و نمایش پیام مناسب
@@ -220,12 +220,25 @@
         },
 
         createDoctorCard: function (doctor) {
-            const availabilityBadge = doctor.hasActiveSchedule
+            // ✅ Support both PascalCase (API default) and camelCase
+            const doctorId = doctor.doctorId ?? doctor.DoctorId ?? 0;
+            const fullName = (doctor.fullName ?? doctor.FullName ?? '').toString();
+            const specialization = (doctor.specialization ?? doctor.Specialization ?? 'نامشخص').toString();
+            const scheduleInfo = (doctor.scheduleInfo ?? doctor.ScheduleInfo ?? '').toString();
+            const hasActiveSchedule = doctor.hasActiveSchedule ?? doctor.HasActiveSchedule ?? false;
+            // ✅ Escape for safe HTML (prevent XSS)
+            const escape = (s) => {
+                const div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            };
+
+            const availabilityBadge = hasActiveSchedule
                 ? `<span class="badge bg-success mb-2"><i class="fas fa-check-circle me-1"></i> در دسترس</span>`
                 : `<span class="badge bg-secondary mb-2"><i class="fas fa-times-circle me-1"></i> غیرفعال</span>`;
 
-            const selectBtn = doctor.hasActiveSchedule
-                ? `<button type="button" class="btn btn-primary w-100 select-doctor-btn" data-doctor-id="${doctor.doctorId}">
+            const selectBtn = hasActiveSchedule
+                ? `<button type="button" class="btn btn-primary w-100 select-doctor-btn" data-doctor-id="${doctorId}">
                     <i class="fas fa-calendar-plus me-1"></i> انتخاب پزشک
                    </button>`
                 : `<button type="button" class="btn btn-secondary w-100" disabled>
@@ -233,7 +246,7 @@
                    </button>`;
 
             return $(`
-                <div class="doctor-card card mb-3" data-doctor-id="${doctor.doctorId}">
+                <div class="doctor-card card mb-3" data-doctor-id="${doctorId}">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-8">
@@ -242,16 +255,16 @@
                                         <i class="fas fa-user-md text-white fs-1"></i>
                                     </div>
                                     <div>
-                                        <h5 class="card-title mb-1">${doctor.fullName}</h5>
+                                        <h5 class="card-title mb-1">${escape(fullName)}</h5>
                                         <p class="text-muted mb-1">
                                             <i class="fas fa-stethoscope me-1"></i>
-                                            ${doctor.specialization}
+                                            ${escape(specialization)}
                                         </p>
                                     </div>
                                 </div>
                                 <p class="text-info mb-0">
                                     <i class="fas fa-calendar-check me-1"></i>
-                                    ${doctor.scheduleInfo}
+                                    ${escape(scheduleInfo)}
                                 </p>
                             </div>
                             <div class="col-md-4 text-end d-flex flex-column justify-content-between">
@@ -319,6 +332,24 @@
             }
 
             makeRequest();
+        },
+
+        /** ✅ Fallback: استفاده از #loadingState اگر showLoading/hideLoading سراسری نباشند */
+        _showLoading: function () {
+            if (typeof showLoading === 'function') {
+                showLoading();
+            } else {
+                var $el = $('#loadingState');
+                if ($el.length) { $el.show(); }
+            }
+        },
+        _hideLoading: function () {
+            if (typeof hideLoading === 'function') {
+                hideLoading();
+            } else {
+                var $el = $('#loadingState');
+                if ($el.length) { $el.hide(); }
+            }
         },
 
         showError: function (message) {

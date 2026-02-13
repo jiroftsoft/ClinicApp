@@ -145,7 +145,7 @@
         },
 
         checkSlotAvailability: function () {
-            showLoading();
+            this._showLoading();
 
             // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URL
             const checkUrl = window.appConfig?.appointmentBooking?.checkSlotAvailabilityUrl || '/Patient/Api/DoctorSearch/CheckSlotAvailability';
@@ -167,7 +167,7 @@
                 maxRetries: 3, // ✅ حداکثر 3 بار تلاش
                 retryDelay: 1000, // ✅ 1 ثانیه تاخیر بین تلاش‌ها
                 onSuccess: (response) => {
-                    hideLoading();
+                    this._hideLoading();
                     // ✅ CRITICAL FIX: Re-enable button after request
                     $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false).data('processing', false);
                     
@@ -188,7 +188,7 @@
                     }
                 },
                 onError: (xhr, status, error) => {
-                    hideLoading();
+                    this._hideLoading();
                     // ✅ CRITICAL FIX: Re-enable button on error
                     $('#continueToConfirmBtn, #continueToConfirmBtnMobile').prop('disabled', false).data('processing', false);
                     
@@ -267,10 +267,19 @@
             }, 15000); // 15 seconds - Better balance between performance and data accuracy
         },
 
+        _showLoading: function () {
+            if (typeof showLoading === 'function') showLoading();
+            else $('#loadingState').length && $('#loadingState').show();
+        },
+        _hideLoading: function () {
+            if (typeof hideLoading === 'function') hideLoading();
+            else $('#loadingState').length && $('#loadingState').hide();
+        },
+
         updateSlotAvailability: function () {
             // ✅ CRITICAL FIX: استفاده از Route system به جای Hardcode URL
             const slotsUrl = window.appConfig?.appointmentBooking?.getAvailableSlotsUrl || '/Patient/Api/DoctorSearch/GetAvailableTimeSlots';
-            
+
             // ✅ CRITICAL FIX: بهبود Error Handling برای Real-time Updates
             this.ajaxWithRetry({
                 url: slotsUrl,
@@ -300,11 +309,23 @@
             });
         },
 
+        /** ✅ نرمال‌سازی زمان به فرمت hh:mm برای تطابق با data-start-time در کارت (سرور با @"hh\:mm" رندر می‌کند) */
+        _normalizeTime: function (t) {
+            if (t == null) return '';
+            const s = String(t).trim();
+            if (s.length >= 5) return s.substring(0, 5); // "09:30" or "09:30:00" -> "09:30"
+            return s;
+        },
+
         updateSlotsUI: function (slots) {
-            slots.forEach(slot => {
-                const $card = $(`.time-slot-premium[data-start-time="${slot.startTime}"], .time-slot-card-minimal[data-start-time="${slot.startTime}"], .time-slot-card[data-start-time="${slot.startTime}"]`);
+            const self = this;
+            (slots || []).forEach(function (slot) {
+                const startTime = self._normalizeTime(slot.startTime || slot.StartTime);
+                const isAvailable = slot.isAvailable !== undefined ? slot.isAvailable : slot.IsAvailable;
+                if (!startTime) return;
+                const $card = $(`.time-slot-premium[data-start-time="${startTime}"], .time-slot-card-minimal[data-start-time="${startTime}"], .time-slot-card[data-start-time="${startTime}"]`);
                 if ($card.length) {
-                    if (!slot.isAvailable) {
+                    if (!isAvailable) {
                         $card.removeClass('slot-available available').addClass('slot-booked unavailable');
                         const $btn = $card.find('.btn-slot-premium, .btn-slot-select, .select-slot-btn');
                         if ($btn.length) {

@@ -55,6 +55,60 @@ namespace ClinicApp.Repositories.Patient
                 throw;
             }
         }
+
+        /// <summary>
+        /// دریافت تاریخچه پزشکی با صفحه‌بندی و فیلتر — برای پرونده غنی (۵+ سال داده).
+        /// </summary>
+        public async Task<(List<MedicalHistory> Items, int TotalCount)> GetMedicalHistoriesPagedAsync(
+            int patientId,
+            int pageNumber,
+            int pageSize,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string searchText)
+        {
+            try
+            {
+                var query = _dbSet
+                    .AsNoTracking()
+                    .Where(mh => mh.PatientId == patientId && !mh.IsDeleted);
+
+                // فیلتر بازهٔ زمانی: بر اساس StartDate یا در صورت نبود، CreatedAt
+                if (fromDate.HasValue)
+                    query = query.Where(mh => (mh.StartDate ?? mh.CreatedAt) >= fromDate.Value);
+                if (toDate.HasValue)
+                    query = query.Where(mh => (mh.StartDate ?? mh.CreatedAt) <= toDate.Value);
+
+                // جستجو در عنوان و توضیحات
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    var term = searchText.Trim();
+                    query = query.Where(mh =>
+                        (mh.Title != null && mh.Title.Contains(term)) ||
+                        (mh.Description != null && mh.Description.Contains(term)));
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Include(mh => mh.Medications)
+                    .Include(mh => mh.LabResults)
+                    .OrderByDescending(mh => mh.StartDate ?? mh.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                _logger.Debug("تاریخچه پزشکی صفحه‌بندی - PatientId: {PatientId}, Page: {Page}, Total: {Total}",
+                    patientId, pageNumber, totalCount);
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تاریخچه پزشکی صفحه‌بندی - PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
         
         /// <summary>
         /// دریافت تاریخچه پزشکی با شناسه
@@ -66,6 +120,8 @@ namespace ClinicApp.Repositories.Patient
                 _logger.Debug("دریافت تاریخچه پزشکی - MedicalHistoryId: {MedicalHistoryId}", medicalHistoryId);
                 
                 var result = await _dbSet
+                    .Include(mh => mh.Medications)
+                    .Include(mh => mh.LabResults)
                     .FirstOrDefaultAsync(mh => mh.MedicalHistoryId == medicalHistoryId && !mh.IsDeleted);
                 
                 if (result == null)

@@ -20,6 +20,7 @@ using static ClinicApp.Helpers.NotificationHelper;
 using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Extensions;
 using ClinicApp.Infrastructure;
+using ClinicApp.Models;
 using Microsoft.AspNet.Identity;
 
 namespace ClinicApp.Areas.Patient.Controllers
@@ -47,9 +48,10 @@ namespace ClinicApp.Areas.Patient.Controllers
             IDoctorScheduleRepository scheduleRepository,
             IDoctorMappingService mappingService,
             ILogger logger,
+            ApplicationDbContext context,
             IAppSettings appSettings = null,
             ITimeProvider timeProvider = null)
-            : base(logger, currentUserService)
+            : base(logger, currentUserService, context)
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));

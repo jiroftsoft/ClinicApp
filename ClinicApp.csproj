@@ -1032,6 +1032,14 @@
     <Compile Include="Migrations\202602060640393_AddFooterTables.Designer.cs">
       <DependentUpon>202602060640393_AddFooterTables.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202602130458031_AddPatientSettingsTable.cs" />
+    <Compile Include="Migrations\202602130458031_AddPatientSettingsTable.Designer.cs">
+      <DependentUpon>202602130458031_AddPatientSettingsTable.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202602130747066_MedicalRecordStandardFieldsAndTables.cs" />
+    <Compile Include="Migrations\202602130747066_MedicalRecordStandardFieldsAndTables.Designer.cs">
+      <DependentUpon>202602130747066_MedicalRecordStandardFieldsAndTables.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
@@ -1039,6 +1047,7 @@
     <Compile Include="Models\DTOs\Appointment\DoctorScheduleDisplayDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorPublicStatsDto.cs" />
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\PatientAppointmentCountsDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\DTOs\Payment\AuditSummary.cs" />
@@ -1081,6 +1090,9 @@
     <Compile Include="Models\Entities\CMS\Story.cs" />
     <Compile Include="Models\Entities\CMS\Testimonial.cs" />
     <Compile Include="Models\Entities\CMS\Video.cs" />
+    <Compile Include="Models\Entities\Patient\MedicalHistoryLabResult.cs" />
+    <Compile Include="Models\Entities\Patient\MedicalHistoryMedication.cs" />
+    <Compile Include="Models\Entities\Patient\PatientSetting.cs" />
     <Compile Include="Models\Entities\Payment\CashierPerformanceMetrics.cs" />
     <Compile Include="Models\Entities\Payment\CashSessionAuditLog.cs" />
     <Compile Include="Models\Entities\Payment\PaymentDiscrepancy.cs" />
@@ -1836,6 +1848,8 @@
     <Compile Include="ViewModels\Patient\DoctorDetailsViewModel.cs" />
     <Compile Include="ViewModels\Patient\DoctorSelectionViewModel.cs" />
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryLabResultItemDto.cs" />
+    <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryMedicationItemDto.cs" />
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalHistoryViewModel.cs" />
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordAppointmentViewModel.cs" />
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordIndexViewModel.cs" />
@@ -2085,6 +2099,7 @@
     <Content Include="Content\css\medical-equipment-details.css" />
     <Content Include="Content\css\medical-equipment-index.css" />
     <Content Include="Content\css\medical-service-info-pages.css" />
+    <Content Include="Content\css\patient-dashboard-settings.css" />
     <Content Include="Content\css\patient-education.css" />
     <Content Include="Content\css\doctor-assignment-index.css" />
     <Content Include="Content\css\doctor-timeslot.css" />
@@ -5236,6 +5251,8 @@
     <Content Include="Docs\ZARINPAL_PRODUCTION_SETUP.md" />
     <Content Include="Documentation\ROADMAP_HOME_AND_DOCTORS_PAGE.md" />
     <Content Include="Areas\Patient\Views\MedicalRecord\_TriageSection.cshtml" />
+    <Content Include="Docs\PROFILE_MODAL_ROADMAP_AND_CHECKLISTS.md" />
+    <Content Include="Areas\Patient\Views\Shared\_ShafaBrandLoading.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -7046,6 +7063,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602060640393_AddFooterTables.resx">
       <DependentUpon>202602060640393_AddFooterTables.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602130458031_AddPatientSettingsTable.resx">
+      <DependentUpon>202602130458031_AddPatientSettingsTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602130747066_MedicalRecordStandardFieldsAndTables.resx">
+      <DependentUpon>202602130747066_MedicalRecordStandardFieldsAndTables.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

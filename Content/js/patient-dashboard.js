@@ -18,6 +18,9 @@
     // ✅ Configuration
     var config = {
         apiBaseUrl: '/Patient/Api/PatientDashboard',
+        /** یک درخواست GetOverview به‌جای چهار درخواست جدا (فاز ۳.۳) */
+        useOverview: true,
+        overviewUrl: '/GetOverview',
         sections: {
             quickStats: {
                 url: '/GetQuickStats',
@@ -57,20 +60,87 @@
         },
 
         /**
-         * ✅ Load All Sections
+         * ✅ Load All Sections — در صورت useOverview یک درخواست، وگرنه چهار درخواست جدا
          */
         loadAllSections: function() {
             var self = this;
-            
-            // ✅ Load Quick Stats first
+            if (config.useOverview) {
+                this.loadOverview();
+                return;
+            }
             this.loadSection('quickStats').then(function() {
-                // ✅ Then load other sections in parallel
                 Promise.all([
                     self.loadSection('recentAppointments'),
                     self.loadSection('upcomingAppointments'),
                     self.loadSection('recentReceptions')
                 ]).catch(function(error) {
                     console.error('Error loading dashboard sections:', error);
+                });
+            });
+        },
+
+        /**
+         * ✅ یک درخواست GetOverview و پر کردن تمام sections (فاز ۳.۳)
+         */
+        loadOverview: function() {
+            var self = this;
+            var sections = config.sections;
+            var $containers = [
+                $(sections.quickStats.container),
+                $(sections.recentAppointments.container),
+                $(sections.upcomingAppointments.container),
+                $(sections.recentReceptions.container)
+            ];
+            $containers.forEach(function($c) {
+                if ($c.length) self.showLoading($c);
+            });
+            var url = config.apiBaseUrl + config.overviewUrl;
+            $.ajax({
+                url: url,
+                method: 'GET',
+                dataType: 'json',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-AJAX-Request': 'true' },
+                cache: false,
+                timeout: 30000
+            }).then(function(response) {
+                if (!response || !response.success || !response.data) {
+                    $containers.forEach(function($c) {
+                        if ($c.length) self.showError($c, response && response.message ? response.message : 'خطا در بارگذاری');
+                    });
+                    return;
+                }
+                var d = response.data;
+                var sectionErrors = d.SectionErrors || d.sectionErrors || {};
+                var $qs = $(sections.quickStats.container), $ra = $(sections.recentAppointments.container), $ua = $(sections.upcomingAppointments.container), $rr = $(sections.recentReceptions.container);
+                // QuickStats
+                if ($qs.length) {
+                    if (sectionErrors.QuickStats) { self.hideLoading($qs); self.showError($qs, sectionErrors.QuickStats); }
+                    else self.renderSection($qs, sections.quickStats.partial, d.QuickStats || d.quickStats);
+                }
+                // RecentAppointments
+                if ($ra.length) {
+                    if (sectionErrors.RecentAppointments) { self.hideLoading($ra); self.showError($ra, sectionErrors.RecentAppointments); }
+                    else self.renderSection($ra, sections.recentAppointments.partial, d.RecentAppointments || d.recentAppointments);
+                }
+                // UpcomingAppointments
+                if ($ua.length) {
+                    if (sectionErrors.UpcomingAppointments) { self.hideLoading($ua); self.showError($ua, sectionErrors.UpcomingAppointments); }
+                    else self.renderSection($ua, sections.upcomingAppointments.partial, d.UpcomingAppointments || d.upcomingAppointments);
+                }
+                // RecentReceptions
+                if ($rr.length) {
+                    if (sectionErrors.RecentReceptions) { self.hideLoading($rr); self.showError($rr, sectionErrors.RecentReceptions); }
+                    else self.renderSection($rr, sections.recentReceptions.partial, d.RecentReceptions || d.recentReceptions);
+                }
+            }).catch(function(xhr) {
+                var msg = 'خطا در بارگذاری. لطفاً دوباره تلاش کنید.';
+                if (xhr.status === 401) {
+                    if (window.openLoginModal) window.openLoginModal(window.location.href);
+                    else window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.href);
+                    return;
+                }
+                $containers.forEach(function($c) {
+                    if ($c.length) self.showError($c, msg);
                 });
             });
         },

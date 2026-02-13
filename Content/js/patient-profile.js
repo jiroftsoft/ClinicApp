@@ -334,58 +334,55 @@
 
         // ✅ Initialize Datepicker (طبق قراردادها - استفاده از PersianDatePickerComponent)
         initDatepicker: function() {
-            console.log('📅 [PatientProfile] Initializing datepicker...');
-            
-            // ✅ BEST PRACTICE: استفاده از PersianDatePickerComponent
-            if (typeof PersianDatePickerComponent !== 'undefined') {
-                const $birthDateInput = $('#BirthDate');
-                if ($birthDateInput.length > 0) {
-                    console.log('✅ [PatientProfile] Using PersianDatePickerComponent');
-                    // Component will auto-initialize inputs with data-persian-datepicker="true"
-                    PersianDatePickerComponent.initializeAll();
-                } else {
-                    console.warn('⚠️ [PatientProfile] BirthDate input not found');
-                }
-            } else if (typeof $.fn.persianDatepicker !== 'undefined') {
-                // Fallback: استفاده مستقیم از persianDatepicker
-                console.log('✅ [PatientProfile] Using persianDatepicker directly');
-                $('#BirthDate').each(function() {
-                    const $input = $(this);
-                    if (!$input.data('persian-datepicker-initialized')) {
-                        $input.persianDatepicker({
-                            format: 'YYYY/MM/DD',
-                            initialValue: false,
-                            autoClose: true,
-                            observer: true,
-                            calendar: {
-                                persian: {
-                                    locale: 'fa',
-                                    leapYearMode: 'astronomical'
-                                }
-                            },
-                            toolbox: {
-                                todayBtn: { enabled: true, text: { fa: 'امروز' } },
-                                clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
-                            },
-                            onSelect: function(unix) {
-                                // Fix for Unix timestamp unit (seconds vs milliseconds)
-                                const ts = unix < 2e10 ? unix * 1000 : unix;
-                                const date = new Date(ts);
-                                const persianDate = date.getFullYear() + '/' + 
-                                    String(date.getMonth() + 1).padStart(2, '0') + '/' + 
-                                    String(date.getDate()).padStart(2, '0');
-                                $input.val(persianDate);
-                                $input.trigger('change');
-                            }
-                        });
-                        $input.data('persian-datepicker-initialized', true);
-                        console.log('✅ [PatientProfile] Datepicker initialized');
+            var self = this;
+            function tryInit() {
+                if (typeof PersianDatePickerComponent !== 'undefined') {
+                    var $birthDateInput = $('#BirthDate');
+                    if ($birthDateInput.length > 0) {
+                        PersianDatePickerComponent.initializeAll();
+                        return true;
                     }
-                });
-            } else {
-                console.error('❌ [PatientProfile] Persian DatePicker not available');
-                this.showError('خطا در بارگذاری تقویم شمسی');
+                }
+                if (typeof $.fn.persianDatepicker !== 'undefined') {
+                    $('#BirthDate').each(function() {
+                        var $input = $(this);
+                        if (!$input.data('persian-datepicker-initialized')) {
+                            $input.persianDatepicker({
+                                format: 'YYYY/MM/DD',
+                                initialValue: false,
+                                autoClose: true,
+                                observer: true,
+                                calendar: {
+                                    persian: { locale: 'fa', leapYearMode: 'astronomical' }
+                                },
+                                toolbox: {
+                                    todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                                    clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+                                },
+                                onSelect: function(unix) {
+                                    var ts = unix < 2e10 ? unix * 1000 : unix;
+                                    var date = new Date(ts);
+                                    var persianDate = date.getFullYear() + '/' +
+                                        String(date.getMonth() + 1).padStart(2, '0') + '/' +
+                                        String(date.getDate()).padStart(2, '0');
+                                    $input.val(persianDate);
+                                    $input.trigger('change');
+                                }
+                            });
+                            $input.data('persian-datepicker-initialized', true);
+                        }
+                    });
+                    return true;
+                }
+                return false;
             }
+            if (tryInit()) return;
+            // تب از طریق AJAX لود می‌شود؛ اسکریپت تقویم ممکن است کمی دیر آمده باشد — یک بار تلاش مجدد بدون نمایش toast
+            setTimeout(function() {
+                if (!tryInit()) {
+                    console.warn('[PatientProfile] تقویم شمسی در این بارگذاری در دسترس نبود؛ در صورت لود شدن بعداً از طریق کلیک روی فیلد تاریخ فعال می‌شود.');
+                }
+            }, 200);
         },
 
         // ✅ Show Success Message (طبق notification-helper.js: success method)

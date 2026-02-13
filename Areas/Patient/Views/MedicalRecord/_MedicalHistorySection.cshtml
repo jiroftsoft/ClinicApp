@@ -18,84 +18,137 @@ else
     <div class="medical-history-list">
         @foreach (var history in Model)
         {
-            <div class="medical-history-item" data-medical-history-id="@history.MedicalHistoryId">
-                <div class="medical-history-item-header">
-                    <div class="medical-history-item-title">
-                        <h4>
-                            <span class="badge badge-primary ml-2">@history.TypeText</span>
-                            @history.Title
-                        </h4>
-                        @if (!history.IsActive)
-                        {
-                            <span class="badge badge-secondary">غیرفعال</span>
-                        }
+            <article class="medical-history-item mh-card" data-medical-history-id="@history.MedicalHistoryId">
+                <header class="mh-card__header">
+                    <div class="mh-card__title-block">
+                        <h4 class="mh-card__title">@history.Title</h4>
+                        <div class="mh-card__badges">
+                            <span class="mh-card__type-badge">@history.TypeText</span>
+                            @if (!history.IsActive)
+                            {
+                                <span class="mh-card__status-badge">غیرفعال</span>
+                            }
+                        </div>
                     </div>
-                    <div class="medical-history-item-actions">
-                        <button class="btn btn-sm btn-outline-primary edit-medical-history" 
-                                data-medical-history-id="@history.MedicalHistoryId">
+                    <div class="medical-history-item-actions mh-card__actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary edit-medical-history" data-medical-history-id="@history.MedicalHistoryId" aria-label="ویرایش">
                             <i class="fas fa-edit ml-1"></i>
                             ویرایش
                         </button>
-                        <button class="btn btn-sm btn-outline-danger delete-medical-history" 
-                                data-medical-history-id="@history.MedicalHistoryId">
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-medical-history" data-medical-history-id="@history.MedicalHistoryId" aria-label="حذف">
                             <i class="fas fa-trash ml-1"></i>
                             حذف
                         </button>
                     </div>
-                </div>
-                <div class="medical-history-item-body">
+                </header>
+                <div class="medical-history-item-body mh-card__body">
                     @if (!string.IsNullOrWhiteSpace(history.Description))
                     {
-                        <p class="medical-history-description">@history.Description</p>
+                        <p class="medical-history-description mh-card__description">@history.Description</p>
                     }
-                    <div class="medical-history-details">
-                        <div class="row">
-                            @if (history.StartDate.HasValue)
-                            {
-                                <div class="col-12 col-md-6">
-                                    <strong>تاریخ شروع:</strong>
-                                    <span>@history.StartDateShamsi</span>
-                                </div>
-                            }
-                            @if (history.EndDate.HasValue)
-                            {
-                                <div class="col-12 col-md-6">
-                                    <strong>تاریخ پایان:</strong>
-                                    <span>@history.EndDateShamsi</span>
-                                </div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(history.DoctorName))
-                            {
-                                <div class="col-12 col-md-6">
-                                    <strong>پزشک معالج:</strong>
-                                    <span>@history.DoctorName</span>
-                                </div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(history.MedicalCenter))
-                            {
-                                <div class="col-12 col-md-6">
-                                    <strong>مرکز درمانی:</strong>
-                                    <span>@history.MedicalCenter</span>
-                                </div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(history.Severity))
-                            {
-                                <div class="col-12 col-md-6">
-                                    <strong>شدت:</strong>
-                                    <span>@history.Severity</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                    <div class="medical-history-meta">
-                        <small class="text-muted">
-                            <i class="fas fa-clock ml-1"></i>
-                            ثبت شده در: @history.CreatedAtShamsi
-                        </small>
-                    </div>
+                    <dl class="mh-card__details">
+                        @if (history.StartDate.HasValue)
+                        {
+                            <div class="mh-card__detail">
+                                <dt><i class="fas fa-calendar-day ml-1"></i> تاریخ شروع</dt>
+                                <dd>@history.StartDateShamsi</dd>
+                            </div>
+                        }
+                        @if (history.EndDate.HasValue)
+                        {
+                            <div class="mh-card__detail">
+                                <dt><i class="fas fa-calendar-check ml-1"></i> تاریخ پایان</dt>
+                                <dd>@history.EndDateShamsi</dd>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(history.DoctorName))
+                        {
+                            <div class="mh-card__detail">
+                                <dt><i class="fas fa-user-md ml-1"></i> پزشک معالج</dt>
+                                <dd>@history.DoctorName</dd>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(history.MedicalCenter))
+                        {
+                            <div class="mh-card__detail">
+                                <dt><i class="fas fa-hospital ml-1"></i> مرکز درمانی</dt>
+                                <dd>@history.MedicalCenter</dd>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(history.Severity))
+                        {
+                            <div class="mh-card__detail">
+                                <dt><i class="fas fa-signal ml-1"></i> شدت</dt>
+                                <dd><span class="mh-card__severity-pill" data-severity="@(history.Severity?.ToLowerInvariant())">@history.Severity</span></dd>
+                            </div>
+                        }
+                        @{
+                            var medList = (history as dynamic)?.Medications as IList<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryMedicationItemDto>;
+                            if (medList == null) { medList = new List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryMedicationItemDto>(); }
+                        }
+                        @if (medList.Count > 0)
+                        {
+                            <div class="mh-card__detail mh-card__medications">
+                                <dt><i class="fas fa-pills ml-1"></i> دارو</dt>
+                                <dd>
+                                    @foreach (var med in medList)
+                                    {
+                                        <div class="mh-medication-line">
+                                            <span class="mh-medication-name">@(med.DrugName)</span>
+                                            @if (!string.IsNullOrWhiteSpace(med.Dosage))
+                                            {
+                                                <span class="mh-medication-dosage">@med.Dosage@(string.IsNullOrWhiteSpace(med.DosageUnit) ? "" : " " + med.DosageUnit)</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(med.Frequency))
+                                            {
+                                                <span class="mh-medication-freq">، @med.Frequency</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(med.Route))
+                                            {
+                                                <span class="mh-medication-route"> (@med.Route)</span>
+                                            }
+                                        </div>
+                                    }
+                                </dd>
+                            </div>
+                        }
+                        @{
+                            var labList = (history as dynamic)?.LabResults as IList<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryLabResultItemDto>;
+                            if (labList == null) { labList = new List<ClinicApp.ViewModels.Patient.MedicalRecord.MedicalHistoryLabResultItemDto>(); }
+                        }
+                        @if (labList.Count > 0)
+                        {
+                            <div class="mh-card__detail mh-card__labs">
+                                <dt><i class="fas fa-vial ml-1"></i> آزمایش</dt>
+                                <dd>
+                                    @foreach (var lab in labList)
+                                    {
+                                        <div class="mh-lab-line">
+                                            <span class="mh-lab-name">@(lab.LabName)</span>
+                                            @if (!string.IsNullOrWhiteSpace(lab.Value))
+                                            {
+                                                <span class="mh-lab-value"> @lab.Value@(string.IsNullOrWhiteSpace(lab.Unit) ? "" : " " + lab.Unit)</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(lab.LabDateShamsi))
+                                            {
+                                                <span class="mh-lab-date"> — @lab.LabDateShamsi</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(lab.ReferenceRange))
+                                            {
+                                                <span class="mh-lab-ref"> (مرجع: @lab.ReferenceRange)</span>
+                                            }
+                                        </div>
+                                    }
+                                </dd>
+                            </div>
+                        }
+                    </dl>
+                    <footer class="mh-card__meta">
+                        <i class="fas fa-clock ml-1"></i>
+                        <span>ثبت شده در: @history.CreatedAtShamsi</span>
+                    </footer>
                 </div>
-            </div>
+            </article>
         }
     </div>
 }
-

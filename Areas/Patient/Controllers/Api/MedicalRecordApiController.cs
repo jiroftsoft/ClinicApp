@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Models;
 using ClinicApp.ViewModels.Patient.MedicalRecord;
 using Serilog;
 
@@ -27,8 +28,9 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             IPatientMedicalRecordService medicalRecordService,
             IDocumentUploadService documentUploadService,
             ILogger logger,
-            ICurrentUserService currentUserService)
-            : base(logger, currentUserService)
+            ICurrentUserService currentUserService,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _medicalRecordService = medicalRecordService ?? 
                 throw new ArgumentNullException(nameof(medicalRecordService));
@@ -37,11 +39,16 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
         
         /// <summary>
-        /// دریافت بخش تاریخچه پزشکی (Component)
-        /// GET: /Patient/Api/MedicalRecord/GetMedicalHistories
+        /// دریافت بخش تاریخچه پزشکی با صفحه‌بندی و فیلتر (فاز ۱.۱ پرونده غنی).
+        /// GET: /Patient/Api/MedicalRecord/GetMedicalHistories?pageNumber=1&pageSize=20&fromDate=&toDate=&search=
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetMedicalHistories()
+        public async Task<JsonResult> GetMedicalHistories(
+            int pageNumber = 1,
+            int pageSize = 20,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            string search = null)
         {
             try
             {
@@ -50,18 +57,22 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 {
                     return ErrorJsonResult("اطلاعات بیمار یافت نشد");
                 }
-                
-                var result = await _medicalRecordService.GetMedicalHistoriesAsync(patientId.Value);
-                
+
+                if (pageSize > 50) pageSize = 50;
+
+                var result = await _medicalRecordService.GetMedicalHistoriesPagedAsync(
+                    patientId.Value, pageNumber, pageSize, fromDate, toDate, search?.Trim());
+
                 if (!result.Success)
                 {
                     return ErrorJsonResult(result.Message);
                 }
-                
-                var list = result.Data ?? new List<MedicalHistoryViewModel>();
-                _logger.Information("GetMedicalHistories - PatientId: {PatientId}, Count: {Count}", patientId.Value, list.Count);
-                
-                return SuccessJsonResult(result.Data, result.Message);
+
+                var paged = result.Data;
+                _logger.Information("GetMedicalHistories - PatientId: {PatientId}, Page: {Page}, Total: {Total}",
+                    patientId.Value, pageNumber, paged?.TotalItems ?? 0);
+
+                return SuccessJsonResult(paged, result.Message);
             }
             catch (Exception ex)
             {
@@ -102,11 +113,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
         
         /// <summary>
-        /// دریافت نوبت‌های پزشکی (Component)
-        /// GET: /Patient/Api/MedicalRecord/GetAppointments?pageNumber=1&pageSize=10
+        /// دریافت نوبت‌های پزشکی (Component) — فاز ۲.۲: fromDate/toDate اختیاری برای فیلتر یکپارچه.
+        /// GET: /Patient/Api/MedicalRecord/GetAppointments?pageNumber=1&pageSize=10&fromDate=&toDate=
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetAppointments(int pageNumber = 1, int pageSize = 10)
+        public async Task<JsonResult> GetAppointments(int pageNumber = 1, int pageSize = 10, DateTime? fromDate = null, DateTime? toDate = null)
         {
             try
             {
@@ -133,11 +144,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
         
         /// <summary>
-        /// دریافت پذیرش‌ها (Component)
-        /// GET: /Patient/Api/MedicalRecord/GetReceptions?pageNumber=1&pageSize=10
+        /// دریافت پذیرش‌ها (Component) — فاز ۲.۲: fromDate/toDate اختیاری برای فیلتر یکپارچه.
+        /// GET: /Patient/Api/MedicalRecord/GetReceptions?pageNumber=1&pageSize=10&fromDate=&toDate=
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetReceptions(int pageNumber = 1, int pageSize = 10)
+        public async Task<JsonResult> GetReceptions(int pageNumber = 1, int pageSize = 10, DateTime? fromDate = null, DateTime? toDate = null)
         {
             try
             {
@@ -164,11 +175,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
         }
         
         /// <summary>
-        /// دریافت ارزیابی‌های تریاژ (Component)
-        /// GET: /Patient/Api/MedicalRecord/GetTriageAssessments?pageNumber=1&pageSize=10
+        /// دریافت ارزیابی‌های تریاژ (Component) — فاز ۲.۲: fromDate/toDate اختیاری برای فیلتر یکپارچه.
+        /// GET: /Patient/Api/MedicalRecord/GetTriageAssessments?pageNumber=1&pageSize=10&fromDate=&toDate=
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetTriageAssessments(int pageNumber = 1, int pageSize = 10)
+        public async Task<JsonResult> GetTriageAssessments(int pageNumber = 1, int pageSize = 10, DateTime? fromDate = null, DateTime? toDate = null)
         {
             try
             {
@@ -221,6 +232,38 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     model.StartDate = PersianDateHelper.ParsePersianDate(startStr.Trim());
                 if (!string.IsNullOrWhiteSpace(endStr))
                     model.EndDate = PersianDateHelper.ParsePersianDate(endStr.Trim());
+                
+                // ✅ بایند صریح فیلدهای دارو و آلرژی (برای اطمینان از ارسال از مودال)
+                model.DrugName = Request.Form["DrugName"];
+                model.Dosage = Request.Form["Dosage"];
+                model.DosageUnit = Request.Form["DosageUnit"];
+                model.Frequency = Request.Form["Frequency"];
+                model.Route = Request.Form["Route"];
+                model.Indication = Request.Form["Indication"];
+                model.PrescribingDoctor = Request.Form["PrescribingDoctor"];
+                var isCriticalStr = Request.Form["IsCritical"];
+                model.IsCritical = !string.IsNullOrEmpty(isCriticalStr) && "true".Equals(isCriticalStr.Trim(), StringComparison.OrdinalIgnoreCase);
+                
+                // ✅ بایند فیلدهای آزمایش
+                model.LabName = Request.Form["LabName"];
+                model.LabValue = Request.Form["LabValue"];
+                model.LabUnit = Request.Form["LabUnit"];
+                model.LabReferenceRange = Request.Form["LabReferenceRange"];
+                var labDateStr = Request.Form["LabDate"];
+                if (!string.IsNullOrWhiteSpace(labDateStr))
+                    model.LabDate = PersianDateHelper.ParsePersianDate(labDateStr.Trim());
+                
+                // ✅ داروهای مرتبط با بیماری (لیست JSON)
+                var medicationsListJson = Request.Form["MedicationsListJson"];
+                if (!string.IsNullOrWhiteSpace(medicationsListJson))
+                {
+                    try
+                    {
+                        model.MedicationsList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalHistoryMedicationItemDto>>(medicationsListJson)
+                            ?? new List<MedicalHistoryMedicationItemDto>();
+                    }
+                    catch { model.MedicationsList = new List<MedicalHistoryMedicationItemDto>(); }
+                }
                 
                 // ✅ Handle file uploads
                 var attachmentPaths = new List<string>();
@@ -290,6 +333,37 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     model.StartDate = PersianDateHelper.ParsePersianDate(startStr.Trim());
                 if (!string.IsNullOrWhiteSpace(endStr))
                     model.EndDate = PersianDateHelper.ParsePersianDate(endStr.Trim());
+                
+                // ✅ بایند صریح فیلدهای دارو و آلرژی (برای ذخیره و ویرایش)
+                model.DrugName = Request.Form["DrugName"];
+                model.Dosage = Request.Form["Dosage"];
+                model.DosageUnit = Request.Form["DosageUnit"];
+                model.Frequency = Request.Form["Frequency"];
+                model.Route = Request.Form["Route"];
+                model.Indication = Request.Form["Indication"];
+                model.PrescribingDoctor = Request.Form["PrescribingDoctor"];
+                var isCriticalStrUpdate = Request.Form["IsCritical"];
+                model.IsCritical = !string.IsNullOrEmpty(isCriticalStrUpdate) && "true".Equals(isCriticalStrUpdate.Trim(), StringComparison.OrdinalIgnoreCase);
+                
+                // ✅ بایند فیلدهای آزمایش
+                model.LabName = Request.Form["LabName"];
+                model.LabValue = Request.Form["LabValue"];
+                model.LabUnit = Request.Form["LabUnit"];
+                model.LabReferenceRange = Request.Form["LabReferenceRange"];
+                var labDateStrUpdate = Request.Form["LabDate"];
+                if (!string.IsNullOrWhiteSpace(labDateStrUpdate))
+                    model.LabDate = PersianDateHelper.ParsePersianDate(labDateStrUpdate.Trim());
+                
+                var medicationsListJsonUpdate = Request.Form["MedicationsListJson"];
+                if (!string.IsNullOrWhiteSpace(medicationsListJsonUpdate))
+                {
+                    try
+                    {
+                        model.MedicationsList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalHistoryMedicationItemDto>>(medicationsListJsonUpdate)
+                            ?? new List<MedicalHistoryMedicationItemDto>();
+                    }
+                    catch { model.MedicationsList = new List<MedicalHistoryMedicationItemDto>(); }
+                }
                 
                 // ✅ Handle file uploads (append to existing attachments)
                 var attachmentPaths = new List<string>();
