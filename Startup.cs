@@ -1,4 +1,4 @@
-﻿using Microsoft.Owin;
+using Microsoft.Owin;
 using Owin;
 
 [assembly: OwinStartupAttribute(typeof(ClinicApp.Startup))]
@@ -9,6 +9,7 @@ namespace ClinicApp
         public void Configuration(IAppBuilder app)
         {
             ConfigureAuth(app);
+            ConfigureHangfire(app);
         }
     }
 }

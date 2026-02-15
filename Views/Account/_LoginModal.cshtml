@@ -943,16 +943,119 @@
                     }
                 }
                 
+                // ✅ OPTIMIZATION: Use AJAX for login flow too (prevents redirect to Login page on OTP error)
+                e.preventDefault();
+                
                 // ✅ Update form action
                 $form.attr('action', '@Url.Action("VerifyLoginOtp", "Account")');
                 
-                // ✅ Disable button to prevent double submit
-                $button.prop('disabled', true);
+                // ✅ Get returnUrl from hidden input or modal data attribute
+                var returnUrl = $form.find('input[name="returnUrl"]').val();
+                if (!returnUrl) {
+                    var loginModal = document.getElementById('loginModal');
+                    if (loginModal) {
+                        returnUrl = loginModal.getAttribute('data-return-url');
+                    }
+                }
                 
-                // ✅ Don't prevent default - let form submit normally
-                // Server will handle redirect with cookie
-                // OTP is already set in combined-otp-code field
-                return true; // Allow form submission
+                showButtonSpinner($button, true);
+                $button.prop('disabled', true);
+                $('#otp-error').text('');
+                
+                // ✅ Build data with returnUrl for login flow
+                var formData = $form.serialize();
+                if (returnUrl) {
+                    if (formData.indexOf('returnUrl=') === -1) {
+                        formData += '&returnUrl=' + encodeURIComponent(returnUrl);
+                    }
+                }
+                
+                // ✅ Send AJAX request for login flow
+                $.ajax({
+                    url: $form.attr('action'),
+                    method: 'POST',
+                    dataType: 'json',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            // ✅ Login successful - redirect to returnUrl or dashboard
+                            var redirectUrl = response.redirectUrl || '/Patient/Dashboard';
+                            toastr.success('ورود با موفقیت انجام شد', '', { timeOut: 1500 });
+                            setTimeout(function() {
+                                window.location.href = redirectUrl;
+                            }, 500);
+                        } else {
+                            // ✅ OPTIMIZATION: Incremental delay for failed attempts
+                            state.failedAttempts++;
+                            
+                            // ✅ Show user-friendly error message
+                            var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';
+                            
+                            // ✅ Map specific error codes to friendly messages
+                            if (response && response.code === 'OTP_INVALID_OR_EXPIRED') {
+                                errorMessage = 'کد تایید نامعتبر یا منقضی شده است. لطفاً کد جدیدی دریافت کنید.';
+                            } else if (response && response.code === 'OTP_ATTEMPTS_EXCEEDED') {
+                                errorMessage = 'تعداد تلاش‌های شما برای وارد کردن کد تایید بیش از حد مجاز است. لطفاً کد جدیدی دریافت کنید.';
+                            }
+                            
+                            $('#otp-error').text(errorMessage);
+                            
+                            // ✅ OPTIMIZATION: Incremental delay (1s, 2s, 3s, ...) for brute force protection
+                            if (state.failedAttempts > 1 && response && response.code === 'OTP_INVALID') {
+                                var delaySeconds = Math.min(state.failedAttempts, 5); // Max 5 seconds
+                                $('#otp-error').text(errorMessage + ' (لطفاً ' + delaySeconds + ' ثانیه صبر کنید)');
+                                
+                                // Disable inputs during delay
+                                $('#otp-inputs .otp-input').prop('disabled', true);
+                                $button.prop('disabled', true);
+                                
+                                setTimeout(function() {
+                                    $('#otp-inputs .otp-input').prop('disabled', false);
+                                    $button.prop('disabled', false);
+                                    isSubmitting = false;
+                                    $('#otp-inputs .otp-input:first').focus();
+                                }, delaySeconds * 1000);
+                                
+                                return; // Don't reset isSubmitting here (already reset in setTimeout)
+                            }
+                            
+                            // ✅ Reset submitting flag for non-delay errors
+                            isSubmitting = false;
+                            // Clear and focus first input
+                            $('#otp-inputs .otp-input').val('');
+                            $('#combined-otp-code').val('');
+                            $('#otp-inputs .otp-input:first').focus();
+                            updateCombinedOtp();
+                            showButtonSpinner($button, false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('VerifyLoginOtp AJAX Error:', { xhr: xhr, status: status, error: error });
+                        isSubmitting = false;
+                        
+                        if (xhr.status === 400) {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                $('#otp-error').text(errorResponse.message || 'کد تایید نامعتبر است');
+                            } catch (e) {
+                                $('#otp-error').text('کد تایید نامعتبر است');
+                            }
+                        } else if (xhr.status === 429) {
+                            $('#otp-error').text('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.');
+                        } else {
+                            showErrorMessage(null, 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
+                        }
+                        // Clear and focus first input
+                        $('#otp-inputs .otp-input').val('');
+                        $('#combined-otp-code').val('');
+                        $('#otp-inputs .otp-input:first').focus();
+                        updateCombinedOtp();
+                        showButtonSpinner($button, false);
+                        $button.prop('disabled', false);
+                    }
+                });
+                
+                return false; // Prevent form submission
             }
             
             // ✅ Reset flag if we preventDefault for registration flow

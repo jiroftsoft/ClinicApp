@@ -47,9 +47,9 @@
                 if (typeof hideLoading === 'function') hideLoading();
                 if (response && response.success && response.data) {
                     PatientAppointments.showAppointmentDetailsModal(response.data);
-                } else {
+                    } else {
                     PatientAppointments.showError(response && response.message ? response.message : 'خطا در دریافت جزئیات نوبت');
-                }
+                    }
             }).fail(function (xhr) {
                 if (typeof hideLoading === 'function') hideLoading();
                 var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
@@ -104,7 +104,7 @@
                             if (window.UnifiedDashboard && typeof window.UnifiedDashboard.reloadTab === 'function') {
                                 window.UnifiedDashboard.reloadTab('appointments');
                             } else {
-                                location.reload();
+                            location.reload();
                             }
                         });
                     } else {

@@ -16,6 +16,7 @@ using ClinicApp.Models.Entities.Doctor;
 using EntityFramework.DynamicFilters;
 using Serilog;
 using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
+using AppointmentNotificationQueue = ClinicApp.Interfaces.Notification;
 
 namespace ClinicApp.Services.Appointment
 {
@@ -33,8 +34,7 @@ namespace ClinicApp.Services.Appointment
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
         private readonly IAppSettings _appSettings; // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
         private readonly IPromotionalEventService _promotionalEventService; // ✅ برای محاسبه تخفیف‌های تبلیغاتی
-        // ✅ CRITICAL: Cache حذف شد - در محیط درمانی، داده‌ها باید Real-time باشند
-        // این ماژول قرار است به صورت گسترده استفاده شود و نیاز به داده‌های به‌روز دارد
+        private readonly AppointmentNotificationQueue.IAppointmentNotificationQueueService _notificationService; // ✅ Event-based اعلان، فقط بعد از Commit
 
         public AppointmentBookingService(
             IAppointmentRepository appointmentRepository,
@@ -42,9 +42,10 @@ namespace ClinicApp.Services.Appointment
             IDoctorCrudService doctorCrudService,
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
-            ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
-            IAppSettings appSettings, // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
-            IPromotionalEventService promotionalEventService, // ✅ برای محاسبه تخفیف‌های تبلیغاتی
+            ITimeProvider timeProvider,
+            IAppSettings appSettings,
+            IPromotionalEventService promotionalEventService,
+            AppointmentNotificationQueue.IAppointmentNotificationQueueService notificationService,
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -55,6 +56,7 @@ namespace ClinicApp.Services.Appointment
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _logger = logger?.ForContext<AppointmentBookingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -880,33 +882,14 @@ namespace ClinicApp.Services.Appointment
                         }
                     }
 
-                    // ارسال اعلان رزرو موفق (به صورت Async - بدون انتظار)
-                    // ✅ Note: Notification خارج از transaction است (Fire and Forget)
+                    // ✅ Enterprise Notification: فقط Enqueue بعد از Commit (ارسال توسط Background Job)
                     try
                     {
-                        var notificationService = new AppointmentNotificationService(
-                            _context,
-                            new EmailService(),
-                            new AsanakSmsService(),
-                            _logger);
-
-                        // Fire and forget - خطا در ارسال اعلان نباید رزرو را متوقف کند
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await notificationService.SendBookingConfirmationAsync(createdAppointment.AppointmentId);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.Error(ex, "خطا در ارسال اعلان رزرو - AppointmentId: {AppointmentId}",
-                                    createdAppointment.AppointmentId);
-                            }
-                        });
+                        await _notificationService.EnqueueAppointmentBookingConfirmationAsync(createdAppointment.AppointmentId);
                     }
                     catch (Exception ex)
                     {
-                        _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
+                        _logger.Warning(ex, "خطا در Enqueue اعلان رزرو - AppointmentId: {AppointmentId}",
                             createdAppointment.AppointmentId);
                     }
 

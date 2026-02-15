@@ -218,13 +218,18 @@ namespace ClinicApp.Controllers
                 {
                     _log.Warning("❌ Login failed - Code: {Code}, Message: {Message}", result.Code, result.Message);
                     
-                    if (!isAjaxRequest)
-                    {
-                        TempData["ErrorMessage"] = result.Message;
-                        return RedirectToAction("Login", new { returnUrl });
-                    }
-                    
+                    // ✅ OPTIMIZATION: Always return JSON for OTP verification (even if not detected as AJAX)
+                    // This prevents redirect to Login page when OTP is wrong, keeping user in modal
+                    // The frontend now always uses AJAX for both login and registration flows
                     return CreateServiceResultJson(result);
+                    
+                    // ✅ OLD CODE: Removed to prevent redirect to Login page
+                    // if (!isAjaxRequest)
+                    // {
+                    //     TempData["ErrorMessage"] = result.Message;
+                    //     return RedirectToAction("Login", new { returnUrl });
+                    // }
+                    // return CreateServiceResultJson(result);
                 }
             }
             catch (Exception ex)

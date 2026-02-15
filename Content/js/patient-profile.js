@@ -93,7 +93,7 @@
             var $form = $(formId);
 
             console.log('📝 [PatientProfile] Populating form with data:', profile);
-
+            
             if (!$form.length) {
                 console.warn('⚠️ [PatientProfile] Form not found:', formId);
                 return;
@@ -106,7 +106,7 @@
             $form.find('#Email').val(profile.Email || '');
             $form.find('#BirthDate').val(profile.BirthDate || '');
             $form.find('#Address').val(profile.Address || '');
-
+            
             // جنسیت — پشتیبانی از PascalCase/camelCase، رشته و عدد (enum از API)
             var rawGender = profile.Gender !== undefined ? profile.Gender : profile.gender;
             var $genderRadios = $form.find('input[name="Gender"]');
@@ -128,7 +128,7 @@
                     }
                 }
             }
-
+            
             console.log('✅ [PatientProfile] Form populated successfully');
         },
 

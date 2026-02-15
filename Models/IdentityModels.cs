@@ -129,6 +129,7 @@ namespace ClinicApp.Models
         public DbSet<ReceiptPrint> ReceiptPrints { get; set; }
         public DbSet<NotificationHistory> NotificationHistories { get; set; }
         public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
+        public DbSet<NotificationQueueItem> NotificationQueue { get; set; }
         public DbSet<DatabaseVersion> DatabaseVersions { get; set; }
         public DbSet<OtpRequest> OtpRequests { get; set; }
         public DbSet<DoctorDepartment> DoctorDepartments { get; set; }

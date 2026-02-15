@@ -31,6 +31,7 @@ using ClinicApp.Interfaces.ClinicAdmin; // ✅ برای IDepartmentManagementSer
 using ClinicApp.Filters; // ✅ برای NoCache
 using ClinicApp.Factories.Patient; // ✅ برای AppointmentBookingViewModelFactory
 using ClinicApp.Infrastructure; // ✅ برای ITimeProvider
+using AppointmentNotificationQueue = ClinicApp.Interfaces.Notification;
 
 namespace ClinicApp.Areas.Patient.Controllers
 {
@@ -68,6 +69,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IDepartmentManagementService _departmentService; // ✅ طبق قرارداد: Controller → Service
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
         private readonly IAuthService _authService; // ✅ برای EnsurePatientRecordForUserIdAsync (جلوگیری از خطای «حساب بیمار یافت نشد»)
+        private readonly AppointmentNotificationQueue.IAppointmentNotificationQueueService _notificationService; // ✅ Event-based اعلان، فقط بعد از Commit
 
         public AppointmentBookingController(
             IAppointmentBookingService bookingService,
@@ -81,6 +83,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             IDepartmentManagementService departmentService, // ✅ طبق قرارداد: Controller → Service
             ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
             IAuthService authService,
+            AppointmentNotificationQueue.IAppointmentNotificationQueueService notificationService,
             ILogger logger)
             : base(logger, currentUserService, context) // ✅ Context به base برای GetCurrentPatientIdAsync
         {
@@ -93,6 +96,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _departmentService = departmentService ?? throw new ArgumentNullException(nameof(departmentService));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
         /// <summary>
@@ -1608,34 +1612,15 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Information("✅ VERIFY: OnlinePayment و Appointment با موفقیت ذخیره شدند - OnlinePaymentId: {OnlinePaymentId}, AppointmentId: {AppointmentId}, RefId: {RefId}",
                                 verifiedPayment.OnlinePaymentId, verifiedAppointment?.AppointmentId, result.GatewayTransactionId);
 
-                            // ارسال اعلان پرداخت موفق (به صورت Async - بدون انتظار)
+                            // ✅ Enterprise Notification: فقط Enqueue بعد از Commit (ارسال توسط Background Job)
                             try
                             {
-                                var notificationService = new AppointmentNotificationService(
-                                    _context,
-                                    new EmailService(),
-                                    new AsanakSmsService(),
-                                    _logger);
-
-                                _ = Task.Run(async () =>
-                                {
-                                    try
-                                    {
-                                        if (verifiedAppointment != null)
-                                        {
-                                            await notificationService.SendPaymentConfirmationAsync(verifiedAppointment.AppointmentId);
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _logger.Error(ex, "خطا در ارسال اعلان پرداخت - AppointmentId: {AppointmentId}",
-                                            verifiedAppointment?.AppointmentId);
-                                    }
-                                });
+                                if (verifiedAppointment != null)
+                                    await _notificationService.EnqueuePaymentConfirmationAsync(verifiedAppointment.AppointmentId);
                             }
                             catch (Exception ex)
                             {
-                                _logger.Warning(ex, "خطا در ایجاد سرویس اعلان - AppointmentId: {AppointmentId}",
+                                _logger.Warning(ex, "خطا در Enqueue اعلان پرداخت - AppointmentId: {AppointmentId}",
                                     verifiedAppointment?.AppointmentId);
                             }
 
