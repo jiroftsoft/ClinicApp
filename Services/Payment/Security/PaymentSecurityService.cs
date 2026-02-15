@@ -5,6 +5,7 @@ using ClinicApp.Models.Enums;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -38,8 +39,7 @@ namespace ClinicApp.Services.Payment.Security
         private const int MaxRequestsPerHourPerUser = 10;
         private const int MaxRequestsPerMinutePerIp = 5;
         private const int MaxRequestsPerHourPerIp = 100;
-        private const int MaxAttemptsPerAppointment = 3;
-        private const int CooldownMinutesBetweenAttempts = 5;
+        // ✅ Appointment rate limit: از Web.config خوانده می‌شود (Payment:MaxAttemptsPerAppointment, Payment:AppointmentCooldownMinutes)
         
         // ✅ Amount Limits
         private const decimal MaxSinglePaymentAmount = 200000000m; // 200M تومان
@@ -59,6 +59,26 @@ namespace ClinicApp.Services.Payment.Security
         {
             _onlinePaymentRepository = onlinePaymentRepository ?? throw new ArgumentNullException(nameof(onlinePaymentRepository));
             _logger = logger?.ForContext<PaymentSecurityService>() ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        #endregion
+
+        #region Config Helpers (Payment:AppointmentCooldownMinutes, Payment:MaxAttemptsPerAppointment)
+
+        private static int GetAppointmentCooldownMinutes()
+        {
+            var raw = ConfigurationManager.AppSettings["Payment:AppointmentCooldownMinutes"];
+            if (string.IsNullOrWhiteSpace(raw) || !int.TryParse(raw.Trim(), out var minutes) || minutes < 0)
+                return 1;
+            return Math.Min(60, Math.Max(0, minutes));
+        }
+
+        private static int GetMaxAttemptsPerAppointment()
+        {
+            var raw = ConfigurationManager.AppSettings["Payment:MaxAttemptsPerAppointment"];
+            if (string.IsNullOrWhiteSpace(raw) || !int.TryParse(raw.Trim(), out var n) || n < 1)
+                return 3;
+            return Math.Min(20, Math.Max(1, n));
         }
 
         #endregion
@@ -94,7 +114,7 @@ namespace ClinicApp.Services.Payment.Security
                         userId, paymentCount, MaxRequestsPerHourPerUser, correlationId);
                     
                     return ServiceResult.Failed(
-                        $"شما بیش از حد مجاز درخواست پرداخت ارسال کرده‌اید. لطفاً {CooldownMinutesBetweenAttempts} دقیقه صبر کنید.",
+                        $"شما بیش از حد مجاز درخواست پرداخت ارسال کرده‌اید. لطفاً {GetAppointmentCooldownMinutes()} دقیقه صبر کنید.",
                         "RATE_LIMIT_EXCEEDED");
                 }
 
@@ -120,9 +140,10 @@ namespace ClinicApp.Services.Payment.Security
             {
                 _logger.Debug("🔒 SECURITY: بررسی Rate Limit برای IP {IpAddress}", ipAddress);
 
-                if (string.IsNullOrWhiteSpace(ipAddress) || !IsValidIpAddress(ipAddress))
+                if (string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "Unknown" || !IsValidIpAddress(ipAddress))
                 {
-                    return ServiceResult.Failed("آدرس IP نامعتبر است", "INVALID_IP_ADDRESS");
+                    _logger.Debug("⚠️ SECURITY: IP not available for rate limit - skipping IP rate limit check, CorrelationId: {CorrelationId}", correlationId);
+                    return ServiceResult.Successful(); // وقتی IP در دسترس نیست، محدودیت IP اعمال نشود
                 }
 
                 // ✅ بررسی IP Blacklist
@@ -202,13 +223,15 @@ namespace ClinicApp.Services.Payment.Security
                      p.Status == OnlinePaymentStatus.Failed ||
                      p.Status == OnlinePaymentStatus.Successful)) ?? 0;
 
-                if (attemptCount >= MaxAttemptsPerAppointment)
+                var maxAttempts = GetMaxAttemptsPerAppointment();
+                if (attemptCount >= maxAttempts)
                 {
+                    var cooldownMin = GetAppointmentCooldownMinutes();
                     _logger.Warning("⚠️ SECURITY: Appointment Rate Limit exceeded - AppointmentId: {AppointmentId}, Attempts: {Attempts}, Limit: {Limit}, CorrelationId: {CorrelationId}",
-                        appointmentId, attemptCount, MaxAttemptsPerAppointment, correlationId);
+                        appointmentId, attemptCount, maxAttempts, correlationId);
                     
                     return ServiceResult.Failed(
-                        $"تعداد تلاش‌های پرداخت برای این نوبت بیش از حد مجاز است. لطفاً {CooldownMinutesBetweenAttempts} دقیقه صبر کنید یا با پشتیبانی تماس بگیرید.",
+                        $"تعداد تلاش‌های پرداخت برای این نوبت بیش از حد مجاز است. لطفاً {cooldownMin} دقیقه صبر کنید یا با پشتیبانی تماس بگیرید.",
                         "APPOINTMENT_RATE_LIMIT_EXCEEDED");
                 }
 
@@ -220,18 +243,19 @@ namespace ClinicApp.Services.Payment.Security
                     .OrderByDescending(p => p.CreatedAt)
                     .FirstOrDefault();
 
+                var cooldownMinutes = GetAppointmentCooldownMinutes();
                 if (lastAttempt != null)
                 {
                     var timeSinceLastAttempt = DateTime.UtcNow - lastAttempt.CreatedAt;
-                    if (timeSinceLastAttempt.TotalMinutes < CooldownMinutesBetweenAttempts)
+                    if (timeSinceLastAttempt.TotalMinutes < cooldownMinutes)
                     {
-                        var remainingMinutes = CooldownMinutesBetweenAttempts - (int)timeSinceLastAttempt.TotalMinutes;
+                        var remainingMinutes = Math.Max(1, cooldownMinutes - (int)timeSinceLastAttempt.TotalMinutes);
                         _logger.Warning("⚠️ SECURITY: Cooldown active - AppointmentId: {AppointmentId}, RemainingMinutes: {RemainingMinutes}, CorrelationId: {CorrelationId}",
                             appointmentId, remainingMinutes, correlationId);
                         
                         return ServiceResult.Failed(
                             $"لطفاً {remainingMinutes} دقیقه صبر کنید و دوباره تلاش کنید.",
-                            "COOLDOWN_ACTIVE");
+                            "AppointmentRateLimit");
                     }
                 }
 
@@ -261,9 +285,10 @@ namespace ClinicApp.Services.Payment.Security
             {
                 _logger.Debug("🔒 SECURITY: اعتبارسنجی IP {IpAddress}", ipAddress);
 
-                if (string.IsNullOrWhiteSpace(ipAddress))
+                if (string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "Unknown")
                 {
-                    return ServiceResult.Failed("آدرس IP الزامی است", "IP_REQUIRED");
+                    _logger.Warning("⚠️ SECURITY: IP not available (empty or Unknown) - CorrelationId: {CorrelationId}", correlationId);
+                    return ServiceResult.Successful(); // Fail-open: در محیط‌هایی که IP در دسترس نیست پرداخت مسدود نشود
                 }
 
                 if (!IsValidIpAddress(ipAddress))
@@ -411,11 +436,12 @@ namespace ClinicApp.Services.Payment.Security
                         "AMOUNT_EXCEEDS_MAXIMUM");
                 }
 
-                // ✅ بررسی دقت اعشار (باید بدون اعشار باشد - ریال)
-                if (amount != Math.Floor(amount))
+                // ✅ بررسی دقت اعشار (ریال؛ اختلاف ناچیز ناشی از float/DB قابل قبول است)
+                var floorAmount = Math.Floor(amount);
+                if (amount - floorAmount > 0.001m)
                 {
-                    _logger.Warning("⚠️ SECURITY: Amount has decimal places - Amount: {Amount}, CorrelationId: {CorrelationId}",
-                        amount, correlationId);
+                    _logger.Warning("⚠️ SECURITY: Amount has significant decimal places - Amount: {Amount}, Floor: {Floor}, CorrelationId: {CorrelationId}",
+                        amount, floorAmount, correlationId);
                     return ServiceResult.Failed("مبلغ پرداخت باید بدون اعشار باشد (ریال)", "AMOUNT_HAS_DECIMAL");
                 }
 
@@ -485,87 +511,105 @@ namespace ClinicApp.Services.Payment.Security
         public async Task<ServiceResult> ValidatePaymentRequestSecurityAsync(
             PaymentSecurityValidationRequest request)
         {
+            const string LogPrefix = "[PaymentSecurity]";
             try
             {
-                _logger.Information("🔒 SECURITY: شروع اعتبارسنجی امنیتی جامع - CorrelationId: {CorrelationId}",
-                    request.CorrelationId);
+                _logger.Information("{Prefix} شروع اعتبارسنجی - CorrelationId: {CorrelationId}, UserId: {UserId}, PatientId: {PatientId}, AppointmentId: {AppointmentId}, Amount: {Amount}, IP: {UserIpAddress}, UserAgentLen: {UserAgentLen}",
+                    LogPrefix, request.CorrelationId, request.UserId ?? "NULL", request.PatientId, request.AppointmentId, request.Amount, request.UserIpAddress ?? "NULL", request.UserAgent?.Length ?? 0);
 
                 var errors = new List<string>();
 
-                // ✅ 1. IP Validation
+                // ✅ Step 1: IP Validation
+                _logger.Debug("{Prefix} Step1 IP - UserIpAddress: {Ip}", LogPrefix, request.UserIpAddress ?? "NULL");
                 var ipResult = ValidateIpAddress(request.UserIpAddress, request.CorrelationId);
                 if (!ipResult.Success)
                 {
-                    errors.Add(ipResult.Message);
+                    _logger.Warning("{Prefix} Step1 IP FAILED - {Message}, Code: {Code}", LogPrefix, ipResult.Message, ipResult.Code);
+                    errors.Add("IP: " + ipResult.Message);
                 }
 
-                // ✅ 2. User Agent Validation
+                // ✅ Step 2: User Agent Validation
+                _logger.Debug("{Prefix} Step2 UserAgent - Length: {Len}", LogPrefix, request.UserAgent?.Length ?? 0);
                 var userAgentResult = ValidateUserAgent(request.UserAgent, request.CorrelationId);
                 if (!userAgentResult.Success)
                 {
-                    errors.Add(userAgentResult.Message);
+                    _logger.Warning("{Prefix} Step2 UserAgent FAILED - {Message}, Code: {Code}", LogPrefix, userAgentResult.Message, userAgentResult.Code);
+                    errors.Add("UserAgent: " + userAgentResult.Message);
                 }
 
-                // ✅ 3. Amount Validation
+                // ✅ Step 3: Amount Validation
+                _logger.Debug("{Prefix} Step3 Amount - Amount: {Amount}, Floor: {Floor}", LogPrefix, request.Amount, Math.Floor(request.Amount));
                 var amountResult = ValidateAmount(request.Amount, request.CorrelationId);
                 if (!amountResult.Success)
                 {
-                    errors.Add(amountResult.Message);
+                    _logger.Warning("{Prefix} Step3 Amount FAILED - {Message}, Code: {Code}", LogPrefix, amountResult.Message, amountResult.Code);
+                    errors.Add("Amount: " + amountResult.Message);
                 }
 
-                // ✅ 4. Rate Limiting
+                // ✅ Step 4: User Rate Limiting
                 if (!string.IsNullOrWhiteSpace(request.UserId))
                 {
+                    _logger.Debug("{Prefix} Step4 UserRateLimit - UserId: {UserId}", LogPrefix, request.UserId);
                     var userRateLimitResult = await ValidateUserRateLimitAsync(request.UserId, request.CorrelationId);
                     if (!userRateLimitResult.Success)
                     {
-                        errors.Add(userRateLimitResult.Message);
+                        _logger.Warning("{Prefix} Step4 UserRateLimit FAILED - {Message}, Code: {Code}", LogPrefix, userRateLimitResult.Message, userRateLimitResult.Code);
+                        errors.Add("UserRateLimit: " + userRateLimitResult.Message);
                     }
                 }
+                else
+                    _logger.Debug("{Prefix} Step4 UserRateLimit SKIP - UserId empty", LogPrefix);
 
+                // ✅ Step 5: IP Rate Limiting
+                _logger.Debug("{Prefix} Step5 IpRateLimit - IP: {Ip}", LogPrefix, request.UserIpAddress ?? "NULL");
                 var ipRateLimitResult = await ValidateIpRateLimitAsync(request.UserIpAddress, request.CorrelationId);
                 if (!ipRateLimitResult.Success)
                 {
-                    errors.Add(ipRateLimitResult.Message);
+                    _logger.Warning("{Prefix} Step5 IpRateLimit FAILED - {Message}, Code: {Code}", LogPrefix, ipRateLimitResult.Message, ipRateLimitResult.Code);
+                    errors.Add("IpRateLimit: " + ipRateLimitResult.Message);
                 }
 
+                // ✅ Step 6: Appointment Rate Limiting
                 if (request.AppointmentId.HasValue)
                 {
+                    _logger.Debug("{Prefix} Step6 AppointmentRateLimit - AppointmentId: {AppointmentId}", LogPrefix, request.AppointmentId.Value);
                     var appointmentRateLimitResult = await ValidateAppointmentRateLimitAsync(
                         request.AppointmentId.Value, request.CorrelationId);
                     if (!appointmentRateLimitResult.Success)
                     {
-                        errors.Add(appointmentRateLimitResult.Message);
+                        _logger.Warning("{Prefix} Step6 AppointmentRateLimit FAILED - {Message}, Code: {Code}", LogPrefix, appointmentRateLimitResult.Message, appointmentRateLimitResult.Code);
+                        errors.Add("AppointmentRateLimit: " + appointmentRateLimitResult.Message);
                     }
                 }
+                else
+                    _logger.Debug("{Prefix} Step6 AppointmentRateLimit SKIP - no AppointmentId", LogPrefix);
 
-                // ✅ 5. Amount Anomaly Detection
+                // ✅ Step 7: Amount Anomaly (Fail-Open)
                 if (request.PatientId.HasValue && request.PatientId.Value > 0)
                 {
+                    _logger.Debug("{Prefix} Step7 Anomaly - PatientId: {PatientId}, Amount: {Amount}", LogPrefix, request.PatientId.Value, request.Amount);
                     var anomalyResult = await DetectAmountAnomalyAsync(
                         request.Amount, request.PatientId.Value, request.CorrelationId);
-                    // Fail-Open: اگر خطا داد، اجازه می‌دهیم ادامه دهد
                 }
 
                 if (errors.Any())
                 {
-                    _logger.Warning("⚠️ SECURITY: اعتبارسنجی امنیتی ناموفق - Errors: {Errors}, CorrelationId: {CorrelationId}",
-                        string.Join("; ", errors), request.CorrelationId);
+                    var details = string.Join("; ", errors);
+                    _logger.Warning("{Prefix} اعتبارسنجی ناموفق - CorrelationId: {CorrelationId}, Errors: {Errors}",
+                        LogPrefix, request.CorrelationId, details);
                     
                     return ServiceResult.Failed(
                         "اعتبارسنجی امنیتی ناموفق بود",
-                        string.Join("; ", errors));
+                        details);
                 }
 
-                _logger.Information("✅ SECURITY: اعتبارسنجی امنیتی موفق - CorrelationId: {CorrelationId}",
-                    request.CorrelationId);
+                _logger.Information("{Prefix} اعتبارسنجی موفق - CorrelationId: {CorrelationId}", LogPrefix, request.CorrelationId);
 
                 return ServiceResult.Successful();
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ SECURITY: خطا در اعتبارسنجی امنیتی جامع, CorrelationId: {CorrelationId}",
-                    request?.CorrelationId);
+                _logger.Error(ex, "{Prefix} EXCEPTION در اعتبارسنجی - CorrelationId: {CorrelationId}", LogPrefix, request?.CorrelationId);
                 return ServiceResult.Failed("خطا در اعتبارسنجی امنیتی", "SECURITY_VALIDATION_ERROR");
             }
         }

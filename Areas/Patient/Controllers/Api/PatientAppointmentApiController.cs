@@ -2,37 +2,34 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using ClinicApp.Areas.Patient.Controllers.Base;
 using ClinicApp.Filters;
-using ClinicApp.Helpers;
-using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Models.DTOs.Appointment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models;
 using Serilog;
 
 namespace ClinicApp.Areas.Patient.Controllers.Api
 {
     /// <summary>
-    /// API Controller برای مدیریت نوبت‌های بیمار
-    /// 
-    /// ✅ Security: PatientRoleAuthorization ensures only Patient role users can access
-    /// طبق: PATIENT_AUTH_INTEGRATION_ANALYSIS.md
+    /// API Controller برای مدیریت نوبت‌های بیمار.
+    /// ✅ از BasePatientController ارث می‌برد تا GetCurrentPatientIdAsync با صفحه نوبت‌های من یکسان باشد (رفع Unauthorized در جزئیات).
     /// </summary>
     [PatientRoleAuthorization]
-    public class PatientAppointmentApiController : Controller
+    public class PatientAppointmentApiController : BasePatientController
     {
         private readonly IAppointmentBookingService _bookingService;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly ILogger _logger;
 
         public PatientAppointmentApiController(
             IAppointmentBookingService bookingService,
             ICurrentUserService currentUserService,
-            ILogger logger)
+            ILogger logger,
+            ApplicationDbContext context)
+            : base(logger, currentUserService, context)
         {
             _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
-            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-            _logger = logger?.ForContext<PatientAppointmentApiController>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -50,7 +47,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "Unauthorized" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید." }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _bookingService.GetPatientAppointmentsAsync(patientId.Value, startDate, endDate);
@@ -93,7 +90,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "Unauthorized" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید." }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _bookingService.GetAppointmentDetailsAsync(id, patientId.Value);
@@ -129,7 +126,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                 var patientId = await GetCurrentPatientIdAsync();
                 if (patientId == null)
                 {
-                    return Json(new { success = false, message = "Unauthorized" });
+                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد. لطفاً دوباره وارد شوید." });
                 }
 
                 var result = await _bookingService.CancelAppointmentAsync(id, patientId.Value);
@@ -152,22 +149,5 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             }
         }
 
-        #region Helper Methods
-
-        private async Task<int?> GetCurrentPatientIdAsync()
-        {
-            try
-            {
-                var patient = await _currentUserService.GetPatientInfoAsync();
-                return patient?.PatientId;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت شناسه بیمار");
-                return null;
-            }
-        }
-
-        #endregion
     }
 }

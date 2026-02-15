@@ -113,10 +113,11 @@ var patientId = 1; // ⚠️ TEMPORARY: فقط برای تست
 
 ## 🔴 Critical (قبل از دیپلوی حتماً رفع شود)
 
-- [ ] **فعال‌سازی احراز هویت در Reserve:** حذف `patientId = 1`؛ استفاده از `GetCurrentPatientIdAsync()` و در صورت null برگرداندن 401/Redirect به لاگین.
-- [ ] **محدود کردن یا حذف CheckAuth در پروداکشن:** عدم نمایش/دسترسی به اطلاعات userId و patientId و نقش‌ها برای کاربران عادی؛ یا غیرفعال کردن endpoint در پروداکشن.
-- [ ] **عدم نمایش تشخیص احراز هویت در پروداکشن:** حذف کامل رندر `_AuthDiagnostic` در پروداکشن یا وابسته کردن به یک تنظیم اپ (مثلاً `ShowAuthDiagnostic = false`).
-- [ ] **حذف متن Debug URL از کارت پزشک در پروداکشن:** حذف بلوک `if (IsDebuggingEnabled)` در `_DoctorCard` یا وابسته کردن به تنظیم اپ.
+- [x] **فعال‌سازی احراز هویت در Reserve:** ✅ اعمال شد. استفاده از `GetCurrentPatientIdAsync()`؛ در صورت null برگرداندن JSON با `requiresLogin: true`. کلاینت در `confirm-booking.js` با نمایش Swal و هدایت به `/Account/Login?returnUrl=...` واکنش نشان می‌دهد.
+- [x] **محدود کردن CheckAuth در پروداکشن:** ✅ اعمال شد. در ابتدای `CheckAuth()` اگر `!HttpContext.IsDebuggingEnabled` باشد، `HttpNotFound()` برگردانده می‌شود.
+- [x] **عدم نمایش تشخیص احراز هویت در پروداکشن:** ✅ اعمال شد. رندر `_AuthDiagnostic` از `SelectDoctor.cshtml` حذف شده است.
+- [x] **حذف متن Debug URL از کارت پزشک:** ✅ اعمال شد. بلوک «🔍 Debug: URL» از `_DoctorCard.cshtml` حذف و برای دکمه `aria-label` اضافه شده است.
+- [x] **جلوگیری از Over-posting در Reserve:** ✅ اعمال شد. پارامتر مدل با `[Bind(Include = "DoctorId, AppointmentDate, StartTime, EndTime, ServiceCategoryId, Description")]` محدود شده است.
 
 ## 🟠 Security
 

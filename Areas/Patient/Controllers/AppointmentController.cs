@@ -143,10 +143,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                     .Take(pageSize)
                     .ToList();
                 
-                // ✅ دریافت تاریخ‌های نوبت موجود برای هر پزشک به صورت موازی (بهینه‌سازی عملکرد)
-                // ⚠️ مهم: باید قبل از ساخت ViewModel انجام شود
+                // ✅ دریافت تاریخ‌های نوبت موجود برای هر پزشک به صورت ترتیبی (EF6 DbContext از استفاده همزمان پشتیبانی نمی‌کند)
                 var maxDates = _appSettings.AppointmentAvailableDatesMaxCount;
-                var doctorsWithDates = await Task.WhenAll(pagedDoctors.Select(async doctor =>
+                foreach (var doctor in pagedDoctors)
                 {
                     if (doctor.HasActiveSchedule)
                     {
@@ -167,11 +166,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     {
                         doctor.AvailableDates = new List<AppointmentDateInfo>();
                     }
-                    return doctor;
-                }));
-                
-                // ✅ تبدیل به لیست (Task.WhenAll یک array برمی‌گرداند)
-                pagedDoctors = doctorsWithDates.ToList();
+                }
                 
                 var viewModel = new AvailableAppointmentsViewModel
                 {
@@ -334,16 +329,12 @@ namespace ClinicApp.Areas.Patient.Controllers
                 object doctorsList;
                 if (filteredDoctors != null && filteredDoctors.Any())
                 {
-                    // ✅ دریافت تاریخ‌های نوبت موجود برای همه پزشکان به صورت موازی
-                    // ⚠️ توجه: این هنوز N+1 query است اما با Task.WhenAll بهینه شده
-                    // برای بهینه‌سازی بیشتر، می‌توان batch query ایجاد کرد
+                    // ✅ دریافت تاریخ‌های نوبت موجود به صورت ترتیبی (EF6 DbContext از استفاده همزمان پشتیبانی نمی‌کند)
                     var maxDates = _appSettings.AppointmentAvailableDatesMaxCount;
-                    var doctorsWithDates = await Task.WhenAll(filteredDoctors.Select(async d =>
+                    var doctorsWithDatesList = new List<object>();
+                    foreach (var d in filteredDoctors)
                     {
-                        // ✅ استفاده از config برای maxDates
                         var availableDates = await GetAvailableDatesForDoctorAsync(d.DoctorId, maxDates: maxDates);
-                        
-                        // ✅ تبدیل AvailableDateInfo به anonymous object با camelCase property names
                         var availableDatesJson = availableDates != null && availableDates.Any()
                             ? availableDates.Select(ad => new
                             {
@@ -356,8 +347,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                                 timeRange = ad.TimeRange
                             }).Cast<object>().ToList()
                             : new List<object>();
-                        
-                        return new
+                        doctorsWithDatesList.Add(new
                         {
                             doctorId = d.DoctorId,
                             fullName = d.FullName,
@@ -373,10 +363,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                             reviewCount = d.ReviewCount ?? 0,
                             availableDates = availableDatesJson,
                             isSelected = doctorId.HasValue && d.DoctorId == doctorId.Value
-                        };
-                    }));
-                    
-                    doctorsList = doctorsWithDates.ToList();
+                        });
+                    }
+                    doctorsList = doctorsWithDatesList;
                 }
                 else
                 {
@@ -1028,7 +1017,13 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return ErrorJsonResult(result.Message); // ✅ از Base
                 }
 
-                return SuccessJsonResult(result.Data); // ✅ از Base
+                // درخواست عادی (لینک «مشاهده جزئیات» از داشبورد) → صفحه HTML
+                if (!Request.IsAjaxRequest())
+                {
+                    return View(result.Data);
+                }
+
+                return SuccessJsonResult(result.Data); // درخواست AJAX (مودال)
             }
             catch (Exception ex)
             {

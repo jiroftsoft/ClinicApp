@@ -64,7 +64,7 @@
                 formData += `&idempotencyKey=${encodeURIComponent(idempotencyKey)}`;
             }
             
-            // ✅ ENTERPRISE-GRADE: AJAX Call با Retry Logic
+            // ✅ PRODUCTION: ارسال کوکی احراز هویت با درخواست (withCredentials) برای جلوگیری از requiresLogin کاذب
             this.ajaxWithRetry({
                 url: reserveUrl,
                 type: 'POST',
@@ -72,6 +72,7 @@
                 timeout: 60000,
                 maxRetries: 1, // فقط 1 بار Retry (Idempotency)
                 retryDelay: 2000,
+                xhrFields: { withCredentials: true },
                 onSuccess: async (response) => {
                     // ✅ CRITICAL: Wrap در try-catch برای catch کردن exceptions از processPayment
                     try {
@@ -98,8 +99,23 @@
                         if (!isSuccess) {
                             // ❌ Reserve failed
                             console.error('❌ [ConfirmBooking] Reserve failed - Message:', response.message, 'Response:', response);
-                            console.error('❌ [ConfirmBooking] Success value:', response.success, 'Type:', typeof response.success);
-                            
+
+                            // ✅ PRODUCTION: در صورت نیاز به لاگین، هدایت به صفحه ورود با returnUrl
+                            if (response.requiresLogin === true) {
+                                const returnUrl = encodeURIComponent(window.location.href);
+                                const loginUrl = '/Account/Login?returnUrl=' + returnUrl;
+                                await Swal.fire({
+                                    title: 'ورود به سیستم',
+                                    text: response.message || 'لطفاً ابتدا وارد سیستم شوید.',
+                                    icon: 'info',
+                                    confirmButtonText: 'ورود',
+                                    confirmButtonColor: '#2c5aa0'
+                                }).then(function () {
+                                    window.location.href = loginUrl;
+                                });
+                                return;
+                            }
+
                             // ✅ نمایش warnings جداگانه (اگر وجود دارد)
                             if (response.warnings && response.warnings.length > 0) {
                                 const warningsText = response.warnings.join('\n');
@@ -111,7 +127,7 @@
                                     confirmButtonColor: '#2c5aa0'
                                 });
                             }
-                            
+
                             // ✅ نمایش خطا
                             const errorMessage = response.message || 'خطا در رزرو نوبت';
                             this.showError(errorMessage);
@@ -136,6 +152,7 @@
                                 
                             } catch (paymentError) {
                                 // ❌ خطا در پردازش پرداخت
+                                const paymentMsg = paymentError && (paymentError.message || paymentError.responseJSON?.message) || 'نامشخص';
                                 console.error('❌ [ConfirmBooking] Payment process failed:', paymentError);
                                 console.error('❌ [ConfirmBooking] Payment error details:', {
                                     message: paymentError.message,
@@ -144,13 +161,14 @@
                                 });
                                 
                                 // ✅ CRITICAL: نوبت با موفقیت رزرو شده است (Status = Pending)
-                                // فقط پرداخت خطا دارد
+                                // فقط پرداخت خطا دارد — دلیل خطا را نمایش بده تا کاربر/توسعه‌دهنده بداند چرا به درگاه وصل نشد
                                 await Swal.fire({
                                     title: 'خطا در پردازش پرداخت',
                                     html: `
                                         <p>نوبت شما با موفقیت ثبت شد و در انتظار پرداخت است.</p>
                                         <p class="mt-2"><strong>شناسه نوبت: ${response.appointmentId}</strong></p>
-                                        <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.</p>
+                                        <p class="mt-2 text-danger"><strong>دلیل:</strong> ${paymentMsg}</p>
+                                        <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید یا دلیل بالا را برطرف کنید.</p>
                                     `,
                                     icon: 'warning',
                                     confirmButtonText: 'باشه',
@@ -194,13 +212,15 @@
                         const requiresPayment = response && (response.requiresPayment === true || response.requiresPayment === 'true' || response.requiresPayment === 1);
                         
                         if (isSuccess && requiresPayment) {
+                            const paymentMsg = error && error.message || (error && error.responseJSON && error.responseJSON.message) || 'نامشخص';
                             // ✅ Reserve موفق بود، فقط پرداخت خطا دارد
                             await Swal.fire({
                                 title: 'خطا در پردازش پرداخت',
                                 html: `
                                     <p>نوبت شما با موفقیت ثبت شد و در انتظار پرداخت است.</p>
                                     <p class="mt-2"><strong>شناسه نوبت: ${response.appointmentId}</strong></p>
-                                    <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید.</p>
+                                    <p class="mt-2 text-danger"><strong>دلیل:</strong> ${paymentMsg}</p>
+                                    <p class="mt-2">لطفاً بعداً از بخش "نوبت‌های من" برای پرداخت اقدام کنید یا دلیل بالا را برطرف کنید.</p>
                                 `,
                                 icon: 'warning',
                                 confirmButtonText: 'باشه',
@@ -425,6 +445,7 @@
                     dataType: 'json', // ✅ CRITICAL FIX: Explicitly set dataType to JSON
                     timeout: options.timeout || 30000,
                     headers: options.headers || {},
+                    xhrFields: options.xhrFields || {}, // ✅ PRODUCTION: ارسال کوکی (withCredentials) برای Reserve
                     success: function (response) {
                         // ✅ CRITICAL FIX: Ensure response is parsed correctly
                         // اگر response به صورت string برگردد، parse می‌کنیم

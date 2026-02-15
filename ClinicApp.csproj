@@ -2147,6 +2147,7 @@
     <Content Include="Content\css\patient-dashboard.css" />
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
+    <Content Include="Content\css\patient-layout.css" />
     <Content Include="Content\css\patient-profile.css" />
     <Content Include="Content\css\popular-specialties-section.css" />
     <Content Include="Content\css\profile-modal.css" />
@@ -5253,6 +5254,7 @@
     <Content Include="Areas\Patient\Views\MedicalRecord\_TriageSection.cshtml" />
     <Content Include="Docs\PROFILE_MODAL_ROADMAP_AND_CHECKLISTS.md" />
     <Content Include="Areas\Patient\Views\Shared\_ShafaBrandLoading.cshtml" />
+    <Content Include="Areas\Patient\Views\Appointment\Details.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

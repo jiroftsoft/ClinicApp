@@ -13,7 +13,8 @@
             <div class="form-group">
                 <label for="NationalCode" class="form-label">کد ملی</label>
                 <input type="tel" id="NationalCode" name="NationalCode" class="form-control text-center" maxlength="10" autocomplete="off" placeholder="کد ملی ۱۰ رقمی خود را وارد کنید" />
-                <div class="text-danger d-block mt-1" data-valmsg-for="NationalCode"></div>
+                <div class="text-danger d-block mt-1" id="national-code-error" data-valmsg-for="NationalCode"></div>
+                <small class="form-text text-muted" id="national-code-hint" style="display: none;"></small>
             </div>
             <div class="d-grid mt-3">
                 <button type="submit" class="btn btn-primary">
@@ -32,8 +33,9 @@
             <input type="hidden" name="NationalCode" />
             <div class="form-group">
                 <label for="PhoneNumber" class="form-label">شماره موبایل</label>
-                <input type="tel" id="PhoneNumber" name="PhoneNumber" class="form-control" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" />
-                <div class="text-danger d-block mt-1" data-valmsg-for="PhoneNumber"></div>
+                <input type="tel" id="PhoneNumber" name="PhoneNumber" class="form-control" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" maxlength="11" dir="ltr" />
+                <div class="text-danger d-block mt-1" id="phone-number-error" data-valmsg-for="PhoneNumber"></div>
+                <small class="form-text text-muted" id="phone-number-hint" style="display: none;"></small>
             </div>
             <div class="d-grid mt-3">
                 <button type="submit" class="btn btn-primary">
@@ -79,6 +81,9 @@
             <div class="text-center mt-3">
                 <span id="countdown-timer"></span>
                 <a href="#" id="resend-otp-link" style="display: none;">ارسال مجدد کد</a>
+                <p class="text-muted small mt-2" id="resend-hint" style="display: none;">
+                    در صورت عدم دریافت، پس از پایان زمان می‌توانید مجدداً درخواست دهید.
+                </p>
             </div>
         }
     </div>
@@ -98,7 +103,8 @@
             remainingSeconds: 0,
             isRegistrationFlow: false, // ✅ Track whether we're in registration or login flow
             nationalCode: null, // ✅ Store national code for registration
-            phoneNumber: null // ✅ Store phone number for registration
+            phoneNumber: null, // ✅ Store phone number for registration
+            failedAttempts: 0 // ✅ Track failed OTP attempts for incremental delay
         };
 
         // --- UTILITY FUNCTIONS ---
@@ -158,6 +164,152 @@
             $('#' + formId)[0].reset();
             $('#' + formId + ' .text-danger').text('');
             $('#' + formId + ' [data-valmsg-for]').text('');
+        }
+        
+        // ✅ OPTIMIZATION: Real-time phone number formatting (09xx) - Digikala style
+        function formatPhoneNumber(value) {
+            if (!value) return '';
+            
+            // Remove all non-digits
+            var digits = value.replace(/\D/g, '');
+            
+            // Auto-add 0 if starts with 9
+            if (digits.length > 0 && digits.charAt(0) === '9' && !digits.startsWith('09')) {
+                digits = '0' + digits;
+            }
+            
+            // Limit to 11 digits (09xxxxxxxxx)
+            if (digits.length > 11) {
+                digits = digits.substring(0, 11);
+            }
+            
+            return digits;
+        }
+        
+        // ✅ OPTIMIZATION: Real-time national code validation
+        function validateNationalCode(value, updateInput) {
+            // Default: update input only if explicitly requested (to prevent infinite loops)
+            if (typeof updateInput === 'undefined') {
+                updateInput = false;
+            }
+            
+            if (!value) {
+                $('#NationalCode').removeClass('is-invalid is-valid');
+                $('#national-code-error').text('');
+                $('#national-code-hint').hide();
+                return false;
+            }
+            
+            var $input = $('#NationalCode');
+            var $error = $('#national-code-error');
+            var $hint = $('#national-code-hint');
+            
+            // Remove all non-digits
+            var digits = value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (digits.length > 10) {
+                digits = digits.substring(0, 10);
+            }
+            
+            // Update input value only if explicitly requested (prevents infinite loop)
+            if (updateInput && $input.val() !== digits) {
+                $input.val(digits);
+            }
+            
+            // Real-time validation
+            if (digits.length === 0) {
+                $input.removeClass('is-invalid is-valid');
+                $error.text('');
+                $hint.hide();
+                return false;
+            } else if (digits.length < 10) {
+                $input.addClass('is-invalid').removeClass('is-valid');
+                $error.text('کد ملی باید ۱۰ رقم باشد');
+                $hint.text('در حال وارد کردن: ' + digits.length + ' / ۱۰');
+                $hint.show().removeClass('text-success').addClass('text-muted');
+                return false;
+            } else if (digits.length === 10) {
+                // Basic format validation (all digits same = invalid)
+                if (/^(\d)\1{9}$/.test(digits)) {
+                    $input.addClass('is-invalid').removeClass('is-valid');
+                    $error.text('کد ملی معتبر نیست');
+                    $hint.hide();
+                    return false;
+                } else {
+                    $input.addClass('is-valid').removeClass('is-invalid');
+                    $error.text('');
+                    $hint.text('✓ فرمت صحیح است');
+                    $hint.show().removeClass('text-muted').addClass('text-success');
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // ✅ OPTIMIZATION: Real-time phone number validation
+        function validatePhoneNumber(value, updateInput) {
+            // Default: update input only if explicitly requested (to prevent infinite loops)
+            if (typeof updateInput === 'undefined') {
+                updateInput = false;
+            }
+            
+            if (!value) {
+                $('#PhoneNumber').removeClass('is-invalid is-valid');
+                $('#phone-number-error').text('');
+                $('#phone-number-hint').hide();
+                return false;
+            }
+            
+            var $input = $('#PhoneNumber');
+            var $error = $('#phone-number-error');
+            var $hint = $('#phone-number-hint');
+            
+            // Format phone number
+            var formatted = formatPhoneNumber(value);
+            
+            // Update input value only if explicitly requested (prevents infinite loop)
+            if (updateInput && $input.val() !== formatted) {
+                $input.val(formatted);
+            }
+            
+            // Real-time validation
+            if (formatted.length === 0) {
+                $input.removeClass('is-invalid is-valid');
+                $error.text('');
+                $hint.hide();
+                return false;
+            } else if (!formatted.startsWith('09')) {
+                $input.addClass('is-invalid').removeClass('is-valid');
+                $error.text('شماره موبایل باید با ۰۹ شروع شود');
+                $hint.text('در حال وارد کردن: ' + formatted);
+                $hint.show().removeClass('text-success').addClass('text-muted');
+                return false;
+            } else if (formatted.length < 11) {
+                $input.addClass('is-invalid').removeClass('is-valid');
+                $error.text('شماره موبایل باید ۱۱ رقم باشد');
+                $hint.text('در حال وارد کردن: ' + formatted.length + ' / ۱۱');
+                $hint.show().removeClass('text-success').addClass('text-muted');
+                return false;
+            } else if (formatted.length === 11) {
+                // Validate mobile operator (09xx where xx is 10-99)
+                var operator = formatted.substring(2, 4);
+                if (operator < '10' || operator > '99') {
+                    $input.addClass('is-invalid').removeClass('is-valid');
+                    $error.text('شماره موبایل معتبر نیست');
+                    $hint.hide();
+                    return false;
+                } else {
+                    $input.addClass('is-valid').removeClass('is-invalid');
+                    $error.text('');
+                    $hint.text('✓ فرمت صحیح است');
+                    $hint.show().removeClass('text-muted').addClass('text-success');
+                    return true;
+                }
+            }
+            
+            return false;
         }
 
         // --- STEP MANAGEMENT ---
@@ -262,8 +414,11 @@
         // --- COUNTDOWN TIMER ---
         function startCountdown() {
             state.remainingSeconds = config.countdownSeconds;
-            $('#countdown-timer').text('ارسال مجدد کد تا ' + state.remainingSeconds + ' ثانیه');
+            var minutes = Math.floor(state.remainingSeconds / 60);
+            var seconds = state.remainingSeconds % 60;
+            $('#countdown-timer').text('ارسال مجدد کد تا ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
             $('#resend-otp-link').hide();
+            $('#resend-hint').show(); // ✅ Show hint message
             
             if (state.countdownInterval) {
                 clearInterval(state.countdownInterval);
@@ -273,11 +428,14 @@
                 state.remainingSeconds--;
                 
                 if (state.remainingSeconds > 0) {
-                    $('#countdown-timer').text('ارسال مجدد کد تا ' + state.remainingSeconds + ' ثانیه');
+                    var minutes = Math.floor(state.remainingSeconds / 60);
+                    var seconds = state.remainingSeconds % 60;
+                    $('#countdown-timer').text('ارسال مجدد کد تا ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
                 } else {
                     clearInterval(state.countdownInterval);
                     $('#countdown-timer').text('');
                     $('#resend-otp-link').show();
+                    $('#resend-hint').hide(); // ✅ Hide hint when resend is available
                 }
             }, 1000);
         }
@@ -288,10 +446,27 @@
             e.preventDefault();
             var $form = $(this);
             var $button = $form.find('button[type="submit"]');
+            var nationalCode = $('#NationalCode').val().trim();
             
-            // Clear previous errors
+            // ✅ OPTIMIZATION: Clear previous errors
             $form.find('.text-danger').text('');
             $form.find('[data-valmsg-for]').text('');
+            $('#NationalCode').removeClass('is-invalid is-valid');
+            
+            // ✅ OPTIMIZATION: Validate before submit
+            if (!nationalCode) {
+                $('#NationalCode').addClass('is-invalid');
+                $('#national-code-error').text('لطفاً کد ملی خود را وارد کنید.');
+                showErrorMessage(null, 'لطفاً کد ملی خود را وارد کنید.');
+                return;
+            }
+            
+            // ✅ OPTIMIZATION: Validate format
+            if (!validateNationalCode(nationalCode)) {
+                $('#NationalCode').addClass('is-invalid');
+                showErrorMessage(null, 'کد ملی وارد شده معتبر نیست.');
+                return;
+            }
             
             showButtonSpinner($button, true);
             
@@ -535,10 +710,27 @@
             e.preventDefault();
             var $form = $(this);
             var $button = $form.find('button[type="submit"]');
+            var phoneNumber = $('#PhoneNumber').val().trim();
             
-            // Clear previous errors
+            // ✅ OPTIMIZATION: Clear previous errors
             $form.find('.text-danger').text('');
             $form.find('[data-valmsg-for]').text('');
+            $('#PhoneNumber').removeClass('is-invalid is-valid');
+            
+            // ✅ OPTIMIZATION: Validate before submit
+            if (!phoneNumber) {
+                $('#PhoneNumber').addClass('is-invalid');
+                $('#phone-number-error').text('لطفاً شماره موبایل خود را وارد کنید.');
+                showErrorMessage(null, 'لطفاً شماره موبایل خود را وارد کنید.');
+                return;
+            }
+            
+            // ✅ OPTIMIZATION: Validate format
+            if (!validatePhoneNumber(phoneNumber)) {
+                $('#PhoneNumber').addClass('is-invalid');
+                showErrorMessage(null, 'شماره موبایل وارد شده معتبر نیست.');
+                return;
+            }
             
             showButtonSpinner($button, true);
             
@@ -828,6 +1020,9 @@
                             window.location.reload();
                         }
                     } else {
+                        // ✅ OPTIMIZATION: Incremental delay for failed attempts
+                        state.failedAttempts++;
+                        
                         // ✅ Show user-friendly error message
                         var errorMessage = (response && response.message) ? response.message : 'کد تایید نامعتبر است';
                         
@@ -839,6 +1034,28 @@
                         }
                         
                         $('#otp-error').text(errorMessage);
+                        
+                        // ✅ OPTIMIZATION: Incremental delay (1s, 2s, 3s, ...) for brute force protection
+                        if (state.failedAttempts > 1 && response && response.code === 'OTP_INVALID') {
+                            var delaySeconds = Math.min(state.failedAttempts, 5); // Max 5 seconds
+                            $('#otp-error').text(errorMessage + ' (لطفاً ' + delaySeconds + ' ثانیه صبر کنید)');
+                            
+                            // Disable inputs during delay
+                            $('#otp-inputs .otp-input').prop('disabled', true);
+                            $button.prop('disabled', true);
+                            
+                            setTimeout(function() {
+                                $('#otp-inputs .otp-input').prop('disabled', false);
+                                $button.prop('disabled', false);
+                                isSubmitting = false; // ✅ Reset submitting flag
+                                $('#otp-inputs .otp-input:first').focus();
+                            }, delaySeconds * 1000);
+                            
+                            return; // Don't reset isSubmitting here (already reset in setTimeout)
+                        }
+                        
+                        // ✅ Reset submitting flag for non-delay errors
+                        isSubmitting = false;
                         // Clear and focus first input
                         $('#otp-inputs .otp-input').val('');
                         $('#combined-otp-code').val('');
@@ -881,6 +1098,12 @@
             e.preventDefault();
             var $link = $(this);
             
+            // ✅ OPTIMIZATION: Prevent resend during countdown
+            if (state.remainingSeconds > 0) {
+                toastr.warning('در صورت عدم دریافت، پس از پایان زمان می‌توانید مجدداً درخواست دهید.');
+                return;
+            }
+            
             // ✅ Get values from state or form
             var nationalCode = state.nationalCode || $('input[name="NationalCode"]').val() || $('#NationalCode').val();
             var phoneNumber = state.phoneNumber || $('input[name="PhoneNumber"]').val() || $('#PhoneNumber').val();
@@ -890,8 +1113,8 @@
                 return;
             }
             
-            // Disable link during request
-            $link.prop('disabled', true).css('opacity', '0.6');
+            // ✅ OPTIMIZATION: Disable link during request and show loading state
+            $link.prop('disabled', true).css('opacity', '0.6').text('در حال ارسال...');
             
             // ✅ Determine flow type: registration if phoneNumber exists or state.isRegistrationFlow is true
             if (state.isRegistrationFlow || phoneNumber) {
@@ -918,7 +1141,8 @@
                             $('#otp-inputs .otp-input').val('');
                             $('#combined-otp-code').val('');
                             $('#otp-error').text('');
-                            startCountdown();
+                            state.failedAttempts = 0; // ✅ Reset failed attempts on resend
+                            startCountdown(); // ✅ Restart countdown after resend
                             // Focus first OTP input
                             setTimeout(function() {
                                 $('#otp-inputs .otp-input:first').focus();
@@ -926,7 +1150,7 @@
                         } else {
                             showErrorMessage(response, 'خطا در ارسال مجدد کد');
                         }
-                        $link.prop('disabled', false).css('opacity', '1');
+                        $link.prop('disabled', false).css('opacity', '1').text('ارسال مجدد کد');
                     },
                     error: function(xhr, status, error) {
                         console.error('ResendRegistrationOtp AJAX Error:', { xhr: xhr, status: status, error: error });
@@ -935,19 +1159,94 @@
                         } else {
                             showErrorMessage(null, 'خطا در ارسال مجدد کد. لطفاً دوباره تلاش کنید.');
                         }
-                        $link.prop('disabled', false).css('opacity', '1');
+                        $link.prop('disabled', false).css('opacity', '1').text('ارسال مجدد کد');
                     }
                 });
             } else {
                 // Resend login OTP
                 sendLoginOtp();
-                $link.prop('disabled', false).css('opacity', '1');
+                $link.prop('disabled', false).css('opacity', '1').text('ارسال مجدد کد');
             }
         });
 
+        // ✅ OPTIMIZATION: Setup real-time validation for National Code
+        var isUpdatingNationalCode = false; // Flag to prevent infinite loops
+        $(document).on('input', '#NationalCode', function() {
+            if (isUpdatingNationalCode) return; // Prevent infinite loop
+            
+            var $this = $(this);
+            var value = $this.val();
+            
+            // Remove non-digits and limit length
+            var digits = value.replace(/\D/g, '');
+            if (digits.length > 10) {
+                digits = digits.substring(0, 10);
+            }
+            
+            // Update input value only if changed
+            if ($this.val() !== digits) {
+                isUpdatingNationalCode = true;
+                $this.val(digits);
+                isUpdatingNationalCode = false;
+            }
+            
+            // Validate
+            validateNationalCode(digits, false);
+        });
+        
+        $(document).on('blur', '#NationalCode', function() {
+            var value = $(this).val();
+            validateNationalCode(value, false);
+        });
+        
+        // ✅ OPTIMIZATION: Setup real-time formatting and validation for Phone Number
+        var isUpdatingPhoneNumber = false; // Flag to prevent infinite loops
+        $(document).on('input', '#PhoneNumber', function() {
+            if (isUpdatingPhoneNumber) return; // Prevent infinite loop
+            
+            var $this = $(this);
+            var value = $this.val();
+            
+            // Format phone number
+            var formatted = formatPhoneNumber(value);
+            
+            // Update input value only if changed
+            if ($this.val() !== formatted) {
+                isUpdatingPhoneNumber = true;
+                $this.val(formatted);
+                isUpdatingPhoneNumber = false;
+            }
+            
+            // Validate
+            validatePhoneNumber(formatted, false);
+        });
+        
+        $(document).on('blur', '#PhoneNumber', function() {
+            var value = $(this).val();
+            validatePhoneNumber(value, false);
+        });
+        
+        // ✅ OPTIMIZATION: Prevent paste of invalid characters
+        $(document).on('paste', '#NationalCode, #PhoneNumber', function(e) {
+            var $this = $(this);
+            setTimeout(function() {
+                var value = $this.val();
+                if ($this.attr('id') === 'NationalCode') {
+                    validateNationalCode(value, false);
+                } else if ($this.attr('id') === 'PhoneNumber') {
+                    validatePhoneNumber(value, false);
+                }
+            }, 10);
+        });
+        
         // Initialize when DOM is ready
         $(document).ready(function() {
             setupOtpInputs();
+            
+            // ✅ OPTIMIZATION: Focus first input on load
+            setTimeout(function() {
+                $('#NationalCode').focus();
+            }, 100);
         });
     })(jQuery);
 </script>

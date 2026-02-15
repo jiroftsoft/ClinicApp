@@ -249,8 +249,8 @@ namespace ClinicApp.Services
                 if (pageSize < 1) pageSize = 5;
                 if (pageSize > 20) pageSize = 20;
 
-                // ✅ دریافت پذیرش‌ها از PatientService
-                var result = await _patientService.GetPatientReceptionsAsync(patientId, pageNumber, pageSize);
+                // ✅ دریافت پذیرش‌ها با صفحه‌بندی و TotalCount از PatientService
+                var result = await _patientService.GetPatientReceptionsPagedAsync(patientId, pageNumber, pageSize);
                 if (!result.Success)
                 {
                     return ServiceResult<DashboardReceptionsSectionViewModel>.Failed(
@@ -258,15 +258,16 @@ namespace ClinicApp.Services
                         result.Code);
                 }
 
-                var receptions = result.Data ?? new List<ViewModels.PatientReceptionViewModel>();
-                var totalCount = receptions.Count; // FIXME(Phase 2): دریافت totalCount از service
+                var paged = result.Data;
+                var receptions = paged?.Items ?? new List<ViewModels.PatientReceptionViewModel>();
+                var totalCount = paged?.TotalCount ?? 0;
 
                 var viewModel = new DashboardReceptionsSectionViewModel
                 {
                     Receptions = receptions.Select(r => new DashboardReceptionItemViewModel
                     {
                         ReceptionId = r.ReceptionId,
-                        DoctorId = r.DoctorId, // ✅ int (not nullable in PatientReceptionViewModel)
+                        DoctorId = r.DoctorId,
                         DoctorName = r.DoctorName,
                         ReceptionDate = r.ReceptionDate,
                         ReceptionDateShamsi = r.ReceptionDateShamsi,
@@ -277,7 +278,7 @@ namespace ClinicApp.Services
                     TotalCount = totalCount,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    HasMore = (pageNumber * pageSize) < totalCount
+                    HasMore = paged != null && paged.HasNextPage
                 };
 
                 return ServiceResult<DashboardReceptionsSectionViewModel>.Successful(

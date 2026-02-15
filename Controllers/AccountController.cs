@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using ClinicApp.Services;
 
 namespace ClinicApp.Controllers
 {
@@ -35,8 +36,9 @@ namespace ClinicApp.Controllers
         private readonly ApplicationUserManager _userManager;
         private readonly ILogger _log;
         private readonly ILoginHistoryService _loginHistoryService;
-        private readonly IUserProfileService _userProfileService;
+        private readonly IUserProfileService _userProfileService;   
         private readonly ICurrentUserService _currentUserService;
+        private readonly AsanakSmsService _smsService;
 
         public AccountController(
             IAuthService authService,
@@ -54,6 +56,7 @@ namespace ClinicApp.Controllers
             _loginHistoryService = loginHistoryService;
             _userProfileService = userProfileService;
             _currentUserService = currentUserService;
+            _smsService = new AsanakSmsService(); // ✅ Initialize SMS service for welcome message
         }
 
         #endregion
@@ -304,18 +307,18 @@ namespace ClinicApp.Controllers
                 if (DateTime.UtcNow.Ticks > expiryTicks)
                 {
                     _log.Warning("Expired registration token was used.");
-                    TempData["ErrorMessage"] = "The registration link has expired. Please try again.";
+                    TempData["ErrorMessage"] = "لینک ثبت‌نام منقضی شده است. لطفاً از ابتدا فرآیند ثبت‌نام را انجام دهید.";
                     return RedirectToAction("Login");
                 }
 
                 var model = new RegisterPatientViewModel { NationalCode = nationalCode, PhoneNumber = phoneNumber };
-                ViewBag.ReturnUrl = returnUrl; // ✅ Set returnUrl for View to preserve flow context
+                ViewBag.ReturnUrl = returnUrl;
                 return View(model);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Invalid, tampered, or expired registration token was used.");
-                TempData["ErrorMessage"] = "The registration link is invalid. Please try again.";
+                TempData["ErrorMessage"] = "لینک ثبت‌نام نامعتبر یا منقضی است. لطفاً از ابتدا فرآیند ثبت‌نام را انجام دهید.";
                 return RedirectToAction("Login");
             }
         }
@@ -325,6 +328,7 @@ namespace ClinicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> CompleteRegistration(RegisterPatientViewModel model, string returnUrl)
         {
+            ViewBag.ReturnUrl = returnUrl;
             if (!ModelState.IsValid) return View(model);
 
             try
@@ -333,7 +337,41 @@ namespace ClinicApp.Controllers
                 if (result.Success)
                 {
                     await _authService.SignInWithNationalCodeAsync(model.NationalCode);
-                    TempData["SuccessMessage"] = "Registration successful! Welcome to Shefa Clinic.";
+                    
+                    // ✅ OPTIMIZATION: فارسی کردن پیام موفقیت
+                    TempData["SuccessMessage"] = "ثبت‌نام با موفقیت انجام شد. به کلینیک درمانی شفا خوش آمدید.";
+                    
+                    // ✅ OPTIMIZATION: ارسال SMS خوش‌آمدگویی بعد از ثبت‌نام موفق
+                    try
+                    {
+                        var welcomeMessage = new IdentityMessage
+                        {
+                            Destination = model.PhoneNumber,
+                            Body = "به کلینیک درمانی شفا خوش آمدید. ثبت‌نام شما با موفقیت انجام شد."
+                        };
+                        
+                        // ✅ ارسال SMS به صورت Async (بدون انتظار برای پاسخ)
+                        _ = _smsService.SendAsync(welcomeMessage).ContinueWith(task =>
+                        {
+                            if (task.IsFaulted)
+                            {
+                                _log.Warning(task.Exception, "خطا در ارسال SMS خوش‌آمدگویی به شماره {PhoneNumber}", 
+                                    MaskHelper.MaskPhoneNumber(model.PhoneNumber));
+                            }
+                            else
+                            {
+                                _log.Information("SMS خوش‌آمدگویی با موفقیت ارسال شد به شماره {PhoneNumber}", 
+                                    MaskHelper.MaskPhoneNumber(model.PhoneNumber));
+                            }
+                        }, TaskContinuationOptions.ExecuteSynchronously);
+                    }
+                    catch (Exception smsEx)
+                    {
+                        // ✅ خطای SMS نباید ثبت‌نام را متوقف کند
+                        _log.Warning(smsEx, "خطا در ارسال SMS خوش‌آمدگویی (ثبت‌نام موفق بود) - شماره: {PhoneNumber}", 
+                            MaskHelper.MaskPhoneNumber(model.PhoneNumber));
+                    }
+                    
                     return RedirectToLocal(returnUrl);
                 }
                 AddErrorsToModelState(result);
@@ -342,7 +380,7 @@ namespace ClinicApp.Controllers
             catch (Exception ex)
             {
                 _log.Error(ex, "System error during final registration for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
-                ModelState.AddModelError("", "An unexpected system error occurred. Please contact support.");
+                ModelState.AddModelError("", "خطای سیستمی رخ داده است. لطفاً دوباره تلاش کنید یا با پشتیبانی کلینیک تماس بگیرید.");
                 return View(model);
             }
         }

@@ -1,12 +1,21 @@
 @* ✅ Dashboard Overview Tab Content *@
 
-<!-- Quick Stats Section (AJAX Loaded) -->
+<!-- Quick Stats Section (AJAX Loaded) - ساختار هم‌ساز با patient-dashboard.js -->
 <section class="dashboard-stats-section mb-4">
     <div id="quickStatsContainer" class="row" data-dashboard-section="quickStats">
-        <!-- Loading State -->
         <div class="col-12">
-            <div class="dashboard-loading">
+            <div class="dashboard-section-loading">
                 @Html.Partial("~/Areas/Patient/Views/Shared/_ShafaBrandLoading.cshtml")
+            </div>
+            <div class="dashboard-section-content" style="display: none;"></div>
+            <div class="dashboard-section-error" style="display: none;">
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle ml-1"></i>
+                    <span class="error-message">خطا در بارگذاری آمار</span>
+                    <button class="btn btn-sm btn-outline-warning mt-2" onclick="PatientDashboard.reloadSection('quickStats')">
+                        تلاش مجدد
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -98,6 +107,10 @@
                         <i class="fas fa-file-medical ml-2"></i>
                         پذیرش‌های اخیر
                     </h3>
+                    <button type="button" class="btn btn-link btn-sm" onclick="UnifiedDashboard.switchTab('medical-record')">
+                        مشاهده همه
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
                 </div>
                 <div class="dashboard-card-body">
                     <div class="dashboard-section-loading">

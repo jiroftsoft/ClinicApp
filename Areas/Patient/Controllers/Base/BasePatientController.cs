@@ -67,32 +67,31 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
         {
             try
             {
-                // ✅ کش درخواستی: در همان request قبلاً محاسبه شده باشد
                 if (HttpContext?.Items != null)
                 {
                     if (HttpContext.Items[PatientIdCacheKey] is int cachedId)
+                    {
+                        _logger.Debug("[PatientLink] GetCurrentPatientIdAsync - cache HIT, PatientId={PatientId}", cachedId);
                         return cachedId;
+                    }
                     if (HttpContext.Items[PatientIdNotFoundKey] != null)
+                    {
+                        _logger.Debug("[PatientLink] GetCurrentPatientIdAsync - cache NOT FOUND (cached null)");
                         return null;
+                    }
                 }
 
-                // ✅ STANDARD: Get UserId from User.Identity (Controller base property)
-                // This is the ONLY reliable source in ASP.NET MVC Controllers
                 var userId = User.Identity.GetUserId();
-                
                 if (string.IsNullOrEmpty(userId))
                 {
-                    _logger.Warning("❌ GetCurrentPatientIdAsync: User.Identity.GetUserId() returned null - User not authenticated");
+                    _logger.Warning("[PatientLink] GetCurrentPatientIdAsync - UserId is NULL (not authenticated)");
                     return null;
                 }
 
-                // ✅ Enhanced Logging: Log user info for debugging (only on first call in request)
                 var userName = User.Identity.Name;
                 var isAuthenticated = User.Identity.IsAuthenticated;
                 var isPatientRole = User.IsInRole("Patient");
-                
-                _logger.Information("🔍 GetCurrentPatientIdAsync - UserId: {UserId}, UserName: {UserName}, IsAuthenticated: {IsAuthenticated}, IsPatientRole: {IsPatientRole}", 
-                    userId, userName, isAuthenticated, isPatientRole);
+                _logger.Information("[PatientLink] GetCurrentPatientIdAsync - UserId={UserId}, UserName={UserName}, IsAuth={IsAuth}, IsPatientRole={IsPatient}", userId, userName ?? "NULL", isAuthenticated, isPatientRole);
 
                 // ✅ DIRECT DATABASE QUERY: Bypass CurrentUserService to avoid DI/caching issues
                 var dbContext = _context ?? System.Web.Mvc.DependencyResolver.Current.GetService<ClinicApp.Models.ApplicationDbContext>();
@@ -113,35 +112,22 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
 
                 if (patient == null)
                 {
-                    // ✅ کش: در این request بیمار یافت نشد
                     if (HttpContext?.Items != null)
                         HttpContext.Items[PatientIdNotFoundKey] = true;
-
-                    // ✅ CRITICAL: Log detailed info when Patient not found
                     var totalPatientsCount = await dbContext.Patients.CountAsync(p => !p.IsDeleted);
                     var patientsWithThisUserId = await dbContext.Patients
                         .Where(p => p.ApplicationUserId == userId)
                         .Select(p => new { p.PatientId, p.IsDeleted })
                         .ToListAsync();
-                    
-                    _logger.Warning("⚠️ Patient record NOT FOUND - UserId: {UserId}, UserName: {UserName}, TotalPatients: {TotalCount}, PatientsWithThisUserId: {Count}", 
-                        userId, userName, totalPatientsCount, patientsWithThisUserId.Count);
-                    
+                    _logger.Warning("[PatientLink] GetCurrentPatientIdAsync - NOT FOUND. UserId={UserId}, TotalPatients={Total}, RowsWithThisUserId={Count} (IsDeleted?)", userId, totalPatientsCount, patientsWithThisUserId.Count);
                     if (patientsWithThisUserId.Any())
-                    {
-                        _logger.Warning("⚠️ Found {Count} Patient records with ApplicationUserId={UserId} but IsDeleted=true: {@Patients}", 
-                            patientsWithThisUserId.Count, userId, patientsWithThisUserId);
-                    }
-                    
+                        _logger.Warning("[PatientLink] GetCurrentPatientIdAsync - Those rows: {@Patients}", patientsWithThisUserId);
                     return null;
                 }
 
-                // ✅ کش: در این request بیمار یافت شد
                 if (HttpContext?.Items != null)
                     HttpContext.Items[PatientIdCacheKey] = patient.PatientId;
-
-                _logger.Information("✅ Patient found - PatientId: {PatientId}, Name: {FullName}, NationalCode: {NationalCode}", 
-                    patient.PatientId, $"{patient.FirstName} {patient.LastName}", patient.NationalCode);
+                _logger.Information("[PatientLink] GetCurrentPatientIdAsync - FOUND PatientId={PatientId}, Name={Name}", patient.PatientId, $"{patient.FirstName} {patient.LastName}");
                     
                 return patient.PatientId;
             }
@@ -150,6 +136,26 @@ namespace ClinicApp.Areas.Patient.Controllers.Base
                 _logger.Error(ex, "❌ Exception in GetCurrentPatientIdAsync - UserId: {UserId}", User?.Identity?.GetUserId());
                 return null;
             }
+        }
+
+        /// <summary>
+        /// پاک کردن کش درخواستی PatientId تا بار بعد GetCurrentPatientIdAsync دوباره از دیتابیس بخواند.
+        /// </summary>
+        protected void ClearPatientIdRequestCache()
+        {
+            if (HttpContext?.Items == null) return;
+            HttpContext.Items.Remove(PatientIdCacheKey);
+            HttpContext.Items.Remove(PatientIdNotFoundKey);
+        }
+
+        /// <summary>
+        /// تنظیم کش درخواستی PatientId (مثلاً بعد از Ensure که PatientId از سرویس برگشته و نیازی به کوئری دوم نیست).
+        /// </summary>
+        protected void SetPatientIdRequestCache(int patientId)
+        {
+            if (HttpContext?.Items == null) return;
+            HttpContext.Items.Remove(PatientIdNotFoundKey);
+            HttpContext.Items[PatientIdCacheKey] = patientId;
         }
 
         /// <summary>

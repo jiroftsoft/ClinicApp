@@ -75,7 +75,7 @@
                         </span>
                         break;
                     case ClinicApp.Models.Enums.AppointmentStatus.Pending:
-                        @if (Model.RequiresPayment)
+                        if (Model.RequiresPayment)
                         {
                             <span class="badge badge-payment-pending mb-2">
                                 <i class="fas fa-credit-card ml-1"></i>

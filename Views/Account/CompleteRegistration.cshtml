@@ -1,153 +1,222 @@
-﻿@model ClinicApp.ViewModels.RegisterPatientViewModel
+@model ClinicApp.ViewModels.RegisterPatientViewModel
 @{
-    ViewBag.Title = "تکمیل پروفایل";
+    ViewBag.Title = "تکمیل ثبت‌نام";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-sm-10 col-md-8 col-lg-7">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>@ViewBag.Title</h4>
-                <p class="mb-0">لطفاً اطلاعات خود را وارد کنید تا ثبت‌نام نهایی شود.</p>
-            </div>
-            <div class="card-body p-3 p-sm-4">
-                @using (Html.BeginForm("CompleteRegistration", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "complete-reg-form", role = "form", novalidate = "novalidate" }))
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+@section MetaTags {
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="Cache-Control" content="no-store, no-cache, must-revalidate" />
+}
 
-                    <div class="row g-3">
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.NationalCode, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
-                            @Html.HiddenFor(model => model.NationalCode)
-                        </div>
+@section Styles {
+    <style>
+        /* صفحه تکمیل ثبت‌نام - بهینه برای پروداکشن و موبایل */
+        .complete-reg-page { min-height: 60vh; padding: 1.5rem 0 2.5rem; }
+        .complete-reg-page .step-indicator {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            margin-bottom: 1.5rem; font-size: 0.875rem; color: #6c757d;
+        }
+        .complete-reg-page .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #dee2e6; }
+        .complete-reg-page .step-dot.active { background: #198754; transform: scale(1.2); }
+        .complete-reg-page .step-dot.done { background: #198754; }
+        .complete-reg-page .card-reg {
+            border: none; border-radius: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,.08);
+            overflow: hidden;
+        }
+        .complete-reg-page .card-reg .card-header-reg {
+            background: linear-gradient(135deg, #198754 0%, #157347 100%);
+            color: #fff; padding: 1.5rem 1.5rem 1.25rem;
+        }
+        .complete-reg-page .card-reg .card-header-reg .title-reg {
+            font-size: 1.35rem; font-weight: 700; margin: 0 0 0.25rem 0;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .complete-reg-page .card-reg .card-header-reg .subtitle-reg {
+            font-size: 0.9rem; opacity: .95; margin: 0;
+        }
+        .complete-reg-page .card-reg .card-body { padding: 1.5rem 1.25rem; }
+        .complete-reg-page .form-label { font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+        .complete-reg-page .form-control:focus, .complete-reg-page .form-select:focus {
+            border-color: #198754; box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.2);
+        }
+        .complete-reg-page .form-control[readonly] { background-color: #f8f9fa; cursor: default; }
+        .complete-reg-page .btn-submit-reg {
+            padding: 0.85rem 1.5rem; font-size: 1.05rem; font-weight: 600;
+            border-radius: 0.5rem; min-height: 52px;
+        }
+        .complete-reg-page .trust-note {
+            font-size: 0.8rem; color: #6c757d; margin-top: 1rem;
+            padding: 0.75rem; background: #f8f9fa; border-radius: 0.5rem;
+        }
+        .complete-reg-page .validation-summary-errors { border-radius: 0.5rem; }
+        .complete-reg-page .invalid-feedback { display: block; }
+        .complete-reg-page .field-hint { font-size: 0.8rem; color: #6c757d; margin-top: 0.2rem; }
+    </style>
+}
 
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
-                            @Html.HiddenFor(model => model.PhoneNumber)
-                        </div>
+<main class="complete-reg-page" role="main" aria-label="تکمیل ثبت‌نام">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6">
+                <!-- نشانگر مرحله (کاربرپسند) -->
+                <div class="step-indicator" aria-hidden="true">
+                    <span class="step-dot done" title="مرحله ۱"></span>
+                    <span class="step-dot done" title="مرحله ۲"></span>
+                    <span class="step-dot active" title="مرحله ۳: تکمیل پروفایل"></span>
+                    <span class="ms-2" style="color:#198754;">مرحله ۳ از ۳ — تکمیل پروفایل</span>
+                </div>
 
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام" } })
-                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی" } })
-                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.BirthDatePersian, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", placeholder = "مثال: ۱۳۷۰/۰۱/۱۵", autocomplete = "off" })
-                            @Html.ValidationMessageFor(model => model.BirthDatePersian, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-12 col-sm-6">
-                            @Html.LabelFor(model => model.Gender, new { @class = "form-label" })
-                            @Html.EnumDropDownListFor(model => model.Gender, "جنسیت خود را انتخاب کنید...", new { @class = "form-select" })
-                            @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
-                        </div>
-                        <div class="col-12">
-                            @Html.LabelFor(model => model.Email, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", placeholder = "آدرس ایمیل (اختیاری)", type = "email" } })
-                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-12">
-                            @Html.LabelFor(model => model.Address, new { @class = "form-label" })
-                            @Html.TextAreaFor(model => model.Address, 3, 0, new { @class = "form-control", placeholder = "آدرس محل سکونت (اختیاری)" })
-                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
-                        </div>
+                <div class="card card-reg shadow-sm">
+                    <div class="card-header-reg">
+                        <h1 class="title-reg">
+                            <i class="fas fa-user-check" aria-hidden="true"></i>
+                            تکمیل ثبت‌نام
+                        </h1>
+                        <p class="subtitle-reg">اطلاعات زیر را با دقت وارد کنید. پس از ثبت، به پنل بیمار هدایت می‌شوید.</p>
                     </div>
+                    <div class="card-body">
+                        @using (Html.BeginForm("CompleteRegistration", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "complete-reg-form", role = "form", novalidate = "novalidate", autocomplete = "on" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary-errors", role = "alert" })
 
-                    <hr class="my-3 my-sm-4">
+                            @Html.HiddenFor(m => m.InsuranceId)
 
-                    <div class="d-grid">
-                        <button type="submit" id="submit-button" class="btn btn-lg btn-success">
-                            <span class="button-text">
-                                <i class="fas fa-check-circle me-2"></i>ثبت‌نام نهایی
-                            </span>
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.NationalCode, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", @readonly = "readonly", aria_readonly = "true" })
+                                    @Html.HiddenFor(m => m.NationalCode)
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", @readonly = "readonly", aria_readonly = "true" })
+                                    @Html.HiddenFor(m => m.PhoneNumber)
+                                </div>
+
+                                <div class="col-12"><hr class="my-2" /></div>
+
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.FirstName, new { @class = "form-label" })
+                                    @Html.EditorFor(m => m.FirstName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام", autocomplete = "given-name", maxlength = "100" } })
+                                    @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.LastName, new { @class = "form-label" })
+                                    @Html.EditorFor(m => m.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "نام خانوادگی", autocomplete = "family-name", maxlength = "100" } })
+                                    @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger" })
+                                </div>
+
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.BirthDatePersian, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", placeholder = "مثال: ۱۳۷۰/۰۱/۱۵", autocomplete = "off", aria_describedby = "birthdate-hint" })
+                                    <span id="birthdate-hint" class="field-hint">تاریخ تولد (اختیاری)</span>
+                                    @Html.ValidationMessageFor(m => m.BirthDatePersian, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    @Html.LabelFor(m => m.Gender, new { @class = "form-label" })
+                                    @Html.EnumDropDownListFor(m => m.Gender, "جنسیت را انتخاب کنید...", new { @class = "form-select", aria_required = "true" })
+                                    @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-danger" })
+                                </div>
+
+                                <div class="col-12">
+                                    @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                                    @Html.EditorFor(m => m.Email, new { htmlAttributes = new { @class = "form-control", placeholder = "example@email.com (اختیاری)", type = "email", autocomplete = "email" } })
+                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-12">
+                                    @Html.LabelFor(m => m.Address, new { @class = "form-label" })
+                                    @Html.TextAreaFor(m => m.Address, 3, 0, new { @class = "form-control", placeholder = "آدرس محل سکونت (اختیاری)", autocomplete = "street-address", maxlength = "500" })
+                                    @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" id="submit-button" class="btn btn-success btn-submit-reg" aria-busy="false" aria-live="polite">
+                                    <span class="button-text">
+                                        <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                                        ثبت‌نام نهایی و ورود به پنل
+                                    </span>
+                                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                                </button>
+                            </div>
+
+                            <p class="trust-note mb-0">
+                                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+                                اطلاعات شما با پروتکل امن منتقل و ذخیره می‌شود. کلینیک شفا از حریم خصوصی شما محافظت می‌کند.
+                            </p>
+                        }
                     </div>
-                }
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     @Html.Partial("_ValidationToasts")
-
     <script type="text/javascript">
-        // اسکریپت ارائه شده در نسخه قبلی کاملا صحیح و بهینه است
-        // و نیازی به هیچ تغییری ندارد.
-        $(document).ready(function () {
+        (function () {
+            'use strict';
+            $(document).ready(function () {
+                var form = $('#complete-reg-form');
+                var submitBtn = $('#submit-button');
+                var buttonText = submitBtn.find('.button-text');
+                var spinner = submitBtn.find('.spinner-border');
+                var submitted = false;
 
-            const ui = {
-                form: $('#complete-reg-form'),
-                submitButton: $('#submit-button'),
-                init: function () {
-                    this.initDatePicker();
-                    this.initValidation();
-                    this.bindFormSubmission();
-                },
-                initDatePicker: function () {
-                    $("#birthdate-picker").pDatepicker({
+                function setBusy(busy) {
+                    submitted = busy;
+                    submitBtn.prop('disabled', busy).attr('aria-busy', busy);
+                    buttonText.toggle(!busy);
+                    spinner.toggle(busy);
+                }
+
+                if ($('#birthdate-picker').length) {
+                    $('#birthdate-picker').pDatepicker({
                         format: 'YYYY/MM/DD',
                         autoClose: true,
                         initialValue: false,
                         observer: true,
                         theme: 'blue',
                         calendar: {
-                            persian: {
-                                locale: 'fa',
-                                leapYearMode: 'astronomical'
-                            }
+                            persian: { locale: 'fa', leapYearMode: 'astronomical' }
                         },
                         toolbox: {
                             todayBtn: { enabled: true, text: { fa: 'امروز' } },
                             clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
                         }
                     });
-                },
-                initValidation: function () {
-                    $.validator.setDefaults({
-                        highlight: function (element) { $(element).addClass('is-invalid'); },
-                        unhighlight: function (element) { $(element).removeClass('is-invalid'); },
-                        errorElement: 'div',
-                        errorClass: 'invalid-feedback',
-                        errorPlacement: function (error, element) {
-                            if (element.parent('.input-group').length || element.hasClass('form-select')) {
-                                error.insertAfter(element.parent());
-                            } else {
-                                error.insertAfter(element);
-                            }
-                        }
-                    });
-                },
-                bindFormSubmission: function () {
-                    this.form.on('submit', (e) => {
-                        if (this.form.valid()) {
-                            this.showSpinner(true);
-                        }
-                    });
-                },
-                showSpinner: function (show) {
-                    this.submitButton.prop('disabled', show);
-                    this.submitButton.find('.button-text').toggle(!show);
-                    this.submitButton.find('.spinner-border').toggle(show);
                 }
-            };
 
-            ui.init();
-        });
+                $.validator.setDefaults({
+                    highlight: function (el) { $(el).addClass('is-invalid'); },
+                    unhighlight: function (el) { $(el).removeClass('is-invalid'); },
+                    errorElement: 'div',
+                    errorClass: 'invalid-feedback',
+                    errorPlacement: function (error, element) {
+                        if (element.parent('.input-group').length || element.hasClass('form-select'))
+                            error.insertAfter(element.parent());
+                        else
+                            error.insertAfter(element);
+                    }
+                });
+
+                form.on('submit', function (e) {
+                    if (submitted) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    if (form.valid()) setBusy(true);
+                });
+
+                if (form.find('.validation-summary-errors').length && form.find('.validation-summary-errors ul li').length)
+                    setBusy(false);
+            });
+        })();
     </script>
 }

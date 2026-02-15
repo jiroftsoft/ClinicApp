@@ -86,52 +86,60 @@
             });
         },
 
-        // ✅ Populate Form Fields
+        // ✅ Populate Form Fields (استفاده از this نه self — self در این scope تعریف نشده)
         populateForm: function(profile) {
+            var self = this;
+            var formId = (self.config && self.config.formId) ? self.config.formId : '#profileForm';
+            var $form = $(formId);
+
             console.log('📝 [PatientProfile] Populating form with data:', profile);
-            
-            $('#FirstName').val(profile.FirstName || '');
-            $('#LastName').val(profile.LastName || '');
-            $('#NationalCode').val(profile.NationalCode || '');
-            $('#PhoneNumber').val(profile.PhoneNumber || '');
-            $('#Email').val(profile.Email || '');
-            $('#BirthDate').val(profile.BirthDate || '');
-            $('#Address').val(profile.Address || '');
-            
-            // Set Gender - handle both string and enum values
-            if (profile.Gender) {
-                const genderValue = typeof profile.Gender === 'string' 
-                    ? profile.Gender 
-                    : profile.Gender.toString();
-                
-                console.log('👤 [PatientProfile] Setting gender:', genderValue);
-                
-                // Try to find and check the radio button
-                const $genderRadio = $('input[name="Gender"][value="' + genderValue + '"]');
-                if ($genderRadio.length > 0) {
-                    $genderRadio.prop('checked', true);
-                    console.log('✅ [PatientProfile] Gender radio button checked');
-                } else {
-                    console.warn('⚠️ [PatientProfile] Gender radio button not found for value:', genderValue);
-                    // Try alternative values
-                    if (genderValue === 'Male' || genderValue === '1') {
-                        $('input[name="Gender"][value="Male"]').prop('checked', true);
-                    } else if (genderValue === 'Female' || genderValue === '2') {
-                        $('input[name="Gender"][value="Female"]').prop('checked', true);
+
+            if (!$form.length) {
+                console.warn('⚠️ [PatientProfile] Form not found:', formId);
+                return;
+            }
+
+            $form.find('#FirstName').val(profile.FirstName || '');
+            $form.find('#LastName').val(profile.LastName || '');
+            $form.find('#NationalCode').val(profile.NationalCode || '');
+            $form.find('#PhoneNumber').val(profile.PhoneNumber || '');
+            $form.find('#Email').val(profile.Email || '');
+            $form.find('#BirthDate').val(profile.BirthDate || '');
+            $form.find('#Address').val(profile.Address || '');
+
+            // جنسیت — پشتیبانی از PascalCase/camelCase، رشته و عدد (enum از API)
+            var rawGender = profile.Gender !== undefined ? profile.Gender : profile.gender;
+            var $genderRadios = $form.find('input[name="Gender"]');
+            $genderRadios.prop('checked', false);
+            if (rawGender !== undefined && rawGender !== null && rawGender !== '') {
+                var genderValue = (typeof rawGender === 'string' ? rawGender.trim() : String(rawGender));
+                // نرمال: 1 یا "1" -> Male، 2 یا "2" -> Female، حروف کوچک/بزرگ
+                if (genderValue === '1' || genderValue.toLowerCase() === 'male') genderValue = 'Male';
+                else if (genderValue === '2' || genderValue.toLowerCase() === 'female') genderValue = 'Female';
+                else if (genderValue === '0' || genderValue === 'Unknown' || genderValue === 'نامشخص') genderValue = '';
+
+                if (genderValue === 'Male' || genderValue === 'Female') {
+                    var $radio = $form.find('input[name="Gender"][value="' + genderValue + '"]');
+                    if ($radio.length) {
+                        $radio.prop('checked', true);
+                        console.log('✅ [PatientProfile] Gender set:', genderValue);
+                    } else {
+                        console.warn('⚠️ [PatientProfile] Gender radio not found for value:', genderValue, '- available:', $genderRadios.map(function() { return $(this).val(); }).get());
                     }
                 }
-            } else {
-                console.warn('⚠️ [PatientProfile] No gender value in profile data');
             }
-            
+
             console.log('✅ [PatientProfile] Form populated successfully');
         },
 
-        // ✅ Update Display (Sidebar)
+        // ✅ Update Display (Sidebar) — پشتیبانی از PascalCase و camelCase
         updateDisplay: function(profile) {
-            const fullName = (profile.FirstName || '') + ' ' + (profile.LastName || '');
-            $('#displayFullName').text(fullName.trim() || 'نام کاربر');
-            $('#displayNationalCode').text('کد ملی: ' + (profile.NationalCode || '-'));
+            if (!profile) return;
+            var first = profile.FirstName || profile.firstName || '';
+            var last = profile.LastName || profile.lastName || '';
+            var nc = profile.NationalCode || profile.nationalCode || '-';
+            $('#displayFullName').text((first + ' ' + last).trim() || 'نام کاربر');
+            $('#displayNationalCode').text('کد ملی: ' + nc);
         },
 
         // ✅ Bind Events

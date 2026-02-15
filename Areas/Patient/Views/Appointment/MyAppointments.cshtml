@@ -81,6 +81,7 @@
                     <select id="status" name="status" class="form-control form-control-medical">
                         <option value="">همه</option>
                         <option value="Scheduled" @(Model?.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Scheduled ? "selected" : "")>رزرو شده</option>
+                        <option value="Pending" @(Model?.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Pending ? "selected" : "")>نیاز به پرداخت</option>
                         <option value="Completed" @(Model?.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Completed ? "selected" : "")>تکمیل شده</option>
                         <option value="Cancelled" @(Model?.StatusFilter == ClinicApp.Models.Enums.AppointmentStatus.Cancelled ? "selected" : "")>لغو شده</option>
                     </select>

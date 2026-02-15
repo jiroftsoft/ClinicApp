@@ -1,4 +1,4 @@
-﻿using ClinicApp.Core;
+using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -127,10 +127,11 @@ namespace ClinicApp.Services
                 _log.Debug("[SendLoginOtp] ✓ Account not locked");
 
                 // Step 5: Apply Rate Limiting
+                // ✅ OPTIMIZATION: Changed to 10 minutes per checklist (3 requests per 10 minutes)
                 _log.Debug("[SendLoginOtp] Step 5: Checking rate limits");
                 var clientIp = _clientProvider.GetClientIpAddress();
-                if (_rateLimiter.IsRateLimited($"login_otp_send_nc:{normalizedCode}", _authSettings.OtpMaxSendsPerNationalCodePer5Min, TimeSpan.FromMinutes(5)) ||
-                    _rateLimiter.IsRateLimited($"login_otp_send_ip:{clientIp}", _authSettings.OtpMaxSendsPerIpPer5Min, TimeSpan.FromMinutes(5)))
+                if (_rateLimiter.IsRateLimited($"login_otp_send_nc:{normalizedCode}", _authSettings.OtpMaxSendsPerNationalCodePer10Min, TimeSpan.FromMinutes(10)) ||
+                    _rateLimiter.IsRateLimited($"login_otp_send_ip:{clientIp}", _authSettings.OtpMaxSendsPerIpPer10Min, TimeSpan.FromMinutes(10)))
                 {
                     _log.Warning("[SendLoginOtp] FAILED - Rate limit exceeded - IP: {IP}, MaskedNC: {MaskedNC}", 
                         clientIp, MaskHelper.MaskNationalCode(normalizedCode));
@@ -169,14 +170,13 @@ namespace ClinicApp.Services
                 _log.Debug("[SendLoginOtp] ✓ OTP state stored to Session - Expiry: {Expiry}", state.ExpiryUtc);
 
                 // ✅ CRITICAL: ALWAYS save to database (not dependent on session)
-                // Remove old OTP states for this user
-                var oldStates = _context.OtpStates
-                    .Where(o => o.NationalCode == normalizedCode)
-                    .ToList();
-                if (oldStates.Any())
+                // ✅ OPTIMIZATION: Use ExecuteSqlCommand for bulk delete (more efficient than RemoveRange)
+                var oldStatesCount = await _context.Database.ExecuteSqlCommandAsync(
+                    "DELETE FROM OtpStates WHERE NationalCode = {0}",
+                    normalizedCode);
+                if (oldStatesCount > 0)
                 {
-                    _context.OtpStates.RemoveRange(oldStates);
-                    _log.Debug("[SendLoginOtp] Removed {Count} old OTP states from database", oldStates.Count);
+                    _log.Debug("[SendLoginOtp] Removed {Count} old OTP states from database", oldStatesCount);
                 }
 
                 // Add new OTP state (sessionId is optional)
@@ -204,11 +204,13 @@ namespace ClinicApp.Services
                 var otpLog = new OtpRequest { PhoneNumber = user.PhoneNumber, OtpCodeHash = otpHash };
                 _context.OtpRequests.Add(otpLog);
                 
-                // ✅ CRITICAL: Save both OtpStateEntity and OtpRequest
+                // ✅ CRITICAL: Save both OtpStateEntity and OtpRequest in single transaction
                 var saveResult = await _context.SaveChangesAsync();
                 _log.Information("💾 [SendLoginOtp] Database save complete - Entities saved: {Count}", saveResult);
                 
-                // ✅ VERIFICATION: Query database to confirm OTP state was saved
+                // ✅ OPTIMIZATION: Removed verification query (only needed in debug mode)
+                // If verification is needed, enable only in DEBUG builds:
+                #if DEBUG
                 var verifyState = await _context.OtpStates
                     .Where(o => o.NationalCode == normalizedCode && o.ExpiryUtc > DateTime.UtcNow)
                     .OrderByDescending(o => o.CreatedAt)
@@ -216,13 +218,14 @@ namespace ClinicApp.Services
                 
                 if (verifyState != null)
                 {
-                    _log.Information("✅ [SendLoginOtp] OTP state verified in database - DbId: {DbId}, Expiry: {Expiry}", 
+                    _log.Debug("✅ [SendLoginOtp] OTP state verified in database - DbId: {DbId}, Expiry: {Expiry}", 
                         verifyState.Id, verifyState.ExpiryUtc);
                 }
                 else
                 {
-                    _log.Error("❌ [SendLoginOtp] CRITICAL: OTP state NOT found in database after save!");
+                    _log.Warning("⚠️ [SendLoginOtp] OTP state not found in database after save (DEBUG mode)");
                 }
+                #endif
 
                 // Send SMS
                 _log.Debug("[SendLoginOtp] Sending SMS to: {MaskedPhone}", 
@@ -361,38 +364,36 @@ namespace ClinicApp.Services
                 // --- فرآیندهای پس از تایید موفقیت‌آمیز ---
 
                 // مرحله ۵: تکمیل ردپای حسابرسی (Audit Trail)
-                var otpLog = await _context.OtpRequests
-                    .Where(r => r.PhoneNumber == user.PhoneNumber && r.OtpCodeHash == incomingHash && !r.IsVerified)
-                    .OrderByDescending(r => r.RequestTime)
-                    .FirstOrDefaultAsync();
-
-                if (otpLog != null)
+                // ✅ OPTIMIZATION: Use ExecuteSqlCommand for bulk update (more efficient than query + update)
+                var otpLogUpdated = await _context.Database.ExecuteSqlCommandAsync(
+                    "UPDATE OtpRequests SET IsVerified = 1, UpdatedAt = {1} WHERE PhoneNumber = {0} AND OtpCodeHash = {2} AND IsVerified = 0",
+                    user.PhoneNumber, DateTime.UtcNow, incomingHash);
+                
+                if (otpLogUpdated > 0)
                 {
-                    otpLog.IsVerified = true; // علامت‌گذاری به عنوان "استفاده شده"
+                    _log.Debug("[VerifyLoginOtp] Updated {Count} OTP request(s) as verified", otpLogUpdated);
                 }
 
                 // مرحله ۶: پاک‌سازی و ورود نهایی
                 _otpStateStore.ClearState(); // جلوگیری از استفاده مجدد از OTP (Session)
                 
-                // ✅ Also clear from database
-                var dbStatesToClear = _context.OtpStates
-                    .Where(o => o.NationalCode == normalizedCode)
-                    .ToList();
-                if (dbStatesToClear.Any())
+                // ✅ OPTIMIZATION: Use ExecuteSqlCommand for bulk delete (more efficient)
+                var clearedCount = await _context.Database.ExecuteSqlCommandAsync(
+                    "DELETE FROM OtpStates WHERE NationalCode = {0}",
+                    normalizedCode);
+                if (clearedCount > 0)
                 {
-                    _context.OtpStates.RemoveRange(dbStatesToClear);
-                    _log.Debug("[VerifyLoginOtp] Cleared {Count} OTP state(s) from database", dbStatesToClear.Count);
+                    _log.Debug("[VerifyLoginOtp] Cleared {Count} OTP state(s) from database", clearedCount);
                 }
                 
                 await _userManager.ResetAccessFailedCountAsync(user.Id); // ریست کردن شمارنده خطاهای ورود
 
                 // ✅ CRITICAL: اطمینان از وجود رکورد Patient (Auto-Create if needed)
-                await EnsurePatientRecordExistsAsync(user);
+                await EnsurePatientRecordExistsForUserAsync(user);
 
                 await SignInUserAsync(user, isPersistent: false); // ورود کاربر و آپدیت LastLoginDate
 
-                // مرحله ۷: ذخیره تمام تغییرات در دیتابیس (آپدیت OtpRequest و LastLoginDate) در یک تراکنش
-                await _context.SaveChangesAsync();
+                // ✅ OPTIMIZATION: LastLoginDate already saved in SignInUserAsync, no need for extra SaveChangesAsync
 
                 // مرحله ۸: ثبت تاریخچه ورود (Login History)
                 var sessionId = HttpContext.Current?.Session?.SessionID;
@@ -403,7 +404,7 @@ namespace ClinicApp.Services
                     sessionId: sessionId
                 );
 
-                _log.Information("ورود موفق کاربر {UserId} با کد ملی {NationalCode}. لاگ OTP با شناسه {OtpLogId} تایید شد.", user.Id, normalizedCode, otpLog?.OtpRequestId);
+                _log.Information("ورود موفق کاربر {UserId} با کد ملی {NationalCode}.", user.Id, normalizedCode);
                 return ServiceResult.Successful("ورود با موفقیت انجام شد.");
             }
             catch (Exception ex)
@@ -534,9 +535,10 @@ namespace ClinicApp.Services
                 }
 
                 // مرحله ۳: اعمال محدودیت نرخ درخواست برای جلوگیری از حملات اسپم
+                // ✅ OPTIMIZATION: Changed to 10 minutes per checklist (3 requests per 10 minutes)
                 var clientIp = _clientProvider.GetClientIpAddress();
-                if (_rateLimiter.IsRateLimited($"reg_otp_send_nc:{nationalCode}", _authSettings.OtpMaxSendsPerNationalCodePer5Min, TimeSpan.FromMinutes(5)) ||
-                    _rateLimiter.IsRateLimited($"reg_otp_send_ip:{clientIp}", _authSettings.OtpMaxSendsPerIpPer5Min, TimeSpan.FromMinutes(5)))
+                if (_rateLimiter.IsRateLimited($"reg_otp_send_nc:{nationalCode}", _authSettings.OtpMaxSendsPerNationalCodePer10Min, TimeSpan.FromMinutes(10)) ||
+                    _rateLimiter.IsRateLimited($"reg_otp_send_ip:{clientIp}", _authSettings.OtpMaxSendsPerIpPer10Min, TimeSpan.FromMinutes(10)))
                 {
                     return ServiceResult.Failed("تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً دقایقی دیگر تلاش کنید.", "RATE_LIMIT_EXCEEDED");
                 }
@@ -613,20 +615,16 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
         }
 
         // ✅ --- FINAL STEP: UPDATE THE DATABASE AUDIT LOG ---
+        // ✅ OPTIMIZATION: Use ExecuteSqlCommand for bulk update (more efficient than query + update)
         try
         {
-            // Find the original log record in the database
-            var otpLog = await _context.OtpRequests
-                .Where(r => r.PhoneNumber == normalizedPhone && r.OtpCodeHash == incomingHash && !r.IsVerified)
-                .OrderByDescending(r => r.RequestTime)
-                .FirstOrDefaultAsync();
-
-            if (otpLog != null)
+            var otpLogUpdated = await _context.Database.ExecuteSqlCommandAsync(
+                "UPDATE OtpRequests SET IsVerified = 1, UpdatedAt = {1} WHERE PhoneNumber = {0} AND OtpCodeHash = {2} AND IsVerified = 0",
+                normalizedPhone, DateTime.UtcNow, incomingHash);
+            
+            if (otpLogUpdated > 0)
             {
-                otpLog.IsVerified = true;
-                // The DbContext will automatically handle UpdatedAt and UpdatedByUserId on save
-                await _context.SaveChangesAsync();
-                _log.Information("Registration OTP for {PhoneNumber} was verified and Log ID {OtpLogId} was updated.", phoneNumber, otpLog.OtpRequestId);
+                _log.Information("Registration OTP for {PhoneNumber} was verified - {Count} log(s) updated.", phoneNumber, otpLogUpdated);
             }
             else
             {
@@ -768,38 +766,95 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
         /// Auto-creates Patient entity if user has "Patient" role but no Patient record
         /// Healthcare-Grade: Required for Patient area access
         /// </summary>
-        private async Task EnsurePatientRecordExistsAsync(ApplicationUser user)
+        private async Task EnsurePatientRecordExistsForUserAsync(ApplicationUser user)
         {
             try
             {
-                // Check if user has Patient role
+                _log.Information("[PatientLink] EnsureStep1 - GetRoles for UserId={UserId}", user.Id);
                 var roles = await _userManager.GetRolesAsync(user.Id);
                 if (!roles.Contains(AppRoles.Patient))
                 {
-                    _log.Debug("User {UserId} does not have Patient role - skipping Patient record creation", user.Id);
-                    return;
+                    _log.Information("[PatientLink] EnsureStep2 - Add Patient role for UserId={UserId}", user.Id);
+                    var addResult = await _userManager.AddToRoleAsync(user.Id, AppRoles.Patient);
+                    if (!addResult.Succeeded)
+                    {
+                        _log.Warning("[PatientLink] EnsureStep2 FAIL - AddToRole failed. UserId={UserId}, Errors={Errors}", user.Id, string.Join("; ", addResult.Errors ?? Array.Empty<string>()));
+                        return;
+                    }
+                    _log.Information("[PatientLink] EnsureStep2 - Patient role added OK");
                 }
 
-                // Check if Patient record already exists
+                _log.Information("[PatientLink] EnsureStep3 - Query Patient by ApplicationUserId={UserId}", user.Id);
                 var existingPatient = await _context.Patients
                     .FirstOrDefaultAsync(p => p.ApplicationUserId == user.Id && !p.IsDeleted);
-                
                 if (existingPatient != null)
                 {
-                    _log.Debug("Patient record already exists for user {UserId} - PatientId: {PatientId}", 
-                        user.Id, existingPatient.PatientId);
+                    _log.Information("[PatientLink] EnsureStep3 - FOUND existing PatientId={PatientId}, return", existingPatient.PatientId);
+                    return;
+                }
+                _log.Information("[PatientLink] EnsureStep3 - No patient for this UserId, continue");
+
+                if (!string.IsNullOrEmpty(user.NationalCode))
+                {
+                    _log.Information("[PatientLink] EnsureStep4 - Search by NationalCode (plain) NC={NC}", MaskHelper.MaskNationalCode(user.NationalCode));
+                    var patientByNationalCode = await _context.Patients
+                        .FirstOrDefaultAsync(p => p.NationalCode == user.NationalCode && !p.IsDeleted);
+                    if (patientByNationalCode != null)
+                    {
+                        if (string.IsNullOrEmpty(patientByNationalCode.ApplicationUserId))
+                        {
+                            _log.Information("[PatientLink] EnsureStep4 - LINK by NC (plain match) PatientId={PatientId} -> UserId={UserId}", patientByNationalCode.PatientId, user.Id);
+                            patientByNationalCode.ApplicationUserId = user.Id;
+                            patientByNationalCode.UpdatedAt = DateTime.UtcNow;
+                            patientByNationalCode.UpdatedByUserId = user.Id;
+                            await _context.SaveChangesAsync();
+                            return;
+                        }
+                        if (patientByNationalCode.ApplicationUserId == user.Id) { _log.Information("[PatientLink] EnsureStep4 - Already linked, return"); return; }
+                        _log.Warning("[PatientLink] EnsureStep4 - NC already linked to other UserId={Other}", patientByNationalCode.ApplicationUserId);
+                        return;
+                    }
+                    _log.Information("[PatientLink] EnsureStep4 - No plain NC match, try unlinked+decrypt. Loading up to 500 unlinked.");
+                    var unlinkedPatients = await _context.Patients
+                        .Where(p => (p.ApplicationUserId == null || p.ApplicationUserId == "") && !p.IsDeleted)
+                        .Take(500)
+                        .ToListAsync();
+                    _log.Information("[PatientLink] EnsureStep5 - Unlinked count={Count}, decrypt and compare NC", unlinkedPatients.Count);
+                    foreach (var p in unlinkedPatients)
+                    {
+                        try
+                        {
+                            _context.DecryptPatientSensitiveData(p);
+                            if (p.NationalCode == user.NationalCode)
+                            {
+                                _log.Information("[PatientLink] EnsureStep5 - LINK by NC (after decrypt) PatientId={PatientId} -> UserId={UserId}", p.PatientId, user.Id);
+                                p.ApplicationUserId = user.Id;
+                                p.UpdatedAt = DateTime.UtcNow;
+                                p.UpdatedByUserId = user.Id;
+                                await _context.SaveChangesAsync();
+                                return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Debug(ex, "[PatientLink] EnsureStep5 Decrypt skip PatientId={PatientId}", p.PatientId);
+                        }
+                    }
+                    _log.Information("[PatientLink] EnsureStep5 - No match after decrypt, will create new");
+                }
+
+                if (string.IsNullOrEmpty(user.NationalCode))
+                {
+                    _log.Warning("[PatientLink] EnsureStep6 SKIP - NationalCode empty for UserId={UserId}", user.Id);
                     return;
                 }
 
-                // ✅ Auto-create Patient record
-                _log.Information("🏥 Auto-creating Patient record for user {UserId} ({NationalCode})", 
-                    user.Id, MaskHelper.MaskNationalCode(user.NationalCode));
-
+                _log.Information("[PatientLink] EnsureStep6 - Create new Patient for UserId={UserId}, NC={NC}", user.Id, MaskHelper.MaskNationalCode(user.NationalCode));
                 var patient = new Models.Entities.Patient.Patient
                 {
                     ApplicationUserId = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
+                    FirstName = string.IsNullOrEmpty(user.FirstName) ? "کاربر" : user.FirstName,
+                    LastName = string.IsNullOrEmpty(user.LastName) ? "-" : user.LastName,
                     NationalCode = user.NationalCode,
                     PhoneNumber = user.PhoneNumber,
                     Gender = user.Gender,
@@ -807,18 +862,56 @@ public async Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode,
                     UpdatedByUserId = user.Id,
                     IsDeleted = false
                 };
-                
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
-                
-                _log.Information("✅ Patient record auto-created successfully - PatientId: {PatientId}, UserId: {UserId}", 
-                    patient.PatientId, user.Id);
+                _log.Information("[PatientLink] EnsureStep6 - Patient CREATED PatientId={PatientId}, UserId={UserId}", patient.PatientId, user.Id);
+            }
+            catch (System.Data.Entity.Infrastructure.DbUpdateException dbEx)
+            {
+                _log.Warning(dbEx, "[PatientLink] EnsureStep EXCEPTION DbUpdateException UserId={UserId} (likely duplicate NationalCode)", user.Id);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "❌ Failed to auto-create Patient record for user {UserId}", user.Id);
-                // Don't throw - allow login to proceed even if Patient creation fails
-                // User can complete profile later
+                _log.Error(ex, "[PatientLink] EnsureStep EXCEPTION UserId={UserId}", user.Id);
+            }
+        }
+
+        /// <summary>
+        /// اطمینان از وجود رکورد Patient برای userId (برای استفاده در Patient Area وقتی رکورد بیمار یافت نشد).
+        /// </summary>
+        /// <returns>PatientId در صورت وجود/ساخت/لینک، وگرنه null (تا کنترلر همان Id را استفاده کند و به کوئری دوم از context دیگر وابسته نباشد)</returns>
+        public async Task<int?> EnsurePatientRecordForUserIdAsync(string userId)
+        {
+            _log.Information("[PatientLink] Ensure START UserId={UserId}", userId ?? "NULL");
+            if (string.IsNullOrEmpty(userId))
+            {
+                _log.Warning("[PatientLink] Ensure FAIL - userId null or empty");
+                return null;
+            }
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _log.Warning("[PatientLink] Ensure FAIL - User not found UserId={UserId}", userId);
+                    return null;
+                }
+                _log.Information("[PatientLink] Ensure - User found UserId={UserId}, NC={NC}, FirstName={Fn}, LastName={Ln}", userId, MaskHelper.MaskNationalCode(user.NationalCode), user.FirstName ?? "", user.LastName ?? "");
+                await EnsurePatientRecordExistsForUserAsync(user);
+                var patient = await _context.Patients
+                    .Where(p => p.ApplicationUserId == userId && !p.IsDeleted)
+                    .Select(p => new { p.PatientId })
+                    .FirstOrDefaultAsync();
+                var patientId = patient?.PatientId ?? 0;
+                _log.Information("[PatientLink] Ensure END - exists={Exists}, PatientId={PatientId} for UserId={UserId}", patientId != 0, patientId != 0 ? patientId : (int?)null, userId);
+                if (patientId == 0)
+                    _log.Warning("[PatientLink] Ensure FAIL - No Patient row after Ensure. See EnsureStep logs above.");
+                return patientId != 0 ? (int?)patientId : null;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "[PatientLink] Ensure EXCEPTION UserId={UserId}", userId);
+                return null;
             }
         }
 

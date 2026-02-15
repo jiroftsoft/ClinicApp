@@ -79,9 +79,17 @@ public class HttpContextClientInfoProvider : IClientInfoProvider
         int OtpLength { get; }
         int OtpExpiryMinutes { get; }
         string OtpHashKey { get; }
-        int OtpMaxSendsPerNationalCodePer5Min { get; }
-        int OtpMaxSendsPerIpPer5Min { get; }
+        // ✅ OPTIMIZATION: Changed to 10 minutes per checklist
+        int OtpMaxSendsPerNationalCodePer10Min { get; }
+        int OtpMaxSendsPerIpPer10Min { get; }
         int OtpFailedMaxAttempts { get; }
         int OtpLockoutMinutes { get; }
         int OtpMaxVerificationAttempts { get; } // ✅ حداکثر تلاش برای تایید یک OTP (پیش‌فرض: 5)
+        
+        // ✅ Backward compatibility (deprecated)
+        [Obsolete("Use OtpMaxSendsPerNationalCodePer10Min instead")]
+        int OtpMaxSendsPerNationalCodePer5Min { get; }
+        
+        [Obsolete("Use OtpMaxSendsPerIpPer10Min instead")]
+        int OtpMaxSendsPerIpPer5Min { get; }
     }

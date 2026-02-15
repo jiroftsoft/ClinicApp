@@ -1,0 +1,647 @@
+/**
+ * Patient Portal Layout — حرفه‌ای، مدرن، درمانی
+ * هدف: اعتماد، راحتی، خرسندی — رسمی و کاربرپسند
+ * طراحی هماهنگ با patient-dashboard-unified.css
+ */
+
+/* ========================================
+   Design Tokens — محیط درمانی و اعتماد
+   ======================================== */
+:root {
+    /* Primary — آبی آرام و قابل اعتماد (کلینیک) */
+    --pl-primary: #1a5f7a;
+    --pl-primary-hover: #2486a8;
+    --pl-primary-soft: rgba(26, 95, 122, 0.12);
+    --pl-primary-soft-bg: rgba(26, 95, 122, 0.06);
+
+    /* Semantic */
+    --pl-success: #0d7d5c;
+    --pl-success-soft: rgba(13, 125, 92, 0.12);
+    --pl-danger: #c53030;
+    --pl-warning: #b8860b;
+    --pl-info: #0a6b8a;
+
+    /* Neutrals */
+    --pl-text: #1e293b;
+    --pl-text-muted: #64748b;
+    --pl-border: #e2e8f0;
+    --pl-bg: #f8fafc;
+    --pl-card-bg: #ffffff;
+    --pl-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --pl-card-shadow-hover: 0 4px 20px rgba(26, 95, 122, 0.08);
+
+    /* Layout */
+    --pl-sidebar-width: 268px;
+    --pl-sidebar-collapsed-width: 72px;
+    --pl-navbar-height: 64px;
+    --pl-radius: 12px;
+    --pl-radius-sm: 8px;
+    --pl-transition: 0.25s ease;
+
+    /* Sidebar */
+    --pl-sidebar-bg: var(--pl-card-bg);
+    --pl-sidebar-border: var(--pl-border);
+    --pl-sidebar-item-hover: var(--pl-primary-soft-bg);
+    --pl-sidebar-item-active-bg: var(--pl-primary-soft);
+    --pl-sidebar-item-active-text: var(--pl-primary);
+
+    /* Navbar */
+    --pl-navbar-bg: var(--pl-primary);
+    --pl-navbar-text: #ffffff;
+    --pl-navbar-hover: rgba(255, 255, 255, 0.12);
+
+    /* سازگاری با کامپوننت‌های موجود */
+    --medical-primary: var(--pl-primary);
+    --content-bg: var(--pl-bg);
+}
+
+/* ========================================
+   Base — تایپوگرافی و بدنه
+   ======================================== */
+body.patient-portal-body {
+    font-family: 'Vazir', 'Shabnam', 'Tahoma', sans-serif !important;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--pl-text);
+    background-color: var(--pl-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* ========================================
+   Top Navbar — رسمی و تمیز
+   ======================================== */
+.patient-navbar-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--pl-navbar-height);
+    background: var(--pl-navbar-bg);
+    box-shadow: 0 2px 12px rgba(26, 95, 122, 0.2);
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    transition: box-shadow var(--pl-transition);
+}
+
+.patient-navbar-top .navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.patient-navbar-top .sidebar-toggle {
+    background: none;
+    border: none;
+    color: var(--pl-navbar-text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--pl-radius-sm);
+    transition: background var(--pl-transition);
+    opacity: 0.95;
+}
+
+.patient-navbar-top .sidebar-toggle:hover {
+    background: var(--pl-navbar-hover);
+    opacity: 1;
+}
+
+.patient-navbar-top .sidebar-toggle:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+.patient-navbar-top .navbar-brand {
+    color: var(--pl-navbar-text) !important;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.patient-navbar-top .navbar-brand:hover {
+    color: var(--pl-navbar-text) !important;
+    opacity: 0.95;
+}
+
+.patient-navbar-top .navbar-right {
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.patient-navbar-top .navbar-notifications {
+    position: relative;
+    color: var(--pl-navbar-text);
+    font-size: 1.15rem;
+    cursor: pointer;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--pl-radius-sm);
+    transition: background var(--pl-transition);
+    opacity: 0.95;
+}
+
+.patient-navbar-top .navbar-notifications:hover {
+    background: var(--pl-navbar-hover);
+    opacity: 1;
+}
+
+.patient-navbar-top .notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--pl-danger);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.patient-navbar-top .navbar-user-button {
+    background: none;
+    border: none;
+    color: var(--pl-navbar-text);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--pl-radius-sm);
+    transition: background var(--pl-transition);
+    font: inherit;
+}
+
+.patient-navbar-top .navbar-user-button:hover {
+    background: var(--pl-navbar-hover);
+}
+
+.patient-navbar-top .navbar-user-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+.patient-navbar-top .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.patient-navbar-top .user-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* User dropdown — حرفه‌ای و خوانا */
+.patient-navbar-top .user-dropdown {
+    min-width: 280px;
+    padding: 0.5rem 0;
+    border: 1px solid var(--pl-border);
+    border-radius: var(--pl-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.patient-navbar-top .user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.75rem 1rem;
+}
+
+.patient-navbar-top .user-avatar-large {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--pl-primary-soft);
+    color: var(--pl-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.patient-navbar-top .user-name-large {
+    font-weight: 600;
+    color: var(--pl-text);
+    font-size: 0.95rem;
+}
+
+.patient-navbar-top .user-email-small {
+    font-size: 0.8rem;
+    color: var(--pl-text-muted);
+}
+
+.patient-navbar-top .user-dropdown .dropdown-item {
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--pl-text);
+    border-radius: 0;
+}
+
+.patient-navbar-top .user-dropdown .dropdown-item:hover {
+    background: var(--pl-primary-soft-bg);
+    color: var(--pl-primary);
+}
+
+.patient-navbar-top .user-dropdown .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    opacity: 0.85;
+}
+
+.patient-navbar-top .user-dropdown form {
+    margin: 0;
+}
+
+.patient-navbar-top .user-dropdown form button {
+    width: 100%;
+    text-align: right;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0.55rem 1rem;
+    font: inherit;
+    color: var(--pl-danger);
+}
+
+.patient-navbar-top .user-dropdown form button:hover {
+    background: rgba(197, 48, 48, 0.08);
+}
+
+/* ========================================
+   Sidebar — آرام و قابل اعتماد
+   ======================================== */
+.patient-sidebar {
+    position: fixed;
+    top: var(--pl-navbar-height);
+    right: 0;
+    width: var(--pl-sidebar-width);
+    height: calc(100vh - var(--pl-navbar-height));
+    background: var(--pl-sidebar-bg);
+    border-left: 1px solid var(--pl-sidebar-border);
+    transition: width var(--pl-transition), transform var(--pl-transition);
+    z-index: 1020;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.04);
+}
+
+.patient-sidebar.collapsed {
+    width: var(--pl-sidebar-collapsed-width);
+}
+
+.patient-sidebar .sidebar-header {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--pl-sidebar-border);
+    text-align: center;
+}
+
+.patient-sidebar .sidebar-user-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--pl-primary-soft);
+    color: var(--pl-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 auto 0.6rem;
+}
+
+.patient-sidebar .sidebar-user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--pl-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.patient-sidebar .sidebar-user-role {
+    font-size: 0.8rem;
+    color: var(--pl-text-muted);
+}
+
+.patient-sidebar .sidebar-nav {
+    padding: 0.75rem 0;
+}
+
+.patient-sidebar .sidebar-nav-item {
+    margin: 0.2rem 0.75rem;
+}
+
+.patient-sidebar .sidebar-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 1rem;
+    color: var(--pl-text);
+    text-decoration: none;
+    border-radius: var(--pl-radius-sm);
+    transition: background var(--pl-transition), color var(--pl-transition);
+    font-size: 0.9rem;
+}
+
+.patient-sidebar .sidebar-nav-link:hover {
+    background: var(--pl-sidebar-item-hover);
+    color: var(--pl-primary);
+}
+
+.patient-sidebar .sidebar-nav-link.active {
+    background: var(--pl-sidebar-item-active-bg);
+    color: var(--pl-sidebar-item-active-text);
+    font-weight: 600;
+    border-left: 3px solid var(--pl-sidebar-item-active-text);
+}
+
+.patient-sidebar .sidebar-nav-link:focus-visible {
+    outline: 2px solid var(--pl-primary);
+    outline-offset: 2px;
+}
+
+.patient-sidebar .sidebar-nav-icon {
+    width: 22px;
+    text-align: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.patient-sidebar .sidebar-nav-text {
+    white-space: nowrap;
+}
+
+.patient-sidebar.collapsed .sidebar-nav-text,
+.patient-sidebar.collapsed .sidebar-user-name,
+.patient-sidebar.collapsed .sidebar-user-role {
+    display: none;
+}
+
+.patient-sidebar.collapsed .sidebar-header {
+    padding: 1rem 0.5rem;
+}
+
+.patient-sidebar .sidebar-nav hr {
+    margin: 0.75rem 1rem;
+    border-color: var(--pl-sidebar-border);
+}
+
+/* ========================================
+   Main Content — فضای خوانا و آرام
+   ======================================== */
+.patient-content {
+    margin-top: var(--pl-navbar-height);
+    margin-right: var(--pl-sidebar-width);
+    padding: 1.75rem 2rem;
+    min-height: calc(100vh - var(--pl-navbar-height));
+    transition: margin-right var(--pl-transition);
+}
+
+.patient-content.sidebar-collapsed {
+    margin-right: var(--pl-sidebar-collapsed-width);
+}
+
+.patient-content .breadcrumb-container {
+    margin-bottom: 1.25rem;
+}
+
+.patient-content .breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.patient-content .breadcrumb-item a {
+    color: var(--pl-primary);
+    text-decoration: none;
+}
+
+.patient-content .breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.patient-content .breadcrumb-item a:focus-visible {
+    outline: 2px solid var(--pl-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.patient-content .breadcrumb-item.active {
+    color: var(--pl-text-muted);
+}
+
+.patient-content .content-card {
+    background: var(--pl-card-bg);
+    border-radius: var(--pl-radius);
+    box-shadow: var(--pl-card-shadow);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--pl-border);
+}
+
+.patient-content .content-card-header {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--pl-text);
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--pl-border);
+}
+
+/* ========================================
+   Footer — رسمی و اعتماد‌ساز
+   ======================================== */
+.patient-footer {
+    background: var(--pl-text);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+}
+
+.patient-footer .mb-0 {
+    margin-bottom: 0;
+}
+
+.patient-footer .mt-2 {
+    margin-top: 0.5rem;
+}
+
+.patient-footer-year {
+    opacity: 0.85;
+    font-size: 0.85rem;
+}
+
+.patient-footer-trust {
+    opacity: 0.75;
+    font-size: 0.8rem;
+    max-width: 32em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ========================================
+   Loading Overlay — هماهنگ با تم
+   ======================================== */
+#loadingOverlay.patient-layout-loading {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 95, 122, 0.08);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#loadingOverlay.patient-layout-loading.active {
+    display: flex;
+}
+
+#loadingOverlay.patient-layout-loading .loading-spinner {
+    background: var(--pl-card-bg);
+    padding: 2rem 2.5rem;
+    border-radius: var(--pl-radius);
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--pl-border);
+}
+
+#loadingOverlay.patient-layout-loading .spinner-border {
+    color: var(--pl-primary) !important;
+}
+
+#loadingOverlay.patient-layout-loading .mt-3.mb-0 {
+    color: var(--pl-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   Help Modal — هماهنگ با layout
+   ======================================== */
+#patientHelpModal .modal-header {
+    background: var(--pl-primary);
+    color: white;
+    border-radius: var(--pl-radius) var(--pl-radius) 0 0;
+}
+
+#patientHelpModal .modal-content {
+    border-radius: var(--pl-radius);
+    border: 1px solid var(--pl-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+#patientHelpModal .modal-body {
+    font-size: 0.95rem;
+}
+
+#patientHelpModal .alert-info {
+    background: var(--pl-primary-soft-bg);
+    border-color: var(--pl-border);
+    color: var(--pl-text);
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+@media (max-width: 991px) {
+    .patient-sidebar {
+        transform: translateX(100%);
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .patient-sidebar.show {
+        transform: translateX(0);
+    }
+
+    .patient-content {
+        margin-right: 0;
+        padding: 1.25rem 1rem;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(30, 41, 59, 0.4);
+        z-index: 1015;
+        transition: opacity var(--pl-transition);
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .patient-sidebar,
+    .patient-content,
+    .patient-navbar-top .sidebar-toggle,
+    .patient-navbar-top .navbar-user-button,
+    .patient-sidebar .sidebar-nav-link {
+        transition: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .patient-navbar-top {
+        padding: 0 1rem;
+    }
+
+    .patient-navbar-top .navbar-brand {
+        font-size: 1.05rem;
+    }
+
+    .patient-navbar-top .user-name {
+        display: none;
+    }
+
+    .patient-content {
+        padding: 1rem;
+    }
+
+    .patient-content .content-card {
+        padding: 1.25rem 1rem;
+    }
+
+    .patient-footer {
+        padding: 1.25rem 1rem;
+        font-size: 0.85rem;
+    }
+}

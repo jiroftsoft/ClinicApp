@@ -71,12 +71,7 @@
     </form>
 </div>
 
-<!-- ✅ Diagnostic: نمایش وضعیت احراز هویت (فقط در Debug Mode) -->
-@* ✅ FIX Issue 3: Conditional Rendering برای Diagnostic View - طبق SELECT_DOCTOR_MODULE_REVIEW.md *@
-@if (this.Context.IsDebuggingEnabled)
-{
-    @Html.Partial("_AuthDiagnostic")
-}
+@* ✅ PRODUCTION: بلوک تشخیص احراز هویت حذف شد — در پروداکشن نباید userId/نقش‌ها در UI نمایش داده شوند. برای عیب‌یابی از لاگ سرور یا endpoint امن استفاده شود. *@
 
 <!-- لیست پزشکان -->
 <div class="doctors-container" id="doctorsContainer">

@@ -1,0 +1,257 @@
+{
+  "project_info": {
+    "name": "ClinicApp",
+    "type": "Medical Appointment Booking System",
+    "backend": "ASP.NET MVC / C#",
+    "date": "2025-01-27",
+    "version": "1.0"
+  },
+  "otp_config": {
+    "otp_usage": ["login", "signup"],
+    "otp_length": 6,
+    "otp_ttl_seconds": 120,
+    "otp_hashed": true,
+    "otp_hash_algorithm": "HMACSHA256",
+    "otp_salt": "phone_number",
+    "otp_storage": "session_and_database",
+    "otp_deletion_after_verify": true
+  },
+  "user_detection": {
+    "method": "auto",
+    "identifier": "national_code",
+    "validation": {
+      "national_code_validator": "IranianNationalCodeValidator",
+      "phone_normalizer": "PersianNumberHelper.ToEnglishNumbers"
+    },
+    "response_time_target_ms": 300
+  },
+  "rate_limiting": {
+    "send_otp_per_national_code": {
+      "max_attempts": 3,
+      "time_window_minutes": 5,
+      "implementation": "MemoryCacheRateLimiter"
+    },
+    "send_otp_per_ip": {
+      "max_attempts": 10,
+      "time_window_minutes": 5,
+      "implementation": "MemoryCacheRateLimiter"
+    },
+    "verify_otp": {
+      "max_attempts": 5,
+      "tracking": "OtpState.AttemptCount"
+    }
+  },
+  "brute_force_protection": {
+    "max_verification_attempts": 5,
+    "lockout_minutes": 15,
+    "incremental_delay": true,
+    "implementation": "ASP.NET Identity Lockout",
+    "account_lockout_enabled": true
+  },
+  "resend_otp": {
+    "enabled": true,
+    "timer_based": false,
+    "limit": "rate_limiting_applies",
+    "ui_implementation": "needs_verification"
+  },
+  "session_management": {
+    "method": "owin_cookie",
+    "http_only": "needs_verification",
+    "secure_flag": "needs_verification",
+    "same_site": "needs_verification",
+    "session_state": "session_and_database_fallback"
+  },
+  "ui_features": {
+    "separate_inputs": true,
+    "auto_focus": true,
+    "auto_submit": true,
+    "paste_support": true,
+    "countdown_timer": false,
+    "navigation_keys": true,
+    "file": "Content/js/login-otp-manager.js"
+  },
+  "security": {
+    "otp_storage": "hashed",
+    "plain_text_storage": false,
+    "otp_deletion_after_verify": true,
+    "session_binding": true,
+    "ip_tracking": true,
+    "user_agent_tracking": true,
+    "hash_key_source": "Web.config (Otp.HashKey)",
+    "salt_source": "user_phone_number"
+  },
+  "edge_cases": {
+    "expired_otp": {
+      "handled": true,
+      "message": "کد تایید منقضی شده است. لطفاً کد جدیدی دریافت کنید.",
+      "code": "OTP_EXPIRED"
+    },
+    "invalid_otp": {
+      "handled": true,
+      "message": "کد وارد شده صحیح نمی‌باشد.",
+      "code": "OTP_INVALID",
+      "attempt_tracking": true
+    },
+    "invalid_national_code": {
+      "handled": true,
+      "message": "کد ملی وارد شده معتبر نیست.",
+      "code": "INVALID_NATIONAL_CODE"
+    },
+    "page_refresh": {
+      "handled": true,
+      "method": "database_fallback",
+      "implementation": "OtpStateEntity recovery"
+    },
+    "back_button": {
+      "handled": true,
+      "method": "session_and_database_state"
+    },
+    "concurrent_otp": {
+      "handled": true,
+      "method": "invalidate_old_otp_before_new"
+    },
+    "user_not_found": {
+      "handled": true,
+      "flow": "signup_flow"
+    },
+    "account_locked": {
+      "handled": true,
+      "message": "حساب کاربری شما به دلیل تلاش‌های ناموفق قفل شده است.",
+      "code": "ACCOUNT_LOCKED"
+    }
+  },
+  "medical_compliance": {
+    "sms_content_safe": true,
+    "sms_template": "کد ورود کلینیک شفا: {otp}",
+    "no_doctor_name": true,
+    "no_disease_info": true,
+    "no_appointment_details": true,
+    "consent_required": false,
+    "consent_implementation": "needs_verification",
+    "audit_trail": true,
+    "audit_implementation": "Serilog + OtpRequest Entity + LoginHistory"
+  },
+  "performance": {
+    "sms_queue": false,
+    "retry_with_backoff": true,
+    "timeout_configured": true,
+    "fallback_provider": false,
+    "monitoring": "basic_logging",
+    "logging_framework": "Serilog",
+    "structured_logging": true
+  },
+  "code_quality": {
+    "separation_of_concerns": true,
+    "dependency_injection": true,
+    "testable": true,
+    "logging": "structured_serilog",
+    "error_handling": "ServiceResult pattern",
+    "interfaces": {
+      "IAuthService": true,
+      "IOtpStateStore": true,
+      "IRateLimiter": true,
+      "IClientInfoProvider": true,
+      "IAuthSettings": true,
+      "ILoginHistoryService": true
+    }
+  },
+  "key_files": {
+    "core_service": "Services/AuthService.cs",
+    "settings": "Infrastructure/AuthSettingsFromConfig.cs",
+    "otp_model": "Models/Core/OtpRequest.cs",
+    "otp_state_entity": "Models/Core/OtpStateEntity.cs",
+    "ui_handler": "Content/js/login-otp-manager.js",
+    "sms_service": "Services/AsanakSmsService.cs",
+    "controller": "Controllers/AccountController.cs",
+    "auth_config": "App_Start/Startup.Auth.cs"
+  },
+  "checklist_status": {
+    "core_requirements": {
+      "otp_type": "passed",
+      "otp_ttl": "passed",
+      "otp_timer_ui": "needs_implementation"
+    },
+    "user_detection": {
+      "auto_detection": "passed",
+      "normalization": "passed",
+      "response_time": "needs_testing"
+    },
+    "security": {
+      "rate_limiting": "passed",
+      "brute_force_protection": "passed",
+      "otp_hashing": "passed",
+      "salt_usage": "passed"
+    },
+    "ux": {
+      "separate_inputs": "passed",
+      "auto_focus": "passed",
+      "auto_submit": "passed",
+      "paste_support": "passed",
+      "countdown_timer": "needs_implementation",
+      "error_messages": "passed"
+    },
+    "resend": {
+      "timer_based": "needs_implementation",
+      "rate_limiting": "passed"
+    },
+    "session": {
+      "creation": "passed",
+      "cookie_security": "needs_verification"
+    },
+    "edge_cases": {
+      "all_handled": "passed"
+    },
+    "compliance": {
+      "sms_content": "passed",
+      "consent": "needs_implementation",
+      "audit": "passed"
+    },
+    "performance": {
+      "queue": "needs_implementation",
+      "retry": "passed",
+      "fallback": "needs_implementation",
+      "monitoring": "basic"
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "item": "Add countdown timer in UI for better UX",
+      "impact": "user_experience"
+    },
+    {
+      "priority": "high",
+      "item": "Verify Cookie security settings (HttpOnly, Secure, SameSite) in Startup.Auth.cs",
+      "impact": "security"
+    },
+    {
+      "priority": "medium",
+      "item": "Add consent checkbox in Signup flow for legal compliance",
+      "impact": "legal_compliance"
+    },
+    {
+      "priority": "medium",
+      "item": "Implement SMS queue for high load scenarios",
+      "impact": "performance"
+    },
+    {
+      "priority": "medium",
+      "item": "Add fallback SMS provider for reliability",
+      "impact": "reliability"
+    },
+    {
+      "priority": "low",
+      "item": "Implement delivery rate monitoring dashboard",
+      "impact": "monitoring"
+    }
+  ],
+  "production_readiness": {
+    "security": "ready",
+    "functionality": "ready",
+    "ux": "mostly_ready",
+    "compliance": "mostly_ready",
+    "performance": "ready",
+    "overall": "ready_with_recommendations"
+  }
+}
+

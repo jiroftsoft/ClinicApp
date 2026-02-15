@@ -12,6 +12,11 @@
 
 <!-- ✅ Unified Dashboard - Tab-Based SPA Architecture -->
 <div id="unifiedDashboard" class="unified-dashboard-container">
+    @* توکن امنیتی برای درخواست‌های POST از داخل تب‌ها (مثلاً پرداخت سریع در تب نوبت‌ها) *@
+    @using (Html.BeginForm(null, null, FormMethod.Post, new { id = "dashboardAjaxTokenForm", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+    }
     
     <!-- ✅ Dashboard Header with Tab Navigation -->
     <section class="dashboard-header-unified">
@@ -134,6 +139,8 @@
     <script src="~/Content/js/patient-dashboard.js"></script>
     <!-- ✅ Medical Record (برای تب پرونده پزشکی) -->
     <script src="~/Content/js/medical-record.js"></script>
+    <!-- ✅ نوبت‌های من: پرداخت سریع، جزئیات، لغو نوبت (در تب و صفحه مستقل) -->
+    <script src="~/Scripts/patient/appointments.js"></script>
     <!-- ✅ Unified Dashboard SPA Module -->
     <script src="~/Content/js/unified-dashboard.js"></script>
     

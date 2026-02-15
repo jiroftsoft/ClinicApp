@@ -71,6 +71,16 @@ namespace ClinicApp.Services.Appointment
                     patientId, startDate?.ToString("yyyy/MM/dd") ?? "همه", endDate?.ToString("yyyy/MM/dd") ?? "همه");
 
                 var appointments = await _appointmentRepository.GetPatientAppointmentsAsync(patientId, startDate, endDate);
+                var appointmentIds = appointments.Select(a => a.AppointmentId).ToList();
+                // نوبت‌هایی که حداقل یک پرداخت آنلاین موفق دارند — دکمه «پرداخت سریع» نباید برای آن‌ها نمایش داده شود
+                var paidOnlineAppointmentIds = appointmentIds.Count > 0
+                    ? await _context.OnlinePayments
+                        .Where(op => op.AppointmentId.HasValue && appointmentIds.Contains(op.AppointmentId.Value) &&
+                                     op.Status == OnlinePaymentStatus.Successful && !op.IsDeleted)
+                        .Select(op => op.AppointmentId.Value)
+                        .Distinct()
+                        .ToListAsync()
+                    : new List<int>();
 
                 var dtos = appointments.Select(a => new PatientAppointmentDto
                 {
@@ -90,10 +100,11 @@ namespace ClinicApp.Services.Appointment
                     IsOnlineBooking = a.IsOnlineBooking,
                     Duration = a.Duration,
                     CreatedAt = a.CreatedAt,
-                    // ✅ ENTERPRISE-GRADE: تشخیص نوبت‌های نیازمند پرداخت
-                    RequiresPayment = (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Scheduled) && 
-                                      !a.PaymentTransactionId.HasValue && 
-                                      a.Price > 0,
+                    // ✅ نوبت نیاز به پرداخت دارد فقط وقتی: (Pending یا Scheduled) و مبلغ > 0 و هنوز پرداخت موفق (نقد/آنلاین) ثبت نشده
+                    RequiresPayment = (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Scheduled) &&
+                                      a.Price > 0 &&
+                                      !a.PaymentTransactionId.HasValue &&
+                                      !paidOnlineAppointmentIds.Contains(a.AppointmentId),
                     PaymentTransactionId = a.PaymentTransactionId
                 }).ToList();
 
@@ -128,6 +139,9 @@ namespace ClinicApp.Services.Appointment
                     return ServiceResult<PatientAppointmentDto>.Failed("شما اجازه دسترسی به این نوبت را ندارید");
                 }
 
+                var hasSuccessfulOnlinePayment = await _context.OnlinePayments
+                    .AnyAsync(op => op.AppointmentId == appointment.AppointmentId && op.Status == OnlinePaymentStatus.Successful && !op.IsDeleted);
+
                 var dto = new PatientAppointmentDto
                 {
                     AppointmentId = appointment.AppointmentId,
@@ -145,7 +159,12 @@ namespace ClinicApp.Services.Appointment
                     Description = appointment.Description,
                     IsOnlineBooking = appointment.IsOnlineBooking,
                     Duration = appointment.Duration,
-                    CreatedAt = appointment.CreatedAt
+                    CreatedAt = appointment.CreatedAt,
+                    RequiresPayment = (appointment.Status == AppointmentStatus.Pending || appointment.Status == AppointmentStatus.Scheduled) &&
+                                      appointment.Price > 0 &&
+                                      !appointment.PaymentTransactionId.HasValue &&
+                                      !hasSuccessfulOnlinePayment,
+                    PaymentTransactionId = appointment.PaymentTransactionId
                 };
 
                 return ServiceResult<PatientAppointmentDto>.Successful(dto);
@@ -270,25 +289,23 @@ namespace ClinicApp.Services.Appointment
                     // Fallback: استفاده از روش قبلی
                 }
 
-                // ✅ Batch Load Doctor Details (یک Query برای همه)
+                // ✅ Batch Load Doctor Details به صورت ترتیبی (EF6 DbContext از استفاده همزمان پشتیبانی نمی‌کند)
                 var doctorDetailsDict = new Dictionary<int, string>();
                 try
                 {
-                    var doctorDetailsResults = await Task.WhenAll(
-                        doctorIds.Select(async id =>
+                    foreach (var id in doctorIds)
+                    {
+                        try
                         {
-                            try
-                            {
-                                var result = await _doctorCrudService.GetDoctorDetailsAsync(id);
-                                return new { DoctorId = id, Bio = result.Success && result.Data != null ? result.Data.Bio : null };
-                            }
-                            catch
-                            {
-                                return new { DoctorId = id, Bio = (string)null };
-                            }
-                        })
-                    );
-                    doctorDetailsDict = doctorDetailsResults.ToDictionary(d => d.DoctorId, d => d.Bio);
+                            var detailsResult = await _doctorCrudService.GetDoctorDetailsAsync(id);
+                            doctorDetailsDict[id] = detailsResult.Success && detailsResult.Data != null ? detailsResult.Data.Bio : null;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Debug(ex, "خطا در دریافت جزئیات پزشک {DoctorId}", id);
+                            doctorDetailsDict[id] = null;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -332,7 +349,10 @@ namespace ClinicApp.Services.Appointment
                         Bio = bio,
                         ExperienceYears = doctor.ExperienceYears,
                         Rating = null,   // TODO: از جدول نظرات/امتیاز پر شود
-                        ReviewCount = 0
+                        ReviewCount = 0,
+                        AvailableDates = hasActiveSchedule && schedule != null
+                            ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
+                            : new List<AvailableDateInfo>()
                     };
 
                     doctorDtos.Add(dto);
@@ -388,7 +408,10 @@ namespace ClinicApp.Services.Appointment
                     Bio = doctor.Bio,
                     ExperienceYears = doctor.ExperienceYears,
                     Rating = null,
-                    ReviewCount = 0
+                    ReviewCount = 0,
+                    AvailableDates = hasActiveSchedule && schedule != null
+                        ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
+                        : new List<AvailableDateInfo>()
                 };
 
                 return ServiceResult<DoctorSearchResultDto>.Successful(dto);
@@ -1053,6 +1076,75 @@ namespace ClinicApp.Services.Appointment
             }
 
             return daysText;
+        }
+
+        /// <summary>
+        /// تاریخ‌های پیش‌نمایش برنامه کاری (تاریخ شمسی دقیق برای نمایش روی کارت پزشک).
+        /// بدون بررسی نوبت موجود؛ فقط روزهای کاری برنامه با تاریخ دقیق.
+        /// </summary>
+        private List<AvailableDateInfo> GetSchedulePreviewDates(Models.Entities.Doctor.DoctorSchedule schedule, int maxDates, int daysToCheck)
+        {
+            var result = new List<AvailableDateInfo>();
+            if (schedule?.WorkDays == null || maxDates <= 0 || daysToCheck <= 0)
+                return result;
+
+            var workDaysWithTimes = schedule.WorkDays
+                .Where(w => w.IsActive && !w.IsDeleted && w.TimeRanges != null && w.TimeRanges.Any(tr => tr.IsActive && !tr.IsDeleted))
+                .Select(w => new
+                {
+                    DayOfWeek = w.DayOfWeek,
+                    TimeRange = w.TimeRanges.FirstOrDefault(tr => tr.IsActive && !tr.IsDeleted)
+                })
+                .Where(x => x.TimeRange != null)
+                .ToList();
+
+            if (!workDaysWithTimes.Any())
+                return result;
+
+            // نمایش ایران: شنبه=0، یکشنبه=1، ...، جمعه=6
+            var dayNames = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه" };
+            var dayNamesShort = new[] { "ش", "ی", "د", "س", "چ", "پ", "ج" };
+
+            var startDate = _timeProvider.GetIranToday();
+            var endDate = startDate.AddDays(Math.Max(daysToCheck, 1));
+            var currentDate = startDate;
+            var foundCount = 0;
+
+            while (currentDate <= endDate && foundCount < maxDates)
+            {
+                var cSharpDayOfWeek = (int)currentDate.DayOfWeek;
+                var dbDayOfWeek = cSharpDayOfWeek;
+                var workDayInfo = workDaysWithTimes.FirstOrDefault(w => w.DayOfWeek == dbDayOfWeek);
+
+                if (workDayInfo != null && workDayInfo.TimeRange != null)
+                {
+                    var persianDate = PersianDateHelper.ToPersianDate(currentDate);
+                    if (!string.IsNullOrEmpty(persianDate) && persianDate != "0000/00/00")
+                    {
+                        var dateParts = persianDate.Split('/');
+                        var shortDate = dateParts.Length >= 3 ? $"{dateParts[2]}/{dateParts[1]}" : persianDate;
+                        var iranDayOfWeek = (dbDayOfWeek + 1) % 7;
+                        var startTime = TimeFormatHelper.FormatTimeToPersian(workDayInfo.TimeRange.StartTime);
+                        var endTime = TimeFormatHelper.FormatTimeToPersian(workDayInfo.TimeRange.EndTime);
+                        var timeRange = TimeFormatHelper.FormatTimeRangeToPersian(workDayInfo.TimeRange.StartTime, workDayInfo.TimeRange.EndTime);
+
+                        result.Add(new AvailableDateInfo
+                        {
+                            PersianDate = persianDate,
+                            ShortDate = shortDate,
+                            DayName = dayNames[iranDayOfWeek],
+                            DayNameShort = dayNamesShort[iranDayOfWeek],
+                            StartTime = startTime,
+                            EndTime = endTime,
+                            TimeRange = timeRange
+                        });
+                        foundCount++;
+                    }
+                }
+                currentDate = currentDate.AddDays(1);
+            }
+
+            return result;
         }
 
         #endregion

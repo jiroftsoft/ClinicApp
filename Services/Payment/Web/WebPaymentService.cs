@@ -10,6 +10,7 @@ using ClinicApp.Helpers;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using GatewayConnectionTest = ClinicApp.Interfaces.Payment.Web.GatewayConnectionTest;
@@ -233,7 +234,7 @@ namespace ClinicApp.Services.Payment.Web
                 if (!callbackResult.Success)
                 {
                     _logger.Error("❌ WEB PAYMENT: خطا در پردازش Callback: {Message}", callbackResult.Message);
-                    return ServiceResult<PaymentCallbackResult>.Failed("خطا در پردازش Callback");
+                    return ServiceResult<PaymentCallbackResult>.Failed(callbackResult.Message ?? "خطا در پردازش Callback");
                 }
 
                 _logger.Information("✅ WEB PAYMENT: Callback با موفقیت پردازش شد. Authority: {Authority}, Status: {Status}", 
@@ -245,8 +246,11 @@ namespace ClinicApp.Services.Payment.Web
             {
                 _logger.Error(ex, "❌ WEB PAYMENT: خطا در پردازش Callback - GatewayType: {GatewayType}, TransactionId: {TransactionId}, PaymentToken: {PaymentToken}",
                     gatewayType, callbackData?.TransactionId, callbackData?.PaymentToken);
+                var callbackErrorMsg = ex.Message;
+                if (ex.InnerException != null)
+                    callbackErrorMsg += " | " + ex.InnerException.Message;
                 return ServiceResult<PaymentCallbackResult>.Failed(
-                    "خطا در پردازش Callback. لطفاً با پشتیبانی تماس بگیرید.",
+                    callbackErrorMsg,
                     "CALLBACK_PROCESSING_ERROR");
             }
         }
@@ -505,7 +509,8 @@ namespace ClinicApp.Services.Payment.Web
                     }
                     
                     return ServiceResult<PaymentGatewayResponse>.Failed(
-                        driverResult.Message ?? "خطا در درخواست پرداخت");
+                        driverResult.Message ?? "خطا در درخواست پرداخت",
+                        driverResult.Code ?? "DRIVER_REQUEST_FAILED");
                 }
 
                 // ✅ بررسی Success flag در Data
@@ -594,6 +599,22 @@ namespace ClinicApp.Services.Payment.Web
                 {
                     _logger.Warning("⚠️ WEB PAYMENT: OnlinePayment با PaymentToken {PaymentToken} یافت نشد", callbackData.PaymentToken);
                     return ServiceResult<PaymentCallbackResult>.Failed("پرداخت یافت نشد");
+                }
+
+                // ✅ طبق مستندات زرین‌پال: متد verify فقط وقتی Status=OK استفاده شود (بازگشت به وب‌سایت پذیرنده)
+                if (gateway.GatewayType == PaymentGatewayType.ZarinPal &&
+                    (string.IsNullOrWhiteSpace(callbackData.Status) || !callbackData.Status.Trim().Equals("OK", StringComparison.OrdinalIgnoreCase)))
+                {
+                    _logger.Information("⚠️ WEB PAYMENT: ZarinPal Callback با Status={Status} — Verify فراخوانی نمی‌شود (فقط Status=OK)", callbackData.Status ?? "(خالی)");
+                    var failedResult = new PaymentCallbackResult
+                    {
+                        Success = false,
+                        PaymentToken = callbackData.PaymentToken,
+                        Status = OnlinePaymentStatus.Failed,
+                        GatewayTransactionId = callbackData.TransactionId,
+                        ErrorMessage = "تراکنش ناموفق بوده یا توسط خریدار لغو شده است."
+                    };
+                    return ServiceResult<PaymentCallbackResult>.Successful(failedResult);
                 }
 
                 // ✅ BEST PRACTICE: انتخاب Driver بر اساس PaymentGateway Entity از Factory
@@ -1074,30 +1095,34 @@ namespace ClinicApp.Services.Payment.Web
             {
                 _logger.Information("🔍 WEB PAYMENT: شروع جستجوی درگاه پرداخت پیش‌فرض...");
 
-                // ✅ STEP 1: جستجوی درگاه پیش‌فرض (IsDefault = true)
-                var defaultGateways = await _paymentGatewayRepository.GetDefaultGatewaysAsync();
-                var defaultGateway = defaultGateways?.FirstOrDefault();
-                
-                _logger.Debug("🔍 WEB PAYMENT: STEP 1 - تعداد درگاه‌های پیش‌فرض: {Count}, اولین درگاه: {GatewayId}",
-                    defaultGateways?.Count() ?? 0, defaultGateway?.PaymentGatewayId);
+                // ✅ محیط عملیاتی: درگاه شبیه‌سازی فقط وقتی مجاز است که Payment:AllowSimulatedGateway = true باشد
+                var allowSimulated = "true".Equals(ConfigurationManager.AppSettings["Payment:AllowSimulatedGateway"]?.Trim(), StringComparison.OrdinalIgnoreCase);
+                if (!allowSimulated)
+                    _logger.Debug("🔍 WEB PAYMENT: درگاه شبیه‌سازی غیرفعال است (Payment:AllowSimulatedGateway=false). فقط درگاه واقعی استفاده می‌شود.");
 
-                if (defaultGateway != null && defaultGateway.IsActive && !defaultGateway.IsDeleted)
+                // ✅ STEP 1: جستجوی درگاه پیش‌فرض (IsDefault = true) — در محیط عملیاتی Simulated نادیده گرفته می‌شود
+                var defaultGateways = await _paymentGatewayRepository.GetDefaultGatewaysAsync();
+                var defaultGateway = defaultGateways?
+                    .Where(g => g.IsActive && !g.IsDeleted && (allowSimulated || g.GatewayType != PaymentGatewayType.Simulated))
+                    .FirstOrDefault();
+                
+                _logger.Debug("🔍 WEB PAYMENT: STEP 1 - تعداد درگاه‌های پیش‌فرض: {Count}, انتخاب: {GatewayId}, Type: {Type}",
+                    defaultGateways?.Count() ?? 0, defaultGateway?.PaymentGatewayId, defaultGateway?.GatewayType);
+
+                if (defaultGateway != null)
                 {
                     _logger.Information("✅ WEB PAYMENT: درگاه پیش‌فرض یافت شد - GatewayId: {GatewayId}, Name: {Name}, Type: {Type}",
                         defaultGateway.PaymentGatewayId, defaultGateway.Name, defaultGateway.GatewayType);
                     return ServiceResult<PaymentGateway>.Successful(defaultGateway);
                 }
 
-                // ✅ STEP 2: اگر درگاه پیش‌فرض یافت نشد، جستجوی درگاه ZarinPal فعال
-                _logger.Debug("⚠️ WEB PAYMENT: درگاه پیش‌فرض یافت نشد. جستجوی درگاه ZarinPal فعال...");
+                // ✅ STEP 2: جستجوی درگاه ZarinPal فعال (اولویت برای محیط عملیاتی)
+                _logger.Debug("⚠️ WEB PAYMENT: درگاه پیش‌فرض مناسب یافت نشد. جستجوی درگاه ZarinPal فعال...");
                 var zarinPalGateways = await _paymentGatewayRepository.GetByTypeAsync(PaymentGatewayType.ZarinPal);
                 var activeZarinPalGateway = zarinPalGateways?.FirstOrDefault(g => g.IsActive && !g.IsDeleted);
                 
-                _logger.Debug("🔍 WEB PAYMENT: STEP 2 - تعداد درگاه‌های ZarinPal: {Count}, اولین درگاه فعال: {GatewayId}, IsActive: {IsActive}, IsDeleted: {IsDeleted}",
-                    zarinPalGateways?.Count() ?? 0, 
-                    activeZarinPalGateway?.PaymentGatewayId,
-                    activeZarinPalGateway?.IsActive,
-                    activeZarinPalGateway?.IsDeleted);
+                _logger.Debug("🔍 WEB PAYMENT: STEP 2 - تعداد درگاه‌های ZarinPal: {Count}, اولین درگاه فعال: {GatewayId}",
+                    zarinPalGateways?.Count() ?? 0, activeZarinPalGateway?.PaymentGatewayId);
 
                 if (activeZarinPalGateway != null)
                 {
@@ -1106,15 +1131,15 @@ namespace ClinicApp.Services.Payment.Web
                     return ServiceResult<PaymentGateway>.Successful(activeZarinPalGateway);
                 }
 
-                // ✅ STEP 3: اگر ZarinPal یافت نشد، جستجوی اولین درگاه فعال
-                _logger.Debug("⚠️ WEB PAYMENT: درگاه ZarinPal یافت نشد. جستجوی اولین درگاه فعال...");
+                // ✅ STEP 3: اولین درگاه فعال (غیر Simulated در محیط عملیاتی)
+                _logger.Debug("⚠️ WEB PAYMENT: درگاه ZarinPal یافت نشد. جستجوی اولین درگاه فعال (غیر شبیه‌سازی)...");
                 var activeGateways = await _paymentGatewayRepository.GetActiveGatewaysAsync();
-                var firstActiveGateway = activeGateways?.FirstOrDefault();
+                var firstActiveGateway = activeGateways?
+                    .Where(g => allowSimulated || g.GatewayType != PaymentGatewayType.Simulated)
+                    .FirstOrDefault();
                 
-                _logger.Debug("🔍 WEB PAYMENT: STEP 3 - تعداد درگاه‌های فعال: {Count}, اولین درگاه: {GatewayId}, Type: {Type}",
-                    activeGateways?.Count() ?? 0, 
-                    firstActiveGateway?.PaymentGatewayId,
-                    firstActiveGateway?.GatewayType);
+                _logger.Debug("🔍 WEB PAYMENT: STEP 3 - تعداد درگاه‌های فعال: {Count}, انتخاب: {GatewayId}, Type: {Type}",
+                    activeGateways?.Count() ?? 0, firstActiveGateway?.PaymentGatewayId, firstActiveGateway?.GatewayType);
 
                 if (firstActiveGateway != null)
                 {
@@ -1150,8 +1175,8 @@ namespace ClinicApp.Services.Payment.Web
                         
                         if (existingGateway != null)
                         {
-                            // ✅ CRITICAL FIX: اگر CallbackUrl خالی است، آن را تنظیم می‌کنیم
                             var needsUpdate = false;
+                            var isSandboxConfig = ZarinPalHelper.IsSandbox();
                             
                             if (string.IsNullOrWhiteSpace(existingGateway.CallbackUrl))
                             {
@@ -1159,13 +1184,18 @@ namespace ClinicApp.Services.Payment.Web
                                 needsUpdate = true;
                                 _logger.Warning("⚠️ WEB PAYMENT: CallbackUrl برای درگاه {GatewayId} خالی بود، تنظیم شد", existingGateway.PaymentGatewayId);
                             }
-                            
-                            // ✅ اگر درگاه وجود دارد اما غیرفعال است، فعال می‌کنیم
                             if (!existingGateway.IsActive)
                             {
                                 existingGateway.IsActive = true;
                                 needsUpdate = true;
                                 _logger.Information("✅ WEB PAYMENT: درگاه با MerchantId {MerchantId} فعال شد", merchantId);
+                            }
+                            // ✅ همگام‌سازی IsTestMode با Web.config (Zarinpal:IsSandbox) برای اتصال به صفحه اصلی/سندباکس
+                            if (existingGateway.IsTestMode != isSandboxConfig)
+                            {
+                                existingGateway.IsTestMode = isSandboxConfig;
+                                needsUpdate = true;
+                                _logger.Information("✅ WEB PAYMENT: IsTestMode درگاه با Web.config همگام شد - IsSandbox={IsSandbox}", isSandboxConfig);
                             }
                             
                             if (needsUpdate)
@@ -1191,12 +1221,13 @@ namespace ClinicApp.Services.Payment.Web
                             GatewayType = PaymentGatewayType.ZarinPal,
                             MerchantId = merchantId,
                             ApiKey = merchantId, // برای ZarinPal، ApiKey همان MerchantId است
-                            GatewayUrl = ZarinPalHelper.GetStartPayUrl(), // ✅ URL برای redirect به درگاه
-                            CallbackUrl = defaultCallbackUrl, // ✅ CRITICAL FIX: تنظیم CallbackUrl پیش‌فرض (در Controller به URL کامل تبدیل می‌شود)
+                            GatewayUrl = ZarinPalHelper.GetStartPayUrl(), // ✅ URL صفحه وارد کردن کارت: https://www.zarinpal.com/pg/StartPay/
+                            CallbackUrl = defaultCallbackUrl, // ✅ در Controller با PaymentUrlHelper به URL کامل تبدیل می‌شود
                             IsActive = true,
-                            IsDefault = true, // ✅ به عنوان پیش‌فرض تنظیم می‌شود
+                            IsDefault = true,
+                            IsTestMode = isSandbox, // ✅ CRITICAL: از Web.config (Zarinpal:IsSandbox) — false = اتصال به صفحه اصلی پرداخت زرین‌پال
                             Description = $"درگاه پرداخت زرین‌پال - ایجاد شده خودکار از Web.config (Sandbox: {isSandbox})",
-                            CreatedByUserId = null, // ✅ CRITICAL FIX: null چون این درگاه خودکار است و User ID واقعی نداریم
+                            CreatedByUserId = null,
                             CreatedAt = DateTime.UtcNow
                         };
                         

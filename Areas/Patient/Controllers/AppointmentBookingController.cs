@@ -67,6 +67,7 @@ namespace ClinicApp.Areas.Patient.Controllers
         private readonly IAppSettings _appSettings;
         private readonly IDepartmentManagementService _departmentService; // ✅ طبق قرارداد: Controller → Service
         private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+        private readonly IAuthService _authService; // ✅ برای EnsurePatientRecordForUserIdAsync (جلوگیری از خطای «حساب بیمار یافت نشد»)
 
         public AppointmentBookingController(
             IAppointmentBookingService bookingService,
@@ -79,6 +80,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             ApplicationDbContext context,
             IDepartmentManagementService departmentService, // ✅ طبق قرارداد: Controller → Service
             ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+            IAuthService authService,
             ILogger logger)
             : base(logger, currentUserService, context) // ✅ Context به base برای GetCurrentPatientIdAsync
         {
@@ -90,6 +92,7 @@ namespace ClinicApp.Areas.Patient.Controllers
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _departmentService = departmentService ?? throw new ArgumentNullException(nameof(departmentService));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }
 
         /// <summary>
@@ -110,14 +113,20 @@ namespace ClinicApp.Areas.Patient.Controllers
         }
 
         /// <summary>
-        /// ✅ Diagnostic Action: بررسی وضعیت احراز هویت و نقش کاربر
+        /// Diagnostic Action: بررسی وضعیت احراز هویت و نقش کاربر.
+        /// ✅ PRODUCTION: در محیط غیر دیباگ برگرداندن 404 تا اطلاعات حساس (userId, patientId, نقش‌ها) افشا نشوند.
         /// GET: /Patient/Appointment/Book/CheckAuth
-        /// این endpoint برای تشخیص مشکل authorization استفاده می‌شود
         /// </summary>
         [HttpGet]
-        [AllowAnonymous] // برای تست
+        [AllowAnonymous]
         public async Task<ActionResult> CheckAuth()
         {
+            if (!HttpContext.IsDebuggingEnabled)
+            {
+                _logger.Debug("CheckAuth: درخواست در محیط غیر دیباگ نادیده گرفته شد");
+                return HttpNotFound();
+            }
+
             try
             {
                 var userId = User.Identity.GetUserId();
@@ -627,18 +636,63 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDoctor");
                 }
 
-                // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است (برای تست)
-                // TODO: بعد از انجام تست‌های کامل، احراز هویت را فعال کنید
-                // var patientId = await GetCurrentPatientIdAsync();
-                // if (patientId == null)
-                // {
-                //     _logger.Warning("Unauthorized access attempt to ConfirmBooking - DoctorId: {DoctorId}, Date: {Date}",
-                //         doctorId, appointmentDate.ToString("yyyy/MM/dd"));
-                //     NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید");
-                //     return RedirectToAction("Login", "Account", new { area = "" });
-                // }
-                // برای تست، از یک patientId ثابت استفاده می‌کنیم
-                var patientId = 1; // ⚠️ TEMPORARY: فقط برای تست
+                // ✅ PRODUCTION: احراز هویت اجباری — صفحه تأیید فقط برای بیمار لاگین‌شده
+                // ✅ لاگ صفر تا صد برای ردیابی خطای «حساب بیمار یافت نشد» — جستجو در لاگ با [PatientLink]
+                var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+                var userId = User?.Identity?.GetUserId();
+                _logger.Information("[PatientLink] ConfirmBooking Step0 - IsAuthenticated={IsAuth}, UserId={UserId}, DoctorId={DoctorId}", isAuthenticated, userId ?? "NULL", doctorId);
+
+                var patientIdNullable = await GetCurrentPatientIdAsync();
+                _logger.Information("[PatientLink] ConfirmBooking Step1 - GetCurrentPatientIdAsync result: {Result}", patientIdNullable.HasValue ? "PatientId=" + patientIdNullable.Value : "NULL");
+
+                if (isAuthenticated && patientIdNullable == null && _authService != null && !string.IsNullOrEmpty(userId))
+                {
+                    _logger.Information("[PatientLink] ConfirmBooking Step2 - Calling EnsurePatientRecordForUserIdAsync for UserId={UserId}", userId);
+                    var ensuredPatientId = await _authService.EnsurePatientRecordForUserIdAsync(userId);
+                    _logger.Information("[PatientLink] ConfirmBooking Step3 - EnsurePatientRecordForUserIdAsync returned: {Result}", ensuredPatientId.HasValue ? "PatientId=" + ensuredPatientId.Value : "NULL");
+                    if (ensuredPatientId.HasValue)
+                    {
+                        SetPatientIdRequestCache(ensuredPatientId.Value);
+                        patientIdNullable = ensuredPatientId;
+                        _logger.Information("[PatientLink] ConfirmBooking Step4 - Using PatientId from Ensure (no second query): {PatientId}", ensuredPatientId.Value);
+                    }
+                    else
+                    {
+                        _logger.Warning("[PatientLink] ConfirmBooking Step3 - Ensure returned null for UserId={UserId}. See [PatientLink] EnsureStep logs below for reason.", userId);
+                    }
+                }
+
+                if (patientIdNullable == null)
+                {
+                    if (!isAuthenticated)
+                    {
+                        // کاربر اصلاً لاگین نشده → هدایت به Login با returnUrl
+                        var returnUrl = Request.Url?.PathAndQuery;
+                        if (string.IsNullOrEmpty(returnUrl))
+                        {
+                            returnUrl = Url.Action("ConfirmBooking", "AppointmentBooking", new
+                            {
+                                area = "Patient",
+                                doctorId,
+                                appointmentDate,
+                                startTime,
+                                endTime,
+                                serviceCategoryId,
+                                description
+                            });
+                        }
+                        _logger.Warning("ConfirmBooking: کاربر لاگین نشده - هدایت به Login با returnUrl: {ReturnUrl}", returnUrl);
+                        NotificationHelper.SetError(TempData, "لطفاً ابتدا وارد سیستم شوید تا بتوانید نوبت را تأیید کنید.");
+                        return RedirectToAction("Login", "Account", new { area = "", returnUrl });
+                    }
+
+                    // ✅ کاربر لاگین است ولی رکورد بیمار ندارد (و ساخت خودکار ممکن نشد) → هدایت به صفحه امن.
+                    _logger.Warning("[PatientLink] ConfirmBooking FAIL - Redirect to SelectDoctor. UserId={UserId}. Search log for [PatientLink] to trace full flow.", User?.Identity?.GetUserId());
+                    NotificationHelper.SetError(TempData, "حساب بیمار برای این کاربر یافت نشد. لطفاً ثبت‌نام بیمار را تکمیل کنید یا با پشتیبانی تماس بگیرید.");
+                    return RedirectToAction("SelectDoctor");
+                }
+
+                var patientId = patientIdNullable.Value;
 
                 // ✅ CRITICAL FIX: بررسی parse شدن startTime و endTime
                 _logger.Debug("🔍 Parse بررسی - StartTime: {StartTime}, EndTime: {EndTime}, StartTimeRaw: {StartTimeRaw}, EndTimeRaw: {EndTimeRaw}",
@@ -692,7 +746,6 @@ namespace ClinicApp.Areas.Patient.Controllers
 
                 // ✅ CRITICAL FIX: استفاده از Service برای بررسی Double Booking (Architecture Fix)
                 // حذف دسترسی مستقیم Controller → DB
-                // ⚠️ TEMPORARY: patientId is int (not int?) because authentication is disabled for testing
                 var doubleBookingCheck = await _bookingService.CheckPatientDoubleBookingAsync(
                     patientId, parsedAppointmentDate, startTime, endTime);
 
@@ -778,7 +831,9 @@ namespace ClinicApp.Areas.Patient.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AppointmentRateLimit(5, 60)] // حداکثر 5 رزرو در ساعت
-        public async Task<ActionResult> Reserve(AppointmentBookingViewModel model, string idempotencyKey = null)
+        public async Task<ActionResult> Reserve(
+            [Bind(Include = "DoctorId, AppointmentDate, StartTime, EndTime, ServiceCategoryId, Description")] AppointmentBookingViewModel model,
+            string idempotencyKey = null)
         {
             try
             {
@@ -793,33 +848,34 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است: " + errors });
                 }
 
-                // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است
-                // var patientId = await GetCurrentPatientIdAsync();
-                // TODO: بعد از رفع مشکل، احراز هویت را فعال کنید
-                // برای تست، از یک patientId ثابت استفاده می‌کنیم
-                var patientId = 1; // ⚠️ TEMPORARY: فقط برای تست
-                
-                // ✅ CRITICAL FIX: بررسی وجود PatientId در دیتابیس (جلوگیری از Foreign Key Error)
+                // ✅ PRODUCTION: احراز هویت اجباری — رزرو فقط برای بیمار لاگین‌شده
+                var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+                var userId = User?.Identity?.GetUserId();
+                var patientIdNullable = await GetCurrentPatientIdAsync();
+                if (patientIdNullable == null && isAuthenticated && _authService != null && !string.IsNullOrEmpty(userId))
+                {
+                    var ensuredPatientId = await _authService.EnsurePatientRecordForUserIdAsync(userId);
+                    if (ensuredPatientId.HasValue)
+                    {
+                        SetPatientIdRequestCache(ensuredPatientId.Value);
+                        patientIdNullable = ensuredPatientId;
+                        _logger.Information("[PatientLink] Reserve - Used PatientId from Ensure: {PatientId}", ensuredPatientId.Value);
+                    }
+                }
+                if (patientIdNullable == null)
+                {
+                    _logger.Warning("Reserve: کاربر لاگین نشده یا رکورد بیمار یافت نشد");
+                    return Json(new { success = false, message = "لطفاً ابتدا وارد سیستم شوید.", requiresLogin = true });
+                }
+
+                var patientId = patientIdNullable.Value;
+
+                // ✅ بررسی وجود Patient در دیتابیس (جلوگیری از Foreign Key Error)
                 var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == patientId && !p.IsDeleted);
                 if (!patientExists)
                 {
-                    // ✅ اگر PatientId = 1 وجود ندارد، اولین Patient موجود را پیدا می‌کنیم
-                    var firstPatient = await _context.Patients
-                        .Where(p => !p.IsDeleted)
-                        .OrderBy(p => p.PatientId)
-                        .FirstOrDefaultAsync();
-                    
-                    if (firstPatient == null)
-                    {
-                        _logger.Error("❌ هیچ بیمار فعالی در دیتابیس یافت نشد. لطفاً ابتدا یک بیمار ایجاد کنید.");
-                        return Json(new { 
-                            success = false, 
-                            message = "هیچ بیمار فعالی در سیستم یافت نشد. لطفاً با پشتیبانی تماس بگیرید." 
-                        });
-                    }
-                    
-                    patientId = firstPatient.PatientId;
-                    _logger.Warning("⚠️ PatientId = 1 وجود ندارد. استفاده از PatientId = {PatientId} به جای آن", patientId);
+                    _logger.Warning("Reserve: PatientId {PatientId} در دیتابیس یافت نشد", patientId);
+                    return Json(new { success = false, message = "اطلاعات بیمار یافت نشد. لطفاً با پشتیبانی تماس بگیرید." });
                 }
 
                 // ✅ CRITICAL FIX: Idempotency Check (جلوگیری از درخواست‌های تکراری)
@@ -1015,7 +1071,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                         });
                     }
 
-                    return Json(new { success = false, message = "درخواست پرداخت در حال پردازش است. لطفاً صبر کنید." });
+                    return Json(new { success = false, message = "درخواست پرداخت در حال پردازش است. لطفاً صبر کنید.", code = "IDEMPOTENCY_IN_PROGRESS" });
                 }
 
                 // 1. دریافت نوبت و بررسی دسترسی (Read-Only Query)
@@ -1028,7 +1084,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (appointment == null)
                 {
                     _logger.Warning("نوبت {AppointmentId} یافت نشد", appointmentId);
-                    return Json(new { success = false, message = "نوبت یافت نشد" });
+                    return Json(new { success = false, message = "نوبت یافت نشد", code = "APPOINTMENT_NOT_FOUND" });
                 }
 
                 // ⚠️ AUTHENTICATION DISABLED: احراز هویت موقتاً غیرفعال شده است
@@ -1045,7 +1101,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (!appointment.PatientId.HasValue)
                 {
                     _logger.Warning("نوبت {AppointmentId} دارای PatientId نیست", appointmentId);
-                    return Json(new { success = false, message = "نوبت معتبر نیست" });
+                    return Json(new { success = false, message = "نوبت معتبر نیست", code = "INVALID_APPOINTMENT" });
                 }
 
                 // 2. بررسی وضعیت نوبت
@@ -1053,13 +1109,38 @@ namespace ClinicApp.Areas.Patient.Controllers
                 {
                     _logger.Warning("نوبت {AppointmentId} در وضعیت قابل پرداخت نیست. وضعیت: {Status}, CorrelationId: {CorrelationId}",
                         appointmentId, appointment.Status, correlationId);
-                    return Json(new { success = false, message = "این نوبت در وضعیت قابل پرداخت نیست", correlationId = correlationId });
+                    return Json(new { success = false, message = "این نوبت در وضعیت قابل پرداخت نیست", code = "APPOINTMENT_NOT_PAYABLE", correlationId = correlationId });
+                }
+
+                // ✅ 2.4. Idempotent retry: اگر برای این نوبت قبلاً درخواست پرداخت Pending با لینک درگاه ساخته شده، همان لینک را برگردان (بدون اعمال cooldown و بدون ایجاد رکورد تازه)
+                var existingPending = await _context.OnlinePayments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(op => op.AppointmentId == appointmentId &&
+                                               op.Status == OnlinePaymentStatus.Pending &&
+                                               !op.IsDeleted &&
+                                               !string.IsNullOrEmpty(op.PaymentUrl));
+                if (existingPending != null)
+                {
+                    _logger.Information("[PaymentSecurity] بازگرداندن لینک پرداخت موجود (Idempotent Retry) - AppointmentId: {AppointmentId}, OnlinePaymentId: {OnlinePaymentId}, CorrelationId: {CorrelationId}",
+                        appointmentId, existingPending.OnlinePaymentId, correlationId);
+                    return Json(new
+                    {
+                        success = true,
+                        paymentUrl = existingPending.PaymentUrl,
+                        paymentToken = existingPending.PaymentToken,
+                        message = "در حال هدایت به درگاه پرداخت..."
+                    });
                 }
 
                 // ✅ 2.5. ENTERPRISE-GRADE: Security Validation (قبل از پردازش)
-                var userIpAddress = Request.UserHostAddress ?? Request.ServerVariables["REMOTE_ADDR"] ?? "Unknown";
-                var userAgent = Request.UserAgent ?? "Unknown";
-                var userId = _currentUserService?.UserId ?? "System";
+                var userIpAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"]?.Split(',')[0]?.Trim()
+                    ?? Request.ServerVariables["HTTP_X_REAL_IP"]
+                    ?? Request.UserHostAddress
+                    ?? Request.ServerVariables["REMOTE_ADDR"]
+                    ?? "127.0.0.1";
+                if (string.IsNullOrWhiteSpace(userIpAddress)) userIpAddress = "127.0.0.1";
+                var userAgent = Request.UserAgent ?? "";
+                var userId = _currentUserService?.UserId ?? User?.Identity?.GetUserId() ?? "System";
                 
                 var securityRequest = new PaymentSecurityValidationRequest
                 {
@@ -1075,13 +1156,16 @@ namespace ClinicApp.Areas.Patient.Controllers
                 var securityResult = await _paymentSecurityService.ValidatePaymentRequestSecurityAsync(securityRequest);
                 if (!securityResult.Success)
                 {
-                    _logger.Warning("⚠️ SECURITY: Security validation failed - AppointmentId: {AppointmentId}, Message: {Message}, CorrelationId: {CorrelationId}",
-                        appointmentId, securityResult.Message, correlationId);
+                    var securityDetails = securityResult.Code ?? "";
+                    _logger.Warning("[PaymentSecurity] Controller: اعتبارسنجی ناموفق - AppointmentId: {AppointmentId}, Message: {Message}, Details: {Details}, CorrelationId: {CorrelationId}",
+                        appointmentId, securityResult.Message, securityDetails, correlationId);
                     
                     return Json(new 
                     { 
                         success = false, 
                         message = securityResult.Message ?? "اعتبارسنجی امنیتی ناموفق بود",
+                        code = securityResult.Code,
+                        securityDetails = securityDetails,
                         correlationId = correlationId
                     });
                 }
@@ -1099,6 +1183,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return Json(new { 
                         success = false, 
                         message = defaultGatewayResult.Message ?? "درگاه پرداخت در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید",
+                        code = defaultGatewayResult.Code ?? "GATEWAY_NOT_AVAILABLE",
                         correlationId = correlationId
                     });
                 }
@@ -1109,7 +1194,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 if (!appointment.PatientId.HasValue)
                 {
                     _logger.Warning("نوبت {AppointmentId} دارای PatientId نیست", appointmentId);
-                    return Json(new { success = false, message = "نوبت معتبر نیست" });
+                    return Json(new { success = false, message = "نوبت معتبر نیست", code = "INVALID_APPOINTMENT", correlationId = correlationId });
                 }
 
                 // ✅ 5. استفاده از Transaction برای اطمینان از یکپارچگی داده‌ها
@@ -1154,7 +1239,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Error("❌ VERIFY: OnlinePayment ذخیره نشد! - OnlinePaymentId: {OnlinePaymentId}",
                                 onlinePayment.OnlinePaymentId);
                             transaction.Rollback();
-                            return Json(new { success = false, message = "خطا در ذخیره اطلاعات پرداخت" });
+                            return Json(new { success = false, message = "خطا در ذخیره اطلاعات پرداخت", code = "PAYMENT_SAVE_FAILED", correlationId = correlationId });
                         }
 
                         _logger.Information("✅ VERIFY: OnlinePayment با موفقیت ذخیره شد - OnlinePaymentId: {OnlinePaymentId}, Amount: {Amount}",
@@ -1176,7 +1261,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Error("❌ PAYMENT REQUEST: مبلغ نوبت نامعتبر - AppointmentId: {AppointmentId}, Price: {Price}",
                                 appointmentId, appointment.Price);
                             transaction.Rollback();
-                            return Json(new { success = false, message = "مبلغ نوبت نامعتبر است" });
+                            return Json(new { success = false, message = "مبلغ نوبت نامعتبر است", code = "INVALID_AMOUNT", correlationId = correlationId });
                         }
                         
                         if (appointment.Price < 1000)
@@ -1238,7 +1323,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                             await _context.SaveChangesAsync();
                             transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
 
-                            return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت در درگاه", correlationId = correlationId });
+                            var paymentErrorCode = paymentResult.Data?.ErrorCode ?? paymentResult.Code ?? "GATEWAY_ERROR";
+                            return Json(new { success = false, message = paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت در درگاه", code = paymentErrorCode, correlationId = correlationId });
                         }
 
                         var gatewayResponse = paymentResult.Data;
@@ -1257,7 +1343,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             await _context.SaveChangesAsync();
                             transaction.Commit(); // ✅ Commit برای ذخیره وضعیت Failed
 
-                            return Json(new { success = false, message = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت" });
+                            return Json(new { success = false, message = gatewayResponse.ErrorMessage ?? "خطا در درگاه پرداخت", code = gatewayResponse.ErrorCode ?? "GATEWAY_INVALID_RESPONSE", correlationId = correlationId });
                         }
 
                         // 8. به‌روزرسانی OnlinePayment با PaymentToken
@@ -1280,7 +1366,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Error("❌ VERIFY: OnlinePayment به‌روزرسانی نشد! - OnlinePaymentId: {OnlinePaymentId}",
                                 onlinePayment.OnlinePaymentId);
                             transaction.Rollback();
-                            return Json(new { success = false, message = "خطا در به‌روزرسانی اطلاعات پرداخت" });
+                            return Json(new { success = false, message = "خطا در به‌روزرسانی اطلاعات پرداخت", code = "PAYMENT_UPDATE_FAILED", correlationId = correlationId });
                         }
 
                         transaction.Commit(); // ✅ Commit موفق
@@ -1313,7 +1399,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                 _logger.Error(ex, "❌ PAYMENT REQUEST: خطا در پردازش پرداخت - AppointmentId: {AppointmentId}, ProcessingTime: {ProcessingTime}ms, CorrelationId: {CorrelationId}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
                     appointmentId, processingTime, correlationId, ex.GetType().Name, ex.Message, ex.StackTrace);
                 
-                // ✅ CRITICAL FIX: نمایش پیام خطای دقیق‌تر برای debugging
+                // ✅ CRITICAL FIX: نمایش پیام خطای دقیق‌تر برای debugging و رفع مشکل
                 var errorMessage = "خطا در پردازش پرداخت. لطفاً دوباره تلاش کنید";
                 if (ex is NotImplementedException)
                 {
@@ -1325,12 +1411,20 @@ namespace ClinicApp.Areas.Patient.Controllers
                     _logger.Error("❌ PAYMENT REQUEST: InnerException - Type: {Type}, Message: {Message}",
                         ex.InnerException.GetType().Name, ex.InnerException.Message);
                 }
+                // در حالت Debug پیام واقعی را برگردان تا کاربر دلیل خطا را ببیند (مثلاً خطای درگاه یا شبکه)
+                if (System.Web.HttpContext.Current?.IsDebuggingEnabled == true && !string.IsNullOrWhiteSpace(ex.Message))
+                {
+                    errorMessage = ex.Message;
+                    if (ex.InnerException != null && !string.IsNullOrWhiteSpace(ex.InnerException.Message))
+                        errorMessage += " | " + ex.InnerException.Message;
+                }
                 
                 return Json(new 
                 { 
                     success = false, 
                     message = errorMessage,
-                    correlationId = correlationId, // ✅ ENTERPRISE-GRADE: برگرداندن Correlation ID برای Support
+                    code = "PAYMENT_PROCESSING_EXCEPTION", // ✅ برای جستجو در لاگ با correlationId
+                    correlationId = correlationId,
                     exceptionType = ex.GetType().Name // ✅ برای debugging (فقط در Development)
                 });
             }
@@ -1388,17 +1482,14 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("PaymentError", new { message = "پرداخت یافت نشد" });
                 }
 
-                // 2. بررسی دسترسی بیمار (اگر کاربر لاگین کرده است)
+                // 2. ✅ بازگشت از درگاه: بر اساس Authority (PaymentToken) اعتبارسنجی می‌شود؛ چک کاربر لاگین‌شده انجام نمی‌شود
+                // تا پس از پرداخت در سندباکس/واقعی بدون خطای «دسترسی غیرمجاز» به‌درستی برگردد (حتی اگر session عوض شده یا GetPatientInfoAsync null برگرداند).
                 if (User.Identity.IsAuthenticated)
                 {
                     var patient = await _currentUserService.GetPatientInfoAsync();
-                    if (patient == null || patient.PatientId != onlinePayment.PatientId)
-                    {
-                        _logger.Warning("⚠️ PAYMENT CALLBACK: دسترسی غیرمجاز به OnlinePayment {OnlinePaymentId} توسط بیمار {PatientId}",
-                            onlinePayment.OnlinePaymentId, patient?.PatientId);
-                        NotificationHelper.SetError(TempData, "شما اجازه دسترسی به این پرداخت را ندارید");
-                        return RedirectToAction("PaymentError", new { message = "دسترسی غیرمجاز" });
-                    }
+                    if (patient != null && patient.PatientId != onlinePayment.PatientId)
+                        _logger.Information("📋 PAYMENT CALLBACK: کاربر لاگین‌شده با بیمار صاحب پرداخت متفاوت است - OnlinePaymentId: {OnlinePaymentId}, LoggedPatientId: {LoggedPatientId}, PaymentPatientId: {PaymentPatientId}",
+                            onlinePayment.OnlinePaymentId, patient.PatientId, onlinePayment.PatientId);
                 }
 
                 // 3. ✅ ساخت PaymentCallbackData از ZarinPal Callback Format
@@ -1433,6 +1524,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     _logger.Error("خطا در پردازش Callback - {ErrorMessage}",
                         callbackResult.Message);
 
+                    TempData.Remove("Notification_Success"); // فقط خطا نمایش داده شود، نه پیام موفق قبلی
                     NotificationHelper.SetError(TempData, callbackResult.Message ?? "خطا در پردازش پرداخت");
                     return RedirectToAction("MyAppointments", "Appointment");
                 }

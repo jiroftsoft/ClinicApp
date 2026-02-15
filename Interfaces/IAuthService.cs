@@ -1,4 +1,4 @@
-﻿using ClinicApp.Helpers;
+using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
 using System.Threading.Tasks;
 
@@ -65,5 +65,13 @@ namespace ClinicApp.Interfaces
 
         // ✅ NEW: Verifies the registration OTP.
         Task<ServiceResult> VerifyRegistrationOtpAsync(string nationalCode, string phoneNumber, string otpCode);
+
+        /// <summary>
+        /// اطمینان از وجود رکورد Patient برای userId (در صورت نقش Patient). در صورت نبود، رکورد ساخته می‌شود.
+        /// برای جلوگیری از خطای «حساب بیمار یافت نشد» وقتی کاربر از مسیر دیگری غیر از OTP لاگین کرده است.
+        /// </summary>
+        /// <param name="userId">شناسه کاربر (ApplicationUser.Id)</param>
+        /// <returns>PatientId در صورت وجود/ساخت/لینک رکورد بیمار، وگرنه null</returns>
+        Task<int?> EnsurePatientRecordForUserIdAsync(string userId);
     }
 }

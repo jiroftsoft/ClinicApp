@@ -2300,19 +2300,16 @@ namespace ClinicApp.Services
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 100) pageSize = 100;
 
-                // ساخت پرس‌وجو
+                // ساخت پرس‌وجو — بدون Include زنجیره بیمه (جلوگیری از خطا در رابطه اختیاری)
                 var query = _context.Receptions
-                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
+                    .AsNoTracking()
                     .Include(r => r.Doctor)
                     .Include(r => r.ReceptionItems)
                     .Include(r => r.Transactions)
-                    .Include(r => r.ActivePatientInsurance.InsurancePlan.InsuranceProvider)
                     .Where(r => r.PatientId == patientId && !r.IsDeleted);
 
-                // محاسبه تعداد کل
                 int totalItems = await query.CountAsync();
 
-                // اعمال صفحه‌بندی
                 var receptions = await query
                     .OrderByDescending(r => r.ReceptionDate)
                     .Skip((pageNumber - 1) * pageSize)
@@ -2332,7 +2329,7 @@ namespace ClinicApp.Services
                     TotalAmount = r.TotalAmount,
                     PatientCoPay = r.PatientCoPay,
                     InsurerShareAmount = r.InsurerShareAmount,
-                    InsuranceProviderName = r.ActivePatientInsurance?.InsurancePlan?.InsuranceProvider?.Name,
+                    InsuranceProviderName = null, // برای داشبورد نیاز نیست؛ در صورت نیاز از GetPatientReceptionsPagedAsync با Include جدا استفاده شود
                     IsPaid = r.IsPaid,
                     ServicesCount = r.ReceptionItems?.Count ?? 0,
                     PaymentsCount = r.Transactions?.Count(t => t.Status == PaymentStatus.Success) ?? 0,
@@ -2381,7 +2378,6 @@ namespace ClinicApp.Services
                     .Include(r => r.Doctor)
                     .Include(r => r.ReceptionItems)
                     .Include(r => r.Transactions)
-                    .Include(r => r.ActivePatientInsurance.InsurancePlan.InsuranceProvider)
                     .Where(r => r.PatientId == patientId && !r.IsDeleted);
 
                 int totalItems = await query.CountAsync();
@@ -2405,7 +2401,7 @@ namespace ClinicApp.Services
                     TotalAmount = r.TotalAmount,
                     PatientCoPay = r.PatientCoPay,
                     InsurerShareAmount = r.InsurerShareAmount,
-                    InsuranceProviderName = r.ActivePatientInsurance?.InsurancePlan?.InsuranceProvider?.Name,
+                    InsuranceProviderName = null,
                     IsPaid = r.IsPaid,
                     ServicesCount = r.ReceptionItems?.Count ?? 0,
                     PaymentsCount = r.Transactions?.Count(t => t.Status == PaymentStatus.Success) ?? 0,

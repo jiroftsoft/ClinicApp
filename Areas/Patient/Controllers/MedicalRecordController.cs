@@ -179,7 +179,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                     };
                     try
                     {
-                        // ✅ Strongly-typed deserialization for partial views
+                        // ✅ Strongly-typed deserialization for partial views (جلوگیری از خطا در رندر و 500)
                         if (partialName == "_TriageSection")
                         {
                             model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalRecordTriageViewModel>>(jsonData, jsonSettings)
@@ -189,6 +189,16 @@ namespace ClinicApp.Areas.Patient.Controllers
                         {
                             model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalHistoryViewModel>>(jsonData, jsonSettings)
                                 ?? new List<MedicalHistoryViewModel>();
+                        }
+                        else if (partialName == "_AppointmentsSection")
+                        {
+                            model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalRecordAppointmentViewModel>>(jsonData, jsonSettings)
+                                ?? new List<MedicalRecordAppointmentViewModel>();
+                        }
+                        else if (partialName == "_ReceptionsSection")
+                        {
+                            model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MedicalRecordReceptionViewModel>>(jsonData, jsonSettings)
+                                ?? new List<MedicalRecordReceptionViewModel>();
                         }
                         else
                         {
@@ -202,11 +212,24 @@ namespace ClinicApp.Areas.Patient.Controllers
                             model = new List<MedicalRecordTriageViewModel>();
                         else if (partialName == "_MedicalHistorySection")
                             model = new List<MedicalHistoryViewModel>();
+                        else if (partialName == "_AppointmentsSection")
+                            model = new List<MedicalRecordAppointmentViewModel>();
+                        else if (partialName == "_ReceptionsSection")
+                            model = new List<MedicalRecordReceptionViewModel>();
                     }
                 }
                 
                 if (partialName == "_MedicalHistorySection" && model is List<MedicalHistoryViewModel> list)
                     _logger.Debug("RenderPartial _MedicalHistorySection - Model count: {Count}", list.Count);
+                
+                // ✅ وقتی body خالی است یا مدل null مانده، برای ویوهای لیستی مدل خالی پاس بده تا از 500 جلوگیری شود
+                if (model == null)
+                {
+                    if (partialName == "_AppointmentsSection") model = new List<MedicalRecordAppointmentViewModel>();
+                    else if (partialName == "_ReceptionsSection") model = new List<MedicalRecordReceptionViewModel>();
+                    else if (partialName == "_TriageSection") model = new List<MedicalRecordTriageViewModel>();
+                    else if (partialName == "_MedicalHistorySection") model = new List<MedicalHistoryViewModel>();
+                }
                 
                 return PartialView(partialName, model);
             }

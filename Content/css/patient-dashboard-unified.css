@@ -1,96 +1,134 @@
 /**
  * Unified Dashboard - Tab-Based SPA Styles
- * Architecture: Enterprise-Grade (AWS Console, Azure Portal style)
+ * UI/UX: حرفه‌ای، جذاب، کاربرپسند — مخصوص محیط درمانی و رسمی
+ * Design tokens الهام از کلینیک‌های معتبر و پورتال‌های پزشکی
  */
+
+/* ========================================
+   Design Tokens — محیط درمانی و رسمی
+======================================== */
+.unified-dashboard-container {
+    --pd-primary: #1a5f7a;
+    --pd-primary-soft: #2486a8;
+    --pd-primary-bg: rgba(26, 95, 122, 0.08);
+    --pd-success: #0d7d5c;
+    --pd-success-soft: rgba(13, 125, 92, 0.12);
+    --pd-info: #0a6b8a;
+    --pd-info-soft: rgba(10, 107, 138, 0.1);
+    --pd-warning: #b8860b;
+    --pd-warning-soft: rgba(184, 134, 11, 0.12);
+    --pd-text: #1e293b;
+    --pd-text-muted: #64748b;
+    --pd-border: #e2e8f0;
+    --pd-bg: #f8fafc;
+    --pd-card-bg: #ffffff;
+    --pd-card-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --pd-card-shadow-hover: 0 4px 20px rgba(26, 95, 122, 0.08);
+    --pd-radius: 12px;
+    --pd-radius-sm: 8px;
+    --pd-font: 'Vazir', 'Tahoma', 'Segoe UI', sans-serif;
+    /* سازگاری با کامپوننت‌های موجود */
+    --medical-primary: var(--pd-primary);
+    --content-bg: var(--pd-bg);
+}
 
 /* ========================================
    Dashboard Container
 ======================================== */
 .unified-dashboard-container {
     min-height: calc(100vh - 120px);
-    background: var(--content-bg, #f5f7fa);
+    background: var(--pd-bg);
     padding: 0;
+    font-family: var(--pd-font);
 }
 
 /* ========================================
-   Dashboard Header
+   Dashboard Header — رسمی و قابل اعتماد
 ======================================== */
 .dashboard-header-unified {
-    background: white;
-    border-bottom: 2px solid #e3e6eb;
+    background: var(--pd-card-bg);
+    border-bottom: 1px solid var(--pd-border);
     padding: 1.5rem 0 0 0;
     margin-bottom: 0;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
 
 .dashboard-title-main {
-    font-size: 1.75rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: var(--medical-dark, #212529);
+    color: var(--pd-text);
     margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
 }
 
 .dashboard-subtitle-main {
-    font-size: 0.95rem;
-    color: var(--sidebar-text-muted, #6c757d);
+    font-size: 0.9rem;
+    color: var(--pd-text-muted);
     margin-bottom: 0;
 }
 
 /* ========================================
-   Tab Navigation (مثل AWS Console)
+   Tab Navigation — تمیز و حرفه‌ای
 ======================================== */
 .dashboard-tabs {
-    border-bottom: 2px solid #e3e6eb;
+    border-bottom: 1px solid var(--pd-border);
     margin-bottom: 0;
-    padding: 0 1rem;
+    padding: 0 0.5rem 0 1rem;
 }
 
 .dashboard-tabs .nav-item {
-    margin-bottom: -2px;
+    margin-bottom: -1px;
 }
 
 .dashboard-tabs .nav-link {
     border: none;
     border-bottom: 3px solid transparent;
     background: transparent;
-    color: var(--sidebar-text, #333);
-    padding: 1rem 1.5rem;
+    color: var(--pd-text-muted);
+    padding: 1rem 1.25rem;
     font-weight: 500;
-    font-size: 0.95rem;
-    border-radius: 0;
-    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    border-radius: var(--pd-radius-sm) var(--pd-radius-sm) 0 0;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
 .dashboard-tabs .nav-link:hover {
-    background: rgba(44, 90, 160, 0.05);
-    color: var(--medical-primary, #2c5aa0);
-    border-bottom-color: rgba(44, 90, 160, 0.3);
+    background: var(--pd-primary-bg);
+    color: var(--pd-primary);
+    border-bottom-color: transparent;
 }
 
 .dashboard-tabs .nav-link.active {
-    background: transparent;
-    color: var(--medical-primary, #2c5aa0);
-    border-bottom-color: var(--medical-primary, #2c5aa0);
+    background: var(--pd-card-bg);
+    color: var(--pd-primary);
+    border-bottom-color: var(--pd-primary);
     font-weight: 600;
 }
 
 .dashboard-tabs .nav-link i {
     font-size: 1rem;
+    opacity: 0.9;
 }
 
 /* ========================================
    Tab Content Container
 ======================================== */
 .dashboard-tab-content {
-    background: var(--content-bg, #f5f7fa);
-    padding: 2rem 0;
+    background: var(--pd-bg);
+    padding: 1.75rem 0 2.5rem;
     min-height: 500px;
 }
 
 .dashboard-tab-content .tab-pane {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.35s ease-in-out;
+}
+
+.dashboard-tab-content,
+.dashboard-content-section {
+    font-family: var(--pd-font);
 }
 
 @keyframes fadeIn {
@@ -143,44 +181,65 @@
 }
 
 /* ========================================
-   Dashboard Cards (for Overview tab)
+   Dashboard Cards — کارت‌های تمیز و رسمی (تب خانه)
 ======================================== */
 .dashboard-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border: 1px solid var(--card-border, #dee2e6);
-    transition: box-shadow 0.2s ease;
+    background: var(--pd-card-bg);
+    border-radius: var(--pd-radius);
+    box-shadow: var(--pd-card-shadow);
+    border: 1px solid var(--pd-border);
+    transition: box-shadow 0.25s ease, border-color 0.2s ease;
     height: 100%;
+    overflow: hidden;
 }
 
 .dashboard-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: var(--pd-card-shadow-hover);
+    border-color: rgba(26, 95, 122, 0.15);
 }
 
 .dashboard-card-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--card-border, #dee2e6);
+    padding: 1.15rem 1.35rem;
+    border-bottom: 1px solid var(--pd-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: linear-gradient(to bottom, rgba(248,250,252,0.6), transparent);
 }
 
 .dashboard-card-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    color: var(--medical-dark, #212529);
+    color: var(--pd-text);
     margin: 0;
     display: flex;
     align-items: center;
+    gap: 0.45rem;
 }
 
 .dashboard-card-title i {
-    color: var(--medical-primary, #2c5aa0);
+    color: var(--pd-primary);
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+.dashboard-card-header .btn-link {
+    color: var(--pd-primary);
+    font-weight: 500;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--pd-radius-sm);
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dashboard-card-header .btn-link:hover {
+    background: var(--pd-primary-bg);
+    color: var(--pd-primary-soft);
 }
 
 .dashboard-card-body {
-    padding: 1.5rem;
+    padding: 1.35rem;
     min-height: 200px;
     position: relative;
 }
@@ -347,44 +406,221 @@
 }
 
 /* ========================================
-   Section States (Loading, Empty, Error)
+   Section States — Loading, Empty, Error (کاربرپسند و رسمی)
 ======================================== */
 .dashboard-section-loading {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 2.5rem 1rem;
 }
 
 .dashboard-section-empty {
     text-align: center;
-    padding: 3rem 1rem;
-    color: var(--sidebar-text-muted, #6c757d);
+    padding: 2.5rem 1.25rem;
+    color: var(--pd-text-muted);
 }
 
 .dashboard-section-empty i {
-    color: #cbd5e0;
+    display: inline-block;
+    color: var(--pd-border);
+    margin-bottom: 0.75rem;
+    opacity: 0.9;
+}
+
+.dashboard-section-empty p {
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
 }
 
 .dashboard-section-error {
     padding: 1rem;
 }
 
+.dashboard-section-error .alert {
+    border-radius: var(--pd-radius-sm);
+    border: 1px solid transparent;
+}
+
 .dashboard-section-content {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.35s ease-in-out;
 }
 
 /* ========================================
-   Quick Stats (Overview Tab)
+   Quick Stats — آمار با کارت‌های جذاب و خوانا
 ======================================== */
 .dashboard-stats-section {
     padding: 0;
 }
 
+.stat-card {
+    background: var(--pd-card-bg);
+    border-radius: var(--pd-radius);
+    padding: 1.15rem 1rem;
+    border: 1px solid var(--pd-border);
+    box-shadow: var(--pd-card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pd-card-shadow-hover);
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--pd-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.stat-card-primary .stat-card-icon { background: var(--pd-primary-bg); color: var(--pd-primary); }
+.stat-card-success .stat-card-icon { background: var(--pd-success-soft); color: var(--pd-success); }
+.stat-card-info .stat-card-icon { background: var(--pd-info-soft); color: var(--pd-info); }
+.stat-card-warning .stat-card-icon { background: var(--pd-warning-soft); color: var(--pd-warning); }
+
+.stat-card-content { flex: 1; min-width: 0; }
+.stat-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pd-text);
+    line-height: 1.2;
+}
+.stat-card-label {
+    font-size: 0.8rem;
+    color: var(--pd-text-muted);
+    margin-top: 0.2rem;
+}
+
 #quickStatsContainer .dashboard-loading {
-    background: white;
-    border-radius: 8px;
-    padding: 3rem;
+    background: var(--pd-card-bg);
+    border-radius: var(--pd-radius);
+    padding: 2.5rem;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: var(--pd-card-shadow);
+    border: 1px solid var(--pd-border);
+}
+
+/* ========================================
+   لیست نوبت‌ها و پذیرش‌ها — آیتم‌های تمیز و قابل کلیک
+======================================== */
+.appointments-list,
+.receptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.appointment-item,
+.reception-item {
+    background: var(--pd-card-bg);
+    border: 1px solid var(--pd-border);
+    border-radius: var(--pd-radius-sm);
+    padding: 1rem 1.15rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.appointment-item:hover,
+.reception-item:hover {
+    border-color: rgba(26, 95, 122, 0.25);
+    box-shadow: 0 2px 8px rgba(26, 95, 122, 0.06);
+}
+
+.appointment-item-header,
+.reception-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+}
+
+.appointment-doctor,
+.reception-doctor {
+    font-weight: 600;
+    color: var(--pd-text);
+    font-size: 0.95rem;
+}
+
+.appointment-doctor i,
+.reception-doctor i {
+    color: var(--pd-primary);
+    margin-left: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.appointment-status,
+.reception-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.appointment-item-body,
+.reception-item-body {
+    font-size: 0.875rem;
+    color: var(--pd-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.appointment-item-body > div,
+.reception-item-body > div {
+    margin-bottom: 0.35rem;
+}
+
+.appointment-item-body i,
+.reception-item-body i {
+    width: 1.1em;
+    color: var(--pd-primary);
+    opacity: 0.8;
+    margin-left: 0.35rem;
+}
+
+.appointment-item-footer,
+.reception-item-footer {
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--pd-border);
+}
+
+.dashboard-appointment-details-btn,
+.btn-dashboard-view-all-appointments,
+.btn-dashboard-view-all-receptions {
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: var(--pd-radius-sm);
+    padding: 0.4rem 0.85rem;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-appointment-details-btn {
+    color: var(--pd-primary);
+    border-color: var(--pd-primary);
+}
+
+.dashboard-appointment-details-btn:hover {
+    background: var(--pd-primary-bg);
+    color: var(--pd-primary-soft);
+    border-color: var(--pd-primary-soft);
+}
+
+.btn-dashboard-view-all-appointments,
+.btn-dashboard-view-all-receptions {
+    color: var(--pd-primary);
+    border-color: var(--pd-border);
+}
+
+.btn-dashboard-view-all-appointments:hover,
+.btn-dashboard-view-all-receptions:hover {
+    background: var(--pd-primary-bg);
+    border-color: var(--pd-primary);
 }
 
 /* ========================================
@@ -392,7 +628,7 @@
 ======================================== */
 @media (max-width: 768px) {
     .dashboard-title-main {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
     
     .dashboard-tabs {
@@ -410,22 +646,35 @@
     
     .dashboard-tabs .nav-link {
         padding: 0.75rem 1rem;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
     
     .dashboard-tab-content {
-        padding: 1rem 0;
+        padding: 1.25rem 0 1.5rem;
     }
     
     .dashboard-card-header {
-        padding: 1rem;
+        padding: 1rem 1.15rem;
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
     }
     
     .dashboard-card-body {
-        padding: 1rem;
+        padding: 1.15rem;
+    }
+    
+    .stat-card {
+        padding: 1rem 0.85rem;
+    }
+    
+    .stat-card-value {
+        font-size: 1.35rem;
+    }
+    
+    .appointment-item,
+    .reception-item {
+        padding: 0.9rem 1rem;
     }
 }
 
@@ -448,10 +697,17 @@
 }
 
 /* ========================================
-   Accessibility
+   Accessibility — تمرکز واضح و قابل دسترس
 ======================================== */
 .dashboard-tabs .nav-link:focus {
-    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline: 2px solid var(--pd-primary);
+    outline-offset: 2px;
+}
+
+.dashboard-appointment-details-btn:focus,
+.btn-dashboard-view-all-appointments:focus,
+.btn-dashboard-view-all-receptions:focus {
+    outline: 2px solid var(--pd-primary);
     outline-offset: 2px;
 }
 
@@ -468,21 +724,114 @@
 }
 
 /* ========================================
-   Button Improvements
+   دکمه رزرو نوبت سریع — برجسته و قابل اعتماد
 ======================================== */
 #btnQuickAppointment {
-    font-weight: 500;
+    font-weight: 600;
     padding: 0.5rem 1.25rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    border-radius: var(--pd-radius-sm);
+    background: var(--pd-primary);
+    border-color: var(--pd-primary);
+    color: #fff;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 #btnQuickAppointment:hover {
+    background: var(--pd-primary-soft);
+    border-color: var(--pd-primary-soft);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(44, 90, 160, 0.2);
+    box-shadow: 0 4px 12px rgba(26, 95, 122, 0.25);
 }
 
 #btnQuickAppointment:active {
     transform: translateY(0);
+}
+
+#btnQuickAppointment:focus {
+    outline: 2px solid var(--pd-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   مودال جزئیات نوبت — رسمی و مناسب محیط درمانی
+======================================== */
+.apt-details-swal.swal2-container { padding: 1rem; }
+.apt-details-swal-popup {
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(26, 95, 122, 0.12), 0 4px 16px rgba(0,0,0,0.08);
+    max-width: min(92vw, 560px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    border: 1px solid var(--pd-border, #e2e8f0);
+}
+.apt-details-swal .swal2-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    padding: 1rem 1rem 0.75rem;
+    margin: 0;
+    border-bottom: 1px solid var(--pd-border, #e2e8f0);
+    flex-shrink: 0;
+    color: var(--pd-text, #1e293b);
+}
+.apt-details-swal .swal2-title .text-primary { color: var(--pd-primary) !important; }
+.apt-details-swal .swal2-html-container,
+.apt-details-swal-html {
+    padding: 0 1rem 0.75rem !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+    max-height: min(60vh, 420px) !important;
+    overflow-x: hidden !important;
+}
+.appointment-details-modal {
+    font-family: var(--pd-font);
+    padding: 0.5rem 0;
+}
+.appointment-details-modal .apt-modal-section { padding: 0; }
+.appointment-details-modal .apt-modal-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: baseline;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--pd-border, #e2e8f0);
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+.appointment-details-modal .apt-modal-row:last-child { border-bottom: none; }
+.appointment-details-modal .apt-modal-label {
+    font-weight: 600;
+    color: var(--pd-text-muted, #64748b);
+    flex-shrink: 0;
+}
+.appointment-details-modal .apt-modal-value {
+    color: var(--pd-text, #1e293b);
+    text-align: right;
+    word-break: break-word;
+}
+.appointment-details-modal .apt-modal-notes .apt-modal-value {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.apt-modal-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--pd-border, #e2e8f0);
+    flex-shrink: 0;
+}
+.apt-modal-footer-actions .btn {
+    border-radius: var(--pd-radius-sm);
+    font-weight: 500;
+}
+.apt-details-swal .swal2-close {
+    top: 0.75rem;
+    color: var(--pd-text-muted);
+}
+.apt-details-swal .swal2-close:hover {
+    color: var(--pd-text);
 }
 

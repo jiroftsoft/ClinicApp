@@ -52,6 +52,18 @@ namespace ClinicApp.Areas.Patient
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
+            // ✅ مسیر جایگزین: Patient/AppointmentBooking/SelectTime/{doctorId}/{date} (همان اکشن، فرمت URL متفاوت)
+            context.MapRoute(
+                name: "Patient_AppointmentBooking_SelectTime_Alt",
+                url: "Patient/AppointmentBooking/SelectTime/{doctorId}/{date}",
+                defaults: new { controller = "AppointmentBooking", action = "SelectTime", area = "Patient" },
+                constraints: new { 
+                    doctorId = @"^\d+$",
+                    date = @"^\d{4}-\d{2}-\d{2}$"
+                },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             context.MapRoute(
                 name: "Patient_AppointmentBooking_Confirm",
                 url: "Patient/Appointment/Book/Confirm",
@@ -96,6 +108,14 @@ namespace ClinicApp.Areas.Patient
                 name: "Patient_API_DoctorSearch",
                 url: "Patient/Api/DoctorSearch/{action}/{id}",
                 defaults: new { controller = "DoctorSearchApi", action = "GetAvailableDoctors", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
+            );
+
+            // ✅ Route برای API نوبت‌های بیمار (JS از /Patient/Api/PatientAppointment/GetAppointmentDetails و CancelAppointment استفاده می‌کند)
+            context.MapRoute(
+                name: "Patient_API_PatientAppointment",
+                url: "Patient/Api/PatientAppointment/{action}/{id}",
+                defaults: new { controller = "PatientAppointmentApi", action = "GetAppointments", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers.Api" }
             );
 

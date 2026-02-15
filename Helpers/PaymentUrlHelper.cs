@@ -54,6 +54,19 @@ namespace ClinicApp.Helpers
                 // ✅ استفاده از appSettings یا Instance
                 appSettings = appSettings ?? AppSettings.Instance;
 
+                // ✅ STEP 0: وقتی درخواست از localhost است (توسعه)، همیشه از Request.Url استفاده کن
+                // تا پس از پرداخت در سندباکس زرین‌پال به همان localhost برگردد و درگاه به درگاه وصل شود
+                var host = request.Url?.Host ?? "";
+                var isLocalhost = host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host == "127.0.0.1";
+                if (isLocalhost)
+                {
+                    var scheme = request.Url.Scheme;
+                    var port = request.Url.Port != 80 && request.Url.Port != 443 ? $":{request.Url.Port}" : "";
+                    var localUrl = $"{scheme}://{host}{port}{relativePath}";
+                    _logger.Information("✅ PaymentUrlHelper: درخواست از localhost است؛ CallbackUrl از Request.Url ساخته شد - {CallbackUrl}", localUrl);
+                    return localUrl;
+                }
+
                 // ✅ STEP 1: بررسی PaymentBaseUrl از تنظیمات
                 var baseUrl = appSettings.PaymentBaseUrl;
                 
@@ -66,10 +79,9 @@ namespace ClinicApp.Helpers
                 }
 
                 // ✅ STEP 2: Fallback به Request.Url
-                var scheme = request.Url.Scheme;
-                var host = request.Url.Host;
-                var port = request.Url.Port != 80 && request.Url.Port != 443 ? $":{request.Url.Port}" : "";
-                var fallbackUrl = $"{scheme}://{host}{port}{relativePath}";
+                var fallbackScheme = request.Url.Scheme;
+                var fallbackPort = request.Url.Port != 80 && request.Url.Port != 443 ? $":{request.Url.Port}" : "";
+                var fallbackUrl = $"{fallbackScheme}://{host}{fallbackPort}{relativePath}";
                 
                 _logger.Warning("⚠️ PaymentUrlHelper: PaymentBaseUrl تنظیم نشده است، استفاده از Request.Url (Fallback) - {CallbackUrl}", fallbackUrl);
                 return fallbackUrl;

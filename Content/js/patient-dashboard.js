@@ -104,18 +104,26 @@
                 timeout: 30000
             }).then(function(response) {
                 if (!response || !response.success || !response.data) {
+                    var errMsg = response && response.message ? response.message : 'خطا در بارگذاری';
                     $containers.forEach(function($c) {
-                        if ($c.length) self.showError($c, response && response.message ? response.message : 'خطا در بارگذاری');
+                        if ($c.length) {
+                            self.hideLoading($c);
+                            self.showError($c, errMsg);
+                        }
                     });
                     return;
                 }
                 var d = response.data;
                 var sectionErrors = d.SectionErrors || d.sectionErrors || {};
                 var $qs = $(sections.quickStats.container), $ra = $(sections.recentAppointments.container), $ua = $(sections.upcomingAppointments.container), $rr = $(sections.recentReceptions.container);
-                // QuickStats
+                // QuickStats — پشتیبانی از خطا و نمایش در همان ساختار کارت‌ها
                 if ($qs.length) {
-                    if (sectionErrors.QuickStats) { self.hideLoading($qs); self.showError($qs, sectionErrors.QuickStats); }
-                    else self.renderSection($qs, sections.quickStats.partial, d.QuickStats || d.quickStats);
+                    if (sectionErrors.QuickStats) {
+                        self.hideLoading($qs);
+                        self.showError($qs, sectionErrors.QuickStats);
+                    } else {
+                        self.renderSection($qs, sections.quickStats.partial, d.QuickStats || d.quickStats);
+                    }
                 }
                 // RecentAppointments
                 if ($ra.length) {
@@ -140,7 +148,10 @@
                     return;
                 }
                 $containers.forEach(function($c) {
-                    if ($c.length) self.showError($c, msg);
+                    if ($c.length) {
+                        self.hideLoading($c);
+                        self.showError($c, msg);
+                    }
                 });
             });
         },
@@ -369,10 +380,10 @@
                 
                 html += '</div>' +
                     '<div class="appointment-item-footer">' +
-                    '<a href="/Patient/Appointment/Details/' + apt.AppointmentId + '" ' +
-                    'class="btn btn-sm btn-outline-primary" data-ajax="true">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary dashboard-appointment-details-btn" ' +
+                    'data-appointment-id="' + apt.AppointmentId + '">' +
                     'مشاهده جزئیات <i class="fas fa-chevron-left"></i>' +
-                    '</a>' +
+                    '</button>' +
                     '</div>' +
                     '</div>';
             }
@@ -380,10 +391,9 @@
             
             if (sectionData.HasMore) {
                 html += '<div class="text-center mt-3">' +
-                    '<a href="/Patient/Appointment/MyAppointments" ' +
-                    'class="btn btn-sm btn-outline-primary" data-ajax="true">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-dashboard-view-all-appointments">' +
                     'مشاهده همه نوبت‌ها <i class="fas fa-chevron-left"></i>' +
-                    '</a>' +
+                    '</button>' +
                     '</div>';
             }
             
@@ -432,9 +442,9 @@
             
             if (sectionData.HasMore) {
                 html += '<div class="text-center mt-3">' +
-                    '<a href="#" class="btn btn-sm btn-outline-primary">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-dashboard-view-all-receptions">' +
                     'مشاهده همه پذیرش‌ها <i class="fas fa-chevron-left"></i>' +
-                    '</a>' +
+                    '</button>' +
                     '</div>';
             }
             
@@ -541,6 +551,124 @@
                     self.reloadSection(sectionName);
                 }
             });
+
+            // ✅ مشاهده جزئیات نوبت — فقط API، بدون رفرش، مودال
+            $(document).on('click', '.dashboard-appointment-details-btn', function(e) {
+                e.preventDefault();
+                var id = $(this).data('appointment-id');
+                if (!id) return;
+                self.showAppointmentDetailsModal(id);
+            });
+
+            // ✅ مشاهده همه نوبت‌ها — تعویض تب
+            $(document).on('click', '.btn-dashboard-view-all-appointments', function(e) {
+                e.preventDefault();
+                if (window.UnifiedDashboard && typeof window.UnifiedDashboard.switchTab === 'function') {
+                    window.UnifiedDashboard.switchTab('appointments');
+                } else {
+                    window.location.href = '/Patient/Appointment/MyAppointments';
+                }
+            });
+
+            // ✅ مشاهده همه پذیرش‌ها — تعویض به تب پرونده پزشکی
+            $(document).on('click', '.btn-dashboard-view-all-receptions', function(e) {
+                e.preventDefault();
+                if (window.UnifiedDashboard && typeof window.UnifiedDashboard.switchTab === 'function') {
+                    window.UnifiedDashboard.switchTab('medical-record');
+                }
+            });
+        },
+
+        /**
+         * ✅ نمایش جزئیات نوبت در مودال — یکپارچه با تب نوبت‌ها: مدرن، جذاب، تاریخ شمسی، دکمه‌های اقدام
+         * در صورت وجود PatientAppointments از همان مودال حرفه‌ای استفاده می‌شود.
+         */
+        showAppointmentDetailsModal: function(appointmentId) {
+            var self = this;
+            var $btn = $('.dashboard-appointment-details-btn[data-appointment-id="' + appointmentId + '"]');
+            if ($btn.length) $btn.prop('disabled', true);
+            $.ajax({
+                url: '/Patient/Api/PatientAppointment/GetAppointmentDetails',
+                method: 'GET',
+                data: { id: appointmentId },
+                dataType: 'json',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                cache: false
+            }).then(function(response) {
+                if ($btn.length) $btn.prop('disabled', false);
+                if (!response || !response.success) {
+                    self.showModalError(response && response.message ? response.message : 'خطا در دریافت جزئیات نوبت');
+                    return;
+                }
+                if (window.PatientAppointments && typeof window.PatientAppointments.showAppointmentDetailsModal === 'function') {
+                    window.PatientAppointments.showAppointmentDetailsModal(response.data);
+                    return;
+                }
+                self._showAppointmentDetailsFallback(response.data);
+            }).catch(function(xhr) {
+                if ($btn.length) $btn.prop('disabled', false);
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
+                self.showModalError(msg);
+            });
+        },
+
+        /** فرمت تاریخ API به شمسی خوانا — پشتیبانی از /Date(ticks)/ و ISO */
+        _formatDateForModal: function(dateValue) {
+            if (dateValue === undefined || dateValue === null || dateValue === '') return '—';
+            var d = null;
+            try {
+                if (typeof dateValue === 'string') {
+                    if (dateValue.indexOf('/Date(') === 0 && dateValue.indexOf(')/') !== -1) {
+                        var tick = parseInt(dateValue.replace(/^\/Date\(/, '').replace(/\)\/$/, ''), 10);
+                        if (!isNaN(tick)) d = new Date(tick);
+                    } else if (dateValue.indexOf('T') !== -1 || /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+                        d = new Date(dateValue);
+                    }
+                } else if (typeof dateValue === 'number') {
+                    d = new Date(dateValue);
+                }
+                if (d && !isNaN(d.getTime())) {
+                    return d.toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+                }
+            } catch (e) { }
+            return typeof dateValue === 'string' ? dateValue : '—';
+        },
+
+        /** مودال ساده (فقط وقتی PatientAppointments لود نشده) با تاریخ شمسی */
+        _showAppointmentDetailsFallback: function(d) {
+            var self = this;
+            var g = function(k) { return d[k] !== undefined && d[k] !== null ? d[k] : (d[k.charAt(0).toLowerCase() + k.slice(1)] || '—'); };
+            var dateStr = self._formatDateForModal(g('AppointmentDate'));
+            var html = '<div class="appointment-details-modal text-right" dir="rtl">' +
+                '<div class="apt-modal-section">' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">پزشک</span><span class="apt-modal-value">' + self.escapeHtml(g('DoctorName')) + '</span></div>' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">تخصص</span><span class="apt-modal-value">' + self.escapeHtml(g('DoctorSpecialization')) + '</span></div>' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">تاریخ</span><span class="apt-modal-value">' + self.escapeHtml(dateStr) + '</span></div>' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">زمان</span><span class="apt-modal-value">' + self.escapeHtml(g('AppointmentTime')) + '</span></div>' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">وضعیت</span><span class="apt-modal-value">' + self.escapeHtml(g('StatusDisplay')) + '</span></div>' +
+                '<div class="apt-modal-row"><span class="apt-modal-label">مبلغ</span><span class="apt-modal-value">' + (d.Price != null ? Number(d.Price).toLocaleString('fa-IR') : '—') + ' تومان</span></div>' +
+                '</div></div>';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<i class="fas fa-calendar-check text-primary me-2"></i>جزئیات نوبت',
+                    html: html,
+                    showConfirmButton: true,
+                    confirmButtonText: 'بستن',
+                    showCloseButton: true,
+                    width: 'min(92vw, 560px)',
+                    customClass: { container: 'apt-details-swal', popup: 'apt-details-swal-popup', htmlContainer: 'apt-details-swal-html' }
+                });
+            } else {
+                alert('پزشک: ' + g('DoctorName') + '\nتاریخ: ' + dateStr + '\nزمان: ' + g('AppointmentTime'));
+            }
+        },
+
+        showModalError: function(message) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ title: 'خطا', text: message || 'خطا در بارگذاری', icon: 'error', confirmButtonText: 'باشه' });
+            } else {
+                alert(message || 'خطا در بارگذاری');
+            }
         }
     };
 

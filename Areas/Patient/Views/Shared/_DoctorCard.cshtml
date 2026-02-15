@@ -31,10 +31,30 @@
                         @Model.DepartmentName
                     </p>
                 }
-                <p class="text-info mb-0">
-                    <i class="fas fa-calendar-check me-1"></i>
-                    @Model.ScheduleInfo
-                </p>
+                @if (Model.HasActiveSchedule && Model.AvailableDates != null && Model.AvailableDates.Any())
+                {
+                    <p class="text-info mb-1">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        <span class="small fw-semibold">برنامه کاری (تاریخ دقیق):</span>
+                    </p>
+                    <ul class="list-unstyled mb-0 small">
+                        @foreach (var d in Model.AvailableDates)
+                        {
+                            <li class="mb-2 text-secondary">
+                                <span class="d-block fw-medium text-dark">@d.DayName <span class="text-muted">(@d.DayNameShort)</span></span>
+                                <span class="d-block fw-semibold text-primary" dir="ltr" style="font-variant-numeric: tabular-nums;">@d.PersianDate</span>
+                                <span class="d-block text-muted">@d.TimeRange</span>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-info mb-0">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        @Model.ScheduleInfo
+                    </p>
+                }
             </div>
             <div class="col-md-4 text-end d-flex flex-column justify-content-between">
                 <div>
@@ -84,18 +104,11 @@
                     <a href="@selectDateUrl" 
                        class="btn btn-primary w-100 select-doctor-btn" 
                        data-doctor-id="@Model.DoctorId"
-                       data-href="@selectDateUrl">
+                       data-href="@selectDateUrl"
+                       aria-label="انتخاب پزشک @Model.FullName برای رزرو نوبت">
                         <i class="fas fa-calendar-plus me-1"></i>
                         انتخاب پزشک
                     </a>
-                    
-                    @* ✅ DEBUGGING: نمایش URL تولید شده (فقط در Debug Mode) *@
-                    if (this.Context.IsDebuggingEnabled)
-                    {
-                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
-                            🔍 Debug: URL = @selectDateUrl
-                        </small>
-                    }
                 }
                 else
                 {

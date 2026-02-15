@@ -1240,6 +1240,78 @@
     color: var(--medical-primary);
 }
 
+/* ✅ مودال جزئیات نوبت — رسمی، محیط درمانی، تاریخ شمسی */
+.apt-details-swal.swal2-container { padding: 1rem; }
+.apt-details-swal-popup {
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(44, 90, 160, 0.12), 0 4px 16px rgba(0,0,0,0.08);
+    max-width: min(92vw, 560px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    border: 1px solid var(--medical-border);
+}
+.apt-details-swal .swal2-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    padding: 1rem 1rem 0.75rem;
+    margin: 0;
+    border-bottom: 1px solid var(--medical-border);
+    flex-shrink: 0;
+    color: var(--medical-text);
+}
+.apt-details-swal .swal2-html-container,
+.apt-details-swal-html {
+    padding: 0 1rem 0.75rem !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+    max-height: min(60vh, 420px) !important;
+    overflow-x: hidden !important;
+}
+.appointment-details-modal {
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+    padding: 0.5rem 0;
+}
+.appointment-details-modal .apt-modal-section { padding: 0; }
+.appointment-details-modal .apt-modal-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: baseline;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--medical-border);
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+.appointment-details-modal .apt-modal-row:last-child { border-bottom: none; }
+.appointment-details-modal .apt-modal-label {
+    font-weight: 600;
+    color: var(--medical-text-muted);
+    flex-shrink: 0;
+}
+.appointment-details-modal .apt-modal-value {
+    color: var(--medical-text);
+    text-align: right;
+    word-break: break-word;
+}
+.appointment-details-modal .apt-modal-notes .apt-modal-value {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.apt-modal-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--medical-border);
+    flex-shrink: 0;
+}
+.apt-modal-footer-actions .btn { border-radius: 8px; font-weight: 500; }
+.apt-details-swal .swal2-close { top: 0.75rem; color: var(--medical-text-muted); }
+.apt-details-swal .swal2-close:hover { color: var(--medical-text); }
+
 /* ✅ 1️⃣9️⃣ Print Styles */
 @media print {
     .appointment-filter-section,

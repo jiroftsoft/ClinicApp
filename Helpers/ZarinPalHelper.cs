@@ -7,8 +7,13 @@ namespace ClinicApp.Helpers
     /// <summary>
     /// Helper برای خواندن تنظیمات ZarinPal از Web.config
     /// طراحی شده طبق اصول SRP - مسئولیت: مدیریت تنظیمات ZarinPal
-    /// 
-    /// طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md
+    ///
+    /// مستندات:
+    /// - درگاه پرداخت (Request/Verify/StartPay): https://www.zarinpal.com/docs/paymentGateway/
+    /// - API جدید (OAuth + GraphQL برای پنل): https://www.zarinpal.com/docs/apiDocs/
+    /// این کلاس فقط برای «درگاه پرداخت» استفاده می‌شود.
+    ///
+    /// طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md و Docs/ZARINPAL_REVIEW.md
     /// </summary>
     public static class ZarinPalHelper
     {
@@ -17,6 +22,7 @@ namespace ClinicApp.Helpers
         #region Configuration Keys
 
         private const string MerchantIdKey = "ZarinpalMerchantId";
+        private const string SandboxMerchantIdKey = "Zarinpal:SandboxMerchantId";
         private const string IsSandboxKey = "Zarinpal:IsSandbox";
         private const string RequestUrlKey = "Zarinpal:RequestUrl";
         private const string VerifyUrlKey = "Zarinpal:VerifyUrl";
@@ -32,10 +38,11 @@ namespace ClinicApp.Helpers
         private const string DefaultSandboxStartPayUrl = "https://sandbox.zarinpal.com/pg/StartPay/";
         private const string DefaultSandboxStatusUrl = "https://sandbox.zarinpal.com/pg/v4/payment/status.json";
 
-        private const string DefaultProductionRequestUrl = "https://api.zarinpal.com/pg/v4/payment/request.json";
-        private const string DefaultProductionVerifyUrl = "https://api.zarinpal.com/pg/v4/payment/verify.json";
-        private const string DefaultProductionStartPayUrl = "https://www.zarinpal.com/pg/StartPay/";
-        private const string DefaultProductionStatusUrl = "https://api.zarinpal.com/pg/v4/payment/status.json";
+        // طبق مستندات رسمی: https://www.zarinpal.com/docs/paymentGateway/connectToGateway.html
+        private const string DefaultProductionRequestUrl = "https://payment.zarinpal.com/pg/v4/payment/request.json";
+        private const string DefaultProductionVerifyUrl = "https://payment.zarinpal.com/pg/v4/payment/verify.json";
+        private const string DefaultProductionStartPayUrl = "https://payment.zarinpal.com/pg/StartPay/";
+        private const string DefaultProductionStatusUrl = "https://payment.zarinpal.com/pg/v4/payment/status.json";
 
         #endregion
 
@@ -65,6 +72,17 @@ namespace ClinicApp.Helpers
                 _logger.Error(ex, "❌ ZarinPal: خطا در خواندن Merchant ID از Web.config");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// مرچنت ای‌دی مخصوص سندباکس/تست محلی (اختیاری).
+        /// وقتی روی localhost اجرا می‌شود، اگر این مقدار تنظیم شده باشد به‌جای مرچنت پروداکشن استفاده می‌شود
+        /// تا درگاه درخواست را به‌خاطر عدم تطابق دامنه رد نکند.
+        /// </summary>
+        public static string GetSandboxMerchantId()
+        {
+            var value = ConfigurationManager.AppSettings[SandboxMerchantIdKey];
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
         #endregion
