@@ -69,6 +69,9 @@ using ClinicApp.Interfaces.CMS;
 using ClinicApp.Repositories.CMS;
 using ClinicApp.Services.CMS;
 using ClinicApp.Services.Payment;
+using ClinicApp.Interfaces.Notification;
+using ClinicApp.Repositories.Notification;
+using ClinicApp.Services.Notification;
 
 namespace ClinicApp
 {
@@ -608,6 +611,13 @@ namespace ClinicApp
 
                 // Register Message Notification Service
                 container.RegisterType<IMessageNotificationService, MessageNotificationService>(new PerRequestLifetimeManager());
+
+                // ✅ صف اعلان نوبت (Appointment Notification Queue) — برای AppointmentBookingService و Dashboard زنجیره وابستگی
+                container.RegisterType<INotificationQueueRepository, NotificationQueueRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IAppointmentNotificationQueueService, NotificationService>(new PerRequestLifetimeManager());
+                // ✅ Hangfire Jobs: پردازش صف اعلان و زمان‌بندی یادآوری نوبت
+                container.RegisterType<NotificationQueueProcessor>(new PerRequestLifetimeManager());
+                container.RegisterType<AppointmentReminderScheduler>(new PerRequestLifetimeManager());
 
                 // Register User Context Service
                 container.RegisterType<IUserContextService, UserContextService>(new PerRequestLifetimeManager());

@@ -68,7 +68,7 @@
 
             Swal.fire({
                 title: 'آیا مطمئن هستید؟',
-                html: 'آیا می‌خواهید این نوبت را لغو کنید؟<br><small class="text-muted">در صورت پرداخت آنلاین، استرداد مبلغ از طریق درگاه انجام نمی‌شود؛ برای استرداد به واحد پذیرش مراجعه کنید.</small>',
+                html: 'آیا می‌خواهید این نوبت را لغو کنید؟<br><small class="text-muted">لغو تنها تا ۲ ساعت قبل از زمان نوبت امکان‌پذیر است. در صورت پرداخت آنلاین، مبلغ طبق قوانین مرکز به اعتبار حساب یا از طریق واحد پذیرش قابل پیگیری است؛ بازگشت نقدی از درگاه انجام نمی‌شود.</small>',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'بله، لغو کن',
@@ -84,14 +84,16 @@
 
         cancelAppointment: function (appointmentId) {
             showLoading();
-
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                if (typeof hideLoading === 'function') hideLoading();
+                this.showError('توکن امنیتی یافت نشد. صفحه را رفرش کنید و دوباره تلاش کنید.');
+                return;
+            }
             $.ajax({
                 url: '/Patient/Api/PatientAppointment/CancelAppointment',
                 type: 'POST',
-                data: { id: appointmentId },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
+                data: { id: appointmentId, __RequestVerificationToken: token },
                 success: (response) => {
                     if (typeof hideLoading === 'function') hideLoading();
                     if (response.success) {

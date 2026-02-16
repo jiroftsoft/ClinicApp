@@ -1612,7 +1612,7 @@ namespace ClinicApp.Areas.Patient.Controllers
                             _logger.Information("✅ VERIFY: OnlinePayment و Appointment با موفقیت ذخیره شدند - OnlinePaymentId: {OnlinePaymentId}, AppointmentId: {AppointmentId}, RefId: {RefId}",
                                 verifiedPayment.OnlinePaymentId, verifiedAppointment?.AppointmentId, result.GatewayTransactionId);
 
-                            // ✅ Enterprise Notification: فقط Enqueue بعد از Commit (ارسال توسط Background Job)
+                            // ✅ Enterprise Notification: فقط Enqueue بعد از Commit (ارسال توسط Hangfire)
                             try
                             {
                                 if (verifiedAppointment != null)
@@ -1623,6 +1623,9 @@ namespace ClinicApp.Areas.Patient.Controllers
                                 _logger.Warning(ex, "خطا در Enqueue اعلان پرداخت - AppointmentId: {AppointmentId}",
                                     verifiedAppointment?.AppointmentId);
                             }
+
+                            // ✅ CRITICAL: پیام موفقیت پرداخت (جایگزین «در انتظار پرداخت» از مرحله رزرو)
+                            NotificationHelper.SetSuccess(TempData, "پرداخت با موفقیت انجام شد. نوبت شما رزرو شد و اطلاع‌رسانی ارسال می‌شود.", "موفقیت");
 
                             // ✅ Redirect به صفحه موفقیت
                             return RedirectToAction("PaymentSuccess", new 
@@ -1705,6 +1708,9 @@ namespace ClinicApp.Areas.Patient.Controllers
             {
                 _logger.Information("✅ PAYMENT SUCCESS: نمایش صفحه موفقیت - AppointmentId: {AppointmentId}, OnlinePaymentId: {OnlinePaymentId}, RefId: {RefId}",
                     appointmentId, onlinePaymentId, refId);
+
+                // ✅ نمایش پیام صحیح «پرداخت موفق» در layout (جایگزین پیام «در انتظار پرداخت» از مرحله رزرو)
+                NotificationHelper.SetSuccess(TempData, "پرداخت با موفقیت انجام شد. نوبت شما رزرو شد و اطلاع‌رسانی ارسال می‌شود.", "موفقیت");
 
                 var viewModel = new PaymentSuccessViewModel
                 {

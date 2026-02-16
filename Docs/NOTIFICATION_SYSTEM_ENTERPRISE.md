@@ -92,6 +92,19 @@ Update-Database
 - `NotificationQueueProcessor.ProcessPendingAsync()`: آیتم‌های Queued با `ScheduledTime == null` یا `<= now` را می‌خواند و با `IIdentityMessageService` (SMS) ارسال می‌کند؛ وضعیت را Sent/Failed به‌روز می‌کند.
 - `AppointmentReminderScheduler`: نوبت‌های در بازه 24h، 3h، 30min را پیدا می‌کند و برای هر کدام `EnqueueAppointmentReminderAsync` با نوع مناسب فراخوانی می‌کند (Idempotency جلوگیری از تکرار می‌کند).
 
+### ثبت Unity (الزامی برای Hangfire)
+
+در `UnityConfig.cs` باید موارد زیر ثبت شوند تا پس از پرداخت، اعلان در صف قرار گیرد و Hangfire بتواند آن را پردازش کند:
+
+- `INotificationQueueRepository` → `NotificationQueueRepository`
+- `IAppointmentNotificationQueueService` → `NotificationService`
+- `NotificationQueueProcessor` (برای Job پردازش صف)
+- `AppointmentReminderScheduler` (برای Jobهای یادآوری 24h، 3h، 30min)
+
+### UI پس از بازگشت از درگاه
+
+بعد از `PaymentCallback` و قبل از `RedirectToAction("PaymentSuccess")` باید پیام موفقیت پرداخت در TempData ست شود تا در layout به‌جای «نوبت در انتظار پرداخت» متن «پرداخت با موفقیت انجام شد...» نمایش داده شود. همین پیام در `PaymentSuccess` (GET) نیز ست می‌شود.
+
 ---
 
 ## ۴) قالب‌های پیام (Production-Level)

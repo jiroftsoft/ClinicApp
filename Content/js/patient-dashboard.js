@@ -48,15 +48,22 @@
         retryDelay: 2000
     };
 
+    /** تعداد تلاش مجدد خودکار برای Overview (خطای بار اول رفع شود بدون نمایش به کاربر) */
+    var _overviewRetryCount = 0;
+
     // ✅ PatientDashboard - Enterprise-Grade Module
     var PatientDashboard = {
         
         /**
          * ✅ Initialize Module
+         * تأخیر کوتاه قبل از اولین درخواست تا از race با session/auth جلوگیری شود.
          */
         init: function() {
-            this.loadAllSections();
+            var self = this;
             this.bindEvents();
+            setTimeout(function() {
+                self.loadAllSections();
+            }, 200);
         },
 
         /**
@@ -111,10 +118,21 @@
                             self.showError($c, errMsg);
                         }
                     });
+                    _overviewRetryCount = 0;
                     return;
                 }
                 var d = response.data;
                 var sectionErrors = d.SectionErrors || d.sectionErrors || {};
+                var hasSectionErrors = sectionErrors && Object.keys(sectionErrors).length > 0;
+
+                // ✅ تلاش مجدد خودکار یک بار در صورت خطای سکشن (رفع خطای بار اول بدون نمایش به کاربر)
+                if (hasSectionErrors && _overviewRetryCount < 1) {
+                    _overviewRetryCount++;
+                    setTimeout(function() { self.loadOverview(); }, 500);
+                    return;
+                }
+                if (!hasSectionErrors) _overviewRetryCount = 0;
+
                 var $qs = $(sections.quickStats.container), $ra = $(sections.recentAppointments.container), $ua = $(sections.upcomingAppointments.container), $rr = $(sections.recentReceptions.container);
                 // QuickStats — پشتیبانی از خطا و نمایش در همان ساختار کارت‌ها
                 if ($qs.length) {
@@ -147,6 +165,7 @@
                     else window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.href);
                     return;
                 }
+                _overviewRetryCount = 0;
                 $containers.forEach(function($c) {
                     if ($c.length) {
                         self.hideLoading($c);
@@ -531,10 +550,15 @@
         },
 
         /**
-         * ✅ Reload Section
+         * ✅ Reload Section — در حالت useOverview کل Overview یک‌جا دوباره لود می‌شود (یک درخواست، تجربه یکپارچه).
          */
         reloadSection: function(sectionName) {
-            this.loadSection(sectionName);
+            if (config.useOverview) {
+                _overviewRetryCount = 0;
+                this.loadOverview();
+            } else {
+                this.loadSection(sectionName);
+            }
         },
 
         /**
