@@ -169,7 +169,10 @@
     const fn = identity.firstName || identity.FirstName;
     const ln = identity.lastName || identity.LastName;
     const fa = identity.fatherName || identity.FatherName;
-    const mb = identity.mobile || identity.Mobile;
+    var mbRaw = identity.mobile || identity.Mobile;
+    var mb = (window.RxUtils && window.RxUtils.normalizeMobileForDisplay)
+      ? window.RxUtils.normalizeMobileForDisplay(mbRaw)
+      : (mbRaw || '');
     const ph = identity.phone || identity.Phone;
     const ad = identity.address || identity.Address;
     const gd = identity.gender || identity.Gender;
@@ -325,6 +328,9 @@
             console.log('🏥 V2: Identity filled to form');
             
             // ✅ Trigger state change event for Summary Header
+            var mobileForState = (window.RxUtils && window.RxUtils.normalizeMobileForDisplay)
+                ? window.RxUtils.normalizeMobileForDisplay(identity.Mobile || identity.mobile)
+                : (identity.Mobile || identity.mobile || '');
             const patientData = {
                 PatientId: identity.PatientId || identity.patientId,
                 NationalCode: identity.NationalCode || identity.nationalCode,
@@ -336,7 +342,7 @@
                 BirthDateIso: identity.BirthDate || identity.birthDate,
                 BirthDateShamsi: identity.BirthDateShamsi || identity.birthDateShamsi,
                 Address: identity.Address || identity.address,
-                Mobile: identity.Mobile || identity.mobile
+                Mobile: mobileForState
             };
             
             console.log('🏥 V2 Patient-Lookup: ✅ Triggering rv2:stateChanged with patientData:', patientData);

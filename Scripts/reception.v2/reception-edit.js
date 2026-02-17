@@ -145,7 +145,10 @@
         $('#fatherName').val(data.PatientFatherName || '');
         $('#gender').val(data.PatientGender || '');
         $('#birthSh').val(data.PatientBirthDateShamsi || '');
-        $('#mobile').val(data.PatientMobile || '');
+        var mobileDisplay = (window.RxUtils && window.RxUtils.normalizeMobileForDisplay)
+          ? window.RxUtils.normalizeMobileForDisplay(data.PatientMobile)
+          : (data.PatientMobile || '');
+        $('#mobile').val(mobileDisplay);
         $('#phone').val(data.PatientPhone || '');
         $('#address').val(data.PatientAddress || '');
 

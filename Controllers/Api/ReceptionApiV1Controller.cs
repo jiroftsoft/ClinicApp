@@ -526,7 +526,7 @@ namespace ClinicApp.Controllers.Api
                                                 FirstName = patient.FirstName,
                                                 LastName = patient.LastName,
                                                 FatherName = patient.FatherName,
-                                                Mobile = patient.PhoneNumber,
+                                                Mobile = RegexHelper.NormalizeMobile(patient.PhoneNumber),
                                                 Phone = null,
                                                 Address = patient.Address,
                                                 Gender = patient.Gender.ToString(),
@@ -646,7 +646,7 @@ namespace ClinicApp.Controllers.Api
                                             FirstName = patient.FirstName,
                                             LastName = patient.LastName,
                                             FatherName = patient.FatherName,
-                                            Mobile = patient.PhoneNumber,
+                                            Mobile = RegexHelper.NormalizeMobile(patient.PhoneNumber),
                                             Phone = null,
                                             Address = patient.Address,
                                             Gender = patient.Gender.ToString(),
@@ -935,7 +935,9 @@ namespace ClinicApp.Controllers.Api
                     return Json(ServiceResult<PatientIdentityDto>.Failed("نام خانوادگی الزامی است.", "VALIDATION"));
                 }
 
-                if (!string.IsNullOrWhiteSpace(request.Mobile) && !Regex.IsMatch(request.Mobile, @"^09\d{9}$"))
+                // نرمال‌سازی موبایل (پذیرش +989... و 09... و 0098...) برای نمایش و اعتبارسنجی یکسان
+                var mobileNormalized = RegexHelper.NormalizeMobile(request.Mobile);
+                if (!string.IsNullOrWhiteSpace(request.Mobile) && (string.IsNullOrWhiteSpace(mobileNormalized) || !Regex.IsMatch(mobileNormalized, @"^09\d{9}$")))
                 {
                     return Json(ServiceResult<PatientIdentityDto>.Failed("شماره موبایل نامعتبر است. باید 11 رقم و با 09 شروع شود.", "VALIDATION"));
                 }
@@ -968,11 +970,11 @@ namespace ClinicApp.Controllers.Api
                     }
                 }
 
-                // اعمال تغییرات مجاز
+                // اعمال تغییرات مجاز (موبایل به فرمت 09xxxxxxxxx ذخیره می‌شود)
                 patient.FirstName = request.FirstName?.Trim();
                 patient.LastName = request.LastName?.Trim();
                 patient.FatherName = request.FatherName?.Trim();
-                patient.PhoneNumber = request.Mobile?.Trim(); // PhoneNumber به عنوان Mobile
+                patient.PhoneNumber = !string.IsNullOrWhiteSpace(mobileNormalized) ? mobileNormalized : request.Mobile?.Trim();
                 patient.Address = request.Address?.Trim();
                 patient.Gender = gender;
                 patient.BirthDate = birthDate;
@@ -982,7 +984,7 @@ namespace ClinicApp.Controllers.Api
 
                 await _context.SaveChangesAsync();
 
-                // بازگرداندن DTO تازه برای همسان‌سازی UI
+                // بازگرداندن DTO تازه برای همسان‌سازی UI (موبایل همیشه به فرمت 09... برای فرم)
                 var updatedDto = new PatientIdentityDto
                 {
                     PatientId = patient.PatientId,
@@ -990,7 +992,7 @@ namespace ClinicApp.Controllers.Api
                     FirstName = patient.FirstName,
                     LastName = patient.LastName,
                     FatherName = patient.FatherName,
-                    Mobile = patient.PhoneNumber,
+                    Mobile = RegexHelper.NormalizeMobile(patient.PhoneNumber),
                     Phone = null,
                     Address = patient.Address,
                     Gender = patient.Gender.ToString(),

@@ -143,11 +143,17 @@
   function validateMobile(mobile) {
     console.log('🔍 Validating Mobile:', mobile);
     
-    // Normalize
+    // Normalize (ارقام فارسی + حذف فاصله)
     mobile = normalizePersianNumbers(String(mobile || '').trim());
-    
-    // حذف فاصله و خط فاصله
     mobile = mobile.replace(/[\s\-]/g, '');
+    // نرمال‌سازی فرمت بین‌المللی به 09xxxxxxxxx (مثلاً +989137699527 → 09137699527)
+    if (window.RxUtils && window.RxUtils.normalizeMobileForDisplay) {
+      mobile = window.RxUtils.normalizeMobileForDisplay(mobile) || mobile;
+    } else if (mobile.indexOf('+98') === 0 && mobile.length === 13) {
+      mobile = '0' + mobile.slice(4);
+    } else if (mobile.indexOf('989') === 0 && mobile.length === 12) {
+      mobile = '0' + mobile.slice(3);
+    }
     
     // بررسی خالی بودن
     if (!mobile) {

@@ -49,10 +49,13 @@
       pat = {};
     }
 
+    var mobileDisplay = (window.RxUtils && window.RxUtils.normalizeMobileForDisplay)
+      ? window.RxUtils.normalizeMobileForDisplay(pat.Mobile)
+      : (pat.Mobile || '');
     $('#id-nationalCode').val(pat.NationalCode || '');
     $('#id-firstName').val(pat.FirstName || '');
     $('#id-lastName').val(pat.LastName || '');
-    $('#id-mobile').val(pat.Mobile || '');
+    $('#id-mobile').val(mobileDisplay);
     $('#id-gender').val(pat.GenderTitle || formatGender(pat.Gender) || '');
     $('#id-birthdate-sh').val(pat.BirthDateShamsi || '');
     $('#id-address').val(pat.Address || '');
