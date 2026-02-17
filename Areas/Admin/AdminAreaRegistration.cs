@@ -349,6 +349,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق Best Practices
 
+            // CMS Home: فقط یک لینک به /Admin/CMS — ریدایرکت به صفحهٔ ورود CMS
+            context.MapRoute(
+                name: "Admin_CMS_Home",
+                url: "Admin/CMS",
+                defaults: new { controller = "InsuranceInfo", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.CMS" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // CMS Routes - مسیرهای CMS (باید قبل از Admin default باشد تا اولویت داشته باشد)
             context.MapRoute(
                 name: "Admin_CMS_Default",

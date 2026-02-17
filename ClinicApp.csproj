@@ -560,6 +560,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\VideoController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorHistoryController.cs" />
@@ -1796,6 +1797,7 @@
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotFilterViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotIndexViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotStatisticsViewModel.cs" />
+    <Compile Include="ViewModels\Admin\Dashboard\DashboardPageViewModel.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
     <Compile Include="ViewModels\CMS\AboutPageViewModels.cs" />
@@ -2153,6 +2155,8 @@
     <Content Include="Content\cashier\cashier-dashboard.css" />
     <Content Include="Content\css\about-page.css" />
     <Content Include="Content\css\admin-layout.css" />
+    <Content Include="Content\css\admin-platform.css" />
+    <Content Include="Content\css\admin-platform-themes.css" />
     <Content Include="Content\css\ajax-navigation.css" />
     <Content Include="Content\css\announcements-section.css" />
     <Content Include="Content\css\appointment-available-page.css" />
@@ -2361,6 +2365,7 @@
     <Content Include="Content\Insurance\supplementary-insurance.css" />
     <Content Include="Content\Insurance\supplementary-tariff.css" />
     <Content Include="Content\js\admin-layout.js" />
+    <Content Include="Content\js\admin-platform-layout.js" />
     <Content Include="Content\js\admin-notification-service.js" />
     <Content Include="Content\js\appointment-booking-loading.js" />
     <Content Include="Content\js\appointment-booking-progress.js" />
@@ -5655,6 +5660,7 @@
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\TransferServiceCategory.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorReporting\Index.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorReporting\PerformanceReport.cshtml" />
+    <Content Include="Areas\Admin\Views\Dashboard\Index.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Index.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Details.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Assignments.cshtml" />
@@ -7242,6 +7248,13 @@
     <Content Include="Views\Patient\Edit.cshtml" />
     <Content Include="Views\Patient\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_AdminLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_AdminPlatformLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_AdminPlatformHeader.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_AdminPlatformSidebar.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\DashboardWidgets\_WidgetQuickActions.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\DashboardWidgets\_WidgetTodayAppointments.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\DashboardWidgets\_WidgetPatientStats.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\DashboardWidgets\_WidgetFinancialOverview.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Account\ConfirmEmail.cshtml" />
     <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />

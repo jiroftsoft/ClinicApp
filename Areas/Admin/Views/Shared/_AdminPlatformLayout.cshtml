@@ -1,0 +1,58 @@
+@*
+    لایوت اختصاصی پلتفرم ادمین — داشبورد و مدیریت کلینیک
+    استفاده: Layout = "~/Areas/Admin/Views/Shared/_AdminPlatformLayout.cshtml"
+    طبق Docs/ADMIN_PLATFORM_ARCHITECTURE.md — بدون تغییر در _AdminLayout موجود
+*@
+@using ClinicApp.Models.Core
+@{
+    var appName = "کلینیک درمانی شفا";
+    var title = ViewBag.Title ?? "داشبورد مدیریت";
+    var metaDescription = ViewBag.MetaDescription ?? "پنل مدیریت کلینیک شفا";
+    var currentUser = User.Identity?.Name ?? "";
+    var currentTime = DateTime.Now;
+    var theme = Request.Cookies["AdminPlatformTheme"]?.Value ?? "light";
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="@theme">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="@metaDescription">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <title>@title - @appName</title>
+    @RenderSection("MetaTags", required: false)
+    <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css" />
+    @Styles.Render("~/Content/admin")
+    @Styles.Render("~/Content/css")
+    <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
+    @Styles.Render("~/Content/admin-platform")
+    @RenderSection("Styles", required: false)
+</head>
+<body class="admin-platform">
+    <a href="#main-content" class="skip-link sr-only">پرش به محتوای اصلی</a>
+
+    @Html.Partial("~/Areas/Admin/Views/Shared/_AdminPlatformHeader.cshtml")
+
+    <div class="admin-platform-container">
+        <aside class="admin-platform-sidebar" role="complementary" aria-label="منوی پنل مدیریت">
+            @Html.Partial("~/Areas/Admin/Views/Shared/_AdminPlatformSidebar.cshtml")
+        </aside>
+        <main id="main-content" class="admin-platform-main" role="main">
+            @Html.Partial("~/Areas/Admin/Views/Shared/_Breadcrumb.cshtml")
+            @RenderBody()
+        </main>
+    </div>
+
+    <div data-notifications class="notifications-container"></div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="~/Scripts/popper.min.js"></script>
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/modernizr")
+    <script src="~/Content/js/admin-platform-layout.js" defer></script>
+    @Html.Partial("~/Views/Shared/_ValidationToasts.cshtml")
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

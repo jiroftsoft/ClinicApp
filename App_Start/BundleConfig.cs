@@ -68,6 +68,12 @@ namespace ClinicApp
                 "~/Content/css/notifications.css"
             ));
 
+            // Admin Platform Layout (داشبورد اختصاصی مدیر)
+            bundles.Add(new StyleBundle("~/Content/admin-platform").Include(
+                "~/Content/css/admin-platform.css",
+                "~/Content/css/admin-platform-themes.css"
+            ));
+
             // Main CSS Bundle
             bundles.Add(new StyleBundle("~/Content/css").Include(
                 "~/Content/bootstrap.css",

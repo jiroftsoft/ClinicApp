@@ -1,0 +1,68 @@
+@*
+    سایدبار پلتفرم ادمین — نقش‌آگاه، لینک CMS با مسیر صحیح Admin/CMS/...
+    طبق ADMIN_PLATFORM_ARCHITECTURE.md
+*@
+@using System.Web.Mvc
+@using ClinicApp.Models.Core
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var areaName = ViewContext.RouteData.DataTokens["area"]?.ToString() ?? "";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isReceptionist = User.IsInRole(AppRoles.Receptionist);
+    var showCms = isAdmin; // یا (isAdmin || isReceptionist) طبق نیاز
+}
+<nav class="admin-platform-sidebar-nav" role="navigation" aria-label="منوی پنل مدیریت">
+    <div class="admin-platform-sidebar-section">
+        <h3 class="admin-platform-sidebar-title">داشبورد</h3>
+        <a href="@Url.Action("Index", "DoctorDashboard", new { area = "Admin" })" class="admin-platform-sidebar-link @(controllerName == "DoctorDashboard" ? "active" : "")">
+            <i class="fas fa-user-md"></i>
+            <span>داشبورد پزشکان</span>
+        </a>
+        <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })" class="admin-platform-sidebar-link @(controllerName == "Dashboard" ? "active" : "")">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>داشبورد مدیریت</span>
+        </a>
+    </div>
+
+    @if (showCms)
+    {
+        var cmsUrl = Url.RouteUrl("Admin_CMS_Home");
+        if (string.IsNullOrEmpty(cmsUrl)) { cmsUrl = "/Admin/CMS"; }
+        var path = Request.Url?.AbsolutePath ?? "";
+        var isInCms = path.IndexOf("/Admin/CMS", StringComparison.OrdinalIgnoreCase) >= 0;
+        <div class="admin-platform-sidebar-section">
+            <h3 class="admin-platform-sidebar-title">مدیریت محتوا</h3>
+            <a href="@cmsUrl" class="admin-platform-sidebar-link @(isInCms ? "active" : "")">
+                <i class="fas fa-sitemap"></i>
+                <span>CMS</span>
+            </a>
+        </div>
+    }
+
+    <div class="admin-platform-sidebar-section">
+        <h3 class="admin-platform-sidebar-title">مدیریت</h3>
+        <a href="@Url.Action("Index", "Clinic", new { area = "Admin" })" class="admin-platform-sidebar-link">
+            <i class="fas fa-hospital"></i>
+            <span>کلینیک‌ها</span>
+        </a>
+        <a href="@Url.Action("Index", "Doctor", new { area = "Admin" })" class="admin-platform-sidebar-link">
+            <i class="fas fa-user-md"></i>
+            <span>پزشکان</span>
+        </a>
+        <a href="@Url.Action("Index", "Service", new { area = "Admin" })" class="admin-platform-sidebar-link">
+            <i class="fas fa-stethoscope"></i>
+            <span>خدمات</span>
+        </a>
+    </div>
+
+    <div class="admin-platform-sidebar-footer">
+        <div class="admin-platform-sidebar-time">
+            <i class="fas fa-clock"></i>
+            <span>@DateTime.Now.ToString("HH:mm")</span>
+        </div>
+        <div class="admin-platform-sidebar-date">
+            <i class="fas fa-calendar"></i>
+            <span>@DateTime.Now.ToString("yyyy/MM/dd")</span>
+        </div>
+    </div>
+</nav>

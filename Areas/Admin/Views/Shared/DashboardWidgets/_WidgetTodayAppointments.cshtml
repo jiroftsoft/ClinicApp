@@ -1,0 +1,33 @@
+@model ClinicApp.ViewModels.Admin.Dashboard.WidgetTodayAppointmentsViewModel
+@{
+    var count = Model?.Count ?? 0;
+    var items = Model?.Items ?? new List<ClinicApp.ViewModels.Admin.Dashboard.TodayAppointmentItemViewModel>();
+}
+<div class="admin-dashboard-widget admin-widget-today-appointments">
+    <div class="admin-dashboard-widget-header">
+        <i class="fas fa-calendar-day text-info"></i>
+        <span>نوبت‌های امروز</span>
+    </div>
+    <div class="admin-dashboard-widget-body">
+        <p class="mb-2">
+            <strong class="fs-4">@count</strong> نوبت
+        </p>
+        @if (items.Any())
+        {
+            <ul class="list-unstyled small mb-0">
+                @foreach (var item in items.Take(5))
+                {
+                    <li class="d-flex justify-content-between py-1">
+                        <span>@(item.PatientName ?? "—")</span>
+                        <span>@(item.Time ?? "—")</span>
+                    </li>
+                }
+            </ul>
+            <a href="#" class="btn btn-link btn-sm p-0 mt-2">مشاهده همه</a>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">اتصال به سرویس نوبت در فاز بعد.</p>
+        }
+    </div>
+</div>

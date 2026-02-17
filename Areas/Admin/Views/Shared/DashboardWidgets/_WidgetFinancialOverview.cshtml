@@ -1,0 +1,22 @@
+@model ClinicApp.ViewModels.Admin.Dashboard.WidgetFinancialOverviewViewModel
+@{
+    var today = Model?.TodayRevenue ?? 0;
+    var week = Model?.WeekRevenue ?? 0;
+}
+<div class="admin-dashboard-widget admin-widget-financial">
+    <div class="admin-dashboard-widget-header">
+        <i class="fas fa-chart-line text-warning"></i>
+        <span>خلاصه مالی</span>
+    </div>
+    <div class="admin-dashboard-widget-body">
+        <p class="mb-2">
+            <span class="text-muted small">امروز:</span>
+            <strong>@today.ToString("N0")</strong> ریال
+        </p>
+        <p class="mb-0">
+            <span class="text-muted small">این هفته:</span>
+            <strong>@week.ToString("N0")</strong> ریال
+        </p>
+        <p class="text-muted small mt-2 mb-0">اتصال به سرویس مالی در فاز بعد.</p>
+    </div>
+</div>

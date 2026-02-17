@@ -8,6 +8,7 @@ using ClinicApp.Filters;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.ViewModels;
+using Serilog;
 
 namespace ClinicApp.Controllers
 {
@@ -66,15 +67,11 @@ namespace ClinicApp.Controllers
             }
             catch (Exception ex)
             {
-                // لاگ خطا با جزئیات کامل
+                // لاگ ساختاری برای تشخیص علت واقعی (مثلاً کدام سکشن/سرویس خطا داده)
+                Log.Error(ex, "Home/Index: خطا در GetHomePageDataAsync — برای رفع قطعی باید از همین لاگ علت مشخص شود");
                 System.Diagnostics.Debug.WriteLine($"❌ ERROR in HomeController.Index: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
                 if (ex.InnerException != null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                }
-                
-                // در صورت خطا، صفحه خالی با پیام خطا نمایش داده می‌شود
+                    System.Diagnostics.Debug.WriteLine($"Inner: {ex.InnerException.Message}");
                 ViewBag.ErrorMessage = "خطا در بارگذاری داده‌های صفحه اصلی. لطفاً دوباره تلاش کنید.";
                 return View(new HomePageViewModel());
             }

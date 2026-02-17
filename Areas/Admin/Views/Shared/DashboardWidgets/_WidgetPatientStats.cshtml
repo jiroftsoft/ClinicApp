@@ -1,0 +1,29 @@
+@model ClinicApp.ViewModels.Admin.Dashboard.WidgetPatientStatsViewModel
+@{
+    var today = Model?.TodayCount ?? 0;
+    var week = Model?.WeekCount ?? 0;
+    var month = Model?.MonthCount ?? 0;
+}
+<div class="admin-dashboard-widget admin-widget-patient-stats">
+    <div class="admin-dashboard-widget-header">
+        <i class="fas fa-users text-success"></i>
+        <span>آمار بیماران</span>
+    </div>
+    <div class="admin-dashboard-widget-body">
+        <ul class="list-unstyled mb-0">
+            <li class="d-flex justify-content-between py-2 border-bottom">
+                <span>امروز</span>
+                <strong>@today</strong>
+            </li>
+            <li class="d-flex justify-content-between py-2 border-bottom">
+                <span>این هفته</span>
+                <strong>@week</strong>
+            </li>
+            <li class="d-flex justify-content-between py-2">
+                <span>این ماه</span>
+                <strong>@month</strong>
+            </li>
+        </ul>
+        <p class="text-muted small mt-2 mb-0">اتصال به سرویس بیمار در فاز بعد.</p>
+    </div>
+</div>

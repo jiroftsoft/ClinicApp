@@ -109,10 +109,9 @@ namespace ClinicApp.Services
         {
             try
             {
-                var effectiveClinicId = clinicId ?? 1; // کلینیک پیش‌فرض: شفا
+                var effectiveClinicId = clinicId ?? 1;
                 _logger.Information("دریافت داده‌های صفحه اصلی - ClinicId: {ClinicId}", effectiveClinicId);
 
-                // لود موازی تمام بخش‌ها برای بهینه‌سازی Performance
                 var heroTask = GetHeroSectionAsync(effectiveClinicId);
                 var valuePropTask = GetValuePropositionAsync(effectiveClinicId);
                 var servicesTask = GetServicesSectionAsync(6, effectiveClinicId);
@@ -125,33 +124,20 @@ namespace ClinicApp.Services
                 var videosTask = GetVideoSectionAsync(6, "endoscopy", effectiveClinicId);
                 var contactTask = GetContactSectionAsync(effectiveClinicId);
                 var medicalEquipmentsTask = GetMedicalEquipmentsSectionAsync(6);
-                
-                // لود بخش‌های اضافی
                 var announcementsTask = GetAnnouncementsSectionAsync(5);
                 var faqsTask = GetFAQsSectionAsync(5);
-                var healthTipsTask = GetHealthTipsSectionAsync(4); // 3-4 نکته برای هوم‌پیج
+                var healthTipsTask = GetHealthTipsSectionAsync(4);
                 var insuranceInfosTask = GetInsuranceInfosSectionAsync(8);
                 var medicalServiceInfosTask = GetMedicalServiceInfosSectionAsync(6);
                 var emergencyContactsTask = GetEmergencyContactsSectionAsync();
-                
-                // لود Stories Section
                 var storiesTask = GetStoriesSectionAsync();
-                
-                // لود ایونت‌های تبلیغاتی فعال
                 var promotionalEventsTask = GetPromotionalEventsSectionAsync(effectiveClinicId);
-                
-                // لود Slider Sections
                 var sidebarSlidersTask = GetSidebarSlidersAsync();
                 var footerSlidersTask = GetFooterSlidersAsync();
-                
-                // لود Sidebar Data
-                var sidebarTask = GetSidebarDataAsync(effectiveClinicId, quickAppointmentTask, contactTask, 
+                var sidebarTask = GetSidebarDataAsync(effectiveClinicId, quickAppointmentTask, contactTask,
                     emergencyContactsTask, healthTipsTask, announcementsTask, sidebarSlidersTask);
-                
-                // لود Footer Data
                 var footerTask = GetFooterDataInternalAsync(effectiveClinicId, contactTask, emergencyContactsTask);
 
-                // انتظار برای تمام Task ها
                 await Task.WhenAll(
                     heroTask, valuePropTask, servicesTask, doctorsTask, quickAppointmentTask,
                     popularSpecialtiesTask, testimonialsTask, galleryTask, blogTask, videosTask, contactTask,

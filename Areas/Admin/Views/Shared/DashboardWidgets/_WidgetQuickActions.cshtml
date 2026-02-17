@@ -1,0 +1,28 @@
+@*
+    ویجت عملیات سریع — داشبورد پلتفرم ادمین
+    مدل: optional (می‌توان لیست لینک‌ها را از ViewModel گرفت)
+    طبق ADMIN_PLATFORM_ARCHITECTURE.md
+*@
+@using System.Web.Mvc
+<div class="admin-dashboard-widget admin-widget-quick-actions">
+    <div class="admin-dashboard-widget-header">
+        <i class="fas fa-bolt text-primary"></i>
+        <span>عملیات سریع</span>
+    </div>
+    <div class="admin-dashboard-widget-body">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="@Url.Action("Index", "ReceptionV2")" class="btn btn-primary btn-sm">
+                <i class="fas fa-user-plus"></i> پذیرش جدید
+            </a>
+            <a href="@Url.Action("Index", "DoctorDashboard", new { area = "Admin" })" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-tachometer-alt"></i> داشبورد پزشکان
+            </a>
+            <a href="@Url.Action("Index", "Clinic", new { area = "Admin" })" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-hospital"></i> کلینیک‌ها
+            </a>
+            <a href="@Url.RouteUrl("Admin_CMS_Default", new { controller = "InsuranceInfo", action = "Index" })" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-shield-alt"></i> اطلاعات بیمه
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,43 @@
+@*
+    هدر پلتفرم ادمین — لوگو، نوتیفیکیشن، منوی کاربر، تم
+    طبق ADMIN_PLATFORM_ARCHITECTURE.md
+*@
+@using ClinicApp.Models.Core
+@{
+    var appName = "کلینیک درمانی شفا";
+    var currentUser = User.Identity?.Name ?? "";
+}
+<header class="admin-platform-header" role="banner">
+    <div class="admin-platform-header-inner">
+        <div class="admin-platform-header-start">
+            <button type="button" class="admin-platform-sidebar-toggle d-md-none" aria-label="باز/بسته کردن منو" data-sidebar-toggle>
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="@Url.Action("Index", "DoctorDashboard", new { area = "Admin" })" class="admin-platform-logo" aria-label="@appName - داشبورد">
+                <i class="fas fa-hospital" aria-hidden="true"></i>
+                <span>@appName</span>
+            </a>
+        </div>
+        <div class="admin-platform-header-end">
+            <div class="admin-platform-notifications" aria-label="اعلان‌ها">
+                <button type="button" class="admin-platform-icon-btn" aria-label="اعلان‌ها" title="اعلان‌ها">
+                    <i class="fas fa-bell"></i>
+                    <span class="admin-platform-badge" data-notification-count style="display: none;">0</span>
+                </button>
+            </div>
+            <button type="button" class="admin-platform-icon-btn" data-theme-toggle aria-label="تغییر تم" title="Light / Medical Blue">
+                <i class="fas fa-palette"></i>
+            </button>
+            <div class="admin-platform-user">
+                <span class="admin-platform-user-name" aria-label="کاربر فعلی">
+                    <i class="fas fa-user-shield"></i>
+                    @currentUser
+                </span>
+                <a href="@Url.Action("LogOff", "Account")" class="btn btn-sm btn-outline-danger" aria-label="خروج" title="خروج">
+                    <i class="fas fa-sign-out-alt"></i>
+                    خروج
+                </a>
+            </div>
+        </div>
+    </div>
+</header>

@@ -81,17 +81,16 @@ namespace ClinicApp.Controllers
                 // اگر returnUrl مربوط به Patient Area است، باید چک کنیم که کاربر نقش Patient دارد
                 if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/Patient/", StringComparison.OrdinalIgnoreCase))
                 {
-                    // ✅ چک کردن نقش Patient - استفاده از AppRoles برای Strongly-Typed
                     if (!User.IsInRole(AppRoles.Patient))
                     {
-                        _log.Warning("⚠️ [Login] کاربر authenticate شده اما نقش Patient ندارد - redirect به Home. UserId: {UserId}, ReturnUrl: {ReturnUrl}", 
+                        _log.Warning("⚠️ [Login] کاربر authenticate شده اما نقش Patient ندارد - redirect به صفحهٔ پیش‌فرض. UserId: {UserId}, ReturnUrl: {ReturnUrl}",
                             User.Identity.GetUserId(), returnUrl);
-                        NotificationHelper.SetError(TempData, 
+                        NotificationHelper.SetError(TempData,
                             "شما مجوز دسترسی به بخش بیمار را ندارید. لطفاً با حساب کاربری بیمار وارد شوید.");
-                        return RedirectToAction("Index", "Home", new { area = "" });
+                        return Redirect(GetDefaultLandingUrl());
                     }
                 }
-                
+
                 return RedirectToLocal(returnUrl);
             }
             ViewBag.ReturnUrl = returnUrl;
@@ -720,13 +719,25 @@ namespace ClinicApp.Controllers
             return Redirect(GetSafeRedirectUrl(returnUrl));
         }
 
+        /// <summary>
+        /// تعیین صفحهٔ پیش‌فرض پس از لاگین بر اساس نقش کاربر (مدیر/منشی → پنل ادمین، بیمار/سایر → صفحهٔ اصلی).
+        /// </summary>
+        private string GetDefaultLandingUrl()
+        {
+            if (_authService.IsAuthenticated &&
+                (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Receptionist)))
+            {
+                return Url.Action("Index", "DoctorDashboard", new { area = "Admin" });
+            }
+            return Url.Action("Index", "Home", new { area = "" });
+        }
+
         private string GetSafeRedirectUrl(string returnUrl)
         {
-            // ✅ CRITICAL FIX: پردازش صحیح returnUrl
-            // اگر returnUrl خالی است یا null، به Home redirect می‌کنیم
+            // ✅ اگر returnUrl خالی است، بر اساس نقش کاربر به پنل ادمین یا صفحهٔ اصلی
             if (string.IsNullOrEmpty(returnUrl))
             {
-                return Url.Action("Index", "Home", new { area = "" });
+                return GetDefaultLandingUrl();
             }
 
             // ✅ Decode URL-encoded returnUrl (مثل http%3A%2F%2Flocalhost%3A3560%2F)
@@ -752,21 +763,18 @@ namespace ClinicApp.Controllers
                 }
                 else
                 {
-                    // ✅ اگر URL مربوط به host دیگری است، به Home redirect می‌کنیم (امنیت)
-                    _log.Warning("⚠️ [GetSafeRedirectUrl] External URL detected - redirecting to Home. ReturnUrl: {ReturnUrl}", returnUrl);
-                    return Url.Action("Index", "Home", new { area = "" });
+                    _log.Warning("⚠️ [GetSafeRedirectUrl] External URL detected - using default landing. ReturnUrl: {ReturnUrl}", returnUrl);
+                    return GetDefaultLandingUrl();
                 }
             }
 
-            // ✅ بررسی اینکه returnUrl یک local URL است
             if (Url.IsLocalUrl(returnUrl))
             {
                 return returnUrl;
             }
-            
-            // ✅ Default: redirect to Home after login
-            _log.Warning("⚠️ [GetSafeRedirectUrl] Invalid returnUrl - redirecting to Home. ReturnUrl: {ReturnUrl}", returnUrl);
-            return Url.Action("Index", "Home", new { area = "" });
+
+            _log.Warning("⚠️ [GetSafeRedirectUrl] Invalid returnUrl - using default landing. ReturnUrl: {ReturnUrl}", returnUrl);
+            return GetDefaultLandingUrl();
         }
 
         private void AddErrorsToModelState(ServiceResult result)

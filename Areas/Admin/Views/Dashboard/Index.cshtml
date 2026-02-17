@@ -1,0 +1,32 @@
+@model ClinicApp.ViewModels.Admin.Dashboard.DashboardPageViewModel
+@{
+    ViewBag.Title = "داشبورد مدیریت";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminPlatformLayout.cshtml";
+}
+
+<div class="admin-dashboard-page">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h4 mb-0 text-gray-800">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>
+            داشبورد مدیریت
+        </h1>
+    </div>
+
+    <div class="admin-dashboard-grid">
+        @if (Model?.ShowQuickActions == true)
+        {
+            <div class="admin-dashboard-grid-item">
+                @Html.Partial("~/Areas/Admin/Views/Shared/DashboardWidgets/_WidgetQuickActions.cshtml")
+            </div>
+        }
+        <div class="admin-dashboard-grid-item">
+            @Html.Partial("~/Areas/Admin/Views/Shared/DashboardWidgets/_WidgetTodayAppointments.cshtml", Model?.TodayAppointments)
+        </div>
+        <div class="admin-dashboard-grid-item">
+            @Html.Partial("~/Areas/Admin/Views/Shared/DashboardWidgets/_WidgetPatientStats.cshtml", Model?.PatientStats)
+        </div>
+        <div class="admin-dashboard-grid-item">
+            @Html.Partial("~/Areas/Admin/Views/Shared/DashboardWidgets/_WidgetFinancialOverview.cshtml", Model?.FinancialOverview)
+        </div>
+    </div>
+</div>

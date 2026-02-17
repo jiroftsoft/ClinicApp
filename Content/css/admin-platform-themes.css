@@ -1,0 +1,29 @@
+/**
+ * Admin Platform — تم‌های Light و Medical Blue
+ * استفاده: data-theme="light" | data-theme="medical-blue" روی <html>
+ */
+[data-theme="light"] {
+    --admin-platform-bg: #f4f6f9;
+    --admin-platform-header-bg: #1e3a8a;
+    --admin-platform-header-text: #fff;
+    --admin-platform-sidebar-bg: #fff;
+    --admin-platform-sidebar-hover: #f0f4f8;
+    --admin-platform-border: #dee2e6;
+    --admin-platform-text: #333;
+    --admin-platform-muted: #6c757d;
+    --admin-platform-primary: #1e3a8a;
+    --admin-platform-card-bg: #fff;
+}
+
+[data-theme="medical-blue"] {
+    --admin-platform-bg: #e8eef5;
+    --admin-platform-header-bg: #0d47a1;
+    --admin-platform-header-text: #fff;
+    --admin-platform-sidebar-bg: #fff;
+    --admin-platform-sidebar-hover: #e3f2fd;
+    --admin-platform-border: #bbdefb;
+    --admin-platform-text: #1565c0;
+    --admin-platform-muted: #5c6bc0;
+    --admin-platform-primary: #0d47a1;
+    --admin-platform-card-bg: #fff;
+}
