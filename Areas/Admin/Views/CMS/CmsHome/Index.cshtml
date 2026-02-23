@@ -1,0 +1,66 @@
+@*
+    صفحهٔ ورود CMS — گرید ماژول‌ها برای بهینه‌سازی و دسترسی سریع
+    مسیر: /Admin/CMS
+*@
+@using System.Web.Mvc
+@{
+    ViewBag.Title = "مدیریت محتوا (CMS)";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var cmsModules = new[]
+    {
+        new { Controller = "Slider", Title = "اسلایدر", Icon = "fa-images", Category = "محتوای بصری" },
+        new { Controller = "Gallery", Title = "گالری تصاویر", Icon = "fa-photo-video", Category = "محتوای بصری" },
+        new { Controller = "Video", Title = "ویدیوها", Icon = "fa-video", Category = "محتوای بصری" },
+        new { Controller = "Story", Title = "استوری‌ها", Icon = "fa-film", Category = "محتوای بصری" },
+        new { Controller = "BlogPost", Title = "مقالات", Icon = "fa-newspaper", Category = "محتوای متنی" },
+        new { Controller = "HealthTip", Title = "نکات سلامتی", Icon = "fa-heartbeat", Category = "محتوای متنی" },
+        new { Controller = "Announcement", Title = "اطلاعیه‌ها", Icon = "fa-bullhorn", Category = "محتوای متنی" },
+        new { Controller = "FAQ", Title = "سوالات متداول", Icon = "fa-question-circle", Category = "اطلاعات" },
+        new { Controller = "AboutPage", Title = "درباره ما", Icon = "fa-info-circle", Category = "اطلاعات" },
+        new { Controller = "InsuranceInfo", Title = "اطلاعات بیمه", Icon = "fa-shield-alt", Category = "اطلاعات" },
+        new { Controller = "MedicalServiceInfo", Title = "خدمات پزشکی", Icon = "fa-stethoscope", Category = "اطلاعات" },
+        new { Controller = "MedicalEquipment", Title = "تجهیزات پزشکی", Icon = "fa-x-ray", Category = "اطلاعات" },
+        new { Controller = "EmergencyContact", Title = "تماس اضطراری", Icon = "fa-phone-alt", Category = "اطلاعات" },
+        new { Controller = "Testimonial", Title = "نظرات بیماران", Icon = "fa-comments", Category = "تعاملات" },
+        new { Controller = "ContactForm", Title = "فرم تماس", Icon = "fa-envelope", Category = "تعاملات" },
+        new { Controller = "NewsletterSubscription", Title = "اشتراک خبرنامه", Icon = "fa-users", Category = "تعاملات" },
+        new { Controller = "NewsletterTemplate", Title = "قالب خبرنامه", Icon = "fa-file-alt", Category = "تعاملات" },
+        new { Controller = "NewsletterCampaign", Title = "کمپین خبرنامه", Icon = "fa-paper-plane", Category = "تعاملات" },
+        new { Controller = "ClinicWorkingHours", Title = "ساعات کاری", Icon = "fa-clock", Category = "تنظیمات" },
+        new { Controller = "Footer", Title = "فوتر سایت", Icon = "fa-list-alt", Category = "تنظیمات" }
+    };
+    var grouped = cmsModules.GroupBy(m => m.Category).OrderBy(g => g.Key).ToList();
+}
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h4 mb-0 text-gray-800">
+            <i class="fas fa-sitemap text-primary me-2"></i>
+            مدیریت محتوا (CMS)
+        </h1>
+    </div>
+    @foreach (var category in grouped)
+    {
+        <h5 class="text-muted mb-3">@category.Key</h5>
+        <div class="row g-3 mb-4">
+            @foreach (var module in category.OrderBy(m => m.Title))
+            {
+                var url = Url.RouteUrl("Admin_CMS_Default", new { controller = module.Controller, action = "Index" });
+                if (string.IsNullOrEmpty(url)) { url = "/Admin/CMS/" + module.Controller; }
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <a href="@url" class="text-decoration-none">
+                        <div class="card cms-module-card h-100 border shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas @module.Icon fa-2x text-primary mb-2"></i>
+                                <h6 class="card-title mb-0">@module.Title</h6>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>
+<style>
+    .cms-module-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .cms-module-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important; }
+</style>

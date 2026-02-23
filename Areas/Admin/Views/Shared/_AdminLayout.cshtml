@@ -206,56 +206,13 @@
     <!-- Main Layout -->
     <div class="container">
         <div class="layout">
-            <!-- Sidebar -->
+            <!-- Sidebar: منوی یکپارچه — حداکثر ۲ سطح، مبتنی بر سناریو کاری -->
             <aside class="sidebar" role="complementary" aria-label="منوی اصلی">
-                <nav role="navigation" aria-label="منوی ناوبری">
-                    <div class="nav-section">
-                        <h3 class="nav-section-title" aria-label="دسترسی سریع">دسترسی سریع</h3>
+                @Html.Partial("~/Areas/Admin/Views/Shared/_AsideMenu.cshtml")
 
-                        <a href="@Url.Action("Index","Home")" class="nav-item" aria-label="صفحه اصلی">
-                            <i class="fas fa-home icon" aria-hidden="true"></i>
-                            <span>صفحه اصلی</span>
-                        </a>
+                <hr class="nav-divider">
 
-                        <a href="@Url.Action("Index","ReceptionV2")" class="nav-item" aria-label="پذیرش بیمار">
-                            <i class="fas fa-user-plus icon" aria-hidden="true"></i>
-                            <span>پذیرش بیمار</span>
-                        </a>
-
-                        <a href="@Url.Action("Index","Clinic", new { area = "Admin" })" class="nav-item" aria-label="مدیریت کلینیک‌ها">
-                            <i class="fas fa-hospital icon" aria-hidden="true"></i>
-                            <span>کلینیک‌ها</span>
-                        </a>
-
-                        <a href="@Url.Action("Index","Doctor", new { area = "Admin" })" class="nav-item" aria-label="مدیریت پزشکان">
-                            <i class="fas fa-user-md icon" aria-hidden="true"></i>
-                            <span>پزشکان</span>
-                        </a>
-
-                        <a href="@Url.Action("Index","Service", new { area = "Admin" })" class="nav-item" aria-label="خدمات پزشکی">
-                            <i class="fas fa-stethoscope icon" aria-hidden="true"></i>
-                            <span>خدمات پزشکی</span>
-                        </a>
-
-                        <a href="@Url.Action("Index","InsurancePlan", new { area = "Admin" })" class="nav-item" aria-label="پلن‌های بیمه">
-                            <i class="fas fa-shield-alt icon" aria-hidden="true"></i>
-                            <span>بیمه‌ها</span>
-                        </a>
-                    </div>
-
-                    <hr class="nav-divider">
-
-                    <!-- Admin Modules Menu Section -->
-                    @Html.Partial("~/Areas/Admin/Views/Shared/_AdminModulesMenu.cshtml")
-
-                    <hr class="nav-divider">
-
-                    <!-- CMS Menu Section -->
-                    @Html.Partial("~/Areas/Admin/Views/Shared/_CMSMenu.cshtml")
-
-                    <hr class="nav-divider">
-
-                    <div class="nav-section">
+                <div class="nav-section">
                         <h3 class="nav-section-title" aria-label="عملیات سریع">عملیات سریع</h3>
 
                         <a href="@Url.Action("Index","ReceptionV2")" class="btn btn-primary nav-action-btn" aria-label="پذیرش جدید">
@@ -285,7 +242,6 @@
                             </div>
                         </div>
                     </div>
-                </nav>
             </aside>
 
             <!-- Main Content -->

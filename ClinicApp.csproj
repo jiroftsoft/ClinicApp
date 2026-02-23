@@ -538,6 +538,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\AboutPageController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AnnouncementController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BaseCMSController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\CmsHomeController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostCommentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BlogPostController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\ClinicWorkingHoursController.cs" />
@@ -4784,6 +4785,7 @@
     <Content Include="Areas\Patient\Views\Appointment\Available.cshtml" />
     <Content Include="Areas\Patient\Views\Appointment\DoctorDetails.cshtml" />
     <Content Include="Areas\Patient\Views\Appointment\_DoctorSchedule.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\CmsHome\Index.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\Announcement\Create.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\Announcement\Details.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\Announcement\Edit.cshtml" />
@@ -5356,6 +5358,7 @@
     <Content Include="Content\bootstrap-grid.css.map" />
     <Content Include="Content\toastr.scss" />
     <Content Include="Content\toastr.less" />
+    <Content Include="Areas\Admin\Views\Shared\_AsideMenu.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

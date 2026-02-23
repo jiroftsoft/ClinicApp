@@ -71,7 +71,8 @@
                     @foreach (var module in category.OrderBy(m => m.Title))
                     {
                         var isActive = controllerName.Equals(module.Controller, StringComparison.OrdinalIgnoreCase);
-                        var moduleUrl = Url.Action("Index", module.Controller, new { area = "Admin" });
+                        var moduleUrl = Url.RouteUrl("Admin_CMS_Default", new { controller = module.Controller, action = "Index" });
+                        if (string.IsNullOrEmpty(moduleUrl)) { moduleUrl = "/Admin/CMS/" + module.Controller; }
                         
                         <li class="cms-menu-item @(isActive ? "active" : "")">
                             <a href="@moduleUrl" 

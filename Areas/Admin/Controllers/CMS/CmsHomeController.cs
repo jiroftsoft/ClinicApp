@@ -11,7 +11,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         [HttpGet]
         public ActionResult Index()
         {
-            return View(GetViewPath("Index"));
+            return View("~/Areas/Admin/Views/CMS/CmsHome/Index.cshtml");
         }
     }
 }
