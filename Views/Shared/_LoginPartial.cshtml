@@ -1,6 +1,7 @@
 @using Microsoft.AspNet.Identity
 @using ClinicApp.Helpers
 @using ClinicApp.Constants
+@using ClinicApp.Models.Core
 @{
     // ✅ ENHANCED FIX: Check authentication state with multiple fallbacks
     // Priority: OWIN Context > Cookie Existence > Request.IsAuthenticated
@@ -101,43 +102,71 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 
-                @* Menu Items - Full Page Navigation for Patient Area *@
-                @* ✅ BEST PRACTICE: لینک به داشبورد و صفحات مربوطه *@
+                @* Menu Items: مدیر/منشی → داشبورد ادمین؛ بیمار → داشبورد بیمار *@
+                @{
+                    var isAdminOrReceptionist = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Receptionist);
+                }
+                @if (isAdminOrReceptionist)
+                {
+                    @* مسیر صریح به /Admin/Dashboard طبق قرارداد — جلوگیری از ساخت /Admin/CMS/Dashboard *@
+                    var adminDashboardUrl = Url.RouteUrl("Admin_default", new { controller = "Dashboard", action = "Index" });
+                    if (string.IsNullOrEmpty(adminDashboardUrl)) { adminDashboardUrl = Url.Content("~/Admin/Dashboard"); }
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>داشبورد</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span>پروفایل من</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
+                            <i class="fas fa-cog"></i>
+                            <span>تنظیمات</span>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#overview" data-ajax="false">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>داشبورد</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#profile" data-ajax="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span>پروفایل من</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#appointments" data-ajax="false">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>نوبت‌های من</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#medical-record" data-ajax="false">
+                            <i class="fas fa-file-medical"></i>
+                            <span>پرونده الکترونیک</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#settings" data-ajax="false">
+                            <i class="fas fa-cog"></i>
+                            <span>تنظیمات</span>
+                        </a>
+                    </li>
+                }
                 <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#overview" data-ajax="false">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>داشبورد</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#profile" data-ajax="false">
-                        <i class="fas fa-user-circle"></i>
-                        <span>پروفایل من</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#appointments" data-ajax="false">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>نوبت‌های من</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#medical-record" data-ajax="false">
-                        <i class="fas fa-file-medical"></i>
-                        <span>پرونده الکترونیک</span>
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                
-                @* Settings & Logout *@
-                <li>
-                    <a class="dropdown-item user-menu-item" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#settings" data-ajax="false">
-                        <i class="fas fa-cog"></i>
-                        <span>تنظیمات</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Action("LogOff", "Account")" 
+                    <a href="@Url.Action("LogOff", "Account", new { area = "" })" 
                        class="dropdown-item user-menu-item user-menu-logout-link"
                        onclick="event.preventDefault(); event.stopPropagation(); var f=document.createElement('form'); f.method='POST'; f.action=this.href; var t=document.createElement('input'); t.type='hidden'; t.name='__RequestVerificationToken'; t.value=document.querySelector('input[name=__RequestVerificationToken]').value; f.appendChild(t); document.body.appendChild(f); f.submit(); return false;"
                        aria-label="خروج از حساب کاربری">

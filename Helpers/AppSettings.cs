@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using ClinicApp.Interfaces;
 using ClinicApp.Helpers;
@@ -312,8 +312,8 @@ namespace ClinicApp.Helpers
         {
             // AppointmentAvailableDatesMaxCount
             AppointmentAvailableDatesMaxCount = GetIntSetting("Appointment:AvailableDatesMaxCount",
-                5,
-                "حداکثر تعداد تاریخ‌های نوبت موجود برای نمایش",
+                1,
+                "حداکثر تعداد تاریخ‌های پیش‌نمایش روی کارت پزشک (پیش‌فرض ۱ = فقط نخستین روز کاری بعدی)",
                 1, 20);
 
             // AppointmentAvailableDatesDaysToCheck

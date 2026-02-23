@@ -30,6 +30,7 @@
     @RenderSection("Styles", required: false)
 </head>
 <body class="admin-platform">
+    @Html.AntiForgeryToken()
     <a href="#main-content" class="skip-link sr-only">پرش به محتوای اصلی</a>
 
     @Html.Partial("~/Areas/Admin/Views/Shared/_AdminPlatformHeader.cshtml")

@@ -166,6 +166,25 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// فیلترهای فعال
         /// </summary>
         public DoctorFilterViewModel ActiveFilters { get; set; } = new DoctorFilterViewModel();
+
+        /// <summary>
+        /// لیست کلینیک‌ها برای فیلتر
+        /// </summary>
+        public List<IdNameViewModel> Clinics { get; set; } = new List<IdNameViewModel>();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای فیلتر
+        /// </summary>
+        public List<IdNameViewModel> Departments { get; set; } = new List<IdNameViewModel>();
+    }
+
+    /// <summary>
+    /// مدل ساده Id و Name برای دراپ‌داون‌ها
+    /// </summary>
+    public class IdNameViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 
     /// <summary>

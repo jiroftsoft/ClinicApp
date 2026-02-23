@@ -138,6 +138,7 @@
     </script>
 </head>
 <body>
+    @Html.AntiForgeryToken()
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link sr-only" aria-label="پرش به محتوای اصلی">پرش به محتوای اصلی</a>
 
@@ -190,10 +191,11 @@
                             <i class="fas fa-user me-1" aria-hidden="true"></i>
                             @currentUser
                         </span>
-                        <a href="@Url.Action("LogOff","Account")"
+                        <a href="@Url.Action("LogOff", "Account", new { area = "" })"
                            class="btn btn-logout"
                            aria-label="خروج از سیستم"
-                           title="خروج از سیستم">
+                           title="خروج از سیستم"
+                           onclick="event.preventDefault(); var f=document.createElement('form'); f.method='POST'; f.action=this.href; var t=document.createElement('input'); t.type='hidden'; t.name='__RequestVerificationToken'; t.value=document.querySelector('input[name=__RequestVerificationToken]')?.value||''; f.appendChild(t); document.body.appendChild(f); f.submit(); return false;">
                             <i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i>
                             خروج
                         </a>

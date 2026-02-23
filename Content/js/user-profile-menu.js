@@ -107,12 +107,9 @@
                     return false;
                 }
 
-                // ✅ If data-ajax="false" or not set, use normal navigation
+                // ✅ If data-ajax="false" or not set, use normal navigation (بدون اضافه کردن .loading تا لینک غیرفعال نشود)
                 if (!isAjax || isAjax === false) {
                     console.log('🔗 Full page navigation to:', url, 'Title:', menuText);
-                    // ✅ Add loading state
-                    $this.addClass('loading');
-                    // Let browser handle normal navigation
                     return true;
                 }
 

@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDashboardIndexViewModel
+@model ClinicApp.Interfaces.ClinicAdmin.DoctorDashboardIndexViewModel
 @{
     ViewBag.Title = "داشبورد پزشکان";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -134,7 +134,7 @@
                         <i class="fas fa-user-md fa-2x"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h4 class="mb-1">@(Model?.TotalDoctors ?? 0)</h4>
+                        <h4 class="mb-1">@(Model?.Stats?.TotalDoctors ?? 0)</h4>
                         <p class="mb-0">کل پزشکان</p>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                         <i class="fas fa-check-circle fa-2x"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h4 class="mb-1">@(Model?.ActiveDoctors ?? 0)</h4>
+                        <h4 class="mb-1">@(Model?.Stats?.ActiveDoctors ?? 0)</h4>
                         <p class="mb-0">پزشکان فعال</p>
                     </div>
                 </div>
@@ -160,7 +160,7 @@
                         <i class="fas fa-link fa-2x"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h4 class="mb-1">@(Model?.TotalAssignments ?? 0)</h4>
+                        <h4 class="mb-1">@(Model?.Stats?.TotalAssignments ?? 0)</h4>
                         <p class="mb-0">کل انتسابات</p>
                     </div>
                 </div>
@@ -173,7 +173,7 @@
                         <i class="fas fa-chart-line fa-2x"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h4 class="mb-1">@(Model?.CompletionPercentage?.ToString("F1") ?? "0")%</h4>
+                        <h4 class="mb-1">@(Model?.Stats != null ? Model.Stats.CompletionPercentage.ToString("F1") : "0")%</h4>
                         <p class="mb-0">نرخ تکمیل</p>
                     </div>
                 </div>
@@ -243,7 +243,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap">
-                        <a href="@Url.Action("Create", "DoctorCrud")" class="quick-action-btn">
+                        <a href="@(Url.RouteUrl("Admin_default", new { controller = "Doctor", action = "Create" }) ?? Url.Action("Create", "Doctor", new { area = "Admin" }))" class="quick-action-btn">
                             <i class="fas fa-plus me-2"></i>
                             افزودن پزشک جدید
                         </a>
@@ -278,7 +278,7 @@
                         <i class="fas fa-users me-2"></i>
                         پزشکان اخیر
                     </h5>
-                    <a href="@Url.Action("Index", "DoctorCrud")" class="btn btn-sm btn-primary">
+                    <a href="@(Url.RouteUrl("Admin_default", new { controller = "Doctor", action = "Index" }) ?? Url.Action("Index", "Doctor", new { area = "Admin" }))" class="btn btn-sm btn-primary">
                         مشاهده همه
                     </a>
                 </div>
@@ -292,12 +292,12 @@
                                     <div class="doctor-card">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="flex-shrink-0">
-                                                <img src="@(string.IsNullOrEmpty(doctor.ProfileImage) ? "/Content/Images/default-avatar.png" : doctor.ProfileImage)" 
+                                                <img src="/Content/Images/default-avatar.png" 
                                                      class="rounded-circle" width="50" height="50" alt="تصویر پزشک">
                                             </div>
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">@doctor.FullName</h6>
-                                                <p class="text-muted mb-0">@doctor.Specialization</p>
+                                                <p class="text-muted mb-0">@(doctor.SpecializationNames != null && doctor.SpecializationNames.Any() ? string.Join("، ", doctor.SpecializationNames) : "—")</p>
                                             </div>
                                             <div class="flex-shrink-0">
                                                 <span class="status-badge @(doctor.IsActive ? "status-active" : "status-inactive")">
@@ -307,17 +307,17 @@
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <small class="text-muted">
-                                                <i class="fas fa-building me-1"></i>
-                                                @doctor.ClinicName
+                                                <i class="fas fa-link me-1"></i>
+                                                @(doctor.ActiveAssignmentsCount) انتساب فعال
                                             </small>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="@Url.Action("Details", new { id = doctor.Id })" class="btn btn-outline-primary btn-sm">
+                                                <a href="@Url.Action("Details", "Doctor", new { area = "Admin", id = doctor.DoctorId })" class="btn btn-outline-primary btn-sm">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="@Url.Action("Assignments", new { id = doctor.Id })" class="btn btn-outline-info btn-sm">
+                                                <a href="@Url.Action("Index", "DoctorAssignment", new { area = "Admin" })" class="btn btn-outline-info btn-sm">
                                                     <i class="fas fa-link"></i>
                                                 </a>
-                                                <button class="btn btn-outline-success btn-sm" onclick="getQuickActions(@doctor.Id)">
+                                                <button class="btn btn-outline-success btn-sm" onclick="getQuickActions(@doctor.DoctorId)">
                                                     <i class="fas fa-bolt"></i>
                                                 </button>
                                             </div>
@@ -333,7 +333,7 @@
                             <i class="fas fa-user-md fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">هیچ پزشکی یافت نشد</h5>
                             <p class="text-muted">برای شروع، پزشک جدیدی اضافه کنید</p>
-                            <a href="@Url.Action("Create", "DoctorCrud")" class="btn btn-primary">
+                            <a href="@(Url.RouteUrl("Admin_default", new { controller = "Doctor", action = "Create" }) ?? Url.Action("Create", "Doctor", new { area = "Admin" }))" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>
                                 افزودن پزشک جدید
                             </a>
