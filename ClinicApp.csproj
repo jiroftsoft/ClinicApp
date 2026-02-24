@@ -534,6 +534,7 @@
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\AppointmentAvailabilityController.cs" />
     <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CashierDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AboutPageController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AnnouncementController.cs" />
@@ -597,6 +598,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
     <Compile Include="Areas\Admin\Controllers\UserManagementController.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CashierDashboardIndexViewModel.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\AppointmentBookingApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\DoctorSearchApiController.cs" />
     <Compile Include="Areas\Patient\Controllers\Api\MedicalRecordApiController.cs" />
@@ -1120,6 +1122,10 @@
     <Compile Include="Migrations\202602231915348_AddOnlineVisitModoule.cs" />
     <Compile Include="Migrations\202602231915348_AddOnlineVisitModoule.Designer.cs">
       <DependentUpon>202602231915348_AddOnlineVisitModoule.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.cs" />
+    <Compile Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.Designer.cs">
+      <DependentUpon>202602240719299_DoctorSchedule.OnlineConsultationFee.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
@@ -5375,6 +5381,7 @@
     <Content Include="Content\toastr.less" />
     <Content Include="Areas\Admin\Views\Shared\_AsideMenu.cshtml" />
     <Content Include="Areas\Patient\Views\OnlineConsultation\Join.cshtml" />
+    <Content Include="Areas\Admin\Views\CashierDashboard\Index.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -7768,6 +7775,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602231915348_AddOnlineVisitModoule.resx">
       <DependentUpon>202602231915348_AddOnlineVisitModoule.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.resx">
+      <DependentUpon>202602240719299_DoctorSchedule.OnlineConsultationFee.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

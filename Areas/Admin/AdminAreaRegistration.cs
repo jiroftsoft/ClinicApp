@@ -134,6 +134,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
+            // ✅ BusinessRule در Insurance است — مسیر صریح برای Admin/BusinessRule و Admin/CMS/BusinessRule
+            context.MapRoute(
+                name: "Admin_BusinessRule_Index",
+                url: "Admin/BusinessRule/{action}/{id}",
+                defaults: new { controller = "BusinessRule", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
             context.MapRoute(
                 name: "Admin_CombinedInsuranceCalculation_Index",
                 url: "Admin/Insurance/CombinedInsuranceCalculation/{action}/{id}",
@@ -371,6 +379,30 @@ namespace ClinicApp.Areas.Admin
                 name: "Admin_CMS_DoctorServiceCategory_Fix",
                 url: "Admin/CMS/DoctorServiceCategory/{action}/{id}",
                 defaults: new { controller = "DoctorServiceCategory", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // مسیر جایگزین: اگر لینک /Admin/CMS/BusinessRule زده شد — کنترلر BusinessRule در Insurance است نه CMS
+            context.MapRoute(
+                name: "Admin_CMS_BusinessRule_Fix",
+                url: "Admin/CMS/BusinessRule/{action}/{id}",
+                defaults: new { controller = "BusinessRule", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // مسیر جایگزین: اگر لینک /Admin/CMS/PaymentManagement زده شد — کنترلر PaymentManagement در Admin است نه CMS
+            context.MapRoute(
+                name: "Admin_CMS_PaymentManagement_Fix",
+                url: "Admin/CMS/PaymentManagement/{action}/{id}",
+                defaults: new { controller = "PaymentManagement", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // مسیر جایگزین: داشبورد صندوق — /Admin/CMS/CashierDashboard
+            context.MapRoute(
+                name: "Admin_CMS_CashierDashboard_Fix",
+                url: "Admin/CMS/CashierDashboard/{action}/{id}",
+                defaults: new { controller = "CashierDashboard", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 

@@ -611,6 +611,42 @@ namespace ClinicApp.Services.Payment.Management
         }
 
         #endregion
+
+        #region Dashboard / Statistics
+
+        /// <summary>
+        /// دریافت آمار پرداخت‌ها با فیلتر (برای داشبورد صندوق)
+        /// </summary>
+        public async Task<PaymentStatisticsViewModel> GetPaymentStatisticsAsync(PaymentSearchFilter filter)
+        {
+            try
+            {
+                return await _repository.GetPaymentStatisticsAsync(filter ?? new PaymentSearchFilter());
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار پرداخت‌ها");
+                return new PaymentStatisticsViewModel();
+            }
+        }
+
+        /// <summary>
+        /// تعداد اختلاف‌های مالی حل‌نشده
+        /// </summary>
+        public async Task<int> GetPendingDiscrepancyCountAsync()
+        {
+            try
+            {
+                return await _repository.GetPendingDiscrepancyCountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در شمارش اختلاف‌های حل‌نشده");
+                return 0;
+            }
+        }
+
+        #endregion
     }
 }
 

@@ -178,6 +178,18 @@
                         </p>
                     }
                 </div>
+                <div class="col-md-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">مبلغ مشاوره آنلاین (ریال)</dt>
+                        <dd class="col-sm-8">@(Model.OnlineConsultationFee > 0 ? Model.OnlineConsultationFee.ToString("N0") : "— (همان حق ویزیت)")</dd>
+                    </dl>
+                    @if (Model.OnlineConsultationFee > 0)
+                    {
+                        <p class="mb-0 mt-1 text-muted small">
+                            معادل <strong>@MoneyDisplayHelper.FormatTomanDisplay(Model.OnlineConsultationFee)</strong>
+                        </p>
+                    }
+                </div>
             </div>
         </div>
 

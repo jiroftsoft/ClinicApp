@@ -24,6 +24,7 @@ using ClinicApp.Models;
 // using System.Data.Entity; // 🚨 CRITICAL FIX: حذف شد - دیگر از EF مستقیم استفاده نمی‌کنیم
 using System.Net.Http;
 using System.Threading;
+using ClinicApp.Models.Entities.Insurance;
 using ViewModels.Insurance.PatientInsurance;
 
 // using Microsoft.Extensions.Caching.Memory; // در ASP.NET Framework در دسترس نیست
@@ -2927,8 +2928,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             SupplementaryPolicyNumber = pi.SupplementaryPolicyNumber,
                             HasSupplementaryInsurance = pi.HasSupplementaryInsurance
                         }).ToList(),
-                        InsurancePlans = new List<ViewModels.Insurance.InsurancePlan.InsurancePlanLookupViewModel>(),
-                        InsuranceProviders = new List<ViewModels.Insurance.InsuranceProvider.InsuranceProviderLookupViewModel>()
+                        InsurancePlans = new List<InsurancePlanLookupViewModel>(),
+                        InsuranceProviders = new List<InsuranceProviderLookupViewModel>()
                     };
 
                     ViewBag.PatientId = patientId; // اضافه کردن PatientId به ViewBag

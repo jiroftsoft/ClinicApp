@@ -1,4 +1,5 @@
 @model ClinicApp.ViewModels.Admin.PaymentManagement.PaymentIndexViewModel
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "مدیریت پرداخت‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -185,7 +186,7 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
+        @@keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -269,18 +270,24 @@
                 <div class="col-md-2">
                     <label class="form-label">از تاریخ</label>
                     <input type="text" 
-                           name="filter.StartDate" 
-                           class="form-control search-input persian-datepicker" 
-                           placeholder="از تاریخ"
-                           value="@(Model?.Filter?.StartDate?.ToString("yyyy-MM-dd") ?? "")" />
+                           id="filterStartDate"
+                           name="filter.StartDateShamsi" 
+                           class="form-control search-input" 
+                           placeholder="مثال: 1404/01/01"
+                           value="@(Model?.Filter?.StartDateShamsi ?? (Model?.Filter?.StartDate.HasValue == true ? PersianDateHelper.ToPersianDate(Model.Filter.StartDate.Value) : ""))"
+                           data-jdp="true"
+                           data-jdp-theme="medical" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">تا تاریخ</label>
                     <input type="text" 
-                           name="filter.EndDate" 
-                           class="form-control search-input persian-datepicker" 
-                           placeholder="تا تاریخ"
-                           value="@(Model?.Filter?.EndDate?.ToString("yyyy-MM-dd") ?? "")" />
+                           id="filterEndDate"
+                           name="filter.EndDateShamsi" 
+                           class="form-control search-input" 
+                           placeholder="مثال: 1404/12/29"
+                           value="@(Model?.Filter?.EndDateShamsi ?? (Model?.Filter?.EndDate.HasValue == true ? PersianDateHelper.ToPersianDate(Model.Filter.EndDate.Value) : ""))"
+                           data-jdp="true"
+                           data-jdp-theme="medical" />
                 </div>
                 <div class="col-md-1">
                     <label class="form-label">&nbsp;</label>
@@ -313,14 +320,15 @@
                 window.PaymentManagement.init();
             }
 
-            // Initialize Persian DatePicker
-            if (typeof $('.persian-datepicker').persianDatepicker !== 'undefined') {
-                $('.persian-datepicker').persianDatepicker({
-                    observer: true,
-                    format: 'YYYY/MM/DD',
-                    altField: '.persian-datepicker-alt',
-                    altFormat: 'YYYY-MM-DD'
-                });
+            // JalaliDatePicker Enterprise: فیلتر از تاریخ / تا تاریخ
+            if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                JalaliDatePickerEnterprise.startWatchAgain();
+            } else {
+                setTimeout(function() {
+                    if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                        JalaliDatePickerEnterprise.startWatchAgain();
+                    }
+                }, 300);
             }
         });
     </script>

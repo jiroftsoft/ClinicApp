@@ -95,7 +95,7 @@ namespace ClinicApp.Services.Notification
                 ? $"/Admin/OnlineConsultation/Join/{appointmentId}"
                 : $"{baseUrl}/Admin/OnlineConsultation/Join/{appointmentId}";
             var patientName = GetPatientDisplayName(appointment.Patient);
-            var message = $"درخواست مشاوره آنلاین از {patientName}. لینک ورود به اتاق: {joinUrl}";
+            var message = $"{ClinicName} | مشاوره آنلاین از {patientName}. لینک ورود به اتاق: {joinUrl}";
 
             var key = $"A{appointmentId}_{AppointmentNotificationType.OnlineConsultationRequestToDoctor}_Sms";
             if (await _queueRepository.ExistsByIdempotencyKeyAsync(key, NotificationStatus.Queued, NotificationStatus.Sending, NotificationStatus.Sent))
@@ -153,7 +153,7 @@ namespace ClinicApp.Services.Notification
                 ? $"/Patient/Consultation/Join/{appointmentId}"
                 : $"{baseUrl}/Patient/Consultation/Join/{appointmentId}";
             var doctorName = appointment.Doctor?.FullName ?? "پزشک";
-            var message = $"پرداخت نوبت مشاوره آنلاین شما با دکتر {doctorName} با موفقیت انجام شد. لینک ورود به اتاق: {joinUrl}";
+            var message = $"{ClinicName} | نوبت ویزیت آنلاین با دکتر {doctorName} ثبت شد. لینک ورود به اتاق: {joinUrl}";
 
             var key = $"A{appointmentId}_{AppointmentNotificationType.OnlineConsultationRequestToPatient}_Sms";
             if (await _queueRepository.ExistsByIdempotencyKeyAsync(key, NotificationStatus.Queued, NotificationStatus.Sending, NotificationStatus.Sent))

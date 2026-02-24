@@ -28,6 +28,8 @@ using ClinicApp.Services.SystemSettings;
 using ClinicApp.Services.Insurance;
 using ClinicApp.Services.Idempotency;
 using ClinicApp.Models.DTOs;
+using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Insurance.InsurancePlan;
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
 {
@@ -3315,7 +3317,7 @@ correlationId, model.Statistics);
         /// <summary>
         /// 🛡️ اعتبارسنجی امن نتایج سرویس‌ها
         /// </summary>
-        private (bool IsValid, string ErrorMessage) ValidateServiceResults(ServiceResult<ViewModels.ServiceDetailsViewModel> serviceResult, ServiceResult<ViewModels.Insurance.InsurancePlan.InsurancePlanDetailsViewModel> planResult, int serviceId, int insurancePlanId, string correlationId)
+        private (bool IsValid, string ErrorMessage) ValidateServiceResults(ServiceResult<ServiceDetailsViewModel> serviceResult, ServiceResult<InsurancePlanDetailsViewModel> planResult, int serviceId, int insurancePlanId, string correlationId)
         {
             try
             {

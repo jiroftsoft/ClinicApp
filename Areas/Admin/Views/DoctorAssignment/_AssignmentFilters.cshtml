@@ -68,11 +68,13 @@
                     <div class="form-group">
                         <label for="dateFromFilter">تاریخ از:</label>
                         <input type="text" 
-                               class="form-control persian-datepicker" 
+                               class="form-control" 
                                id="dateFromFilter" 
                                name="dateFrom" 
-                               placeholder="انتخاب تاریخ"
-                               value="@Model.DateFrom">
+                               placeholder="مثال: 1404/01/01"
+                               value="@Model.DateFrom"
+                               data-jdp="true"
+                               data-jdp-theme="medical">
                     </div>
                 </div>
 
@@ -81,11 +83,13 @@
                     <div class="form-group">
                         <label for="dateToFilter">تاریخ تا:</label>
                         <input type="text" 
-                               class="form-control persian-datepicker" 
+                               class="form-control" 
                                id="dateToFilter" 
                                name="dateTo" 
-                               placeholder="انتخاب تاریخ"
-                               value="@Model.DateTo">
+                               placeholder="مثال: 1404/12/29"
+                               value="@Model.DateTo"
+                               data-jdp="true"
+                               data-jdp-theme="medical">
                     </div>
                 </div>
 

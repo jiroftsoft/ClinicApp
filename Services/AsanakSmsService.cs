@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -58,36 +58,36 @@ namespace ClinicApp.Services
         /// </summary>
         public async Task SendAsync(IdentityMessage message)
         {
-            // در سناریوهایی که پیامک موقتاً غیر فعال شده است (محیط توسعه/تست)
-            if (!_enabled)
-            {
-                _log.Information("Asanak SMS sending is DISABLED via config. Destination: {Destination}, Body: {Body}", message?.Destination, message?.Body);
-                return;
-            }
-
             if (message == null)
             {
                 _log.Warning("IdentityMessage is null. SMS not sent.");
-                return;
+                throw new InvalidOperationException("SMS: IdentityMessage is null.");
             }
 
-            // اعتبارسنجی پایه
+            // در سناریوهایی که پیامک موقتاً غیرفعال است — پرتاب تا صف اعلان وضعیت را Failed ثبت کند (شفاف‌سازی برای اپراتور)
+            if (!_enabled)
+            {
+                _log.Information("Asanak SMS sending is DISABLED via config. Destination: {Destination}", message.Destination);
+                throw new InvalidOperationException("SMS غیرفعال است (Asanak:Enabled=false).");
+            }
+
+            // اعتبارسنجی پایه — پرتاب تا آیتم در صف به‌عنوان Failed علامت بخورد و در داشبورد قابل بررسی باشد
             if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
             {
                 _log.Error("Asanak credentials are missing in Web.config. SMS to {Destination} aborted.", message.Destination);
-                return;
+                throw new InvalidOperationException("تنظیمات آسانک ناقص است (Username/Password).");
             }
 
             if (string.IsNullOrWhiteSpace(_sourceNumber))
             {
                 _log.Error("Asanak SourceNumber is missing in Web.config. SMS to {Destination} aborted.", message.Destination);
-                return;
+                throw new InvalidOperationException("شماره فرستنده آسانک (SourceNumber) تنظیم نشده است.");
             }
 
             if (string.IsNullOrWhiteSpace(message.Destination) || string.IsNullOrWhiteSpace(message.Body))
             {
                 _log.Warning("Destination or Body is empty. Destination: {Destination}, BodyLength: {Len}", message.Destination, message.Body?.Length ?? 0);
-                return;
+                throw new InvalidOperationException("شماره گیرنده یا متن پیام خالی است.");
             }
 
             // نرمال‌سازی شماره‌ها
@@ -97,7 +97,7 @@ namespace ClinicApp.Services
             if (!IsLikelyPhone(destination))
             {
                 _log.Warning("Destination MSISDN seems invalid after normalization. Original: {Original}, Normalized: {Normalized}", message.Destination, destination);
-                return;
+                throw new InvalidOperationException($"شماره تلفن نامعتبر پس از نرمال‌سازی: {destination}");
             }
 
             // برخی پنل‌ها محدودیت طول دارند؛ فقط هشدار می‌دهیم (برش نمی‌زنیم تا مسئولیت متن دست‌نخورده بماند)

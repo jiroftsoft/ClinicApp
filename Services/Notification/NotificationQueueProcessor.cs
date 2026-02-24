@@ -56,6 +56,18 @@ namespace ClinicApp.Services.Notification
         {
             try
             {
+                if (item.Channel == NotificationChannelType.Sms)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Recipient))
+                    {
+                        item.Status = NotificationStatus.Failed;
+                        item.ErrorLog = "شماره گیرنده (Recipient) خالی است.";
+                        await _queueRepository.UpdateAsync(item);
+                        _logger.Warning("اعلان رد شد - Id: {Id}, Type: {Type}, Reason: Recipient empty", item.Id, item.NotificationType);
+                        return;
+                    }
+                }
+
                 item.Status = NotificationStatus.Sending;
                 await _queueRepository.UpdateAsync(item);
 
@@ -64,7 +76,7 @@ namespace ClinicApp.Services.Notification
                     var message = new IdentityMessage
                     {
                         Destination = item.Recipient,
-                        Body = item.Message
+                        Body = item.Message ?? ""
                     };
                     await _smsService.SendAsync(message);
                 }
@@ -82,7 +94,8 @@ namespace ClinicApp.Services.Notification
                 item.SentTime = DateTime.UtcNow;
                 item.ErrorLog = null;
                 await _queueRepository.UpdateAsync(item);
-                _logger.Information("اعلان ارسال شد - Id: {Id}, Channel: {Channel}, Recipient: {Recipient}", item.Id, item.Channel, item.Recipient);
+                _logger.Information("اعلان ارسال شد - Id: {Id}, Type: {Type}, Channel: {Channel}, Recipient: {Recipient}, AppointmentId: {AppointmentId}",
+                    item.Id, item.NotificationType, item.Channel, MaskPhone(item.Recipient), item.AppointmentId);
             }
             catch (Exception ex)
             {
@@ -91,15 +104,22 @@ namespace ClinicApp.Services.Notification
                 if (item.RetryCount >= item.MaxRetries)
                 {
                     item.Status = NotificationStatus.Failed;
-                    _logger.Error(ex, "اعلان پس از {Retries} تلاش ناموفق - Id: {Id}", item.MaxRetries, item.Id);
+                    _logger.Error(ex, "اعلان پس از {Retries} تلاش ناموفق - Id: {Id}, Type: {Type}, AppointmentId: {AppointmentId}, Error: {Error}",
+                        item.MaxRetries, item.Id, item.NotificationType, item.AppointmentId, ex.Message);
                 }
                 else
                 {
                     item.Status = NotificationStatus.Queued;
-                    _logger.Warning(ex, "خطا در ارسال اعلان - Id: {Id}, Retry: {Retry}", item.Id, item.RetryCount);
+                    _logger.Warning(ex, "خطا در ارسال اعلان - Id: {Id}, Type: {Type}, Retry: {Retry}/{Max}", item.Id, item.NotificationType, item.RetryCount, item.MaxRetries);
                 }
                 await _queueRepository.UpdateAsync(item);
             }
+        }
+
+        private static string MaskPhone(string phone)
+        {
+            if (string.IsNullOrEmpty(phone) || phone.Length < 5) return "***";
+            return phone.Substring(0, 3) + "***" + phone.Substring(phone.Length - 2);
         }
     }
 }

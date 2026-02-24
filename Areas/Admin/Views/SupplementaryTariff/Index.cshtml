@@ -128,12 +128,42 @@
     </div>
 </div>
 
-@section Styles {
+@section styles {
+    @* 🔧 یک منبع استایل برای گرید: اول فایل اختصاصی جدول (همان استایل اصلی)، بعد بقیه — جلوگیری از دو استایل و فلش بعد از رفرش *@
+    <link href="~/Content/css/insurance/supplementary-tariff-index.css" rel="stylesheet" />
     @Styles.Render("~/Content/css/medical-environment")
-    <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
     <link href="~/Content/css/supplementary-tariff-styles.css" rel="stylesheet" />
     <link href="~/Content/css/insurance/supplementary-tariff-views.css" rel="stylesheet" />
-    <link href="~/Content/css/insurance/supplementary-tariff-index.css" rel="stylesheet" />
+    <style>
+        /* استایل بحرانی گرید تعرفه — اعمال فوری در اولین رندر تا با استایل لودشده تداخل نداشته باشد */
+        .professional-medical-container .professional-table-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e1e5e9;
+            overflow: hidden;
+        }
+        .professional-medical-container .professional-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .professional-medical-container .professional-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        .professional-medical-container .professional-table thead th {
+            padding: 16px 12px;
+            text-align: right;
+            font-weight: 600;
+            color: #374151;
+        }
+        .professional-medical-container .professional-table tbody td {
+            padding: 16px 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+    </style>
     
     <!-- 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />

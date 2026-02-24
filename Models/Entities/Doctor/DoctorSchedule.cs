@@ -86,9 +86,14 @@ public class DoctorSchedule : ISoftDelete, ITrackable
     public bool RequirePatientRegistration { get; set; } = false;
 
     /// <summary>
-    /// هزینه ویزیت پایه (ریال)
+    /// هزینه ویزیت پایه (ریال) — ویزیت حضوری
     /// </summary>
     public decimal ConsultationFee { get; set; } = 0;
+
+    /// <summary>
+    /// هزینه مشاوره آنلاین (ریال). اگر بزرگ‌تر از صفر باشد، برای نوبت‌های نوع «مشاوره آنلاین» این مبلغ استفاده می‌شود؛ در غیر این صورت از ConsultationFee استفاده می‌شود.
+    /// </summary>
+    public decimal OnlineConsultationFee { get; set; } = 0;
 
     /// <summary>
     /// هزینه لغو نوبت (ریال)
@@ -245,6 +250,10 @@ public class DoctorScheduleConfiguration : EntityTypeConfiguration<DoctorSchedul
 
         // ✅ مبالغ IRR: decimal(18,0) بدون اعشار (طبق قرارداد مالی و پایگاه دانش)
         Property(ds => ds.ConsultationFee)
+            .IsRequired()
+            .HasPrecision(18, 0);
+
+        Property(ds => ds.OnlineConsultationFee)
             .IsRequired()
             .HasPrecision(18, 0);
 

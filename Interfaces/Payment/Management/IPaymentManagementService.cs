@@ -38,6 +38,16 @@ namespace ClinicApp.Interfaces.Payment.Management
         /// Refund پرداخت
         /// </summary>
         Task<ServiceResult> RefundPaymentAsync(int onlinePaymentId, decimal? refundAmount, string reason, string userId);
+
+        /// <summary>
+        /// دریافت آمار پرداخت‌ها با فیلتر (برای داشبورد)
+        /// </summary>
+        Task<PaymentStatisticsViewModel> GetPaymentStatisticsAsync(PaymentSearchFilter filter);
+
+        /// <summary>
+        /// تعداد اختلاف‌های مالی حل‌نشده
+        /// </summary>
+        Task<int> GetPendingDiscrepancyCountAsync();
     }
 }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Appointment;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.DTOs.Appointment;
@@ -21,20 +22,28 @@ namespace ClinicApp.Services.Appointment
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IDoctorScheduleRepository _doctorScheduleRepository;
         private readonly IDoctorCrudService _doctorCrudService;
+        private readonly ITimeProvider _timeProvider;
+        private readonly IAppSettings _appSettings;
         private readonly ILogger _logger;
-        private readonly ITimeProvider _timeProvider; // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+
+        /// <summary>حداقل فاصله رزرو برای ویزیت حضوری (ساعت)</summary>
+        private const double MinAdvanceHoursInPerson = 2.0;
+        /// <summary>حداقل فاصله رزرو برای مشاوره آنلاین (ساعت) — در دنیای واقعی نیازی به حضور فیزیکی نیست</summary>
+        private const double MinAdvanceHoursOnline = 0.5;
 
         public AppointmentValidationService(
             IAppointmentRepository appointmentRepository,
             IDoctorScheduleRepository doctorScheduleRepository,
             IDoctorCrudService doctorCrudService,
-            ITimeProvider timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+            ITimeProvider timeProvider,
+            IAppSettings appSettings,
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _logger = logger?.ForContext<AppointmentValidationService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -74,8 +83,12 @@ namespace ClinicApp.Services.Appointment
                 errors.AddRange(availabilityValidation.Errors);
                 warnings.AddRange(availabilityValidation.Warnings);
 
-                // 5. بررسی حداقل زمان رزرو
-                var timeValidation = ValidateBookingTime(request.AppointmentDate, request.StartTime);
+                // 5. بررسی حداقل زمان رزرو (ویزیت آنلاین: ۳۰ دقیقه، حضوری: ۲ ساعت)
+                var isOnlineConsultation = _appSettings.EnableOnlineConsultation
+                    && _appSettings.OnlineConsultationServiceCategoryId.HasValue
+                    && request.ServiceCategoryId.HasValue
+                    && request.ServiceCategoryId.Value == _appSettings.OnlineConsultationServiceCategoryId.Value;
+                var timeValidation = ValidateBookingTime(request.AppointmentDate, request.StartTime, isOnlineConsultation);
                 errors.AddRange(timeValidation.Errors);
                 warnings.AddRange(timeValidation.Warnings);
 
@@ -309,7 +322,7 @@ namespace ClinicApp.Services.Appointment
             }
         }
 
-        private ValidationResult ValidateBookingTime(DateTime appointmentDate, TimeSpan startTime)
+        private ValidationResult ValidateBookingTime(DateTime appointmentDate, TimeSpan startTime, bool isOnlineConsultation = false)
         {
             var errors = new List<string>();
             var warnings = new List<string>();
@@ -317,31 +330,32 @@ namespace ClinicApp.Services.Appointment
             var appointmentDateTime = appointmentDate.Date.Add(startTime);
             var now = _timeProvider.GetIranNow();
 
-            // بررسی تاریخ گذشته
             if (appointmentDate.Date < _timeProvider.GetIranToday())
             {
                 errors.Add("نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید");
             }
 
-            // بررسی حداقل زمان رزرو (2 ساعت قبل)
-            var minimumBookingTime = now.AddHours(2);
+            // ویزیت آنلاین: حداقل ۳۰ دقیقه قبل؛ حضوری: حداقل ۲ ساعت قبل
+            var minAdvanceHours = isOnlineConsultation ? MinAdvanceHoursOnline : MinAdvanceHoursInPerson;
+            var minimumBookingTime = now.AddHours(minAdvanceHours);
             if (appointmentDateTime < minimumBookingTime)
             {
-                errors.Add("نوبت باید حداقل 2 ساعت قبل از زمان نوبت رزرو شود");
+                if (isOnlineConsultation)
+                    errors.Add("نوبت مشاوره آنلاین باید حداقل ۳۰ دقیقه قبل از زمان نوبت رزرو شود");
+                else
+                    errors.Add("نوبت باید حداقل ۲ ساعت قبل از زمان نوبت رزرو شود");
             }
 
-            // بررسی حداکثر زمان رزرو (90 روز بعد)
             var maximumBookingTime = now.AddDays(90);
             if (appointmentDateTime > maximumBookingTime)
             {
                 errors.Add("نمی‌توانید بیش از 90 روز جلوتر نوبت رزرو کنید");
             }
 
-            // هشدار برای نوبت‌های فوری (کمتر از 24 ساعت)
             var urgentThreshold = now.AddHours(24);
             if (appointmentDateTime < urgentThreshold && appointmentDateTime >= minimumBookingTime)
             {
-                warnings.Add("این نوبت کمتر از 24 ساعت دیگر است. در صورت امکان، زمان دیگری انتخاب کنید");
+                warnings.Add("این نوبت کمتر از ۲۴ ساعت دیگر است. در صورت امکان، زمان دیگری انتخاب کنید");
             }
 
             return ValidationResult.Create(errors, warnings);

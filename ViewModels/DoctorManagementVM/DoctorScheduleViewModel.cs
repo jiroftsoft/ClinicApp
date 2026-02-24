@@ -79,11 +79,18 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public TimeSpan? DefaultEndTime { get; set; }
 
         /// <summary>
-        /// هزینه ویزیت پایه (ریال)
+        /// هزینه ویزیت پایه (ریال) — ویزیت حضوری
         /// </summary>
         [Range(0, 10000000, ErrorMessage = "هزینه ویزیت باید بین 0 تا 10,000,000 ریال باشد.")]
         [Display(Name = "هزینه ویزیت (ریال)")]
         public decimal ConsultationFee { get; set; } = 0;
+
+        /// <summary>
+        /// هزینه مشاوره آنلاین (ریال). اگر بزرگ‌تر از صفر باشد، برای نوبت‌های نوع «مشاوره آنلاین تصویری» این مبلغ استفاده می‌شود؛ در غیر این صورت از هزینه ویزیت (حضوری) استفاده می‌شود.
+        /// </summary>
+        [Range(0, 10000000, ErrorMessage = "هزینه مشاوره آنلاین باید بین 0 تا 10,000,000 ریال باشد.")]
+        [Display(Name = "هزینه مشاوره آنلاین (ریال)")]
+        public decimal OnlineConsultationFee { get; set; } = 0;
 
         /// <summary>
         /// تاریخ ایجاد برنامه کاری
@@ -303,7 +310,8 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                     AppointmentDuration = doctorSchedule.AppointmentDuration,
                     DefaultStartTime = doctorSchedule.DefaultStartTime,
                     DefaultEndTime = doctorSchedule.DefaultEndTime,
-                    ConsultationFee = doctorSchedule.ConsultationFee, // ✅ اضافه شد
+                    ConsultationFee = doctorSchedule.ConsultationFee,
+                    OnlineConsultationFee = doctorSchedule.OnlineConsultationFee,
                     CreatedAt = doctorSchedule.CreatedAt,
                     CreatedBy = doctorSchedule.CreatedByUserId,
                     UpdatedAt = doctorSchedule.UpdatedAt,
@@ -361,7 +369,8 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 AppointmentDuration = this.AppointmentDuration,
                 DefaultStartTime = this.DefaultStartTime,
                 DefaultEndTime = this.DefaultEndTime,
-                ConsultationFee = this.ConsultationFee, // ✅ اضافه شد
+                ConsultationFee = this.ConsultationFee,
+                OnlineConsultationFee = this.OnlineConsultationFee,
                 CreatedAt = this.CreatedAt,
                 CreatedByUserId = this.CreatedBy,
                 UpdatedAt = this.UpdatedAt,
@@ -659,6 +668,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .LessThanOrEqualTo(10000000)
                 .WithMessage("هزینه ویزیت نمی‌تواند بیش از 10,000,000 ریال باشد.")
                 .WithErrorCode("INVALID_CONSULTATION_FEE_MAX");
+
+            RuleFor(x => x.OnlineConsultationFee)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("هزینه مشاوره آنلاین نمی‌تواند منفی باشد.")
+                .LessThanOrEqualTo(10000000)
+                .WithMessage("هزینه مشاوره آنلاین نمی‌تواند بیش از 10,000,000 ریال باشد.");
 
             // ✅ اعتبارسنجی WorkDays (اصلی) - فقط اگر تاریخ خاصی وجود نداشته باشد
             // ✅ اگر تاریخ خاصی وجود دارد، نیازی به WorkDays نیست

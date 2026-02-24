@@ -1042,6 +1042,30 @@
     <script src="~/Content/js/plugins/select2/js/select2.full.min.js"></script>
 
     <script>
+        // ✅ ثابت‌های JS در scope سراسری تا applyFilters() و event handlerها به آن دسترسی داشته باشند
+        var DoctorScheduleConstants = {
+            QueryParameters: {
+                DoctorId: '@DoctorScheduleConstants.QueryParameters.DoctorId',
+                DayOfWeek: '@DoctorScheduleConstants.QueryParameters.DayOfWeek',
+                IsActive: '@DoctorScheduleConstants.QueryParameters.IsActive',
+                Page: '@DoctorScheduleConstants.QueryParameters.Page'
+            },
+            ElementIds: {
+                DoctorFilter: '@DoctorScheduleConstants.ElementIds.DoctorFilter',
+                DayOfWeekFilter: '@DoctorScheduleConstants.ElementIds.DayOfWeekFilter',
+                StatusFilter: '@DoctorScheduleConstants.ElementIds.StatusFilter',
+                SearchBtn: '@DoctorScheduleConstants.ElementIds.SearchBtn'
+            },
+            FilterValues: {
+                Active: '@DoctorScheduleConstants.FilterValues.Active',
+                Inactive: '@DoctorScheduleConstants.FilterValues.Inactive',
+                All: '@DoctorScheduleConstants.FilterValues.All'
+            },
+            Defaults: {
+                PageNumber: @DoctorScheduleConstants.Defaults.PageNumber
+            }
+        };
+
         $(document).ready(function () {
             // ✅ Initialize DataTable فقط اگر جدول وجود داشته باشد و داده داشته باشد
             var $table = $('#schedulesTable');
@@ -1135,31 +1159,6 @@
             var debouncedApplyFilters = debounceFilter(function() {
                 applyFilters();
             }, 300);
-
-            // ✅ Constants برای JavaScript (Strongly-typed)
-            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
-            var DoctorScheduleConstants = {
-                QueryParameters: {
-                    DoctorId: '@DoctorScheduleConstants.QueryParameters.DoctorId',
-                    DayOfWeek: '@DoctorScheduleConstants.QueryParameters.DayOfWeek',
-                    IsActive: '@DoctorScheduleConstants.QueryParameters.IsActive',
-                    Page: '@DoctorScheduleConstants.QueryParameters.Page'
-                },
-                ElementIds: {
-                    DoctorFilter: '@DoctorScheduleConstants.ElementIds.DoctorFilter',
-                    DayOfWeekFilter: '@DoctorScheduleConstants.ElementIds.DayOfWeekFilter',
-                    StatusFilter: '@DoctorScheduleConstants.ElementIds.StatusFilter',
-                    SearchBtn: '@DoctorScheduleConstants.ElementIds.SearchBtn'
-                },
-                FilterValues: {
-                    Active: '@DoctorScheduleConstants.FilterValues.Active',
-                    Inactive: '@DoctorScheduleConstants.FilterValues.Inactive',
-                    All: '@DoctorScheduleConstants.FilterValues.All'
-                },
-                Defaults: {
-                    PageNumber: @DoctorScheduleConstants.Defaults.PageNumber
-                }
-            };
 
             // ✅ مقداردهی فیلترها از QueryString (Strongly-typed)
             // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
@@ -1348,23 +1347,13 @@
 
         function applyFilters() {
             // ✅ استفاده از Constants (Strongly-typed)
-            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
             var doctorFilter = $('#' + DoctorScheduleConstants.ElementIds.DoctorFilter).val();
             var dayOfWeekFilter = $('#' + DoctorScheduleConstants.ElementIds.DayOfWeekFilter).val();
             var statusFilter = $('#' + DoctorScheduleConstants.ElementIds.StatusFilter).val();
 
-            console.log('Applying filters:', {
-                doctor: doctorFilter,
-                dayOfWeek: dayOfWeekFilter,
-                status: statusFilter
-            });
-
-            // ✅ ساخت URL با پارامترهای فیلتر (Strongly-typed)
-            // طبق: DEVELOPMENT_CONTRACT.md - Strongly-Typed Development
-            var url = '@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })?' + 
+            // ✅ ساخت URL با پارامترهای فیلتر
+            var url = '@Url.Action("Index", "DoctorSchedule", new { area = "Admin" })?' +
                       DoctorScheduleConstants.QueryParameters.Page + '=' + DoctorScheduleConstants.Defaults.PageNumber;
-            
-            // ✅ اضافه کردن پارامترهای فیلتر به URL
             if (doctorFilter) {
                 url += '&' + DoctorScheduleConstants.QueryParameters.DoctorId + '=' + encodeURIComponent(doctorFilter);
             }
@@ -1375,9 +1364,18 @@
                 url += '&' + DoctorScheduleConstants.QueryParameters.IsActive + '=' + encodeURIComponent(statusFilter);
             }
 
-            console.log('Redirecting to:', url);
-            
-            // ✅ ارسال درخواست جدید به سرور با فیلترها
+            // ✅ جلوگیری از رفرش مداوم: اگر URL فعلی همان پارامترها را دارد، ریدایرکت نکن
+            var currentSearch = window.location.search || '';
+            var targetSearch = (url.indexOf('?') >= 0) ? url.substring(url.indexOf('?')) : '';
+            var currentParams = new URLSearchParams(currentSearch);
+            var targetParams = new URLSearchParams(targetSearch);
+            var sameDoctor = (currentParams.get(DoctorScheduleConstants.QueryParameters.DoctorId) || '') === (targetParams.get(DoctorScheduleConstants.QueryParameters.DoctorId) || '');
+            var sameDay = (currentParams.get(DoctorScheduleConstants.QueryParameters.DayOfWeek) || '') === (targetParams.get(DoctorScheduleConstants.QueryParameters.DayOfWeek) || '');
+            var sameStatus = (currentParams.get(DoctorScheduleConstants.QueryParameters.IsActive) || '') === (targetParams.get(DoctorScheduleConstants.QueryParameters.IsActive) || '');
+            if (sameDoctor && sameDay && sameStatus) {
+                return;
+            }
+
             window.location.href = url;
         }
 

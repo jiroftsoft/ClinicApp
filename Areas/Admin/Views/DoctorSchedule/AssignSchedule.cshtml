@@ -562,6 +562,23 @@
                                         </span>
                                     </div>
                                 </div>
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.OnlineConsultationFee, "مبلغ مشاوره آنلاین (ریال)", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.OnlineConsultationFee,
+                                        new {
+                                            @class = "form-control",
+                                            type = "number",
+                                            min = "0",
+                                            max = "10000000",
+                                            step = "1000",
+                                            placeholder = "خالی = همان مبلغ ویزیت حضوری",
+                                            id = "onlineConsultationFeeInput"
+                                        })
+                                    @Html.ValidationMessageFor(m => m.OnlineConsultationFee, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">
+                                        اگر این پزشک امکان «مشاوره آنلاین تصویری» دارد و مبلغ آن با ویزیت حضوری متفاوت است، اینجا وارد کنید. خالی یا صفر = استفاده از همان مبلغ حق ویزیت بالا.
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -238,6 +238,23 @@ namespace ClinicApp.Repositories.Payment.Management
             }
         }
 
+        /// <summary>
+        /// تعداد اختلاف‌های مالی حل‌نشده (وضعیت Pending)
+        /// </summary>
+        public async Task<int> GetPendingDiscrepancyCountAsync()
+        {
+            try
+            {
+                return await _context.PaymentDiscrepancies
+                    .CountAsync(pd => pd.Status == DiscrepancyStatus.Pending);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در شمارش اختلاف‌های حل‌نشده");
+                return 0;
+            }
+        }
+
         #region Private Helper Methods
 
         /// <summary>

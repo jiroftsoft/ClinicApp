@@ -73,14 +73,16 @@
                 <!-- Date Range Filter -->
                 <div class="filter-group">
                     <label for="startDate" class="filter-label">تاریخ شروع از</label>
-                    <input type="text" class="professional-input persian-datepicker" id="startDate" name="startDate" 
-                           value="@ViewBag.SelectedStartDate" placeholder="تاریخ شروع" aria-label="تاریخ شروع برای فیلتر کردن">
+                    <input type="text" class="professional-input" id="startDate" name="startDate" 
+                           value="@ViewBag.SelectedStartDate" placeholder="مثال: 1404/01/01" aria-label="تاریخ شروع برای فیلتر کردن"
+                           data-jdp="true" data-jdp-theme="medical">
                 </div>
 
                 <div class="filter-group">
                     <label for="endDate" class="filter-label">تاریخ شروع تا</label>
-                    <input type="text" class="professional-input persian-datepicker" id="endDate" name="endDate" 
-                           value="@ViewBag.SelectedEndDate" placeholder="تاریخ پایان" aria-label="تاریخ پایان برای فیلتر کردن">
+                    <input type="text" class="professional-input" id="endDate" name="endDate" 
+                           value="@ViewBag.SelectedEndDate" placeholder="مثال: 1404/12/29" aria-label="تاریخ پایان برای فیلتر کردن"
+                           data-jdp="true" data-jdp-theme="medical">
                 </div>
 
                 <!-- Amount Range Filter -->
@@ -313,17 +315,26 @@
     function initializeProfessionalFilters() {
         if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             $(document).ready(function() {
-                // Initialize Persian date picker
-                $('.persian-datepicker').persianDatepicker({
-                    format: 'YYYY/MM/DD',
-                    autoClose: true,
-                    initialValue: false,
-                    observer: true
-                });
+                // JalaliDatePicker Enterprise: فیلتر تاریخ شروع از / تا
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                } else {
+                    setTimeout(function() {
+                        if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                            JalaliDatePickerEnterprise.startWatchAgain();
+                        }
+                    }, 300);
+                }
 
-                // Auto-apply filters with debounce
+                // Auto-apply filters with debounce (شامل انتخاب از تقویم: jdp:change)
                 let filterTimeout;
                 $('.professional-select, .professional-input').on('change input', function() {
+                    clearTimeout(filterTimeout);
+                    filterTimeout = setTimeout(() => {
+                        applyFiltersProfessionally();
+                    }, 500);
+                });
+                $('#startDate, #endDate').on('jdp:change', function() {
                     clearTimeout(filterTimeout);
                     filterTimeout = setTimeout(() => {
                         applyFiltersProfessionally();

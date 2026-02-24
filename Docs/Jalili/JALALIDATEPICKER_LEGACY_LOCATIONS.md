@@ -18,6 +18,11 @@
 | `Areas/Admin/Views/PatientInsurance/Edit.cshtml` | فراخوانی `startWatchAgain()` بعد از ست کردن تاریخ‌ها؛ اعتبارسنجی بازه با `convertPersianToGregorian` |
 | `Areas/Admin/Views/PatientInsurance/_PatientInsuranceForm.cshtml` | تاریخ شروع/پایان اعتبار → `data-jdp` و `data-jdp-theme="medical"` (استفاده در Edit و هر جایی که این پارشال لود شود) |
 | `Areas/Admin/Views/PatientInsurance/Create.cshtml` | مرحله ۳: جزئیات بیمه — inputها به `data-jdp`؛ حذف لینک CSS قدیمی؛ `initializeEnhancedFallbackDateInputs` → `startWatchAgain()`؛ اعتبارسنجی با `convertPersianToGregorian` و رویداد `jdp:change` |
+| `Areas/Admin/Views/DoctorAssignment/Index.cshtml` | از تاریخ / تا تاریخ → `data-jdp` و `data-jdp-theme="medical"` با placeholder شمسی |
+| `Areas/Admin/Views/DoctorAssignment/_AssignmentFilters.cshtml` | تاریخ از / تاریخ تا → همان الگوی Enterprise |
+| `Scripts/app/doctor-assignment-index.js` | حذف `.persianDatepicker()`؛ `startWatchAgain()` و رویداد `jdp:change` برای reload جدول |
+| `Areas/Admin/Views/SupplementaryTariff/_SupplementaryTariffFilters.cshtml` | تاریخ شروع از / تاریخ شروع تا → `data-jdp` و `data-jdp-theme="medical"`؛ حذف `.persianDatepicker()`؛ `startWatchAgain()` و `jdp:change` برای اعمال فیلتر |
+| `Areas/Admin/Views/PaymentManagement/Index.cshtml` | از تاریخ / تا تاریخ → `data-jdp` و `data-jdp-theme="medical"`؛ فیلتر با `StartDateShamsi`/`EndDateShamsi` و پارس در کنترلر؛ `startWatchAgain()` |
 
 ---
 
@@ -32,10 +37,7 @@
 | `Areas/Admin/Views/DoctorSchedule/Index.cshtml` | CSS + JS + `$('.persian-datepicker').persianDatepicker(...)` | جایگزینی با data-jdp و حذف init قدیمی |
 | `Areas/Admin/Views/Security/LoginHistory/Index.cshtml` | لینک CSS قدیمی | حذف؛ data-jdp |
 | `Areas/Admin/Views/DoctorTimeSlot/Index.cshtml` | لینک CSS قدیمی | همان |
-| `Areas/Admin/Views/PaymentManagement/Index.cshtml` | کلاس persian-datepicker + persianDatepicker() | data-jdp و حذف init |
-| `Areas/Admin/Views/DoctorAssignment/Index.cshtml` | کلاس persian-datepicker روی inputها | data-jdp |
 | `Areas/Admin/Views/DoctorAssignment/Edit.cshtml` | persian-datepicker + persianDatepicker() | data-jdp و startWatchAgain یا حذف init |
-| `Areas/Admin/Views/DoctorAssignment/_AssignmentFilters.cshtml` | کلاس persian-datepicker | data-jdp |
 | `Areas/Admin/Views/DoctorServiceCategory/Index.cshtml` | persian-datepicker-initialized + init دستی | data-jdp و startWatchAgain بعد از لود |
 | `Areas/Admin/Views/DoctorServiceCategory/Edit.cshtml` | input با کلاس persian-datepicker | data-jdp |
 | `Areas/Admin/Views/DoctorServiceCategory/ServiceCategoryPermissions.cshtml` | CSS + JS قدیمی | حذف و data-jdp |
@@ -46,7 +48,6 @@
 | `Areas/Admin/Views/EmergencyBooking/Create.cshtml` | bundle persian-datepicker | حذف باندل؛ data-jdp |
 | `Areas/Admin/Views/EmergencyBooking/Index.cshtml` | همان | همان |
 | `Areas/Admin/Views/PatientInsurance/SupplementaryInsurances.cshtml` | persian-datepicker + persianDatepicker() | data-jdp و حذف init |
-| `Areas/Admin/Views/SupplementaryTariff/_SupplementaryTariffFilters.cshtml` | persian-datepicker + persianDatepicker() | data-jdp و حذف init |
 | `Areas/Admin/Views/CombinedInsuranceCalculation/Index.cshtml` | input + CSS + JS قدیمی | data-jdp و حذف اسکریپت قدیمی |
 | `Areas/Admin/Views/InsuranceCalculation/Calculate.cshtml` | persian-datepicker + persianDatepicker() | data-jdp و حذف init |
 | `Areas/Admin/Views/AppointmentAvailability/*.cshtml` (ReleaseSlot, ViewSlotDetails, ReserveSlot, GenerateMonthlySlots, CheckSlotAvailability, GenerateWeeklySlots) | `@Scripts.Render("~/bundles/persian-datepicker")` | حذف باندل؛ استفاده از data-jdp و لود Enterprise از Layout |

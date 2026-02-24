@@ -81,6 +81,10 @@ namespace ClinicApp.ViewModels.Admin.PaymentManagement
         public string DoctorName { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        /// <summary>تاریخ شروع (شمسی) برای نمایش و ارسال از فرم — در کنترلر به StartDate تبدیل می‌شود.</summary>
+        public string StartDateShamsi { get; set; }
+        /// <summary>تاریخ پایان (شمسی) برای نمایش و ارسال از فرم — در کنترلر به EndDate تبدیل می‌شود.</summary>
+        public string EndDateShamsi { get; set; }
         public decimal? MinAmount { get; set; }
         public decimal? MaxAmount { get; set; }
         public int? PaymentGatewayId { get; set; }

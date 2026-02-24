@@ -26,7 +26,7 @@ $(document).ready(function() {
     function initializeDataTable() {
         assignmentsTable = $('#assignmentsTable').DataTable({
             language: {
-                url: '/Content/plugins/DataTables/js/fa.json'
+                url: '/Content/js/plugins/DataTables/js/fa.json'
             },
             processing: true,
             serverSide: true,
@@ -103,18 +103,24 @@ $(document).ready(function() {
             language: 'fa'
         });
 
-        // راه‌اندازی DatePicker
-        $('#dateFromFilter, #dateToFilter').persianDatepicker({
-            format: 'YYYY/MM/DD',
-            observer: true,
-            timePicker: {
-                enabled: false
-            }
-        });
+        // ✅ JalaliDatePicker Enterprise: فیلتر از تاریخ / تا تاریخ (بدون init قدیمی)
+        if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+            JalaliDatePickerEnterprise.startWatchAgain();
+        } else {
+            setTimeout(function() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }
+            }, 300);
+        }
 
-        // رویداد تغییر فیلترها
-        $('#departmentFilter, #serviceCategoryFilter, #dateFromFilter, #dateToFilter, #doctorSearchFilter')
+        // رویداد تغییر فیلترها (شامل انتخاب از تقویم Enterprise: jdp:change)
+        $('#departmentFilter, #serviceCategoryFilter, #doctorSearchFilter')
             .on('change keyup', function() {
+                assignmentsTable.ajax.reload();
+            });
+        $('#dateFromFilter, #dateToFilter')
+            .on('change keyup jdp:change', function() {
                 assignmentsTable.ajax.reload();
             });
     }

@@ -275,6 +275,28 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-video me-2"></i>
+                            مبلغ مشاوره آنلاین (ریال)
+                        </label>
+                        @Html.TextBoxFor(m => m.OnlineConsultationFee, 
+                            new { 
+                                @class = "form-control", 
+                                type = "number",
+                                min = "0",
+                                max = "10000000",
+                                step = "1000",
+                                placeholder = "خالی = همان مبلغ ویزیت حضوری",
+                                id = "onlineConsultationFeeInput"
+                            })
+                        @Html.ValidationMessageFor(m => m.OnlineConsultationFee, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            برای نوبت «مشاوره آنلاین تصویری». صفر یا خالی = همان مبلغ حق ویزیت.
+                        </small>
+                    </div>
+                </div>
             </div>
             
             <!-- Action Buttons -->

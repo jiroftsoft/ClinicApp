@@ -1,5 +1,7 @@
 @using ClinicApp.Extensions
 @using ClinicApp.Helpers
+@using ClinicApp.Models.Enums
+@using ClinicApp.ViewModels
 @model ClinicApp.ViewModels.ServiceComponentCreateEditViewModel
 @{
     ViewBag.Title = "ایجاد جزء خدمت جدید";
@@ -435,7 +437,7 @@
                                 <div class="form-group">
                                     <label for="ComponentType" class="required">نوع جزء</label>
                                     @Html.DropDownListFor(m => m.ComponentType, 
-                                        Html.GetEnumSelectList<ClinicApp.Models.Enums.ServiceComponentType>(), 
+                                        Html.GetEnumSelectList<ServiceComponentCreateEditViewModel, ServiceComponentType>(), 
                                         "انتخاب نوع جزء...", 
                                         new { @class = "form-select", @id = "ComponentType" })
                                     @Html.ValidationMessageFor(m => m.ComponentType, "", new { @class = "field-validation-error" })

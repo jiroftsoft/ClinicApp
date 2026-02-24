@@ -8,6 +8,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Admin.TimeSlotManagement;
+using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
 
 namespace ClinicApp.Areas.Admin.Controllers
@@ -328,7 +329,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         {
             try
             {
-                var filter = new ViewModels.DoctorManagementVM.DoctorSearchViewModel
+                var filter = new DoctorSearchViewModel
                 {
                     PageNumber = 1,
                     PageSize = 1000,

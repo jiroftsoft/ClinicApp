@@ -70,13 +70,7 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
                     return Json(new { success = false, message = "نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید" });
                 }
 
-                // بررسی حداقل زمان رزرو (2 ساعت قبل)
-                var minimumBookingTime = DateTime.Now.AddHours(2);
-                var appointmentDateTime = request.AppointmentDate.Date.Add(request.StartTime);
-                if (appointmentDateTime < minimumBookingTime)
-                {
-                    return Json(new { success = false, message = "نوبت باید حداقل 2 ساعت قبل از زمان نوبت رزرو شود" });
-                }
+                // حداقل زمان رزرو در سرویس اعتبارسنجی بررسی می‌شود (آنلاین: ۳۰ دقیقه، حضوری: ۲ ساعت)
 
                 var result = await _bookingService.ReserveAppointmentAsync(request);
 

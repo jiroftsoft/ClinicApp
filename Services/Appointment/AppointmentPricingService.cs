@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.PromotionalEvent;
 using ClinicApp.Models.DTOs.PromotionalEvent;
@@ -21,6 +22,7 @@ namespace ClinicApp.Services.Appointment
         private readonly IDoctorScheduleRepository _doctorScheduleRepository;
         private readonly IPromotionalEventService _promotionalEventService;
         private readonly ApplicationDbContext _context;
+        private readonly IAppSettings _appSettings;
         private readonly ILogger _logger;
 
         // قیمت پیش‌فرض در صورت عدم وجود تنظیمات
@@ -30,11 +32,13 @@ namespace ClinicApp.Services.Appointment
             IDoctorScheduleRepository doctorScheduleRepository,
             IPromotionalEventService promotionalEventService,
             ApplicationDbContext context,
+            IAppSettings appSettings,
             ILogger logger)
         {
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
             _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _logger = logger?.ForContext<AppointmentPricingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -100,26 +104,38 @@ namespace ClinicApp.Services.Appointment
         #region Private Methods
 
         /// <summary>
-        /// دریافت قیمت پایه
+        /// دریافت قیمت پایه — برای مشاوره آنلاین از OnlineConsultationFee استفاده می‌شود در صورت تنظیم.
         /// </summary>
         private async Task<decimal> GetBasePriceAsync(int doctorId, int? serviceCategoryId)
         {
             try
             {
-                // 1. تلاش برای دریافت قیمت از ServiceCategory (در صورت وجود)
-                // TODO: در آینده می‌توان از ServiceCategory برای محاسبه قیمت استفاده کرد
-                // فعلاً ServiceCategory دارای Price نیست، پس از ConsultationFee استفاده می‌کنیم
-
-                // 2. دریافت قیمت از برنامه کاری پزشک
                 var schedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
-                if (schedule != null && schedule.ConsultationFee > 0)
+                if (schedule == null)
                 {
-                    _logger.Information("قیمت از DoctorSchedule دریافت شد - DoctorId: {DoctorId}, ConsultationFee: {ConsultationFee}",
+                    _logger.Warning("قیمت پایه یافت نشد، استفاده از قیمت پیش‌فرض - DoctorId: {DoctorId}, DefaultPrice: {DefaultPrice}",
+                        doctorId, DEFAULT_CONSULTATION_FEE);
+                    return DEFAULT_CONSULTATION_FEE;
+                }
+
+                var isOnlineConsultation = _appSettings.OnlineConsultationServiceCategoryId.HasValue
+                    && serviceCategoryId.HasValue
+                    && serviceCategoryId.Value == _appSettings.OnlineConsultationServiceCategoryId.Value;
+
+                if (isOnlineConsultation && schedule.OnlineConsultationFee > 0)
+                {
+                    _logger.Information("قیمت مشاوره آنلاین از DoctorSchedule - DoctorId: {DoctorId}, OnlineConsultationFee: {Fee}",
+                        doctorId, schedule.OnlineConsultationFee);
+                    return schedule.OnlineConsultationFee;
+                }
+
+                if (schedule.ConsultationFee > 0)
+                {
+                    _logger.Information("قیمت از DoctorSchedule - DoctorId: {DoctorId}, ConsultationFee: {ConsultationFee}",
                         doctorId, schedule.ConsultationFee);
                     return schedule.ConsultationFee;
                 }
 
-                // 3. استفاده از قیمت پیش‌فرض
                 _logger.Warning("قیمت پایه یافت نشد، استفاده از قیمت پیش‌فرض - DoctorId: {DoctorId}, DefaultPrice: {DefaultPrice}",
                     doctorId, DEFAULT_CONSULTATION_FEE);
                 return DEFAULT_CONSULTATION_FEE;

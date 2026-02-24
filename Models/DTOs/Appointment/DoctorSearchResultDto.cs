@@ -46,6 +46,11 @@ namespace ClinicApp.Models.DTOs.Appointment
         /// تاریخ‌های نوبت موجود با اطلاعات کامل (حداکثر 5 تاریخ آینده)
         /// </summary>
         public List<AvailableDateInfo> AvailableDates { get; set; } = new List<AvailableDateInfo>();
+
+        /// <summary>
+        /// آیا این پزشک امکان مشاوره آنلاین تصویری دارد (برای نمایش از همان مرحله انتخاب پزشک)
+        /// </summary>
+        public bool HasOnlineConsultation { get; set; }
     }
     
     /// <summary>

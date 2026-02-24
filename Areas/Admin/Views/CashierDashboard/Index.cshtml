@@ -1,0 +1,365 @@
+@*
+    داشبورد صندوق — عملیاتی و کاربردی برای محیط درمانی (دید مدیر کلینیک)
+    مسیر: /Admin/CashierDashboard یا /Admin/CMS/CashierDashboard
+    طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT، 03-Development-Contract-Quick-Guide
+*@
+@model ClinicApp.Areas.Admin.ViewModels.CashierDashboardIndexViewModel
+@{
+    ViewBag.Title = "داشبورد صندوق";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var dashboard = Model?.Dashboard ?? new ClinicApp.ViewModels.Payment.CashierDashboardViewModel();
+    var s = dashboard.DailyStats ?? new ClinicApp.ViewModels.Payment.CashierStatsViewModel();
+    var top = dashboard.TopPerformers ?? new List<ClinicApp.Models.DTOs.Payment.CashierRanking>();
+    var rank = dashboard.CurrentCashierRanking;
+    var todayStats = Model?.TodayPaymentStats ?? new ClinicApp.ViewModels.Admin.PaymentManagement.PaymentStatisticsViewModel();
+    var openSessions = Model?.OpenSessions ?? new List<ClinicApp.Areas.Admin.ViewModels.OpenSessionDisplay>();
+    var openCount = Model?.OpenSessionsCount ?? 0;
+    var pendingDisc = Model?.PendingDiscrepancyCount ?? 0;
+    var paymentsUrl = Url.Action("Index", "PaymentManagement", new { area = "Admin" });
+}
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <h1 class="h4 mb-0 text-gray-800">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>
+            داشبورد صندوق
+        </h1>
+        <a href="@paymentsUrl" class="btn btn-primary btn-sm">
+            <i class="fas fa-credit-card me-1"></i>
+            مدیریت پرداخت‌ها
+        </a>
+    </div>
+
+    @* هشدارهای عملیاتی (اولویت مدیر) *@
+    @if (pendingDisc > 0 || todayStats.PendingPayments > 0 || todayStats.FailedPayments > 0 || openCount > 0)
+    {
+        <div class="mb-4">
+            <h5 class="text-muted mb-2">وضعیت عملیاتی</h5>
+            <div class="row g-2">
+                @if (pendingDisc > 0)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <a href="/Payment/CashierReport" class="text-decoration-none">
+                            <div class="card border-0 shadow-sm border-end border-3 border-danger">
+                                <div class="card-body py-2 d-flex align-items-center">
+                                    <i class="fas fa-exclamation-triangle text-danger fa-lg me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>@pendingDisc</strong> اختلاف مالی حل‌نشده
+                                    </div>
+                                    <small class="text-muted">مشاهده گزارشات</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+                @if (todayStats.PendingPayments > 0)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <a href="@paymentsUrl" class="text-decoration-none">
+                            <div class="card border-0 shadow-sm border-end border-3 border-warning">
+                                <div class="card-body py-2 d-flex align-items-center">
+                                    <i class="fas fa-clock text-warning fa-lg me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>@todayStats.PendingPayments</strong> پرداخت در انتظار امروز
+                                        @if (todayStats.PendingAmount > 0)
+                                        { <span class="text-muted">(@todayStats.PendingAmount.ToString("N0") ریال)</span> }
+                                    </div>
+                                    <small class="text-muted">مدیریت پرداخت‌ها</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+                @if (todayStats.FailedPayments > 0)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <a href="@paymentsUrl" class="text-decoration-none">
+                            <div class="card border-0 shadow-sm border-end border-3 border-danger">
+                                <div class="card-body py-2 d-flex align-items-center">
+                                    <i class="fas fa-times-circle text-danger fa-lg me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>@todayStats.FailedPayments</strong> پرداخت ناموفق امروز
+                                    </div>
+                                    <small class="text-muted">پیگیری / تلاش مجدد</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+                @if (openCount > 0)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm border-end border-3 border-info">
+                            <div class="card-body py-2 d-flex align-items-center">
+                                <i class="fas fa-door-open text-info fa-lg me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>@openCount</strong> جلسه صندوق باز
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* دسترسی سریع (عملیاتی) *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <a href="@paymentsUrl" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 cashier-quick-card" style="border-right: 4px solid var(--primary) !important;">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="fas fa-credit-card fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark">مدیریت پرداخت‌ها</h6>
+                            <small class="text-muted">مشاهده، پیگیری و تلاش مجدد تراکنش‌ها</small>
+                        </div>
+                        <i class="fas fa-chevron-left text-muted me-0 ms-auto"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <a href="/Payment/CashierReport" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 cashier-quick-card" style="border-right: 4px solid var(--info) !important;">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 rounded-3 p-3 me-3" style="background: rgba(8, 145, 178, 0.12);">
+                            <i class="fas fa-chart-bar fa-2x" style="color: var(--info);"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark">گزارشات صندوق</h6>
+                            <small class="text-muted">گزارش روزانه، ماهانه و مقایسه منشی‌ها</small>
+                        </div>
+                        <i class="fas fa-chevron-left text-muted me-0 ms-auto"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    @* پرداخت‌های امروز (خلاصه عملیاتی) *@
+    <h5 class="text-muted mb-3">پرداخت‌های امروز</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="text-success fw-bold fs-5">@todayStats.SuccessfulPayments</div>
+                    <small class="text-muted">موفق</small>
+                    <div class="small text-success">@todayStats.SuccessfulAmount.ToString("N0") ریال</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5 @(todayStats.PendingPayments > 0 ? "text-warning" : "text-muted")">@todayStats.PendingPayments</div>
+                    <small class="text-muted">در انتظار</small>
+                    @if (todayStats.PendingPayments > 0)
+                    { <div class="small text-warning">@todayStats.PendingAmount.ToString("N0") ریال</div> }
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5 @(todayStats.FailedPayments > 0 ? "text-danger" : "text-muted")">@todayStats.FailedPayments</div>
+                    <small class="text-muted">ناموفق</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="text-primary fw-bold fs-6">@todayStats.TotalPayments</div>
+                    <small class="text-muted">کل تراکنش‌ها</small>
+                    <div class="small text-muted">@todayStats.TotalAmount.ToString("N0") ریال</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* جلسات صندوق باز *@
+    @if (openSessions.Any())
+    {
+        <h5 class="text-muted mb-3">جلسات صندوق باز</h5>
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>شماره جلسه</th>
+                                <th>منشی</th>
+                                <th>زمان باز شدن</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cs in openSessions)
+                            {
+                                <tr>
+                                    <td>@cs.SessionNumber</td>
+                                    <td>@cs.UserName</td>
+                                    <td>@cs.OpenedAtDisplay</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* آمار عملکرد منشی امروز (از متریک‌های صندوق) *@
+    <h5 class="text-muted mb-3">آمار عملکرد امروز (متریک صندوق)</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="text-primary fw-bold fs-4">@s.TotalTransactions</div>
+                    <small class="text-muted">تراکنش</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="text-success fw-bold fs-6">@s.TotalAmount.ToString("N0")</div>
+                    <small class="text-muted">مبلغ (ریال)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5 @(s.SuccessRate >= 95 ? "text-success" : s.SuccessRate >= 90 ? "text-warning" : "text-danger")">@s.SuccessRate.ToString("F1")%</div>
+                    <small class="text-muted">نرخ موفقیت</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5">@s.AverageTransactionTime.ToString("F1")</div>
+                    <small class="text-muted">میانگین زمان (ث)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5 @(s.DiscrepancyCount > 0 ? "text-danger" : "text-muted")">@s.DiscrepancyCount</div>
+                    <small class="text-muted">اختلاف</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fw-bold fs-5 text-muted">@s.SessionsOpened / @s.SessionsClosed</div>
+                    <small class="text-muted">جلسات باز/بسته</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* رتبه من *@
+    @if (rank != null)
+    {
+        <h5 class="text-muted mb-3">رتبه من (۳۰ روز گذشته)</h5>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 text-center">
+                            <div class="col-6 col-md-3">
+                                <span class="d-block fs-3 fw-bold text-primary">#@rank.Rank</span>
+                                <small class="text-muted">رتبه</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="d-block fw-bold">@rank.TotalTransactions.ToString("N0")</span>
+                                <small class="text-muted">تراکنش</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="d-block fw-bold">@rank.TotalAmount.ToString("N0")</span>
+                                <small class="text-muted">مبلغ (ریال)</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="d-block fw-bold">@rank.SuccessRate.ToString("F1")%</span>
+                                <small class="text-muted">نرخ موفقیت</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* منشی‌های برتر *@
+    <h5 class="text-muted mb-3">منشی‌های برتر (۳۰ روز گذشته)</h5>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (top.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رتبه</th>
+                                <th>نام منشی</th>
+                                <th>تراکنش</th>
+                                <th>مبلغ (ریال)</th>
+                                <th>نرخ موفقیت</th>
+                                <th>اختلاف</th>
+                                <th>امتیاز</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in top)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (p.Rank == 1)
+                                        { <span class="badge bg-warning text-dark"><i class="fas fa-trophy me-1"></i>@p.Rank</span> }
+                                        else if (p.Rank == 2)
+                                        { <span class="badge bg-secondary">@p.Rank</span> }
+                                        else if (p.Rank == 3)
+                                        { <span class="badge bg-info">@p.Rank</span> }
+                                        else
+                                        { <span class="badge bg-light text-dark">@p.Rank</span> }
+                                    </td>
+                                    <td>@(p.CashierName ?? "-")</td>
+                                    <td>@p.TotalTransactions.ToString("N0")</td>
+                                    <td>@p.TotalAmount.ToString("N0")</td>
+                                    <td>
+                                        <span class="badge @(p.SuccessRate >= 95 ? "bg-success" : p.SuccessRate >= 90 ? "bg-warning text-dark" : "bg-danger")">@p.SuccessRate.ToString("F1")%</span>
+                                    </td>
+                                    <td>
+                                        @if (p.DiscrepancyCount > 0)
+                                        { <span class="badge bg-danger">@p.DiscrepancyCount</span> }
+                                        else
+                                        { <span class="text-muted">0</span> }
+                                    </td>
+                                    <td class="fw-bold">@p.OverallScore.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <p class="mb-0">داده‌ای برای نمایش وجود ندارد.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .cashier-quick-card { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+    .cashier-quick-card:hover { box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
+</style>

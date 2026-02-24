@@ -321,6 +321,30 @@ namespace ClinicApp.Services.Appointment
                     _logger.Warning(ex, "⚠️ خطا در Batch Loading Doctor Details");
                 }
 
+                // ✅ Batch Load: پزشکانی که امکان مشاوره آنلاین دارند (برای نمایش از همان مرحله انتخاب پزشک)
+                var onlineConsultationDoctorIds = new HashSet<int>();
+                if (_appSettings.EnableOnlineConsultation && _appSettings.OnlineConsultationServiceCategoryId.HasValue)
+                {
+                    try
+                    {
+                        var onlineCatId = _appSettings.OnlineConsultationServiceCategoryId.Value;
+                        var ids = await _context.DoctorServiceCategories
+                            .AsNoTracking()
+                            .Where(dsc => doctorIds.Contains(dsc.DoctorId)
+                                && dsc.ServiceCategoryId == onlineCatId
+                                && dsc.IsActive
+                                && !dsc.IsDeleted)
+                            .Select(dsc => dsc.DoctorId)
+                            .Distinct()
+                            .ToListAsync();
+                        onlineConsultationDoctorIds = new HashSet<int>(ids);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "⚠️ خطا در Batch Load پزشکان دارای مشاوره آنلاین");
+                    }
+                }
+
                 // ✅ Map به DTOs
                 var doctorDtos = new List<DoctorSearchResultDto>();
                 foreach (var doctor in doctors)
@@ -361,7 +385,8 @@ namespace ClinicApp.Services.Appointment
                         ReviewCount = 0,
                         AvailableDates = hasActiveSchedule && schedule != null
                             ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
-                            : new List<AvailableDateInfo>()
+                            : new List<AvailableDateInfo>(),
+                        HasOnlineConsultation = onlineConsultationDoctorIds.Contains(doctor.DoctorId)
                     };
 
                     doctorDtos.Add(dto);
@@ -401,6 +426,17 @@ namespace ClinicApp.Services.Appointment
 
                 var specialization = doctor.SpecializationNames?.FirstOrDefault() ?? "نامشخص";
                 var department = doctor.DoctorDepartments?.FirstOrDefault();
+
+                var hasOnlineConsultation = false;
+                if (_appSettings.EnableOnlineConsultation && _appSettings.OnlineConsultationServiceCategoryId.HasValue)
+                {
+                    hasOnlineConsultation = await _context.DoctorServiceCategories
+                        .AsNoTracking()
+                        .AnyAsync(dsc => dsc.DoctorId == doctorId
+                            && dsc.ServiceCategoryId == _appSettings.OnlineConsultationServiceCategoryId.Value
+                            && dsc.IsActive
+                            && !dsc.IsDeleted);
+                }
                 
                 var dto = new DoctorSearchResultDto
                 {
@@ -420,7 +456,8 @@ namespace ClinicApp.Services.Appointment
                     ReviewCount = 0,
                     AvailableDates = hasActiveSchedule && schedule != null
                         ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
-                        : new List<AvailableDateInfo>()
+                        : new List<AvailableDateInfo>(),
+                    HasOnlineConsultation = hasOnlineConsultation
                 };
 
                 return ServiceResult<DoctorSearchResultDto>.Successful(dto);
@@ -787,12 +824,13 @@ namespace ClinicApp.Services.Appointment
                     _logger.Information("درخواست رزرو نوبت - پزشک: {DoctorId}, تاریخ: {Date}, زمان: {StartTime}",
                         request.DoctorId, request.AppointmentDate.ToString("yyyy/MM/dd"), request.StartTime);
 
-                    // اعتبارسنجی پیشرفته
+                    // اعتبارسنجی پیشرفته (ویزیت آنلاین: حداقل ۳۰ دقیقه قبل، حضوری: ۲ ساعت قبل)
                     var validationService = new AppointmentValidationService(
                         _appointmentRepository,
                         _doctorScheduleRepository,
                         _doctorCrudService,
-                        _timeProvider, // ✅ ENTERPRISE-GRADE: برای مدیریت زمان ایران
+                        _timeProvider,
+                        _appSettings,
                         _logger);
 
                     var validationResult = await validationService.ValidateBookingRequestAsync(request);
@@ -830,11 +868,12 @@ namespace ClinicApp.Services.Appointment
                             string.Join("، ", validationResult.Warnings));
                     }
 
-                    // ✅ محاسبه قیمت با جزئیات (شامل تخفیف و PromotionalEventId)
+                    // ✅ محاسبه قیمت با جزئیات (شامل تخفیف و PromotionalEventId؛ برای مشاوره آنلاین از OnlineConsultationFee استفاده می‌شود)
                     var pricingService = new AppointmentPricingService(
                         _doctorScheduleRepository,
                         _promotionalEventService,
                         _context,
+                        _appSettings,
                         _logger);
 
                     var patient = await _currentUserService.GetPatientInfoAsync();
@@ -958,11 +997,12 @@ namespace ClinicApp.Services.Appointment
         {
             try
             {
-                // ✅ استفاده از AppointmentPricingService برای محاسبه قیمت (شامل تخفیف ایونت بر اساس تاریخ نوبت)
+                // ✅ استفاده از AppointmentPricingService برای محاسبه قیمت (شامل تخفیف ایونت؛ برای مشاوره آنلاین از OnlineConsultationFee)
                 var pricingService = new AppointmentPricingService(
                     _doctorScheduleRepository,
                     _promotionalEventService,
                     _context,
+                    _appSettings,
                     _logger);
 
                 var patient = await _currentUserService.GetPatientInfoAsync();
@@ -992,6 +1032,7 @@ namespace ClinicApp.Services.Appointment
                     _doctorScheduleRepository,
                     _promotionalEventService,
                     _context,
+                    _appSettings,
                     _logger);
 
                 var patient = await _currentUserService.GetPatientInfoAsync();

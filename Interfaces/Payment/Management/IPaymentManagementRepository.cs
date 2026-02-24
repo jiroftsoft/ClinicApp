@@ -37,6 +37,11 @@ namespace ClinicApp.Interfaces.Payment.Management
         /// دریافت Timeline پرداخت
         /// </summary>
         Task<List<PaymentTimelineItemViewModel>> GetPaymentTimelineAsync(int onlinePaymentId);
+
+        /// <summary>
+        /// تعداد اختلاف‌های مالی حل‌نشده (وضعیت Pending)
+        /// </summary>
+        Task<int> GetPendingDiscrepancyCountAsync();
     }
 }
 

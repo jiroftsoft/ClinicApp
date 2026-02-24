@@ -61,6 +61,18 @@ namespace ClinicApp.Areas.Admin.Controllers
                 filter = filter ?? new PaymentSearchFilter();
                 if (page < 1) page = 1;
 
+                // ✅ تبدیل تاریخ شمسی (از فرم) به میلادی برای سرویس
+                if (!string.IsNullOrWhiteSpace(filter.StartDateShamsi))
+                {
+                    var parsed = PersianDateHelper.ParsePersianDate(filter.StartDateShamsi.Trim());
+                    if (parsed.HasValue) filter.StartDate = parsed;
+                }
+                if (!string.IsNullOrWhiteSpace(filter.EndDateShamsi))
+                {
+                    var parsed = PersianDateHelper.ParsePersianDate(filter.EndDateShamsi.Trim());
+                    if (parsed.HasValue) filter.EndDate = parsed;
+                }
+
                 const int pageSize = 20;
 
                 // ✅ دریافت داده از Service
@@ -76,6 +88,15 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 _logger.Information("لیست پرداخت‌ها با موفقیت دریافت شد - Count: {Count}. User: {UserId}",
                     result.Data?.Payments?.Count ?? 0, _currentUserService.UserId);
+
+                // ✅ پر کردن تاریخ شمسی برای نمایش در فیلتر (JalaliDatePicker)
+                if (result.Data?.Filter != null)
+                {
+                    if (result.Data.Filter.StartDate.HasValue)
+                        result.Data.Filter.StartDateShamsi = PersianDateHelper.ToPersianDate(result.Data.Filter.StartDate.Value);
+                    if (result.Data.Filter.EndDate.HasValue)
+                        result.Data.Filter.EndDateShamsi = PersianDateHelper.ToPersianDate(result.Data.Filter.EndDate.Value);
+                }
 
                 return View(result.Data);
             }
@@ -148,7 +169,19 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Debug("API: درخواست لیست پرداخت‌ها - Page: {Page}, PageSize: {PageSize}. User: {UserId}",
                     page, pageSize, _currentUserService.UserId);
 
-                var result = await _paymentService.GetPaymentsAsync(filter ?? new PaymentSearchFilter(), page, pageSize);
+                filter = filter ?? new PaymentSearchFilter();
+                if (!string.IsNullOrWhiteSpace(filter.StartDateShamsi))
+                {
+                    var parsed = PersianDateHelper.ParsePersianDate(filter.StartDateShamsi.Trim());
+                    if (parsed.HasValue) filter.StartDate = parsed;
+                }
+                if (!string.IsNullOrWhiteSpace(filter.EndDateShamsi))
+                {
+                    var parsed = PersianDateHelper.ParsePersianDate(filter.EndDateShamsi.Trim());
+                    if (parsed.HasValue) filter.EndDate = parsed;
+                }
+
+                var result = await _paymentService.GetPaymentsAsync(filter, page, pageSize);
 
                 if (!result.Success)
                 {

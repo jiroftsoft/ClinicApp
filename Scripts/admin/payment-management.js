@@ -103,10 +103,10 @@ var PaymentManagement = {
     },
 
     // Load Payments (Form Submit - SSR)
+    // استفاده از submit نیتیو تا رویداد submit جی‌کوئری trigger نشود و از حلقهٔ بی‌نهایت (preventDefault + loadPayments + submit) جلوگیری شود
     loadPayments: function() {
-        var self = this;
-        // Form submit will handle the reload
-        $('#searchForm').submit();
+        var form = document.getElementById('searchForm');
+        if (form) form.submit();
     },
 
     // Handle Retry
