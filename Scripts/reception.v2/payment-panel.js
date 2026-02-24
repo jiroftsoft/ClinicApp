@@ -1305,13 +1305,18 @@
   
   /**
    * 🏥 MEDICAL: پاک کردن فرم و آماده‌سازی برای پذیرش بیمار بعدی
-   * این تابع Draft را حذف می‌کند و تمام فیلدهای فرم را پاک می‌کند
+   * @param {boolean} [skipDeleteDraft=false] - اگر true باشد (دکمه «ادامه»)، Draft حذف نمی‌شود و بیمار به لیست مراجعه‌کنندگان می‌رود تا بعداً تسویه کند
    */
-  async function resetForm() {
+  async function resetForm(skipDeleteDraft) {
     try {
-      console.log('🏥 V2: ===== شروع پاک کردن فرم =====');
+      console.log('🏥 V2: ===== شروع پاک کردن فرم =====', 'skipDeleteDraft:', !!skipDeleteDraft);
       
-      // ✅ 1. حذف Draft (اگر وجود دارد) - بدون بررسی isDraftNotFinalized
+      // ✅ وقتی «ادامه (پذیرش بعدی)» زده شده، Draft را حذف نکن تا بیمار در لیست مراجعه‌کنندگان بماند
+      if (skipDeleteDraft) {
+        console.log('✅ V2: ادامه بدون تسویه - Draft حذف نمی‌شود، بیمار در لیست مراجعه‌کنندگان می‌ماند');
+      }
+      
+      // ✅ 1. حذف Draft (اگر وجود دارد و skipDeleteDraft نباشد) - بدون بررسی isDraftNotFinalized
       // چون کاربر صراحتاً روی دکمه "پاک کردن فرم" کلیک کرده است
       
       // ⚠️ مهم: باید ReceptionId را قبل از هر چیز دیگری بخوانیم
@@ -1371,7 +1376,7 @@
       
       console.log('🏥 V2: ReceptionId نهایی برای حذف:', receptionId, 'Type:', typeof receptionId);
       
-      if (receptionId && receptionId > 0) {
+      if (!skipDeleteDraft && receptionId && receptionId > 0) {
         console.log('🏥 V2: حذف Draft قبل از Reset فرم - ReceptionId:', receptionId);
         
         // ✅ CRITICAL: بررسی اینکه آیا Reception قبلاً finalized شده است یا نه
@@ -1731,17 +1736,67 @@
     }
   }
 
-  // ✅ Event Handler برای دکمه Reset Form
+  // ✅ Event Handler برای دکمه «ادامه (پذیرش بعدی)» — بیمار فعلی به لیست مراجعه‌کنندگان می‌رود، فرم ریست می‌شود
+  $(document).on('click', '#BtnContinueWithoutPayment', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🏥 V2: BtnContinueWithoutPayment (ادامه) clicked');
+    if (typeof Swal === 'undefined' || typeof Swal.fire !== 'function') {
+      if (confirm('بیمار فعلی به لیست مراجعه‌کنندگان اضافه می‌شود و می‌تواند بعداً تسویه کند. ادامه می‌دهید؟')) {
+        resetForm(true).then(function() {
+          if (typeof toastr !== 'undefined') { toastr.success('بیمار به لیست مراجعه‌کنندگان اضافه شد.', 'ادامه', { timeOut: 4000 }); }
+        });
+      }
+      return;
+    }
+    Swal.fire({
+      icon: 'question',
+      title: 'ادامه (پذیرش بعدی)',
+      html: '<p class="mb-2">بیمار فعلی به <strong>لیست مراجعه‌کنندگان</strong> اضافه می‌شود و می‌تواند بعداً تسویه کند.</p><p class="mb-0 text-muted">فرم برای پذیرش بیمار بعدی خالی می‌شود.</p>',
+      showCancelButton: true,
+      confirmButtonText: 'بله، ادامه',
+      cancelButtonText: 'انصراف',
+      confirmButtonColor: '#0d6efd',
+      cancelButtonColor: '#6c757d',
+      reverseButtons: true,
+      focusCancel: false
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        resetForm(true).then(function() {
+          if (typeof toastr !== 'undefined') {
+            toastr.success('بیمار به لیست مراجعه‌کنندگان اضافه شد. می‌تواند از لیست پذیرش‌ها بعداً تسویه کند.', 'ادامه', { timeOut: 4000 });
+          }
+        });
+      }
+    });
+  });
+
+  // ✅ Event Handler برای دکمه Reset Form (پاک کردن فرم و حذف Draft — فقط وقتی پذیرش را می‌خواهید لغو کنید)
   $(document).on('click', '#BtnResetForm', function(e) {
     e.preventDefault();
     e.stopPropagation();
-    
     console.log('🏥 V2: BtnResetForm clicked');
-    
-    // نمایش تایید از کاربر
-    if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید？\n\nتمام اطلاعات وارد شده حذف می‌شود و فرم آماده پذیرش بیمار بعدی می‌شود.')) {
-      resetForm();
+    if (typeof Swal === 'undefined' || typeof Swal.fire !== 'function') {
+      if (confirm('آیا مطمئن هستید که می‌خواهید فرم را پاک کنید؟ پذیرش فعلی حذف می‌شود.')) {
+        resetForm(false);
+      }
+      return;
     }
+    Swal.fire({
+      icon: 'warning',
+      title: 'پاک کردن فرم',
+      html: '<p class="mb-2">پذیرش فعلی <strong>حذف</strong> می‌شود و فرم برای پذیرش بیمار بعدی خالی می‌شود.</p><p class="mb-0 small text-muted">برای نگه داشتن بیمار در لیست و تسویه بعداً، از دکمه «ادامه (پذیرش بعدی)» استفاده کنید.</p>',
+      showCancelButton: true,
+      confirmButtonText: 'بله، پاک کن',
+      cancelButtonText: 'انصراف',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      reverseButtons: true
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        resetForm(false);
+      }
+    });
   });
   
   /**
