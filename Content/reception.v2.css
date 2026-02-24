@@ -233,3 +233,15 @@ tr.row-bad {
   font-weight: 600;
 }
 /* در مرورگرهایی که از استایل option پشتیبانی می‌کنند، ایموجی ⚠️ به‌صورت رنگی نمایش داده می‌شود */
+
+/* ✅ UX: سلسله‌مراتب دکمه‌های پرداخت — یک CTA اصلی واضح */
+.rv2-payment-card .rv2-cta-primary {
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+}
+.rv2-payment-card .rv2-payment-secondary {
+  font-size: 0.95rem;
+}
+.rv2-payment-card .rv2-payment-secondary hr {
+  border-color: #e9ecef;
+}

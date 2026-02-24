@@ -1,11 +1,11 @@
 (function(){
   console.log('🏥 V2: Reception Main Module Initialized');
   
-  // Keyboard shortcuts
+  // Keyboard shortcuts (کد ملی = Patient_NationalCode در فرم)
   $(document).on("keydown", function(e){
     if(e.key==="F2"){ 
       e.preventDefault(); 
-      $("#NationalCode").focus(); 
+      $("#Patient_NationalCode").focus(); 
       console.log('🏥 V2: F2 - Focus on National Code');
     }
     if(e.ctrlKey && e.key==="Enter"){ 
@@ -18,6 +18,12 @@
   // Initialize form state
   $(document).ready(function() {
     console.log('🏥 V2: Form ready, initializing...');
+    
+    // UX: فوکوس اول روی کد ملی برای شروع سریع پذیرش
+    var $nc = $("#Patient_NationalCode");
+    if ($nc.length && !$nc.val()) {
+      setTimeout(function() { $nc.focus(); }, 200);
+    }
     
     // Set default values
     $("#Quantity").val(1);

@@ -124,17 +124,18 @@
   }
 
   // ✅ انتخاب خدمت با کد: جستجو در لیست دپارتمان فعلی و set کردن dropdown
+  // @returns {boolean} true اگر خدمت پیدا و انتخاب شد، وگرنه false
   function applyServiceByCode() {
     const codeInput = ($("#ServiceCodeSearch").val() || '').toString().trim();
     if (!codeInput) {
       toastr.warning('کد خدمت را وارد کنید');
-      return;
+      return false;
     }
     const deptId = $("#DepartmentId").val();
     if (!deptId || deptId === '' || deptId === '0') {
       toastr.warning('ابتدا دپارتمان را انتخاب کنید');
       $("#ServiceCodeSearch").val('');
-      return;
+      return false;
     }
     const codeLower = codeInput.toLowerCase();
     const found = currentDepartmentServices.find(function(s) {
@@ -147,8 +148,10 @@
       $("#ServiceCodeSearch").val('');
       $("#Quantity").focus();
       toastr.success('خدمت انتخاب شد');
+      return true;
     } else {
       toastr.warning('خدمتی با این کد در دپارتمان انتخاب‌شده یافت نشد.');
+      return false;
     }
   }
   
@@ -174,11 +177,19 @@
     }
   });
 
-  // ✅ انتخاب خدمت با کد: Enter در فیلد کد
+  // ✅ انتخاب خدمت با کد: Enter در فیلد کد — اگر خدمت پیدا شد، همان لحظه با تعداد فعلی (معمولاً ۱) افزوده می‌شود (UX بهینه)
   $("#ServiceCodeSearch").on('keypress', function(e) {
     if (e.which === 13) {
       e.preventDefault();
-      applyServiceByCode();
+      var applied = applyServiceByCode();
+      if (applied) {
+        // تأخیر کوتاه تا trigger('change') و لود پزشکان وابسته تمام شود، بعد همان جریان افزودن آیتم اجرا شود
+        setTimeout(function() {
+          if ($("#ServiceId").val() && $("#BtnAddItem").length) {
+            $("#BtnAddItem").click();
+          }
+        }, 150);
+      }
     }
   });
 

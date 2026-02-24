@@ -1684,6 +1684,10 @@
       $("#PayCash").removeClass('active btn-primary').addClass('btn-outline-secondary');
       console.log('✅ V2: Payment method reset شد');
 
+      // ✅ 9.1 بازگرداندن دکمه‌های پرداخت به حالت اول — بعد از ریست فقط «ذخیره پذیرش» نمایش داده شود، نه «پرداخت و نهایی‌سازی»
+      $("#BtnSaveReception").removeClass('d-none');
+      $("#BtnFinalizePOS").addClass('d-none');
+
       // ✅ 10. Reset Form Dirty State
       if (window.FormDirty && window.FormDirty.clean) {
         window.FormDirty.clean();
@@ -1716,7 +1720,7 @@
       
       // ✅ 14. Focus روی فیلد کد ملی برای آماده‌سازی پذیرش بیمار بعدی
       setTimeout(function() {
-        $("#NationalCode").focus();
+        $("#Patient_NationalCode").focus();
         console.log('✅ V2: Focus روی فیلد کد ملی');
       }, 100);
 
